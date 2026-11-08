@@ -1,15 +1,41 @@
 {
-  "generated_at": "2026-11-08T18:59:06.670Z",
+  "generated_at": "2026-11-08T19:33:38.402Z",
   "kind": "shipped desktop/plugin.js mounted in jsdom (real effects, real clicks) against recorded real backend payloads, painted in headless Chromium",
-  "plugin_sha256": null,
+  "plugin_sha256": "c8e98f29b6ac2270a379a4bbc2dbd39a798c70189d4e77bb067a7953a99793e0",
   "chromium": "Chrome/155.0.8059.84",
+  "packs": [
+    {
+      "pack_id": "japanese-affection-context-l0",
+      "pack_version": "2.0.0",
+      "title": "Japanese affection and register — a Sample L0 classroom",
+      "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
+      "cover": "artifact",
+      "installed": true
+    },
+    {
+      "pack_id": "parent-measurement-practice",
+      "pack_version": "1.0.0",
+      "title": "Parent demo: measuring ingredients together",
+      "content_hash": "sha256:92ee4a79c2ea469c6567ccadbe9fc55290fdd576f28091546372aa87ac36db3d",
+      "cover": "typographic",
+      "installed": false
+    },
+    {
+      "pack_id": "technical-demo-pack",
+      "pack_version": "1.0.0",
+      "title": "Technical demo: reading a pack before you install it",
+      "content_hash": "sha256:603c0b7de57110ff31ec58f8e7d1dab7211c3312e369f880000deac7fda66174",
+      "cover": "typographic",
+      "installed": false
+    }
+  ],
   "frames": [
     {
       "id": "01-discover-light-1049",
       "view": "workshop",
       "mode": "light",
       "width": 1049,
-      "height": 1938,
+      "height": 1944,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -53,7 +79,7 @@
         "typographic"
       ],
       "cover_first_w_px": 541,
-      "cover_first_h_px": 305,
+      "cover_first_h_px": 306,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -68,6 +94,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -85,7 +113,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 1938,
+      "document_height": 1944,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -93,7 +121,7 @@
       "view": "workshop",
       "mode": "dark",
       "width": 1049,
-      "height": 1938,
+      "height": 1944,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -137,7 +165,7 @@
         "typographic"
       ],
       "cover_first_w_px": 541,
-      "cover_first_h_px": 305,
+      "cover_first_h_px": 306,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -152,6 +180,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -169,7 +199,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 1938,
+      "document_height": 1944,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -177,7 +207,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 900,
-      "height": 1970,
+      "height": 1978,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -221,7 +251,7 @@
         "typographic"
       ],
       "cover_first_w_px": 459,
-      "cover_first_h_px": 289,
+      "cover_first_h_px": 292,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -236,6 +266,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -253,7 +285,7 @@
       "horizontal_overflow": false,
       "scroll_width": 900,
       "client_width": 900,
-      "document_height": 1970,
+      "document_height": 1978,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -261,7 +293,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 460,
-      "height": 2476,
+      "height": 2485,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -305,7 +337,7 @@
         "typographic"
       ],
       "cover_first_w_px": 432,
-      "cover_first_h_px": 244,
+      "cover_first_h_px": 245,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -320,6 +352,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -337,7 +371,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "document_height": 2476,
+      "document_height": 2485,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -345,7 +379,7 @@
       "view": "workshop",
       "mode": "dark",
       "width": 460,
-      "height": 2476,
+      "height": 2485,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -389,7 +423,7 @@
         "typographic"
       ],
       "cover_first_w_px": 432,
-      "cover_first_h_px": 244,
+      "cover_first_h_px": 245,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -404,6 +438,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -421,7 +457,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "document_height": 2476,
+      "document_height": 2485,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -429,7 +465,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 460,
-      "height": 4710,
+      "height": 4732,
       "font": "32px",
       "motion": "full",
       "interactions": [],
@@ -488,6 +524,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -505,7 +543,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "document_height": 4710,
+      "document_height": 4732,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -513,7 +551,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 1049,
-      "height": 1938,
+      "height": 1944,
       "font": null,
       "motion": "reduced",
       "interactions": [],
@@ -557,7 +595,7 @@
         "typographic"
       ],
       "cover_first_w_px": 541,
-      "cover_first_h_px": 305,
+      "cover_first_h_px": 306,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -572,6 +610,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -589,7 +629,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 1938,
+      "document_height": 1944,
       "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
     },
     {
@@ -597,7 +637,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 1049,
-      "height": 1982,
+      "height": 1988,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -641,7 +681,7 @@
         "typographic"
       ],
       "cover_first_w_px": 541,
-      "cover_first_h_px": 329,
+      "cover_first_h_px": 330,
       "images": [
         {
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
@@ -652,8 +692,8 @@
             470
           ],
           "displayed": [
-            539,
-            303
+            541,
+            304
           ]
         },
         {
@@ -665,8 +705,8 @@
             470
           ],
           "displayed": [
-            228,
-            152
+            232,
+            155
           ]
         }
       ],
@@ -683,6 +723,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 3,
       "card_titles": [
@@ -700,7 +742,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 1982,
+      "document_height": 1988,
       "text_head": "Discover\nLibrary\nProvenance\nPack visual — the relationship and register map\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits."
     },
     {
@@ -708,7 +750,7 @@
       "view": "detail",
       "mode": "light",
       "width": 1049,
-      "height": 2359,
+      "height": 2362,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -742,7 +784,7 @@
         "artifact"
       ],
       "cover_first_w_px": 1049,
-      "cover_first_h_px": 615,
+      "cover_first_h_px": 616,
       "images": [
         {
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
@@ -753,8 +795,8 @@
             470
           ],
           "displayed": [
-            1047,
-            589
+            1049,
+            590
           ]
         }
       ],
@@ -787,6 +829,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -796,7 +840,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 2359,
+      "document_height": 2362,
       "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
     },
     {
@@ -804,7 +848,7 @@
       "view": "detail",
       "mode": "dark",
       "width": 900,
-      "height": 2293,
+      "height": 2296,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -838,7 +882,7 @@
         "artifact"
       ],
       "cover_first_w_px": 900,
-      "cover_first_h_px": 531,
+      "cover_first_h_px": 532,
       "images": [
         {
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
@@ -849,8 +893,8 @@
             470
           ],
           "displayed": [
-            898,
-            505
+            900,
+            506
           ]
         }
       ],
@@ -883,6 +927,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -892,7 +938,7 @@
       "horizontal_overflow": false,
       "scroll_width": 900,
       "client_width": 900,
-      "document_height": 2293,
+      "document_height": 2296,
       "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
     },
     {
@@ -934,7 +980,7 @@
         "artifact"
       ],
       "cover_first_w_px": 460,
-      "cover_first_h_px": 283,
+      "cover_first_h_px": 285,
       "images": [
         {
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
@@ -945,8 +991,8 @@
             470
           ],
           "displayed": [
-            458,
-            258
+            460,
+            259
           ]
         }
       ],
@@ -979,6 +1025,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -996,7 +1044,7 @@
       "view": "detail",
       "mode": "light",
       "width": 1049,
-      "height": 1831,
+      "height": 1833,
       "font": null,
       "motion": "full",
       "interactions": [],
@@ -1030,7 +1078,7 @@
         "typographic"
       ],
       "cover_first_w_px": 1049,
-      "cover_first_h_px": 591,
+      "cover_first_h_px": 592,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -1060,6 +1108,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -1069,7 +1119,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 1831,
+      "document_height": 1833,
       "text_head": "← All packs\nFOR PARENTS\nParent demo: measuring ingredients together\nParent demo: measuring ingredients together\n\nRead a measuring jug and double a quantity, with a parent guiding and the answers kept off the learner page.\n\nValidated\nFor par"
     },
     {
@@ -1111,7 +1161,7 @@
         "typographic"
       ],
       "cover_first_w_px": 460,
-      "cover_first_h_px": 260,
+      "cover_first_h_px": 261,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -1141,6 +1191,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -1158,7 +1210,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 1049,
-      "height": 2377,
+      "height": 2380,
       "font": null,
       "motion": "full",
       "interactions": [
@@ -1198,7 +1250,7 @@
         "typographic"
       ],
       "cover_first_w_px": 1049,
-      "cover_first_h_px": 591,
+      "cover_first_h_px": 592,
       "images": [],
       "empty_alt_images": 0,
       "badges": [
@@ -1228,6 +1280,8 @@
       ],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -1237,7 +1291,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 2377,
+      "document_height": 2380,
       "text_head": "Discover\nLibrary\nProvenance\n← All packs\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and "
     },
     {
@@ -1293,6 +1347,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 1,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": "Choose a pack to see what we know about itPreview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.",
       "card_count": 0,
       "card_titles": [],
@@ -1358,6 +1414,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 1,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": "Choose a pack to see what we know about itPreview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.",
       "card_count": 0,
       "card_titles": [],
@@ -1423,6 +1481,8 @@
       "detail_fact_labels": [],
       "notice": null,
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": "No packs on this profile yetA pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.",
       "card_count": 0,
       "card_titles": [],
@@ -1440,7 +1500,7 @@
       "view": "workshop",
       "mode": "light",
       "width": 1049,
-      "height": 2491,
+      "height": 2494,
       "font": null,
       "motion": "full",
       "interactions": [
@@ -1481,7 +1541,7 @@
         "artifact"
       ],
       "cover_first_w_px": 1049,
-      "cover_first_h_px": 615,
+      "cover_first_h_px": 616,
       "images": [
         {
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
@@ -1492,8 +1552,8 @@
             470
           ],
           "displayed": [
-            1047,
-            589
+            1049,
+            590
           ]
         }
       ],
@@ -1526,6 +1586,8 @@
       ],
       "notice": "Added: Japanese affection and register — a Sample L0 classroomAdded to your library. The course is open in Courses and the pack is installed on this profile.Open the courseDismiss",
       "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
       "library_empty": null,
       "card_count": 0,
       "card_titles": [],
@@ -1535,8 +1597,634 @@
       "horizontal_overflow": false,
       "scroll_width": 1049,
       "client_width": 1049,
-      "document_height": 2491,
+      "document_height": 2494,
       "text_head": "Discover\nLibrary\nProvenance\n\nAdded: Japanese affection and register — a Sample L0 classroom\n\nAdded to your library. The course is open in Courses and the pack is installed on this profile.\n\nOpen the course\nDismiss\n← All packs\nPack visual — "
+    },
+    {
+      "id": "19-provenance-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1000,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "Provenance tab"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Provenance",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 1,
+      "state_kind": null,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1000,
+      "text_head": "Discover\nLibrary\nProvenance\nImported and shared packs\nThe Workshop ledger\n\nEvery pack this profile holds, the version it was imported at, where it came from and the hash that was verified. There is no publishing, no upload and no version th"
+    },
+    {
+      "id": "20-provenance-dark-460",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 460,
+      "height": 1500,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "Provenance tab"
+      ],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Provenance",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 1,
+      "state_kind": null,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 1500,
+      "text_head": "Discover\nLibrary\nProvenance\nImported and shared packs\nThe Workshop ledger\n\nEvery pack this profile holds, the version it was imported at, where it came from and the hash that was verified. There is no publishing, no upload and no version th"
+    },
+    {
+      "id": "21-empty-catalogue-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 900,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": "empty",
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 900,
+      "text_head": "Discover\nLibrary\nProvenance\nNo packs in this build\n\nThe Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered."
+    },
+    {
+      "id": "22-empty-catalogue-light-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 900,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": "empty",
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 900,
+      "text_head": "Discover\nLibrary\nProvenance\nNo packs in this build\n\nThe Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered."
+    },
+    {
+      "id": "23-error-catalogue-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 900,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": "error:WORKSHOP_UNAVAILABLE",
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 900,
+      "text_head": "Discover\nLibrary\nProvenance\nThe Workshop could not be read\n\nWORKSHOP_UNAVAILABLE: The Workshop catalogue could not be read.\n\nTry again"
+    },
+    {
+      "id": "24-error-catalogue-dark-460",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 460,
+      "height": 900,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": "error:WORKSHOP_UNAVAILABLE",
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 900,
+      "text_head": "Discover\nLibrary\nProvenance\nThe Workshop could not be read\n\nWORKSHOP_UNAVAILABLE: The Workshop catalogue could not be read.\n\nTry again"
+    },
+    {
+      "id": "25-detail-200pct-1049",
+      "view": "detail",
+      "mode": "light",
+      "width": 1049,
+      "height": 4495,
+      "font": "32px",
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "32px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 640,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            1049,
+            590
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 0,
+      "state_kind": null,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 4495,
+      "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
+    },
+    {
+      "id": "26-library-200pct-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 1800,
+      "font": "32px",
+      "motion": "full",
+      "interactions": [
+        "Library tab at 200 % text"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "32px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Library",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 1,
+      "ledger_rows": 0,
+      "state_kind": null,
+      "library_empty": "Choose a pack to see what we know about itPreview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.",
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 1800,
+      "text_head": "Discover\nLibrary\nProvenance\nUse my college syllabus\nImport pack\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, wh"
+    },
+    {
+      "id": "27-provenance-reduced-motion-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1000,
+      "font": null,
+      "motion": "reduced",
+      "interactions": [
+        "Provenance tab, reduced motion"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "reduced",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Provenance",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "ledger_rows": 1,
+      "state_kind": null,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 0,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1000,
+      "text_head": "Discover\nLibrary\nProvenance\nImported and shared packs\nThe Workshop ledger\n\nEvery pack this profile holds, the version it was imported at, where it came from and the hash that was verified. There is no publishing, no upload and no version th"
     }
   ]
 }

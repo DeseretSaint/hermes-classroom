@@ -17,7 +17,9 @@ import { spawn } from 'node:child_process'
 
 const ROOT = resolve(process.argv[2] || '.')
 const outDir = resolve(ROOT, 'audit/visual/h196-workshop')
-const frames = JSON.parse(readFileSync(resolve(outDir, 'frames.json'), 'utf8')).frames
+const framesDoc = JSON.parse(readFileSync(resolve(outDir, 'frames.json'), 'utf8'))
+const frames = framesDoc.frames
+const packs = framesDoc.packs || []
 const htmlDir = resolve(outDir, 'html')
 mkdirSync(htmlDir, { recursive: true })
 const PORT = process.env.H196_CDP_PORT || '9427'
@@ -130,6 +132,12 @@ const MEASURE = `(() => {
     detail_fact_labels: [...document.querySelectorAll('[data-cb-workshop-detail] dt')].map((n) => text(n)),
     notice: text(document.querySelector('[data-cb-workshop-notice]')),
     library_rows: document.querySelectorAll('[data-cb-pack-row-action]').length,
+    ledger_rows: document.querySelectorAll('[data-cb-workshop-ledger-row]').length,
+    state_kind: document.querySelector('[data-cb-workshop-error]')
+      ? 'error:' + document.querySelector('[data-cb-workshop-error]').getAttribute('data-cb-workshop-error')
+      : document.querySelector('[data-cb-workshop-empty]')
+        ? 'empty'
+        : null,
     library_empty: text(document.querySelector('.empty-state')),
     card_count: document.querySelectorAll('[data-cb-workshop-card]').length,
     card_titles: [...document.querySelectorAll('[data-cb-workshop-card]')].map((n) => text(n.querySelector('h3, h4, strong'))),
@@ -150,6 +158,7 @@ const evidence = {
     'shipped desktop/plugin.js mounted in jsdom (real effects, real clicks) against recorded real backend payloads, painted in headless Chromium',
   plugin_sha256: process.env.H196_PLUGIN_SHA || null,
   chromium: (await send('Browser.getVersion')).product,
+  packs,
   frames: []
 }
 

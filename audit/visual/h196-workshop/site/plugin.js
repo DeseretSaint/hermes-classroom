@@ -22972,6 +22972,24 @@ const WORKSHOP_BADGE = Object.freeze({
 /** Four quiet fields for the typographic cover; the identity's own tokens, no new colours. */
 const WORKSHOP_TONES = Object.freeze(['accent-soft', 'plum-soft', 'lamp-soft', 'paper-raised'])
 
+/** A state heading on the Workshop surfaces: an h2 region, never a competing display plate. */
+const workshopStateHeadingStyle = Object.freeze({
+  margin: 0,
+  fontFamily: CB_SERIF,
+  fontSize: CB_TYPE.heading,
+  fontWeight: 600,
+  lineHeight: 1.2,
+  color: 'var(--cb-ink)'
+})
+
+const workshopStateBodyStyle = Object.freeze({
+  margin: 0,
+  fontFamily: CB_SANS,
+  fontSize: CB_TYPE.body,
+  lineHeight: 1.6,
+  color: 'var(--cb-ink)'
+})
+
 function workshopTone(packId) {
   const text = String(packId || '')
   let sum = 0
@@ -23151,10 +23169,8 @@ function useWorkshopCatalog(enabled) {
  * shape, gradient or seal.
  */
 function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
-  const motion = useCbMotion()
   const cover = (item && item.cover) || { kind: 'typographic' }
   const preview = useArtifactPreview(cover.kind === 'artifact' ? cover.artifact_id : null)
-  const [loaded, setLoaded] = useState(false)
   const tone = workshopTone(item && item.pack_id)
   const image = cover.kind === 'artifact' && preview.state === 'ready' ? preview.data_url : null
   const ratio = hero ? '16 / 9' : '3 / 2'
@@ -23178,10 +23194,12 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
           aspectRatio: ratio,
           minHeight: hero ? '12rem' : '5.5rem',
           borderRadius: '2px',
+          // Depth is drawn with rules, never with shadow (H-152). The hero plate carries the
+          // lamp underline; every other cover keeps the hairline rule.
           border: '1px solid var(--cb-rule)',
+          borderBottom: hero ? '2px solid var(--cb-lamp)' : '1px solid var(--cb-rule)',
           background: `var(--cb-${tone})`,
-          overflow: 'hidden',
-          boxShadow: hero ? '0 1px 0 var(--cb-rule), 0 10px 24px -18px rgba(0,0,0,0.45)' : 'none'
+          overflow: 'hidden'
         },
         children: [
           jsx('span', {
@@ -23200,7 +23218,6 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
                 alt,
                 src: image,
                 loading: hero ? 'eager' : 'lazy',
-                onLoad: () => setLoaded(true),
                 'data-cb-workshop-cover-image': '',
                 style: {
                   display: 'block',
@@ -23208,9 +23225,7 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
                   height: '100%',
                   objectFit: 'contain',
                   objectPosition: 'center',
-                  background: 'var(--cb-paper)',
-                  opacity: loaded ? 1 : 0.985,
-                  transition: motion.transition('opacity', 'route') || 'none'
+                  background: 'var(--cb-paper)'
                 }
               })
             : jsxs('div', {
@@ -23246,6 +23261,10 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
                   jsx('div', {
                     style: {
                       fontFamily: CB_SERIF,
+                      // Deliberate: a pack title on a cover sits at the heading step, never at
+                      // `display`. The identity allows one display plate per route and the route
+                      // header's `h1` already owns it, so a cover that took `display` would be a
+                      // second plate. The cover is a plate inside the page, not the page title.
                       fontSize: hero ? CB_TYPE.heading : CB_TYPE.lead,
                       fontWeight: 600,
                       lineHeight: 1.15,
@@ -23349,15 +23368,15 @@ function WorkshopMeta({ item }) {
 
 /**
  * One storefront card. The cover and title are one real button; the actions sit beside it, never
- * inside it, so a keyboard user meets two separate targets instead of nested controls. Hover is one
- * finite lift (2px) on the press beat; reduced motion paints it static.
+ * inside it, so a keyboard user meets two separate targets instead of nested controls. Hover and
+ * focus are a rule change, not depth: the plate keeps `--cb-paper-raised`, its side rules take ink
+ * and its base rule turns to the lamp. No shadow and no lift — the identity draws depth with rules
+ * (H-152), and the mount settle is the only thing that moves.
  */
 function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, favorite, onFavorite, userCategory, layout }) {
   const [hover, setHover] = useState(false)
   const noteId = `cb-workshop-badge-${item.pack_id}`
   const settle = useCbSettle(motion, { beat: 'route', index, staggerMs: 40, enabled: index < CB_PATH_SETTLE_NODES })
-  const lift = motion.reduced || !hover ? 'none' : 'translateY(-2px)'
-  const transition = motion.transition('transform, box-shadow', 'press') || 'none'
   return jsxs('article', {
     'data-cb-workshop-card': item.pack_id,
     'data-cb-workshop-shelf': shelfKey || '',
@@ -23368,12 +23387,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
       gap: '0.5rem',
       minWidth: 0,
       padding: '0.65rem',
-      border: '1px solid var(--cb-rule)',
+      border: `1px solid ${hover ? 'var(--cb-ink-soft)' : 'var(--cb-rule)'}`,
       borderRadius: '3px',
       background: 'var(--cb-paper-raised)',
-      boxShadow: motion.reduced || !hover ? 'none' : '0 10px 22px -18px rgba(0,0,0,0.5)',
-      transform: lift,
-      transition,
+      borderBottom: hover ? '2px solid var(--cb-lamp)' : '2px solid var(--cb-rule)',
       ...(settle || {})
     },
     onMouseEnter: () => setHover(true),
@@ -23462,9 +23479,9 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               gap: '0.25rem',
               minWidth: '44px',
               minHeight: '44px',
-              border: '1px solid transparent',
+              border: '1px solid var(--cb-rule)',
               borderRadius: '2px',
-              background: 'none',
+              background: 'var(--cb-paper)',
               color: favorite ? 'var(--cb-lamp)' : 'var(--cb-ink-soft)',
               cursor: 'pointer',
               fontFamily: CB_SANS,
@@ -23534,10 +23551,10 @@ function WorkshopHero({ item, layout, motion, onOpen, onInstall, busy }) {
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.display,
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              lineHeight: 1.12,
+              letterSpacing: '-0.01em',
               color: 'var(--cb-ink)',
               overflowWrap: 'anywhere'
             },
@@ -23677,10 +23694,10 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                 style: {
                   margin: 0,
                   fontFamily: CB_SERIF,
-                  fontSize: CB_TYPE.display,
+                  fontSize: CB_TYPE.heading,
                   fontWeight: 600,
-                  lineHeight: 1.05,
-                  letterSpacing: '-0.02em',
+                  lineHeight: 1.12,
+                  letterSpacing: '-0.01em',
                   color: 'var(--cb-ink)',
                   overflowWrap: 'anywhere',
                   outline: 'none'
@@ -24205,7 +24222,7 @@ function WorkshopDiscover({ catalog, layout, motion, prefs, onOpen, onInstall, b
               fontWeight: 600,
               color: 'var(--cb-ink)'
             },
-            children: 'The shelves'
+            children: 'Find a pack',
           }),
           jsxs('div', {
             'data-cb-workshop-filter': '',
@@ -24224,7 +24241,6 @@ function WorkshopDiscover({ catalog, layout, motion, prefs, onOpen, onInstall, b
               categories.map((category) =>
                 jsx('button', {
                   type: 'button',
-                  key: category,
                   'aria-pressed': filter === category ? 'true' : 'false',
                   onClick: () => setFilter(category),
                   style: workshopFilterStyle(filter === category),
@@ -24572,20 +24588,32 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
     body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Reading the Workshop catalogue' }) })
   } else if (catalog.status === 'error') {
     body = jsxs('div', {
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+      'data-cb-workshop-error': (catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
       children: [
-        jsx(EmptyState, {
-          title: 'The Workshop could not be read',
-          description: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
+        jsx('h2', {
+          style: workshopStateHeadingStyle,
+          children: 'The Workshop could not be read'
+        }),
+        jsx('p', {
+          style: workshopStateBodyStyle,
+          children: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
         }),
         jsx(CbAction, { variant: 'tertiary', onClick: catalog.reload, className: 'self-start', children: 'Try again' })
       ]
     })
   } else if (!items.length) {
-    body = jsx(EmptyState, {
-      title: 'No packs in this build',
-      description:
-        'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
+    body = jsxs('div', {
+      'data-cb-workshop-empty': '',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
+      children: [
+        jsx('h2', { style: workshopStateHeadingStyle, children: 'No packs in this build' }),
+        jsx('p', {
+          style: workshopStateBodyStyle,
+          children:
+            'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
+        })
+      ]
     })
   } else {
     body = jsx(WorkshopDiscover, {

@@ -432,13 +432,13 @@
         "validated": true,
         "cover": {
           "kind": "artifact",
-          "artifact_id": "art_ca52ecb5386c4c109c21ac6bc7baae6b",
+          "artifact_id": "art_2dab3a985392426181a5569187f45695",
           "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
           "caption": "Pack visual \u2014 the relationship and register map"
         },
         "installed": {
-          "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
-          "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
+          "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
+          "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
           "next_step": {
             "kind": "start_lesson",
             "label": "Start Tell everyday affection from a direct romantic declaration"
@@ -448,7 +448,7 @@
             "review_due": 0,
             "total_objectives": 4
           },
-          "updated_at": "2026-11-08T18:58:56.593770+00:00"
+          "updated_at": "2026-11-08T19:32:32.233772+00:00"
         }
       },
       {
@@ -606,10 +606,49 @@
     "refused": [],
     "count": 3
   },
+  "catalog_empty": {
+    "ok": true,
+    "generated": "2026-11-08",
+    "items": [],
+    "featured_pack_id": "japanese-affection-context-l0",
+    "refused": [],
+    "count": 3
+  },
+  "catalog_error": {
+    "ok": false,
+    "code": "WORKSHOP_UNAVAILABLE",
+    "message": "The Workshop catalogue could not be read."
+  },
+  "packs": [
+    {
+      "pack_id": "japanese-affection-context-l0",
+      "pack_version": "2.0.0",
+      "title": "Japanese affection and register \u2014 a Sample L0 classroom",
+      "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
+      "cover": "artifact",
+      "installed": true
+    },
+    {
+      "pack_id": "parent-measurement-practice",
+      "pack_version": "1.0.0",
+      "title": "Parent demo: measuring ingredients together",
+      "content_hash": "sha256:92ee4a79c2ea469c6567ccadbe9fc55290fdd576f28091546372aa87ac36db3d",
+      "cover": "typographic",
+      "installed": false
+    },
+    {
+      "pack_id": "technical-demo-pack",
+      "pack_version": "1.0.0",
+      "title": "Technical demo: reading a pack before you install it",
+      "content_hash": "sha256:603c0b7de57110ff31ec58f8e7d1dab7211c3312e369f880000deac7fda66174",
+      "cover": "typographic",
+      "installed": false
+    }
+  ],
   "library_empty": {
     "ok": true,
     "contract_version": 18,
-    "operation_id": "op-library-list-80c9fd7a",
+    "operation_id": "op-library-list-7c9e52cb",
     "revision": 0,
     "result": {
       "items": [],
@@ -622,13 +661,13 @@
   "library_full": {
     "ok": true,
     "contract_version": 18,
-    "operation_id": "op-library-list-d8bb43ed",
+    "operation_id": "op-library-list-d0175f96",
     "revision": 0,
     "result": {
       "items": [
         {
-          "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
-          "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
+          "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
+          "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
           "title": "Japanese affection and register \u2014 a Sample L0 classroom",
           "subtitle": null,
           "recipe": "casual",
@@ -650,10 +689,10 @@
             "independent": 0,
             "review_due": 0,
             "total_objectives": 4,
-            "current_objective_id": "obj_d54a89f32ec842958be0d74ec1ee6e87"
+            "current_objective_id": "obj_9e4700d7b2654856900d434f626d6c06"
           },
           "warning": null,
-          "updated_at": "2026-11-08T18:58:56.593770+00:00",
+          "updated_at": "2026-11-08T19:32:32.233772+00:00",
           "revision": 0
         }
       ],
@@ -1040,14 +1079,14 @@
       "ok": true,
       "pack_id": "japanese-affection-context-l0",
       "pack_version": "2.0.0",
-      "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
-      "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
+      "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
+      "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
       "revision": 0,
       "imported": true
     },
-    "/media/art_ca52ecb5386c4c109c21ac6bc7baae6b": {
+    "/media/art_2dab3a985392426181a5569187f45695": {
       "ok": true,
-      "artifact_id": "art_ca52ecb5386c4c109c21ac6bc7baae6b",
+      "artifact_id": "art_2dab3a985392426181a5569187f45695",
       "mime": "image/png",
       "bytes": 6948,
       "label": "Illustration \u2014 generated for context only. It is not a measurement, procedure, technical reference, or safety authority.",
@@ -1065,7 +1104,7 @@
     "library.list": {
       "ok": true,
       "contract_version": 18,
-      "operation_id": "op-library-list-80c9fd7a",
+      "operation_id": "op-library-list-7c9e52cb",
       "revision": 0,
       "result": {
         "items": [],
@@ -1078,7 +1117,7 @@
     "pack.list": {
       "ok": true,
       "contract_version": 18,
-      "operation_id": "op-pack-list-a0665bcd",
+      "operation_id": "op-pack-list-5cf90e70",
       "revision": 0,
       "result": {
         "items": [
@@ -1090,7 +1129,7 @@
             "source": "local",
             "state": "installed",
             "revision": 0,
-            "installed_at": "2026-11-08T18:58:56Z",
+            "installed_at": "2026-11-08T19:32:32Z",
             "file_count": 6,
             "expanded_bytes": 39468,
             "license": {
@@ -1122,13 +1161,13 @@
     "library.list": {
       "ok": true,
       "contract_version": 18,
-      "operation_id": "op-library-list-d8bb43ed",
+      "operation_id": "op-library-list-d0175f96",
       "revision": 0,
       "result": {
         "items": [
           {
-            "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
-            "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
+            "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
+            "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
             "title": "Japanese affection and register \u2014 a Sample L0 classroom",
             "subtitle": null,
             "recipe": "casual",
@@ -1150,10 +1189,10 @@
               "independent": 0,
               "review_due": 0,
               "total_objectives": 4,
-              "current_objective_id": "obj_d54a89f32ec842958be0d74ec1ee6e87"
+              "current_objective_id": "obj_9e4700d7b2654856900d434f626d6c06"
             },
             "warning": null,
-            "updated_at": "2026-11-08T18:58:56.593770+00:00",
+            "updated_at": "2026-11-08T19:32:32.233772+00:00",
             "revision": 0
           }
         ],
@@ -1166,7 +1205,7 @@
     "pack.list": {
       "ok": true,
       "contract_version": 18,
-      "operation_id": "op-pack-list-a0665bcd",
+      "operation_id": "op-pack-list-5cf90e70",
       "revision": 0,
       "result": {
         "items": [
@@ -1178,7 +1217,7 @@
             "source": "local",
             "state": "installed",
             "revision": 0,
-            "installed_at": "2026-11-08T18:58:56Z",
+            "installed_at": "2026-11-08T19:32:32Z",
             "file_count": 6,
             "expanded_bytes": 39468,
             "license": {
@@ -1207,14 +1246,14 @@
     }
   },
   "media_ids": [
-    "art_ca52ecb5386c4c109c21ac6bc7baae6b"
+    "art_2dab3a985392426181a5569187f45695"
   ],
   "install_response": {
     "ok": true,
     "pack_id": "japanese-affection-context-l0",
     "pack_version": "2.0.0",
-    "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
-    "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
+    "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
+    "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
     "revision": 0,
     "imported": true
   },
@@ -1222,8 +1261,8 @@
     "ok": true,
     "pack_id": "japanese-affection-context-l0",
     "pack_version": "2.0.0",
-    "course_id": "crs_c8d3604a16da4a2f8666843907fd60c8",
-    "enrollment_id": "enr_418d447cdee44ffcb329be09fcc5aa1e",
+    "course_id": "crs_cf8131fcfd2f46c4ad89e556ab0694b0",
+    "enrollment_id": "enr_ac31e13d925f45179019a8e4b28cb847",
     "revision": 0,
     "imported": false,
     "message": "This pack is already in your library; nothing was imported twice."

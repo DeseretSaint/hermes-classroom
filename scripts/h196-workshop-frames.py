@@ -203,9 +203,34 @@ def build_payloads() -> dict:
         "library.list": library_empty,  # replaced per frame below when the installed shelf is wanted
         "pack.list": packs,
     }
+    # State frames (H-196b). Neither is a recorded backend answer: the build bundles packs, so an
+    # empty catalogue cannot be produced by a real read, and a catalogue that answers "unavailable"
+    # is a transport posture. Both are built from the real envelope's own shape so the surface is
+    # exercised as shipped — and both are named as state frames in the evidence record, never
+    # presented as a catalogue of packs.
+    catalog_empty = {**catalog_fresh, "items": [], "refused": []}
+    catalog_error = {
+        "ok": False,
+        "code": "WORKSHOP_UNAVAILABLE",
+        "message": "The Workshop catalogue could not be read.",
+    }
+    pack_facts = [
+        {
+            "pack_id": item["pack_id"],
+            "pack_version": item["pack_version"],
+            "title": item["title"],
+            "content_hash": item["content_hash"],
+            "cover": (item.get("cover") or {}).get("kind", "none"),
+            "installed": bool(item.get("installed")),
+        }
+        for item in catalog_installed["items"]
+    ]
     return {
         "catalog_fresh": catalog_fresh,
         "catalog_installed": catalog_installed,
+        "catalog_empty": catalog_empty,
+        "catalog_error": catalog_error,
+        "packs": pack_facts,
         "library_empty": library_empty,
         "library_full": library_full,
         "rest": rest,
@@ -341,6 +366,94 @@ FRAMES = [
             {"clickText": "Add to library", "note": "pressed Add to library"},
         ],
     },
+    # H-196b additions — the surfaces the first eighteen frames did not cover.
+    # Provenance: one ledger row per recorded import, read from the real pack.list envelope.
+    {
+        "id": "19-provenance-light-1049",
+        "view": "workshop",
+        "mode": "light",
+        "width": 1049,
+        "height": 1000,
+        "catalog": "catalog_installed",
+        "rpc": "rpc_full",
+        "actions": [{"click": "[data-cb-workshop-tab=\"provenance\"]", "note": "Provenance tab"}],
+    },
+    {
+        "id": "20-provenance-dark-460",
+        "view": "workshop",
+        "mode": "dark",
+        "width": 460,
+        "height": 1500,
+        "catalog": "catalog_installed",
+        "rpc": "rpc_full",
+        "actions": [{"click": "[data-cb-workshop-tab=\"provenance\"]", "note": "Provenance tab"}],
+    },
+    # State frames: an empty catalogue and a catalogue that refused to answer.
+    {
+        "id": "21-empty-catalogue-light-1049",
+        "view": "workshop",
+        "mode": "light",
+        "width": 1049,
+        "height": 900,
+        "catalog": "catalog_empty",
+    },
+    {
+        "id": "22-empty-catalogue-light-460",
+        "view": "workshop",
+        "mode": "light",
+        "width": 460,
+        "height": 900,
+        "catalog": "catalog_empty",
+    },
+    {
+        "id": "23-error-catalogue-light-1049",
+        "view": "workshop",
+        "mode": "light",
+        "width": 1049,
+        "height": 900,
+        "catalog": "catalog_error",
+    },
+    {
+        "id": "24-error-catalogue-dark-460",
+        "view": "workshop",
+        "mode": "dark",
+        "width": 460,
+        "height": 900,
+        "catalog": "catalog_error",
+    },
+    # The posture matrix on surfaces beyond Discover: 200 % text and reduced motion.
+    {
+        "id": "25-detail-200pct-1049",
+        "view": "detail",
+        "pack_id": "japanese-affection-context-l0",
+        "mode": "light",
+        "width": 1049,
+        "height": 2600,
+        "font": "32px",
+        "catalog": "catalog_installed",
+    },
+    {
+        "id": "26-library-200pct-460",
+        "view": "workshop",
+        "mode": "light",
+        "width": 460,
+        "height": 1800,
+        "font": "32px",
+        "catalog": "catalog_installed",
+        "rpc": "rpc_full",
+        "actions": [{"click": "[data-cb-workshop-tab=\"library\"]", "note": "Library tab at 200 % text"}],
+    },
+    {
+        "id": "27-provenance-reduced-motion-1049",
+        "view": "workshop",
+        "mode": "light",
+        "width": 1049,
+        "height": 1000,
+        "motion": "reduced",
+        "catalog": "catalog_installed",
+        "rpc": "rpc_full",
+        "actions": [{"click": "[data-cb-workshop-tab=\"provenance\"]", "note": "Provenance tab, reduced motion"}],
+    },
 ]
 
 
@@ -446,7 +559,9 @@ def main() -> int:
         if frame["id"] in ("15-library-light-1049", "18-add-to-library-result-1049"):
             print("   requests: " + " | ".join(rendered.get("requests", [])), file=sys.stderr)
 
-    (OUT / "frames.json").write_text(json.dumps({"frames": frames}, indent=2), encoding="utf-8")
+    (OUT / "frames.json").write_text(
+        json.dumps({"frames": frames, "packs": payloads["packs"]}, indent=2), encoding="utf-8"
+    )
     print(json.dumps({"frames": len(frames), "path": str(OUT / "frames.json"), "media_ids": payloads["media_ids"]}))
     return 0
 
