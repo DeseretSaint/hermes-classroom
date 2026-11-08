@@ -139,12 +139,14 @@ const read = (el) => ({
   text: text(el).slice(0, 48),
   action: el.getAttribute('data-cb-action'),
   variant: el.getAttribute('data-variant'),
+  breadcrumb: el.getAttribute('data-cb-breadcrumb'),
   disabled: Boolean(el.disabled),
   minHeight: el.style.minHeight || '',
   fontSize: el.style.fontSize || '',
   background: el.style.backgroundColor || el.style.background || '',
   color: el.style.color || '',
   width: el.style.width || '',
+  styleAttr: el.getAttribute('style') || '',
   className: typeof el.className === 'string' ? el.className : ''
 })
 
@@ -186,13 +188,15 @@ for (const destination of ['courses', 'library', 'studio']) {
 }
 
 // Course Detail: the course page a learner reaches from the Courses catalog. This runs before
-// the section mount, because that mount replaces the route root.
+// the section mount, because that mount replaces the route root. An empty profile has no row to
+// open, so the step is skipped rather than failing the whole harness.
 await navTo('courses')
 const openCourse = [...document.querySelectorAll('[data-cb-course-cover] button')].find((b) => text(b) === 'Open')
-if (!openCourse) throw new Error('courses rendered no Open action')
-await act(async () => { openCourse.click() })
-await flush(240)
-surfaces.push(snapshot('course-detail'))
+if (openCourse) {
+  await act(async () => { openCourse.click() })
+  await flush(240)
+  surfaces.push(snapshot('course-detail'))
+}
 
 // The section surface is rendered from its own page document, so the reading column always mounts.
 const lessonPage = responses['lesson.page']
@@ -292,18 +296,26 @@ class ActionRenderTest(unittest.TestCase):
             json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
         )
         (sdk / "index.js").write_text(STUB, encoding="utf-8")
-        cls.cache: dict[int, dict] = {}
+        cls.cache: dict[tuple[int, bool], dict] = {}
 
     @classmethod
     def tearDownClass(cls) -> None:
         if hasattr(cls, "tmp"):
             cls.tmp.cleanup()
 
-    def report(self, width: int = 1049) -> dict:
-        if width in self.cache:
-            return self.cache[width]
-        case = self.root / f"case-{width}.json"
-        case.write_text(json.dumps({"width": width, "responses": library_responses()}), encoding="utf-8")
+    def report(self, width: int = 1049, empty_catalog: bool = False) -> dict:
+        key = (width, empty_catalog)
+        if key in self.cache:
+            return self.cache[key]
+        responses = library_responses()
+        if empty_catalog:
+            # The welcome owns the primary when the profile has no courses; the route header must
+            # then drop its own "New course" (UX-01: one screen, one primary).
+            responses = dict(responses)
+            responses["library.list"] = {"items": [], "total": 0, "applied_filter": "all"}
+        suffix = "empty" if empty_catalog else "shelf"
+        case = self.root / f"case-{width}-{suffix}.json"
+        case.write_text(json.dumps({"width": width, "responses": responses}), encoding="utf-8")
         result = subprocess.run(
             ["node", str(self.root / "harness.mjs"), str(case)],
             cwd=self.root,
@@ -313,15 +325,15 @@ class ActionRenderTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr[-4000:])
         data = json.loads(result.stdout)
-        self.cache[width] = data
+        self.cache[key] = data
         return data
 
-    def surfaces(self, width: int = 1049) -> list[dict]:
-        return self.report(width)["surfaces"]
+    def surfaces(self, width: int = 1049, empty_catalog: bool = False) -> list[dict]:
+        return self.report(width, empty_catalog)["surfaces"]
 
-    def surface(self, name: str, width: int = 1049) -> dict:
-        found = next((item for item in self.surfaces(width) if item["name"] == name), None)
-        self.assertIsNotNone(found, f"{name} was not reached; got {[s['name'] for s in self.surfaces(width)]}")
+    def surface(self, name: str, width: int = 1049, empty_catalog: bool = False) -> dict:
+        found = next((item for item in self.surfaces(width, empty_catalog) if item["name"] == name), None)
+        self.assertIsNotNone(found, f"{name} was not reached; got {[s['name'] for s in self.surfaces(width, empty_catalog)]}")
         assert found is not None
         return found
 
@@ -343,6 +355,35 @@ class ActionRenderTest(unittest.TestCase):
                 with self.subTest(surface=item["name"], width=width):
                     primaries = [b for b in item["buttons"] if b["action"] == "primary"]
                     self.assertLessEqual(len(primaries), 1, primaries)
+
+    def test_courses_carries_exactly_its_new_course_primary(self) -> None:
+        # H-160. "At most one" cannot catch a defect of omission, and H-151's live facts recorded
+        # `primaryCount: 0` on the catalog — the surface a learner lands on had no primary at all.
+        # UX_SPEC §4 names the Courses page-header primary: **New course**. Pin the one primary,
+        # its label, and its lamp fill at every measured width.
+        for width in (1049, 900, 460):
+            with self.subTest(width=width):
+                item = self.surface("courses", width)
+                primaries = [b for b in item["buttons"] if b["action"] == "primary"]
+                self.assertEqual([b["text"] for b in primaries], ["New course"], primaries)
+                self.assertEqual(primaries[0]["background"], "var(--cb-lamp)", primaries[0])
+                self.assertEqual(primaries[0]["color"], "var(--cb-on-lamp)", primaries[0])
+                self.assertEqual(self.px(primaries[0]["minHeight"], "New course"), 44, primaries[0])
+
+    def test_the_empty_catalog_keeps_exactly_one_primary(self) -> None:
+        # The same header button is one eligibility check, not an unconditional render: an empty
+        # profile shows the welcome, whose own primary replaces it. Two primaries here would mean
+        # the catalog's new primary double-painted the first-run screen.
+        for width in (1049, 460):
+            with self.subTest(width=width):
+                item = self.surface("courses", width, empty_catalog=True)
+                primaries = [b for b in item["buttons"] if b["action"] == "primary"]
+                self.assertEqual(len(primaries), 1, primaries)
+                self.assertNotEqual(primaries[0]["text"], "New course", primaries)
+                self.assertEqual(
+                    [b for b in item["buttons"] if b["text"] == "New course"], [],
+                    "the route header kept its New course action beside the welcome's primary",
+                )
 
     def test_the_primary_is_the_lamp_field_at_44_px(self) -> None:
         seen = 0
@@ -422,6 +463,34 @@ class ActionRenderTest(unittest.TestCase):
             for button in item["buttons"]:
                 if button["action"]:
                     self.assertIsNotNone(to_px(button["minHeight"]), button)
+
+    def test_the_section_route_wraps_its_widest_tokens_at_460_200_percent(self) -> None:
+        # H-160. The live frame at a 460 px window and a 32 px root measured `routeOverflowX: 53`
+        # on the section route: three unbreakable tokens were wider than the pane. jsdom has no
+        # layout, so this pins the declarations that removed the overflow; the number itself is
+        # re-taken by `scripts/h151-action-capture.mjs`, which now prints `routeOverflowX` for
+        # every surface and for the 200% frame.
+        #
+        #   wordmark   "COURSEBOOK" at 28 px + 0.14em tracking = 239 px (pane 215, content 170)
+        #   page title "Course" at the display step (72 px at a 32 px root)
+        #   breadcrumb the course title in a host text button: shrink-0 + whitespace-nowrap = 790 px
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        for anchor in ("'data-cb-wordmark': ''", "'data-cb-page-title': ''"):
+            with self.subTest(anchor=anchor):
+                start = source.index(anchor)
+                block = source[start : start + 1600]
+                self.assertIn("overflowWrap: 'anywhere'", block)
+                self.assertIn("minWidth: 0", block)
+        section = self.surface("section")
+        crumbs = [b for b in section["buttons"] if b["breadcrumb"] == "sections"]
+        self.assertEqual(len(crumbs), 1, crumbs)
+        crumb = crumbs[0]
+        # A breadcrumb is prose: it must ask for a Coursebook variant and declare that it wraps,
+        # rather than inherit the host button's `shrink-0 whitespace-nowrap`.
+        self.assertEqual(crumb["action"], "tertiary", crumb)
+        self.assertRegex(crumb["styleAttr"], r"white-space:\s*normal", crumb["styleAttr"])
+        self.assertRegex(crumb["styleAttr"], r"flex-shrink:\s*1", crumb["styleAttr"])
+
 
 
 if __name__ == "__main__":

@@ -81,19 +81,20 @@ Measured primaries in `h151-facts.json` (`primaries[]`, `primaryCount`):
 | library | Import pack | 44 px | 44 px | lamp / on-lamp |
 | section | Record observation | 44 px | 44 px | lamp / on-lamp |
 | studio | New lesson plan | 44 px | 44 px | lamp / on-lamp |
-| courses | **none** — `primaryCount: 0` | — | — | — |
+| courses | New course | 44 px | 44 px | lamp / on-lamp |
 
-Two honest deviations from a flat reading of "one primary per core surface":
+**H-160 correction.** At `fc16813` this table's Courses row read `none — primaryCount: 0`, and the
+section below argued the catalog had no single next step to fill. That was the wrong reading of
+UX_SPEC §4, which names the Courses page-header primary explicitly ("Courses: **New course**
+primary; Import pack in Library/overflow"). H-151 had left the call site at `variant: 'secondary'`,
+and "at most one primary" cannot catch a defect of omission. On `wt/h160-h151-followups` the button
+is `variant: 'primary'` behind the same eligibility check (`!coursesEmpty && !openCourse`), so the
+catalog carries exactly one lamp and the welcome still owns the only one on an empty profile.
+Measured: `courses primaryCount: 1` at 1049/900/460 (§8).
 
-- **Courses renders zero primaries.** The catalog's only actions are row and tertiary controls;
-  there is no single next step to fill. The live frames and the render test agree, because the test
-  pins *at most* one, not *exactly* one.
-- "one per surface" is therefore a property of the five task surfaces, not of the catalog. If the
-  catalog is supposed to grow a primary (e.g. "Add course"), that is a design decision for the
-  owning card, not something H-151 can assert today.
 
-The render contract lives in `tests/test_desktop_h151_action_type.py` (14 tests, `Ran 14 tests`,
-`OK`). The hand-counted claims, by method name:
+The render contract lives in `tests/test_desktop_h151_action_type.py` (17 tests on this branch; 14 at
+`fc16813`, `Ran 14 tests`, `OK`). The hand-counted claims, by method name:
 
 | claim | test method |
 |---|---|
@@ -135,13 +136,14 @@ calibrate the window to `innerWidth: 460`, re-measure.
 | primaries | 1, "Record observation", 58.2 px tall, `minHeight: 44px`, 32 px label |
 | `zeroSizedControls` | `[]` — no control collapses |
 | `documentElement` overflow | `overflowX: 0` |
-| route overflow | **`routeOverflowX: 53`** |
+| route overflow | `routeOverflowX: 53` at H-151 → **`0` after H-160** (§8) |
 
-That last number is real and is not a pass: at a 32 px root in a 460 px window the section surface is
-53 px wider than its own client box (`route.scrollWidth - route.clientWidth`), i.e. the pane scrolls
-horizontally. The document itself does not overflow, so a `body`-level check would have missed it.
-Recorded here rather than smoothed over; it needs its own fix card, and H-152 (motion/responsive) is
-the natural owner. Before it is claimed fixed, re-capture this frame and expect `routeOverflowX: 0`.
+That last number is real and was not a pass at `fc16813`: at a 32 px root in a 460 px window the
+section surface measured 53 px wider than its own client box
+(`route.scrollWidth - route.clientWidth`), i.e. the pane scrolled horizontally. The document itself
+does not overflow, so a `body`-level check would have missed it. H-160 fixed it at the source and
+re-measured `0`; §8 names the three unbreakable tokens and their replacements.
+
 
 What the tests assert about scaling instead of a live frame: the H-151 render test does not run at a
 doubled root. The root-relative half is pinned in `tests/test_desktop_tokens.py` by
@@ -197,10 +199,13 @@ Two tests, different scopes:
   `audit/visual/m4-visual/audit.json` `plugin_sha256` points at `fc16813`'s module. That pin is valid
   on `wt/h151-action-type` only; it is superseded by the batch union (H-158) and must be regenerated
   there, not carried forward.
-- **The 200% residual.** `routeOverflowX: 53` on the section route at 460 / 32 px root is recorded
-  and unfixed by this card.
-- **Courses has no primary** (§3) — the "one primary per surface" target is met on five surfaces and
-  is vacuously true (not "met") on the catalog.
+- **The 200% residual.** `routeOverflowX: 53` on the section route at 460 / 32 px root was recorded
+  and unfixed at `fc16813`; H-160 fixed it at the source and re-measured `0` (§8). What H-160 does
+  *not* fix: at a 32 px root the reading column itself (`[data-cb-main]`, `overflow: auto`) still
+  scrolls sideways by 163 px for tabular evidence rows and nowrap chips. At 100% text at 460 px that
+  column fits exactly (`185 / 185`). The route-level claim — the number this card accepts — is `0`.
+- **Courses had no primary** at `fc16813` (§3); H-160 made the UX_SPEC §4 "New course" action the
+  catalog's one lamp and pinned it in the render test.
 - **No before-frames.** `docs/h151-shots/` is the after-state only. The before numbers in this
   document are source counts from `git show 6f43cc4`; no before pixels were captured, so no claim
   here about how the old route *looked* is measured.
@@ -211,3 +216,56 @@ Two tests, different scopes:
 - `node --check desktop/plugin.js` → clean (unchanged by this doc commit).
 - Working tree clean at `fc16813` before this document was added; this digest is the only change in
   its own commit.
+
+## 8. H-160 follow-up: the two measured defects
+
+Both numbers below are from the isolated rig (`~/.hermes/coursebook-test-h151`, CDP 9371) running
+this branch's `desktop/plugin.js`, re-captured with `scripts/h151-action-capture.mjs` after the fix.
+The script now prints `routeOverflowX` for every surface and for the 200% frame, so the acceptance
+number is read from the tool rather than from this table. The unedited capture output is
+`docs/h160-shots/h160-facts.json` (provenance in that directory's `README.md`); it is a second bundle
+so the `fc16813` before-state in `docs/h151-shots/` stays intact.
+
+| fact | before (`fc16813`) | after (H-160) |
+|---|---|---|
+| Courses `primaryCount` at 1049 / 900 / 460 | 0 / 0 / 0 | **1 / 1 / 1** (`New course`) |
+| section route `text200.routeOverflowX` at 460 / 32 px root | **53** | **0** |
+| section reading column `[data-cb-main]` at 460 / 16 px root | scrolled (breadcrumb 790 px) | **0** (`185 / 185`) |
+| every other surface `routeOverflowX` (15 frames) | 0 | 0 |
+
+**What actually overflowed.** The route pane at a 460 px window is 215 px wide (170 px of content);
+three unbreakable tokens were wider than that:
+
+1. the header wordmark, `COURSEBOOK` at 28 px + `0.14em` tracking = **239 px** — it alone accounts
+   for the 53 px (`22.4` px padding + 239 = 261 vs 215);
+2. the page title, `Course` at the display step = 72 px at a 32 px root ≈ 220 px;
+3. the section breadcrumb, the course title in a host `variant: 'text'` button whose own classes are
+   `shrink-0 whitespace-nowrap` = **790 px** — it made the reading column scroll at 460 px even at a
+   16 px root.
+
+The fixes are at the source, not masks: the two header tokens now declare
+`overflowWrap: 'anywhere'` + `minWidth: 0` (and the title `maxWidth: '100%'`), and the breadcrumb is
+a `CbAction tertiary` that declares `whiteSpace: 'normal'`, `flexShrink: 1`, `maxWidth: '100%'`.
+There is no `overflow-x: hidden` anywhere in the change; the only clipping element is the reading
+column's own `overflow: auto`.
+
+**Tests that now pin it** (`tests/test_desktop_h151_action_type.py`, `Ran 17 tests`, `OK`):
+
+| claim | method |
+|---|---|
+| Courses carries exactly one primary, `New course`, lamp fill, 44 px, at 1049/900/460 | `test_courses_carries_exactly_its_new_course_primary` |
+| an empty catalog keeps exactly one primary (the welcome's) and drops the header action | `test_the_empty_catalog_keeps_exactly_one_primary` |
+| the section route's widest tokens declare wrapping (wordmark + title `anywhere`; breadcrumb is a wrapping `CbAction`) | `test_the_section_route_wraps_its_widest_tokens_at_460_200_percent` |
+
+`tests/test_desktop_h86_wayfinding.py::test_new_course_is_the_catalog_primary_and_yields_to_a_course`
+is the same acceptance read from the other direction: it used to assert `variant: 'secondary'` and
+now asserts the primary while keeping the "an open course owns the only primary" yield rule.
+
+**Acceptance changed, not pixels:** no. UX_SPEC §4 already named "New course" the Courses primary;
+H-151's "there is no single next step" note was wrong and is corrected in §3 above.
+
+**Known suite state.** `tests/test_m4_visual_audit.py::test_evidence_is_not_stale_against_the_shipped_module`
+now fails by design on this branch: `plugin.js` changed (`71017857…`) and this card must not
+regenerate `audit/visual/m4-visual/`. H-158 (`t_9f20ed21`) re-pins M4 once after the batch union; that
+failure is expected here and is not a regression in any surface.
+

@@ -59,7 +59,10 @@ class WayfindingTest(unittest.TestCase):
         self.assertIn("jsx(CbDestinationNav, { value: destination, onChange: changeDestination })", self.source)
         self.assertNotIn("options: DESTINATIONS,\n                sizing: 'content'", self.source)
 
-    def test_new_course_is_secondary_and_yields_to_a_course(self) -> None:
+    def test_new_course_is_the_catalog_primary_and_yields_to_a_course(self) -> None:
+        # H-160: UX_SPEC §4 names Courses' page-header primary as **New course**. H-151 measured
+        # the catalog at `primaryCount: 0` because this call site was still `secondary`; the yield
+        # rule below is unchanged, so an open course (or the welcome) still owns the only primary.
         self.assertIn(
             "destination === 'courses' && canCreate && !coursesEmpty && !openCourse",
             self.source,
@@ -71,7 +74,7 @@ class WayfindingTest(unittest.TestCase):
         ]
         self.assertEqual(len(line), 1, line)
         nearby = self.source[self.source.index("children: 'New course'") - 220 : self.source.index("children: 'New course'")]
-        self.assertIn("variant: 'secondary'", nearby)
+        self.assertIn("variant: 'primary'", nearby)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)
 
     def test_host_entry_opens_the_route_and_carries_the_wordmark(self) -> None:

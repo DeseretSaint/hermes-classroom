@@ -282,9 +282,15 @@ console.log(JSON.stringify({
     hostDefaultCount: value.hostDefaultCount,
     zero: value.zeroSizedControls.length,
     overflowX: value.overflowX,
+    routeOverflowX: value.routeOverflowX,
     plateHead: value.plateHeads[0] || null
   }])),
-  text200: results.text200 && { innerWidth: results.text200.innerWidth, overflowX: results.text200.overflowX, zero: results.text200.zeroSizedControls.length },
+  text200: results.text200 && {
+    innerWidth: results.text200.innerWidth,
+    overflowX: results.text200.overflowX,
+    routeOverflowX: results.text200.routeOverflowX,
+    zero: results.text200.zeroSizedControls.length
+  },
   keyboard,
   frames: results.frames.length
 }, null, 2))
