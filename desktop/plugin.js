@@ -9905,15 +9905,41 @@ const LESSON_VIEWS = [
 ]
 
 /**
+ * Why a view cannot render for this document, in the learner's words.
+ *
+ * An older stored page has no `views` object at all; that is the same fact as `guided: false`,
+ * not a reason to hide the choice. The switcher names all three views and explains the missing
+ * ones instead of silently dropping them (H-96 / H-80 F3).
+ */
+const LESSON_VIEW_UNAVAILABLE_REASON = {
+  guided: 'This lesson has no guided version.',
+  field_quest: 'This lesson has no Field Quest version.'
+}
+
+/**
  * The views *this document* can render.
  *
  * Textbook is the floor. Guided needs authored `short` prose on every block. Field Quest needs the
  * same and exactly one attachable check, because its checkpoints are the document's existing
- * checks and nothing else. The switcher never offers a view that would render as a broken toggle.
+ * checks and nothing else. This returns only the enabled options (the legacy marker value);
+ * `lessonViewChoices` returns all three with an availability flag and a reason.
  */
 function lessonViewOptions(document) {
   const views = (document && document.views) || {}
   return LESSON_VIEWS.filter((view) => (view.id === 'textbook' ? true : Boolean(views[view.id])))
+}
+
+/** All three named views, each marked available or carrying the plain-words reason it is not. */
+function lessonViewChoices(document) {
+  const views = (document && document.views) || {}
+  return LESSON_VIEWS.map((view) => {
+    const available = view.id === 'textbook' ? true : Boolean(views[view.id])
+    return {
+      ...view,
+      available,
+      reason: available ? null : LESSON_VIEW_UNAVAILABLE_REASON[view.id] || `This lesson has no ${view.label} version.`
+    }
+  })
 }
 
 /** A role is where the block sits in the teaching sequence, never a skin or a difficulty claim. */
@@ -11677,29 +11703,75 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
       ]
     : []
   const viewOptions = document ? lessonViewOptions(document) : []
+  const viewChoices = document ? lessonViewChoices(document) : []
+  const unavailableViews = viewChoices.filter((choice) => !choice.available)
   const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : 'textbook'
   const activeMode = cbModeFor(activeView)
+  // One switcher, always in the header, at every pane width. The three names never disappear: a
+  // view this document cannot render stays as a disabled choice with its reason in plain words,
+  // and no breakpoint swaps the row for a hidden rail or a below-fold combobox (H-96 / H-80 F3).
   const switcher = document
     ? jsxs('div', {
+        role: 'group',
+        'aria-label': 'Lesson view',
         className: 'flex flex-wrap items-center gap-2',
+        style: { minWidth: 0 },
         'data-cb-view-switcher': viewOptions.length > 1 ? 'available' : 'textbook-only',
         'data-cb-view-options': viewOptions.map((option) => option.id).join(' '),
+        'data-cb-view-unavailable': unavailableViews.map((choice) => choice.id).join(' '),
         children: [
           jsxs('span', {
+            key: 'label',
             style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
             children: [jsx(ModeDot, { mode: activeMode }), 'Lesson view']
           }),
-          viewOptions.length > 1
-            ? jsx(sdk.SegmentedControl, {
-                onChange: (next) => {
-                  setFocusBlockId(null)
-                  setLessonView(next)
+          jsx('div', {
+            key: 'choices',
+            'data-cb-view-choice-row': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem', minWidth: 0 },
+            children: viewChoices.map((choice) =>
+              jsx(
+                sdk.Button,
+                {
+                  key: choice.id,
+                  size: 'xs',
+                  variant: choice.id === activeView ? 'secondary' : 'ghost',
+                  disabled: !choice.available,
+                  title: choice.reason || undefined,
+                  'aria-pressed': choice.available ? choice.id === activeView : undefined,
+                  'aria-describedby': choice.available ? undefined : `cb-view-reason-${choice.id}`,
+                  'data-cb-view-choice': choice.id,
+                  'data-cb-view-choice-state': choice.available ? 'available' : 'unavailable',
+                  onClick: () => {
+                    if (!choice.available) return
+                    setFocusBlockId(null)
+                    setLessonView(choice.id)
+                  },
+                  children: choice.label
                 },
-                options: viewOptions,
-                sizing: 'content',
-                value: activeView
+                choice.id
+              )
+            )
+          }),
+          unavailableViews.length > 0
+            ? jsx('span', {
+                key: 'reasons',
+                'data-cb-view-reasons': '',
+                style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.35, color: 'var(--cb-ink-soft)', minWidth: 0, overflowWrap: 'anywhere' },
+                children: unavailableViews.map((choice, index) =>
+                  jsx(
+                    'span',
+                    {
+                      key: choice.id,
+                      id: `cb-view-reason-${choice.id}`,
+                      'data-cb-view-reason': choice.id,
+                      children: `${index === 0 ? '' : ' '}${choice.reason}`
+                    },
+                    choice.id
+                  )
+                )
               })
-            : jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Textbook only' })
+            : null
         ]
       })
     : null
@@ -15595,7 +15667,7 @@ function StudioPlanView({
         : learner
           ? 'This course has no plan job attached. Start a new course to generate one; nothing is invented to fill the gap.'
           : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
-      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled, onRunAgain: onChanged }) : null
+      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null
     })
   }
 
@@ -17572,6 +17644,7 @@ export {
   objectiveProgress,
   progressStatement,
   lessonViewOptions,
+  lessonViewChoices,
   mainlineObjective,
   notebookSourceRef,
   pronPercent,

@@ -101,13 +101,22 @@ export const useTheme = () => ({
   resolvedMode: globalThis.__CB_TEST_MODE__ === 'dark' ? 'dark' : 'light'
 })
 
-export const Button = (props) =>
-  el('button', {
+export const Button = (props) => {
+  const attrs = {
     type: 'button',
     disabled: Boolean(props.disabled),
     'data-variant': props.variant || null,
     onClick: props.onClick
-  }, textOf(props))
+  }
+  if (props.className) attrs.className = props.className
+  if (props.title) attrs.title = props.title
+  for (const [name, value] of Object.entries(props)) {
+    if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {
+      attrs[name] = value
+    }
+  }
+  return el('button', attrs, textOf(props))
+}
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))
@@ -390,19 +399,71 @@ class LessonViewRenderTest(unittest.TestCase):
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.render(self.section_payload(doc))
         self.assertIn('data-cb-view-switcher="available"', html)
+        self.assertIn('data-cb-view-options="textbook guided"', html)
+        self.assertIn('data-cb-view-unavailable="field_quest"', html)
         self.assertIn('aria-pressed="true"', html)
         self.assertIn("Textbook", html)
         self.assertIn("Guided", html)
+        # H-96: the third name stays on screen even when this document has no quest.
+        self.assertIn("Field Quest", html)
+        self.assertIn('data-cb-view-choice="field_quest"', html)
+        self.assertIn('data-cb-view-choice-state="unavailable"', html)
         self.assertIn('data-cb-lesson-view="textbook"', html)
 
-    def test_the_section_page_declares_textbook_only_instead_of_a_broken_toggle(self) -> None:
-        doc = document(guided=False, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef",
-                       state="textbook_only", note="This older lesson has no guided view.")
+    def test_a_document_without_guided_or_quest_still_shows_three_named_choices(self) -> None:
+        """H-96: an absent view is a disabled choice with a reason, never a vanished control.
+
+        H-80 F3 saw `Textbook · Guided · Field Quest` become `View · Textbook` on the same
+        section with no explanation. The switcher now always prints all three names and says why
+        a view cannot render.
+        """
+        doc = document(
+            guided=False,
+            blocks=COMPLETE_BLOCKS,
+            check_id="chk_0123456789abcdef",
+            state="textbook_only",
+            note="This older lesson has no guided view.",
+        )
+        doc["views"]["field_quest"] = False
         html = self.render(self.section_payload(doc))
         self.assertIn('data-cb-view-switcher="textbook-only"', html)
-        self.assertIn("Textbook only", html)
+        self.assertIn('data-cb-view-options="textbook"', html)
+        self.assertIn('data-cb-view-unavailable="guided field_quest"', html)
+        self.assertEqual(html.count('data-cb-view-choice="'), 3)
+        for view_id, label in (("textbook", "Textbook"), ("guided", "Guided"), ("field_quest", "Field Quest")):
+            self.assertIn(f'data-cb-view-choice="{view_id}"', html)
+            self.assertIn(label, html)
+        self.assertIn('data-cb-view-choice-state="available"', html)
+        self.assertEqual(html.count('data-cb-view-choice-state="unavailable"'), 2)
+        self.assertIn("This lesson has no guided version.", html)
+        self.assertIn("This lesson has no Field Quest version.", html)
+        self.assertIn('data-cb-view-reason="guided"', html)
+        self.assertIn('data-cb-view-reason="field_quest"', html)
+        # The active view is still Textbook, and the old badge is gone: the reasons replace it.
+        self.assertEqual(html.count('aria-pressed="true"'), 1)
+        self.assertNotIn("Textbook only", html)
+        self.assertNotIn("<select", html.lower())
         self.assertIn("This older lesson has no guided view.", html)
-        self.assertNotIn('aria-pressed="true"', html)
+
+    def test_an_older_stored_page_without_a_views_object_shows_all_three_choices(self) -> None:
+        """A page written before block documents has no `views` key at all (v7 rows)."""
+        doc = document(
+            guided=False,
+            blocks=COMPLETE_BLOCKS,
+            check_id="chk_0123456789abcdef",
+            state="textbook_only",
+            note="This lesson was authored before the block document existed, so it has no short-text view.",
+        )
+        doc.pop("views")
+        html = self.render(self.section_payload(doc))
+        self.assertIn('data-cb-view-choice="textbook"', html)
+        self.assertIn('data-cb-view-choice="guided"', html)
+        self.assertIn('data-cb-view-choice="field_quest"', html)
+        self.assertIn('data-cb-view-unavailable="guided field_quest"', html)
+        self.assertIn("This lesson has no guided version.", html)
+        self.assertIn("This lesson has no Field Quest version.", html)
+        self.assertIn("authored before the block document existed", html)
+        self.assertNotIn("<select", html.lower())
 
     # -- H-91 regression: a section with no runtime read at all ------------------------------
     def test_a_section_with_a_null_runtime_renders_instead_of_throwing(self) -> None:

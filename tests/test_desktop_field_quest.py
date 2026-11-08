@@ -33,28 +33,7 @@ from tests.test_desktop_lesson_views import (
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 
-# The shared stub drops `aria-label` and `className` on Button. This suite asserts the quest's
-# keyboard affordances by name, so it renders against the same stub with those two attributes
-# forwarded — the real SDK passes both through.
-QUEST_SDK_STUB = SDK_STUB.replace(
-    """export const Button = (props) =>
-  el('button', {
-    type: 'button',
-    disabled: Boolean(props.disabled),
-    'data-variant': props.variant || null,
-    onClick: props.onClick
-  }, textOf(props))""",
-    """export const Button = (props) =>
-  el('button', {
-    type: 'button',
-    disabled: Boolean(props.disabled),
-    'data-variant': props.variant || null,
-    className: props.className || null,
-    'aria-label': props['aria-label'] || null,
-    'aria-expanded': props['aria-expanded'] || null,
-    onClick: props.onClick
-  }, textOf(props))""",
-)
+QUEST_SDK_STUB = SDK_STUB
 
 HARNESS = """
 import React from 'react'
@@ -431,18 +410,25 @@ class FieldQuestRenderTest(unittest.TestCase):
     def test_the_section_page_offers_all_three_views_when_quest_is_available(self) -> None:
         html = self.section()
         self.assertIn('data-cb-view-options="textbook guided field_quest"', html)
+        self.assertIn('data-cb-view-unavailable=""', html)
         self.assertIn('data-cb-view-switcher="available"', html)
         self.assertIn("Field Quest", html)
+        self.assertEqual(html.count('data-cb-view-choice-state="available"'), 3)
 
-    def test_a_textbook_only_section_never_offers_quest(self) -> None:
+    def test_a_textbook_only_section_shows_quest_disabled_with_a_reason(self) -> None:
         doc = quest_document(state="textbook_only")
         doc["blocks"] = [
             block("blk_orient0001", "orient", "Start here", short=None, deep="Deep orient prose.")
         ]
         html = self.section(doc)
         self.assertIn('data-cb-view-options="textbook"', html)
-        self.assertIn("Textbook only", html)
-        self.assertNotIn("Field Quest", html)
+        self.assertIn('data-cb-view-unavailable="guided field_quest"', html)
+        # H-96: the name stays on screen, disabled, and the reason is plain words.
+        self.assertIn("Field Quest", html)
+        self.assertIn('data-cb-view-choice="field_quest"', html)
+        self.assertIn('data-cb-view-choice-state="unavailable"', html)
+        self.assertIn("This lesson has no Field Quest version.", html)
+        self.assertNotIn("Textbook only", html)
 
     def test_asking_for_quest_without_quest_falls_back_to_textbook(self) -> None:
         doc = quest_document(state="textbook_only")
@@ -450,12 +436,15 @@ class FieldQuestRenderTest(unittest.TestCase):
         self.assertIn('data-cb-lesson-view="textbook"', html)
         self.assertNotIn('data-cb-lesson-view="field_quest"', html)
 
-    def test_a_guided_only_document_offers_two_views_and_no_quest(self) -> None:
+    def test_a_guided_only_document_offers_two_enabled_views_and_quest_disabled(self) -> None:
         doc = quest_document()
         doc["views"]["field_quest"] = False
         html = self.section(doc)
         self.assertIn('data-cb-view-options="textbook guided"', html)
-        self.assertNotIn("field_quest", html)
+        self.assertIn('data-cb-view-unavailable="field_quest"', html)
+        self.assertIn('data-cb-view-choice="field_quest"', html)
+        self.assertIn('data-cb-view-choice-state="unavailable"', html)
+        self.assertIn("This lesson has no Field Quest version.", html)
 
 
 class FieldQuestModelTest(FieldQuestRenderTest):
