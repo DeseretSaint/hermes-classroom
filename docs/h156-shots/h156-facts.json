@@ -1,0 +1,2171 @@
+{
+  "port": "9382",
+  "startedAt": "2026-11-08T07:23:52.446Z",
+  "homeInitial": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+    },
+    "focusInSheet": false,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {}
+  },
+  "window": {
+    "inner": 481,
+    "outer": 432,
+    "dpr": 0.8963781595230103
+  },
+  "sheetOpen": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "15",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {}
+  },
+  "childSafeSectionScroll": {
+    "top": 0,
+    "height": 345
+  },
+  "childSafeContrast": {
+    "heading": 15.01,
+    "description": 7.85,
+    "sheetBackground": "rgb(29, 27, 22)"
+  },
+  "afterSessionTwenty": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 20 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "20",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "20",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 20,
+        "classrooms": {}
+      }
+    }
+  },
+  "afterSessionTen": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 10 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "10",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "10",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 10,
+        "classrooms": {}
+      }
+    }
+  },
+  "afterSessionReset": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "15",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "resetContrast": {
+    "heading": 15.01,
+    "description": 7.85,
+    "sheetBackground": "rgb(29, 27, 22)"
+  },
+  "homeAfterSheet": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Open Coursebook settings",
+      "text": "Settings"
+    },
+    "focusInSheet": false,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "studio": {
+    "mounted": true,
+    "destination": "studio",
+    "pageTitle": "Parent Studio",
+    "lineText": null,
+    "childSafe": "on",
+    "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+    },
+    "focusInSheet": false,
+    "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "studioSheet": {
+    "mounted": true,
+    "destination": "studio",
+    "pageTitle": "Parent Studio",
+    "lineText": null,
+    "childSafe": "on",
+    "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+    "sessionMinutes": "15",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "15",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "studioSheetTab": {
+    "mounted": true,
+    "destination": "studio",
+    "pageTitle": "Parent Studio",
+    "lineText": null,
+    "childSafe": "on",
+    "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+    "sessionMinutes": "15",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 40
+      },
+      {
+        "label": "15 min",
+        "height": 40
+      },
+      {
+        "label": "20 min",
+        "height": 40
+      },
+      {
+        "label": "30 min",
+        "height": 40
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "child-safe",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "15",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Reset appearance to System",
+      "text": "Reset"
+    },
+    "focusInSheet": true,
+    "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "studioAfterEscape": {
+    "mounted": true,
+    "destination": "studio",
+    "pageTitle": "Parent Studio",
+    "lineText": null,
+    "childSafe": "on",
+    "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Open Coursebook settings",
+      "text": "Settings"
+    },
+    "focusInSheet": false,
+    "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "studioPlan": {
+    "mounted": true,
+    "destination": "studio",
+    "pageTitle": "Parent Studio",
+    "lineText": null,
+    "childSafe": null,
+    "childSafeText": null,
+    "sessionMinutes": null,
+    "childSafeRules": [],
+    "parentEvidence": "Parent view · what your child did and what you observed, never points, levels or rankings.",
+    "trigger": null,
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+    },
+    "focusInSheet": false,
+    "bodyText": "All parent courses H103 live reject check Parent preparation Plan draft · v2 Lesson set not approved Parent view · what your child did and what you observed, never points, levels or rankings. You are the operator · revision 0 Studio view Brief This course has no parent brief It was not created by parent.brief.create, or the job row that stores it is gone. Nothing is reconstructed from a form. Try again",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "frames": [
+    {
+      "mode": "light",
+      "width": 1049,
+      "calibrated": {
+        "target": 1049,
+        "override": 941,
+        "inner": 1049
+      },
+      "home": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Open Coursebook settings",
+          "text": "Settings"
+        },
+        "focusInSheet": false,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "sheet": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [
+          {
+            "id": "reminders",
+            "state": "never",
+            "text": "Loss-framed remindersNever"
+          },
+          {
+            "id": "leaderboard",
+            "state": "never",
+            "text": "Public leaderboardNever"
+          },
+          {
+            "id": "rewards",
+            "state": "never",
+            "text": "Loot or random rewardsNever"
+          },
+          {
+            "id": "xp",
+            "state": "never",
+            "text": "XP and streaksNever"
+          }
+        ],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": true,
+        "sheetRole": "dialog",
+        "sheetModal": "true",
+        "sheetWidth": 460,
+        "sections": [
+          "appearance",
+          "default-view",
+          "classroom",
+          "child-safe",
+          "sound",
+          "haptics",
+          "reduced-motion"
+        ],
+        "sessionOptionHeights": [
+          {
+            "label": "10 min",
+            "height": 40
+          },
+          {
+            "label": "15 min",
+            "height": 40
+          },
+          {
+            "label": "20 min",
+            "height": 40
+          },
+          {
+            "label": "30 min",
+            "height": 40
+          }
+        ],
+        "resetButtons": [
+          {
+            "section": "appearance",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "default-view",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "classroom",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "child-safe",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "sound",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "haptics",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "reduced-motion",
+            "disabled": true,
+            "height": 44
+          }
+        ],
+        "controls": {
+          "appearance": "light",
+          "default-view": "textbook",
+          "classroom": "default",
+          "session-length": "15",
+          "reduced-motion": "system"
+        },
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Close settings",
+          "text": "Close"
+        },
+        "focusInSheet": true,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 14 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "studio": {
+        "mounted": true,
+        "destination": "studio",
+        "pageTitle": "Parent Studio",
+        "lineText": null,
+        "childSafe": "on",
+        "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "contrast": {
+        "heading": 17.41,
+        "description": 7.35,
+        "sheetBackground": "rgb(255, 252, 243)"
+      }
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "calibrated": {
+        "target": 460,
+        "override": 413,
+        "inner": 460
+      },
+      "home": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "sheet": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [
+          {
+            "id": "reminders",
+            "state": "never",
+            "text": "Loss-framed remindersNever"
+          },
+          {
+            "id": "leaderboard",
+            "state": "never",
+            "text": "Public leaderboardNever"
+          },
+          {
+            "id": "rewards",
+            "state": "never",
+            "text": "Loot or random rewardsNever"
+          },
+          {
+            "id": "xp",
+            "state": "never",
+            "text": "XP and streaksNever"
+          }
+        ],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": true,
+        "sheetRole": "dialog",
+        "sheetModal": "true",
+        "sheetWidth": 460,
+        "sections": [
+          "appearance",
+          "default-view",
+          "classroom",
+          "child-safe",
+          "sound",
+          "haptics",
+          "reduced-motion"
+        ],
+        "sessionOptionHeights": [
+          {
+            "label": "10 min",
+            "height": 40
+          },
+          {
+            "label": "15 min",
+            "height": 40
+          },
+          {
+            "label": "20 min",
+            "height": 40
+          },
+          {
+            "label": "30 min",
+            "height": 40
+          }
+        ],
+        "resetButtons": [
+          {
+            "section": "appearance",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "default-view",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "classroom",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "child-safe",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "sound",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "haptics",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "reduced-motion",
+            "disabled": true,
+            "height": 44
+          }
+        ],
+        "controls": {
+          "appearance": "light",
+          "default-view": "textbook",
+          "classroom": "default",
+          "session-length": "15",
+          "reduced-motion": "system"
+        },
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Close settings",
+          "text": "Close"
+        },
+        "focusInSheet": true,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "studio": {
+        "mounted": true,
+        "destination": "studio",
+        "pageTitle": "Parent Studio",
+        "lineText": null,
+        "childSafe": "on",
+        "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "light",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "light",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "contrast": {
+        "heading": 17.41,
+        "description": 7.35,
+        "sheetBackground": "rgb(255, 252, 243)"
+      }
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "calibrated": {
+        "target": 1049,
+        "override": 941,
+        "inner": 1049
+      },
+      "home": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Open Coursebook settings",
+          "text": "Settings"
+        },
+        "focusInSheet": false,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "sheet": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [
+          {
+            "id": "reminders",
+            "state": "never",
+            "text": "Loss-framed remindersNever"
+          },
+          {
+            "id": "leaderboard",
+            "state": "never",
+            "text": "Public leaderboardNever"
+          },
+          {
+            "id": "rewards",
+            "state": "never",
+            "text": "Loot or random rewardsNever"
+          },
+          {
+            "id": "xp",
+            "state": "never",
+            "text": "XP and streaksNever"
+          }
+        ],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": true,
+        "sheetRole": "dialog",
+        "sheetModal": "true",
+        "sheetWidth": 460,
+        "sections": [
+          "appearance",
+          "default-view",
+          "classroom",
+          "child-safe",
+          "sound",
+          "haptics",
+          "reduced-motion"
+        ],
+        "sessionOptionHeights": [
+          {
+            "label": "10 min",
+            "height": 40
+          },
+          {
+            "label": "15 min",
+            "height": 40
+          },
+          {
+            "label": "20 min",
+            "height": 40
+          },
+          {
+            "label": "30 min",
+            "height": 40
+          }
+        ],
+        "resetButtons": [
+          {
+            "section": "appearance",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "default-view",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "classroom",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "child-safe",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "sound",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "haptics",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "reduced-motion",
+            "disabled": true,
+            "height": 44
+          }
+        ],
+        "controls": {
+          "appearance": "dark",
+          "default-view": "textbook",
+          "classroom": "default",
+          "session-length": "15",
+          "reduced-motion": "system"
+        },
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Close settings",
+          "text": "Close"
+        },
+        "focusInSheet": true,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "studio": {
+        "mounted": true,
+        "destination": "studio",
+        "pageTitle": "Parent Studio",
+        "lineText": null,
+        "childSafe": "on",
+        "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "contrast": {
+        "heading": 15.01,
+        "description": 7.85,
+        "sheetBackground": "rgb(29, 27, 22)"
+      }
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "calibrated": {
+        "target": 460,
+        "override": 413,
+        "inner": 460
+      },
+      "home": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "sheet": {
+        "mounted": true,
+        "destination": "home",
+        "pageTitle": "Home",
+        "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+        "childSafe": "on",
+        "childSafeText": "· Child-safe defaults",
+        "sessionMinutes": "15",
+        "childSafeRules": [
+          {
+            "id": "reminders",
+            "state": "never",
+            "text": "Loss-framed remindersNever"
+          },
+          {
+            "id": "leaderboard",
+            "state": "never",
+            "text": "Public leaderboardNever"
+          },
+          {
+            "id": "rewards",
+            "state": "never",
+            "text": "Loot or random rewardsNever"
+          },
+          {
+            "id": "xp",
+            "state": "never",
+            "text": "XP and streaksNever"
+          }
+        ],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": true,
+        "sheetRole": "dialog",
+        "sheetModal": "true",
+        "sheetWidth": 460,
+        "sections": [
+          "appearance",
+          "default-view",
+          "classroom",
+          "child-safe",
+          "sound",
+          "haptics",
+          "reduced-motion"
+        ],
+        "sessionOptionHeights": [
+          {
+            "label": "10 min",
+            "height": 40
+          },
+          {
+            "label": "15 min",
+            "height": 40
+          },
+          {
+            "label": "20 min",
+            "height": 40
+          },
+          {
+            "label": "30 min",
+            "height": 40
+          }
+        ],
+        "resetButtons": [
+          {
+            "section": "appearance",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "default-view",
+            "disabled": false,
+            "height": 44
+          },
+          {
+            "section": "classroom",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "child-safe",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "sound",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "haptics",
+            "disabled": true,
+            "height": 44
+          },
+          {
+            "section": "reduced-motion",
+            "disabled": true,
+            "height": 44
+          }
+        ],
+        "controls": {
+          "appearance": "dark",
+          "default-view": "textbook",
+          "classroom": "default",
+          "session-length": "15",
+          "reduced-motion": "system"
+        },
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "button",
+          "label": "Close settings",
+          "text": "Close"
+        },
+        "focusInSheet": true,
+        "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "studio": {
+        "mounted": true,
+        "destination": "studio",
+        "pageTitle": "Parent Studio",
+        "lineText": null,
+        "childSafe": "on",
+        "childSafeText": "Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks· Session · 15 minSettings",
+        "sessionMinutes": "15",
+        "childSafeRules": [],
+        "parentEvidence": null,
+        "trigger": {
+          "label": "Open Coursebook settings",
+          "haspopup": "dialog",
+          "height": 44
+        },
+        "sheetOpen": false,
+        "sheetRole": null,
+        "sheetModal": null,
+        "sheetWidth": null,
+        "sections": [],
+        "sessionOptionHeights": [],
+        "resetButtons": [],
+        "controls": {},
+        "scope": "dark",
+        "motion": "full",
+        "horizontalOverflow": 0,
+        "focus": {
+          "tag": "body",
+          "label": null,
+          "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+        },
+        "focusInSheet": false,
+        "bodyText": "Parent Studio Plans for your child Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first. New lesson plan Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks · Session · 15 min Settings HL H103 live reject check Unit 1 of 1 · Supervised Creek Sampling and Observation Record 0 of 1 with evidence Lesson plan for a child updated 3 hr ago Open plan PD Parent demo: measuring ingredients together Resume Double a recipe quantity and explain the operation 0 of 2 with evidence Lesson plan for a child updated 7 hr ago Open plan",
+        "stored": {
+          "hermes.plugin.coursebook.home-preferences.default": {
+            "appearance": "dark",
+            "defaultMode": "textbook",
+            "sound": false,
+            "reducedMotion": "system",
+            "sessionMinutes": 15,
+            "classrooms": {}
+          }
+        }
+      },
+      "contrast": {
+        "heading": 15.01,
+        "description": 7.85,
+        "sheetBackground": "rgb(29, 27, 22)"
+      }
+    }
+  ],
+  "text200Home": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 48
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+    },
+    "focusInSheet": false,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "text200Sheet": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [
+      {
+        "id": "reminders",
+        "state": "never",
+        "text": "Loss-framed remindersNever"
+      },
+      {
+        "id": "leaderboard",
+        "state": "never",
+        "text": "Public leaderboardNever"
+      },
+      {
+        "id": "rewards",
+        "state": "never",
+        "text": "Loot or random rewardsNever"
+      },
+      {
+        "id": "xp",
+        "state": "never",
+        "text": "XP and streaksNever"
+      }
+    ],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 48
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 461,
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "child-safe",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sessionOptionHeights": [
+      {
+        "label": "10 min",
+        "height": 80
+      },
+      {
+        "label": "15 min",
+        "height": 80
+      },
+      {
+        "label": "20 min",
+        "height": 80
+      },
+      {
+        "label": "30 min",
+        "height": 80
+      }
+    ],
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "disabled": false,
+        "height": 48
+      },
+      {
+        "section": "default-view",
+        "disabled": false,
+        "height": 48
+      },
+      {
+        "section": "classroom",
+        "disabled": true,
+        "height": 48
+      },
+      {
+        "section": "child-safe",
+        "disabled": true,
+        "height": 48
+      },
+      {
+        "section": "sound",
+        "disabled": true,
+        "height": 48
+      },
+      {
+        "section": "haptics",
+        "disabled": true,
+        "height": 48
+      },
+      {
+        "section": "reduced-motion",
+        "disabled": true,
+        "height": 48
+      }
+    ],
+    "controls": {
+      "appearance": "dark",
+      "default-view": "textbook",
+      "classroom": "default",
+      "session-length": "15",
+      "reduced-motion": "system"
+    },
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  },
+  "final": {
+    "mounted": true,
+    "destination": "home",
+    "pageTitle": "Home",
+    "lineText": "Default view · Textbook· Child-safe defaults· Session · 15 minSettings",
+    "childSafe": "on",
+    "childSafeText": "· Child-safe defaults",
+    "sessionMinutes": "15",
+    "childSafeRules": [],
+    "parentEvidence": null,
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "height": 48
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sections": [],
+    "sessionOptionHeights": [],
+    "resetButtons": [],
+    "controls": {},
+    "scope": "dark",
+    "motion": "full",
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Open Coursebook settings",
+      "text": "Settings"
+    },
+    "focusInSheet": false,
+    "bodyText": "Classroom All courses Japanese affection and register — an L0 demonstration classroom H103 live failure check Showing Japanese affection and register — an L0 demonstration classroom Review due Japanese affection and register — an L0 demonstration classroom Tell everyday affection from a direct romantic declaration Section 1 of 4 ≈ 8 min Last touched 15 min ago Needs review This section · 0 of 4 With evidence · 3 Due now Start the review Open the section Field Notes 11 saved · showing the last 4 All field notes Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-d7d0l edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 1 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection. lesson_segment loop-proof-d3xq2 Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin… cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-ci4cr edited Section · Choose the polite expression for a first confession Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook Section 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a… cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession. lesson_segment loop-proof-bxkg6 edited Section · Recall the intimate declaration in a new context Japanese affection and register — an L0 demonstration classroom saved 2 d ago Open in textbook The route Japanese affection and register — an L0 demonstration classroom 0 of 4 sections with evidence · 3 due 01 Tell everyday affection from a direct romantic declaration Needs review 02 Choose the polite expression for a first confession Needs review 03 Recall the intimate declaration in a new context Needs review 04 Explain why register changes with the relationship Overridden Show sources Sources for “Tell everyday affection from a direct romantic declaration”",
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "sessionMinutes": 15,
+        "classrooms": {}
+      }
+    }
+  }
+}
