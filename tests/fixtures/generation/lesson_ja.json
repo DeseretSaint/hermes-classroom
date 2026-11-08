@@ -3,9 +3,9 @@
   "segments": [
     {
       "kind": "model",
-      "heading": "Three phrases at the counter",
-      "body": "お願いします (onegaishimasu) is the request you make when ordering. ありがとうございます (arigatou gozaimasu) is the thanks you give as you leave. さようなら (sayounara) is the farewell you say when you leave a shop. All three are standard polite forms.",
-      "short": "Onegaishimasu requests, arigatou gozaimasu thanks, sayounara says farewell."
+      "heading": "Four phrases at the counter",
+      "body": "お願いします (onegaishimasu) is the request you make when ordering. ありがとうございます (arigatou gozaimasu) is the thanks you give as you leave. こんにちは (konnichiwa) is the standard daytime greeting you give when you enter a shop. さようなら (sayounara) is the farewell you say when you leave a shop. All four are standard polite forms.",
+      "short": "Onegaishimasu requests, arigatou gozaimasu thanks, konnichiwa greets, sayounara says farewell."
     },
     {
       "kind": "explain",

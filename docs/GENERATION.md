@@ -418,6 +418,14 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
+The leak gate forbids **announcing** the key, not **teaching** the form. A `model` segment (and the
+`role: narration` media that reads it) may present the item the check keys — form, function and
+reading together — because a check that tests a form the lesson never shows is unanswerable. Every
+other learner surface (explain/guided/retrieval segments and their shorts, the worked example, the
+explanation, parent notes, non-narration media and the remaining document blocks) is still scanned,
+so "the answer you should pick is X" outside the model is refused. The ruling and its bounds are in
+`docs/DECISION-TAUGHT-TARGET.md`.
+
 The stored reference also declares its **grading lane** (`validators.seal_reference`): a quiz is
 `{"kind": "exact", "answers": [...]}` over the union of the declared correct forms, and a
 verification checklist or parent observation is `{"kind": "rubric_only"}`. A reference without a

@@ -195,13 +195,13 @@ class LegacyDocumentHashTest(unittest.TestCase):
     ``lesson_document.document_from_page(lesson_ja)`` — the same call ``domain.lesson_page`` makes
     for a stored ``gen_lessons.page_json`` — so this is cross-version evidence rather than a number
     the new code reports about itself. H-173b repaired the ``lesson_ja`` fixture (a taught phrase is
-    no longer announced ahead of the check) and H-173d removed its say-it-aloud instruction, so the
-    pin is re-derived from the repaired fixture each time; the assertion it protects is unchanged:
-    passing a locale must not move the hash or id.
+    no longer announced ahead of the check), and H-173d later added the keyed greeting to the model
+    segment (``docs/DECISION-TAUGHT-TARGET.md``), so the pin is re-derived from the repaired fixture;
+    the assertion it protects is unchanged: passing a locale must not move the hash or id.
     """
 
-    PINNED_HASH = "sha256:72e347aa8e6f7b08221f63efa2e7a2742c91d6af5f6fbe591f0c5e5dbeb2967e"
-    PINNED_ID = "doc_72e347aa8e6f7b08221f"
+    PINNED_HASH = "sha256:a3a1f4f43a843e0ccb373d0d2cb125f3bd5806bb660a0cead386662bf0fc396c"
+    PINNED_ID = "doc_a3a1f4f43a843e0ccb37"
 
     def test_legacy_document_hash_unchanged_by_locale(self) -> None:
         document = lesson_document.document_from_page(fixture("lesson_ja"))

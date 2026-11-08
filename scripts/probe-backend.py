@@ -135,6 +135,10 @@ def main() -> int:
         "cb.jobs",
         "cb.pack",
         "cb.projection",
+        # H-89 froze cb.frequency_inventory without adding it here, so the admission gate has
+        # failed on a correct tree since 53fe8c9. The set is the gate; keep it in step with
+        # `contracts.FROZEN_CONTRACTS`.
+        "cb.frequency_inventory",
     }
     inventory = schema.json()["result"]["contracts"] if schema.status_code == 200 else []
     record(
