@@ -19,15 +19,15 @@ Three different calls, three different prompts, three different schemas:
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v6` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v7` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v9` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v7` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v6` otherwise.
 
-The labels in that table are not hand-copied. They are the constants at
-`coursebook/generation.py:157-174` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
+The labels in that table are not hand-copied. They are the constants in
+`coursebook/generation.py` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
 `UNIT_SECTIONS_PROMPT_VERSION`, `LESSON_PROMPT_VERSION`, `VALIDATION_PROMPT_VERSION`), and
 `scripts/check-docs-truth.py` reads them out of the module and fails this document when a table row
 or prose reference names a retired label. A prompt label is part of every stored validation binding
@@ -541,6 +541,44 @@ On rejection the author is called **once more** with the validator's itemised re
 `gen_lessons.rejection_reasons_json` holds the reasons, and `learner_page()` refuses with
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
+
+### 7.1 A malformed answer is repaired once, then it is a typed failure — never an outage, never a verdict
+
+The host's structured-output gate (`agent.plugin_llm._parse_structured_text`) validates the parsed
+document against the request's `json_schema` and raises `ValueError` for the **whole** document when
+it does not match. H-191 §5 measured the cost of that: one `coursebook.plan.validate` answer
+returned in 54.2 s, one `item` locator was 81 characters against `maxLength: 80`, and the answer was
+discarded. `_call_llm` mapped the `ValueError` to `ProviderFailure`, so the job reported retryable
+`HOST_UNAVAILABLE` — an outage label for a healthy host, and the plan was neither validated nor
+rejected.
+
+The rule now (`generation._call_llm`):
+
+* the abandoned call is **recorded** as real spend (`usage_events.tokens_json.outcome =
+  "schema_rejected"`, tokens unknown, never zero);
+* **one** re-ask runs, carrying the same system prompt, schema, purpose and input bytes, plus a
+  correction that names the host's rejection reason and restates the shape rules. It inherits what
+  is left of the original deadline and is only attempted when at least
+  `MIN_SHAPE_REPAIR_SECONDS` (15 s) remain. Its `prompt_version` is marked with `.repair` because its
+  instruction text differs (§1) — the *validation record* still stores the pass label;
+* a second malformed answer raises `generation.ModelOutputInvalid`, which the job service reports as
+  `VALIDATION_FAILED` (category `validation`, `retryable: false`) with `purpose`, `schema_name`,
+  `repair_attempted` and the bounded `violation` in `details`. It is **not** `HOST_UNAVAILABLE`
+  (nothing was unavailable) and it is **not** a rejection (a malformed answer is not a verdict, so
+  no validation record, criterion row or rejection is written);
+* a repaired answer is stored as repaired: `validation.shape_violations` and the
+  `gen_validation_records` rejection block carry the re-ask count, so a validation that took two
+  calls is never presented as a first-time one.
+
+The observer-facing limit: `cb.errors` is frozen and has no `MODEL_OUTPUT_INVALID` code, so
+`VALIDATION_FAILED` ("payload violates the frozen contract") carries it. A dedicated code needs a
+contract bump owned by Atlas, not a private code in this module.
+
+The `item` bound itself is **not** widened. It is a locator (`plan.goal`, `check_plan[0]`) whose
+explanations belong in `reason`, and the same `ITEM_REFERENCE_MAX_CHARS` constant now feeds both
+`VALIDATION_SCHEMA` and the instruction text, so the limit the model is told can never drift from
+the limit it is checked against. Widening it would have accepted a claim where a locator is
+expected and still failed on the next 250-character prose label.
 
 ## 8. The lesson document: one validated document, many views
 

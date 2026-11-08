@@ -201,7 +201,7 @@ class PlanRequestSeamTest(unittest.TestCase):
 
     def test_the_validation_request_sees_the_same_inventory(self) -> None:
         inventory_selection = selection()
-        request = gen.build_plan_validation_request(
+        request = gen.build_plan_validation_requests(
             plan=japanese_plan({1: ["水"]}),
             goal="Order coffee politely",
             recipe="committed",
@@ -212,7 +212,7 @@ class PlanRequestSeamTest(unittest.TestCase):
             subject_domain="language",
             scope="short",
             frequency_selection=inventory_selection,
-        )
+        )[0]
         payload = json.loads(request.input_text)
         self.assertEqual(payload["vocabulary_inventory"]["content_hash"], inventory_selection.inventory.content_hash)
 

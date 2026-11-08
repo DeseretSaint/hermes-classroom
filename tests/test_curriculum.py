@@ -128,7 +128,7 @@ class CurriculumReachesTheModelTest(unittest.TestCase):
         )
         plan = json.loads(planning.input_text)
         # The validator receives the brief, not a different policy inferred from the plan.
-        request = generation.build_plan_validation_request(
+        request = generation.build_plan_validation_requests(
             plan={"plan_schema": generation.PLAN_SCHEMA_V2_NAME},
             goal="Replace the front brake pads",
             recipe="casual",
@@ -137,7 +137,7 @@ class CurriculumReachesTheModelTest(unittest.TestCase):
             research_run=unavailable_run(),
             subject_domain="technical_procedure",
             scope="short",
-        )
+        )[0]
         payload = json.loads(request.input_text)
         self.assertEqual(payload["curriculum"]["profile"], "task_analysis_and_safety")
         self.assertIn("curriculum sequence", request.instructions)

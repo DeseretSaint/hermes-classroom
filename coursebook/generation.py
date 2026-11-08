@@ -43,9 +43,10 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -87,6 +88,7 @@ __all__ = [
     "PlanNotApproved",
     "ProviderTimeout",
     "ProviderFailure",
+    "ModelOutputInvalid",
     "CostCeilingExceeded",
     "CostPreflightRefused",
     "CostPreflight",
@@ -141,6 +143,13 @@ __all__ = [
     "LESSON_PROMPT_VERSION",
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
+    "VALIDATION_CRITERIA_PASSES",
+    "build_plan_validation_requests",
+    "validation_pass_schema",
+    "validation_pass_instructions",
+    "validation_pass_criteria",
+    "plan_claim_labels",
+    "merge_validation_reports",
     "run_plan_job",
     "run_unit_sections_job",
     "run_lesson_job",
@@ -173,7 +182,13 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt.
 LESSON_PROMPT_VERSION = "lesson-prompt.v9"
-VALIDATION_PROMPT_VERSION = "validation-prompt.v3"
+#: The validator instruction text. H-191 §5: a validator answer was discarded because one
+#: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
+#: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
+#: and ``_call_llm`` re-asks once on a shape violation. Both are changes to the instruction text,
+#: and a label is recorded in stored validation bindings and the idempotency fingerprint, so the
+#: label advances rather than wearing v3 for a third, different prompt.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v4"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -239,6 +254,30 @@ MAX_PLAN_BYTES = 48 * 1024
 MAX_LESSON_BYTES = 64 * 1024
 MAX_VALIDATION_BYTES = 24 * 1024
 
+#: Bound on the validator's ``item`` locator, in both ``rejections`` and ``claim_verdicts``.
+#: The field is a *locator* ("plan.goal", "objective_2", "check_plan[0]") — the explanation
+#: belongs in ``reason`` — so the bound is deliberately tight and, from H-191, stated in the
+#: prompt. The schema and the prompt read this one constant, so the limit a model is told can
+#: never drift from the limit it is checked against. It is not widened to absorb prose: an
+#: 81-character sentence in ``item`` is a shape mistake, and the honest repair is to say the
+#: rule (and re-ask once) rather than to accept a claim where a locator is expected.
+ITEM_REFERENCE_MAX_CHARS = 80
+
+#: Minimum seconds a shape re-ask must inherit from the original call's deadline to be worth
+#: spending. Below it the stage could not finish inside its declared bound anyway, so the
+#: failure is typed instead of buying a call that is already out of time.
+MIN_SHAPE_REPAIR_SECONDS = 15.0
+
+#: Suffix a re-ask carries on its ``prompt_version``. ``docs/GENERATION.md`` §1: a different
+#: instruction text under a reused label is never silently accepted, and the repair instruction
+#: is a different text. The recorded validation binding keeps the *pass* label; the usage row
+#: and the recorded shape-violation count carry the re-ask.
+REPAIR_PROMPT_SUFFIX = ".repair"
+
+#: How much of a host schema-violation message the re-ask quotes back. Bounded because the
+#: message quotes model output, and the quote is wrapped in the untrusted-data envelope.
+SHAPE_VIOLATION_QUOTE_CHARS = 400
+
 
 # ── Errors ──────────────────────────────────────────────────────────────────
 
@@ -302,6 +341,44 @@ class ProviderFailure(GenerationError):
         super().__init__(message)
         self.message = message
         self.purpose = purpose
+
+
+class ModelOutputInvalid(GenerationError):
+    """The model answered, and its answer did not match the frozen response schema.
+
+    This is deliberately **not** ``ProviderFailure``: the host and the provider were healthy, so
+    the job must not report an infrastructure outage (H-191: one 81-character ``item`` label threw
+    away a 54 s paid validation and surfaced as ``HOST_UNAVAILABLE``, retryable). It is also not a
+    rejection: a malformed answer is not a verdict about the artifact, so no validation record,
+    criterion row or rejection is written.
+
+    One bounded re-ask (:func:`_call_llm`) runs before this is raised; ``repair_attempted`` says
+    whether that happened, and ``violation`` carries the host's own message so the operator reads
+    the real rule that failed instead of a generic failure.
+
+    The job service maps this to the contract's ``VALIDATION_FAILED`` (category ``validation``,
+    retryable ``false``): the *payload* violated the frozen contract. A dedicated
+    ``MODEL_OUTPUT_INVALID`` code would name it better, but ``cb.errors`` is frozen and code
+    additions are a contract bump owned by Atlas, not a licence for this module to invent one.
+    """
+
+    code = "VALIDATION_FAILED"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        purpose: str | None = None,
+        schema_name: str | None = None,
+        violation: str | None = None,
+        repair_attempted: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.purpose = purpose
+        self.schema_name = schema_name
+        self.violation = violation
+        self.repair_attempted = repair_attempted
 
 
 #: The recovery actions a cost abort may offer. Fixed strings so a UI can switch on them; the
@@ -455,6 +532,10 @@ class LLMResponse:
     input_tokens: int | None = None
     output_tokens: int | None = None
     cost_usd: float | None = None
+    #: How many shape re-asks preceded this answer (H-191). ``0`` means the first answer parsed
+    #: and matched its schema. It is recorded beside the validation verdict so a repaired answer is
+    #: never presented as a first-time result.
+    shape_repair_attempts: int = 0
 
 
 LLM = Callable[[LLMRequest], LLMResponse]
@@ -909,6 +990,25 @@ class _Usage:
     #: job stops at a *call* boundary instead of waiting out a multi-minute stage. ``None``
     #: means the call is not attached to a durable job (tests, pure helpers).
     cancel_probe: Any = None
+    #: The validator's passes run together (H-191 follow-up), so the call ceiling and the running
+    #: totals are shared between threads: reserve and record under one lock, or four passes could
+    #: each see the same call count and cross a ceiling together.
+    _lock: Any = field(default_factory=threading.Lock, repr=False, compare=False)
+    #: Call slots held for passes that have been submitted but have not started yet. A reservation
+    #: is consumed by the ``before_call`` that starts the pass, so the ceiling counts calls in
+    #: flight, not just calls that already returned.
+    _reserved: int = 0
+
+    def reserve(self, count: int) -> None:
+        """Hold *count* call slots before a group of parallel passes is submitted."""
+        with self._lock:
+            if len(self.calls) + self._reserved + int(count) > self.budget.max_calls:
+                raise CostCeilingExceeded(
+                    f"job already made {len(self.calls)} provider calls and holds "
+                    f"{self._reserved} reservation(s); {count} more would exceed the ceiling "
+                    f"{self.budget.max_calls}"
+                )
+            self._reserved += int(count)
 
     @property
     def estimated_spend_usd(self) -> float:
@@ -927,41 +1027,65 @@ class _Usage:
             # and keeps the checkpoint. Spending another provider call after the user asked to
             # stop is the defect H-66 names.
             raise ResearchCancelled(f"job cancelled before {request.purpose}")
-        if len(self.calls) >= self.budget.max_calls:
-            raise CostCeilingExceeded(
-                f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
-            )
-        if self.budget.max_cost_usd is not None and self.estimated_spend_usd >= self.budget.max_cost_usd:
-            raise CostCeilingExceeded(
-                f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
-                f"{self.unknown_calls} with unknown cost) already reaches the "
-                f"{self.budget.max_cost_usd:.4f} USD ceiling"
-            )
+        with self._lock:
+            if self._reserved > 0:
+                self._reserved -= 1
+            elif len(self.calls) >= self.budget.max_calls:
+                raise CostCeilingExceeded(
+                    f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
+                )
+            if (
+                self.budget.max_cost_usd is not None
+                and self.estimated_spend_usd >= self.budget.max_cost_usd
+            ):
+                raise CostCeilingExceeded(
+                    f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
+                    f"{self.unknown_calls} with unknown cost) already reaches the "
+                    f"{self.budget.max_cost_usd:.4f} USD ceiling"
+                )
 
-    def record(self, request: LLMRequest, response: LLMResponse, duration_ms: int) -> None:
+    def record(
+        self,
+        request: LLMRequest,
+        response: LLMResponse,
+        duration_ms: int,
+        *,
+        outcome: str = "returned",
+    ) -> None:
         cost = response.cost_usd
-        if cost is None:
-            self.unknown_cost = True
-            self.unknown_calls += 1
-        else:
-            self.known_cost += float(cost)
-        self.input_tokens += int(response.input_tokens or 0)
-        self.output_tokens += int(response.output_tokens or 0)
-        self.calls.append(
-            {
-                "purpose": request.purpose,
-                "prompt_version": request.prompt_version,
-                "provider": response.provider,
-                "model": response.model,
-                "input_tokens": response.input_tokens,
-                "output_tokens": response.output_tokens,
-                "cost_usd": cost,
-                "duration_ms": duration_ms,
-            }
-        )
-        if self.budget.max_cost_usd is not None and self.estimated_spend_usd > self.budget.max_cost_usd:
+        with self._lock:
+            if cost is None:
+                self.unknown_cost = True
+                self.unknown_calls += 1
+            else:
+                self.known_cost += float(cost)
+            self.input_tokens += int(response.input_tokens or 0)
+            self.output_tokens += int(response.output_tokens or 0)
+            self.calls.append(
+                {
+                    "purpose": request.purpose,
+                    "prompt_version": request.prompt_version,
+                    "provider": response.provider,
+                    "model": response.model,
+                    "input_tokens": response.input_tokens,
+                    "output_tokens": response.output_tokens,
+                    "cost_usd": cost,
+                    "duration_ms": duration_ms,
+                    # ``returned`` for a call the pipeline used; ``schema_rejected`` for a call whose
+                    # answer the host's schema gate threw away before it could be read. The second
+                    # shape is real spend with unknown tokens, so it is recorded, never dropped.
+                    "outcome": outcome,
+                }
+            )
+            over_ceiling = (
+                self.budget.max_cost_usd is not None
+                and self.estimated_spend_usd > self.budget.max_cost_usd
+            )
+            spend = self.estimated_spend_usd
+            unknown = self.unknown_calls
+        if over_ceiling:
             raise CostCeilingExceeded(
-                f"spend {self.estimated_spend_usd:.4f} USD ({self.unknown_calls} calls with unknown "
+                f"spend {spend:.4f} USD ({unknown} calls with unknown "
                 f"cost) exceeded the {self.budget.max_cost_usd:.4f} USD ceiling"
             )
 
@@ -1244,38 +1368,127 @@ def host_llm() -> LLM:
     return PluginLLMAdapter(_HOST_LLM)
 
 
-def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage) -> LLMResponse:
-    usage.before_call(request)
+def _shape_violation_text(exc: BaseException) -> str:
+    """The host's own schema-violation message, bounded and stripped of control characters.
+
+    The host raises ``ValueError("Plugin LLM structured output did not match schema: <message>")``
+    from its structured-output gate. The message quotes the model's own value, so it is treated as
+    data: bounded here, and wrapped in the untrusted-data envelope by
+    :func:`_shape_repair_request`.
+    """
+    text = " ".join(str(exc or "").split())
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+    return text[:SHAPE_VIOLATION_QUOTE_CHARS]
+
+
+def _shape_repair_request(request: LLMRequest, violation: str, *, timeout_s: float) -> LLMRequest:
+    """The one re-ask for a schema violation: same pass, same schema, the rule stated.
+
+    The host discards the rejected document before this module can see it, so a *repair* of the
+    previous answer is not possible — what is possible, and honest, is one re-ask that names the
+    violation and restates the shape rules. The system prompt, schema, purpose and input are
+    byte-identical to the original pass, so this is still the validator (or author) answering its
+    own request, not a second role; only ``instructions`` carries the correction and only
+    ``prompt_version`` is marked, because the instruction text is different
+    (``docs/GENERATION.md`` §1).
+    """
+    note = (
+        "\n\nYour previous answer to this same request was rejected by the response-schema check "
+        "before it could be read, so no verdict from it survives. Answer the request again and "
+        "return exactly one JSON object that matches the schema. Every field in the schema's "
+        "required list must be present, no field outside the schema may appear, enum fields keep "
+        "their listed values, and every string stays inside its schema length bound. The item "
+        "fields are locators, not sentences: put each explanation or claim in 'reason'.\n"
+        f"The rejection reason, quoted as untrusted data: {UNTRUSTED_SOURCE_BEGIN} "
+        f"{violation} {UNTRUSTED_SOURCE_END}"
+    )
+    return replace(
+        request,
+        instructions=request.instructions + note,
+        prompt_version=request.prompt_version + REPAIR_PROMPT_SUFFIX,
+        timeout_s=timeout_s,
+    )
+
+
+def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: bool = True) -> LLMResponse:
+    """One bounded structured call, plus at most one bounded re-ask on a shape violation.
+
+    The host's structured-output gate raises ``ValueError`` when the answer does not match the
+    response schema. Before H-191 that ``ValueError`` became a ``ProviderFailure``, which the job
+    service reported as ``HOST_UNAVAILABLE`` (retryable): a healthy host and a *measured* 54 s paid
+    answer were both described as an outage, and the plan was neither validated nor rejected. Now:
+
+    * the discarded call is recorded as real spend with unknown tokens (it happened);
+    * one re-ask runs, inside whatever is left of the original deadline, and only if enough of it
+      is left to finish (``MIN_SHAPE_REPAIR_SECONDS``);
+    * if the second answer is also malformed the failure is :class:`ModelOutputInvalid`, a typed
+      contract violation — never a verdict and never an infrastructure outage.
+
+    The re-ask is a distinct call: it carries a different ``instructions`` text, a marked
+    ``prompt_version`` and its own usage row. It does not touch ``assert_separate_pass`` (that
+    compares the *generation* request with the *validation* request, both unchanged) and it does
+    not weaken identity recording (the identity compared is the answering response's, whichever
+    attempt produced it).
+    """
     started = time.monotonic()
-    try:
-        response = llm(request)
-    except (TimeoutError,) as exc:
-        raise ProviderTimeout(
-            f"{request.purpose} timed out: {exc}",
-            purpose=request.purpose,
-            deadline_s=float(request.timeout_s),
-        ) from exc
-    except GenerationError:
-        raise
-    except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
-        raise ProviderFailure(
-            f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
-        ) from exc
-    duration_ms = int((time.monotonic() - started) * 1000)
-    if not isinstance(response, LLMResponse):
-        raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
-    # A call that returned is real spend even when it returned too late to use. Record it before
-    # the deadline verdict so usage never understates what the provider charged and a cost
-    # ceiling is checked against the true total.
-    usage.record(request, response, duration_ms)
-    if duration_ms > int(request.timeout_s * 1000):
-        raise ProviderTimeout(
-            f"{request.purpose} took {duration_ms}ms, over its {request.timeout_s}s deadline",
-            purpose=request.purpose,
-            duration_ms=duration_ms,
-            deadline_s=float(request.timeout_s),
-        )
-    return response
+    attempt_started = started
+    deadline_s = float(request.timeout_s)
+    current = request
+    repairs = 0
+    while True:
+        usage.before_call(current)
+        try:
+            response = llm(current)
+        except (TimeoutError,) as exc:
+            raise ProviderTimeout(
+                f"{request.purpose} timed out: {exc}",
+                purpose=request.purpose,
+                deadline_s=deadline_s,
+            ) from exc
+        except GenerationError:
+            raise
+        except ValueError as exc:
+            # The host's structured-output gate. Not a provider outage: the answer arrived.
+            now = time.monotonic()
+            call_ms = int((now - attempt_started) * 1000)
+            usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
+            violation = _shape_violation_text(exc)
+            remaining = deadline_s - (now - started)
+            if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
+                raise ModelOutputInvalid(
+                    f"{request.purpose} returned an answer that violates its response schema "
+                    f"({request.schema_name}); this artifact has no verdict"
+                    f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+                    purpose=request.purpose,
+                    schema_name=request.schema_name,
+                    violation=violation,
+                    repair_attempted=bool(repairs),
+                ) from exc
+            repairs += 1
+            attempt_started = now
+            current = _shape_repair_request(request, violation, timeout_s=remaining)
+            continue
+        except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
+            raise ProviderFailure(
+                f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
+            ) from exc
+        duration_ms = int((time.monotonic() - started) * 1000)
+        if not isinstance(response, LLMResponse):
+            raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
+        # A call that returned is real spend even when it returned too late to use. Record it before
+        # the deadline verdict so usage never understates what the provider charged and a cost
+        # ceiling is checked against the true total.
+        usage.record(current, response, duration_ms)
+        if duration_ms > int(deadline_s * 1000):
+            raise ProviderTimeout(
+                f"{request.purpose} took {duration_ms}ms, over its {deadline_s}s deadline",
+                purpose=request.purpose,
+                duration_ms=duration_ms,
+                deadline_s=deadline_s,
+            )
+        if repairs:
+            return replace(response, shape_repair_attempts=repairs)
+        return response
 
 
 # ── Strict schemas ──────────────────────────────────────────────────────────
@@ -2174,7 +2387,7 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["item", "criterion", "reason"],
                 "properties": {
-                    "item": {"type": "string", "minLength": 1, "maxLength": 80},
+                    "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "criterion": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
                     "reason": {"type": "string", "minLength": 5, "maxLength": 400},
                     "fix_hint": {"type": "string", "maxLength": 400},
@@ -2189,7 +2402,7 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["item", "support", "reason"],
                 "properties": {
-                    "item": {"type": "string", "minLength": 1, "maxLength": 80},
+                    "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "source_id": {"type": ["string", "null"], "maxLength": 64},
                     "support": {"type": "string", "enum": list(research_mod.SUPPORT_STATUSES)},
                     "evidence_quote": {
@@ -2212,6 +2425,232 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         },
     },
 }
+
+
+#: How the validator's ten criteria are grouped across validation passes.
+#:
+#: H-191 follow-up, measured live on `nous` / `z-ai/glm-5.3-flash` (2026-11-08), on the exact
+#: reconstructed single-scope request:
+#:
+#: * one call demanding ten verdicts *and* a support verdict per claim: 243–286 s / 12–16 k
+#:   completion tokens against a 180 s deadline, and the host does not forward ``max_tokens`` on
+#:   this route (a forwarded 2 000-token cap returned 2 000 tokens of reasoning and **no**
+#:   content, so a cap is not the repair);
+#: * the same reviewed set split into five concurrent two-criterion passes: four returned in
+#:   48–87 s and the fifth missed the deadline; ~21 k completion tokens total. The provider
+#:   staggers concurrent calls, so the split bought extra spend, not wall time;
+#: * one pass over all ten criteria, with the claim-verdict set bounded to the plan's own named
+#:   claims (``plan_claim_labels``) and one-sentence reasons: **145.0 s / 8 246 tokens**.
+#:
+#: So the shipped grouping is ONE pass. The pass machinery stays because a caller may need to
+#: narrow further (a cheaper validator route, a smaller deadline): the aggregation, the
+#: narrowed schema and the merge are the same code for one pass or for several.
+VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (VALIDATION_CRITERIA,)
+
+#: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
+#: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
+_PLAN_SEQUENCE_CRITERION = "objective_alignment"
+
+
+def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
+    """Deterministic labels for the plan's own claims, in a stable order.
+
+    A claim support verdict is linked to the ledger by ``source_id`` plus a verbatim
+    ``evidence_quote`` (``research.claim_verdict_link_problem``), so the label only records *which*
+    plan claim a verdict answers. Naming the claims here — instead of letting the model enumerate
+    them — is what bounds the output demand, and it makes two passes' verdict sets comparable.
+    """
+    labels: list[str] = []
+    for objective in plan.get("objectives") or []:
+        if isinstance(objective, Mapping):
+            labels.append(f"objective:{objective.get('ordinal')}")
+    for unit in plan.get("units") or []:
+        if isinstance(unit, Mapping):
+            labels.append(f"unit:{unit.get('ordinal')}")
+    outcome = plan.get("learner_outcome")
+    if isinstance(outcome, str) and outcome.strip():
+        labels.append("plan:learner_outcome")
+    return labels
+
+
+def validation_pass_schema(
+    criteria: Sequence[str], claim_labels: Sequence[str] = ()
+) -> dict[str, Any]:
+    """``VALIDATION_SCHEMA`` narrowed to one pass's criteria and (optionally) its claim labels.
+
+    Narrowing the *instructions* alone does not bound the answer: measured on the exact H-187
+    request, asking for one criterion still produced ten entries and 14 409 completion tokens. The
+    schema is what makes an out-of-pass answer impossible — a pass that returns a criterion it was
+    not given fails validation instead of quietly widening the record.
+
+    A pass with no claim labels does not carry ``claim_verdicts`` at all: the top-level
+    ``additionalProperties: False`` then turns a stray claim verdict into a schema violation, so a
+    criteria pass cannot spend its budget re-judging support that another pass owns.
+    """
+    schema = copy.deepcopy(VALIDATION_SCHEMA)
+    properties = schema["properties"]
+    criteria_schema = properties["criteria"]
+    criteria_schema["minItems"] = len(criteria)
+    criteria_schema["maxItems"] = len(criteria)
+    criteria_schema["items"]["properties"]["id"]["enum"] = list(criteria)
+    properties["rejections"]["items"]["properties"]["criterion"]["enum"] = list(criteria)
+    if claim_labels:
+        claim_schema = properties["claim_verdicts"]
+        claim_schema["minItems"] = len(claim_labels)
+        claim_schema["maxItems"] = len(claim_labels)
+        claim_schema["items"]["properties"]["item"] = {
+            "type": "string",
+            "enum": list(claim_labels),
+        }
+    else:
+        properties.pop("claim_verdicts", None)
+    return schema
+
+
+def validation_pass_instructions(
+    *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
+) -> str:
+    """One pass's instruction text: its criteria, its claims, and nothing else to write about."""
+    text = (
+        f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
+        f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
+        "named here and no others. Keep each reason to one sentence (at most 200 characters) that "
+        "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
+        "author's rationale, or explain your method. Reject any item that must not reach a learner, "
+        "with the item reference and a concrete reason."
+    )
+    if claim_labels:
+        text += (
+            " Also return a support verdict for these plan claims: "
+            + ", ".join(claim_labels)
+            + ". Use source_id only when the supplied source ledger actually contains that source. "
+            "Support is not the same as provenance: to mark a claim 'supported' or 'partial' you "
+            "must set source_id and quote in 'excerpt' the exact words from that source that carry "
+            "the claim. Without an exact quoted excerpt the harness keeps the claim 'unverified', "
+            "and a title, publisher, URL, DOI or ISBN you cite must appear in the ledger or the "
+            "verdict is flagged."
+        )
+    else:
+        text += " Return no claim_verdicts: claim support is judged by another pass."
+    if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += (
+            " Also judge curriculum sequence under objective_alignment: every unit after the "
+            "first must name the earlier unit(s) it builds on and explain why it comes at that "
+            "point; no unit may require a concept taught later. Reject a plan whose order is "
+            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
+            "language-coverage claim is unsourced or treats coverage as comprehension."
+        )
+    return text
+
+
+def validation_pass_criteria(request: LLMRequest) -> tuple[str, ...]:
+    """The criteria one pass was given, read back from its own narrowed schema.
+
+    The request is the record of what the validator was asked to judge, so the merge reads
+    ownership from there instead of from a second list that could drift.
+    """
+    enum = (
+        request.schema.get("properties", {})
+        .get("criteria", {})
+        .get("items", {})
+        .get("properties", {})
+        .get("id", {})
+        .get("enum")
+    )
+    return tuple(enum or VALIDATION_CRITERIA)
+
+
+def merge_validation_reports(
+    passes: Sequence[tuple[Sequence[str], Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Combine one report per validation pass into the single report ``validation_verdict`` reads.
+
+    ``passes`` is one ``(owned_criteria, report)`` pair per pass. Nothing is dropped to make the
+    merge succeed: every one of the ten criteria must arrive from the pass that owns it, so a pass
+    that answered only part of its batch is a typed rejection rather than a smaller review. The
+    merged report keeps the shape and the meaning ``validation_verdict`` already relies on
+    (``outcome``, ``independence`` and the recorded validator identity are computed there, not
+    here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
+    validation declare ``reject``.
+
+    A pass's answer is filtered to the criteria it owns. On the real route the host rejects an
+    out-of-pass answer against the narrowed schema before it reaches this function, so the filter
+    only matters for a caller that hands in raw reports (tests, replays): it can never widen the
+    reviewed set, and it can never stand in for a missing pass.
+    """
+    by_criterion: dict[str, dict[str, Any]] = {}
+    rejections: list[dict[str, Any]] = []
+    claim_verdicts: list[dict[str, Any]] = []
+    seen_rejections: set[tuple[Any, Any, Any]] = set()
+    seen_claims: set[str] = set()
+    declared = "pass"
+    for owned, report in passes:
+        owned_ids = {str(criterion) for criterion in owned}
+        if str(report.get("verdict")) != "pass":
+            declared = "reject"
+        for entry in report.get("criteria") or []:
+            criterion = str(entry.get("id"))
+            if criterion not in owned_ids:
+                continue
+            if criterion in by_criterion:
+                raise GenerationRejected(
+                    f"validator reported criterion {criterion!r} more than once"
+                )
+            by_criterion[criterion] = dict(entry)
+        for entry in report.get("rejections") or []:
+            key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
+            if key in seen_rejections:
+                continue
+            seen_rejections.add(key)
+            rejections.append(dict(entry))
+        for entry in report.get("claim_verdicts") or []:
+            item = str(entry.get("item"))
+            if item in seen_claims:
+                continue
+            seen_claims.add(item)
+            claim_verdicts.append(dict(entry))
+    missing = [criterion for criterion in VALIDATION_CRITERIA if criterion not in by_criterion]
+    if missing:
+        raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
+    return {
+        "verdict": declared,
+        "criteria": [by_criterion[criterion] for criterion in VALIDATION_CRITERIA],
+        "rejections": rejections,
+        "claim_verdicts": claim_verdicts,
+    }
+
+
+def _run_validation_passes(
+    llm: "LLM", requests: Sequence[LLMRequest], usage: "_Usage"
+) -> list["LLMResponse"]:
+    """Run the validator's passes together, each with its own deadline and its own schema.
+
+    A pass that times out or fails fails the *whole* validation: a partial criteria set is never
+    merged and never recorded as a review, so a lost pass is ``needs_retry``, never a pass. Every
+    pass is submitted before the first result is awaited, which is what keeps the aggregate wall
+    time at the slowest pass instead of the sum.
+    """
+    if len(requests) <= 1:
+        return [_call_llm(llm, request, usage) for request in requests]
+    from concurrent.futures import ThreadPoolExecutor
+
+    # Reserve every pass's slot before any of them starts: five threads that each check the call
+    # ceiling as they begin would all see the same "calls so far" and cross it together.
+    usage.reserve(len(requests))
+    with ThreadPoolExecutor(max_workers=len(requests), thread_name_prefix="coursebook-validation") as pool:
+        futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
+        responses: list[LLMResponse | None] = [None] * len(requests)
+        first_error: BaseException | None = None
+        for index, future in enumerate(futures):
+            try:
+                responses[index] = future.result()
+            except BaseException as exc:  # noqa: BLE001 - re-raised after every pass is settled
+                if first_error is None:
+                    first_error = exc
+    if first_error is not None:
+        raise first_error
+    assert all(response is not None for response in responses)
+    return [response for response in responses if response is not None]
 
 
 def validate_artifact(schema: dict[str, Any], instance: Any, *, what: str) -> None:
@@ -3122,6 +3561,17 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "words from that source that carry the claim. Without an exact quoted excerpt the harness "
         "keeps the claim 'unverified', and a title, publisher, URL, DOI or ISBN you cite must "
         "appear in the ledger or the verdict is flagged."
+        # The locator rule is stated because it is enforced. Before H-191 the schema capped
+        # ``item`` at 80 characters and nothing said so: one 81-character label discarded a whole
+        # validation answer. A stated rule the model can follow is the first repair; ``_call_llm``
+        # adds one bounded re-ask for the slip that still happens.
+        " In 'rejections' and 'claim_verdicts', 'item' is a short locator for the place in the "
+        "artifact — for example 'plan.goal', 'objective_2', 'check_plan[0]', "
+        "'lesson.segments[1]' — never a sentence and never a claim: it is at most "
+        f"{ITEM_REFERENCE_MAX_CHARS} characters, and every explanation goes in 'reason'. The "
+        "response is rejected before it is read if any string is over its schema bound or any "
+        "field outside the schema is returned, so put each verdict in exactly the fields the "
+        "schema names."
     )
     if subject == "plan":
         text += (
@@ -5027,7 +5477,7 @@ def build_plan_request(
     )
 
 
-def build_plan_validation_request(
+def build_plan_validation_requests(
     *,
     plan: dict[str, Any],
     goal: str,
@@ -5042,7 +5492,20 @@ def build_plan_validation_request(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
-) -> LLMRequest:
+) -> list[LLMRequest]:
+    """The plan's independent validation, as one request per criteria pass.
+
+    H-191 follow-up: one call demanding ten verdicts *and* a support verdict per claim did not
+    finish inside the declared deadline on the measured route. The same reviewed set is now judged
+    by ``VALIDATION_CRITERIA_PASSES`` — each pass carries its own narrowed schema, all passes carry
+    the same payload and prompt version, and they run together (see
+    :func:`_run_validation_passes`). The claim labels are distributed across the passes so no
+    single pass owns the whole support judgement.
+
+    Every pass has the same ``purpose`` and the same declared deadline: the purpose still means
+    "the plan's validation", the usage record still attributes the spend to it, and an operator's
+    ``COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS`` still bounds each pass.
+    """
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
     normal_domain = (
@@ -5076,17 +5539,44 @@ def build_plan_validation_request(
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
-    return LLMRequest(
-        purpose="coursebook.plan.validate",
-        prompt_version=VALIDATION_PROMPT_VERSION,
-        system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="plan", criteria=VALIDATION_CRITERIA),
-        input_text=_bounded_input(payload, limit=_request_bound(scope)),
-        schema=VALIDATION_SCHEMA,
-        schema_name="coursebook_validation_v1",
-        max_tokens=2000,
-        timeout_s=_timeout_for("coursebook.plan.validate", timeout_s),
-    )
+    input_text = _bounded_input(payload, limit=_request_bound(scope))
+    timeout = _timeout_for("coursebook.plan.validate", timeout_s)
+    claims = plan_claim_labels(plan)
+    return [
+        LLMRequest(
+            purpose="coursebook.plan.validate",
+            prompt_version=VALIDATION_PROMPT_VERSION,
+            system_prompt=VALIDATION_SYSTEM_PROMPT,
+            instructions=validation_pass_instructions(
+                subject="plan", criteria=pass_criteria, claim_labels=pass_claims
+            ),
+            input_text=input_text,
+            schema=validation_pass_schema(pass_criteria, pass_claims),
+            schema_name="coursebook_validation_v1",
+            max_tokens=2000,
+            timeout_s=timeout,
+        )
+        for pass_criteria, pass_claims in _validation_pass_plan(claims)
+    ]
+
+
+def _validation_pass_plan(
+    claim_labels: Sequence[str],
+) -> list[tuple[tuple[str, ...], tuple[str, ...]]]:
+    """Pair each criteria pass with its share of the claim labels, in a stable order.
+
+    Claims are distributed round-robin so a plan with many objectives (a full-course plan) does not
+    load the whole support judgement onto one pass. A pass with no share carries no
+    ``claim_verdicts`` at all, which the narrowed schema enforces.
+    """
+    passes = len(VALIDATION_CRITERIA_PASSES)
+    shares: list[list[str]] = [[] for _ in range(passes)]
+    for index, label in enumerate(claim_labels):
+        shares[index % passes].append(label)
+    return [
+        (VALIDATION_CRITERIA_PASSES[index], tuple(shares[index]))
+        for index in range(passes)
+    ]
 
 
 def build_lesson_request(
@@ -6097,6 +6587,9 @@ def _record_validation(
                         "unknown": verdict["unknown"],
                         "waived_unknown": verdict.get("waived_unknown") or [],
                         "declared": verdict["declared"],
+                        # H-191: how many shape re-asks this answer took. A repaired answer is
+                        # stored as repaired, never presented as a first-time one.
+                        "shape_violations": int(getattr(response, "shape_repair_attempts", 0) or 0),
                     }
                 ),
                 sha256_of_text(generation_request.system_prompt),
@@ -6159,6 +6652,8 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "generator_prompt_sha256": row.get("generator_prompt_sha256"),
         "validator_prompt_sha256": row.get("validator_prompt_sha256"),
         "waived_unknown": rejections.get("waived_unknown") or [],
+        # H-191: a re-asked answer is stored and read back as re-asked.
+        "shape_violations": int(rejections.get("shape_violations") or 0),
         "warning": _provenance_warning(outcome, independence, bool(row.get("facts_unverified"))),
     }
 
@@ -6491,7 +6986,7 @@ def run_plan_job(
                 feedback = "The plan broke required rules:\n- " + "\n- ".join(exc.reasons)
                 continue
 
-            validation_request = build_plan_validation_request(
+            validation_requests = build_plan_validation_requests(
                 plan=candidate,
                 goal=planning_goal,
                 recipe=recipe,
@@ -6505,11 +7000,24 @@ def run_plan_job(
                 frequency_selection=frequency_selection,
                 frequency_status=frequency_status,
             )
-            assert_separate_pass(plan_request, validation_request)
-            validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_structured(
-                validation_response, VALIDATION_SCHEMA, what="plan validation", max_bytes=MAX_VALIDATION_BYTES
-            )
+            for validation_request in validation_requests:
+                assert_separate_pass(plan_request, validation_request)
+            validation_responses = _run_validation_passes(validator, validation_requests, usage)
+            reports = [
+                (
+                    validation_pass_criteria(validation_request),
+                    _parse_structured(
+                        validation_response, VALIDATION_SCHEMA, what="plan validation",
+                        max_bytes=MAX_VALIDATION_BYTES,
+                    ),
+                )
+                for validation_request, validation_response in zip(
+                    validation_requests, validation_responses
+                )
+            ]
+            report = merge_validation_reports(reports)
+            validation_request = validation_requests[0]
+            validation_response = validation_responses[0]
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
             )
@@ -6870,6 +7378,9 @@ def _validation_block(
         "facts_unverified": facts_unverified,
         "research_status": verdict.get("research_status"),
         "waived_unknown": list(verdict.get("waived_unknown") or []),
+        # H-191: how many shape re-asks produced this answer. Read beside ``outcome`` so a
+        # repaired validation is never presented as a first-time one.
+        "shape_violations": int(getattr(validator_response, "shape_repair_attempts", 0) or 0),
         "warning": _provenance_warning(outcome, independence, facts_unverified),
         "cost_usd": None,
     }

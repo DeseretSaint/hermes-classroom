@@ -803,10 +803,17 @@ def _stop_on_unreadable_cancel(
     return _view(lease.job_id)
 
 
-#: Stage exceptions that are the *host's* problem, mapped to the contract's capability code.
+#: Exceptions that are the *host's* problem, mapped to the contract's capability code.
 #: ``HOST_UNAVAILABLE`` means "the Hermes host (gateway, auxiliary model, media provider) is
 #: unavailable"; ``GRADER_UNAVAILABLE`` is about grading an answer, and reporting a provider
 #: deadline as a grader failure sends the reader to the wrong subsystem (CB-011-D1).
+#:
+#: ``ModelOutputInvalid`` is deliberately *absent*: the host and the provider answered, so an
+#: outage label is false (H-191: one 81-character validator ``item`` label discarded a 54 s paid
+#: call and surfaced as retryable ``HOST_UNAVAILABLE``). It carries ``code = "VALIDATION_FAILED"``
+#: itself — the *payload* violated the frozen response contract — and reports
+#: ``retryable: false``: blind re-running of the same stage is not the honest next step. It is
+#: still not a rejection: nothing was validated or rejected, and no validation record is written.
 _PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure", "ResearchTimeout", "MediaTimeout"})
 
 #: Exceptions that are a declared policy ceiling, not a bug or a host outage. A cost ceiling is a
@@ -838,10 +845,15 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
     code = _error_code(exc)
     message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
     details: dict[str, Any] = {}
-    for attribute in ("purpose", "duration_ms", "deadline_s"):
+    for attribute in ("purpose", "duration_ms", "deadline_s", "schema_name", "repair_attempted"):
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value
+    # A shape violation quotes the model's own rejected answer, which is the only way an operator
+    # can read the rule that actually failed. It is bounded by the exception itself and carries no
+    # key or credential.
+    if getattr(exc, "violation", None):
+        details["violation"] = str(getattr(exc, "violation"))[:500]
     details.update(_cost_details(exc))
     return contracts.build_error(code, message, **details)
 
