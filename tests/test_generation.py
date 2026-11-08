@@ -1250,9 +1250,16 @@ class LessonJobTest(GenerationTestBase):
         result = self.run_lessons(plan_result, self.lesson_script(validation_from_fixture()))
         for item in result["lessons"]:
             page = gen.learner_page(self.connection, item["lesson_id"])
+            # H-173d / docs/DECISION-TAUGHT-TARGET.md: the model segment is the presenting
+            # surface; the gate does not scan it for the key, so this projection check must not
+            # either. Every other learner surface below is still held to "no announced answer".
+            scanned = [
+                segment for segment in page["segments"]
+                if gen._segment_kind(segment) != gen._PRESENTING_SEGMENT_KIND
+            ]
             narrative = canonical_json(
                 {
-                    "segments": page["segments"],
+                    "segments": scanned,
                     "worked_example": page["worked_example"],
                     "learner_explanation": page["learner_explanation"],
                     "media": page["media"],
