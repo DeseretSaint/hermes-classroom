@@ -79,7 +79,10 @@ class WayfindingTest(unittest.TestCase):
         header = self.source[self.source.index("'data-cb-route': ROUTE_PATH") :]
         header = header[: header.index("PageBody")]
         self.assertIn("SurveyMark", header)
-        self.assertIn("children: ROUTE_TITLE", header)
+        # H-92: the route header's heading is the destination's page title, so the wordmark a
+        # reader sees is the page they are on; the sidebar still registers ROUTE_TITLE above.
+        self.assertIn("children: pageTitle", header)
+        self.assertNotIn("children: ROUTE_TITLE", header)
         # The header no longer explains the UI in a second line.
         self.assertNotIn("Pick up where you left off", self.source)
 

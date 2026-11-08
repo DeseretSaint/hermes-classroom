@@ -33,7 +33,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from . import api, db
+from . import api, db, practice
 
 #: Statuses that mean "this chat still governs the lesson".
 LIVE_STATUSES = ("active", "paused")
@@ -156,6 +156,13 @@ def bind_session(
                 # The same chat moving to another section of the same course is the Reattach
                 # flow: move the binding with it (one row per chat, history kept by revision)
                 # instead of demanding a second row the enrollment-wide rule would refuse.
+                if existing["lesson_run_id"] and str(existing["lesson_run_id"]) != str(run["id"]):
+                    # The run the chat is leaving is a new session scope: an active practice on it
+                    # can never be graded from this chat (docs/CONVERSATION-PRACTICE.md §5.5).
+                    practice.abandon_for_run(
+                        connection, str(existing["lesson_run_id"]),
+                        reason="binding_detached", now=db.utcnow(),
+                    )
                 connection.execute(
                     "UPDATE bindings SET lesson_run_id = ?, objective_id = ?, profile = ?,"
                     " status = 'active', revision = revision + 1, updated_at = ? WHERE id = ?",
@@ -196,6 +203,13 @@ def bind_session(
                 " WHERE id = ?",
                 (db.utcnow(), active["id"]),
             )
+            # A detached section can never grade a practice: the live session on the superseded
+            # run is abandoned in the same transaction (docs/CONVERSATION-PRACTICE.md §5.5).
+            if active["lesson_run_id"]:
+                practice.abandon_for_run(
+                    connection, str(active["lesson_run_id"]),
+                    reason="binding_detached", now=db.utcnow(),
+                )
 
         now = db.utcnow()
         binding_id = _new_id()

@@ -8,6 +8,12 @@ H-84's plain-language pass, H-86's wayfinding pass and H-91's section-crash / Li
 and is pinned to the module that ships from that tree: `desktop/plugin.js` sha256
 `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`.
 
+Re-run on the v16 backend tree (`origin/master` `14a6443` plus the H-120a amendment) the same
+command reproduces this evidence: 62 frames, 15/15 claims PASS, 2,282 measured text nodes, pinned to
+the module that ships from that tree, `desktop/plugin.js` sha256
+`035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d`. The two `audit.json` files
+differ only in `generated_at` and the recorded branch name.
+
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
 
@@ -32,27 +38,20 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run twice back to back on this pin (`71fc4c3…`), verbatim:
+Run back to back on this pin (`50b446c1…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-8ic2t13n/run-a
-run B → …/cb-m4v-repro-8ic2t13n/run-b
+run A → …/cb-m4v-repro-fubf16ia/run-a
+run B → …/cb-m4v-repro-fubf16ia/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5
-  reference_time: 2026-11-07T10:00:00.000Z
-
-$ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-wg4ztx7e/run-a
-run B → …/cb-m4v-repro-wg4ztx7e/run-b
-PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5
+  plugin_sha256: 50b446c1deeb705efaa5f4948cc2fc202274367621a83e5c9ef404cc1facbb60
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
-Earlier runs at the `80725f6` module (`670de1b`, the H-91 fix this candidate contains) reported the
-same 62/62 result. Both runs measured the module that ships from the commit the run was made on; the
-`plugin_sha256` line is what makes that traceable.
+Earlier runs at the `71fc4c3…`, `80725f6` and `635b706…` modules reported the same 62/62 result at
+their own pins; those are history for their commits. Every run measured the module that ships from
+the commit it was made on; the `plugin_sha256` line is what makes that traceable.
 
 #### The one frame that used to drift (H-90)
 
@@ -94,8 +93,10 @@ Two stages, both black-box against the shipped `desktop/plugin.js`:
 1. **Render** (`scripts/m4v-render.mjs`). The shipped components are mounted with
    `react-dom/client` in jsdom, so effects run: `useArtifactPreview` actually calls a stubbed
    `ctx.rest`, and the real `<img>`, `<audio>` and media frame are mounted. The transport is the
-   only stub; it serves the **real M0 artifacts** (PNG and MP3, byte-identical to
-   `docs/M0-MEDIA-PROBE.md`) and a deterministic schematic built by the shipped
+   only stub; it serves the committed media fixtures in `tests/fixtures/media/` — a real 1024×576
+   PNG and a real 4.66 s MP3 of the documented utterance `こんにちは。今日はいい天気ですね。`
+   (neither is the M0 host-probe artifact; see `tests/fixtures/media/README.md`) — and a
+   deterministic schematic built by the shipped
    `artifacts.make_schematic_svg` from the procedure document's own rows. The module is rendered
    once per (surface × light/dark × 1280/460 host viewport × motion), because the module reads
    `host.state.viewport` at render time — the 460 px layout is a real narrow render, not a
@@ -116,37 +117,48 @@ audio players, text-only, media-unavailable.
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
-| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,266 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
+| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,282 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
-| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 364 AX controls across the 32 measured frames; 304 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 80 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
+| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 364 AX controls across the 32 measured frames; 304 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 86 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
 | C-05 No autoplay | **PASS** | 0 of 22 painted `<audio>` elements autoplay or play on load |
 | C-06 Every instructional image has a text equivalent | **PASS** | 60 images, 0 without `alt`, 0 of 106 media frames without a caption/text equivalent |
 | C-07 Every audio has a transcript | **PASS** | 22 audio elements, 0 without an accessible transcript/`aria-label` |
 | C-08 Reduced motion respected | **PASS** (trivial) | 0 animated/transitioned nodes in reduced **and** full frames — the module paints no motion to suppress; the preference is read and recorded |
 | C-09 Forced colors stays readable | **PASS** | 6 forced-colors frames, 0 authored failures, 0 clipped, 0 overflow |
-| C-10 Media-unavailable leaves the lesson readable | **PASS** | 4 frames: 0 images, 0 audio, honest message + caption retained |
-| C-11 Text-only path renders media as text | **PASS** | 4 frames: 0 players, 0 broken frames, text equivalent retained |
-| C-12 Image player renders the real artifact | **PASS** | 60 decoded images, natural widths 1024 (generated PNG) and 640 (deterministic SVG) |
+| C-10 Media-unavailable leaves the lesson readable | **PASS** | 6 frames: 0 images, 0 audio, honest message + caption retained |
+| C-11 Text-only path renders media as text | **PASS** | 6 frames: 0 players, 0 broken frames, text equivalent retained |
+| C-12 Image player renders the real artifact | **PASS** | 60 decoded images, natural widths 1024 (committed gate PNG) and 640 (deterministic SVG) |
 | C-13 Audio player is explicit, not autoplay | **PASS** | `controls`, `preload=metadata`, `data:` source, no autoplay attribute |
-| C-14 Generated illustration is context, not procedure authority | **PASS** | label/alt carry "generated for context only" on every image media frame; independent review below |
+| C-14 Illustration fixture is context, not procedure authority | **PASS** | label/alt carry "generated for context only" on every image media frame; independent review below |
 | C-15 Every media item has a label and provenance line | **PASS** | 106 media frames, 0 without a label; provenance line present in the frame |
 
 ## Independent illustration review
 
-Artifact `cb-media-image.png`, `sha256 193c10f4…f15036`, `image/png`, 1024×576, 1,137,959 bytes —
-byte-identical to the artifact recorded in `docs/M0-MEDIA-PROBE.md` §Image.
+Artifact `tests/fixtures/media/cb-media-image.png`, `sha256
+e3be1eed6e3881ceb52bf76385ec542e9129728a65a3bf45477f54658f386669`, `image/png`, 1024×576,
+49,776 bytes. It is a **committed gate fixture** produced deterministically by
+`scripts/make-m4-fixtures.py`, not a generated illustration and not the M0 host-probe image. The M0
+image is a `docs/M0-MEDIA-PROBE.md` history record; those bytes are not in the tree. This review
+describes the bytes the audit actually serves, and `audit.json` recomputes the same sha256 from the
+file on every run.
 
-Independent visual inspection (not the generator's self-report) finds:
+Independent visual inspection (a look at the committed file, not the generator's source) finds:
 
-- one large bore on a workshop bench with a torque wrench and hand tools;
-- **no** numbers, arrows, bolt order, torque values, clearances, orientation marks or text;
-- the torque wrench is present but its scale is not legible, and a general hammer sits in frame.
+- a flat workshop-bench plate: one large circular gasket/hub plate with concentric rings and two
+  locating holes, a torque-wrench silhouette to the right, and a mallet and a drift on the bench;
+- **no** text, numbers, arrows, bolt order, torque values, clearances or orientation marks;
+- the torque wrench has no legible scale — it is a solid silhouette.
 
 Conclusion: it cannot carry a torque value, a sequence, a clearance or a safety instruction. It is
 suitable only as labelled context — which is exactly how the renderer presents it (label
 "Illustration — generated for context only", the caption says it is not a procedure authority,
 and the procedure lens keeps the deterministic schematic rows as the only torque authority).
 Verdict **PASS**.
+
+The M0 probe's finding about the original host image — atmospheric, one large bore, no usable
+torque authority — still stands as the reason the plan requires a deterministic schematic or a
+sourced reference for any procedure, but it is now documented as history in `docs/M0-MEDIA-PROBE.md`
+rather than as a claim about the bytes this gate serves.
 
 ## Defect found and fixed
 
@@ -174,8 +186,10 @@ its caption in all six media-unavailable frames — unchanged from before except
   counted as product contrast evidence. Their real host-theme contrast is F-01's subject, not
   this gate's.
 - The audio `<audio>` element is measured for attributes, not playback: headless Chromium cannot
-  prove the decoded waveform is audible. The bytes are the M0 MP3 (verified by sha256) and decode
-  as `audio/mpeg`.
+  prove the decoded waveform is audible. The bytes are the committed gate fixture
+  `tests/fixtures/media/cb-media-audio.mp3` — real speech of the documented utterance (synthesized
+  once with the free Edge speech service and re-encoded to raw MPEG frames; sha256 recorded in
+  `audit.json.summary.media_fixtures`), not the M0 MP3 — and they decode as `audio/mpeg`.
 - The reduced-motion claim is trivially satisfied: the module has no CSS transition or animation
   at all in any mode. There is no motion theatre to suppress, but this gate also cannot claim a
   suppression that never occurs.

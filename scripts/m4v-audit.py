@@ -55,8 +55,54 @@ REFERENCE_TIME = "2026-11-07T10:00:00.000Z"
 
 IMAGE_ARTIFACT = "art_image00000001"
 AUDIO_ARTIFACT = "art_audio00000002"
-IMAGE_PATH = Path.home() / ".hermes" / "cache" / "scratch" / "cb-media-image.png"
-AUDIO_PATH = Path.home() / ".hermes" / "cache" / "scratch" / "cb-media-audio.mp3"
+
+
+def _media_path(env_var: str, fixture_name: str) -> Path:
+    """Resolve one media fixture: explicit override, then the committed fixture, then legacy scratch.
+
+    The gate ran off two files in ``~/.hermes/cache/scratch`` for a while. That directory is pruned
+    by the scratch janitor, so a clean machine could not reproduce the evidence at all (H-136). The
+    committed fixtures under ``tests/fixtures/media`` come first; the legacy scratch path stays only
+    as a fallback for a machine that still has the original M0 bytes, and an env override lets a
+    probe point the gate at a fresh artifact without editing code.
+    """
+    override = os.environ.get(env_var)
+    if override:
+        return Path(override).expanduser().resolve()
+    fixture = ROOT / "tests" / "fixtures" / "media" / fixture_name
+    if fixture.is_file():
+        return fixture
+    return Path.home() / ".hermes" / "cache" / "scratch" / fixture_name
+
+
+IMAGE_PATH = _media_path("M4V_IMAGE", "cb-media-image.png")
+AUDIO_PATH = _media_path("M4V_AUDIO", "cb-media-audio.mp3")
+
+# Real media carries its own magic; a renamed placeholder must not silently satisfy the gate.
+MEDIA_MAGIC = {IMAGE_PATH: b"\x89PNG", AUDIO_PATH: b"\xff\xf3"}
+MEDIA_MIME = {IMAGE_PATH: "image/png", AUDIO_PATH: "audio/mpeg"}
+
+
+def media_fixtures() -> dict:
+    """The bytes this run actually served, with the hash and location, so the review is verifiable."""
+    fixtures = {}
+    for role, path in (("image", IMAGE_PATH), ("audio", AUDIO_PATH)):
+        data = path.read_bytes() if path.is_file() else b""
+        magic = MEDIA_MAGIC[path]
+        fixtures[role] = {
+            "path": str(path.relative_to(ROOT)) if path.is_file() and path.is_relative_to(ROOT) else str(path),
+            "sha256": hashlib.sha256(data).hexdigest() if data else None,
+            "bytes": len(data),
+            "mime": MEDIA_MIME[path],
+            "magic_ok": data.startswith(magic),
+            "source": (
+                "M4V_" + role.upper() if os.environ.get("M4V_" + role.upper())
+                else "committed fixture" if path.is_relative_to(ROOT)
+                else "legacy scratch"
+            ),
+        }
+    return fixtures
+
 
 AFFECTION_SOURCE = {
     "source_id": "src_affection01",
@@ -107,27 +153,40 @@ def text_only_document() -> dict:
 
 
 def media_answers(procedure: dict | None = None) -> dict:
-    image = base64.b64encode(IMAGE_PATH.read_bytes()).decode("ascii") if IMAGE_PATH.is_file() else None
-    audio = base64.b64encode(AUDIO_PATH.read_bytes()).decode("ascii") if AUDIO_PATH.is_file() else None
-    answers: dict = {}
-    if image:
-        answers[IMAGE_ARTIFACT] = {
+    fixtures = media_fixtures()
+    missing = [role for role, item in fixtures.items() if not item["bytes"]]
+    if missing:
+        raise SystemExit(
+            "missing media fixture(s): "
+            + ", ".join(f"{role} ({fixtures[role]['path']})" for role in missing)
+            + " — set M4V_IMAGE / M4V_AUDIO or restore tests/fixtures/media/"
+        )
+    bad = [role for role, item in fixtures.items() if not item["magic_ok"]]
+    if bad:
+        raise SystemExit(
+            "media fixture(s) do not carry real media magic: "
+            + ", ".join(f"{role} ({fixtures[role]['path']})" for role in bad)
+        )
+    image = base64.b64encode(IMAGE_PATH.read_bytes()).decode("ascii")
+    audio = base64.b64encode(AUDIO_PATH.read_bytes()).decode("ascii")
+    answers: dict = {
+        IMAGE_ARTIFACT: {
             "mime": "image/png",
             "bytes": IMAGE_PATH.stat().st_size,
             "label": "Illustration — generated for context only",
             "text_equivalent": IMAGE_TEXT,
             "permission": "generated",
             "data_url": f"data:image/png;base64,{image}",
-        }
-    if audio:
-        answers[AUDIO_ARTIFACT] = {
+        },
+        AUDIO_ARTIFACT: {
             "mime": "audio/mpeg",
             "bytes": AUDIO_PATH.stat().st_size,
             "label": "Narration — the transcript is authoritative",
             "text_equivalent": AUDIO_TEXT,
             "permission": "generated",
             "data_url": f"data:audio/mpeg;base64,{audio}",
-        }
+        },
+    }
     # A deterministic schematic is a real artifact too: render it from the document's own
     # structured rows through the shipped builder, exactly as the media job would.
     for document in [procedure] if procedure else []:
@@ -575,7 +634,7 @@ def aggregate() -> int:
                           "src_kinds": sorted({audio["src_kind"] for frame in frames for audio in frame["audios"]})},
         },
         {
-            "id": "C-14", "claim": "One real generated illustration is labelled context and is not usable as a procedure authority.",
+            "id": "C-14", "claim": "One real illustration fixture is labelled context and is not usable as a procedure authority.",
             "verdict": verdict(not media_without_label and all(
                 "context" in item["label"].lower() for item in media_frames
                 if item["artifact"].startswith("art_image") and item["label"])),
@@ -583,11 +642,19 @@ def aggregate() -> int:
                           "media_without_label": len(media_without_label),
                           "artifact_review": "docs/M4-VISUAL-MEDIA-AUDIT.md#independent-illustration-review",
                           "independent_review": {
-                              "artifact": "cb-media-image.png",
-                              "sha256": "193c10f4b80fd5a70fa2e97b27a48bd07aa77933947e8983df9d87f612f15036",
+                              "artifact": media_fixtures()["image"]["path"],
+                              "sha256": media_fixtures()["image"]["sha256"],
                               "mime": "image/png",
+                              "bytes": media_fixtures()["image"]["bytes"],
                               "pixels": "1024x576",
-                              "depicts": "single-cylinder head gasket on a bench with a torque wrench and hand tools; no text, no numbers, no bolt sequence, no clearances, no orientation marks",
+                              "provenance": "committed gate fixture generated deterministically by "
+                                            "scripts/make-m4-fixtures.py; not a generated illustration and "
+                                            "not the M0 host-probe image",
+                              "depicts": "a flat workshop-bench plate: one large circular gasket/hub plate "
+                                         "with concentric rings and two locating holes, a torque-wrench "
+                                         "silhouette to the right, a mallet and a drift on the bench",
+                              "absent": "no text, no numbers, no arrows, no bolt sequence, no clearances, "
+                                        "no orientation marks, and no legible wrench scale",
                               "verdict": "context only; cannot carry a torque value, sequence, clearance or safety instruction",
                           }},
         },
@@ -636,6 +703,7 @@ def aggregate() -> int:
         "claims": {item["id"]: item["verdict"] for item in claims},
         "defects": defects,
         "reference_time": evidence.get("reference_time"),
+        "media_fixtures": media_fixtures(),
         "plugin_sha256": hashlib.sha256((ROOT / "desktop" / "plugin.js").read_bytes()).hexdigest(),
         "branch": subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT,
                                  capture_output=True, text=True).stdout.strip(),

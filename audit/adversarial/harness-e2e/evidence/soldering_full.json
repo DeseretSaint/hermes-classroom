@@ -1224,7 +1224,7 @@
   },
   "scope_bounds": {
     "brief_scope": "full",
-    "contract": "contracts/rpc.v14.json",
+    "contract": "contracts/rpc.v15.json",
     "contract_scopes": [
       "single",
       "short",
@@ -1306,7 +1306,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 14,
+          "contract_version": 16,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-00009b",
           "result": {
@@ -1336,7 +1336,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 14,
+          "contract_version": 16,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000a1",
           "result": {

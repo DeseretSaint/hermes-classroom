@@ -133,8 +133,9 @@ const scope = React.createElement('div', {
     ]),
     React.createElement('div', {
       key: 'switcher',
-      'data-cb-view-switcher': 'available',
+      'data-cb-view-switcher': mod.lessonViewOptions(payload.document).length > 1 ? 'available' : 'textbook-only',
       'data-cb-view-options': mod.lessonViewOptions(payload.document).map((v) => v.id).join(' '),
+      'data-cb-view-unavailable': mod.lessonViewChoices(payload.document).filter((v) => !v.available).map((v) => v.id).join(' '),
       style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem',
                fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }
     }, [
@@ -142,19 +143,28 @@ const scope = React.createElement('div', {
       React.createElement('div', {
         key: 'seg',
         className: 'segmented',
-        style: { display: 'inline-flex', border: '1px solid var(--cb-rule)' }
-      }, mod.lessonViewOptions(payload.document).map((option) =>
+        style: { display: 'inline-flex', flexWrap: 'wrap', border: '1px solid var(--cb-rule)' }
+      }, mod.lessonViewChoices(payload.document).map((option) =>
         React.createElement('span', {
           key: option.id,
-          'aria-pressed': option.id === payload.view ? 'true' : 'false',
+          'data-cb-view-choice': option.id,
+          'data-cb-view-choice-state': option.available ? 'available' : 'unavailable',
+          'aria-pressed': option.available ? (option.id === payload.view ? 'true' : 'false') : undefined,
+          title: option.reason || undefined,
           style: {
             padding: '0.2rem 0.55rem',
             borderLeft: '1px solid var(--cb-rule)',
             background: option.id === payload.view ? 'var(--cb-accent-soft)' : 'transparent',
-            color: all(option.id === payload.view)
+            color: all(option.id === payload.view),
+            opacity: option.available ? 1 : 0.5
           }
         }, option.label)
-      ))
+      )),
+      React.createElement('span', {
+        key: 'reasons',
+        'data-cb-view-reasons': '',
+        style: { flexBasis: '100%', color: 'var(--cb-ink-soft)' }
+      }, mod.lessonViewChoices(payload.document).filter((v) => !v.available).map((v) => v.reason).join(' '))
     ])
   ]),
   body

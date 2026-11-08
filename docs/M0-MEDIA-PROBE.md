@@ -1,5 +1,14 @@
 # M0 media probe — real host image and speech
 
+> **History record (H-136, 2026-11-07).** The bytes recorded below were probe artifacts in
+> `~/.hermes/cache/scratch/`; that directory is pruned and those two files are no longer on this
+> machine or in this tree. This document is kept as the record of what the M0 host probe measured.
+> The M4 visual/media gate no longer serves these bytes: it serves the committed, labelled fixtures
+> in `tests/fixtures/media/` (real 1024×576 PNG and real speech MP3 of the same utterance) whose
+> path, sha256 and byte count are recorded in `audit/visual/m4-visual/audit.json` under
+> `summary.media_fixtures`. See `tests/fixtures/media/README.md` and
+> `docs/M4-VISUAL-MEDIA-AUDIT.md` §Independent illustration review.
+
 Date: 2026-11-06 (MST)
 Host profile: `default` (`~/.hermes`)
 Host image provider: `image_gen.provider = nous`

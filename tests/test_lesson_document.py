@@ -397,10 +397,11 @@ class NoAnswerLeakTest(unittest.TestCase):
 
 
 class ContractSurfaceTest(unittest.TestCase):
-    def test_the_wire_contract_is_v14_and_keeps_v13_on_disk(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.rpc"), 14)
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 14)
+    def test_the_wire_contract_is_current_and_keeps_the_older_files_on_disk(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)
+        self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 14)
         self.assertTrue((contracts.CONTRACT_DIR / "rpc.v13.json").is_file())
+        self.assertTrue((contracts.CONTRACT_DIR / "rpc.v14.json").is_file())
 
     def test_lesson_page_requires_the_document_and_keeps_the_old_fields(self) -> None:
         schema = contracts.method_schema("lesson.page")

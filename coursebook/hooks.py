@@ -166,6 +166,8 @@ def pre_llm_call(
                 "revision": outcome.revision,
                 "verdict": outcome.verdict,
                 "attempt_id": outcome.attempt_id,
+                "practice_session_id": outcome.practice_session_id,
+                "practice_revision": outcome.practice_revision,
             }
         return lesson_skills.attach(
             outcome.hook,
@@ -205,6 +207,23 @@ def post_llm_call(
         return None
     nonce = pending.get("nonce")
     revision = pending.get("revision")
+    practice_session = pending.get("practice_session_id")
+    if practice_session:
+        # A practice turn writes a tutor row in the practice transcript, never a teaching segment:
+        # learner and tutor dialogue is not teaching prose (docs/CONVERSATION-PRACTICE.md §4).
+        try:
+            turn.record_practice_tutor_turn(
+                session_id=str(practice_session),
+                assistant_response=str(assistant_response or ""),
+                practice_revision=pending.get("practice_revision"),
+            )
+        except Exception as exc:  # noqa: BLE001 - the observer is never the gate
+            logger.warning(
+                "coursebook: practice tutor turn was not stored (session=%s): %s",
+                practice_session,
+                f"{type(exc).__name__}: {exc}",
+            )
+        return None
     last_error: BaseException | None = None
     # One immediate retry before declaring the snapshot lost. A transient lock or a brief I/O
     # fault recovers here, and the lesson page never has to be told about it.

@@ -60,16 +60,20 @@ def is_terminal(state: str) -> bool:
 def cancellable(state: str) -> bool:
     """Whether a *new* cancel request is meaningful right now.
 
-    ``cancelling`` answers False on purpose: cancellation is already in progress, so offering it
-    again would be a control that does nothing.
+    ``cancel_requested``/``cancelling`` answer False on purpose: cancellation is already in
+    progress, so offering it again would be a control that does nothing. ``interrupted_requires_retry``
+    answers True because ``jobs.cancel`` accepts it (``interrupted_requires_retry -> cancelled``);
+    a read model that said otherwise would hide an action the command layer performs.
     """
+    if state in ("cancel_requested", "cancelling"):
+        return False
     try:
         targets = allowed_targets(state)
     except ContractError:
         return False
-    # `queued` cancels directly; anything already running needs a cancel *request*. A job that is
-    # already `cancel_requested`/`cancelling` must not offer the action a second time.
-    return state == "queued" or "cancel_requested" in targets
+    # `queued` and `interrupted_requires_retry` cancel directly; a running job needs a cancel
+    # *request*. Either edge is a real action the command layer accepts.
+    return "cancel_requested" in targets or "cancelled" in targets
 
 
 def job_schema() -> dict[str, Any]:

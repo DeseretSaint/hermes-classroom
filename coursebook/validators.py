@@ -30,7 +30,9 @@ CLOSED_KINDS = ("exact", "numeric", "selection")
 
 #: Every kind a stored reference may declare. ``rubric_only`` names the open lane explicitly, so
 #: an authoring mistake cannot masquerade as an open-response check by omitting ``kind``.
-REFERENCE_KINDS = CLOSED_KINDS + ("rubric_only",)
+#: ``conversation`` is a closed kind graded by :mod:`coursebook.conversation` from the stored
+#: learner turns; it never reaches the aux lane (``docs/CONVERSATION-PRACTICE.md`` §7).
+REFERENCE_KINDS = CLOSED_KINDS + ("rubric_only", "conversation")
 
 
 class ReferenceSpecError(ValueError):
@@ -219,6 +221,43 @@ def seal_reference(spec: dict[str, Any] | None) -> dict[str, Any]:
         for group in answers:
             if not isinstance(group, list) or not group:
                 raise ReferenceSpecError("each accepted selection must be a non-empty list")
+    elif kind == "conversation":
+        targets = reference.get("targets")
+        if not isinstance(targets, list) or not targets:
+            raise ReferenceSpecError("a conversation reference declares its target key")
+        seen: set[str] = set()
+        for target in targets:
+            if not isinstance(target, dict) or not isinstance(target.get("id"), str):
+                raise ReferenceSpecError("each conversation target names an id")
+            target_id = str(target["id"])
+            if target_id in seen:
+                raise ReferenceSpecError("conversation target ids are unique")
+            seen.add(target_id)
+            clauses = target.get("match")
+            if not isinstance(clauses, list) or not clauses:
+                raise ReferenceSpecError("a conversation target carries at least one match clause")
+            for clause in clauses:
+                if not isinstance(clause, dict) or clause.get("type") not in ("exact", "regex"):
+                    raise ReferenceSpecError("a conversation clause is exact or regex")
+                value = clause.get("value")
+                if not isinstance(value, str) or not value.strip():
+                    raise ReferenceSpecError("a conversation clause carries a value")
+                if clause["type"] == "regex":
+                    try:
+                        pattern = re.compile(value)
+                    except re.error as exc:
+                        raise ReferenceSpecError(f"a conversation regex does not compile: {exc}") from exc
+                    if pattern.search(""):
+                        raise ReferenceSpecError("a conversation regex matches the empty string")
+        low, high = reference.get("min_turns"), reference.get("max_turns")
+        if (
+            not isinstance(low, int)
+            or isinstance(low, bool)
+            or not isinstance(high, int)
+            or isinstance(high, bool)
+            or not (3 <= low <= high <= 5)
+        ):
+            raise ReferenceSpecError("a conversation reference declares a 3 to 5 learner-turn range")
     return reference
 
 

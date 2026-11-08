@@ -60,6 +60,7 @@ from . import deadline as deadline_mod
 from . import lesson_document
 from . import localization
 from . import policy as capability_policy
+from . import practice
 from . import prompts
 from . import rubrics
 from . import text_completeness
@@ -168,7 +169,7 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: same label, and the label is recorded in stored validation bindings and the idempotency
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt.
-LESSON_PROMPT_VERSION = "lesson-prompt.v8"
+LESSON_PROMPT_VERSION = "lesson-prompt.v9"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v3"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -1845,6 +1846,65 @@ LESSON_SCHEMA: dict[str, Any] = {
                                     },
                                     "label": {"type": "string", "minLength": 1, "maxLength": 200},
                                 },
+                            },
+                        },
+                        # A conversation practice declaration (H-120). The author writes one
+                        # target list carrying both the learner-facing label and the match
+                        # clauses; the backend splits it: labels stay in the stimulus, clauses go
+                        # only to checks.reference_json.
+                        "practice": {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["scenario", "learner_role", "tutor_role", "turns",
+                                         "targets", "targets_visible", "rubric_angle", "opening"],
+                            "properties": {
+                                "scenario": {"type": "string", "minLength": 3, "maxLength": 300},
+                                "learner_role": {"type": "string", "minLength": 3, "maxLength": 120},
+                                "tutor_role": {"type": "string", "minLength": 3, "maxLength": 120},
+                                "turns": {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "required": ["min", "max"],
+                                    "properties": {
+                                        "min": {"type": "integer", "minimum": 3, "maximum": 5},
+                                        "max": {"type": "integer", "minimum": 3, "maximum": 5},
+                                    },
+                                },
+                                "targets": {
+                                    "type": "array",
+                                    "minItems": 2,
+                                    "maxItems": 5,
+                                    "items": {
+                                        "type": "object",
+                                        "additionalProperties": False,
+                                        "required": ["id", "label", "match"],
+                                        "properties": {
+                                            "id": {
+                                                "type": "string",
+                                                "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                                                "maxLength": 64,
+                                            },
+                                            "label": {"type": "string", "minLength": 1, "maxLength": 120},
+                                            "match": {
+                                                "type": "array",
+                                                "minItems": 1,
+                                                "maxItems": 8,
+                                                "items": {
+                                                    "type": "object",
+                                                    "additionalProperties": False,
+                                                    "required": ["type", "value"],
+                                                    "properties": {
+                                                        "type": {"type": "string", "enum": ["exact", "regex"]},
+                                                        "value": {"type": "string", "minLength": 1, "maxLength": 300},
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                                "targets_visible": {"type": "boolean"},
+                                "rubric_angle": {"type": "string", "enum": list(capability_policy.RUBRIC_PROFILES)},
+                                "opening": {"type": "string", "minLength": 1, "maxLength": 300},
                             },
                         },
                     },
@@ -4275,6 +4335,12 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     narrative = _narrative_text(page)
     check = lesson.get("check") or {}
     secrets = [str(check.get("reference_answer") or "")] + [str(item) for item in check.get("accepted_answers") or []]
+    # A practice's key is its match clauses; they must not appear in the learner page either
+    # (docs/CONVERSATION-PRACTICE.md §3.2). Labels are learner-facing when targets are visible.
+    for target in (check.get("stimulus") or {}).get("practice", {}).get("targets") or [] \
+            if isinstance((check.get("stimulus") or {}).get("practice"), dict) else []:
+        for clause in target.get("match") or []:
+            secrets.append(str(clause.get("value") or ""))
     leaked = [secret for secret in secrets if secret and _normalize_answer(secret) in narrative]
     if leaked:
         raise _RuleViolation(["learner-facing narrative contains the check reference answer or a keyed answer"])
@@ -7541,7 +7607,18 @@ def _reference_payload(check: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, Any]:
+def _plan_has_practice(connection, plan_id: str) -> bool:
+    """Whether a stored check in this plan already declares a practice (one practice per course)."""
+    row = connection.execute(
+        "SELECT COUNT(*) AS n FROM checks c JOIN objectives o ON o.id = c.objective_id"
+        " WHERE o.plan_id = ? AND c.stimulus_json LIKE ?",
+        (str(plan_id), '%"practice"%'),
+    ).fetchone()
+    return int(row["n"] or 0) > 0
+
+
+def _check_payloads(lesson: dict[str, Any], *, locale: str | None, recipe: str | None = None,
+                    practice_check_already: bool = False) -> dict[str, Any]:
     check = lesson["check"]
     stimulus = {
         "prompt": check["stimulus"]["prompt"],
@@ -7555,6 +7632,44 @@ def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, 
         "scaffolds": localization.copy_scaffolds(check.get("scaffolds")),
         "assistance_policy": dict(check["assistance_policy"]),
     }
+    authored_practice = check["stimulus"].get("practice")
+    if isinstance(authored_practice, dict):
+        # One authored target list, split by the backend: labels to the stimulus, match clauses
+        # only to the sealed reference. The rubric is synthesized here, never copied from the
+        # model's rubric array, so a criterion the deterministic lane cannot score is impossible
+        # (docs/CONVERSATION-PRACTICE.md §3.2).
+        declaration_targets, key_targets = practice.split_targets(
+            [dict(target) for target in authored_practice.get("targets") or []]
+        )
+        declaration = {
+            "scenario": authored_practice.get("scenario"),
+            "learner_role": authored_practice.get("learner_role"),
+            "tutor_role": authored_practice.get("tutor_role"),
+            "turns": dict(authored_practice.get("turns") or {}),
+            "targets": declaration_targets,
+            "targets_visible": authored_practice.get("targets_visible"),
+            "rubric_angle": authored_practice.get("rubric_angle"),
+            "opening": authored_practice.get("opening"),
+        }
+        stimulus["practice"] = declaration
+        reference = validators.seal_reference({
+            "kind": "conversation",
+            "targets": key_targets,
+            "min_turns": int((declaration["turns"] or {}).get("min", 0)),
+            "max_turns": int((declaration["turns"] or {}).get("max", 0)),
+            "reference_answer": str(check.get("reference_answer") or ""),
+            "accepted_answers": list(check.get("accepted_answers") or []),
+        })
+        rubric = practice.synthesize_rubric(declaration)
+        practice.validate_declaration(
+            stimulus,
+            reference,
+            rubric,
+            evidence_target=str(check.get("evidence_target") or ""),
+            recipe=recipe,
+            practice_check_already=practice_check_already,
+        )
+        return {"stimulus": stimulus, "reference": reference, "rubric": rubric, "locale": locale}
     reference = _reference_payload(check)
     rubric = {"criteria": [dict(item) for item in check["rubric"]]}
     return {"stimulus": stimulus, "reference": reference, "rubric": rubric, "locale": locale}
@@ -8086,7 +8201,10 @@ def _author_section(
         state = "model_assessed"
     else:
         state = "needs_review"
-    check_payloads = _check_payloads(lesson, locale=locale)
+    check_payloads = _check_payloads(
+        lesson, locale=locale, recipe=recipe,
+        practice_check_already=_plan_has_practice(connection, plan_id),
+    )
     lesson_id = _new_id()
     check_id = str(review_target["check_id"]) if review_target is not None else _new_id()
     timestamp = _now_iso(now)

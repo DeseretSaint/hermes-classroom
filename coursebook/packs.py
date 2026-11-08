@@ -36,9 +36,17 @@ from typing import Any, Iterable, Mapping
 
 from . import segments
 from . import rubrics
-from .contracts import ContractError, contract, validate
+from .contracts import ContractError, contract, contract_as, validate_as, version_files
 
 CONTRACT_ID = "cb.pack"
+
+#: ``media[]`` entry cap per section, mirrored from ``lesson_document.MAX_MEDIA_PER_BLOCK``.
+MAX_MEDIA_PER_SECTION = 8
+#: ``media[].caption`` cap, mirrored from ``lesson_document.MAX_PURPOSE`` (the media child's
+#: ``purpose`` is filled from the segment text, so the two must not drift).
+MAX_MEDIA_CAPTION = 200
+#: Roles a ``media[]`` link may name, and the artifact kind each one materializes as.
+MEDIA_LINK_ROLES: dict[str, str] = {"narration": "audio", "visual": "visual"}
 
 #: Fields that must never appear in an exported or imported pack, by construction.
 EXCLUDED_BY_CONSTRUCTION: tuple[str, ...] = tuple(contract(CONTRACT_ID)["excluded_by_construction"])
@@ -110,23 +118,44 @@ def root_file() -> str:
     return str(contract(CONTRACT_ID)["root_file"])
 
 
-def export_allowlist() -> tuple[str, ...]:
+def export_allowlist(version: int | None = None) -> tuple[str, ...]:
     """Top-level manifest fields permitted in an exported pack.
 
     Export builds a fresh document from these fields; it never copies a stored manifest, which is
-    how personal notes, attempts and notebook text stay out by construction.
+    how personal notes, attempts and notebook text stay out by construction. *version* selects the
+    schema whose allowlist applies: a v1 pack re-exports as v1 and never gains ``media``.
     """
-    return tuple(contract(CONTRACT_ID)["properties"].keys())
+    document = contract(CONTRACT_ID) if version is None else contract_as(CONTRACT_ID, version)
+    return tuple(document["properties"].keys())
+
+
+def manifest_contract_version(document: Any) -> int:
+    """The declared ``contract_version`` of a pack manifest, bounded to the known set.
+
+    Peeked and type-checked before any schema is chosen, so a bogus value is a refusal naming the
+    version rather than a schema error at an arbitrary location.
+    """
+    version = document.get("contract_version") if isinstance(document, Mapping) else None
+    if not isinstance(version, int) or isinstance(version, bool):
+        raise PackRejected("pack manifest contract_version must be an integer")
+    known = version_files(CONTRACT_ID)
+    if version not in known:
+        raise PackRejected(
+            f"pack manifest declares contract_version {version}; this build accepts {sorted(known)}"
+        )
+    return int(version)
 
 
 def validate_manifest(document: Any) -> None:
-    """Validate a parsed pack manifest against ``cb.pack``.
+    """Validate a parsed pack manifest against the ``cb.pack`` version it declares.
 
-    Raises :class:`PackRejected` with the failing location. Callers must not adopt any content
-    until this returns cleanly.
+    A v1 document is judged by the frozen v1 schema and a v2 document by v2; neither inherits the
+    other's allowlist. Raises :class:`PackRejected` with the failing location. Callers must not
+    adopt any content until this returns cleanly.
     """
+    version = manifest_contract_version(document)
     try:
-        validate(CONTRACT_ID, document, what="pack manifest")
+        validate_as(CONTRACT_ID, version, document, what="pack manifest")
     except ContractError as exc:
         raise PackRejected(str(exc)) from exc
 
@@ -217,6 +246,7 @@ def build_manifest(
     files: Mapping[str, bytes],
     file_metadata: Mapping[str, Mapping[str, Any]],
     sources: list[dict[str, Any]] | None = None,
+    contract_version: int | None = None,
     **optional: Any,
 ) -> dict[str, Any]:
     """Assemble and validate a manifest from content bytes.
@@ -224,6 +254,10 @@ def build_manifest(
     *file_metadata* is ``path -> {mime, role, text_equivalent?, description?}``. Both sides must
     agree exactly: a declared file with no bytes, or bytes with no declared metadata, is an
     error rather than a silently partial pack.
+
+    *contract_version* defaults to the current ``cb.pack`` version. A builder that must keep
+    producing the older document (the bundled demo packs, until the release ships v2) passes it
+    explicitly; the schema, allowlist and stamp all follow that version.
     """
     declared = set(files)
     described = set(file_metadata)
@@ -250,7 +284,9 @@ def build_manifest(
 
     document: dict[str, Any] = {
         "contract": CONTRACT_ID,
-        "contract_version": int(contract(CONTRACT_ID)["x-contract-version"]),
+        "contract_version": int(
+            contract(CONTRACT_ID)["x-contract-version"] if contract_version is None else contract_version
+        ),
         "pack_id": pack_id,
         "pack_version": pack_version,
         "title": title,
@@ -264,7 +300,7 @@ def build_manifest(
     if sources is not None:
         document["sources"] = copy.deepcopy(sources)
     for key, value in optional.items():
-        if key not in export_allowlist() or key in document or key in PRIVATE_FIELDS:
+        if key not in export_allowlist(document["contract_version"]) or key in document or key in PRIVATE_FIELDS:
             raise PackRejected(f"cannot set manifest field {key!r}")
         document[key] = copy.deepcopy(value)
     document = with_content_hash(document)
@@ -409,6 +445,7 @@ def _minima_problems(manifest: Mapping[str, Any]) -> list[str]:
     for artifact in manifest["license"].get("per_artifact") or []:
         if str(artifact["path"]) not in paths:
             problems.append(f"per-artifact license names undeclared file {artifact['path']!r}")
+    declared = {str(entry["path"]): entry for entry in manifest["files"]}
     licensed = {str(artifact["path"]) for artifact in manifest["license"].get("per_artifact") or []}
     for entry in manifest["files"]:
         path = str(entry["path"])
@@ -420,6 +457,80 @@ def _minima_problems(manifest: Mapping[str, Any]) -> list[str]:
             problems.append(f"{path!r}: media needs a text equivalent for accessibility")
         if mime in MEDIA_MIME_TYPES and path not in licensed:
             problems.append(f"{path!r}: media needs a per-artifact license record")
+    problems.extend(_media_link_problems(manifest, declared))
+    return problems
+
+
+def section_paths(manifest: Mapping[str, Any]) -> set[str]:
+    """Every section file path any objective declares, i.e. the paths a lesson page can resolve."""
+    paths: set[str] = set()
+    for objective in manifest.get("objectives") or []:
+        for section in objective.get("sections") or []:
+            path = str(section.get("path") or "")
+            if path:
+                paths.add(path)
+    return paths
+
+
+def _media_link_problems(manifest: Mapping[str, Any], declared: Mapping[str, Any]) -> list[str]:
+    """M1–M7: the rules that travel with the ``media[]`` link (H-73 §4).
+
+    A link that no page can resolve is a defect, not a no-op: it is refused here rather than
+    silently dropped at import, because an author who wrote it believes the learner will hear it.
+    """
+    problems: list[str] = []
+    media = manifest.get("media")
+    if media is None:
+        return problems
+    version = manifest_contract_version(manifest)
+    if version < 2:
+        problems.append(f"contract_version {version} may not carry a media[] link")
+        return problems
+    objective_sections = section_paths(manifest)
+    seen: set[tuple[str, str]] = set()
+    per_section: dict[str, int] = {}
+    for index, entry in enumerate(media or []):
+        if not isinstance(entry, Mapping):
+            problems.append(f"media[{index}] must be an object")
+            continue
+        path = str(entry.get("path") or "")
+        section_path = str(entry.get("section_path") or "")
+        caption = str(entry.get("caption") or "")
+        # M1: the file must be declared, so its bytes, hash, licence and text equivalent exist.
+        file_entry = declared.get(path)
+        if file_entry is None:
+            problems.append(f"media[{index}]: {path!r} is not a declared file")
+            continue
+        role = str(file_entry.get("role"))
+        # M2: only a narration/visual file may be played, and the role must match the MIME.
+        if role not in MEDIA_LINK_ROLES:
+            problems.append(
+                f"media[{index}]: {path!r} has role {role!r}; only "
+                f"{sorted(MEDIA_LINK_ROLES)} may be linked to a lesson page"
+            )
+        # M3: the section must be one an objective declares, or no page can ever resolve the link.
+        if section_path not in objective_sections:
+            problems.append(
+                f"media[{index}]: section_path {section_path!r} is not a section of any objective"
+            )
+        # M4: the same file may link to several sections; the same pair twice is a defect.
+        pair = (path, section_path)
+        if pair in seen:
+            problems.append(f"media[{index}]: duplicate link of {path!r} to {section_path!r}")
+        seen.add(pair)
+        # M5: the caption becomes the media child's ``purpose`` and ``text_equivalent``.
+        if not 1 <= len(caption) <= MAX_MEDIA_CAPTION:
+            problems.append(
+                f"media[{index}]: caption is {len(caption)} characters; the media child cap is "
+                f"{MAX_MEDIA_CAPTION}"
+            )
+        # M6: the block a media child attaches to holds at most eight children.
+        per_section[section_path] = per_section.get(section_path, 0) + 1
+        if per_section[section_path] > MAX_MEDIA_PER_SECTION:
+            problems.append(
+                f"media[{index}]: section {section_path!r} links more than "
+                f"{MAX_MEDIA_PER_SECTION} media files"
+            )
     return problems
 
 
@@ -666,6 +777,7 @@ def build_export(
     """
     validate_manifest(manifest)
     validate_minima(manifest)
+    version = manifest_contract_version(manifest)
 
     declared = {str(entry["path"]): entry for entry in manifest["files"]}
     provided = {str(path): bytes(data) for path, data in files.items()}
@@ -686,10 +798,13 @@ def build_export(
     # measured length, before the bytes leave Coursebook. Import owns the refusal.
     warn_authoring_bound(manifest, provided)
 
-    source = {key: copy.deepcopy(manifest[key]) for key in export_allowlist() if key in manifest}
+    source = {key: copy.deepcopy(manifest[key]) for key in export_allowlist(version) if key in manifest}
     source.pop("files", None)
     source.pop("content_hash", None)
     source.pop("trust", None)
+    # The re-export keeps the version the source declared: a v1 pack must not acquire a v2 stamp
+    # (and therefore a different content hash) just because this build speaks v2.
+    source["contract_version"] = version
 
     source["pack_id"] = pack_id if pack_id is not None else str(manifest["pack_id"])
     source["pack_version"] = pack_version if pack_version is not None else str(manifest["pack_version"])

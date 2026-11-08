@@ -234,16 +234,40 @@ def audit_objective_texts(manifest: Mapping[str, Any], root: Any) -> None:
             if not pieces:
                 raise PackRejected(f"{path!r} holds no readable teaching text")
             teaching_segments += len(pieces)
-        needed = teaching_segments + checks
+        # H-73 §2.4.3: a linked media file becomes one more ``lesson_segments`` row on this page.
+        # The page is read with ``LIMIT 500``, so a section already at the budget would push its
+        # media past the cut and the tail — possibly the audio — would vanish silently.
+        media_segments = _linked_media_count(manifest, objective)
+        needed = teaching_segments + checks + media_segments
         if needed > budget:
             longest_path, longest_chars = _longest_section(objective, root)
+            detail = (
+                f"{teaching_segments} teaching from {len(plans)} section file(s) plus {checks} check "
+                f"prompt(s)"
+            )
+            if media_segments:
+                detail += f" plus {media_segments} linked media segment(s)"
             raise PackRejected(
                 f"objective {objective.get('objective_id')!r} needs {needed} lesson segments "
-                f"({teaching_segments} teaching from {len(plans)} section file(s) plus {checks} check "
-                f"prompt(s)), but a lesson page returns at most {budget}. Longest section file: "
+                f"({detail}), but a lesson page returns at most {budget}. Longest section file: "
                 f"{longest_path!r} at {longest_chars:,} characters (cb.rpc caps one segment at "
                 f"{limit:,} characters). Make the section files shorter."
             )
+
+
+def _linked_media_count(manifest: Mapping[str, Any], objective: Mapping[str, Any]) -> int:
+    """How many ``media[]`` links belong to this objective's sections.
+
+    Counted per link, not per distinct file: each link writes one row, even when the same bytes
+    are linked to two sections.
+    """
+    paths = {str(section.get("path") or "") for section in objective.get("sections") or []}
+    paths.discard("")
+    return sum(
+        1
+        for entry in manifest.get("media") or []
+        if isinstance(entry, Mapping) and str(entry.get("section_path") or "") in paths
+    )
 
 
 def _longest_section(objective: Mapping[str, Any], root: Any) -> tuple[str, int]:

@@ -13,6 +13,10 @@ merge of `e564e07` and `ce9fcab`, H-135). Every current-tree number in this file
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
+On the H-120a branch the backend carries `cb.db` v11 (schema v11, migrations `0001`-`0011`), the
+conversation-practice amendment; the measurement numbers in the rows below are still the
+`b33a42f` ones and are re-derived on the merged tree by the release-evidence pass.
+
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 license exists, no live Desktop window has driven this exact tree, and the operator publication gate

@@ -1,6 +1,9 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v14** (H-53 `observation.record`, additive over H-08 authored-course export at v13,
+Status: **frozen at v16** (H-120 bounded conversation practice: `cb.rpc` v16 appends the four
+`practice.*` commands and one optional `check_stimulus.practice` declaration, and `cb.db` v11 adds
+the two practice tables; v15 = H-139 job `activity` read model, a reference refresh over
+v14 and `cb.jobs` v5 additively adds `job.activity`; v14 = H-53 `observation.record`, additive over H-08 authored-course export at v13,
 the H-18 `lesson_document` `lang`/`direction`
 addition, and the H-26b syllabus read projection inside v13; v12 = H-26 student syllabus intake,
 v11 = H-21 slice A, v10 = H-01, v9 = M3-B1,
@@ -19,20 +22,36 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v14.json` | 14 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v10.json` | 10 | Cinder | migrations, every command, evidence views |
-| `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
-| `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
+| `cb.rpc` | `contracts/rpc.v16.json` | 16 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v11.json` | 11 | Cinder | migrations, every command, evidence views |
+| `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
+| `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v13** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
-`rpc.v12.json` and `rpc.v13.json`), the
-v1 **to v9** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
-`db.v8.json` and `db.v9.json`), and the v1
-**to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v13.json`, `db.v9.json`,
-`errors.v3.json` and `jobs.v3.json`.
+The v1 **to v15** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json` and `rpc.v15.json`), the
+v1 **to v10** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
+`db.v8.json`, `db.v9.json` and `db.v10.json`), and the v1
+**to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v15.json`, `db.v10.json`,
+`errors.v3.json` and `jobs.v4.json`.
+
+`cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
+(`pack-manifest.v2.json`) both live on disk, and a pack is validated, exported and allowlisted
+against the `contract_version` it declares. v2 adds one optional root `media[]` array that links a
+declared `narration`/`visual` file to the section that may play it, with a short caption; a file
+not named there stays stored evidence only, exactly as every v1 pack behaves. No `cb.rpc` method,
+`cb.db` column or migration changes (H-137 implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+
+The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v15) and
+`cb.projection` v1 resolve `$ref` targets to `pack-manifest/v1`; naming v2 current would either
+break those references or require editing a frozen wire contract. v2 is therefore an accepted
+*document* version, selected per pack by `contract_version`, not a change to the cross-document
+inventory. Only v2 documents may carry `media[]` (v1's `additionalProperties: false` refuses it).
+A pack author who wants playback writes `contract_version: 2`; `packs.build_manifest` accepts that
+explicitly, while its default stays v1 so the bundled demo packs keep shipping v1
+(`docs/PACK-MEDIA-PLAYBACK.md` §13 ordering).
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -1584,6 +1603,7 @@ Consequences for clients (H-117 and the retry surface):
 | v13 | 2026-11-07 | H-08 additive amendment: a learner-authored course packages itself. Two methods appended (`course.export.read`, `course.export`) to the 61 v12 methods, so a course created from a goal can export instead of only a pack-backed course or a Parent Studio blueprint; `pack.export` keeps the pack-backed bytes with its own allowlist and unchanged behaviour. The gate is an approved plan plus every lesson page in `validated` state; a stored active final approval is honoured as a hash fence, and the caller's reviewed `expected_content_hash` is the second. No new cb.db table, column, migration, error code, job kind or vocabulary value. Numbered v13 because v11 is H-21's unit contract and v12 is H-26's syllabus intake; `rpc.v12.json` is pinned by sha256. |
 | v13 (H-18) | 2026-11-07 | Additive inside v13: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b was authored against v11 and landed there on its own branch; in the union it lands inside v13 rather than opening a version, because v11 is the frozen H-21 unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. `contracts/rpc.v11.json` is byte-identical to its shipped snapshot. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
 | v14 | 2026-11-07 | H-53 additive amendment (contract and migration only). One method appended, `observation.record`, so the layer-1 observation `domain.record_observation` has written since CB-002 is reachable from a client — `docs/ASSESSMENT-BREADTH.md` §11 **B-2**: `self_reported`/`parent_reported` are frozen classes that no learner could produce. Request: `enrollment_id`, `objective_id`, `evidence_class` (the full six-label vocabulary; the **kernel** refuses `cold`/`hinted`/`answer_shown`/`override` with `POLICY_VIOLATION`) and optional `note` (≤ 1000 characters). Response: `evidence_id`, `evidence_class`, `revision`. Envelope: `idempotency_key`, no `expected_revision`. cb.db **v9** adds nullable `evidence.note` via migration 0009, additive with no backfill and no row rewrite. 64 RPC methods; no new error code, job kind, vocabulary value, check kind, answer kind, upload path or learner-media retention. `rpc.v13.json` and `db.v8.json` are pinned by sha256. The handler, the API registration and the UI are follow-up cards; this card ships the contract, the migration and the tests that pin them. |
+| v16 | 2026-11-07 | H-120 additive amendment (contract, migration and the grading lane's router). Four methods appended to the 64 v15 methods — `practice.start`, `practice.state`, `practice.end`, `practice.cancel` — plus one optional `check_stimulus.practice` declaration, so a bounded conversation practice is a `quiz` check the learner actually talks through. 68 RPC methods. Grading is provider-free: `practice.end` hands the stored learner turns to `conversation.grade_transcript` through the same `_commit_attempt` path `attempt.submit` uses, and `attempt.submit` on a practice check is refused `POLICY_VIOLATION` / `practice_requires_practice_end`, so one chat line can never produce a verdict. cb.db **v11** adds `practice_sessions` and `practice_turns` via migration 0011, additive with no backfill; practice turns are learner-owned and never reach `pack.export` or `course.export`. No new error code, job kind, vocabulary value, answer kind, evidence class or evidence target; the new refusals ride `error.details.reason`. Authored as a v15 on `wt/h120-practice`, but v15 was already frozen by H-139 when that branch reached master, so the amendment took the next free number instead of editing a frozen document. `rpc.v15.json` and `db.v10.json` are pinned by sha256. |
 | no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
@@ -1817,3 +1837,119 @@ evidence genuinely could not be persisted, and it is stated rather than implied.
 asserts the turn still returns `None`, the loss is attributed to the run, `binding.get` reports it,
 a transient failure recovers without a row, and a normal turn still writes exactly one segment.
 `tests/test_contracts.py::DbV10AmendmentTest` pins the additive schema and the open binding object.
+
+## v15 delta (H-139) — a waiting pane can read the durable job stage
+
+The Pane says "may take several minutes" and then shows nothing, so a long generation is
+indistinguishable from breakage (H-117, `docs/SILENT-FAILURES.md` F9/F18). Every fact the pane
+needs was already durable — `jobs.state`, `jobs.progress_json`, `jobs.created_at`/`updated_at`
+and the `usage_events` rows whose `operation_id` is the job id — but no single read exposed it.
+**The wire does not gain a method.** `jobs.get` already returns the job; `cb.jobs` v5 adds one
+required object to it:
+
+| Field | Source (all durable) |
+|---|---|
+| `activity.stage` | the last checkpointed stage (`progress_json.stage`), else the queued brief's `stage`, else `null` |
+| `activity.stage_source` | `checkpoint` / `brief` / `queued` / `none` — which of those answered |
+| `activity.steps_done`, `steps_total` | `progress_json`; `steps_total` stays `null` until the backend knows it |
+| `activity.elapsed_seconds` + `elapsed_basis` | `created_at` to now while live; `created_at` to `updated_at` once the row rests |
+| `activity.can_cancel`, `can_retry`, `terminal` | the frozen `cb.jobs` transition table, not a UI guess |
+| `activity.message`, `last_progress_at` | the checkpoint message and the instant it was written |
+| `activity.usage` | `usage_events` for this `operation_id`: calls, the four token counts, `cost_usd`, `unknown_cost_calls`, artifacts, providers, models |
+
+**No percentage.** There is no `percent` field and no computed rate: `steps_done`/`steps_total`
+are the real counts, and the total is `null` when the plan is not known. A client that wants a
+bar must handle `steps_total: null` honestly.
+
+**`readable` and the named failure.** `activity.readable` is `false` only when a durable JSON
+column for the row cannot be parsed; `stage` and both step counts are then `null` (never `0`,
+which would read as "not started"). `jobs.get` is stricter than `jobs.list`: an unreadable
+`progress_json`/`brief_json` raises `INTERNAL_ERROR` with `details.reason =
+"job_progress_unreadable"` and `details.column` naming the column, and an unreadable store raises
+`details.reason = "job_store_unreadable"`. `jobs.list` keeps its shape and marks the single row
+`readable: false`, because one corrupt job must not blank the whole list.
+
+**No storage change.** `cb.db` stays **v10**: activity is a read of existing columns and rows.
+
+**Wire refresh.** `jobs.list`'s item `$ref` moves from `cb.jobs/v4#/job` to `cb.jobs/v5#/job`,
+which is why `cb.rpc` is **v15**. v15 is v14 byte-for-byte apart from `$id`, `x-contract-version`,
+`x-supersedes`, the description and that one `$ref`; the method enum, every request and every
+other response field are unchanged. `cb.errors` stays **v4**. The method count does not move.
+
+**Tests.** `tests/test_job_progress.py` covers every stage (`plan`, `unit_sections`, `lessons`,
+`syllabus_parse`, a checkpointed stage), a finished job, a provider failure, an interrupted job,
+a cancelled job, idempotent cancellation, backend-sourced usage (including unknown token/cost
+fields) and both named read failures. `tests/test_contracts.py::V15AmendmentTest` pins the
+superseded v14 bytes and the additive v5 job shape.
+
+## v16 delta (H-120) — a bounded conversation practice, graded from its transcript
+
+A conversation practice is a **check property**, not a lesson kind (`docs/CONVERSATION-PRACTICE.md`
+§2): a `quiz` check whose stimulus carries a stored `stimulus.practice` declaration and whose
+`checks.reference_json` declares `kind = "conversation"`. v16 appends four commands to the 64 v15
+methods — 68 RPC methods — plus one optional property on `check_stimulus`. Every v1-v15 method name
+and every v1-v15 request/response payload is preserved unchanged, including v15's `cb.jobs` v5
+reference refresh.
+
+| Method | Request (closed) | Envelope | Response | What it may never do |
+|---|---|---|---|---|
+| `practice.start` | `enrollment_id`, `objective_id` | `expected_revision` | `session_id`, `check_id`, `check_version`, `state`, `revision`, `session_revision`, `turns{min,max}`, `transcript[]` | start a second session for the same run and check, or start on a check that is not an open, audited practice |
+| `practice.state` | `enrollment_id`, `objective_id` | none — a read | `session_id`, `check_id`, `check_version`, `state`, `learner_turns`, `remaining`, `awaiting_tutor`, `transcript[]`, `attempt_id`, `verdict`, `criteria[]` | report `state: none` as an error, or invent a verdict for an ungraded session |
+| `practice.end` | `enrollment_id`, `check_id`, `check_version`, `attempt_nonce` | `expected_revision` | `attempt_id`, `verdict`, `evidence_class`, `criteria[]`, `next_action`, `revision`, `transcript_sha256`, `learner_turns`, `session_revision` | grade a cancelled or detached session; mint a second attempt for the same `attempt_nonce` |
+| `practice.cancel` | `enrollment_id`, `check_id` | `expected_revision` | `session_id`, `state`, `revision`, `session_revision` | delete a turn, or cancel a session that is already graded |
+
+**Grading is provider-free.** `practice.end` reads the stored *learner* turns and the declared
+targets/turn range, and hands them to `coursebook.conversation.grade_transcript` through the same
+`domain._commit_attempt` path `attempt.submit` uses. The reference kind is `conversation`, which is
+routed in `grading.grade` **before** the open lane and never consults `configure_aux_grader`
+(`docs/GRADING-LANES.md` §2.1). Tutor text is never inspected, so nothing the model says can produce
+a pass. A reference the grader cannot read raises, and the caller persists `needs_retry` and
+advances nothing.
+
+**One chat line is not a verdict.** `attempt.submit` on a practice check is refused
+`POLICY_VIOLATION` / `error.details.reason = "practice_requires_practice_end"`, so a verdict can only
+come from a bounded session that was actually held. The other practice refusals ride the same
+channel (`practice_not_a_practice_check`, `practice_not_bound`, `practice_not_open`,
+`practice_already_graded`, `practice_not_available_for_recipe`, `practice_malformed_declaration`);
+no error code is added to `cb.errors`, which stays **v4**.
+
+**No new vocabulary.** No answer kind, verdict, evidence class, evidence target, next action or job
+kind is added, and `cb.jobs` stays **v5**: the four methods write no job and open no lifecycle —
+turns arrive through the existing chat hook. No percentage, score or mastery claim exists on the
+wire.
+
+**Why v16 and not v15.** The amendment was authored as a v15 on `wt/h120-practice`. By the time that
+branch reached current master, **v15 was already frozen by H-139** (the job `activity` read model),
+so `contracts/rpc.v15.json` is immutable history and the amendment took the next free number.
+`rpc.v15.json` is byte-identical to its shipped bytes (pinned by sha256); `x-supersedes` names
+`.../rpc/v15`. If a reader of this document is looking for "the v15 practice delta", this is it.
+
+**Regression guard.** `tests/test_contracts.py::V16AmendmentTest` fails if a v15 method or payload
+moves, if a fifth method appears, if `check_stimulus` gains anything but `practice`, if the echo
+drifts from 16, if the envelope fence is dropped, or if the two practice tables or migration 0011
+disappear. `tests/test_conversation_practice.py` drives the whole session through the real dispatcher
+against a migrated database.
+
+## cb.db v11 delta (H-120) — a practice session and its transcript
+
+`cb.db` **v11** is v10 plus exactly two tables, created by
+`coursebook/migrations/0011_conversation_practice.sql`. Additive, forward-only, no backfill: a
+pre-v11 database had no practice session, which is true because nothing could create one.
+
+| Table | Shape | What it may never do |
+|---|---|---|
+| `practice_sessions` | `id`, `enrollment_id`, `objective_id`, `check_id`, `check_version`, `lesson_run_id`, `state` (`active`/`graded`/`cancelled`/`abandoned`), nullable `attempt_id`, `revision`, `started_at`, nullable `ended_at`, nullable `end_reason` | store a "turn limit reached" flag (it is derived from the learner turns), or hold an `attempt_id` that `practice.end` did not set |
+| `practice_turns` | `id`, `session_id`, `ordinal`, `speaker` (`learner`/`tutor`), `text`, nullable `nonce`, `created_at` | be edited or deleted; a unique `(session_id, ordinal)` and a unique `(session_id, nonce)` keep a retried hook from double-appending a learner turn |
+
+**Learner-owned data.** Practice turns are the learner's own words. `pack.export` and
+`course.export` never include them, and `lesson_segments` is not a writer of them — a practice is
+not teaching prose and must not appear on the Textbook page as a second copy of the conversation.
+A detached binding or a fresh lesson run marks an active session `abandoned` in the same
+transaction, so a detached chat can never grade a practice.
+
+**No `cb.rpc` consequence beyond the four methods above.** `cb.errors` stays v4 and `cb.jobs` stays
+v5. No v10 table, column, index or unique key is dropped, retyped or rewritten.
+
+**Regression guard.** `tests/test_contracts.py::V16AmendmentTest` pins the two added tables, every
+v10 column and index, the migration's forward-only statements, and the byte-identity of
+`db.v10.json`. `tests/test_conversation_practice.py` runs the migration against a real database.
