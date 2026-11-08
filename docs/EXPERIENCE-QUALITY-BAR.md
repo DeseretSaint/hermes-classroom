@@ -254,6 +254,35 @@ What we do not take:
 - Multiple progression systems stacked because a game has them.
 - Decoration that has no meaning in the subject or the learning act.
 
+### 6.1 The game layer we may build
+
+| Mechanic | What it means here | Source |
+|---|---|---|
+| Self-determination | Competence: the path shows what the learner can now do. Autonomy: the learner sets pace and session length. Relatedness: a shared parent/learner view, not a public league. One or two metrics; concrete counts beat points. | Q240 |
+| Streaks, if ever used | Only with a durable daily fact, a freeze/repair path and "total practice days"; never zero-reset or loss-framed. Not in the first slice. | Q240 |
+| Progression as story | Unlocks are path milestones and capability statements ("you can now order food"), not XP thresholds. A session is a 3–8 minute arc: enter, teach, check, settle, exit. | storyteller-research |
+| Show, don't tell | The path and checkpoint embody the idea; no copy names the theme. Choice must change what is practised. | storyteller-research |
+| Feel beats | Design the moment before and after the answer: preview, attention cue, commit, settle. | game-designer-research |
+| Juice and transitions | One authored functional beat per commit; semantic and low-stim. Audio only when it confirms a real learning event, off by default. No shake, damage numbers or coin SFX. | JP-Game-OSS-Quality-Stack |
+| Mistake tolerance | Free retry, no shaming, specific correction. A wrong answer becomes a review item, not a damaged save. | humanifier-research |
+| Anti-generic test | If the design could be reskinned to medieval Europe, redesign it. | game-designer-research |
+
+UI never invents a learning mechanic. A game element may visualise a real evidence fact or lower
+the cost of the next repetition; if it creates a number the backend does not record, it is fake.
+
+### 6.2 Rulings on contradictions
+
+| Tension | Ruling |
+|---|---|
+| "No XP, streaks, leagues or levels ever" vs the owner's game baseline | The ban is on fabricated facts, not motivation. SDT-backed mechanics are allowed only when the fact exists. No XP/levels/leagues in the first slice; conditional streak is deferred. |
+| Owner wants a game; the constraint is "game = learning" | No currency, shop, energy, loot or XP economy. The path, checkpoint and evidence are the game. |
+| Four to six type sizes vs many identity roles | Budget per route, not a token census. Roles may reuse a step; labels stay at least 0.75rem. |
+| No card rows vs the shelf | Rows on rules, one featured element, one line of labelled facts. Cards only for a small heterogeneous shelf; never nested. |
+| "No motion by default" vs "motion must read as the intended physical act" | No decorative motion; every state change gets next-frame feedback and at most one authored functional beat. |
+| Plain language vs college-level subject matter | The plain-language rule governs chrome, instructions and errors; the subject keeps its register. |
+| A "profile slot" vs the existing data model | A classroom slot is course + active enrollment. Do not invent a learner profile or avatar; true multi-learner evidence is a later data-model card. |
+| The seal as identity vs the owner's confusion | Retire it from primary surfaces. A mark that needs explanation is not doing an identity job. |
+
 ## 7. Required shape of the first experience redesign
 
 Owner clarification: the Hollow Knight reference means **a home/launcher screen only**, not an RPG
