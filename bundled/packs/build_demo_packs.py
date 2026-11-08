@@ -26,6 +26,10 @@ from coursebook import packs  # noqa: E402  (path is set above for direct execut
 
 JAPANESE = ROOT / "japanese-affection-context-l0"
 PARENT = ROOT / "parent-measurement-practice"
+#: H-196 — a third real fixture so the Workshop storefront is built from real packs, not invented
+#: cards. It teaches the pack contract this repository implements; every claim is a file in this
+#: tree, and the pack bundles no third-party text or media.
+TECHNICAL = ROOT / "technical-demo-pack"
 
 FETCHED_AT = "2026-11-06"
 ORIGINAL = (
@@ -671,6 +675,143 @@ def parent_manifest() -> dict:
     )
 
 
+def technical_manifest() -> dict:
+    paths = [
+        "content/section-01-anatomy.md",
+        "content/section-02-labels.md",
+        "content/source-notes.md",
+    ]
+    files = {path: (TECHNICAL / path).read_bytes() for path in paths}
+    metadata = {
+        "content/section-01-anatomy.md": {"mime": "text/markdown", "role": "section"},
+        "content/section-02-labels.md": {"mime": "text/markdown", "role": "section"},
+        "content/source-notes.md": {"mime": "text/markdown", "role": "source_note"},
+    }
+    objectives = [
+        {
+            "objective_id": "obj-manifest-anatomy",
+            "ordinal": 1,
+            "title": "Read what a pack manifest declares",
+            "evidence_target": "comprehension",
+            "evidence_criteria": [
+                "Names the field that lists every shipped file",
+                "Says what each file record must match",
+            ],
+            "estimated_minutes": 6,
+            "sections": [
+                {
+                    "section_id": "sec-anatomy",
+                    "title": "Anatomy of a pack",
+                    "path": "content/section-01-anatomy.md",
+                }
+            ],
+            "checks": [
+                {
+                    "check_id": "chk-anatomy-files-1",
+                    "version": 1,
+                    "evidence_target": "comprehension",
+                    "stimulus": (
+                        "A pack's manifest declares every file it ships, each with a path, mime, "
+                        "size and sha256. Which manifest field holds that list?"
+                    ),
+                    "rubric": [
+                        "Names files[]",
+                        "Does not name objectives[] or sources[]",
+                        "Says each record's bytes must match its declared size and hash",
+                    ],
+                    "reference_answer": "the files list",
+                    "accepted_alternatives": ["files", "the files field", "files array", "file list"],
+                    "locale": "en-US",
+                    "audit_state": "unreviewed",
+                }
+            ],
+        },
+        {
+            "objective_id": "obj-label-meaning",
+            "ordinal": 2,
+            "title": "Say what an unreviewed check record means",
+            "evidence_target": "discrimination",
+            "evidence_criteria": [
+                "Separates a hash match from a human review",
+                "Reads audit_state as a recorded fact about review",
+            ],
+            "estimated_minutes": 6,
+            "sections": [
+                {
+                    "section_id": "sec-labels",
+                    "title": "What a label can and cannot prove",
+                    "path": "content/section-02-labels.md",
+                }
+            ],
+            "checks": [
+                {
+                    "check_id": "chk-label-unreviewed-1",
+                    "version": 1,
+                    "evidence_target": "discrimination",
+                    "stimulus": (
+                        "A pack's check carries audit_state \"unreviewed\". What does that record "
+                        "mean, and what does it not mean?"
+                    ),
+                    "rubric": [
+                        "Says no human review of that check is recorded",
+                        "Does not read it as a failed or unsafe pack",
+                        "Does not read a matching hash as a human review",
+                    ],
+                    "reference_answer": "that check has no recorded human review",
+                    "accepted_alternatives": [
+                        "unreviewed",
+                        "no human review",
+                        "no human review recorded",
+                        "nobody has reviewed it",
+                    ],
+                    "locale": "en-US",
+                    "audit_state": "unreviewed",
+                }
+            ],
+        },
+    ]
+    return packs.build_manifest(
+        pack_id="technical-demo-pack",
+        pack_version="1.0.0",
+        title="Technical demo: reading a pack before you install it",
+        subtitle="Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
+        recipe="one_off",
+        locale="en-US",
+        level_label="Technical · for pack readers",
+        minimum_coursebook_version="0.1.0",
+        contract_version=1,
+        license={
+            "id": "CC0-1.0",
+            "redistribution": "local_only",
+            "note": (
+                "Original Coursebook-authored teaching text about this repository's own pack "
+                "contract. No third-party text or media is bundled; the repository files it cites "
+                "are read locally by the pack maintainer, not redistributed."
+            ),
+        },
+        attribution="Original teaching text: Coursebook demo pack. No third-party text or media is bundled.",
+        contributors=[{"name": "Coursebook demo pack", "role": "author"}],
+        objectives=objectives,
+        files=files,
+        file_metadata=metadata,
+        content_notes=[
+            "Every claim in this pack is about the cb.pack contract as implemented in this repository "
+            "(contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, "
+            "contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and "
+            "quotes no third-party text.",
+            "The pack claims no human review and no native-speaker or expert review: its checks are "
+            "recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
+            "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+        ],
+        safety_notes=["Text only. No media, no external services, no learner data."],
+        accessibility_notes=[
+            "Plain markdown; every field name is written as literal text so it survives a screen reader.",
+            "No diagrams and no media: nothing here depends on seeing an image or hearing audio.",
+        ],
+        default_dials={"pace": "light", "depth": "survey", "assessment": "self_check", "autonomy": "independent"},
+    )
+
+
 def write_manifest(directory: Path, manifest: dict) -> Path:
     path = directory / "pack.json"
     text = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
@@ -681,7 +822,11 @@ def write_manifest(directory: Path, manifest: dict) -> Path:
 
 def main() -> int:
     (JAPANESE / "content" / "relationship-map.png").write_bytes(relationship_map_png())
-    for directory, builder in ((JAPANESE, japanese_manifest), (PARENT, parent_manifest)):
+    for directory, builder in (
+        (JAPANESE, japanese_manifest),
+        (PARENT, parent_manifest),
+        (TECHNICAL, technical_manifest),
+    ):
         manifest = builder()
         path = write_manifest(directory, manifest)
         print(f"{path.relative_to(ROOT.parent.parent)}  {manifest['content_hash']}")
