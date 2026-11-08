@@ -1444,7 +1444,7 @@ function PackPreview({ preview, existing }) {
           }),
           jsx(PackReviewLine, {
             label: 'Files',
-            value: `${preview.integrity.file_count} file(s) · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
+            value: `${plural(preview.integrity.file_count, 'file', 'files')} · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
           }),
           jsx(PackReviewLine, {
             label: 'Hashes match the manifest',
@@ -1522,7 +1522,7 @@ function PackPreview({ preview, existing }) {
                     jsx(sdk.Badge, {
                       size: 'xs',
                       variant: 'outline',
-                      children: `${(objective.checks || []).length} check(s)`
+                      children: plural((objective.checks || []).length, 'check', 'checks')
                     })
                   ]
                 }),
@@ -4207,7 +4207,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
           jsx(StatusRow, {
             label: 'Evidence',
             value: `${Number((row.evidence_summary || {}).independent || 0)} independent`,
-            detail: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives · ${Number((row.evidence_summary || {}).review_due || 0)} due`
+            detail: `${plural(Number((row.evidence_summary || {}).total_objectives || 0), 'objective', 'objectives')} · ${plural(Number((row.evidence_summary || {}).review_due || 0), 'due', 'due')}`
           }),
           jsx(StatusRow, {
             label: 'Last change',
@@ -6568,7 +6568,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
       needsDecision.length
         ? jsx('div', {
             className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: `${needsDecision.filter((row) => decisions[row.itemId]).length} of ${needsDecision.length} items have a decision. Every partly covered, uncovered or conflicting item needs one before the mapping is approved.`
+            children: `${needsDecision.filter((row) => decisions[row.itemId]).length} of ${needsDecision.length} ${needsDecision.length === 1 ? 'item has' : 'items have'} a decision. Every partly covered, uncovered or conflicting item needs one before the mapping is approved.`
           })
         : null,
       notice ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: notice }) : null,
@@ -7114,6 +7114,45 @@ const LEARNING_VIEWS = [
   { id: 'sources', label: 'Sources' },
   { id: 'export', label: 'Export' }
 ]
+
+const PRIMARY_SURFACE_OF_VIEW = {
+  overview: 'overview',
+  textbook: 'learn',
+  guided: 'learn',
+  field_quest: 'learn',
+  learn: 'learn',
+  notebook: 'notebook',
+  evidence: 'evidence'
+}
+
+/** Which of the four primary course surfaces a legacy view id belongs to. */
+function primarySurfaceFor(view) {
+  return PRIMARY_SURFACE_OF_VIEW[view] || view
+}
+
+/** The four primary course surfaces. Learn is one surface, not three peer tabs. */
+const COURSE_PRIMARY_TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'learn', label: 'Learn' },
+  { id: 'notebook', label: 'Notebook' },
+  { id: 'evidence', label: 'Evidence' }
+]
+
+/**
+ * Everything else, behind one `More` disclosure.
+ *
+ * Plan, Sources and Export are reference/administration; the graded-attempt record is an
+ * inspector of what was already recorded, not a learning surface. Export only appears when the
+ * backend advertises `course.export.read`.
+ */
+function courseMoreTabs(supports) {
+  return [
+    { id: 'quizzes', label: 'Attempts' },
+    { id: 'plan', label: 'Plan' },
+    { id: 'sources', label: 'Sources' },
+    supports && supports('course.export.read') ? { id: 'export', label: 'Export' } : null
+  ].filter(Boolean)
+}
 
 /** A section or quiz row is never colour-only: this is the text that carries the state. */
 const OBJECTIVE_STATE_COPY = {
@@ -9612,6 +9651,18 @@ function CbStatePill({ state, label, phone }) {
 }
 
 /**
+ * One plural branch for every count the learner reads.
+ *
+ * `1 objectives`, a plural decision count and a parenthesised plural placeholder are the same
+ * defect: a plural
+ * template with no singular case. Every surface calls this instead of writing its own `=== 1`.
+ */
+function plural(count, one, many) {
+  const value = Number(count) || 0
+  return `${value} ${value === 1 ? one : many}`
+}
+
+/**
  * The recorded facts of a course, as one calm line rather than a metric block: the number and its
  * caption sit in reading order, separated by a rule. Only facts the backend read produced appear.
  */
@@ -9656,10 +9707,34 @@ function HeroFacts({ facts, phone }) {
  * a 2px underline on the current one. It never hides a surface behind a select.
  */
 function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
+  const list = (options || []).filter(Boolean)
+  // The row is one tab stop with a roving tabindex, so the arrow keys must work and the focused
+  // tab must show a ring of its own (the host resets the UA outline). Left/Right wrap, Home/End
+  // jump; the focused tab moves with the selection instead of being left behind.
+  const [focusId, setFocusId] = useState(null)
+  const onKeyDown = (event) => {
+    const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
+    if (!keys.includes(event.key)) return
+    const index = list.findIndex((option) => option.id === value)
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? list.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length
+    const next = list[nextIndex]
+    if (!next) return
+    event.preventDefault()
+    setFocusId(next.id)
+    onChange(next.id)
+    const node = event.currentTarget.querySelector(`[data-cb-tab="${next.id}"]`)
+    if (node && typeof node.focus === 'function') node.focus()
+  }
   return jsx('nav', {
     'aria-label': ariaLabel || 'Course surfaces',
     'data-cb-learning-tabs': value,
     role: 'tablist',
+    onKeyDown,
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -9668,7 +9743,7 @@ function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
       borderBottom: '1px solid var(--cb-rule)',
       minWidth: 0
     },
-    children: (options || []).map((option) => {
+    children: list.map((option) => {
       const current = option.id === value
       const mode = option.mode ? cbModeFor(option.id) : null
       return jsx(
@@ -9678,8 +9753,17 @@ function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
           role: 'tab',
           'aria-selected': current ? 'true' : 'false',
           'data-cb-tab': option.id,
+          'data-cb-tab-focus': focusId === option.id ? 'ring' : 'idle',
+          tabIndex: current ? 0 : -1,
           className: '!h-auto !px-0 !py-0',
           onClick: () => onChange(option.id),
+          onFocus: () => setFocusId(option.id),
+          onBlur: () => setFocusId((id) => (id === option.id ? null : id)),
+          style: {
+            outline: focusId === option.id ? '2px solid var(--cb-accent)' : 'none',
+            outlineOffset: '2px',
+            borderRadius: '2px'
+          },
           children: jsx('span', {
             style: {
               display: 'inline-flex',
@@ -11247,52 +11331,40 @@ function questProgressLabel(summary) {
 }
 
 /**
+ * The one line a mission shows.
+ *
+ * Field Quest is a path, not a second reader: the brief is the block's authored `short` prose cut
+ * to its first sentence, and the full prose, media and pronunciation studio stay in Textbook. The
+ * line is also painted as a single row (`nowrap` + ellipsis), so a narrow window never turns the
+ * pointer back into a prose block.
+ */
+function missionBriefLine(block, checkLabels) {
+  const text = withoutCheckLabels(block.short || block.deep, checkLabels) || ''
+  const flat = String(text).replace(/\s+/g, ' ').trim()
+  if (!flat) return ''
+  const stop = flat.search(/[.!?](\s|$)/)
+  const first = stop >= 0 ? flat.slice(0, stop + 1) : flat
+  return first.length > 140 ? `${first.slice(0, 137).trimEnd()}…` : first
+}
+
+/**
  * One mission on the quest spine: a numbered node, the role word, a serif title, one line of what
- * the learner does, and one tertiary way into the same block in Textbook. A checkpoint keeps the
- * same node but gains the `lamp-soft` check field. Nothing is locked, nothing is scored, and the
- * clickable affordance is the whole brief — not a grey bar under every mission
- * (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §4.7, §5.9).
+ * the learner does, and one way into the same block in Textbook. A checkpoint keeps the same node
+ * but gains the `lamp-soft` check field. Nothing is locked, nothing is scored, and the row holds
+ * exactly one action — the whole row is not a second, invisible control.
  */
 function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock, pronunciation }) {
   const block = mission.block
-  const body = withoutCheckLabels(block.short || block.deep, checkLabels)
+  const brief = missionBriefLine(block, checkLabels)
   const checkpoint = mission.checkpoint
   const stateWord = checkpoint ? 'Checkpoint' : 'Mission'
   const tone = checkpoint ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
-  const headingId = `cb-mission-headline-${block.id}`
-  // The mission's heading and prose are the brief. Clicking anywhere outside an actual control
-  // hands the same block to Textbook, so a learner who taps the brief is not left wondering
-  // whether the card is decorative. Nested controls keep their own behaviour.
-  const openMission = (event) => {
-    const target = event && event.target
-    if (
-      target &&
-      typeof target.closest === 'function' &&
-      target.closest('button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="radio"]')
-    ) {
-      return
-    }
-    if (onReadInTextbook) onReadInTextbook(block.id)
-  }
-  const openMissionOnKey = (event) => {
-    if (event.target !== event.currentTarget) return
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      if (onReadInTextbook) onReadInTextbook(block.id)
-    }
-  }
   return jsxs('li', {
     'data-cb-mission': block.id,
     'data-cb-mission-index': String(mission.index + 1),
     'data-cb-mission-role': block.role,
     'data-cb-mission-checkpoint': checkpoint ? 'true' : 'false',
     'data-cb-mission-check': checkpoint && block.check_id ? block.check_id : '',
-    tabIndex: 0,
-    role: 'link',
-    'aria-label': `Open mission ${mission.index + 1}, ${block.headline}, in Textbook`,
-    title: 'Open this mission in Textbook',
-    onClick: openMission,
-    onKeyDown: openMissionOnKey,
     style: {
       position: 'relative',
       display: 'flex',
@@ -11302,8 +11374,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
       background: checkpoint ? 'var(--cb-lamp-soft)' : 'transparent',
       borderTop: checkpoint ? '1px solid var(--cb-lamp)' : 'none',
       maxWidth: '46rem',
-      boxSizing: 'border-box',
-      cursor: 'pointer'
+      boxSizing: 'border-box'
     },
     children: [
       // The spine: a node per mission and a hairline that runs through the whole list.
@@ -11336,85 +11407,92 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
         ]
       }),
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.2rem 0.75rem' },
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
         children: [
-          jsx('h3', {
-            id: headingId,
-            style: {
-              margin: 0,
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.heading,
-              fontWeight: 600,
-              lineHeight: 1.25,
-              color: 'var(--cb-ink)',
-              overflowWrap: 'anywhere'
-            },
-            children: block.headline
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.2rem 0.75rem' },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.heading,
+                  fontWeight: 600,
+                  lineHeight: 1.25,
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: block.headline
+              }),
+              jsxs('span', {
+                'data-cb-mission-state': checkpoint ? 'checkpoint' : 'mission',
+                style: {
+                  flex: '0 0 auto',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: tone
+                },
+                children: [stateWord, ' · ', BLOCK_ROLE_COPY[block.role] || block.role]
+              })
+            ]
           }),
-          jsxs('span', {
-            'data-cb-mission-state': checkpoint ? 'checkpoint' : 'mission',
-            style: {
-              flex: '0 0 auto',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              fontWeight: 600,
-              lineHeight: 1.3,
-              color: tone
-            },
-            children: [stateWord, ' · ', BLOCK_ROLE_COPY[block.role] || block.role]
+          brief
+            ? jsx('p', {
+                'data-cb-mission-brief': block.id,
+                style: {
+                  margin: 0,
+                  maxWidth: '46rem',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink-soft)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                },
+                children: brief
+              })
+            : null,
+          jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+          // Notebook save and the pronunciation studio are the same controls every lesson view
+          // offers at this block; only the prose moves to Textbook.
+          jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
+          jsx(PronunciationSeat, { block, pronunciation }),
+          checkpoint
+            ? jsxs('div', {
+                'data-cb-mission-gate': block.check_id || 'unattached',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
+                children: [
+                  jsx('p', {
+                    style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                    children: 'The section’s one check. Nothing on this page is locked.'
+                  }),
+                  checkSlot
+                    ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
+                    : jsx('div', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+                        children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
+                      })
+                ]
+              })
+            : null,
+          // Exactly one action per mission. Everything else about this block is in Textbook.
+          jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.1rem' },
+            children: jsx(sdk.Button, {
+              variant: 'text',
+              size: 'sm',
+              className: 'self-start',
+              'data-cb-mission-read': block.id,
+              'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
+              onClick: () => onReadInTextbook(block.id),
+              children: 'Read in Textbook'
+            })
           })
         ]
-      }),
-      body
-        ? jsx(ProseText, {
-            style: {
-              maxWidth: CB_MEASURE,
-              paddingTop: '0.3rem',
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.body,
-              lineHeight: 1.6,
-              color: 'var(--cb-ink)'
-            },
-            text: body
-          })
-        : null,
-      (block.media || []).map((media, ordinal) =>
-        jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
-      ),
-      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
-      jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
-      jsx(PronunciationSeat, { block, pronunciation }),
-      checkpoint
-        ? jsxs('div', {
-            'data-cb-mission-gate': block.check_id || 'unattached',
-            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
-            children: [
-              jsx('p', {
-                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-                children: 'This is the section’s existing check — the same one Textbook and Guided use. Finishing it is not required to read anything here.'
-              }),
-              checkSlot
-                ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
-                : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
-                    children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
-                  })
-            ]
-          })
-        : null,
-      // One tertiary link at the foot of the brief, not a full-width bar under every mission.
-      jsx('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.35rem' },
-        children: jsx(sdk.Button, {
-          variant: 'text',
-          size: 'sm',
-          className: 'self-start',
-          'data-cb-mission-read': block.id,
-          'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
-          onClick: () => onReadInTextbook(block.id),
-          children: 'Read in Textbook'
-        })
       })
     ]
   })
@@ -11435,10 +11513,13 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const progressLabel = questProgressLabel(progress)
   const checkpoints = missions.filter((mission) => mission.checkpoint).length
-  const display = `${missions.length} ${missions.length === 1 ? 'mission' : 'missions'}, ${checkpoints} ${checkpoints === 1 ? 'checkpoint' : 'checkpoints'}`
-  const due = progress && typeof progress === 'object' ? Number(progress.review_due) || 0 : 0
-  const independent = progress && typeof progress === 'object' ? Number(progress.independent) || 0 : 0
+  const display = `${plural(missions.length, 'mission', 'missions')}, ${plural(checkpoints, 'checkpoint', 'checkpoints')}`
   const hasRecord = progress && typeof progress === 'object' && Number(progress.total_objectives) > 0
+  const evidenceLine = hasRecord
+    ? `${Number(progress.independent) || 0} of ${Number(progress.total_objectives)} with independent evidence${
+        Number(progress.review_due) > 0 ? ` · ${Number(progress.review_due)} due for review` : ''
+      }`
+    : questProgressLabel(progress)
   return jsxs('div', {
     ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'field_quest',
@@ -11449,11 +11530,14 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
     'data-cb-quest-checkpoints': String(checkpoints),
     style: { display: 'flex', flexDirection: 'column', gap: '0.9rem' },
     children: [
+      // The section is the heading; the counts are a caption under it, never the hero. One real
+      // evidence line follows, and it is the only number on the page that is not a length.
       jsxs('header', {
         'data-cb-quest-head': '',
-        style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', maxWidth: '46rem' },
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '46rem' },
         children: [
           jsx('h2', {
+            'data-cb-quest-title': '',
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
@@ -11462,34 +11546,20 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
               lineHeight: 1.1,
               letterSpacing: '-0.015em',
               color: 'var(--cb-ink)',
-              maxWidth: '24ch'
+              maxWidth: '24ch',
+              overflowWrap: 'anywhere'
             },
-            children: display.charAt(0).toUpperCase() + display.slice(1)
+            children: document.section_title || 'This section'
           }),
           jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '52ch' },
-            children: 'Missions are the reading path. The checkpoint is shared with the other lesson views.'
+            'data-cb-quest-caption': '',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: display
           }),
-          jsx(HeroFacts, {
-            phone,
-            facts: [
-              { value: String(missions.length), label: 'Missions' },
-              { value: String(checkpoints), label: 'Checkpoints' },
-              hasRecord ? { value: String(due), label: 'Due for review' } : null
-            ].filter(Boolean)
-          }),
-          jsxs('details', {
-            'data-cb-quest-note': '',
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-            children: [
-              jsx('summary', { style: { cursor: 'pointer' }, children: 'What these counts mean' }),
-              jsx('p', {
-                style: { margin: '0.3rem 0 0', lineHeight: 1.5, maxWidth: '52ch' },
-                children: hasRecord
-                  ? `Counts describe evidence already recorded — ${independent} independent, ${due} due. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.`
-                  : 'Counts describe evidence already recorded. They are not a score, nothing here is locked, and the checkpoint is the section’s own check.'
-              })
-            ]
+          jsx('p', {
+            'data-cb-quest-evidence': hasRecord ? 'recorded' : 'none',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: evidenceLine
           })
         ]
       }),
@@ -12929,7 +12999,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
               jsx(StatusRow, {
                 label: 'Evidence',
                 value: `${Number(summary.independent || 0)} independent`,
-                detail: `${Number(summary.total_objectives || 0)} objectives · ${Number(summary.review_due || 0)} due`
+                detail: `${plural(Number(summary.total_objectives || 0), 'objective', 'objectives')} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
               }),
               jsx(StatusRow, {
                 label: 'Where it came from',
@@ -14162,33 +14232,56 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
     children: [
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l3',
         children: [
-          jsx(CbLabel, { children: 'L3 · current recommendation' }),
+          jsx(CbLabel, { children: 'What to do next' }),
           (l3.recommendations || []).length === 0
-            ? jsx(QuietNote, { children: 'No recommendation was derived from the recorded evidence.' })
+            ? jsx(QuietNote, { children: 'Nothing is suggested yet, because no evidence has been recorded.' })
             : (l3.recommendations || []).map((item, index) =>
-                jsxs(
+                jsx(
                   'div',
                   {
                     className: 'flex flex-col gap-0.5 py-1',
-                    children: [
-                      jsx('div', { className: 'text-sm text-(--ui-text-secondary)', children: item.text }),
-                      jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `basis: ${item.basis}` })
-                    ]
+                    children: jsx('div', { className: 'text-sm text-(--ui-text-secondary)', children: item.text })
                   },
                   `${item.kind}-${index}`
                 )
               ),
-          jsx(QuietNote, { children: `Revisable and derived from layer 2. Not a persona claim. As of ${whenLabel(l3.as_of)}.` })
+          jsx(QuietNote, {
+            children: `It changes when new evidence is recorded, and it describes that evidence rather than judging you. Updated ${whenLabel(l3.as_of)}.`
+          }),
+          (l3.recommendations || []).length > 0
+            ? jsxs('details', {
+                'data-cb-evidence-technical': 'l3',
+                className: 'flex flex-col',
+                children: [
+                  jsx('summary', {
+                    className: 'cursor-pointer text-xs text-(--ui-text-secondary)',
+                    children: 'Technical detail'
+                  }),
+                  jsxs('div', {
+                    className: 'flex flex-col gap-0.5 pt-1',
+                    children: (l3.recommendations || []).map((item, index) =>
+                      jsx(
+                        'code',
+                        { className: 'break-words text-xs text-(--ui-text-secondary)', children: `basis: ${item.basis}` },
+                        `basis-${item.kind}-${index}`
+                      )
+                    )
+                  })
+                ]
+              })
+            : null
         ]
       }),
 
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l2',
         children: [
-          jsx(CbLabel, { children: 'L2 · objective evidence' }),
+          jsx(CbLabel, { children: 'What the evidence shows' }),
           (l2.objectives || []).length === 0
-            ? jsx(QuietNote, { children: 'No approved-plan objective has evidence yet.' })
+            ? jsx(QuietNote, { children: 'No objective in your plan has evidence yet.' })
             : jsx('div', {
                 className: 'flex flex-col',
                 children: (l2.objectives || []).map((objective) =>
@@ -14221,8 +14314,9 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
 
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l1',
         children: [
-          jsx(CbLabel, { children: 'L1 · attempts and events' }),
+          jsx(CbLabel, { children: 'Your attempts' }),
           jsxs('div', {
             className: 'flex flex-col',
             children: [
@@ -14451,7 +14545,7 @@ function CourseExportView({ row, implemented }) {
         read.sections
           ? jsx('div', {
               className: 'text-xs text-(--ui-text-secondary)',
-              children: `${Number(read.sections.validated)} of ${Number(read.sections.total)} lesson page(s) validated.`
+              children: `${Number(read.sections.validated)} of ${plural(Number(read.sections.total), 'lesson page', 'lesson pages')} validated.`
             })
           : null,
         jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' })
@@ -14664,8 +14758,11 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   }, [])
 
   const selectView = useCallback((nextView) => {
-    setView(nextView)
-    if (nextView === 'textbook') setOpenSectionId(null)
+    // `learn` is the primary surface; the reading path itself is the textbook index, and the
+    // section page offers Textbook / Guided / Field Quest over the same document.
+    const target = nextView === 'learn' ? 'textbook' : nextView
+    setView(target)
+    if (target === 'textbook') setOpenSectionId(null)
   }, [])
 
   const viewLabel = (LEARNING_VIEWS.find((option) => option.id === view) || { label: view }).label
@@ -14835,22 +14932,21 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     dueCount !== null && dueCount > 0 ? { value: String(dueCount), label: 'Due for review' } : null
   ].filter(Boolean)
   const parentIdentity = row.recipe === 'parent' ? 'plum' : 'lamp'
-  const tierOne = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'textbook', label: 'Textbook', mode: true },
-    { id: 'notebook', label: 'Notebook' },
-    { id: 'quizzes', label: 'Quizzes' },
-    { id: 'evidence', label: 'Evidence' }
-  ]
-  const tierTwo = [
-    { id: 'plan', label: 'Plan' },
-    { id: 'sources', label: 'Sources' },
-    supports('course.export.read') ? { id: 'export', label: 'Export' } : null
-  ].filter(Boolean)
-  const tierTwoActive = tierTwo.some((option) => option.id === view)
+  // Four primary surfaces. Learn hosts the reading path in its three lesson views (Textbook,
+  // Guided, Field Quest, chosen on the section page), so the learner sees one way in, not a
+  // control panel. Everything that is reference or administration sits behind one `More`
+  // disclosure: Plan, Sources, Export and the record of graded attempts.
+  const primaryTabs = COURSE_PRIMARY_TABS
+  const moreTabs = courseMoreTabs(supports)
+  const primaryActive = primarySurfaceFor(view)
+  const moreActive = moreTabs.some((option) => option.id === view)
   const layout = cbLayoutFor(useCbViewportWidth())
   const phone = layout === 'phone'
   const compactHero = layout !== 'wide'
+  const [moreOpen, setMoreOpen] = useState(moreActive)
+  useEffect(() => {
+    if (moreActive) setMoreOpen(true)
+  }, [moreActive])
 
   return jsxs('div', {
     'data-cb-course-detail': view,
@@ -14954,37 +15050,60 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 
       jsx(NoticeLine, { notice, busy }),
 
-      // Two tiers, every surface one click away. The reading modes carry their dot; the reference
-      // tier is a plain text row so it never competes with the reading path.
+      // Four primary surfaces, then one `More` disclosure for reference and administration. Every
+      // surface stays one click away and every legacy view id still resolves, so a direct link
+      // lands on the surface it names.
       jsxs('div', {
         style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
         children: [
-          jsx(LearningTabs, { options: tierOne, value: view, onChange: selectView, phone, ariaLabel: 'Course surfaces' }),
-          jsx('div', {
-            'data-cb-tier-two': view,
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.15rem 0.9rem' },
-            children: tierTwo.map((option) =>
-              jsx(
-                sdk.Button,
-                {
-                  variant: 'text',
-                  size: 'sm',
-                  'data-cb-tab': option.id,
-                  'aria-current': option.id === view ? 'page' : undefined,
-                  onClick: () => selectView(option.id),
-                  children: option.label
-                },
-                option.id
-              )
-            )
+          jsx(LearningTabs, {
+            options: primaryTabs,
+            value: primaryActive,
+            onChange: selectView,
+            phone,
+            ariaLabel: 'Course surfaces'
+          }),
+          jsxs('details', {
+            'data-cb-more': moreActive ? 'active' : 'idle',
+            open: moreOpen,
+            onToggle: (event) => setMoreOpen(Boolean(event.currentTarget.open)),
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', {
+                'data-cb-more-summary': '',
+                style: { cursor: 'pointer', padding: '0.3rem 0', width: 'fit-content' },
+                children: moreActive
+                  ? `More · ${(moreTabs.find((option) => option.id === view) || { label: '' }).label}`
+                  : 'More'
+              }),
+              jsx('div', {
+                'data-cb-tier-two': view,
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.15rem 0.9rem', padding: '0.1rem 0 0.35rem' },
+                children: moreTabs.map((option) =>
+                  jsx(
+                    sdk.Button,
+                    {
+                      variant: 'text',
+                      size: 'sm',
+                      'data-cb-tab': option.id,
+                      'aria-current': option.id === view ? 'page' : undefined,
+                      onClick: () => selectView(option.id),
+                      children: option.label
+                    },
+                    option.id
+                  )
+                )
+              })
+            ]
           })
         ]
       }),
 
-      tierTwoActive
+      moreActive
         ? jsx('div', {
+            'data-cb-outside-route': view,
             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-            children: `You are reading ${viewLabel.toLowerCase()}, outside the course route. Overview, Textbook, Notebook, Quizzes and Evidence stay one click away above.`
+            children: `You are reading ${((moreTabs.find((option) => option.id === view) || {}).label || viewLabel).toLowerCase()} from More. Overview, Learn, Notebook and Evidence stay one click away above.`
           })
         : null,
       review.data && review.data.total_overdue > 0 && view !== 'overview'
@@ -18976,7 +19095,7 @@ function SessionDiagnostics() {
         label: 'Wire contract',
         value: `cb.rpc v${backendWire.contractVersion}`,
         detail: implemented
-          ? `${implemented.length} implemented command(s): ${implemented.join(', ')}`
+          ? `${plural(implemented.length, 'implemented command', 'implemented commands')}: ${implemented.join(', ')}`
           : 'Backend method registry unavailable; commands are attempted, not assumed.'
       })
     ]
@@ -19026,6 +19145,7 @@ export {
   LIBRARY_COPY,
   TITLE_PLACEHOLDER,
   EvidenceClassText,
+  EvidenceView,
   EVIDENCE_TARGET_OPTIONS,
   RECIPE_COPY,
   courseToolsVisible,
@@ -19129,7 +19249,12 @@ export {
   pronPercent,
   pronunciationAvailabilityCopy,
   questMissions,
+  missionBriefLine,
   planJobBrief,
+  plural,
+  COURSE_PRIMARY_TABS,
+  courseMoreTabs,
+  primarySurfaceFor,
   planRejectView,
   PlanRejectPanel,
   PLAN_VALIDATION_LINES,
