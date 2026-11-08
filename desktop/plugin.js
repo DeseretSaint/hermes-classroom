@@ -17892,7 +17892,7 @@ function CourseExportView({ row, implemented, onRepair, onOpenLibrary }) {
       jsx('div', {
         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
         'data-cb-export-stays': '',
-        children: `${files.length} file(s): this course’s own lesson text and its guides, and nothing else.`
+        children: `${plural(files.length, 'file', 'files')}: this course’s own lesson text and its guides, and nothing else.`
       }),
       jsxs('div', {
         className: 'flex flex-col',
