@@ -1,17 +1,18 @@
 {
   "accessibility_notes": [
     "Plain markdown; every field name is written as literal text so it survives a screen reader.",
-    "No diagrams and no media: nothing here depends on seeing an image or hearing audio."
+    "The cover plate has a text equivalent on its file record and the caption 'Cover plate — illustration, not a technical diagram.' beside it; nothing in the course depends on seeing it."
   ],
-  "attribution": "Original teaching text: Coursebook demo pack. No third-party text or media is bundled.",
-  "content_hash": "sha256:603c0b7de57110ff31ec58f8e7d1dab7211c3312e369f880000deac7fda66174",
+  "attribution": "Original teaching text and cover plate: Coursebook demo pack. No third-party text or media is bundled.",
+  "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
   "content_notes": [
     "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
     "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
-    "This is a technical demo. It teaches the pack format, not the subject of any other pack."
+    "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+    "2.0.0 adds one composed cover plate (content/cover-plate.png) and moves the document to cb.pack v2 so the plate can be linked through media[]. The plate is decorative: it is not a diagram of the manifest schema and states no field, count or rule."
   ],
   "contract": "cb.pack",
-  "contract_version": 1,
+  "contract_version": 2,
   "contributors": [
     {
       "name": "Coursebook demo pack",
@@ -25,6 +26,24 @@
     "pace": "light"
   },
   "files": [
+    {
+      "bytes": 3784,
+      "description": "Press Plate cover for this pack (16:9 master): five flat inks, printed deterministically. Decorative material; it is not a schema diagram and has no text.",
+      "mime": "image/png",
+      "path": "content/cover-16x9.png",
+      "role": "visual",
+      "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "text_equivalent": "Pack visual: a flat printed plate in five inks — warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+    },
+    {
+      "bytes": 3162,
+      "description": "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 master for a 3:2 card). Same plate, same five inks.",
+      "mime": "image/png",
+      "path": "content/cover-3x2.png",
+      "role": "visual",
+      "sha256": "sha256:3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+      "text_equivalent": "Pack visual: a flat printed plate in five inks — warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+    },
     {
       "bytes": 1765,
       "mime": "text/markdown",
@@ -50,10 +69,29 @@
   "level_label": "Technical · for pack readers",
   "license": {
     "id": "CC0-1.0",
-    "note": "Original Coursebook-authored teaching text about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+    "note": "Original Coursebook-authored teaching text and Press Plate about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+    "per_artifact": [
+      {
+        "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+        "license_id": "CC0-1.0",
+        "path": "content/cover-16x9.png"
+      },
+      {
+        "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+        "license_id": "CC0-1.0",
+        "path": "content/cover-3x2.png"
+      }
+    ],
     "redistribution": "local_only"
   },
   "locale": "en-US",
+  "media": [
+    {
+      "caption": "Pack visual — generated plate; not a diagram of the course.",
+      "path": "content/cover-16x9.png",
+      "section_path": "content/section-01-anatomy.md"
+    }
+  ],
   "minimum_coursebook_version": "0.1.0",
   "objectives": [
     {
@@ -138,10 +176,10 @@
     }
   ],
   "pack_id": "technical-demo-pack",
-  "pack_version": "1.0.0",
+  "pack_version": "2.0.0",
   "recipe": "one_off",
   "safety_notes": [
-    "Text only. No media, no external services, no learner data."
+    "Text plus one decorative cover plate. No external services, no learner data, and no image that carries a technical claim."
   ],
   "subtitle": "Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
   "title": "Technical demo: reading a pack before you install it"

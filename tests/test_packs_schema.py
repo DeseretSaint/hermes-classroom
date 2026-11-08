@@ -11,6 +11,7 @@ from coursebook import packs
 ROOT = Path(__file__).resolve().parent.parent
 JAPANESE = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
 PARENT = ROOT / "bundled" / "packs" / "parent-measurement-practice"
+TECHNICAL = ROOT / "bundled" / "packs" / "technical-demo-pack"
 
 
 def load(directory: Path) -> dict:
@@ -19,20 +20,24 @@ def load(directory: Path) -> dict:
 
 class BundledManifestTests(unittest.TestCase):
     def test_bundled_manifests_validate_and_hash(self) -> None:
-        for directory in (JAPANESE, PARENT):
+        for directory in (JAPANESE, PARENT, TECHNICAL):
             with self.subTest(pack=directory.name):
                 manifest = load(directory)
                 packs.validate_manifest(manifest)
                 packs.validate_minima(manifest)
                 packs.verify_content_hash(manifest)
                 self.assertEqual(manifest["contract"], "cb.pack")
-                # H-186: the Japanese demo is cb.pack v2 so its two real assets can be linked
-                # through media[]; the parent fixture stays v1.
+                # H-186/H-197: the two demo packs that carry declared assets are cb.pack v2; the
+                # parent fixture stays v1 because it is the compatibility gate.
                 self.assertEqual(
-                    manifest["contract_version"], 2 if directory == JAPANESE else 1
+                    manifest["contract_version"], 1 if directory == PARENT else 2
                 )
                 if directory == JAPANESE:
-                    self.assertEqual(len(manifest.get("media") or []), 2)
+                    # H-197 adds the 16:9 cover master as the pack's first media link.
+                    self.assertEqual(len(manifest.get("media") or []), 3)
+                if directory == TECHNICAL:
+                    # H-197 moved this pack to v2 so it could carry the cover as a real artifact.
+                    self.assertEqual(len(manifest.get("media") or []), 1)
 
     def test_manifest_is_json_only(self) -> None:
         manifest = load(PARENT)

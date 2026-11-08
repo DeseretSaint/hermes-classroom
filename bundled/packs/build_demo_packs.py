@@ -31,13 +31,45 @@ PARENT = ROOT / "parent-measurement-practice"
 #: tree, and the pack bundles no third-party text or media.
 TECHNICAL = ROOT / "technical-demo-pack"
 
+#: H-197 — the cover plates. The Japanese and technical packs carry one as a real pack media
+#: artifact (cb.pack v2). The parent pack stays cb.pack v1 on purpose: it is the repository's only
+#: v1 fixture and the gate that proves a v1 pack imports byte-for-byte as before, so it keeps the
+#: typographic cover rather than gaining a `media[]` link. Its plate exists in `cover_plate_png`
+#: for the day that pack is released as v2, but nothing ships it unused.
+COVER_CAPTION = "Pack visual — generated plate; not a diagram of the course."
+COVER_ATTRIBUTION = (
+    "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder "
+    "(bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no "
+    "gradient, no grain, no photograph, no model call, no third-party imagery."
+)
+JAPANESE_COVER_TEXT = (
+    "Pack visual: a flat printed plate in five inks — warm paper, a pale gold field across the "
+    "lower half, a wide shallow indigo band rising across it, one near-black rule along the field's "
+    "edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the "
+    "course, not a photograph, and it carries no text."
+)
+TECHNICAL_COVER_TEXT = (
+    "Pack visual: a flat printed plate in five inks — warm paper, a solid near-black half with a "
+    "pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along "
+    "the bottom. Decorative material only: it is not a diagram of the pack format and carries no "
+    "text."
+)
+PARENT_COVER_TEXT = (
+    "Pack visual: a flat printed plate in five inks — warm paper, a solid plum plane to two thirds "
+    "with one ink cut edge, a narrow plum band across the frame, a pale gold field, and a gold bar "
+    "along the bottom. Decorative material only: it is not a diagram of the measurement lesson and "
+    "carries no text."
+)
+
 FETCHED_AT = "2026-11-06"
 ORIGINAL = (
     "Original teaching text and schematic: Coursebook demo pack. Sources are cited by link and "
     "are not bundled; see sources[] and content/source-notes.md."
 )
 JAPANESE_ATTRIBUTION = (
-    "Original teaching text, schematic and narration: Coursebook demo pack. The narration clip is "
+    "Original teaching text, cover plate, schematic and narration: Coursebook demo pack. The cover "
+    "plate and the schematic are host-composed, deterministic artwork built from the Atlas Lamp "
+    "token palette; no third-party imagery is bundled. The narration clip is "
     "synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack "
     "maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see "
     "sources[] and content/source-notes.md."
@@ -213,6 +245,125 @@ def relationship_map_png() -> bytes:
     return canvas.to_png()
 
 
+# ── H-197 · the one approved cover lane: Press Plate ───────────────────────
+#
+# Every pack is one sheet off the same press. The cover is a printed *field*, not a picture: one
+# broad flat form, one hard-edged `lamp-soft` flood, one `lamp` band full bleed at a fixed y, and
+# one heavy ink rule. There is no depiction of teaching content, no object, no person, no symbol and
+# no text in the raster — the title is type the app renders beside the plate, so the artwork can
+# neither garble a glyph nor imply a fact the pack does not teach.
+#
+# The art direction measured the host image pipeline and found it unusable for exact geometry
+# (four probes ignored "exactly five flat inks": 4,851 to 34,692 unique colours, plus grain and an
+# unrequested keyline frame). It recommended Press Plate precisely because the model is good at
+# material and broad mass and bad at topology. This builder therefore prints the plate itself,
+# deterministically, to the same brief and the same acceptance block: five identity inks, the left
+# 4% clear (the app paints its 6px lamp spine there), the form's centroid inside the middle 84%,
+# and the lamp band at a fixed y. The prompts (P1–P3) remain in `docs/ART-DIRECTION-COVERS.md` for a
+# host that does have `image_generate`; nothing here claims a model made these bytes.
+COVER_MASTER = "content/cover-16x9.png"
+COVER_CROP = "content/cover-3x2.png"
+COVER_W = 1024
+COVER_H = 576
+#: The 3:2 card crop at the same height: 864 x 576 keeps 84.4% of the width, centred.
+COVER_CROP_W = 864
+COVER_CROP_OFFSET = (COVER_W - COVER_CROP_W) // 2  # 80
+#: 4% of the width. WorkshopCover paints a 6px lamp spine over the plate's left edge, so nothing
+#: meaningful may sit inside it.
+COVER_LEFT_CLEAR = 41
+#: The lamp band is 58px = 10.1% of the frame height, full bleed, at one fixed y for the imprint.
+COVER_BAND_TOP = 518
+#: The cover surfaces present the master; the crop is the file a 3:2 surface uses.
+COVER_PATH = COVER_MASTER
+
+#: Atlas Lamp, light mode, copied from contracts/cb.tokens.v2.json. A plate is a lit page, so it
+#: keeps the paper palette in both UI modes; the app mounts it on its own token background.
+_PAPER = (247, 241, 228)  # paper      #f7f1e4
+_INK = (26, 23, 19)  # ink        #1a1713
+_RULE = (215, 203, 180)  # rule       #d7cbb4
+_ACCENT = (44, 74, 140)  # accent     #2c4a8c
+_LAMP = (232, 169, 58)  # lamp       #e8a93a
+_LAMP_SOFT = (251, 235, 203)  # lamp-soft  #fbebcb
+_PLUM = (106, 62, 116)  # plum       #6a3e74
+
+
+def _fill(canvas: "Canvas", x0: int, y0: int, x1: int, y1: int, colour) -> None:
+    """A clipped flat rectangle: the form, the flood and the band are all just flat fills."""
+    canvas.rect(max(0, x0), max(0, y0), min(canvas.width, x1), min(COVER_H, y1), colour)
+
+
+def _arc_band(canvas: "Canvas", *, dx: int, colour) -> None:
+    """One broad form: a straight-cut plane with a slanted edge, bleeding off the top and bottom.
+
+    Printed row by row so the cut edge is exact — no anti-aliasing, no gradient, no outline. A
+    plane was chosen over an arc after inspection: a band that rises and falls reads as an arch or
+    a bridge, and a cover may not carry a recognisable thing.
+    """
+    x_top, x_bottom = 760, 560
+    for y in range(0, COVER_BAND_TOP):
+        share = y / max(1, COVER_BAND_TOP - 1)
+        edge = int(round(x_top + (x_bottom - x_top) * share))
+        _fill(canvas, COVER_LEFT_CLEAR, y, edge, y + 1, colour)
+        _fill(canvas, edge, y, edge + 8, y + 1, _INK)  # the cut edge, in ink
+
+
+def _japanese_plate(canvas: "Canvas", dx: int) -> None:
+    """P1: a pale gold field, one indigo plane with a slanted cut edge, the gold band."""
+    _fill(canvas, 0, 300, COVER_W, COVER_BAND_TOP, _LAMP_SOFT)  # one flood, hard top edge
+    _arc_band(canvas, dx=dx, colour=_ACCENT)  # one broad form, bleeding off top and bottom
+
+
+def _technical_plate(canvas: "Canvas", dx: int) -> None:
+    """P3: a solid near-black half, one pale grey band along its edge, a pale gold field."""
+    _fill(canvas, 522, 340, COVER_W, COVER_BAND_TOP, _LAMP_SOFT)  # the flood on the paper side
+    _fill(canvas, COVER_LEFT_CLEAR, 0, 512, COVER_BAND_TOP, _INK)  # the one broad form
+    _fill(canvas, 512, 0, 522, COVER_BAND_TOP, _RULE)  # the pale grey band along its cut edge
+
+
+def _parent_plate(canvas: "Canvas", dx: int) -> None:
+    """P2: a solid plum plane to two thirds, one plum band across it, one ink cut rule."""
+    _fill(canvas, COVER_LEFT_CLEAR, 340, COVER_W, COVER_BAND_TOP, _LAMP_SOFT)  # the flood
+    _fill(canvas, COVER_LEFT_CLEAR, 0, 682, COVER_BAND_TOP, _PLUM)  # the one broad form
+    _fill(canvas, 682, 0, 690, COVER_BAND_TOP, _INK)  # its cut edge, in ink
+    _fill(canvas, COVER_LEFT_CLEAR, 190, COVER_W, 210, _PLUM)  # one narrow band across the frame
+
+
+def _press_plate(kind: str, *, width: int = COVER_W) -> bytes:
+    """One printed plate: the pack's form, then the imprint's lamp band over everything."""
+    plates = {
+        "japanese": _japanese_plate,
+        "technical": _technical_plate,
+        "parent": _parent_plate,
+    }
+    if kind not in plates:
+        raise ValueError(f"unknown cover plate {kind!r}")
+    canvas = Canvas(COVER_W, COVER_H, _PAPER)
+    plates[kind](canvas, 0)
+    # The band is printed last and full bleed, so every pack carries the same y and the same height.
+    _fill(canvas, 0, COVER_BAND_TOP, COVER_W, COVER_H, _LAMP)
+    if width == COVER_W:
+        return canvas.to_png()
+    # A real crop of the master's pixels, never a second drawing: the 3:2 file is provably the
+    # centre of the 16:9 plate.
+    offset_x = (COVER_W - width) // 2
+    crop = Canvas(width, COVER_H, _PAPER)
+    for y in range(COVER_H):
+        source = (y * COVER_W + offset_x) * 3
+        target = y * width * 3
+        crop.pixels[target : target + width * 3] = canvas.pixels[source : source + width * 3]
+    return crop.to_png()
+
+
+def cover_plate_png(kind: str) -> bytes:
+    """The 16:9 master: the plate every cover surface presents."""
+    return _press_plate(kind)
+
+
+def cover_crop_png(kind: str) -> bytes:
+    """The 3:2 card file: a mechanical centre crop of the master, never a regeneration."""
+    return _press_plate(kind, width=COVER_CROP_W)
+
+
 # ── Pack definitions ───────────────────────────────────────────────────────
 
 
@@ -227,10 +378,14 @@ def japanese_manifest() -> dict:
         "content/section-03-new-context.md",
         "content/source-notes.md",
         "content/relationship-map.png",
+        COVER_MASTER,
+        COVER_CROP,
         NARRATION_PATH,
     ]
-    files = _sections(section_paths[:-2])
+    files = _sections(section_paths[:-4])
     files["content/relationship-map.png"] = relationship_map_png()
+    files[COVER_MASTER] = cover_plate_png("japanese")
+    files[COVER_CROP] = cover_crop_png("japanese")
     files[NARRATION_PATH] = (JAPANESE / NARRATION_PATH).read_bytes()
     metadata = {
         "content/section-01-two-ways.md": {"mime": "text/markdown", "role": "section"},
@@ -258,6 +413,24 @@ def japanese_manifest() -> dict:
                 "relationship and setting."
             ),
             "description": "Relationship and register map drawn deterministically for the demo pack.",
+        },
+        COVER_MASTER: {
+            "mime": "image/png",
+            "role": "visual",
+            "text_equivalent": JAPANESE_COVER_TEXT,
+            "description": (
+                "Press Plate cover for this pack (16:9 master): five flat inks, printed "
+                "deterministically. Decorative material; it carries no register facts and no text."
+            ),
+        },
+        COVER_CROP: {
+            "mime": "image/png",
+            "role": "visual",
+            "text_equivalent": JAPANESE_COVER_TEXT,
+            "description": (
+                "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 "
+                "master for a 3:2 card). Same plate, same five inks."
+            ),
         },
     }
 
@@ -482,7 +655,7 @@ def japanese_manifest() -> dict:
 
     return packs.build_manifest(
         pack_id="japanese-affection-context-l0",
-        pack_version="2.0.0",
+        pack_version="2.1.0",
         title="Japanese affection and register — a Sample L0 classroom",
         subtitle="Four lines, three addressees, one decision: who is listening, how close, and where.",
         recipe="casual",
@@ -493,6 +666,13 @@ def japanese_manifest() -> dict:
         # real assets as ``media[]`` links. A v1 document may not carry them (M1-M7 in packs.py).
         contract_version=2,
         media=[
+            # H-197: the cover plate is the pack's first linked visual, so the Workshop's
+            # catalogue cover is the plate the catalogue names, not an incidental figure.
+            {
+                "path": COVER_PATH,
+                "section_path": "content/section-01-two-ways.md",
+                "caption": COVER_CAPTION,
+            },
             {
                 "path": NARRATION_PATH,
                 "section_path": "content/section-02-choosing.md",
@@ -507,6 +687,16 @@ def japanese_manifest() -> dict:
         license={
             **UNSPECIFIED_LICENSE,
             "per_artifact": [
+                {
+                    "path": COVER_MASTER,
+                    "license_id": "CC0-1.0",
+                    "attribution": COVER_ATTRIBUTION,
+                },
+                {
+                    "path": COVER_CROP,
+                    "license_id": "CC0-1.0",
+                    "attribution": COVER_ATTRIBUTION,
+                },
                 {
                     "path": "content/relationship-map.png",
                     "license_id": "CC0-1.0",
@@ -552,6 +742,10 @@ def japanese_manifest() -> dict:
             "The fourth objective is a closed choice about a third situation, graded by exact comparison against "
             "its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an "
             "open-response answer.",
+            "2.1.0 adds one composed cover plate (content/cover-plate.png), linked first in media[] so the "
+            "Workshop storefront, the Library row and the course detail show the same plate. It is decorative "
+            "illustration: it carries no register facts. The relationship map remains the pack's deterministic "
+            "schematic and the only visual that states them. No wording, check or source changed.",
         ],
         safety_notes=[
             "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack "
@@ -562,6 +756,9 @@ def japanese_manifest() -> dict:
             "Every Japanese line carries romaji and an English meaning.",
             "The relationship schematic has a text equivalent on its file record and a short caption beside it on "
             "the lesson page.",
+            "The cover plate is illustration only: it has a text equivalent on its file record and the caption "
+            "'Cover plate — illustration, not a technical diagram.' beside it. Nothing in the course depends on "
+            "seeing it.",
             "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as "
             "its lesson caption, and the lesson does not depend on hearing it.",
             "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities.",
@@ -682,10 +879,30 @@ def technical_manifest() -> dict:
         "content/source-notes.md",
     ]
     files = {path: (TECHNICAL / path).read_bytes() for path in paths}
+    files[COVER_MASTER] = cover_plate_png("technical")
+    files[COVER_CROP] = cover_crop_png("technical")
     metadata = {
         "content/section-01-anatomy.md": {"mime": "text/markdown", "role": "section"},
         "content/section-02-labels.md": {"mime": "text/markdown", "role": "section"},
         "content/source-notes.md": {"mime": "text/markdown", "role": "source_note"},
+        COVER_MASTER: {
+            "mime": "image/png",
+            "role": "visual",
+            "text_equivalent": TECHNICAL_COVER_TEXT,
+            "description": (
+                "Press Plate cover for this pack (16:9 master): five flat inks, printed "
+                "deterministically. Decorative material; it is not a schema diagram and has no text."
+            ),
+        },
+        COVER_CROP: {
+            "mime": "image/png",
+            "role": "visual",
+            "text_equivalent": TECHNICAL_COVER_TEXT,
+            "description": (
+                "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 "
+                "master for a 3:2 card). Same plate, same five inks."
+            ),
+        },
     }
     objectives = [
         {
@@ -772,24 +989,48 @@ def technical_manifest() -> dict:
     ]
     return packs.build_manifest(
         pack_id="technical-demo-pack",
-        pack_version="1.0.0",
+        pack_version="2.0.0",
         title="Technical demo: reading a pack before you install it",
         subtitle="Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
         recipe="one_off",
         locale="en-US",
         level_label="Technical · for pack readers",
         minimum_coursebook_version="0.1.0",
-        contract_version=1,
+        # H-197: 2.0.0 moves this fixture to cb.pack v2 so it can carry the one composed cover
+        # plate through media[]. The cover is the pack's only media and it is decorative.
+        contract_version=2,
+        media=[
+            {
+                "path": COVER_MASTER,
+                "section_path": "content/section-01-anatomy.md",
+                "caption": COVER_CAPTION,
+            },
+        ],
         license={
             "id": "CC0-1.0",
             "redistribution": "local_only",
             "note": (
-                "Original Coursebook-authored teaching text about this repository's own pack "
-                "contract. No third-party text or media is bundled; the repository files it cites "
-                "are read locally by the pack maintainer, not redistributed."
+                "Original Coursebook-authored teaching text and Press Plate about this repository's "
+                "own pack contract. No third-party text or media is bundled; the repository files it "
+                "cites are read locally by the pack maintainer, not redistributed."
             ),
+            "per_artifact": [
+                {
+                    "path": COVER_MASTER,
+                    "license_id": "CC0-1.0",
+                    "attribution": COVER_ATTRIBUTION,
+                },
+                {
+                    "path": COVER_CROP,
+                    "license_id": "CC0-1.0",
+                    "attribution": COVER_ATTRIBUTION,
+                },
+            ],
         },
-        attribution="Original teaching text: Coursebook demo pack. No third-party text or media is bundled.",
+        attribution=(
+            "Original teaching text and cover plate: Coursebook demo pack. No third-party text or "
+            "media is bundled."
+        ),
         contributors=[{"name": "Coursebook demo pack", "role": "author"}],
         objectives=objectives,
         files=files,
@@ -802,11 +1043,19 @@ def technical_manifest() -> dict:
             "The pack claims no human review and no native-speaker or expert review: its checks are "
             "recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
             "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+            "2.0.0 adds one composed cover plate (content/cover-plate.png) and moves the document to "
+            "cb.pack v2 so the plate can be linked through media[]. The plate is decorative: it is "
+            "not a diagram of the manifest schema and states no field, count or rule.",
         ],
-        safety_notes=["Text only. No media, no external services, no learner data."],
+        safety_notes=[
+            "Text plus one decorative cover plate. No external services, no learner data, and no "
+            "image that carries a technical claim.",
+        ],
         accessibility_notes=[
             "Plain markdown; every field name is written as literal text so it survives a screen reader.",
-            "No diagrams and no media: nothing here depends on seeing an image or hearing audio.",
+            "The cover plate has a text equivalent on its file record and the caption 'Cover plate — "
+            "illustration, not a technical diagram.' beside it; nothing in the course depends on "
+            "seeing it.",
         ],
         default_dials={"pace": "light", "depth": "survey", "assessment": "self_check", "autonomy": "independent"},
     )
@@ -822,6 +1071,12 @@ def write_manifest(directory: Path, manifest: dict) -> Path:
 
 def main() -> int:
     (JAPANESE / "content" / "relationship-map.png").write_bytes(relationship_map_png())
+    # H-197: each plate is written beside its pack before the manifest is rebuilt, so the committed
+    # bytes, the declared sha256 and the catalogue cover path all come from one generator.
+    (JAPANESE / COVER_MASTER).write_bytes(cover_plate_png("japanese"))
+    (JAPANESE / COVER_CROP).write_bytes(cover_crop_png("japanese"))
+    (TECHNICAL / COVER_MASTER).write_bytes(cover_plate_png("technical"))
+    (TECHNICAL / COVER_CROP).write_bytes(cover_crop_png("technical"))
     for directory, builder in (
         (JAPANESE, japanese_manifest),
         (PARENT, parent_manifest),

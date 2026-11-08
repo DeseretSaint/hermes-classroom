@@ -7,6 +7,7 @@ migrated profile database and the real import gate.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import shutil
@@ -171,13 +172,23 @@ class CatalogViewTests(KernelCase):
         item = next(entry for entry in view["items"] if entry["pack_id"] == "japanese-affection-context-l0")
         self.assertEqual(item["cover"]["kind"], "artifact")
         self.assertTrue(str(item["cover"]["artifact_id"]).startswith("art_"))
-        self.assertIn("relationship", (item["cover"]["alt"] or "").lower())
+        # H-197: the plate the catalogue names is the plate that is served — not merely "some
+        # visual". The artifact's bytes must be the declared cover file, byte for byte.
+        document = workshop.load_catalog()
+        entry = next(e for e in document["packs"] if e["pack_id"] == "japanese-affection-context-l0")
+        manifest, files = archive.read_directory(PACKS / "japanese-affection-context-l0")
+        declared = next(f for f in manifest["files"] if f["path"] == entry["cover"]["path"])
+        self.assertEqual(declared["role"], "visual")
+        self.assertIn("generated plate", (item["cover"]["alt"] or "").lower())
         # The artifact must resolve through the same media route the lesson uses.
         from coursebook import media
 
         preview = media.preview_artifact(str(item["cover"]["artifact_id"]))
         self.assertEqual(preview["ok"], True, preview)
         self.assertTrue(str(preview.get("data_url") or "").startswith("data:image/png"))
+        served = base64.b64decode(str(preview["data_url"]).split(",", 1)[1])
+        self.assertEqual(packs.file_sha256(served), declared["sha256"])
+        self.assertEqual(served, files[entry["cover"]["path"]])
 
     def test_installed_pack_carries_the_real_next_step(self) -> None:
         workshop.install("parent-measurement-practice")

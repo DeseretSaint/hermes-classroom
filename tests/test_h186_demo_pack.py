@@ -121,7 +121,8 @@ class DemoPackMediaTest(DemoPackCase):
             self.assertEqual(teaching[-1]["kind"], "check_prompt")
 
         artifacts = self.rows("SELECT * FROM artifacts")
-        self.assertEqual(len(artifacts), 2)
+        # H-197 added the Press Plate cover as this pack's third media artifact.
+        self.assertEqual(len(artifacts), 3)
         self.assertEqual({row["kind"] for row in artifacts}, {"audio", "visual"})
 
     def test_lesson_page_returns_media_children_with_captions_and_text_equivalents(self) -> None:
@@ -129,8 +130,12 @@ class DemoPackMediaTest(DemoPackCase):
         manifest = packs.load_manifest(JAPANESE / "pack.json")
         captions = {link["path"]: link["caption"] for link in manifest["media"]}
 
-        for ordinal, expected_path in ((1, "content/relationship-map.png"),
-                                       (2, "content/narration-polite-confession.mp3")):
+        # H-197: objective 1 now carries the cover plate and then the relationship map, in
+        # ``media[]`` order; objective 2 carries the narration.
+        for ordinal, expected_paths in (
+            (1, ["content/cover-16x9.png", "content/relationship-map.png"]),
+            (2, ["content/narration-polite-confession.mp3"]),
+        ):
             page = self.ok(
                 "lesson.page",
                 {
@@ -140,16 +145,18 @@ class DemoPackMediaTest(DemoPackCase):
             )["result"]
             self.assertGreaterEqual(len(page["artifacts"]), 1, ordinal)
             children = [child for block in page["document"]["blocks"] for child in block["media"]]
-            self.assertEqual(len(children), 1, ordinal)
-            child = children[0]
-            self.assertEqual(child["purpose"], captions[expected_path])
-            self.assertEqual(child["text_equivalent"], captions[expected_path])
-            self.assertTrue(child["text_equivalent"].strip())
-            self.assertFalse(child["degraded"])
+            self.assertEqual(len(children), len(expected_paths), ordinal)
+            for child, expected_path in zip(children, expected_paths):
+                self.assertEqual(child["purpose"], captions[expected_path])
+                self.assertEqual(child["text_equivalent"], captions[expected_path])
+                self.assertTrue(child["text_equivalent"].strip())
+                self.assertFalse(child["degraded"])
             media_segments = [row for row in page["segments"] if row["kind"] == "media"]
-            self.assertEqual(len(media_segments), 1)
-            self.assertEqual(media_segments[0]["artifact_id"], child["artifact_id"])
-            self.assertEqual(media_segments[0]["text"], captions[expected_path])
+            self.assertEqual(len(media_segments), len(expected_paths))
+            for segment, child in zip(media_segments, children):
+                self.assertEqual(segment["artifact_id"], child["artifact_id"])
+            for segment, expected_path in zip(media_segments, expected_paths):
+                self.assertEqual(segment["text"], captions[expected_path])
 
         # A section with no link keeps a prose page and no invented media child.
         page = self.ok(

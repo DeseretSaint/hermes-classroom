@@ -142,31 +142,48 @@ def _installed_rows(pack_id: str, version: str) -> dict[str, Any] | None:
     return dict(row) if row is not None else None
 
 
-def _cover_artifact(connection, course_id: str) -> str | None:
-    """The course's first real visual artifact, read through the media route the app already has.
+def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -> str | None:
+    """The course's cover artifact, read through the media route the app already has.
 
     A pack's cover is not a new kind of object: it is one of the pack's own visual files, adopted at
-    import. The lookup goes through this course's own lesson segments first, because an artifact row
-    is keyed by ``(content_hash, kind)`` and a second import of the same pack reuses the first
-    course's row. Falling back to the artifact row's own course keeps a generated visual working.
+    import. When the catalogue names a cover file, that file is preferred by the artifact's own
+    ``pack_file`` provenance, so a pack that later gains a figure *before* the plate in lesson order
+    cannot silently change its cover. The lookup goes through this course's own lesson segments
+    first, because an artifact row is keyed by ``(content_hash, kind)`` and a second import of the
+    same pack reuses the first course's row. Falling back to the artifact row's own course keeps a
+    generated visual working.
     """
-    row = connection.execute(
-        "SELECT a.id AS artifact_id FROM lesson_segments s"
+    rows = connection.execute(
+        "SELECT a.id AS artifact_id, a.provenance_json AS provenance_json FROM lesson_segments s"
         " JOIN lesson_runs r ON r.id = s.lesson_run_id"
         " JOIN objectives o ON o.id = r.objective_id"
         " JOIN plans pl ON pl.id = o.plan_id"
         " JOIN artifacts a ON a.id = s.artifact_id"
         " WHERE pl.course_id = ? AND a.kind = 'visual'"
-        " ORDER BY pl.version DESC, o.ordinal ASC, s.ordinal ASC LIMIT 1",
+        " ORDER BY pl.version DESC, o.ordinal ASC, s.ordinal ASC",
+        (course_id,),
+    ).fetchall()
+    if cover_path:
+        for row in rows:
+            try:
+                provenance = json.loads(row["provenance_json"] or "{}")
+            except (TypeError, ValueError):
+                continue
+            if isinstance(provenance, Mapping) and str(provenance.get("pack_file")) == cover_path:
+                return str(row["artifact_id"])
+    if rows:
+        return str(rows[0]["artifact_id"])
+    row = connection.execute(
+        "SELECT id AS artifact_id FROM artifacts"
+        " WHERE course_id = ? AND kind = 'visual' ORDER BY created_at ASC, rowid ASC LIMIT 1",
         (course_id,),
     ).fetchone()
-    if row is None:
-        row = connection.execute(
-            "SELECT id AS artifact_id FROM artifacts"
-            " WHERE course_id = ? AND kind = 'visual' ORDER BY created_at ASC, rowid ASC LIMIT 1",
-            (course_id,),
-        ).fetchone()
     return str(row["artifact_id"]) if row is not None else None
+
+
+def _declared_cover_path(entry: Mapping[str, Any]) -> str | None:
+    cover = _mapping(entry.get("cover"))
+    return _text(cover.get("path"), limit=200) if cover else None
 
 
 def _install_next_step(connection, enrollment_id: str, course_id: str) -> dict[str, Any] | None:
@@ -176,6 +193,50 @@ def _install_next_step(connection, enrollment_id: str, course_id: str) -> dict[s
         return domain._library_next_step(connection, {"id": enrollment_id}, {"id": course_id})
     except Exception:  # noqa: BLE001
         return None
+
+
+def _cover_problems(entry: Mapping[str, Any], manifest: Mapping[str, Any]) -> list[str]:
+    """H-197: a catalogue cover must be the pack's own first linked visual, or nothing.
+
+    The Workshop serves a cover through the existing artifact route, and an import adopts an
+    artifact only for a ``media[]`` link. So a catalogue cover that is not the pack's first linked
+    visual would either never render or — worse — render some *other* figure as the cover. This
+    check keeps the catalogue, the manifest and the artifact in one line: the plate the catalogue
+    names is the plate the reader sees. A v1 pack declares no ``media[]``, so it cannot serve an
+    artifact cover at all and must declare none; it keeps the composed typographic plate.
+    """
+    cover = _mapping(entry.get("cover"))
+    path = _text(cover.get("path"), limit=200) if cover else None
+    if not path:
+        return []
+    images = {
+        str(item.get("path"))
+        for item in manifest.get("files") or []
+        if isinstance(item, Mapping) and str(item.get("mime", "")).startswith("image/")
+    }
+    if path not in images:
+        return [f"catalogue cover {path!r} is not a declared image file of the pack"]
+    media = [item for item in manifest.get("media") or [] if isinstance(item, Mapping)]
+    if not media:
+        return [
+            f"catalogue cover {path!r} cannot be served: a v1 pack carries no media[] link, so "
+            "its cover is the composed typographic plate"
+        ]
+    roles = {
+        str(item.get("path")): str(item.get("role"))
+        for item in manifest.get("files") or []
+        if isinstance(item, Mapping)
+    }
+    first_visual = next(
+        (str(link.get("path")) for link in media if roles.get(str(link.get("path"))) == "visual"),
+        None,
+    )
+    if first_visual != path:
+        return [
+            f"catalogue cover {path!r} is not the pack's first linked visual "
+            f"({first_visual!r} is); the storefront would show a different figure as the cover"
+        ]
+    return []
 
 
 # ── one catalogue entry ────────────────────────────────────────────────────
@@ -204,6 +265,9 @@ def _read_entry(entry: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     problems = packs.audit_bundle(directory)
     if problems:
         raise WorkshopError("bundled pack content audit failed: " + "; ".join(problems))
+    cover_problems = _cover_problems(entry, manifest)
+    if cover_problems:
+        raise WorkshopError("; ".join(cover_problems))
     integrity = {
         "hashes_match": set(files) == {str(item["path"]) for item in manifest["files"]},
         "file_count": len(manifest["files"]),
@@ -335,7 +399,11 @@ def catalog_view() -> dict[str, Any]:
             if installed_row is not None:
                 installed = {
                     **installed_row,
-                    "cover_artifact_id": _cover_artifact(connection, str(installed_row["course_id"])),
+                    "cover_artifact_id": _cover_artifact(
+                        connection,
+                        str(installed_row["course_id"]),
+                        _declared_cover_path(entry),
+                    ),
                     "next_step": _install_next_step(
                         connection, str(installed_row["enrollment_id"]), str(installed_row["course_id"])
                     ),
