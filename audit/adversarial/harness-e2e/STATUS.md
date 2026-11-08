@@ -424,3 +424,28 @@ PYTHONPATH=. python3 -m unittest discover -s tests -t .
 The P3 gate false positive above (preposition stranding on `to`) was still open at H-49 — it is
 H-46's signal, not this packet's. H-51 `2620c95` has since made the judgement structural, so the
 packet's bytes are unchanged and the false positive is closed; see the H-46b note above.
+
+## H-191 follow-up — packet re-run after the validator shape repair (`wt/h191-item-label`, base `883cdfe`)
+
+`coursebook.generation._call_llm` now records how many schema re-asks a structured answer took and
+surfaces it as `validation.shape_violations`. That key is part of the plan-stage record the packet
+embeds, so the three scenario evidence files no longer matched `manifest.json` (3 failures in
+`PacketManifestTest.test_fresh_evidence_reproduces_the_committed_bytes`) — the manifest doing its
+job, as in H-49.
+
+Regenerated on this tree and re-pinned. The complete evidence diff is **additive only**:
+`shape_violations: 0` on each embedded `validation` block (2 sites in `bicycle_single`,
+5 in `music_short`, 4 in `soldering_full`, plus the ceiling-probe line in `run-output.txt`).
+No verdict, outcome, independence, lesson text, check or grading row changed; each scenario is
+still `independence: independent` / `outcome: independently_validated`.
+
+```text
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py
+  overall: PASS  (3/3 scenarios)
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
+  packet: FRESH — every evidence file and harness input matches manifest.json
+```
+
+Why the packet was re-derived rather than the key dropped: an operator reads a repaired validation
+in the plan-stage record (`coursebook/executor.py` carries `result["validation"]`), and a re-asked
+answer must never read as a first-time one.
