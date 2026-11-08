@@ -439,7 +439,8 @@ class PolicyThreadingTest(KernelCase):
     def test_scope_caps_the_plan_time_estimate(self) -> None:
         from tests.test_generation import _unsourced, plan_fixture
 
-        plan = _unsourced(plan_fixture("plan_ja"))  # time_estimate.weeks == 6
+        plan = _unsourced(plan_fixture("plan_ja"))
+        weeks = plan["time_estimate"]["weeks"]
         with self.assertRaises(gen._RuleViolation) as raised:
             gen.enforce_plan_rules(
                 plan, recipe="committed", dials={"level": "L0"}, locale="ja-JP",
@@ -447,7 +448,7 @@ class PolicyThreadingTest(KernelCase):
             )
         joined = " ".join(raised.exception.reasons)
         self.assertIn("scope 'single' caps the plan at 1 week(s)", joined)
-        self.assertIn("the time estimate says 6 week(s)", joined)
+        self.assertIn(f"the time estimate says {weeks} week(s)", joined)
 
         # `short` allows the same estimate: the cap is the scope's, not a blanket one.
         gen.enforce_plan_rules(

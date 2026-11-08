@@ -1,25 +1,25 @@
 {
   "title": "Japanese café basics",
-  "learner_outcome": "At a café, greet the staff, order one drink, ask a price and answer a simple follow-up question in Japanese using standard polite forms, with romaji and furigana available as scaffolds.",
+  "learner_outcome": "At a café, choose the greeting that opens the interaction, order one drink, pick out a menu item by its distance, and answer a written question about drink size in Japanese, with romaji and furigana available as scaffolds.",
   "delivery": "self_study",
   "time_estimate": {
-    "sessions_per_week": 3,
+    "sessions_per_week": 1,
     "minutes_per_session": 25,
-    "weeks": 6,
+    "weeks": 4,
     "basis": "model",
     "confidence": "low",
-    "rationale": "Derived from the declared 75 minutes per week and three sections; it schedules practice, it does not promise attainment.",
+    "rationale": "One 25-minute session per authored section, one session a week for four weeks; it schedules practice, it does not promise attainment.",
     "benchmark": null,
     "attainment_hours": null
   },
   "objectives": [
     {
       "ordinal": 1,
-      "title": "Greet café staff and open the interaction politely",
-      "evidence_target": "production",
+      "title": "Choose the greeting that opens a café interaction",
+      "evidence_target": "discrimination",
       "evidence_criteria": [
-        "Produces a greeting in Japanese script",
-        "Chooses a greeting appropriate to entering a shop"
+        "Selects the greeting option when the interaction opens",
+        "Rejects the thanks and farewell options for the same moment"
       ],
       "support": "sourced",
       "source_ids": [
@@ -38,7 +38,7 @@
     },
     {
       "ordinal": 3,
-      "title": "Distinguish これ / それ / あれ when pointing at menu items",
+      "title": "Distinguish これ / それ / あれ by the item's distance from the speaker",
       "evidence_target": "discrimination",
       "evidence_criteria": [
         "Selects the demonstrative that matches the speaker's distance from the item"
@@ -47,7 +47,7 @@
     },
     {
       "ordinal": 4,
-      "title": "Understand a staff follow-up question about drink size",
+      "title": "Understand a written staff question about drink size",
       "evidence_target": "comprehension",
       "evidence_criteria": [
         "Identifies that a size choice was requested",
@@ -60,7 +60,7 @@
     {
       "ordinal": 1,
       "title": "Greeting and opening",
-      "lesson_intent": "Model one polite greeting, then have the learner produce it cold before seeing romaji removed.",
+      "lesson_intent": "Contrast the request, thanks and farewell phrases, teach the register rule, then have the learner choose the greeting that opens the interaction.",
       "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         1
@@ -91,7 +91,7 @@
     {
       "ordinal": 3,
       "title": "This, that and over there",
-      "lesson_intent": "Point at three menu items at different distances and choose これ / それ / あれ each time.",
+      "lesson_intent": "Describe three menu items at different distances and have the learner choose これ / それ / あれ for each.",
       "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         3
@@ -104,8 +104,8 @@
     },
     {
       "ordinal": 4,
-      "title": "Price and follow-up",
-      "lesson_intent": "Ask a price, then recognise and answer a size question.",
+      "title": "Drink size and follow-up",
+      "lesson_intent": "Read a written staff question about drink size, then answer with one of the offered sizes.",
       "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         4
@@ -121,10 +121,10 @@
     {
       "objective_ref": 1,
       "kind": "quiz",
-      "evidence_target": "production",
+      "evidence_target": "discrimination",
       "count": 1,
       "independent_evidence": true,
-      "notes": "Selection check on a greeting, no romaji in the stimulus."
+      "notes": "Selection check on the opening phrase; the three script options are the stimulus, and two of them are the thanks and farewell taught in the section."
     },
     {
       "objective_ref": 2,
@@ -163,5 +163,5 @@
     "No keigo beyond standard polite forms."
   ],
   "spaced_review": true,
-  "evidence_note": null
+  "evidence_note": "SRC_ALPHA is tied to the greeting wording and register in objective 1. Objectives 2-4 and the request and thanks phrases are unverified in this recorded sample: no fetched source is attached, so a teacher must check them before a learner relies on them."
 }

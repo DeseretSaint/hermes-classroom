@@ -191,14 +191,16 @@ class DocumentDirectionTest(unittest.TestCase):
 class LegacyDocumentHashTest(unittest.TestCase):
     """A page authored before H-18 must render and hash exactly as it did before H-18.
 
-    The pinned values were produced by the **master** checkout (263c19d, before this change) with
+    The pin was first produced by the **master** checkout (263c19d, before H-18) with
     ``lesson_document.document_from_page(lesson_ja)`` — the same call ``domain.lesson_page`` makes
     for a stored ``gen_lessons.page_json`` — so this is cross-version evidence rather than a number
-    the new code reports about itself.
+    the new code reports about itself. H-173b repaired the ``lesson_ja`` fixture (a taught phrase is
+    no longer announced ahead of the check), so the pin is re-derived from the repaired fixture;
+    the assertion it protects is unchanged: passing a locale must not move the hash or id.
     """
 
-    PINNED_HASH = "sha256:fe03579c76401d11e57e6285bd62b471a0b4e216b7f258653d10c4e7c1a785c5"
-    PINNED_ID = "doc_fe03579c76401d11e57e"
+    PINNED_HASH = "sha256:a954165bb3a7e290fd404c4fb9e0ae175633f3fbba246b799d0903b4a9f4354f"
+    PINNED_ID = "doc_a954165bb3a7e290fd40"
 
     def test_legacy_document_hash_unchanged_by_locale(self) -> None:
         document = lesson_document.document_from_page(fixture("lesson_ja"))

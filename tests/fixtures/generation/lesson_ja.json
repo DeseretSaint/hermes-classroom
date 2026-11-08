@@ -3,34 +3,34 @@
   "segments": [
     {
       "kind": "model",
-      "heading": "Two phrases you will hear",
-      "body": "お願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.",
-      "short": "お願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks."
+      "heading": "Three phrases at the counter",
+      "body": "お願いします (onegaishimasu) is the request you make when ordering. ありがとうございます (arigatou gozaimasu) is the thanks you give as you leave. さようなら (sayounara) is the farewell you say when you leave a shop. All three are standard polite forms.",
+      "short": "Onegaishimasu requests, arigatou gozaimasu thanks, sayounara says farewell."
     },
     {
       "kind": "explain",
-      "heading": "Why register matters",
-      "body": "Standard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.",
-      "short": "Standard polite forms are the safe default in a shop; casual forms belong with friends."
+      "heading": "Why register and timing matter",
+      "body": "The greeting opens the interaction and comes before any order; if the staff greet you first, answer in kind. The register with staff you have not met is the standard polite one, while casual forms belong with friends. The opening phrase is the standard daytime greeting: it is neither the request, nor the thanks, nor the farewell, so you can tell it apart from the phrases you already know. Grounding note: SRC_ALPHA supports the greeting wording above; the register rule and the request, thanks and farewell phrases are unverified in this recorded sample, so check them with a teacher before relying on them.",
+      "short": "The greeting opens the interaction and is not the request, thanks or farewell. The register rule is unverified in this sample."
     },
     {
       "kind": "guided",
-      "heading": "Say it with romaji visible",
-      "body": "Repeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.",
-      "short": "Repeat お願いします with romaji visible, then once more without it."
+      "heading": "Tell the greeting apart",
+      "body": "At the check you will see three phrases. Two of them are functions you already know from this section: the thanks and the farewell. Set those two aside. The remaining phrase is the standard daytime greeting for entering, so that is the one to choose. Say each phrase aloud with the romaji visible; the romaji is a scaffold, not evidence of reading.",
+      "short": "At the check, set aside the thanks and the farewell; the remaining phrase is the greeting."
     }
   ],
   "worked_example": {
-    "prompt": "You want to ask for a menu politely.",
+    "prompt": "You walk into a café and the staff look up. Which phrase opens the interaction politely?",
     "steps": [
-      "Say お願いします with a small bow",
-      "Wait for the staff member to respond",
-      "Thank them with ありがとうございます"
+      "Notice the moment: you are entering and greeting, before ordering or leaving",
+      "Set aside the thanks and the farewell, because neither one opens an interaction",
+      "Choose the remaining phrase: it is the standard daytime greeting"
     ],
-    "answer": "お願いします (onegaishimasu)",
-    "short": "Wait for the staff member to respond, then thank them with ありがとうございます."
+    "answer": "the remaining phrase, the standard daytime greeting",
+    "short": "Entering is a greeting moment; set the thanks and farewell aside, then choose the remaining phrase."
   },
-  "learner_explanation": "Pick the phrase that fits entering a shop and speaking to staff for the first time. Script is shown; romaji is available as a scaffold until you no longer need it.",
+  "learner_explanation": "At the check, three phrases are shown. You already know the thanks and the farewell, so set them aside; the remaining phrase is the standard daytime greeting for entering a shop. Romaji stays available as a scaffold until you no longer need it.",
   "check": {
     "kind": "quiz",
     "stimulus": {
@@ -42,8 +42,8 @@
         "さようなら"
       ]
     },
-    "learner_instructions": "Choose one phrase. Romaji is shown after your first attempt, not before.",
-    "evidence_target": "production",
+    "learner_instructions": "Choose one phrase from the options and type it. The romaji reading of the phrases is in the model above and stays visible as a scaffold, not as evidence of reading.",
+    "evidence_target": "discrimination",
     "accepted_answers": [
       "こんにちは"
     ],
@@ -56,17 +56,17 @@
       {
         "criterion": "polite greeting",
         "weight": 1.0,
-        "description": "Selects a greeting used when entering a shop"
-      },
-      {
-        "criterion": "target script",
-        "weight": 1.0,
-        "description": "Produces the chosen phrase in Japanese script"
+        "description": "Chooses the phrase that opens the interaction"
       },
       {
         "criterion": "register",
         "weight": 1.0,
-        "description": "Keeps the polite register expected with staff"
+        "description": "Sets aside the thanks and farewell options"
+      },
+      {
+        "criterion": "script recognition",
+        "weight": 1.0,
+        "description": "Matches the chosen phrase to Japanese script"
       }
     ],
     "reference_answer": "こんにちは",
@@ -86,5 +86,5 @@
   "media": [],
   "parent_notes": null,
   "supervision_notes": [],
-  "learner_explanation_short": "Pick the phrase that fits entering a shop and speaking to staff for the first time."
+  "learner_explanation_short": "Set the thanks and farewell aside; pick the remaining daytime greeting."
 }

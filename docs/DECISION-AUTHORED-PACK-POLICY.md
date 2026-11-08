@@ -73,7 +73,7 @@ The probe runs `parent.brief.create` → plan job → `plan.approve` → lessons
 `checks[].accepted_alternatives`, including the reference answer, and `validate_minima` refuses a
 pack whose check lists its own reference answer as an alternative (`coursebook/packs.py:377-379`).
 Every shipped lesson fixture has `accepted_answers == [reference_answer]`
-(`tests/fixtures/generation/lesson_ja.json:43-58`), so the export refuses the pack it just built.
+(`tests/fixtures/generation/lesson_ja.json:47-54`), so the export refuses the pack it just built.
 
 Evidence (`one_to_one`, 4 validated lessons, approval `active`):
 
