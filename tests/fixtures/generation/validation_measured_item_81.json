@@ -1,0 +1,64 @@
+{
+  "verdict": "reject",
+  "criteria": [
+    {
+      "id": "objective_alignment",
+      "verdict": "pass",
+      "reason": "one objective, one unit, and the check measures the declared target"
+    },
+    {
+      "id": "source_support",
+      "verdict": "pass",
+      "reason": "every claim the plan makes about the technique names an id in the ledger"
+    },
+    {
+      "id": "factual_correctness",
+      "verdict": "pass",
+      "reason": "the stated pressure technique matches the fetched source excerpt"
+    },
+    {
+      "id": "answer_uniqueness",
+      "verdict": "pass",
+      "reason": "one answer is correct and the decoys fail the stated criterion"
+    },
+    {
+      "id": "alternative_coverage",
+      "verdict": "pass",
+      "reason": "accepted alternatives and the required answer are both declared"
+    },
+    {
+      "id": "rubric_consistency",
+      "verdict": "pass",
+      "reason": "each rubric line names one observable aspect of the response"
+    },
+    {
+      "id": "internal_contradiction",
+      "verdict": "pass",
+      "reason": "the technique and the rubric describe the same action"
+    },
+    {
+      "id": "answer_leakage",
+      "verdict": "pass",
+      "reason": "no reference answer appears in the learner-facing text"
+    },
+    {
+      "id": "hazard_age_appropriateness",
+      "verdict": "pass",
+      "reason": "the hazard is named with the age-appropriate supervision"
+    },
+    {
+      "id": "evidence_target_fit",
+      "verdict": "fail",
+      "reason": "the planned check asks the learner to restate the rule, not to apply it, so the declared production target is not measured"
+    }
+  ],
+  "rejections": [
+    {
+      "item": "check_plan: pressing harder does not fix a rolled edge; light strokes are correct",
+      "criterion": "evidence_target_fit",
+      "reason": "The check asks the learner to recall the rule in words, which evidences recall rather than the declared production target.",
+      "fix_hint": "Make the check require one produced stroke sequence the parent can observe."
+    }
+  ],
+  "claim_verdicts": []
+}

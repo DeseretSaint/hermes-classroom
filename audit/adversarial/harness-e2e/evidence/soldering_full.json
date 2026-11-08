@@ -50,6 +50,7 @@
         "independent": true,
         "outcome": "independently_validated",
         "research_status": "ok",
+        "shape_violations": 0,
         "validator": {
           "known": true,
           "model": "recorded-validator-h40",
@@ -1589,6 +1590,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1622,6 +1624,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1719,6 +1722,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1752,6 +1756,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1849,6 +1854,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1882,6 +1888,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -1979,6 +1986,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2012,6 +2020,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2109,6 +2118,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2142,6 +2152,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2239,6 +2250,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2272,6 +2284,7 @@
                 "independent": true,
                 "outcome": "independently_validated",
                 "research_status": "ok",
+                "shape_violations": 0,
                 "validator": {
                   "known": true,
                   "model": "recorded-validator-h40",
@@ -2869,6 +2882,7 @@
           "independent": true,
           "outcome": "independently_validated",
           "research_status": "ok",
+          "shape_violations": 0,
           "validator": {
             "known": true,
             "model": "recorded-validator-h40",

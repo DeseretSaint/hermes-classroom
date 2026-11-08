@@ -45,7 +45,7 @@ import secrets
 import sqlite3
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -87,6 +87,7 @@ __all__ = [
     "PlanNotApproved",
     "ProviderTimeout",
     "ProviderFailure",
+    "ModelOutputInvalid",
     "CostCeilingExceeded",
     "CostPreflightRefused",
     "CostPreflight",
@@ -173,7 +174,13 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt.
 LESSON_PROMPT_VERSION = "lesson-prompt.v9"
-VALIDATION_PROMPT_VERSION = "validation-prompt.v3"
+#: The validator instruction text. H-191 §5: a validator answer was discarded because one
+#: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
+#: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
+#: and ``_call_llm`` re-asks once on a shape violation. Both are changes to the instruction text,
+#: and a label is recorded in stored validation bindings and the idempotency fingerprint, so the
+#: label advances rather than wearing v3 for a third, different prompt.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v4"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -239,6 +246,30 @@ MAX_PLAN_BYTES = 48 * 1024
 MAX_LESSON_BYTES = 64 * 1024
 MAX_VALIDATION_BYTES = 24 * 1024
 
+#: Bound on the validator's ``item`` locator, in both ``rejections`` and ``claim_verdicts``.
+#: The field is a *locator* ("plan.goal", "objective_2", "check_plan[0]") — the explanation
+#: belongs in ``reason`` — so the bound is deliberately tight and, from H-191, stated in the
+#: prompt. The schema and the prompt read this one constant, so the limit a model is told can
+#: never drift from the limit it is checked against. It is not widened to absorb prose: an
+#: 81-character sentence in ``item`` is a shape mistake, and the honest repair is to say the
+#: rule (and re-ask once) rather than to accept a claim where a locator is expected.
+ITEM_REFERENCE_MAX_CHARS = 80
+
+#: Minimum seconds a shape re-ask must inherit from the original call's deadline to be worth
+#: spending. Below it the stage could not finish inside its declared bound anyway, so the
+#: failure is typed instead of buying a call that is already out of time.
+MIN_SHAPE_REPAIR_SECONDS = 15.0
+
+#: Suffix a re-ask carries on its ``prompt_version``. ``docs/GENERATION.md`` §1: a different
+#: instruction text under a reused label is never silently accepted, and the repair instruction
+#: is a different text. The recorded validation binding keeps the *pass* label; the usage row
+#: and the recorded shape-violation count carry the re-ask.
+REPAIR_PROMPT_SUFFIX = ".repair"
+
+#: How much of a host schema-violation message the re-ask quotes back. Bounded because the
+#: message quotes model output, and the quote is wrapped in the untrusted-data envelope.
+SHAPE_VIOLATION_QUOTE_CHARS = 400
+
 
 # ── Errors ──────────────────────────────────────────────────────────────────
 
@@ -302,6 +333,44 @@ class ProviderFailure(GenerationError):
         super().__init__(message)
         self.message = message
         self.purpose = purpose
+
+
+class ModelOutputInvalid(GenerationError):
+    """The model answered, and its answer did not match the frozen response schema.
+
+    This is deliberately **not** ``ProviderFailure``: the host and the provider were healthy, so
+    the job must not report an infrastructure outage (H-191: one 81-character ``item`` label threw
+    away a 54 s paid validation and surfaced as ``HOST_UNAVAILABLE``, retryable). It is also not a
+    rejection: a malformed answer is not a verdict about the artifact, so no validation record,
+    criterion row or rejection is written.
+
+    One bounded re-ask (:func:`_call_llm`) runs before this is raised; ``repair_attempted`` says
+    whether that happened, and ``violation`` carries the host's own message so the operator reads
+    the real rule that failed instead of a generic failure.
+
+    The job service maps this to the contract's ``VALIDATION_FAILED`` (category ``validation``,
+    retryable ``false``): the *payload* violated the frozen contract. A dedicated
+    ``MODEL_OUTPUT_INVALID`` code would name it better, but ``cb.errors`` is frozen and code
+    additions are a contract bump owned by Atlas, not a licence for this module to invent one.
+    """
+
+    code = "VALIDATION_FAILED"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        purpose: str | None = None,
+        schema_name: str | None = None,
+        violation: str | None = None,
+        repair_attempted: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.purpose = purpose
+        self.schema_name = schema_name
+        self.violation = violation
+        self.repair_attempted = repair_attempted
 
 
 #: The recovery actions a cost abort may offer. Fixed strings so a UI can switch on them; the
@@ -455,6 +524,10 @@ class LLMResponse:
     input_tokens: int | None = None
     output_tokens: int | None = None
     cost_usd: float | None = None
+    #: How many shape re-asks preceded this answer (H-191). ``0`` means the first answer parsed
+    #: and matched its schema. It is recorded beside the validation verdict so a repaired answer is
+    #: never presented as a first-time result.
+    shape_repair_attempts: int = 0
 
 
 LLM = Callable[[LLMRequest], LLMResponse]
@@ -938,7 +1011,14 @@ class _Usage:
                 f"{self.budget.max_cost_usd:.4f} USD ceiling"
             )
 
-    def record(self, request: LLMRequest, response: LLMResponse, duration_ms: int) -> None:
+    def record(
+        self,
+        request: LLMRequest,
+        response: LLMResponse,
+        duration_ms: int,
+        *,
+        outcome: str = "returned",
+    ) -> None:
         cost = response.cost_usd
         if cost is None:
             self.unknown_cost = True
@@ -957,6 +1037,10 @@ class _Usage:
                 "output_tokens": response.output_tokens,
                 "cost_usd": cost,
                 "duration_ms": duration_ms,
+                # ``returned`` for a call the pipeline used; ``schema_rejected`` for a call whose
+                # answer the host's schema gate threw away before it could be read. The second
+                # shape is real spend with unknown tokens, so it is recorded, never dropped.
+                "outcome": outcome,
             }
         )
         if self.budget.max_cost_usd is not None and self.estimated_spend_usd > self.budget.max_cost_usd:
@@ -1244,38 +1328,127 @@ def host_llm() -> LLM:
     return PluginLLMAdapter(_HOST_LLM)
 
 
-def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage) -> LLMResponse:
-    usage.before_call(request)
+def _shape_violation_text(exc: BaseException) -> str:
+    """The host's own schema-violation message, bounded and stripped of control characters.
+
+    The host raises ``ValueError("Plugin LLM structured output did not match schema: <message>")``
+    from its structured-output gate. The message quotes the model's own value, so it is treated as
+    data: bounded here, and wrapped in the untrusted-data envelope by
+    :func:`_shape_repair_request`.
+    """
+    text = " ".join(str(exc or "").split())
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+    return text[:SHAPE_VIOLATION_QUOTE_CHARS]
+
+
+def _shape_repair_request(request: LLMRequest, violation: str, *, timeout_s: float) -> LLMRequest:
+    """The one re-ask for a schema violation: same pass, same schema, the rule stated.
+
+    The host discards the rejected document before this module can see it, so a *repair* of the
+    previous answer is not possible — what is possible, and honest, is one re-ask that names the
+    violation and restates the shape rules. The system prompt, schema, purpose and input are
+    byte-identical to the original pass, so this is still the validator (or author) answering its
+    own request, not a second role; only ``instructions`` carries the correction and only
+    ``prompt_version`` is marked, because the instruction text is different
+    (``docs/GENERATION.md`` §1).
+    """
+    note = (
+        "\n\nYour previous answer to this same request was rejected by the response-schema check "
+        "before it could be read, so no verdict from it survives. Answer the request again and "
+        "return exactly one JSON object that matches the schema. Every field in the schema's "
+        "required list must be present, no field outside the schema may appear, enum fields keep "
+        "their listed values, and every string stays inside its schema length bound. The item "
+        "fields are locators, not sentences: put each explanation or claim in 'reason'.\n"
+        f"The rejection reason, quoted as untrusted data: {UNTRUSTED_SOURCE_BEGIN} "
+        f"{violation} {UNTRUSTED_SOURCE_END}"
+    )
+    return replace(
+        request,
+        instructions=request.instructions + note,
+        prompt_version=request.prompt_version + REPAIR_PROMPT_SUFFIX,
+        timeout_s=timeout_s,
+    )
+
+
+def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: bool = True) -> LLMResponse:
+    """One bounded structured call, plus at most one bounded re-ask on a shape violation.
+
+    The host's structured-output gate raises ``ValueError`` when the answer does not match the
+    response schema. Before H-191 that ``ValueError`` became a ``ProviderFailure``, which the job
+    service reported as ``HOST_UNAVAILABLE`` (retryable): a healthy host and a *measured* 54 s paid
+    answer were both described as an outage, and the plan was neither validated nor rejected. Now:
+
+    * the discarded call is recorded as real spend with unknown tokens (it happened);
+    * one re-ask runs, inside whatever is left of the original deadline, and only if enough of it
+      is left to finish (``MIN_SHAPE_REPAIR_SECONDS``);
+    * if the second answer is also malformed the failure is :class:`ModelOutputInvalid`, a typed
+      contract violation — never a verdict and never an infrastructure outage.
+
+    The re-ask is a distinct call: it carries a different ``instructions`` text, a marked
+    ``prompt_version`` and its own usage row. It does not touch ``assert_separate_pass`` (that
+    compares the *generation* request with the *validation* request, both unchanged) and it does
+    not weaken identity recording (the identity compared is the answering response's, whichever
+    attempt produced it).
+    """
     started = time.monotonic()
-    try:
-        response = llm(request)
-    except (TimeoutError,) as exc:
-        raise ProviderTimeout(
-            f"{request.purpose} timed out: {exc}",
-            purpose=request.purpose,
-            deadline_s=float(request.timeout_s),
-        ) from exc
-    except GenerationError:
-        raise
-    except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
-        raise ProviderFailure(
-            f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
-        ) from exc
-    duration_ms = int((time.monotonic() - started) * 1000)
-    if not isinstance(response, LLMResponse):
-        raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
-    # A call that returned is real spend even when it returned too late to use. Record it before
-    # the deadline verdict so usage never understates what the provider charged and a cost
-    # ceiling is checked against the true total.
-    usage.record(request, response, duration_ms)
-    if duration_ms > int(request.timeout_s * 1000):
-        raise ProviderTimeout(
-            f"{request.purpose} took {duration_ms}ms, over its {request.timeout_s}s deadline",
-            purpose=request.purpose,
-            duration_ms=duration_ms,
-            deadline_s=float(request.timeout_s),
-        )
-    return response
+    attempt_started = started
+    deadline_s = float(request.timeout_s)
+    current = request
+    repairs = 0
+    while True:
+        usage.before_call(current)
+        try:
+            response = llm(current)
+        except (TimeoutError,) as exc:
+            raise ProviderTimeout(
+                f"{request.purpose} timed out: {exc}",
+                purpose=request.purpose,
+                deadline_s=deadline_s,
+            ) from exc
+        except GenerationError:
+            raise
+        except ValueError as exc:
+            # The host's structured-output gate. Not a provider outage: the answer arrived.
+            now = time.monotonic()
+            call_ms = int((now - attempt_started) * 1000)
+            usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
+            violation = _shape_violation_text(exc)
+            remaining = deadline_s - (now - started)
+            if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
+                raise ModelOutputInvalid(
+                    f"{request.purpose} returned an answer that violates its response schema "
+                    f"({request.schema_name}); this artifact has no verdict"
+                    f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+                    purpose=request.purpose,
+                    schema_name=request.schema_name,
+                    violation=violation,
+                    repair_attempted=bool(repairs),
+                ) from exc
+            repairs += 1
+            attempt_started = now
+            current = _shape_repair_request(request, violation, timeout_s=remaining)
+            continue
+        except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
+            raise ProviderFailure(
+                f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
+            ) from exc
+        duration_ms = int((time.monotonic() - started) * 1000)
+        if not isinstance(response, LLMResponse):
+            raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
+        # A call that returned is real spend even when it returned too late to use. Record it before
+        # the deadline verdict so usage never understates what the provider charged and a cost
+        # ceiling is checked against the true total.
+        usage.record(current, response, duration_ms)
+        if duration_ms > int(deadline_s * 1000):
+            raise ProviderTimeout(
+                f"{request.purpose} took {duration_ms}ms, over its {deadline_s}s deadline",
+                purpose=request.purpose,
+                duration_ms=duration_ms,
+                deadline_s=deadline_s,
+            )
+        if repairs:
+            return replace(response, shape_repair_attempts=repairs)
+        return response
 
 
 # ── Strict schemas ──────────────────────────────────────────────────────────
@@ -2174,7 +2347,7 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["item", "criterion", "reason"],
                 "properties": {
-                    "item": {"type": "string", "minLength": 1, "maxLength": 80},
+                    "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "criterion": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
                     "reason": {"type": "string", "minLength": 5, "maxLength": 400},
                     "fix_hint": {"type": "string", "maxLength": 400},
@@ -2189,7 +2362,7 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["item", "support", "reason"],
                 "properties": {
-                    "item": {"type": "string", "minLength": 1, "maxLength": 80},
+                    "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "source_id": {"type": ["string", "null"], "maxLength": 64},
                     "support": {"type": "string", "enum": list(research_mod.SUPPORT_STATUSES)},
                     "evidence_quote": {
@@ -3122,6 +3295,17 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "words from that source that carry the claim. Without an exact quoted excerpt the harness "
         "keeps the claim 'unverified', and a title, publisher, URL, DOI or ISBN you cite must "
         "appear in the ledger or the verdict is flagged."
+        # The locator rule is stated because it is enforced. Before H-191 the schema capped
+        # ``item`` at 80 characters and nothing said so: one 81-character label discarded a whole
+        # validation answer. A stated rule the model can follow is the first repair; ``_call_llm``
+        # adds one bounded re-ask for the slip that still happens.
+        " In 'rejections' and 'claim_verdicts', 'item' is a short locator for the place in the "
+        "artifact — for example 'plan.goal', 'objective_2', 'check_plan[0]', "
+        "'lesson.segments[1]' — never a sentence and never a claim: it is at most "
+        f"{ITEM_REFERENCE_MAX_CHARS} characters, and every explanation goes in 'reason'. The "
+        "response is rejected before it is read if any string is over its schema bound or any "
+        "field outside the schema is returned, so put each verdict in exactly the fields the "
+        "schema names."
     )
     if subject == "plan":
         text += (
@@ -6074,6 +6258,9 @@ def _record_validation(
                         "unknown": verdict["unknown"],
                         "waived_unknown": verdict.get("waived_unknown") or [],
                         "declared": verdict["declared"],
+                        # H-191: how many shape re-asks this answer took. A repaired answer is
+                        # stored as repaired, never presented as a first-time one.
+                        "shape_violations": int(getattr(response, "shape_repair_attempts", 0) or 0),
                     }
                 ),
                 sha256_of_text(generation_request.system_prompt),
@@ -6136,6 +6323,8 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "generator_prompt_sha256": row.get("generator_prompt_sha256"),
         "validator_prompt_sha256": row.get("validator_prompt_sha256"),
         "waived_unknown": rejections.get("waived_unknown") or [],
+        # H-191: a re-asked answer is stored and read back as re-asked.
+        "shape_violations": int(rejections.get("shape_violations") or 0),
         "warning": _provenance_warning(outcome, independence, bool(row.get("facts_unverified"))),
     }
 
@@ -6799,6 +6988,9 @@ def _validation_block(
         "facts_unverified": facts_unverified,
         "research_status": verdict.get("research_status"),
         "waived_unknown": list(verdict.get("waived_unknown") or []),
+        # H-191: how many shape re-asks produced this answer. Read beside ``outcome`` so a
+        # repaired validation is never presented as a first-time one.
+        "shape_violations": int(getattr(validator_response, "shape_repair_attempts", 0) or 0),
         "warning": _provenance_warning(outcome, independence, facts_unverified),
         "cost_usd": None,
     }
