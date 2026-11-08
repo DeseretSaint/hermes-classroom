@@ -245,6 +245,20 @@ invites a content-safety policy the product does not have and should not improvi
 
 **Verdict.** Out for 0.1.0. Gate: §10.3.
 
+**H-173e decision (2026-11-08).** Re-asked when the S1 course-quality repair found that a
+procedure objective can only collect a self-ticked checklist. The answer stands and is narrowed:
+0.1.0 owns **no** procedure-evidence lane, and the checklist remains the lane. Option 1 as proposed
+("its own evidence class, not `self_reported`") is refused because §5 above is the correct ceiling
+— a learner-supplied file proves a file exists — and because `evidence_class` describes how an
+answer was produced, not what was stored. A generic observer lane (option 2) is refused on identity
+grounds: `observed` would be a class the system cannot test, and `parent_reported` already carries
+the one observer whose relationship is stable. The consequence is a documented boundary, not a
+capability: a `procedure` objective keeps a `verification` checklist stored `self_reported`, the
+course must say in its plan and lesson that the result is attestation and that no artifact is
+collected, and the rubric's D3 anchor of 2 for "self-ticked checklist for a procedure" stands as a
+**0.1.0 ceiling** for that construct. `docs/DECISION-PROCEDURE-EVIDENCE.md` owns the reasoning and
+the §10.3 gate that would flip it.
+
 ---
 
 ## 6. Comparison
