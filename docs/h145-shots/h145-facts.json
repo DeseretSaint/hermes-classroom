@@ -1,0 +1,865 @@
+{
+  "port": "9361",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "frames": [
+    {
+      "mode": "light",
+      "width": 1049,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/light-1049.png"
+    },
+    {
+      "mode": "light",
+      "width": 900,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/light-900.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/light-460.png"
+    },
+    {
+      "mode": "light",
+      "width": 1049,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/text200-light-1049.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/text200-light-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/dark-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 900,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/dark-900.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/dark-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/text200-dark-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_244cc1ed/docs/h145-shots/text200-dark-460.png"
+    }
+  ],
+  "facts": {
+    "light-1049": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "home",
+      "paper": "rgb(247, 241, 228)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "37.7485px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.66)",
+          "border": "rgb(208, 215, 222)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(232, 169, 58)",
+          "color": "rgb(26, 23, 19)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.0524956 0.244207 0.631462 / 0.088)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "light-900": {
+      "innerWidth": 900,
+      "mode": "light",
+      "destination": "home",
+      "paper": "rgb(247, 241, 228)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "36.702px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.66)",
+          "border": "rgb(208, 215, 222)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(232, 169, 58)",
+          "color": "rgb(26, 23, 19)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.0524956 0.244207 0.631462 / 0.088)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "light-460": {
+      "innerWidth": 460,
+      "mode": "light",
+      "destination": "home",
+      "paper": "rgb(247, 241, 228)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "36px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.66)",
+          "border": "rgb(208, 215, 222)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(232, 169, 58)",
+          "color": "rgb(26, 23, 19)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.0524956 0.244207 0.631462 / 0.088)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+          "border": "rgb(26, 23, 19)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "dark-1049": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "home",
+      "paper": "rgb(19, 18, 16)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "37.7485px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+          "border": "rgb(48, 54, 61)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(239, 192, 107)",
+          "color": "rgb(19, 18, 16)",
+          "border": "rgb(19, 18, 16)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.554367 0.695455 0.977451 / 0.088)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+          "border": "rgb(245, 239, 225)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "dark-900": {
+      "innerWidth": 900,
+      "mode": "dark",
+      "destination": "home",
+      "paper": "rgb(19, 18, 16)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "36.702px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+          "border": "rgb(48, 54, 61)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(239, 192, 107)",
+          "color": "rgb(19, 18, 16)",
+          "border": "rgb(19, 18, 16)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.554367 0.695455 0.977451 / 0.088)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+          "border": "rgb(245, 239, 225)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "dark-460": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "home",
+      "paper": "rgb(19, 18, 16)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "36px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "14px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+          "border": "rgb(48, 54, 61)",
+          "height": 23.98541259765625
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(239, 192, 107)",
+          "color": "rgb(19, 18, 16)",
+          "border": "rgb(19, 18, 16)",
+          "height": 35.99555206298828
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.554367 0.695455 0.977451 / 0.088)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+          "border": "rgb(245, 239, 225)",
+          "height": 35.99555206298828
+        }
+      ]
+    },
+    "text200-light-1049": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "home",
+      "paper": "rgb(247, 241, 228)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "72px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "28px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.66)",
+          "border": "rgb(208, 215, 222)",
+          "height": 47.9708251953125
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(232, 169, 58)",
+          "color": "rgb(26, 23, 19)",
+          "border": "rgb(26, 23, 19)",
+          "height": 58.22040557861328
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.0524956 0.244207 0.631462 / 0.088)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+          "border": "rgb(26, 23, 19)",
+          "height": 58.22040557861328
+        }
+      ]
+    },
+    "text200-light-460": {
+      "innerWidth": 460,
+      "mode": "light",
+      "destination": "home",
+      "paper": "rgb(247, 241, 228)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "72px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "28px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.66)",
+          "border": "rgb(208, 215, 222)",
+          "height": 47.9708251953125
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(232, 169, 58)",
+          "color": "rgb(26, 23, 19)",
+          "border": "rgb(26, 23, 19)",
+          "height": 58.22040557861328
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.0524956 0.244207 0.631462 / 0.088)",
+          "color": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+          "border": "rgb(26, 23, 19)",
+          "height": 58.22040557861328
+        }
+      ]
+    },
+    "text200-dark-1049": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "home",
+      "paper": "rgb(19, 18, 16)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "72px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "28px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+          "border": "rgb(48, 54, 61)",
+          "height": 47.9708251953125
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(239, 192, 107)",
+          "color": "rgb(19, 18, 16)",
+          "border": "rgb(19, 18, 16)",
+          "height": 58.22040557861328
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.554367 0.695455 0.977451 / 0.088)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+          "border": "rgb(245, 239, 225)",
+          "height": 58.22040557861328
+        }
+      ]
+    },
+    "text200-dark-460": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "home",
+      "paper": "rgb(19, 18, 16)",
+      "h1": {
+        "count": 1,
+        "text": "Home",
+        "fontSize": "72px",
+        "family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+        "weight": "600"
+      },
+      "wordmarks": [
+        {
+          "text": "Coursebook",
+          "tag": "div",
+          "fontSize": "28px"
+        }
+      ],
+      "nav": [
+        {
+          "id": "home",
+          "text": "Home",
+          "current": "page"
+        },
+        {
+          "id": "courses",
+          "text": "Courses",
+          "current": null
+        },
+        {
+          "id": "library",
+          "text": "Library",
+          "current": null
+        },
+        {
+          "id": "studio",
+          "text": "Parent Studio",
+          "current": null
+        }
+      ],
+      "continueCards": 1,
+      "seals": 0,
+      "stamps": 0,
+      "nextSentences": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "overflow": 0,
+      "course": "H103 live reject check",
+      "section": "Follow a supervised creek sampling procedure and record observations",
+      "position": "Section 1 of 1",
+      "minutes": "Session length could not be read",
+      "tally": "0 of 1 section with evidence",
+      "buttons": [
+        {
+          "label": "Retry",
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+          "border": "rgb(48, 54, 61)",
+          "height": 47.9708251953125
+        },
+        {
+          "label": "Review the plan",
+          "background": "rgb(239, 192, 107)",
+          "color": "rgb(19, 18, 16)",
+          "border": "rgb(19, 18, 16)",
+          "height": 58.22040557861328
+        },
+        {
+          "label": "Open the section",
+          "background": "color(srgb 0.554367 0.695455 0.977451 / 0.088)",
+          "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+          "border": "rgb(245, 239, 225)",
+          "height": 58.22040557861328
+        }
+      ]
+    }
+  },
+  "darkKeyboard": {
+    "firstStop": "a",
+    "firstLabel": "Skip to course content",
+    "skipRevealed": true,
+    "navFocusRing": true,
+    "navFocusOutline": "auto 1.1156px rgb(238, 238, 238)",
+    "navOrder": [
+      "home",
+      "courses",
+      "library",
+      "studio"
+    ]
+  }
+}
