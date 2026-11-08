@@ -116,9 +116,18 @@ class ClaimBatchingTest(unittest.TestCase):
                     f"{len(claim_enum(request))} claims in one answer for {objectives} objectives",
                 )
 
-    def test_the_criteria_pass_keeps_the_whole_ten_criterion_review(self) -> None:
+    def test_the_criteria_passes_cover_the_whole_ten_criterion_review(self) -> None:
+        # H-192b: the review is split into fixed-size passes, so no answer reasons over ten
+        # criteria and a full plan at once. Together they still cover exactly the reviewed set.
         requests = build_requests(big_plan(20))
-        self.assertEqual(gen.validation_pass_criteria(requests[0]), gen.VALIDATION_CRITERIA)
+        owned = [
+            criterion
+            for request in requests
+            for criterion in gen.validation_pass_criteria(request)
+        ]
+        self.assertEqual(tuple(owned), gen.VALIDATION_CRITERIA)
+        for request in requests:
+            self.assertLessEqual(len(gen.validation_pass_criteria(request)), 5)
 
     def test_leftover_claims_become_claim_only_passes(self) -> None:
         plan = big_plan(20)
@@ -128,8 +137,9 @@ class ClaimBatchingTest(unittest.TestCase):
         leftover = max(0, len(labels) - criteria_passes * gen.CLAIM_VERDICTS_PER_PASS)
         expected = criteria_passes + -(-leftover // gen.CLAIM_ONLY_VERDICTS_PER_PASS)
         self.assertEqual(len(requests), expected)
-        for request in requests[1:]:
-            self.assertEqual(gen.validation_pass_criteria(request), ())
+        claim_only = [request for request in requests if not gen.validation_pass_criteria(request)]
+        self.assertTrue(claim_only, "a 20-objective plan must have leftover claim passes")
+        for request in claim_only:
             self.assertNotIn("criteria", request.schema["properties"])
             self.assertNotIn("rejections", request.schema["properties"])
             self.assertNotIn("verdict", request.schema["properties"])
@@ -143,21 +153,51 @@ class ClaimBatchingTest(unittest.TestCase):
         self.assertEqual(sorted(demanded), sorted(labels))
         self.assertEqual(len(demanded), len(set(demanded)))
 
-    def test_a_small_plan_still_makes_one_call(self) -> None:
-        # Single/short plans measured 3–5 claim labels; they must not pay for extra passes.
+    def test_a_small_plan_needs_no_claim_only_pass(self) -> None:
+        # Single/short plans measured 3–5 claim labels; they must not pay for extra claim passes.
         plan = big_plan(2, units=1)
         self.assertLessEqual(len(gen.plan_claim_labels(plan)), gen.CLAIM_VERDICTS_PER_PASS)
-        self.assertEqual(len(build_requests(plan)), 1)
+        requests = build_requests(plan)
+        self.assertEqual(len(requests), len(gen.VALIDATION_CRITERIA_PASSES))
+        for request in requests:
+            self.assertLessEqual(len(claim_enum(request)), gen.CLAIM_VERDICTS_PER_PASS)
+
+    def test_every_pass_demands_a_fixed_maximum(self) -> None:
+        # H-192b: no answer's demand grows with plan size — five criteria at most, six claims at
+        # most on a criteria pass, twelve on a claim-only pass.
+        for plan in (big_plan(2, units=1), big_plan(12), big_plan(40, units=12)):
+            requests = build_requests(plan)
+            labels = gen.plan_claim_labels(plan)
+            self.assertEqual(
+                sorted(label for request in requests for label in claim_enum(request)),
+                sorted(labels),
+            )
+            for request in requests:
+                criteria = gen.validation_pass_criteria(request)
+                claims = claim_enum(request)
+                self.assertLessEqual(len(criteria), 5)
+                if criteria:
+                    self.assertLessEqual(len(claims), gen.CLAIM_VERDICTS_PER_PASS)
+                else:
+                    self.assertLessEqual(len(claims), gen.CLAIM_ONLY_VERDICTS_PER_PASS)
 
     def test_a_claim_only_pass_is_told_it_rules_on_no_criterion(self) -> None:
-        request = build_requests(big_plan(20))[1]
+        request = next(
+            request
+            for request in build_requests(big_plan(20))
+            if not gen.validation_pass_criteria(request)
+        )
         self.assertIn("no criteria", request.instructions)
         self.assertIn("no overall verdict", request.instructions)
         for label in claim_enum(request):
             self.assertIn(label, request.instructions)
 
     def test_a_claim_only_schema_rejects_a_criterion_answer(self) -> None:
-        request = build_requests(big_plan(20))[1]
+        request = next(
+            request
+            for request in build_requests(big_plan(20))
+            if not gen.validation_pass_criteria(request)
+        )
         report = report_for(request)
         report["criteria"] = [
             {"id": gen.VALIDATION_CRITERIA[0], "verdict": "pass", "reason": "stray"}
@@ -185,9 +225,9 @@ class MergedReviewTest(unittest.TestCase):
         plan = big_plan(20)
         requests = build_requests(plan)
         reports = []
-        for index, request in enumerate(requests):
+        for request in requests:
             report = report_for(request)
-            if index > 0:
+            if not gen.validation_pass_criteria(request):
                 # A raw report cannot smuggle a verdict or rejection through a claim-only pass:
                 # the pass owns no criterion, so its artifact-level fields are ignored.
                 report["verdict"] = "reject"
@@ -315,6 +355,71 @@ class CommittedGradedCheckPromptTest(unittest.TestCase):
                     scope="short",
                 )
                 self.assertNotIn("graded quiz check", one_off)
+
+
+class UnitValidationPayloadTest(unittest.TestCase):
+    """H-192b: the unit-stage validation request is bounded by the unit, not the course.
+
+    A short committed course serialised this request at 26 799 bytes against the scope's 24 000
+    byte bound and the unit stage failed before validating anything: the payload carried the whole
+    plan document. Only this unit's intent and checks are needed.
+    """
+
+    def _request(self, plan: dict, objectives: list[dict]):
+        unit = {
+            "ordinal": 1,
+            "title": "Unit one",
+            "goal": "Advance the goal",
+            "target_lessons": 3,
+            "prereq_unit_ordinals": [],
+        }
+        return gen.build_unit_sections_validation_request(
+            plan=plan,
+            unit=unit,
+            objectives=objectives,
+            sections=[
+                {
+                    "title": f"Section {index}",
+                    "lesson_intent": "Teach the construct this objective names. " * 8,
+                    "role": "owner",
+                    "primary_objective_ref": index,
+                    "reinforces": [],
+                    "media_need": {"construct": "", "image": "none", "audio": "none", "role": "none"},
+                    "context_needs": [],
+                    "source_ids": [],
+                }
+                for index in (1, 2, 3)
+            ],
+            goal="Reach the goal",
+            recipe="committed",
+            locale="en-US",
+            sources=[],
+            research_status="ok",
+        )
+
+    def test_the_payload_does_not_grow_with_course_length(self) -> None:
+        objectives = [
+            {"ordinal": index, "title": f"Objective {index}", "evidence_target": "recall",
+             "evidence_criteria": ["Names the step once"]}
+            for index in (1, 2, 3)
+        ]
+        small_plan = big_plan(3, units=1)
+        big_plan_doc = big_plan(40, units=12)
+        small = self._request(small_plan, objectives)
+        big = self._request(big_plan_doc, objectives)
+        self.assertEqual(small.input_text, big.input_text)
+        self.assertLess(len(small.input_text.encode("utf-8")), 20000)
+
+    def test_the_brief_carries_only_this_units_checks(self) -> None:
+        plan = big_plan(6, units=1)
+        plan["check_plan"] = [
+            {"objective_ref": ordinal, "kind": "quiz", "evidence_target": "recall"}
+            for ordinal in range(1, 7)
+        ]
+        brief = gen._unit_plan_brief(plan, [{"ordinal": 2}, {"ordinal": 3}])
+        self.assertEqual([item["objective_ref"] for item in brief["check_plan"]], [2, 3])
+        self.assertNotIn("objectives", brief)
+        self.assertNotIn("units", brief)
 
 
 if __name__ == "__main__":

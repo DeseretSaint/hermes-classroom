@@ -1264,7 +1264,7 @@
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
           "input_tokens": 3584,
-          "output_tokens": 1023,
+          "output_tokens": 1315,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -1383,7 +1383,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1940,
+            "input_tokens": 1262,
             "output_tokens": 525,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1442,7 +1442,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1957,
+            "input_tokens": 1280,
             "output_tokens": 524,
             "unknown_calls": 0,
             "unknown_cost": false

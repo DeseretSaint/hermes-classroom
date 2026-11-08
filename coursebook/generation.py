@@ -2530,10 +2530,17 @@ VALIDATION_SCHEMA: dict[str, Any] = {
 #: * one pass over all ten criteria, with the claim-verdict set bounded to the plan's own named
 #:   claims (``plan_claim_labels``) and one-sentence reasons: **145.0 s / 8 246 tokens**.
 #:
-#: So the shipped grouping is ONE pass. The pass machinery stays because a caller may need to
-#: narrow further (a cheaper validator route, a smaller deadline): the aggregation, the
-#: narrowed schema and the merge are the same code for one pass or for several.
-VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (VALIDATION_CRITERIA,)
+#: So the shipped grouping was ONE pass until H-192b. The H-192 live measurement changed that:
+#: with the claim set batched off, the *criteria* pass became the unbounded one. On a full-scope
+#: plan it was still running at the 600 s deadline (job failed ``HOST_UNAVAILABLE``), and on a
+#: short plan it emitted 22 325 tokens / 539 s. Ten criteria reasoned over a full plan is not a
+#: fixed demand. The criteria set is therefore split into two passes of five: every pass now
+#: answers a fixed maximum (five criteria, six claims), independent of plan size, and the two
+#: halves run together (max of the two, not the sum).
+VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
+    VALIDATION_CRITERIA[:5],
+    VALIDATION_CRITERIA[5:],
+)
 
 #: Most claim-support verdicts one validation pass may demand.
 #:
@@ -8062,6 +8069,34 @@ def build_unit_sections_request(
     )
 
 
+def _unit_plan_brief(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """The plan context one unit's validation needs, bounded by the unit, not the course.
+
+    H-192b: this request used to carry the whole plan document. On a short committed course the
+    serialised request then measured 26 799 bytes against the scope's 24 000-byte bound, so the
+    unit stage failed before any section was validated (job ``VALIDATION_FAILED``). The validator
+    rules on this unit's sections against this unit's objectives; it needs the plan's intent and
+    the checks that cover *these* objectives, not every objective and unit in the course. Extra
+    course length no longer grows this payload.
+    """
+    ordinals = {int(obj["ordinal"]) for obj in objectives}
+    check_plan = [
+        dict(item)
+        for item in plan.get("check_plan") or []
+        if isinstance(item, Mapping) and int(item.get("objective_ref") or 0) in ordinals
+    ]
+    brief = {
+        "title": plan.get("title"),
+        "scope": plan.get("scope"),
+        "delivery": plan.get("delivery"),
+        "learner_outcome": plan.get("learner_outcome"),
+        "check_plan": check_plan,
+    }
+    return {key: value for key, value in brief.items() if value not in (None, [], "")}
+
+
 def build_unit_sections_validation_request(
     *,
     plan: dict[str, Any],
@@ -8080,7 +8115,7 @@ def build_unit_sections_validation_request(
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
-        "plan": plan,
+        "plan_brief": _unit_plan_brief(plan, objectives),
         "unit": unit,
         "objectives": list(objectives),
         "sections": list(sections),

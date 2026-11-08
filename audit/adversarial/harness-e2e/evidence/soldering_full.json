@@ -35,7 +35,7 @@
       "units": 12,
       "validation": {
         "cost": {
-          "calls": 5,
+          "calls": 6,
           "cost_usd": 0.0,
           "unknown_cost": false
         },
@@ -2969,7 +2969,7 @@
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
           "input_tokens": 14424,
-          "output_tokens": 1986,
+          "output_tokens": 2179,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -3112,7 +3112,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5899,
+            "input_tokens": 4320,
             "output_tokens": 517,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3171,7 +3171,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5892,
+            "input_tokens": 4316,
             "output_tokens": 504,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3230,7 +3230,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5881,
+            "input_tokens": 4304,
             "output_tokens": 503,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3289,7 +3289,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5887,
+            "input_tokens": 4310,
             "output_tokens": 505,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3348,7 +3348,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5893,
+            "input_tokens": 4314,
             "output_tokens": 509,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3407,7 +3407,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5909,
+            "input_tokens": 4331,
             "output_tokens": 508,
             "unknown_calls": 0,
             "unknown_cost": false
