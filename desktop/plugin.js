@@ -2115,25 +2115,12 @@ function mainlineObjective(row, objectives) {
   return list.find((entry) => !entry.independent) || list[list.length - 1]
 }
 
-/**
- * The estimate state, normalized for rendering. `error` means the read itself failed: the desk
- * has no answer, so it must not say the author recorded none. `none` means the backend answered
- * successfully and the answer carries no estimate. The two are never collapsed.
- */
-function deskEstimateState(estimate) {
-  const status = estimate && estimate.status ? estimate.status : 'none'
-  if (status === 'loading' || status === 'idle') return 'loading'
-  if (status === 'error') return 'error'
-  if (status === 'ready' && Number(estimate.minutes) > 0) return 'ready'
-  return 'none'
-}
-
-/** "Estimated minutes" is either recorded, absent from a real answer, or unreadable. Never derived. */
+/** "Estimated minutes" is either recorded by the backend or said to be missing. Never derived. */
 function deskEstimateLabel(estimate) {
-  const state = deskEstimateState(estimate)
-  if (state === 'loading') return 'Reading the estimate'
-  if (state === 'error') return 'Session length could not be read'
-  if (state === 'ready') return `≈ ${Number(estimate.minutes)} min`
+  if (estimate && (estimate.status === 'loading' || estimate.status === 'idle')) return 'Reading the estimate'
+  if (estimate && estimate.status === 'ready' && Number(estimate.minutes) > 0) {
+    return `≈ ${Number(estimate.minutes)} min`
+  }
   return 'Session length not recorded'
 }
 
@@ -2155,8 +2142,6 @@ function buildDeskModel({ library, outline, estimate }) {
       primaryLabel: null,
       primaryKind: null,
       estimateLabel: deskEstimateLabel(estimate),
-      estimateState: deskEstimateState(estimate),
-      estimateError: estimate && estimate.error ? estimate.error : null,
       lastTouched: null,
       touchedSource: null
     }
@@ -2182,8 +2167,6 @@ function buildDeskModel({ library, outline, estimate }) {
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
     estimateLabel: deskEstimateLabel(estimate),
-    estimateState: deskEstimateState(estimate),
-    estimateError: estimate && estimate.error ? estimate.error : null,
     // `last_opened_at` is this section's newest lesson run; `updated_at` is the enrollment's own
     // write. The section wins when it exists, and the label says which clock was read.
     lastTouched: (current && current.last_opened_at) || row.updated_at || null,
@@ -2304,7 +2287,7 @@ function DeskStats({ desk }) {
 }
 
 /** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
-function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate }) {
+function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
   const current = desk.current
   const title = current ? current.title : desk.nextLabel
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
@@ -2377,25 +2360,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                   desk.sectionLabel
                     ? jsx('span', { 'data-cb-continue-position': '', children: desk.sectionLabel })
                     : null,
-                  jsx('span', {
-                    'data-cb-continue-minutes': '',
-                    'data-cb-continue-minutes-state': desk.estimateState || 'none',
-                    title:
-                      desk.estimateState === 'error' && desk.estimateError && desk.estimateError.code
-                        ? `${desk.estimateError.code}: ${desk.estimateError.message || ''}`.trim()
-                        : undefined,
-                    style: desk.estimateState === 'error' ? { color: 'var(--cb-ochre)' } : undefined,
-                    children: desk.estimateLabel
-                  }),
-                  desk.estimateState === 'error'
-                    ? jsx(sdk.Button, {
-                        variant: 'text',
-                        size: 'sm',
-                        onClick: onRetryEstimate,
-                        'aria-label': 'Retry reading the session length',
-                        children: 'Retry'
-                      })
-                    : null,
+                  jsx('span', { 'data-cb-continue-minutes': '', children: desk.estimateLabel }),
                   jsx('span', {
                     'data-cb-continue-touched': desk.touchedSource || 'none',
                     children: desk.lastTouched ? `Last touched ${whenLabel(desk.lastTouched)}` : 'Nothing touched yet'
@@ -2977,7 +2942,6 @@ function FieldDeskHome({
   onSyllabus,
   onPrimary,
   onOpenSection,
-  onRetryEstimate,
   onOpen,
   onShowAll,
   sourcesOpen,
@@ -3026,7 +2990,7 @@ function FieldDeskHome({
     })
   }
 
-  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate })
+  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection })
   const notesCard = jsx(FieldNotesStrip, {
     notes,
     courseTitle: desk.row && desk.row.title ? desk.row.title : null,
@@ -3096,11 +3060,8 @@ function FieldDeskHome({
 /**
  * The estimate the backend already recorded: a pack manifest's per-objective `estimated_minutes`,
  * or the parent brief's `duration_minutes`. It never computes one from a count of sections.
- *
- * A failed read is its own state (`error`), not `none`: the desk has no answer and must not tell
- * the author they recorded none. `retryToken` re-runs the read for the desk's Retry control.
  */
-function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
+function useSessionEstimate({ row, current, enabled }) {
   const [state, setState] = useState({ status: 'none', minutes: null, source: null, error: null })
   const courseId = row ? row.course_id : null
   const packId = row && row.provenance ? row.provenance.pack_id : null
@@ -3115,14 +3076,10 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
     }
     let cancelled = false
     setState({ status: 'loading', minutes: null, source: null, error: null })
-    // A refusal is not an empty answer: only `parent.brief.get`'s NOT_FOUND is a real answer
-    // ("this course has no parent brief"), so it alone collapses to `none`.
-    const refusalIsAnAnswer = (method, response) =>
-      method === 'parent.brief.get' && Boolean(response.error) && response.error.code === 'NOT_FOUND'
     let read
     if (packId && packVersion && backendSupports('pack.inspect')) {
       read = rpc('pack.inspect', { pack_id: packId, pack_version: packVersion }).then((response) => {
-        if (!response.ok) return { failed: true, error: response.error || null }
+        if (!response.ok) return null
         const manifest = response.result && response.result.manifest
         const entries = manifest && Array.isArray(manifest.objectives) ? manifest.objectives : []
         const match = entries.find((entry) => Number(entry.ordinal) === Number(ordinal))
@@ -3131,11 +3088,7 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
       })
     } else if (backendSupports('parent.brief.get')) {
       read = rpc('parent.brief.get', { course_id: courseId }).then((response) => {
-        if (!response.ok) {
-          return refusalIsAnAnswer('parent.brief.get', response)
-            ? null
-            : { failed: true, error: response.error || null }
-        }
+        if (!response.ok) return null
         const brief = response.result && response.result.brief
         const minutes = brief && Number(brief.duration_minutes) > 0 ? Number(brief.duration_minutes) : null
         return minutes ? { minutes, source: 'parent_brief' } : null
@@ -3146,29 +3099,19 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
     read
       .then((found) => {
         if (cancelled) return
-        if (found && found.failed) {
-          setState({ status: 'error', minutes: null, source: null, error: found.error || null })
-          return
-        }
         setState(
           found
             ? { status: 'ready', minutes: found.minutes, source: found.source, error: null }
             : { status: 'none', minutes: null, source: null, error: null }
         )
       })
-      .catch((error) => {
-        if (cancelled) return
-        setState({
-          status: 'error',
-          minutes: null,
-          source: null,
-          error: { code: 'HOST_UNAVAILABLE', message: describeError(error) }
-        })
+      .catch(() => {
+        if (!cancelled) setState({ status: 'none', minutes: null, source: null, error: null })
       })
     return () => {
       cancelled = true
     }
-  }, [enabled, courseId, packId, packVersion, ordinal, key, retryToken])
+  }, [enabled, courseId, packId, packVersion, ordinal, key])
 
   return state
 }
@@ -3194,14 +3137,7 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
   )
   const withOutline = buildDeskModel({ library: library.data, outline: outline.data, estimate: null })
   const current = withOutline.current
-  const [estimateTicket, setEstimateTicket] = useState(0)
-  const estimate = useSessionEstimate({
-    row,
-    current,
-    enabled: Boolean(row) && Boolean(current),
-    retryToken: estimateTicket
-  })
-  const onRetryEstimate = useCallback(() => setEstimateTicket((value) => value + 1), [])
+  const estimate = useSessionEstimate({ row, current, enabled: Boolean(row) && Boolean(current) })
   const desk = buildDeskModel({ library: library.data, outline: outline.data, estimate })
 
   const [sourcesOpen, setSourcesOpen] = useState(false)
@@ -3272,7 +3208,6 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
-    onRetryEstimate,
     notes,
     onShowNotebook: () => onOpen(desk.row, null, null, 'notebook'),
     onOpen,
@@ -6101,13 +6036,17 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
     setStep('parsing')
   }, [refuse, onParsed])
 
-  // Cancelling before the backend has minted a parse job is honest only if it says why: nothing
-  // further is sent from this screen, and there is no job id here to stop. Once a job exists the
-  // parse stage owns the cancel so its answer is rendered instead of assumed.
-  const cancelBeforeJob = useCallback(() => {
+  const cancel = useCallback(() => {
     cancelledRef.current = true
     setCancelled(true)
-  }, [])
+    // Stopping the watch is not stopping the job. A real cancel is sent when the backend has
+    // already minted the parse job, so the learner is not told work stopped while it runs on.
+    if (parseJob && parseJob.job_id) {
+      rpc('jobs.cancel', { job_id: parseJob.job_id }, { idempotencyKey: `cb-syllabus-parse-cancel-${parseJob.job_id}` })
+        .catch(() => null)
+    }
+    onCancel && onCancel()
+  }, [onCancel, parseJob])
 
   if (step === 'parsing' || step === 'parsed') {
     return jsx(SyllabusParseStage, {
@@ -6117,7 +6056,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
       revisionOnly,
       onParsed: setParsed,
       onStep: setStep,
-      onCancel: onCancel,
+      onCancel: cancel,
       onCreated,
       door: door,
       busy,
@@ -6142,7 +6081,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         door === 'available'
           ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: openFile, disabled: busy, children: 'Choose a syllabus file' })
           : null,
-        jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: cancelBeforeJob, children: 'Cancel' })
+        jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: cancel, children: 'Cancel' })
       ] }),
       jsxs('div', { className: 'flex flex-col gap-1', children: [
         jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Or paste the syllabus text' }),
@@ -6179,13 +6118,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         ? jsx(sdk.ErrorState, { title: error.code, description: error.message })
         : null,
       cancelled
-        ? jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
-          jsx('div', {
-            className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
-          }),
-          jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Close' })
-        ] })
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Cancelled. Nothing further was sent.' })
         : null
     ]
   })
@@ -6199,14 +6132,10 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
   const [scope, setScope] = useState('short')
   const [submitting, setSubmitting] = useState(false)
   const [failure, setFailure] = useState(null)
-  // The backend's answer to a cancel, rendered instead of assumed. `asking` is the unanswered
-  // moment; nothing claims the job stopped until this holds the backend's own state.
-  const [cancelOutcome, setCancelOutcome] = useState(null)
-  const cancelRef = useRef(false)
   const keyRef = useRef(null)
 
   useEffect(() => {
-    if (!syllabus || document || cancelOutcome) return undefined
+    if (!syllabus || document) return undefined
     let stopped = false
     let attempts = 0
     let dispose = null
@@ -6218,7 +6147,6 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       }
     }
     const tick = async () => {
-      if (stopped || cancelRef.current) return
       attempts += 1
       const response = await rpc('syllabus.get', {
         syllabus_id: syllabus.syllabus_id,
@@ -6274,76 +6202,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       dispose = () => clearInterval(handle)
     }
     return stop
-  }, [syllabus, jobId, document, onParsed, cancelOutcome])
-
-  // Stopping the watch is not stopping the job. `cancelRef` halts the poll immediately, then the
-  // `jobs.cancel` answer decides which of the three outcomes is shown: accepted (`queued` became
-  // `cancelled`), requested but still finishing (`running` became `cancel_requested`), or refused.
-  const requestCancel = useCallback(async () => {
-    cancelRef.current = true
-    setCancelOutcome({ status: 'asking' })
-    if (!jobId) {
-      setCancelOutcome({ status: 'no-job' })
-      return
-    }
-    const response = await rpc('jobs.cancel', { job_id: jobId }, { idempotencyKey: `cb-syllabus-parse-cancel-${jobId}` })
-    if (!response || response.ok !== true) {
-      const refusal = (response && response.error) || {
-        code: 'INTERNAL_ERROR',
-        message: 'The backend did not answer the cancel, so this screen cannot say the parse stopped.'
-      }
-      setCancelOutcome({ status: 'failed', error: refusal })
-      return
-    }
-    const target = response.result && response.result.state
-    if (target === 'cancelled') setCancelOutcome({ status: 'accepted' })
-    else setCancelOutcome({ status: 'requested', state: target || null })
-  }, [jobId])
-
-  if (cancelOutcome) {
-    const close = jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back to Library' })
-    if (cancelOutcome.status === 'asking') {
-      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-asking', children: [
-        jsx(sdk.Loader, { label: 'Asking the backend to stop the parse' })
-      ] })
-    }
-    if (cancelOutcome.status === 'accepted') {
-      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-accepted', children: [
-        jsx('div', { className: 'max-w-prose text-sm', children: 'Cancelled. Nothing further was sent.' }),
-        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: 'The backend accepted the stop, so no course will be created from this parse.' }),
-        close
-      ] })
-    }
-    if (cancelOutcome.status === 'requested') {
-      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-requested', children: [
-        jsx('div', {
-          className: 'max-w-prose text-sm',
-          children: 'Asked the backend to stop; it will not start new work. The course will not be created until you review it.'
-        }),
-        close
-      ] })
-    }
-    if (cancelOutcome.status === 'no-job') {
-      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
-        jsx('div', {
-          className: 'max-w-prose text-sm',
-          children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
-        }),
-        close
-      ] })
-    }
-    const refusal = cancelOutcome.error || {}
-    return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-failed', children: [
-      jsx(sdk.ErrorState, {
-        title: refusal.code || 'CANCEL_REFUSED',
-        description: `${refusal.message || 'The backend refused the cancel.'} The parse may still be running, and a course could be created from it. Retry the cancel, or review the course when it appears.`
-      }),
-      jsxs('div', { className: 'flex flex-wrap gap-2', children: [
-        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: requestCancel, children: 'Retry cancel' }),
-        close
-      ] })
-    ] })
-  }
+  }, [syllabus, jobId, document, onParsed])
 
   const target = document || (parsed && parsed.document ? parsed : null)
 
@@ -6351,7 +6210,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
     return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'parsing', children: [
       jsx(sdk.Loader, { label: 'Reading your syllabus' }),
       jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.parseRunning }),
-      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'ghost', onClick: requestCancel, children: 'Stop watching this parse' })
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'ghost', onClick: onCancel, children: 'Stop watching this parse' })
     ] })
   }
   if (state === 'failed' || failure) {
@@ -13959,49 +13818,6 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 }
 
 /**
- * A teaching turn that reached the chat but not the lesson page.
- *
- * `binding.get` answers `snapshot_failures = {recorded, last_at}` for the bound lesson run: the
- * count of teaching turns whose durable `lesson_segments` row could not be written after one
- * retry. This is an integrity notice, not a blocking error — the chat still holds the turn, so
- * there is no dialog, no disabled control and no retry (a retry writes a *new* turn, not the lost
- * one). The three states are kept distinct: a positive count names the loss, an explicit zero is
- * silent, and `null` is "unknown", never a zero.
- */
-function SnapshotLossNotice({ failures }) {
-  const recorded = failures && typeof failures === 'object' ? failures.recorded : undefined
-  if (recorded === 0) return null
-  const count = Number(recorded)
-  if (Number.isFinite(count) && count > 0) {
-    const lastAt = failures && failures.last_at
-    return jsxs('div', {
-      className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
-      role: 'status',
-      'data-cb-snapshot-loss': 'recorded',
-      'data-cb-snapshot-count': String(count),
-      children: [
-        jsx('div', {
-          className: 'text-xs leading-relaxed',
-          children: `${count} teaching ${count === 1 ? 'turn' : 'turns'} could not be saved to this lesson. The chat has them; this page does not.`
-        }),
-        lastAt
-          ? jsx('div', {
-              className: 'text-xs text-(--ui-text-secondary)',
-              children: `Last recorded ${whenLabel(lastAt)}.`
-            })
-          : null
-      ]
-    })
-  }
-  return jsx('div', {
-    className: 'border-l-2 border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
-    role: 'status',
-    'data-cb-snapshot-loss': 'unknown',
-    children: 'Coursebook could not check whether any teaching turn was lost.'
-  })
-}
-
-/**
  * The bound lesson pane.
  *
  * Scope is the focused chat's stored session id → binding → enrollment. Nothing here falls back to
@@ -14145,8 +13961,6 @@ function LessonPaneBody({ binding, storedId }) {
           })
         ]
       }),
-
-      jsx(SnapshotLossNotice, { failures: binding.snapshot_failures }),
 
       bindingStatus !== 'active'
         ? jsxs('div', {
@@ -17327,8 +17141,6 @@ export {
   CB_TOKEN_NAMES,
   COURSE_SCOPES,
   CREATE_RESULT_COPY,
-  FieldDesk,
-  deskEstimateState,
   CreateCourseFlow,
   FIRST_RUN_COPY,
   FirstRun,
@@ -17392,8 +17204,6 @@ export {
   PronunciationStudio,
   QuestMission,
   SectionPage,
-  SnapshotLossNotice,
-  LessonPaneBody,
   WorkspaceShell,
   blockSaveExcerpt,
   buildDeskModel,

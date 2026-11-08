@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import unittest
@@ -45,7 +46,10 @@ class MediaGenerationTest(KernelCase):
             generation.ensure_schema(connection)
         self.objective_id = self.seed_objective(self.plan_id)
         self.enrollment_id = self.new_enrollment(self.course_id)
-        self.store = artifacts.ArtifactStore(Path(self.home) / "artifacts")
+        # The canonical store the preview route reads from, not a fixture-local root: the route
+        # refuses any path outside ``<plugin data>/artifacts``, so a test store elsewhere would be
+        # testing a layout production never has.
+        self.store = artifacts.ArtifactStore()
         self.execute(
             "INSERT INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint, plan_hash,"
             " document_json, research_json, generation_state, validation_id, result_json, created_at)"
@@ -174,6 +178,76 @@ class MediaGenerationTest(KernelCase):
         self.assertEqual(preview["permission"], provenance["permission"])
         self.assertEqual(preview["source_ids"], provenance["source_ids"])
         self.assertIn("permission", preview)
+
+    # ── H-115-D2: a row is a record, not a warrant ────────────────────────
+    # The route used to serve whatever path an ``artifacts`` row named, with the row's declared
+    # MIME. These three tests are the probe's T3a/T3c reproduced as suite tests.
+
+    def insert_row(self, artifact_id: str, *, path: Path, mime: str, data: bytes, kind: str = "visual") -> None:
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                artifact_id,
+                self.course_id,
+                kind,
+                hashlib.sha256(data).hexdigest(),
+                str(path),
+                len(data),
+                mime,
+                json.dumps({"label": "probe"}),
+                NOW,
+            ),
+        )
+
+    def test_preview_refuses_a_row_pointing_outside_the_artifact_store(self) -> None:
+        outside = Path(self.home) / "outside.png"
+        outside.write_bytes(PNG)
+        self.insert_row("art_outside0000000000000000000000001", path=outside, mime="image/png", data=PNG)
+        preview = media.preview_artifact("art_outside0000000000000000000000001")
+        self.assertFalse(preview["ok"])
+        self.assertEqual(preview["code"], "NOT_FOUND")
+        self.assertNotIn("data_url", preview)
+        # The refusal never echoes the path it refused.
+        self.assertNotIn(str(outside), json.dumps(preview))
+
+    def test_preview_refuses_a_symlink_that_escapes_the_artifact_store(self) -> None:
+        outside = Path(self.home) / "outside-target.png"
+        outside.write_bytes(PNG)
+        store = artifacts.read_root()
+        store.mkdir(parents=True, exist_ok=True)
+        link = store / "escape.png"
+        link.symlink_to(outside)
+        self.insert_row("art_symlink000000000000000000000001", path=link, mime="image/png", data=PNG)
+        preview = media.preview_artifact("art_symlink000000000000000000000001")
+        self.assertFalse(preview["ok"])
+        self.assertEqual(preview["code"], "NOT_FOUND")
+
+    def test_preview_refuses_html_bytes_declared_as_svg(self) -> None:
+        payload = b"<html><script>alert(document.domain)</script></html>"
+        store = artifacts.read_root()
+        store.mkdir(parents=True, exist_ok=True)
+        target = store / "mime-confusion.bin"
+        target.write_bytes(payload)
+        self.insert_row(
+            "art_mimeconfusion00000000000000000001", path=target, mime="image/svg+xml", data=payload
+        )
+        preview = media.preview_artifact("art_mimeconfusion00000000000000000001")
+        self.assertFalse(preview["ok"])
+        self.assertEqual(preview["code"], "UNSAFE_MEDIA")
+        self.assertNotIn("data_url", preview)
+
+    def test_preview_still_serves_a_genuine_svg_from_the_store(self) -> None:
+        svg = artifacts.make_schematic_svg("Torque order", [{"label": "Step 1", "value": "20 Nm"}])
+        store = artifacts.read_root()
+        store.mkdir(parents=True, exist_ok=True)
+        target = store / "schematic.svg"
+        target.write_bytes(svg)
+        self.insert_row("art_goodsvg00000000000000000000000001", path=target, mime="image/svg+xml", data=svg)
+        preview = media.preview_artifact("art_goodsvg00000000000000000000000001")
+        self.assertTrue(preview["ok"])
+        self.assertEqual(preview["mime"], "image/svg+xml")
+        self.assertTrue(preview["data_url"].startswith("data:image/svg+xml;base64,"))
 
 
 class MediaSpecTest(unittest.TestCase):

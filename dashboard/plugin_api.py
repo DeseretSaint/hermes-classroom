@@ -227,8 +227,10 @@ async def media_preview(artifact_id: str) -> dict[str, Any]:
 
     The Desktop renderer has a JSON-only ``ctx.rest`` door, so an image or audio player needs a
     data URL rather than a relative file link. This route is authenticated by the host's normal
-    ``/api/`` middleware; it re-verifies size and sha256 before encoding, and returns a refusal as
-    data so the lesson can keep its text equivalent and download handle.
+    ``/api/`` middleware; it refuses any path outside this profile's artifact store, re-verifies
+    size and sha256 before encoding, re-derives the media type from the bytes (an ``artifacts``
+    row's ``mime`` is a claim, not evidence) and refuses active content. A refusal arrives as data
+    so the lesson can keep its text equivalent and download handle.
     """
     media = _media()
     return media.preview_artifact(artifact_id)
@@ -239,7 +241,8 @@ async def artifact_download(handle: str) -> Any:
     """Stream one exported pack by its expiring, session-bound handle (CB-010).
 
     ``artifact.get`` mints the handle; ``pack_flow.open_artifact`` re-verifies expiry, size and
-    sha256 against the artifacts row before a byte leaves. The request is authenticated by the
+    sha256 against the artifacts row, and refuses any path outside this profile's own
+    ``pack-exports``/``artifacts`` stores, before a byte leaves. The request is authenticated by the
     host's ``/api/`` auth middleware (session token or OAuth gate) — there is no token in the URL,
     and the handle never names a filesystem path. A policy refusal is a 404; an integrity
     mismatch is a 500; neither carries a path or a traceback.

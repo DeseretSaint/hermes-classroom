@@ -95,6 +95,17 @@ def _within(child: Path, parent: Path) -> bool:
     return child_key == parent_key or child_key.startswith(parent_key + os.sep)
 
 
+def within(child: Path, parent: Path) -> bool:
+    """Public containment test for paths read out of a database row.
+
+    A stored path is data, not proof: routes that read bytes named by ``artifacts.path`` must
+    check :func:`within` against the directory that path is *supposed* to live under before the
+    file is opened. Symlinks are resolved first, so a link inside the root that points outside it
+    is refused.
+    """
+    return _within(child, parent)
+
+
 def is_single_home_host() -> bool:
     """Whether this process declared itself a dedicated single-home backend (the flag is set)."""
     return os.environ.get(SINGLE_HOME_FLAG, "").strip().lower() in {"1", "true", "yes"}

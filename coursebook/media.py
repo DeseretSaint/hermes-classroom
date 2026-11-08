@@ -641,19 +641,51 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
             "message": "this artifact is too large for an inline preview; use its download handle",
         }
     path = Path(str(row["path"]))
+    # Containment first: an ``artifacts`` row is a record, not a warrant. Only a file inside this
+    # profile's own artifact store may be served, so a row (written by a compromised local
+    # process, a stale row, or a hand-edited db) cannot name ``/etc/passwd`` or another profile's
+    # media. Symlinks are resolved, so a link inside the store pointing outside is refused too.
+    if not db.within(path, artifacts.read_root()):
+        return {
+            "ok": False,
+            "code": "NOT_FOUND",
+            "message": "artifact file is outside this profile's artifact store",
+        }
     if not path.is_file():
         return {"ok": False, "code": "NOT_FOUND", "message": "artifact file is missing on disk"}
+    # Compare the on-disk size before reading: the row's ``bytes`` is the claim being checked, so
+    # it cannot bound the read, and an inline preview must never load an unbounded file.
+    try:
+        on_disk = path.stat().st_size
+    except OSError:
+        return {"ok": False, "code": "NOT_FOUND", "message": "artifact file is missing on disk"}
+    if on_disk != size:
+        return {"ok": False, "code": "INTERNAL_ERROR", "message": "artifact size does not match its record"}
     data = path.read_bytes()
     if len(data) != size:
         return {"ok": False, "code": "INTERNAL_ERROR", "message": "artifact size does not match its record"}
     digest = hashlib.sha256(data).hexdigest()
     if digest != str(row["content_hash"]):
         return {"ok": False, "code": "INTERNAL_ERROR", "message": "artifact hash does not match its record"}
+    # Re-derive the type from the bytes and demand they are render-safe. The hash only proves the
+    # file matches the row; it says nothing about whether the row's ``mime`` describes the file.
+    # ``sniff_mime`` refuses a declared type that the magic bytes contradict, and
+    # ``assert_render_safe`` refuses active content (script/event/foreign markup), so HTML declared
+    # as ``image/svg+xml`` cannot become an inline ``data:`` URL.
+    try:
+        detected = artifacts.sniff_mime(data, mime)
+        artifacts.assert_render_safe(data, detected)
+    except artifacts.UnsafeMedia:
+        return {
+            "ok": False,
+            "code": "UNSAFE_MEDIA",
+            "message": "artifact bytes are not the declared, render-safe media type",
+        }
     provenance = json.loads(row["provenance_json"] or "{}")
     return {
         "ok": True,
         "artifact_id": str(row["id"]),
-        "mime": mime,
+        "mime": detected,
         "bytes": size,
         "label": provenance.get("label") or "Coursebook media",
         "text_equivalent": provenance.get("text_equivalent") or "",
@@ -661,5 +693,5 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         # cited sources, exactly as the artifact store recorded them at generation time.
         "permission": provenance.get("permission"),
         "source_ids": list(provenance.get("source_ids") or []),
-        "data_url": f"data:{mime};base64," + base64.b64encode(data).decode("ascii"),
+        "data_url": f"data:{detected};base64," + base64.b64encode(data).decode("ascii"),
     }

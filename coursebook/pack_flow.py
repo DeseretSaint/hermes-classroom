@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, packs, segments, validators
+from . import archive, artifacts, packs, segments, validators
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -84,7 +84,13 @@ def staging_root() -> Path:
 
 
 def export_root() -> Path:
-    return data_root() / "pack-exports"
+    """``<plugin data>/pack-exports/`` — resolved without creating anything.
+
+    Writers call ``mkdir`` themselves before writing; the download route uses the same definition
+    for containment, and a refused download must not leave a directory behind. Same path
+    ``data_root()`` resolves to.
+    """
+    return db.store_root() / "pack-exports"
 
 
 #: Process-level staging registry, keyed by resolved root. A grant lives in this object only,
@@ -1779,6 +1785,13 @@ def open_artifact(handle: str) -> tuple[Path, str, int]:
     if row is None:
         raise RpcError.of("NOT_FOUND", "artifact not found")
     path = Path(str(row["path"]))
+    # An ``artifacts`` row is a record, not a warrant: only files the plugin itself writes may
+    # leave through this handle. Exports live under ``pack-exports/`` and stored media under
+    # ``artifacts/``; a row naming anything else (another profile, /etc, a hand-edited path) is
+    # refused before a byte is opened. Symlinks are resolved, so a link escaping either root is
+    # refused too.
+    if not any(db.within(path, root) for root in (export_root(), artifacts.read_root())):
+        raise RpcError.of("NOT_FOUND", "artifact file is outside this profile's store")
     if not path.is_file():
         raise RpcError.of("NOT_FOUND", "artifact file is missing on disk")
     if path.stat().st_size != int(row["bytes"]):

@@ -14,6 +14,7 @@ import shutil
 import tempfile
 import unittest
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from coursebook import api, archive, db, domain, pack_flow, packs
@@ -439,6 +440,40 @@ class ExportTest(PackFlowCase):
             self.assertTrue(entry["role"])
             self.assertTrue(entry["mime"])
             self.assertGreater(entry["bytes"], 0)
+
+
+class ArtifactDownloadContainmentTest(PackFlowCase):
+    """H-115-D2: a download handle resolves only to a file the plugin itself wrote."""
+
+    def insert_export_row(self, artifact_id: str, path: Path, data: bytes) -> str:
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, created_at) VALUES (?, NULL, 'export', ?, ?, ?, 'application/zip',"
+            " '{}', '2026-11-07T00:00:00Z')",
+            (artifact_id, "sha256:" + hashlib.sha256(data).hexdigest(), str(path), len(data)),
+        )
+        expires = int(datetime.now(timezone.utc).timestamp()) + 600
+        return f"{artifact_id}_{expires}"
+
+    def test_a_row_naming_a_path_outside_the_export_store_is_refused(self) -> None:
+        outside = self.work / "outside.zip"
+        outside.write_bytes(b"PK\x03\x04 outside-the-store")
+        handle = self.insert_export_row("art_" + "a" * 32, outside, outside.read_bytes())
+        with self.assertRaises(api.RpcError) as caught:
+            pack_flow.open_artifact(handle)
+        self.assertEqual(caught.exception.error["code"], "NOT_FOUND")
+
+    def test_a_symlink_escaping_the_export_store_is_refused(self) -> None:
+        outside = self.work / "outside-target.zip"
+        outside.write_bytes(b"PK\x03\x04 outside-the-store")
+        root = pack_flow.export_root()
+        root.mkdir(parents=True, exist_ok=True)
+        link = root / "escape.zip"
+        link.symlink_to(outside)
+        handle = self.insert_export_row("art_" + "b" * 32, link, outside.read_bytes())
+        with self.assertRaises(api.RpcError) as caught:
+            pack_flow.open_artifact(handle)
+        self.assertEqual(caught.exception.error["code"], "NOT_FOUND")
 
 
 class DeleteTest(PackFlowCase):

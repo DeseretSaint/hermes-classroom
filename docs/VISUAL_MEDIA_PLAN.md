@@ -309,7 +309,11 @@ small authenticated plugin route:
 `GET /api/plugins/coursebook/media/{artifact_id}` → `{mime, bytes, label, data_url}`
 
 The route verifies the artifact row size and sha256, refuses oversized payloads, and returns a
-data URL only for renderable media (PNG/JPEG/WebP/GIF/SVG/MP3/WAV/OGG). The lesson renderer
+data URL only for renderable media (PNG/JPEG/WebP/GIF/SVG/MP3/WAV/OGG). A row's `path` is treated
+as data, not proof: the file must resolve inside this profile's own `<plugin data>/artifacts`
+store (symlinks resolved), and the media type is re-derived from the bytes with `sniff_mime` and
+checked against the render-safe allowlist — the row's declared `mime` alone never decides what is
+served, so HTML declared as `image/svg+xml` is refused rather than encoded. The lesson renderer
 uses that data URL in a native `<img>` or `<audio controls>` element, with the text equivalent
 as caption and alt text. If the route refuses, the text equivalent and a download handle remain.
 

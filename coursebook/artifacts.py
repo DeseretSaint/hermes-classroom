@@ -463,6 +463,15 @@ def default_root() -> Path:
     return db.database_path().parent / "artifacts"
 
 
+def read_root() -> Path:
+    """The artifact store root resolved **without creating anything**.
+
+    Read paths (preview, download containment) use this one: a refused or missing artifact must
+    leave the filesystem exactly as it found it. Same directory as :func:`default_root`.
+    """
+    return db.store_root() / "artifacts"
+
+
 class ArtifactStore:
     """Content-addressed object store plus the DB rows that make it discoverable."""
 
