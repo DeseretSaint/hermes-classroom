@@ -709,7 +709,9 @@ process.stdout.write(JSON.stringify(output))
         # had been generated yet — the one case where the parent may still have seen the child do it.
         parent = self.run_case({"kind": "section", "recipe": "parent", "withDocument": True})["html"]
         self.assertIn('data-cb-parent-observation="obj_0123456789abcdef"', parent)
-        self.assertIn("This section has no teaching content yet", parent)
+        # H-174: an empty generated document is named as incomplete and owned by the lessons job.
+        self.assertIn("This lesson page is incomplete", parent)
+        self.assertNotIn("Coursebook does not write it for you", parent)
         learner = self.run_case({"kind": "section", "recipe": "committed", "withDocument": True})["html"]
         self.assertNotIn("data-cb-parent-observation", learner)
 
