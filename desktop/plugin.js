@@ -22972,6 +22972,24 @@ const WORKSHOP_BADGE = Object.freeze({
 /** Four quiet fields for the typographic cover; the identity's own tokens, no new colours. */
 const WORKSHOP_TONES = Object.freeze(['accent-soft', 'plum-soft', 'lamp-soft', 'paper-raised'])
 
+/** A state heading on the Workshop surfaces: an h2 region, never a competing display plate. */
+const workshopStateHeadingStyle = Object.freeze({
+  margin: 0,
+  fontFamily: CB_SERIF,
+  fontSize: CB_TYPE.heading,
+  fontWeight: 600,
+  lineHeight: 1.2,
+  color: 'var(--cb-ink)'
+})
+
+const workshopStateBodyStyle = Object.freeze({
+  margin: 0,
+  fontFamily: CB_SANS,
+  fontSize: CB_TYPE.body,
+  lineHeight: 1.6,
+  color: 'var(--cb-ink)'
+})
+
 function workshopTone(packId) {
   const text = String(packId || '')
   let sum = 0
@@ -23534,10 +23552,10 @@ function WorkshopHero({ item, layout, motion, onOpen, onInstall, busy }) {
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.display,
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              lineHeight: 1.12,
+              letterSpacing: '-0.01em',
               color: 'var(--cb-ink)',
               overflowWrap: 'anywhere'
             },
@@ -23677,10 +23695,10 @@ function WorkshopDetail({ item, layout, motion, onBack, onInstall, onContinue, b
                 style: {
                   margin: 0,
                   fontFamily: CB_SERIF,
-                  fontSize: CB_TYPE.display,
+                  fontSize: CB_TYPE.heading,
                   fontWeight: 600,
-                  lineHeight: 1.05,
-                  letterSpacing: '-0.02em',
+                  lineHeight: 1.12,
+                  letterSpacing: '-0.01em',
                   color: 'var(--cb-ink)',
                   overflowWrap: 'anywhere',
                   outline: 'none'
@@ -24571,20 +24589,32 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
     body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Reading the Workshop catalogue' }) })
   } else if (catalog.status === 'error') {
     body = jsxs('div', {
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+      'data-cb-workshop-error': (catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
       children: [
-        jsx(EmptyState, {
-          title: 'The Workshop could not be read',
-          description: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
+        jsx('h2', {
+          style: workshopStateHeadingStyle,
+          children: 'The Workshop could not be read'
+        }),
+        jsx('p', {
+          style: workshopStateBodyStyle,
+          children: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
         }),
         jsx(CbAction, { variant: 'tertiary', onClick: catalog.reload, className: 'self-start', children: 'Try again' })
       ]
     })
   } else if (!items.length) {
-    body = jsx(EmptyState, {
-      title: 'No packs in this build',
-      description:
-        'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
+    body = jsxs('div', {
+      'data-cb-workshop-empty': '',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
+      children: [
+        jsx('h2', { style: workshopStateHeadingStyle, children: 'No packs in this build' }),
+        jsx('p', {
+          style: workshopStateBodyStyle,
+          children:
+            'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
+        })
+      ]
     })
   } else {
     body = jsx(WorkshopDiscover, {
