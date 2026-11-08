@@ -1,8 +1,12 @@
 # StudentMode: a second import path, paired to an external class
 
-Status: design only, 2026-11-07. Owner: atlas. Branch: `wt/harness-student-mode-design`.
+Status: design frozen 2026-11-07; **implemented and merged** — H-25 `t_5535fc66` design at
+`3705a7a`, H-26a `t_faad26cf` intake backend at `d0ca064` (`cb.rpc` v12, `cb.db` v8), H-26b
+`t_855dbdf6` read projection at `21e62e5`, H-27 `t_71ea55ee` UI at `ca1ca4f`; `syllabus.*` rides
+the shipped `cb.rpc` v17. Owner: atlas. Branch: `wt/harness-student-mode-design`.
 Base: local `master` at `2e57efa` (H-02 learner flow, H-03 blueprint design, H-13 policy
-threading merged). This card changes no code, no contract, no migration and no `desktop/plugin.js`.
+threading merged). This design card changed no code, no contract, no migration and no
+`desktop/plugin.js`.
 
 Read with: `docs/ADVERSARIAL-UX-REVIEW.md` UX-06, `docs/GENERIC-HARNESS-REVIEW.md` G-06 and
 section 5, `docs/COURSE-BLUEPRINT.md` (scopes and unit-scoped authoring), `docs/PLAN-APPROVAL.md`,
@@ -11,8 +15,9 @@ section 5, `docs/COURSE-BLUEPRINT.md` (scopes and unit-scoped authoring), `docs/
 This document freezes the product and data decisions for a **student mode**: a learner uploads the
 syllabus of a college class they are already taking, and Coursebook builds a **companion course**
 that supports that class. The syllabus is the scope authority. Coursebook is not the registrar, not
-the gradebook, and not the official course. Nothing below is true until the implementing cards land
-the contract delta, the migration and the tests named in section 10.
+the gradebook, and not the official course. Nothing below was true until the implementing cards
+landed the contract delta, the migration and the tests named in section 10; they have now landed
+(see the status line above).
 
 ## 0. Seam verdict (read this first)
 
@@ -36,11 +41,12 @@ Two consequences follow and are part of the design, not caveats bolted on:
    DTD/entity and zip-bomb guards). PDF cannot be parsed honestly without an extractor. The
    optional `pypdf` dependency answers `PARSER_UNAVAILABLE` — a typed refusal, not a guess — when
    it is absent. Markdown, plain text and pasted text work with no new dependency.
-2. **`full` scope is blocked on H-21.** `PLAN_SCHEMA` is still 4–8 objectives and 2–8 sections
-   (`coursebook/generation.py:671-672`). A 14-week companion course cannot be honest until H-21's
-   CourseBlueprint v2 lands. H-26 may ship intake, parse, anchors and alignment before that, but it
-   must refuse `scope=full` with a typed `BLUEPRINT_UNAVAILABLE`, not truncate a semester into
-   eight objectives.
+2. **`full` scope was blocked on H-21 at design time.** `PLAN_SCHEMA` was 4–8 objectives and 2–8
+   sections (`coursebook/generation.py:671-672` on the design base). A 14-week companion course
+   could not be honest until H-21's CourseBlueprint v2 landed; H-21 completed 2026-11-07 and is
+   merged on master at `f990cad` (`PLAN_SCHEMA` v2: `full` = 2–12 units / 12–40 objectives), so
+   the block is gone. The rule it implied stays: the companion path refuses `scope=full` with a
+   typed `BLUEPRINT_UNAVAILABLE` rather than truncate a semester into eight objectives.
 
 If H-26 cannot meet both conditions, it stops at `single`/`short` and text formats, and says so in
 its own card. It does not invent an extraction path or a second planner.
@@ -419,8 +425,8 @@ pre-generated twelve-week course would be stale before week 3.
 - Therefore this design targets **`cb.rpc` v12, `cb.db` v8, `cb.errors` v3**, each strictly
   additive over the line that exists when H-26 starts. H-26 must re-read the contract directory at
   implementation time and take the next free version; it may not reserve v13 now, skip a number, or
-  renumber 0008 over another card's migration. If H-21 has not merged, H-26 waits or scopes itself
-  to parse/alignment without the plan-brief fields.
+  renumber 0008 over another card's migration. H-21 merged at `f990cad` before H-26a landed, so
+  H-26a took the v2 blueprint line (`d0ca064`) rather than scoping itself down.
 
 ### 6.2 Additive methods (RPC v12)
 

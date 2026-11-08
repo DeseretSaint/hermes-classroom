@@ -1,6 +1,8 @@
 # CourseBlueprint: one-off, short and full courses
 
-Status: design only, 2026-11-07. Owner: atlas. Branch: `wt/harness-blueprint-design`.
+Status: design frozen 2026-11-07; **implemented and merged at `f990cad`** (H-21a `8eb83d8`
+contract + migration, H-21b `7f46e17` plan schema v2 and unit stages, H-21c `bcd545e` R1–R9
+gating and the measured full-scope ceiling). Owner: atlas. Branch: `wt/harness-blueprint-design`.
 Amended by H-20 on `wt/harness-prereq-edges`: section 9 points at section 14, and section 13's
 objective-level-edge bullet is closed. Section 14 freezes the prerequisite contract and records why
 no edge, migration or contract version ships before the blueprint implementation.
@@ -11,10 +13,9 @@ still expects the pre-H-12 approval behavior. This card changes no code and adds
 contain that commit, so every statement about `scope`, `level` and `subject_domain` below is a
 dependency on H-01, not a description of this tree.
 
-This document decides the data model and the rules for a course of any length. It is not a
-shipped capability, it does not edit the contract, and it does not touch production code. The
-implementing card must land the contract delta and migration described here before any of it is
-true.
+This document decides the data model and the rules for a course of any length. It did not ship a
+capability, edit the contract or touch production code; H-21 `t_2a2fc90c` landed the contract delta
+and migration described here at `f990cad`, which is what makes the rules below true on master.
 
 Read with: `docs/ADVERSARIAL-HARNESS-REVIEW.md` P0-2 and P1-3, `docs/GENERATION.md` section 5,
 `docs/CONTRACTS.md` decision (e), `docs/PLAN-APPROVAL.md`.
@@ -509,7 +510,8 @@ full course.
 
 ## 14. Prerequisite edges: the frozen contract (H-20, 2026-11-07)
 
-Status: **decided and frozen here, not implemented in this tree.** Owner: atlas. Branch
+Status: **decided and frozen here on 2026-11-07; implemented and merged at `f990cad`** (H-21a/H-21b/
+H-21c; R1–R9 gating tests landed in H-21c `bcd545e`). Owner: atlas. Branch
 `wt/harness-prereq-edges`. Base: `master` at `903a606` plus this document at `f465a4d`.
 
 ### 14.1 The decision

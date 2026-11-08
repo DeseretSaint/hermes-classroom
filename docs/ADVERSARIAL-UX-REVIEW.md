@@ -141,7 +141,8 @@ Concrete fixes:
 - Keep the trust labels, but move "no ranking / no verified badge" into a "What we check / what we
   do not check" disclosure. Do not lead with the absence.
 - This is also where the second import path belongs: "Have a college syllabus? Start a Student
-  companion course" should be visible once H-25/H-27 exist, not buried behind a pack.
+  companion course" should be visible now that H-25 design (`3705a7a`) and H-27 UI (`ca1ca4f`)
+  have landed, not buried behind a pack.
 
 ### UX-07 — Parent Studio speaks to an architect
 
