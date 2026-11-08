@@ -183,7 +183,7 @@ The entry is judged by the catalog validator and by a human reviewer. The rules 
 | `requires_hermes` | SemVer floor, not newer than current release, same as `plugin.yaml` | `">=0.23.0"` in both |
 | `version` | quoted label matching the pinned code | `"0.1.0"` |
 | `readme` | `true` renders the README at the pinned sha | `true`; the pinned commit must contain the README |
-| `capabilities` | must match what `register()` does | `coursebook_status` plus the three hooks |
+| `capabilities` | must match what `register()` does | `coursebook_status` and `coursebook_due`, plus the three hooks |
 | `platforms` | list from linux, macos, windows | empty means all |
 
 Additional admission rules that apply to this plugin:

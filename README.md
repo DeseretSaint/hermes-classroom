@@ -97,7 +97,8 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | Surface | State in this build |
 | --- | --- |
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
-| `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
+| `coursebook_status` agent tool (read-only health) | Working: one of the two registered tools |
+| `coursebook_due` agent tool (read-only next step) | Working: reads the same profile-scoped store as the Desktop (`library.list` next step plus the derived `review.queue`). Writes nothing, makes no provider call, and reports an unavailable database as `available:false` with a reason instead of an empty list |
 | Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31). `/media/<artifact_id>` is an M0 addition (`3cead45`), covered by `tests/test_manifest.py` and `tests/test_media_generation.py`; it does not exist at `29bede7` |
 | Frozen contracts at `29bede7`: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working in that build: 52 declared methods, 52 handlers, no contract problems from `/runtime`. This tree has moved to `cb.rpc` v17 and `cb.db` v11 with 68 declared methods and 68 handlers; the product-line row above carries the current numbers |
 | Profile-scoped SQLite schema and migrations `0001`-`0004` at `29bede7` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home. This tree ships migrations `0001`-`0011` and answers `db.ready: true`, `schema_version: 11` on a fresh home |
@@ -184,7 +185,8 @@ not the plugin, and Atlas reclassified CB-QA-09 as P3-operational on exactly tha
 (`docs/REVIEW_CB017-FINAL.md` §3.1). A demo that shows the chat side still needs a composer, which
 means recording on the profile that owns this host's gateway.
 
-Ask the agent to run `coursebook_status` to get the health block as JSON. If the backend is not
+Ask the agent to run `coursebook_status` to get the health block as JSON, or `coursebook_due` to
+get the learner's next step from this profile's local store. If the backend is not
 mounted, the pane names the enable path and offers Check again instead of showing an empty
 course list.
 

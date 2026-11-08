@@ -83,10 +83,23 @@ def register(ctx: Any) -> None:
         description=tools.STATUS_TOOL_DESCRIPTION,
         emoji="📘",
     )
+    # The learner-facing read: the same profile-scoped store and the same next step the Desktop
+    # shows. Read-only and declared here because a declared tool with no registration would fail
+    # admission; nothing is registered that plugin.yaml does not declare.
+    ctx.register_tool(
+        name=tools.DUE_TOOL_NAME,
+        toolset=TOOLSET,
+        schema=tools.due_schema(),
+        handler=tools.due_handler,
+        description=tools.DUE_TOOL_DESCRIPTION,
+        emoji="🗓️",
+    )
     for hook_name in hooks.PROVIDED_HOOKS:
         ctx.register_hook(hook_name, getattr(hooks, hook_name))
     # The job tick: queued `plan` jobs (and their `brief.stage = lessons` variant) become real
     # work. Bounded per tick, driven on the host's own asyncio loop, stopped on unload. A host
     # without spawn_task (bare tests, dashboard-only process) simply does not start one.
     executor.start_tick(ctx)
-    logger.debug("coursebook %s registered (1 tool, %d hooks)", __version__, len(hooks.PROVIDED_HOOKS))
+    logger.debug(
+        "coursebook %s registered (2 tools, %d hooks)", __version__, len(hooks.PROVIDED_HOOKS)
+    )
