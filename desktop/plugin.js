@@ -3557,6 +3557,8 @@ function CheckpointDetailRow({ label, value }) {
  */
 function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRetryOutline }) {
   const width = useCbViewportWidth()
+  const motion = useCbMotion()
+  const routeSettle = useCbSettled(motion, true)
   const compact = width > 0 && width < 620
   const objectives = Array.isArray(desk.objectives) ? desk.objectives : []
   // A failed route read is its own state (H-146). Continue still works from the row's next step;
@@ -3612,7 +3614,7 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
         ? jsx('ol', {
             'aria-label': 'Course route',
             style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
-            children: objectives.map((objective) => {
+            children: objectives.map((objective, nodeIndex) => {
               const tone = cbPathTone(objective.state)
               const kind = cbPathNodeKind(objective, currentId, nextId)
               const size = cbPathNodeSize(kind, compact)
@@ -3621,11 +3623,26 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
               const checkWord = cbCheckStateWord(objective.check_state)
               const attempts = Math.max(0, Number(objective.attempt_count) || 0)
               const detailOpen = kind === 'current' || kind === 'next'
+              // The route settle is one beat for the whole list: at most eight nodes, 40 ms apart.
+              const inBeat = routeSettle.active && nodeIndex < CB_PATH_SETTLE_NODES
+              const settleStyle = inBeat
+                ? cbSettleFrame(motion, routeSettle.settled, {
+                    beat: 'route',
+                    props: 'opacity, transform',
+                    delay: nodeIndex * CB_PATH_SETTLE_STAGGER_MS
+                  }) || {}
+                : {}
               return jsx(
                 'li',
                 {
                   'data-cb-path-node': objective.objective_id,
-                  style: { display: 'flex', flexDirection: 'column', position: 'relative' },
+                  'data-cb-path-node-motion': inBeat ? 'settle' : 'static',
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    ...settleStyle
+                  },
                   children: [
                   jsx('span', {
                     'aria-hidden': 'true',
@@ -3643,6 +3660,8 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
                     className: 'w-full justify-start',
                     'aria-current': isCurrent ? 'step' : undefined,
                     'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+                    state: isCurrent ? 'selected' : 'rest',
+                    style: { padding: 0, display: 'block', minHeight: '44px' },
                     onClick: () => onOpenSection(objective.objective_id),
                     children: jsxs('span', {
                       'data-cb-path-open': objective.objective_id,
@@ -11009,6 +11028,9 @@ const CB_NARROW_BREAKPOINT = 460
 /** A comfortable reading measure (62-72 characters) for the lesson column. */
 const CB_MEASURE = '66ch'
 const CB_RAIL_WIDTH = '20rem'
+/** The route settle is capped at eight nodes, 40 ms apart (docs/CRAFT-CHANNELS-RESEARCH.md §5). */
+const CB_PATH_SETTLE_NODES = 8
+const CB_PATH_SETTLE_STAGGER_MS = 40
 
 /** Painted light/dark, from the SDK's own theme context. Never inferred from a colour value. */
 function cbModeFromTheme(theme) {
@@ -11035,12 +11057,35 @@ function useCbMode() {
   return 'light'
 }
 
+/**
+ * The motion ladder, from docs/CRAFT-CHANNELS-RESEARCH.md §4 (M2) and §5 (the aliveness kit) and
+ * docs/EXPERIENCE-QUALITY-BAR.md §2.3. Four functional beats and no more: press 90–120 ms, route
+ * settle 180 ms, check verdict 120–180 ms, completion ≤600 ms. The values are tokens so a test can
+ * read them, and so no surface can author a fifth duration inline.
+ */
+const CB_MOTION = Object.freeze({
+  press: '100ms',
+  route: '180ms',
+  verdict: '160ms',
+  complete: '600ms',
+  /** The reduced-motion crossfade ceiling (M3): the state still changes, it does not travel. */
+  fade: '120ms',
+  ease: 'cubic-bezier(0.2, 0, 0, 1)'
+})
+/** The only beats the product may paint. `fade` is the reduced-motion substitute, not a beat. */
+const CB_MOTION_BEATS = Object.freeze(['press', 'route', 'verdict', 'complete'])
+/** Nothing Coursebook animates may outlast this, except a progress indicator. */
+const CB_MOTION_CEILING_MS = 600
+
 /** The scoped custom properties. Inline, so the layer travels with the route and nothing leaks. */
 function cbScopeStyle(mode) {
   const palette = CB_TOKENS[mode === 'dark' ? 'dark' : 'light']
   const style = {}
   for (const name of CB_TOKEN_NAMES) style[`--cb-${name}`] = palette[name]
   for (const step of CB_TYPE_STEPS) style[`--cb-text-${step}`] = CB_TYPE[step]
+  for (const beat of CB_MOTION_BEATS) style[`--cb-dur-${beat}`] = CB_MOTION[beat]
+  style['--cb-dur-fade'] = CB_MOTION.fade
+  style['--cb-ease'] = CB_MOTION.ease
   style.colorScheme = mode === 'dark' ? 'dark' : 'light'
   style.backgroundColor = 'var(--cb-paper)'
   style.color = 'var(--cb-ink)'
@@ -11052,29 +11097,59 @@ function cbMotionPreference(media) {
   return media && media.matches === true ? 'reduced' : 'full'
 }
 
-function useCbMotion() {
-  const read = () => {
-    try {
-      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        return cbMotionPreference(window.matchMedia('(prefers-reduced-motion: reduce)'))
-      }
-    } catch (error) {
-      // No matchMedia: assume the default, motion-on posture.
+/**
+ * The one motion object every Coursebook surface asks for. `preference` is the reader's setting;
+ * `transition(props, beat)` is the only way a surface may name a duration, so no call site can
+ * invent a fifth beat or a longer one. Reduced motion keeps the state change and drops the travel:
+ * an instant repaint, or at most a §4 M3 crossfade inside the 120 ms ceiling.
+ */
+function cbMotionFor(preference) {
+  const reduced = preference === 'reduced'
+  return Object.freeze({
+    preference: reduced ? 'reduced' : 'full',
+    reduced,
+    beats: CB_MOTION_BEATS,
+    duration(beat) {
+      return Object.prototype.hasOwnProperty.call(CB_MOTION, beat) ? CB_MOTION[beat] : null
+    },
+    /** A transition string for one beat, or `null` when reduced motion keeps the change static. */
+    transition(props, beat) {
+      if (reduced) return null
+      if (!Object.prototype.hasOwnProperty.call(CB_MOTION, beat)) return null
+      return props
+        .split(',')
+        .map((prop) => `${prop.trim()} var(--cb-dur-${beat}) var(--cb-ease)`)
+        .join(', ')
+    },
+    /** The reduced-motion crossfade: opacity only, never longer than the 120 ms ceiling. */
+    crossfade(props) {
+      if (!reduced) return null
+      return props
+        .split(',')
+        .map((prop) => `${prop.trim()} var(--cb-dur-fade) linear`)
+        .join(', ')
     }
-    return 'full'
+  })
+}
+
+/** A media query that is stable for the life of the window, read once per mount. */
+function cbReducedMotionMedia() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)')
+    }
+  } catch (error) {
+    // No matchMedia: assume the default, motion-on posture.
   }
-  const [motion, setMotion] = useState(read)
+  return null
+}
+
+function useCbMotion() {
+  const [preference, setPreference] = useState(() => cbMotionPreference(cbReducedMotionMedia()))
   useEffect(() => {
-    let media = null
-    try {
-      media = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-        ? window.matchMedia('(prefers-reduced-motion: reduce)')
-        : null
-    } catch (error) {
-      media = null
-    }
+    const media = cbReducedMotionMedia()
     if (!media) return undefined
-    const onChange = () => setMotion(cbMotionPreference(media))
+    const onChange = () => setPreference(cbMotionPreference(media))
     onChange()
     if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange)
     else if (typeof media.addListener === 'function') media.addListener(onChange)
@@ -11083,8 +11158,67 @@ function useCbMotion() {
       else if (typeof media.removeListener === 'function') media.removeListener(onChange)
     }
   }, [])
-  return motion
+  return cbMotionFor(preference)
 }
+
+/**
+ * The one mount gate every beat shares: a beat runs only in a browser frame, only while the reader
+ * allows motion, and only once. A server render or a reduced-motion reader is `settled` at once, so
+ * a static frame is the resting frame and nothing arrives late.
+ */
+function useCbSettled(motion, enabled) {
+  const active = enabled !== false
+    && !motion.reduced
+    && typeof window !== 'undefined'
+    && typeof window.requestAnimationFrame === 'function'
+  const [settled, setSettled] = useState(!active)
+  useEffect(() => {
+    if (!active) {
+      setSettled(true)
+      return undefined
+    }
+    const frame = window.requestAnimationFrame(() => setSettled(true))
+    return () => {
+      if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame)
+    }
+  }, [active])
+  return { active, settled }
+}
+
+/** The style for one settle frame; shared by the mount hook and the staggered path list. */
+function cbSettleFrame(motion, settled, options) {
+  const spec = options || {}
+  if (motion.reduced) return null
+  const beat = spec.beat || 'route'
+  const delay = Math.max(0, Number(spec.delay) || 0)
+  const frame = {
+    opacity: settled ? 1 : Number(spec.fromOpacity) || 0.96,
+    transform: settled ? 'none' : spec.from || 'translateY(2px)'
+  }
+  if (!settled) return { ...frame, transition: 'none' }
+  const transition = motion.transition(spec.props || 'opacity, transform', beat)
+  if (!transition) return null
+  return { ...frame, transition, ...(delay ? { transitionDelay: `${delay}ms` } : {}) }
+}
+
+/**
+ * One mount beat: the node paints at its start position for a single frame, then transitions to
+ * rest. `index`/`staggerMs` space a list; the caller decides how many nodes may be in the beat
+ * (the route caps at eight), and the ones past the cap settle with no motion at all.
+ */
+function useCbSettle(motion, options) {
+  const spec = options || {}
+  const { active, settled } = useCbSettled(motion, spec.enabled)
+  if (!active) return {}
+  return cbSettleFrame(motion, settled, {
+    beat: spec.beat,
+    props: spec.props,
+    from: spec.from,
+    fromOpacity: spec.fromOpacity,
+    delay: Math.max(0, Number(spec.index) || 0) * (Number(spec.staggerMs) || 0)
+  }) || {}
+}
+
 
 /** Live width from `host.state.viewport`, with a static read for hosts that predate the atom. */
 function useCbViewportWidth() {
@@ -11816,26 +11950,69 @@ const CB_ACTION_STYLES = {
  * The host `size` prop is accepted and dropped: the Coursebook variant owns the target and the
  * type step, so a caller cannot accidentally shrink a primary below 44px. A disabled primary
  * keeps the fill honest: it drops to paper and soft ink rather than pretending it is still live.
+ *
+ * `data-cb-state` is the primitive's own eight-state vocabulary, reduced to the five this control
+ * can actually be in: rest, pressed, selected, disabled, pending. The press beat is one 100 ms
+ * translate (docs/CRAFT-CHANNELS-RESEARCH.md §5): transform only, so it cannot move the layout or
+ * the focus ring, and pointer-up/blur always return it to rest even if the pointer leaves.
  */
-function CbAction({ variant, className, style, disabled, children, ...rest }) {
+function CbAction({ variant, state, className, style, disabled, pending, children, ...rest }) {
   // The Coursebook variant owns the target and the type step; a caller's host `size` cannot
   // shrink a primary below 44px.
   delete rest.size
+  const motion = useCbMotion()
+  const [pressed, setPressed] = useState(false)
   const kind = Object.prototype.hasOwnProperty.call(CB_ACTION_STYLES, variant) ? variant : 'secondary'
   const spec = CB_ACTION_STYLES[kind]
-  const palette = disabled && kind === 'primary'
+  const isDisabled = Boolean(disabled)
+  const palette = isDisabled && kind === 'primary'
     ? { background: 'var(--cb-paper)', color: 'var(--cb-ink-soft)', border: '1px solid var(--cb-rule)' }
     : null
+  const cbState = state
+    || (isDisabled ? 'disabled' : pending ? 'pending' : pressed ? 'pressed' : 'rest')
+  const pressStyle = isDisabled || pending
+    ? null
+    : {
+        transform: pressed ? 'translateY(1px)' : 'none',
+        transition: motion.transition('transform, border-color', 'press') || 'none'
+      }
+  const release = () => setPressed(false)
+  const call = (name, event) => {
+    const handler = rest[name]
+    if (typeof handler === 'function') handler(event)
+  }
   return jsx(sdk.Button, {
     ...rest,
     'data-cb-action': kind,
-    disabled: Boolean(disabled),
+    'data-cb-state': cbState,
+    disabled: isDisabled,
     variant: spec.variant,
     className: [spec.className, className].filter(Boolean).join(' ') || undefined,
+    onPointerDown: (event) => {
+      if (!isDisabled) setPressed(true)
+      call('onPointerDown', event)
+    },
+    onPointerUp: (event) => {
+      release()
+      call('onPointerUp', event)
+    },
+    onPointerLeave: (event) => {
+      release()
+      call('onPointerLeave', event)
+    },
+    onPointerCancel: (event) => {
+      release()
+      call('onPointerCancel', event)
+    },
+    onBlur: (event) => {
+      release()
+      call('onBlur', event)
+    },
     style: {
       ...spec.style,
       ...(style || {}),
       ...(palette || {}),
+      ...(pressStyle || {}),
       minHeight: spec.minHeight,
       fontSize: spec.fontSize
     },
@@ -12775,7 +12952,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
     'data-cb-pronunciation': (block && block.id) || 'block',
     'data-cb-pronunciation-phase': phase,
     'data-cb-pronunciation-availability': availability.tone,
-    'data-cb-pronunciation-motion': motion,
+    'data-cb-pronunciation-motion': motion.preference,
     'aria-label': `Pronunciation practice: ${target}`,
     style: {
       display: 'flex',
@@ -13742,7 +13919,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
     ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'field_quest',
     'data-cb-document': document.document_id,
-    'data-cb-motion': motion,
+    'data-cb-motion': motion.preference,
     'data-cb-quest-progress': progressLabel,
     'data-cb-quest-missions': String(missions.length),
     'data-cb-quest-checkpoints': String(checkpoints),
@@ -14329,6 +14506,10 @@ function playerConcept(block, checkLabels) {
  * the backend recorded and says plainly that a retry is free.
  */
 function PlayerVerdict({ result, criteria, checklist, answer }) {
+  const motion = useCbMotion()
+  // The verdict beat is caused by a real graded result: it cannot start before the backend answers,
+  // because the surface only mounts once `result` exists. 160 ms, opacity + 2 px, once.
+  const verdictBeat = useCbSettle(motion, { beat: 'verdict', props: 'opacity, transform', from: 'translateY(2px)', fromOpacity: 0.9 })
   const passed = Boolean(result) && (result.verdict === 'pass' || result.verdict === 'overridden')
   const rows = (criteria || []).filter(Boolean)
   const unmet = rows.filter((row) => !row.met)
@@ -14340,7 +14521,9 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
   const answerText = Array.isArray(answer) ? answer.join('; ') : String(answer || '').trim()
   return jsxs('div', {
     'data-cb-player-feedback': passed ? 'correct' : 'not_quite',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE },
+    'data-cb-state': passed ? 'correct' : 'not_quite',
+    'data-cb-player-beat': motion.reduced ? 'static' : 'verdict',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE, ...verdictBeat },
     children: [
       jsxs('div', {
         style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
@@ -14402,6 +14585,10 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
 
 /** The close: the section is finished, and every number is the enrollment row's own count. */
 function PlayerClose({ section, progress, onBack }) {
+  const motion = useCbMotion()
+  // Completion is one beat, once: the result mark settles in 600 ms or not at all. Nothing is
+  // celebrated, counted up or replayed, and the title is readable on the first frame.
+  const completeBeat = useCbSettle(motion, { beat: 'complete', props: 'opacity, transform', from: 'scale(0.995)', fromOpacity: 0.88 })
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
   const summary = progress || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
@@ -14412,13 +14599,22 @@ function PlayerClose({ section, progress, onBack }) {
   if (total > 0) facts.push(due > 0 ? `${due} to review` : 'Nothing due for review')
   return jsxs('section', {
     'data-cb-player-close': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: CB_MEASURE, padding: '1.25rem 0' },
+    'data-cb-state': 'complete',
+    'data-cb-player-beat': motion.reduced ? 'static' : 'complete',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      maxWidth: CB_MEASURE,
+      padding: '1.25rem 0',
+      ...completeBeat
+    },
     children: [
       jsx('h3', {
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.heading,
+          fontSize: CB_TYPE.display,
           fontWeight: 600,
           lineHeight: 1.1,
           letterSpacing: '-0.015em',
@@ -14656,6 +14852,7 @@ function LessonPlayer({
             'data-cb-player-primary': action.label,
             variant: 'primary',
             disabled: action.disabled,
+            pending: state.phase === 'submitting',
             onClick: action.run || undefined,
             children: action.label
           }),
@@ -15154,6 +15351,7 @@ function SectionPage({
               'data-cb-section-primary': playerSurface ? 'secondary' : '',
               variant: playerSurface ? 'secondary' : 'primary',
               disabled: busy,
+              pending: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
               children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
             })
@@ -21468,7 +21666,7 @@ function CoursebookPage() {
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, homePrefs.appearance)
   const systemMotion = useCbMotion()
-  const cbMotion = homePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
+  const cbMotion = homePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
   const online = useOnline()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsTriggerRef = useRef(null)
@@ -21802,7 +22000,7 @@ function CoursebookPage() {
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
-    'data-cb-motion': cbMotion,
+    'data-cb-motion': cbMotion.preference,
     style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
@@ -21958,7 +22156,7 @@ function CoursebookPane() {
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, panePrefs.appearance)
   const systemMotion = useCbMotion()
-  const cbMotion = panePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
+  const cbMotion = panePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
@@ -22083,7 +22281,7 @@ function CoursebookPane() {
     'data-cb-stored-id': storedId || '',
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     'data-cb-scope': cbMode,
-    'data-cb-motion': cbMotion,
+    'data-cb-motion': cbMotion.preference,
     style: { ...cbScopeStyle(cbMode), ...cbHostVars(panePrefs.appearance) },
     children: [
       jsx(CbLabel, { children: 'Coursebook' }),
@@ -22290,6 +22488,14 @@ export {
   PracticeSurface,
   practiceFeedback,
   useOpenCheck,
+  CbAction,
+  CB_MOTION,
+  CB_MOTION_BEATS,
+  CB_MOTION_CEILING_MS,
+  cbMotionFor,
+  cbSettleFrame,
+  useCbSettle,
+  useCbSettled,
   BackendUnavailable,
   CB_HOME_PREF_DEFAULTS,
   CB_PRESENTATION_LABEL,
