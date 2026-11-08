@@ -409,11 +409,12 @@ class FieldQuestRenderTest(unittest.TestCase):
     # -- the switcher ---------------------------------------------------------------------------
     def test_the_section_page_offers_all_three_views_when_quest_is_available(self) -> None:
         html = self.section()
-        self.assertIn('data-cb-view-options="textbook guided field_quest"', html)
+        # H-149 adds the player (Game) as the default surface beside the three reference views.
+        self.assertIn('data-cb-view-options="player guided textbook field_quest"', html)
         self.assertIn('data-cb-view-unavailable=""', html)
         self.assertIn('data-cb-view-switcher="available"', html)
         self.assertIn("Field Quest", html)
-        self.assertEqual(html.count('data-cb-view-choice-state="available"'), 3)
+        self.assertEqual(html.count('data-cb-view-choice-state="available"'), 4)
 
     def test_a_textbook_only_section_shows_quest_disabled_with_a_reason(self) -> None:
         doc = quest_document(state="textbook_only")
@@ -421,7 +422,7 @@ class FieldQuestRenderTest(unittest.TestCase):
             block("blk_orient0001", "orient", "Start here", short=None, deep="Deep orient prose.")
         ]
         html = self.section(doc)
-        self.assertIn('data-cb-view-options="textbook"', html)
+        self.assertIn('data-cb-view-options="player textbook"', html)
         self.assertIn('data-cb-view-unavailable="guided field_quest"', html)
         # H-96: the name stays on screen, disabled, and the reason is plain words.
         self.assertIn("Field Quest", html)
@@ -440,7 +441,7 @@ class FieldQuestRenderTest(unittest.TestCase):
         doc = quest_document()
         doc["views"]["field_quest"] = False
         html = self.section(doc)
-        self.assertIn('data-cb-view-options="textbook guided"', html)
+        self.assertIn('data-cb-view-options="player guided textbook"', html)
         self.assertIn('data-cb-view-unavailable="field_quest"', html)
         self.assertIn('data-cb-view-choice="field_quest"', html)
         self.assertIn('data-cb-view-choice-state="unavailable"', html)
@@ -481,10 +482,11 @@ class FieldQuestModelTest(FieldQuestRenderTest):
         self.assertEqual([m["id"] for m in model["missions"] if m["checkpoint"]], ["blk_practice01"])
 
     def test_model_reports_the_views_the_document_supports(self) -> None:
-        self.assertEqual(self.model()["views"], ["textbook", "guided", "field_quest"])
+        # H-149: the player (Game) is always available; textbook too.
+        self.assertEqual(self.model()["views"], ["player", "guided", "textbook", "field_quest"])
         doc = quest_document(state="textbook_only")
         doc["blocks"] = [block("blk_orient0001", "orient", "Start", short=None, deep="Deep.")]
-        self.assertEqual(self.model(doc)["views"], ["textbook"])
+        self.assertEqual(self.model(doc)["views"], ["player", "textbook"])
 
     def test_progress_strings_are_descriptive_and_never_invented(self) -> None:
         self.assertEqual(

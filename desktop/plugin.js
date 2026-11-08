@@ -7970,7 +7970,10 @@ function AttemptControls({
   parentLed = false,
   stimulusStatus = null,
   stimulusError = null,
-  onRetryStimulus = null
+  onRetryStimulus = null,
+  playerMode = false,
+  playerController = null,
+  onPlayerState = null
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const [text, setText] = useState('')
@@ -8144,6 +8147,60 @@ function AttemptControls({
     setPhase('overridden')
     if (onCommitted) onCommitted(response.result)
   }, [check, enrollmentId, revision, onCommitted])
+
+  /**
+   * Start a different re-attempt on the same open check.
+   *
+   * `Check` never changes the check the backend served, so retrying is free and unshamed: the
+   * nonce is dropped (a new attempt, never a replay), the answer is cleared and any feedback is
+   * dismissed. Nothing is scored and nothing is counted against the learner.
+   */
+  const newExample = useCallback(() => {
+    setText('')
+    setTicked([])
+    setResult(null)
+    setResultCheck(null)
+    setError(null)
+    setPhase('awaiting_input')
+    nonceRef.current = null
+  }, [])
+
+  /**
+   * The player bridge.
+   *
+   * The player owns the single footer primary, so the answer card must not paint a second one and
+   * must tell its host when `Check` is legal. The snapshot is deliberately small and primitive so
+   * the parent only re-renders when the answer state actually changes; every action below already
+   * exists for the reference views and this bridge only exposes it.
+   */
+  const playerSnapshot = {
+    phase,
+    canCheck: !check
+      ? false
+      : Boolean(
+          stimulusState === 'unsupported' ||
+            (stimulusState === 'ready' && (checklist.length > 0 ? ticked.length > 0 : text.trim().length > 0))
+        ) && phase === 'awaiting_input' && !detached,
+    verdict: result ? result.verdict : null,
+    evidenceClass: result ? result.evidence_class || null : null,
+    answerKind: checklist.length > 0 ? 'selection' : 'text'
+  }
+  const playerSnapshotKey = `${playerSnapshot.phase}|${playerSnapshot.canCheck}|${playerSnapshot.verdict}|${playerSnapshot.answerKind}`
+  useEffect(() => {
+    if (!playerMode || !onPlayerState) return
+    onPlayerState(playerSnapshot)
+    // The key is what changes; the object itself is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerMode, onPlayerState, playerSnapshotKey])
+  useEffect(() => {
+    if (!playerMode || !playerController) return
+    playerController.current = {
+      submit,
+      retryGrading,
+      newExample,
+      moveOn: () => setOverrideOpen(true)
+    }
+  })
 
   if (!check) {
     return jsx(QuietNote, {
@@ -8350,7 +8407,11 @@ function AttemptControls({
                     children: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.'
                   })
                 : null,
-              jsxs('div', {
+              // The player carries the one footer primary (`Check`), so the answer card paints no
+              // button of its own there. The reference views keep their inline actions unchanged.
+              playerMode
+                ? null
+                : jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
                 children: [
                   jsx(sdk.Button, {
@@ -8403,21 +8464,24 @@ function AttemptControls({
             ref: resultRef,
             tabIndex: -1,
             children: [
-              jsx(AttemptVerdict, {
-                result,
-                criteria,
-                checklist,
-                onResumeChecklist: resumeChecklist,
-                onNewExample: () => {
-                  setText('')
-                  setTicked([])
-                  setResult(null)
-                  setResultCheck(null)
-                  setPhase('awaiting_input')
-                  nonceRef.current = null
-                },
-                onExplain: () => setPhase('awaiting_input')
-              })
+              playerMode
+                ? jsx(PlayerVerdict, {
+                    result,
+                    criteria,
+                    checklist,
+                    answer:
+                      checklist.length > 0
+                        ? checklist.filter((item) => ticked.includes(item.id)).map((item) => item.label)
+                        : text.trim()
+                  })
+                : jsx(AttemptVerdict, {
+                    result,
+                    criteria,
+                    checklist,
+                    onResumeChecklist: resumeChecklist,
+                    onNewExample: newExample,
+                    onExplain: () => setPhase('awaiting_input')
+                  })
             ]
           })
         : null,
@@ -8445,10 +8509,12 @@ function AttemptControls({
                       'Your answer is saved, not graded. No progress was changed, and Retry grading does not create a second attempt.'
                   }),
               error ? jsx(ErrorLine, { error }) : null,
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: retryGrading, children: 'Retry grading' }),
+              playerMode
+                ? null
+                : jsxs('div', {
+                    className: 'flex flex-wrap items-center gap-2',
+                    children: [
+                      jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: retryGrading, children: 'Retry grading' }),
                   jsx(sdk.Button, {
                     variant: 'secondary',
                     size: 'sm',
@@ -8472,10 +8538,12 @@ function AttemptControls({
               jsx(QuietNote, {
                 children: 'The override is recorded against this objective. It advances access and is never counted as a pass.'
               }),
-              jsx(sdk.Button, {
-                variant: 'secondary',
-                size: 'sm',
-                onClick: () => {
+              playerMode
+                ? null
+                : jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => {
                   setResult(null)
                   setResultCheck(null)
                   setPhase('awaiting_input')
@@ -8502,11 +8570,13 @@ function AttemptControls({
 
       error && phase !== 'needs_retry' && phase !== 'stale' ? jsx(ErrorLine, { error }) : null,
 
-      jsx(QuietNote, {
-        children: supports('lesson.assist')
-          ? 'Hints and shown answers are recorded against the next attempt.'
-          : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
-      }),
+      playerMode
+        ? null
+        : jsx(QuietNote, {
+            children: supports('lesson.assist')
+              ? 'Hints and shown answers are recorded against the next attempt.'
+              : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+          }),
 
       jsx('p', {
         className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -9558,17 +9628,25 @@ function BlankPlate({ title, caption, action, tertiary }) {
 
 /** A mode hue is a 3px dot plus the mode word, never a coloured block. */
 function ModeDot({ mode }) {
-  const paint = mode === 'guided' ? 'var(--cb-field)' : mode === 'field_quest' ? 'var(--cb-ochre)' : 'var(--cb-accent)'
+  const paint =
+    mode === 'guided'
+      ? 'var(--cb-field)'
+      : mode === 'field_quest'
+        ? 'var(--cb-ochre)'
+        : mode === 'game'
+          ? 'var(--cb-lamp)'
+          : 'var(--cb-accent)'
   return jsx('span', {
     'aria-hidden': 'true',
     style: { display: 'inline-block', width: '3px', height: '3px', minWidth: '3px', borderRadius: '50%', background: paint, verticalAlign: 'middle' }
   })
 }
 
-/** Which hue a surface owns: Textbook `accent`, Guided `field`, Field Quest `ochre`. */
+/** Which hue a surface owns: Textbook `accent`, Guided `field`, Game `lamp`, Field Quest `ochre`. */
 function cbModeFor(view) {
   if (view === 'guided') return 'guided'
   if (view === 'field_quest') return 'field_quest'
+  if (view === 'player') return 'game'
   return 'textbook'
 }
 
@@ -10722,10 +10800,18 @@ function PronunciationSeat({ block, pronunciation }) {
   })
 }
 
-/** The three presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
+/**
+ * The presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5).
+ *
+ * `player` is the default learning surface (docs/EXPERIENCE-QUALITY-BAR.md §7.4, H-149): one
+ * concept, one check, one close, rendered from the same lesson document, check and evidence as
+ * the reference views. Textbook stays the optional reference view, and the order here is the order
+ * the Home default offers: Game, Guided, Textbook.
+ */
 const LESSON_VIEWS = [
-  { id: 'textbook', label: 'Textbook' },
+  { id: 'player', label: 'Game' },
   { id: 'guided', label: 'Guided' },
+  { id: 'textbook', label: 'Textbook' },
   { id: 'field_quest', label: 'Field Quest' }
 ]
 
@@ -10744,21 +10830,25 @@ const LESSON_VIEW_UNAVAILABLE_REASON = {
 /**
  * The views *this document* can render.
  *
- * Textbook is the floor. Guided needs authored `short` prose on every block. Field Quest needs the
- * same and exactly one attachable check, because its checkpoints are the document's existing
- * checks and nothing else. This returns only the enabled options (the legacy marker value);
- * `lessonViewChoices` returns all three with an availability flag and a reason.
+ * Textbook and the player are the floor: both are read from the document's own blocks and its one
+ * check, so neither can be missing for a document that has blocks. Guided needs authored `short`
+ * prose on every block. Field Quest needs the same and exactly one attachable check, because its
+ * checkpoints are the document's existing checks and nothing else. This returns only the enabled
+ * options (the legacy marker value); `lessonViewChoices` returns all four with an availability
+ * flag and a reason.
  */
 function lessonViewOptions(document) {
   const views = (document && document.views) || {}
-  return LESSON_VIEWS.filter((view) => (view.id === 'textbook' ? true : Boolean(views[view.id])))
+  return LESSON_VIEWS.filter((view) =>
+    view.id === 'textbook' || view.id === 'player' ? true : Boolean(views[view.id])
+  )
 }
 
-/** All three named views, each marked available or carrying the plain-words reason it is not. */
+/** All four named views, each marked available or carrying the plain-words reason it is not. */
 function lessonViewChoices(document) {
   const views = (document && document.views) || {}
   return LESSON_VIEWS.map((view) => {
-    const available = view.id === 'textbook' ? true : Boolean(views[view.id])
+    const available = view.id === 'textbook' || view.id === 'player' ? true : Boolean(views[view.id])
     return {
       ...view,
       available,
@@ -11006,7 +11096,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
                 checkSlot,
                 jsx('p', {
                   style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
-                  children: 'This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade.'
+                  children: 'This is the section’s one check. It is the same in Game, Textbook, Guided and Field Quest, and it is not a grade.'
                 })
               ]
             })
@@ -11985,7 +12075,407 @@ function lessonTextAttrs(document) {
   return attrs
 }
 
-function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation }) {
+/* ---------------------------------------------------------------------------------------------
+ * H-149 · the lesson player.
+ *
+ * The learner surface is a bounded session over the section's own document: one concept per step,
+ * one response (the document's one check), immediate corrective feedback, and a close that returns
+ * to the path with the recorded result. Nothing here authors content: the steps are the document's
+ * blocks in authored order, the response is the same `check.get` the reference views mount, and
+ * every number on the close plate is read from the enrollment row.
+ * ------------------------------------------------------------------------------------------- */
+
+/** The player's steps: the document's blocks, with the section's one check on the block that carries it. */
+function playerSteps(document) {
+  const blocks = (document && document.blocks) || []
+  const checkId = document ? document.check_id : null
+  const carried = blocks.some((block) => Boolean(checkId && block.check_id === checkId))
+  return blocks.map((block, index) => ({
+    index,
+    total: blocks.length,
+    block,
+    // A document whose one check is not attached to a block still gets its response: the last
+    // step hosts it rather than dropping the check from the session.
+    check: Boolean(checkId && (block.check_id === checkId || (!carried && index === blocks.length - 1)))
+  }))
+}
+
+/** How many distinct checks this section's document declares. One is the normal case. */
+function playerCheckCount(document) {
+  const blocks = (document && document.blocks) || []
+  const ids = new Set()
+  for (const block of blocks) if (block && block.check_id) ids.add(block.check_id)
+  if (ids.size === 0 && document && document.check_id) ids.add(document.check_id)
+  return ids.size
+}
+
+/**
+ * The one concept on a step: the authored `short` when the document has one, otherwise the first
+ * paragraph of the authored `deep` prose. The clip is declared to the learner and Textbook keeps
+ * the full text, so the player never silently drops authored material.
+ */
+function playerConcept(block, checkLabels) {
+  const short = withoutCheckLabels(block.short, checkLabels)
+  if (short) return { text: short, clipped: false }
+  const deep = withoutCheckLabels(block.deep, checkLabels) || ''
+  const first = String(deep).split(/\n\s*\n/)[0].trim()
+  return { text: first, clipped: Boolean(first) && first.length < String(deep).trim().length }
+}
+
+/**
+ * The player's verdict card.
+ *
+ * Two verdicts only — `Correct` and `Not quite` — always as words, with the learner's own answer in
+ * context and the backend's own criterion text as the reason. The correct answer is not invented:
+ * the contract returns criteria and a next action, not a reference answer, so the card prints what
+ * the backend recorded and says plainly that a retry is free.
+ */
+function PlayerVerdict({ result, criteria, checklist, answer }) {
+  const passed = Boolean(result) && (result.verdict === 'pass' || result.verdict === 'overridden')
+  const rows = (criteria || []).filter(Boolean)
+  const unmet = rows.filter((row) => !row.met)
+  const met = rows.filter((row) => row.met && row.observed)
+  const override = Boolean(result) && result.verdict === 'overridden'
+  const selfReported = Boolean(result) && result.evidence_class === 'self_reported'
+  const why = passed ? verdictTakeaway(result, criteria) : nextActionCopy(result)
+  const rule = unmet.length > 0 ? String(unmet[0].observed || unmet[0].id || '').trim() : null
+  const answerText = Array.isArray(answer) ? answer.join('; ') : String(answer || '').trim()
+  return jsxs('div', {
+    'data-cb-player-feedback': passed ? 'correct' : 'not_quite',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
+        children: [
+          jsx(sdk.Codicon, { name: passed ? 'pass-filled' : 'circle-slash', size: '0.95rem' }),
+          jsx('strong', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 700, color: 'var(--cb-ink)' },
+            children: override ? 'Recorded — not a pass' : passed ? 'Correct' : 'Not quite'
+          })
+        ]
+      }),
+      answerText
+        ? jsxs('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+            'data-cb-player-answer': '',
+            children: ['You answered: ', jsx('span', { style: { color: 'var(--cb-ink)' }, children: answerText })]
+          })
+        : null,
+      selfReported
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            children: SELF_REPORTED_CONFIRM_COPY
+          })
+        : null,
+      why
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-why': '',
+            children: why
+          })
+        : null,
+      !passed && rule
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-rule': '',
+            children: `The part that did not hold: ${rule}`
+          })
+        : null,
+      !passed && met.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: `What you did show: ${met.slice(0, 2).map((row) => String(row.observed).trim()).join('; ')}.`
+          })
+        : null,
+      !passed && checklist && checklist.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: 'Tick the remaining steps and check again. Nothing here is counted against you.'
+          })
+        : !passed
+          ? jsx('p', {
+              style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+              children: 'Try again with a different answer. The retry is free and nothing is counted against you.'
+            })
+          : null
+    ]
+  })
+}
+
+/** The close: the section is finished, and every number is the enrollment row's own count. */
+function PlayerClose({ section, progress, onBack }) {
+  const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  const summary = progress || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const facts = []
+  if (total > 0) facts.push(`${independent} of ${total} with evidence`)
+  if (total > 0) facts.push(due > 0 ? `${due} to review` : 'Nothing due for review')
+  return jsxs('section', {
+    'data-cb-player-close': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: CB_MEASURE, padding: '1.25rem 0' },
+    children: [
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.display,
+          fontWeight: 600,
+          lineHeight: 1.1,
+          letterSpacing: '-0.015em',
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: ordinal ? `You finished Section ${ordinal}` : 'You finished this section'
+      }),
+      facts.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-close-facts': '',
+            children: facts.join(' · ')
+          })
+        : jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-close-facts': '',
+            children: 'The result is recorded on this profile.'
+          }),
+      jsx('p', {
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: 'The path shows which section is next. Nothing is lost when you leave.'
+      }),
+      jsx(sdk.Button, {
+        'data-cb-player-close-primary': '',
+        variant: 'default',
+        size: 'sm',
+        style: CB_PRIMARY_STYLE,
+        onClick: onBack,
+        children: 'Back to the path'
+      })
+    ]
+  })
+}
+
+/**
+ * The player surface.
+ *
+ * One footer, one primary: `Check` becomes `Continue`, then `Finish` on the last step, then the
+ * close. Enter runs the same action as the footer; a textarea keeps Enter for its own newlines.
+ */
+function LessonPlayer({
+  document,
+  sources,
+  checkSlot,
+  checkLabels,
+  section,
+  progress,
+  playerState,
+  playerController,
+  onExit,
+  onReload,
+  onSaveBlock,
+  pronunciation
+}) {
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
+  const steps = playerSteps(document)
+  const [index, setIndex] = useState(0)
+  const [closed, setClosed] = useState(false)
+  const state = playerState || { phase: 'awaiting_input', canCheck: false, verdict: null }
+  if (steps.length === 0) return null
+  const current = steps[Math.min(index, steps.length - 1)]
+  const last = current.index >= steps.length - 1
+  const concept = playerConcept(current.block, checkLabels)
+  const call = (name) => {
+    const api = playerController && playerController.current
+    if (api && typeof api[name] === 'function') api[name]()
+  }
+  const advance = () => {
+    if (last) setClosed(true)
+    else setIndex(current.index + 1)
+  }
+  if (closed) return jsx(PlayerClose, { section, progress, onBack: onExit })
+
+  const passed = state.verdict === 'pass' || state.verdict === 'overridden'
+  let action
+  if (!current.check) {
+    action = { label: last ? 'Finish' : 'Continue', run: advance, disabled: false }
+  } else if (state.phase === 'submitting') {
+    action = { label: 'Checking', run: null, disabled: true }
+  } else if (state.phase === 'graded' || state.phase === 'overridden') {
+    action = passed
+      ? { label: last ? 'Finish' : 'Continue', run: advance, disabled: false }
+      : { label: 'Try again', run: () => call('newExample'), disabled: false }
+  } else if (state.phase === 'needs_retry') {
+    action = { label: 'Retry grading', run: () => call('retryGrading'), disabled: false }
+  } else if (state.phase === 'stale') {
+    action = { label: 'Read the current check', run: onReload || advance, disabled: false }
+  } else {
+    action = { label: 'Check', run: () => call('submit'), disabled: !state.canCheck }
+  }
+  const onKeyDown = (event) => {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    const target = event.target
+    if (target && typeof target.closest === 'function' && target.closest('button, textarea, input, select, [contenteditable="true"]')) return
+    if (action.disabled || !action.run) return
+    event.preventDefault()
+    action.run()
+  }
+  const checks = playerCheckCount(document)
+  const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  return jsxs('div', {
+    'data-cb-lesson-view': 'player',
+    'data-cb-player': '',
+    'data-cb-document': document.document_id,
+    'data-cb-play-heading-tier': 'prose',
+    onKeyDown,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minWidth: 0 },
+    ...lessonTextAttrs(document),
+    children: [
+      jsxs('div', {
+        'data-cb-player-bar': '',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.35rem 0.9rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid var(--cb-rule)',
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          color: 'var(--cb-ink-soft)'
+        },
+        children: [
+          jsx('span', {
+            'data-cb-player-section': ordinal || 'section',
+            style: { fontWeight: 600, color: 'var(--cb-ink)' },
+            children: ordinal ? `Section ${ordinal}` : 'Section'
+          }),
+          jsxs('span', {
+            'data-cb-player-mode': 'game',
+            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem' },
+            children: [jsx(ModeDot, { mode: 'game' }), 'Game']
+          }),
+          checks > 0
+            ? jsx('span', {
+                'data-cb-player-check-count': String(checks),
+                style: { fontVariantNumeric: 'tabular-nums' },
+                children: current.check ? `Check 1 of ${checks}` : `${checks} ${checks === 1 ? 'check' : 'checks'} in this section`
+              })
+            : null,
+          jsx('span', {
+            'data-cb-player-step': `${current.index + 1}/${steps.length}`,
+            'aria-live': 'polite',
+            style: { fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' },
+            children: `Step ${current.index + 1} of ${steps.length}`
+          }),
+          jsx(sdk.Button, {
+            'data-cb-player-exit': '',
+            variant: 'text',
+            size: 'sm',
+            onClick: onExit,
+            children: 'Exit'
+          })
+        ]
+      }),
+      jsxs('section', {
+        'data-cb-player-step-block': current.block.id,
+        'data-cb-player-role': current.block.role,
+        'aria-labelledby': `cb-play-headline-${current.block.id}`,
+        style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem 0.6rem', minWidth: 0 },
+            children: [
+              jsx('h3', {
+                id: `cb-play-headline-${current.block.id}`,
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.heading,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: current.block.headline
+              }),
+              jsx('span', {
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-ink-soft)' },
+                children: BLOCK_ROLE_COPY[current.block.role] || current.block.role
+              })
+            ]
+          }),
+          concept.text
+            ? jsx(ProseText, {
+                'data-cb-play-concept': current.block.id,
+                style: {
+                  maxWidth: CB_MEASURE,
+                  fontFamily: CB_SERIF,
+                  fontSize: phone ? CB_TYPE.body : CB_TYPE.lead,
+                  lineHeight: 1.6,
+                  color: 'var(--cb-ink)'
+                },
+                text: concept.text
+              })
+            : null,
+          concept.clipped
+            ? jsx('p', {
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                children: 'First paragraph of this step. The full text is in Textbook.'
+              })
+            : null,
+          (current.block.media || []).map((media, ordinalIndex) =>
+            jsx(BlockMedia, { media, blockId: current.block.id, ordinal: ordinalIndex }, `${current.block.id}-media-${ordinalIndex}`)
+          ),
+          jsx(PronunciationSeat, { block: current.block, pronunciation }),
+          jsx(BlockSourceChips, { ids: current.block.source_ids, index: sources }),
+          onSaveBlock ? jsx(BlockSaveActions, { block: current.block, checkLabels, onSaveBlock }) : null,
+          current.check && checkSlot
+            ? jsx(CheckPanelFrame, {
+                kind: 'check',
+                label: 'Your turn',
+                children: jsx('div', {
+                  className: 'flex flex-col gap-2',
+                  'data-cb-block-check': current.block.id,
+                  children: checkSlot
+                })
+              })
+            : null
+        ]
+      }),
+      jsxs('footer', {
+        'data-cb-player-footer': '',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.5rem 0.75rem',
+          paddingTop: '0.65rem',
+          borderTop: '1px solid var(--cb-rule)'
+        },
+        children: [
+          jsx(sdk.Button, {
+            'data-cb-player-primary': action.label,
+            variant: 'default',
+            size: 'sm',
+            style: CB_PRIMARY_STYLE,
+            disabled: action.disabled,
+            onClick: action.run || undefined,
+            children: action.label
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+            children: action.disabled && state.phase === 'awaiting_input' ? 'Answer above, then press Enter.' : 'Enter does the same.'
+          })
+        ]
+      })
+    ]
+  })
+}
+
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation, player }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
@@ -12047,6 +12537,27 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     })
   }
 
+  if (view === 'player' && player) {
+    return jsx(
+      LessonPlayer,
+      {
+        document,
+        sources,
+        checkSlot: player.slot || checkSlot,
+        checkLabels: labels,
+        section: player.section,
+        progress,
+        playerState: player.state,
+        playerController: player.controller,
+        onExit: player.onExit,
+        onReload: player.onReload,
+        onSaveBlock,
+        pronunciation
+      },
+      document.document_id
+    )
+  }
+
   if (view === 'guided' && document.views && document.views.guided) {
     const current = Math.min(step, blocks.length - 1)
     const block = blocks[current]
@@ -12104,7 +12615,23 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   })
 }
 
-function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review, targetBlockId }) {
+function SectionPage({
+  row,
+  objectiveId,
+  page,
+  pageStatus,
+  pageError,
+  onRetryPage,
+  implemented,
+  onBack,
+  onChanged,
+  review,
+  targetBlockId,
+  // The Home settings sheet owns the learner's default presentation mode (Game / Guided /
+  // Textbook, docs/EXPERIENCE-QUALITY-BAR.md §7.2). Until that sheet lands in this tree, the
+  // player is the default surface and this prop is the seam it will pass.
+  defaultLessonView = 'player'
+}) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
   const runtime = page && page.runtime
@@ -12112,7 +12639,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
-  const [lessonView, setLessonView] = useState('textbook')
+  const preferredView = LESSON_VIEWS.some((view) => view.id === defaultLessonView) ? defaultLessonView : 'player'
+  const [lessonView, setLessonView] = useState(preferredView)
   // A mission or a saved moment hands the reader to the same block in Textbook. The target is a
   // block id, so the handoff survives the view switch and lands on the document's own block, not
   // an offset. A target from outside the section (Notebook, Field Desk) arrives the same way.
@@ -12127,8 +12655,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // One view is on screen at a time, so a single check node serves the Textbook block, the Guided
   // step and the legacy segment list. It is never rendered twice in one view.
   useEffect(() => {
-    setLessonView('textbook')
+    setLessonView(preferredView)
     setFocusBlockId(targetBlockId || null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [objectiveId, targetBlockId])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
@@ -12194,10 +12723,32 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             if (onChanged) onChanged()
           }
         })
-  // The practice slot: the observation for a parent-led lesson, the graded check everywhere else.
-  // It is mounted once by the page body below, not inside a document block: a parent observation is
-  // not a check, so it must not inherit the block's `CHECK` heading, and it must still be reachable
-  // on a section whose document has no blocks yet.
+  // The player's own check node. It is the same `AttemptControls` over the same open check; the
+  // only difference is that it reports its answer phase to the player footer and paints no button
+  // of its own, so the session has exactly one primary.
+  const [playerCheckState, setPlayerCheckState] = useState({ phase: 'awaiting_input', canCheck: false, verdict: null })
+  const playerController = useRef(null)
+  const playerCheckNode =
+    check.status === 'error' || (check.status === 'loading' && !check.check)
+      ? checkNode
+      : jsx(AttemptControls, {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          check: check.check,
+          revision: page ? page.revision : 0,
+          implemented,
+          bindingState: runtime ? runtime.binding_status : 'detached',
+          parentLed,
+          stimulusStatus: check.stimulusStatus,
+          stimulusError: check.stimulusError,
+          onRetryStimulus: check.reload,
+          playerMode: true,
+          playerController,
+          onPlayerState: setPlayerCheckState,
+          onCommitted: () => {
+            if (onChanged) onChanged()
+          }
+        })
 
   const begin = useCallback(
     async (mode) => {
@@ -12316,6 +12867,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }
       : null
 
+  // The player owns the screen's one primary (`Check`), so the chat action beside it is secondary
+  // while the player is on screen. It keeps its handler: nothing becomes a dead control.
+  const playerSurface = Boolean(document) && lessonView === 'player'
+
   let body
   if (!page) {
     body =
@@ -12400,10 +12955,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
           children: [
             jsx(sdk.Button, {
-              'data-cb-section-primary': '',
-              variant: 'default',
+              'data-cb-section-primary': playerSurface ? 'secondary' : '',
+              variant: playerSurface ? 'secondary' : 'default',
               size: 'sm',
-              style: CB_PRIMARY_STYLE,
+              style: playerSurface ? undefined : CB_PRIMARY_STYLE,
               disabled: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
               children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
@@ -12425,7 +12980,17 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 focusBlockId,
                 onOpenBlock: openBlock,
                 onSaveBlock: supports('notebook.save') ? saveBlock : null,
-                pronunciation
+                pronunciation,
+                player: parentLed
+                  ? null
+                  : {
+                      slot: playerCheckNode,
+                      state: playerCheckState,
+                      controller: playerController,
+                      section,
+                      onExit: onBack,
+                      onReload: onRetryPage
+                    }
               },
               objectiveId
             )
@@ -12563,7 +13128,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const viewOptions = document ? lessonViewOptions(document) : []
   const viewChoices = document ? lessonViewChoices(document) : []
   const unavailableViews = viewChoices.filter((choice) => !choice.available)
-  const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : 'textbook'
+  const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : (viewOptions[0] && viewOptions[0].id) || 'player'
+  const activeViewLabel = (LESSON_VIEWS.find((view) => view.id === activeView) || {}).label || 'Game'
   const activeMode = cbModeFor(activeView)
   // One switcher, always in the header, at every pane width. The three names never disappear: a
   // view this document cannot render stays as a disabled choice with its reason in plain words,
@@ -12647,7 +13213,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }, 'back'),
         jsx('span', {
           style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-          children: [place, activeView === 'textbook' ? 'Textbook' : activeView === 'guided' ? 'Guided' : 'Field Quest'].filter(Boolean).join(' · ')
+          children: [place, activeViewLabel].filter(Boolean).join(' · ')
         }, 'place'),
         jsx(CbStatePill, { state: section.state }, 'state'),
         section.evidence_target
@@ -12681,7 +13247,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
       : null,
     children: [
       body,
-      page && document
+      page && document && !playerSurface
         ? jsx('div', {
             'data-cb-section-footer': '',
             style: {
@@ -18836,6 +19402,12 @@ export {
   FieldDesk,
   deskEstimateState,
   CreateCourseFlow,
+  LessonPlayer,
+  PlayerVerdict,
+  PlayerClose,
+  playerSteps,
+  playerCheckCount,
+  playerConcept,
   FIRST_RUN_COPY,
   FirstRun,
   GOAL_EXAMPLES,
