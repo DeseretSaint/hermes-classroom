@@ -2938,7 +2938,12 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 "UPDATE lesson_runs SET state = 'abandoned', revision = revision + 1, updated_at = ? WHERE id = ?",
                 (now, run["id"]),
             )
+            previous_run_id = str(run["id"])
             run = None
+        else:
+            # A run that ended (completed/abandoned) is still the durable page's source; a new
+            # run carries its teaching rows forward exactly like a fresh run does.
+            previous_run_id = str(run["id"]) if run is not None else None
         if run is not None and run["state"] in ("active", "paused"):
             binding = _latest_binding(connection, enrollment["id"], run["id"])
             connection.execute("UPDATE lesson_runs SET last_opened_at = ? WHERE id = ?", (now, run["id"]))
@@ -2967,14 +2972,50 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
                 (run_id, enrollment["id"], objective["id"], now, now, now),
             )
+            # H-200: the textbook page belongs to the section, not to the chat session. Carry the
+            # durable teaching rows forward so a fresh run cannot blank a served page (the defect
+            # H-178b recorded: "start a fresh run" emptied the page while the open check survived).
+            carried = 0
+            if previous_run_id is not None:
+                if not connection.execute(
+                    "SELECT 1 FROM lesson_segments WHERE lesson_run_id = ? LIMIT 1",
+                    (previous_run_id,),
+                ).fetchone():
+                    # The newest run may itself be a blank one left by the old defect. The page
+                    # still exists on an older run of this section; carry from there.
+                    older = _row(
+                        connection,
+                        "SELECT r.id FROM lesson_runs r WHERE r.enrollment_id = ? AND r.objective_id = ?"
+                        " AND EXISTS (SELECT 1 FROM lesson_segments s WHERE s.lesson_run_id = r.id)"
+                        " ORDER BY r.created_at DESC, r.rowid DESC LIMIT 1",
+                        (enrollment["id"], objective["id"]),
+                    )
+                    previous_run_id = str(older["id"]) if older is not None else None
+            if previous_run_id is not None:
+                for segment in connection.execute(
+                    "SELECT kind, text, artifact_id, source_id FROM lesson_segments"
+                    " WHERE lesson_run_id = ? ORDER BY ordinal LIMIT 500",
+                    (previous_run_id,),
+                ).fetchall():
+                    carried += 1
+                    connection.execute(
+                        "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text,"
+                        " artifact_id, source_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            _new_id("seg"), run_id, carried, segment["kind"], segment["text"],
+                            segment["artifact_id"], segment["source_id"], now,
+                        ),
+                    )
             # Authored media (when the plan/lesson pipeline produced it) is projected into the
             # durable page before the chat writes its own teaching segments. The text equivalent
             # is kept even when an artifact is absent, so a provider failure is visible, not silent.
-            from . import media as coursebook_media
+            # A carried page already holds its media rows; seeding again would duplicate them.
+            if carried == 0:
+                from . import media as coursebook_media
 
-            coursebook_media.seed_authored_media(
-                connection, lesson_run_id=run_id, objective_id=str(objective["id"]), now=now
-            )
+                coursebook_media.seed_authored_media(
+                    connection, lesson_run_id=run_id, objective_id=str(objective["id"]), now=now
+                )
             result = {
                 "lesson_run_id": run_id,
                 "run_state": "created",
@@ -3067,11 +3108,30 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             " ORDER BY created_at DESC, rowid DESC LIMIT 1",
             (enrollment["id"], objective["id"]),
         )
+        # H-200: the run is the session scope, not the textbook. A "start a fresh run" replaces the
+        # newest run with an empty one, so reading segments only from that run served a blank page
+        # for a section whose durable teaching rows were still on disk under the abandoned run —
+        # and the open check on that section became unreachable. Read the page from the newest run
+        # that actually carries segments; keep `run` (the newest) for the runtime/binding view so
+        # the session the plugin attached to is still the one reported. A pack section, a chat
+        # transcript and an authored page all live in `lesson_segments`, so this cannot serve
+        # content the learner never had.
+        page_run = run
+        if run is not None and not connection.execute(
+            "SELECT 1 FROM lesson_segments WHERE lesson_run_id = ? LIMIT 1", (run["id"],)
+        ).fetchone():
+            page_run = _row(
+                connection,
+                "SELECT r.* FROM lesson_runs r WHERE r.enrollment_id = ? AND r.objective_id = ?"
+                " AND EXISTS (SELECT 1 FROM lesson_segments s WHERE s.lesson_run_id = r.id)"
+                " ORDER BY r.created_at DESC, r.rowid DESC LIMIT 1",
+                (enrollment["id"], objective["id"]),
+            )
         binding = _latest_binding(connection, enrollment["id"], run["id"]) if run else None
         segments = connection.execute(
             "SELECT * FROM lesson_segments WHERE lesson_run_id = ? ORDER BY ordinal LIMIT 500",
-            (run["id"],),
-        ).fetchall() if run else []
+            (page_run["id"],),
+        ).fetchall() if page_run else []
         sources = connection.execute(
             "SELECT * FROM sources WHERE course_id = ? ORDER BY fetched_at DESC LIMIT 200", (course["id"],)
         ).fetchall()
