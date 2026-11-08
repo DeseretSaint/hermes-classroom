@@ -2997,10 +2997,15 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
     run the pipeline has no ``gen_*`` tables: that is a normal course built from packs or chat
     segments, not an error, and it stays on the segment projection.
 
-    The **latest** revision is returned: an authored edit (``needs_review``) supersedes the
-    generated page it was made from without deleting it, and a parent-approved edit is served as
-    ``parent_approved`` — never relabelled as independently validated. A profile that never
-    fine-tunes has exactly one version-1 row, so its read is unchanged.
+    The **latest** revision is returned: an authored edit supersedes the generated page it was
+    made from without deleting it, and a parent-approved edit is served as ``parent_approved`` —
+    never relabelled as independently validated. A profile that never fine-tunes has exactly one
+    version-1 row, so its read is unchanged.
+
+    Only a page a learner may be offered is returned. ``validated`` and ``model_assessed`` are
+    pages the validator cleared (one honestly labelled); ``parent_approved`` is an authored edit
+    the human signed off. A ``needs_review`` row is content no one approved, so it is refused here
+    exactly as before H-194 and the caller falls back to the durable segment projection.
     """
     try:
         document = connection.execute(
@@ -3019,6 +3024,7 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
         lesson = connection.execute(
             "SELECT id, page_json, state, validation_id, media_json, version FROM gen_lessons"
             " WHERE section_id = ? AND plan_hash = ?"
+            " AND state IN ('validated', 'model_assessed', 'parent_approved')"
             " ORDER BY version DESC, rowid DESC LIMIT 1",
             (str(section["id"]), str(document["plan_hash"])),
         ).fetchone()
@@ -3141,10 +3147,10 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         authored = _authored_lesson_page(connection, objective)
         if authored is not None:
             page = dict(authored["page"])
-            # H-194: a section under authored review is served as text, but its check is not
-            # attached to the page until the edit is approved. The learner keeps the previous
-            # book page and cannot submit a new grade against unreviewed content.
-            served_check_id = None if authored["state"] == "needs_review" else check_id
+            # H-194: a pending authored edit (`needs_review`) is never returned by
+            # `_authored_lesson_page`, so the page served here is always one an adult or the
+            # validator cleared and its check may be attached.
+            served_check_id = check_id
             # H-169/H-185: `media_json` is the authoritative record after the media caller
             # attached artifact ids, MIME and honest degraded reasons; the authoring snapshot in
             # `page_json` still holds the pre-generation spec. Merge the generated list in so the

@@ -508,7 +508,7 @@ def validated_sections(
             continue
         state = str(section.get("lesson_state") or "")
         if state == "needs_review":
-            problems.append(f"{label} was edited and needs review")
+            problems.append(f"{label} is needs_review (edited and not yet approved)")
             continue
         if state not in served_states:
             problems.append(f"{label} is {state or 'not generated'}, not validated")

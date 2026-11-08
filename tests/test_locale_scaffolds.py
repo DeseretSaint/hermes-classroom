@@ -221,9 +221,11 @@ class LegacyDocumentHashTest(unittest.TestCase):
             Path(__file__).resolve().parents[1] / "coursebook" / "domain.py"
         ).read_text(encoding="utf-8")
         # H-185 renamed the projected page local (the authored page is merged with its generated
-        # media first); the property under test is unchanged: no locale is handed over.
-        self.assertIn("document = lesson_document.document_from_page(page, check_id=check_id)", source)
-        self.assertNotIn("document_from_page(page, check_id=check_id, locale=", source)
+        # media first) and H-194 renamed the *check* local (`served_check_id`) when it stopped
+        # serving a page under review; the property under test is unchanged: no locale is handed
+        # over, so a pre-H-18 page keeps its stored hash and document id.
+        self.assertIn("document = lesson_document.document_from_page(page, check_id=served_check_id)", source)
+        self.assertNotIn("document_from_page(page, check_id=served_check_id, locale=", source)
 
 
 class ReviewTargetScaffoldTest(unittest.TestCase):

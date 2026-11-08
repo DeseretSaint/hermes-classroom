@@ -1456,6 +1456,22 @@ AUTHORED_NO_UPLOAD = (
 )
 
 
+def _pending_fine_tune(connection, course_id: str) -> bool:
+    """Whether this course carries an authored edit nobody has approved yet (H-194).
+
+    A fine-tune writes one revision row per edit at ``needs_review``. Approval flips those rows
+    to ``approved`` in the same transaction that stores the covering ``final_approvals`` row, so
+    an empty result means the course was never fine-tuned (or every edit was signed off).
+    """
+    row = connection.execute(
+        "SELECT EXISTS(SELECT 1 FROM plan_revisions WHERE course_id = ? AND state = 'needs_review')"
+        " OR EXISTS(SELECT 1 FROM lesson_revisions WHERE course_id = ? AND state = 'needs_review')"
+        " AS pending",
+        (course_id, course_id),
+    ).fetchone()
+    return bool(row["pending"]) if row is not None else False
+
+
 def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
     """Read-only: what ``course.export`` would package, or the one reason it cannot.
 
@@ -1469,8 +1485,10 @@ def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
     Question 4 is the hash fence for a course a parent approved in Parent Studio. Final approval
     is **not required** for ``course.export`` — the approved plan plus validated pages is the
     authority — but a stored active approval is honoured: once an adult approved this exact text,
-    a changed page blocks instead of quietly shipping under the old decision. The caller's own
-    reviewed hash is the second fence, enforced by ``course_export``.
+    a changed page blocks instead of quietly shipping under the old decision. The one exception is
+    H-194: when a fine-tune is still pending (a ``plan_revisions``/``lesson_revisions`` row at
+    ``needs_review``), the edited bytes must carry a covering final approval before they ship.
+    The caller's own reviewed hash is the second fence, enforced by ``course_export``.
 
     Nothing here writes: the manifest and file bytes are composed in memory so the read can show
     the exact files, hashes and content hash the export will produce.
@@ -1546,18 +1564,20 @@ def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
         " ORDER BY approved_at DESC LIMIT 1",
         (course["id"],),
     )
-    # H-194: the readiness report fails closed exactly like `parent.export`. A course whose
-    # active approval was superseded by a fine-tune has no approval covering its bytes, so it is
-    # not ready even before the hash comparison below.
+    # H-194: an authored fine-tune (a pending `plan_revisions`/`lesson_revisions` row) is content
+    # an adult has not signed off yet, so it must carry an active approval covering its bytes.
+    # A course that was never fine-tuned keeps the pre-H-194 contract: the approved plan plus
+    # validated pages is the authority, and a stored approval is honoured, not required.
     if approval is None:
-        plan_record.update(
-            blocked_reason="no_final_approval",
-            blocked_message=(
-                "the generated lessons have not been approved; review the changes and approve before packaging."
-            ),
-        )
-        return plan_record
-    if str(approval["content_hash"]) != digest:
+        if _pending_fine_tune(connection, str(course["id"])):
+            plan_record.update(
+                blocked_reason="no_final_approval",
+                blocked_message=(
+                    "the generated lessons have not been approved; review the changes and approve before packaging."
+                ),
+            )
+            return plan_record
+    elif str(approval["content_hash"]) != digest:
         plan_record.update(
             blocked_reason="changes_need_review",
             blocked_message=(
