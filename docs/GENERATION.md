@@ -16,10 +16,23 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author | `coursebook.plan.generate` | `plan-prompt.v3` | `PLAN_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v8` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v6` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v7` | `PLAN_SCHEMA_V2` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v9` | `LESSON_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
+
+`build_plan_request()` selects the v2 schema and `plan-prompt.v7` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v6` otherwise.
+
+The labels in that table are not hand-copied. They are the constants at
+`coursebook/generation.py:157-174` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
+`UNIT_SECTIONS_PROMPT_VERSION`, `LESSON_PROMPT_VERSION`, `VALIDATION_PROMPT_VERSION`), and
+`scripts/check-docs-truth.py` reads them out of the module and fails this document when a table row
+or prose reference names a retired label. A prompt label is part of every stored validation binding
+and the idempotency fingerprint, so a different instruction text under a reused label is never
+silently accepted.
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
 generation schema, or the generation prompt version. The validation record stores both prompt
@@ -68,10 +81,11 @@ credential pool — both bypass the per-plugin trust gate that makes `ctx.llm` s
 does not call a model at all: the job executor (agent half) performs the bounded calls and hands
 the results to the pipeline, which persists them.
 
-**Wiring still owed by the agent half.** `coursebook.generation.bind_host_llm(ctx.llm)` must be
-called once from `register(ctx)` in `__init__.py`. `__init__.py` is owned by Sable; this card does
-not edit it. Until that line lands, `host_llm()` raises a typed `GenerationRejected` instead of
-falling back to any provider — failing closed is the intended behaviour.
+**Wiring.** `coursebook.generation.bind_host_llm(ctx.llm)` is called once from `register(ctx)` in
+`__init__.py:59`; `bind_validator_llm(...)` follows at `__init__.py:67` with the
+`validator_provider` / `validator_model` settings read from the plugin config there and nowhere
+else. Before binding, `host_llm()` raises a typed `GenerationRejected` instead of falling back to
+any provider — failing closed is the intended behaviour.
 
 **Limits.**
 
@@ -386,10 +400,10 @@ whose labels read the same once case, spacing and punctuation are ignored are re
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
 `needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v8` is
+prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v9` is
 the current label.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v8`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v9`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -403,7 +417,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v8`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v9`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -426,12 +440,11 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v8` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v9` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
-everywhere else. The label is `v8`, not `v7`: master's `v7` (the rubric-profile fix) and this
-branch's `v7` were two different instruction texts under one label, and the label is recorded in
-stored validation bindings and the idempotency fingerprint, so the merged line takes the next free
-number rather than reusing a `v7` that already meant something else. The authored shape is closed
+everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
+bindings and the idempotency fingerprint, so a different instruction text under a reused label
+would invalidate old bindings rather than be silently accepted. The authored shape is closed
 (`additionalProperties: false`):
 
 ```
@@ -507,7 +520,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v8`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v9`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`

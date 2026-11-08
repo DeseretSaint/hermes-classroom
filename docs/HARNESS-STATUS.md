@@ -2,23 +2,33 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current release candidate (measured on 2026-11-08):** merged `master`
-`625c9397469cfaab95692a00abf5fd343a8dd493` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
-union `39659b7`, re-landed on H-155 `ac301a1`). On that commit `cb.rpc` is
-v16 with 68 declared methods and 68 handlers, `cb.db` is v11 (`contracts/db.v11.json`, migrations
-`0001`-`0011`), the suite is `Ran 2007 tests … OK (skipped=1, expected failures=1)`, and `desktop/plugin.js` is sha256
-`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543`. The row-by-row body below is
-the older `498b1da` snapshot it was written against; where a row says "on `master`" or quotes a
-contract version, read it as `498b1da`, not as the current tree.
+**Current tree (measured 2026-11-08, re-derived by H-171):** `origin/master`
+`38ecc2279129f1cf43ea95fe8173b53834309176`. On it `cb.rpc` is v17
+(`coursebook/contracts.py:51`) with 68 declared methods and 68 handlers, `cb.db` is v11
+(`contracts/db.v11.json`, `DB_SCHEMA_VERSION = 11` in `coursebook/db.py:214`, migrations
+`0001`-`0011`), `desktop/plugin.js` is sha256
+`179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`, and the recorded suite is
+`Ran 2242 tests … OK (skipped=1)`.
 
-Base: `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700).
-`desktop/plugin.js` on that tree: sha256 `5beed34797ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25`
-(last changed by H-02, `5b7423374a5b8d10a2fe94ce520a2613b5c8f02e`).
+The suite, contract, schema and pin values are the record in `docs/release-evidence.json`, measured
+at `eed7dc717f6503d4172b6b0ebf4cec2fa663fc37`. That commit is an ancestor of `38ecc22`, and
+`git diff --stat eed7dc7 38ecc22 -- coursebook desktop contracts tests` is empty, so the record
+still describes the current tree; only docs and audit artifacts changed on top of it.
 
-This document exists because the harness slice produced a great deal of evidence, and almost all of
-it lives on **unmerged branches**. Prose that says "the harness works" without saying which commit
-it works on, and whether a model or a recording produced the output, is the failure this pass
-repairs. Nothing here is new capability; every row points at a file or a command.
+**Historical snapshot label — not current.** The row-by-row body (§1-§7) is a snapshot written
+against `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700), where the
+suite was `Ran 1177 tests … OK` and `desktop/plugin.js` was sha256
+`5beed34797ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25` (last changed by H-02,
+`5b7423374a5b8d10a2fe94ce520a2613b5c8f02e`). Every "on `master`" / "not on `master`" statement in
+those rows describes `498b1da` unless §5.1 or §8 re-derives it. Do not quote a row as current
+without re-running `git merge-base --is-ancestor <commit> origin/master`; §8 records the H-171
+re-derivation for the harness cards.
+
+This document exists because the harness slice produced a great deal of evidence, and most of it
+lives on **unmerged branches** or in commits that reached `master` only through successor merges.
+Prose that says "the harness works" without saying which commit it works on, and whether a model or
+a recording produced the output, is the failure this pass repairs. Nothing here is new capability;
+every row points at a file or a command.
 
 > **Superseded evidence (H-102, 2026-11-07):** §4 and §5 quote `SUMMARY total=22 fail=0 pass=22`
 > from their own commits. That is **not** the current matrix. `S08` and `S09` were written against
@@ -43,10 +53,10 @@ Vocabulary, used strictly below:
 
 | # | Claim class | Verdict | What that means here | Evidence | What it does not mean |
 |---|---|---|---|---|---|
-| 1 | **Harness code complete** | **PARTIAL** — pipeline MERGED; P0-5, P0-6 and P0-7 only on branches | On `master`: cb.rpc v10 with `level`/`subject_domain`/`scope` on `course.create` (H-01), learner create → plan job → approve → lessons (H-02, `5b74233`), runtime threading (H-13), bounded research depth (H-04), plan-time `media_need` (H-05), parent brief fidelity (H-07), fail-closed plan approval with a durable validation binding (H-12), plan-sized cost ceilings (H-17). Not on `master`: procedure authoring (H-06 `00b502f`), general authored export (H-08 `c9c6cec`), locale-aware scaffolds (H-18 `2aca201`), validator independence (H-15 `833e335`), rubric extensibility (H-24 `491443a`). | `contracts/rpc.v10.json:532-556` (the three new inputs); `coursebook/domain.py:678`; `coursebook/research.py:67-97`; `coursebook/generation.py:147`; branch commits as named. Merge check: `git merge-base --is-ancestor <branch> master; echo $?` | Does not mean the review's P0 list is closed. P0-5 (export) and P0-6 (procedure) are fixed only on branches, P0-7 (arbitrary-topic generation) is proved only on a branch, and P0-2's scope cell contradicts its own design doc (§2). |
-| 2 | **Authored course generated end to end** | **BRANCH + FIXTURE** — 3/3 scenarios PASS, recorded transcripts | Three non-Japanese goals (`single`/`one_off` bicycle repair, `short`/`committed` music analysis, `full`/`committed` soldering) each ran `course.create` → plan job → kernel-digest approval → lessons job → `lesson.page` → `course.export.read` → `course.export` against a throwaway `HERMES_HOME` on branch `wt/harness-e2e-proof`. The model and the research pages are **recorded transcripts**: 0 provider calls, $0 spend. | `docs/HARNESS-E2E.md` and `audit/adversarial/harness-e2e/STATUS.md` at `111c7e9` (content commit `4dd0f18`); `audit/adversarial/harness-e2e/evidence/{bicycle_single,music_short,soldering_full}.json`; `tests/test_harness_e2e.py` (9 tests). Reach them with `git show 111c7e9:docs/HARNESS-E2E.md`. | Does not mean a live model produced those lessons, that the web was searched live, that a check attempt was submitted on a generated objective, or that the branch is merged. The `single` scenario has 4 objectives where `docs/COURSE-BLUEPRINT.md` says 1 (§2). |
+| 1 | **Harness code complete** | **PARTIAL** — pipeline and the harness cards are MERGED on `38ecc22`; the P0-7 live claim is not | On `master` `38ecc22`: cb.rpc v17 with `level`/`subject_domain`/`scope` on `course.create` (H-01), learner create → plan job → approve → lessons (H-02, `5b74233`), runtime threading (H-13), bounded research depth (H-04), plan-time `media_need` (H-05), procedure authoring (H-06 `00b502f`), parent brief fidelity (H-07), fail-closed plan approval with a durable validation binding (H-12), validator independence (H-15 `833e335`), plan-sized cost ceilings (H-17), the rubric-extensibility decision (H-24 `491443a`, docs/registry — not a new runtime seam), authored export through its successor commit (H-08b `18638be`: `course.export.read`/`course.export` in cb.rpc v17, `coursebook/pack_flow.py:1618,1649`), and locale scaffolds through their successor commit (H-18b `9e6c5e4`: `coursebook/localization.py:139`). Not on `master`: the H-08 original `c9c6cec`, the H-18 original `2aca201` (an M4 frame refresh, not the locale code), and the H-09 evidence packet `4dd0f18`/`111c7e9` (superseded by the merged H-40 packet `9f2de53`). `git merge-base --is-ancestor` for `00b502f`, `833e335`, `491443a`, `18638be`, `9e6c5e4` returns `0`; for `c9c6cec`, `2aca201`, `111c7e9` it returns `1` (§8). | `coursebook/contracts.py:51`; `contracts/rpc.v17.json`; `coursebook/research.py:67-97`; `coursebook/generation.py:157-174`; `coursebook/localization.py:139`; `coursebook/pack_flow.py:1618-1758`; commit graph as named. Merge check: `git merge-base --is-ancestor <commit> origin/master; echo $?` | Does not mean the review's P0 list is closed. P0-5 (export) and P0-6 (procedure) now have code on `master`, but P0-7 (arbitrary-topic generation) is proved only by a recorded-transcript packet plus one off-tree live run with no validation record (`docs/AUDIT-INDEX.md` §4, §15). The P0-2 scope cell is not a live contradiction: §2 separates the v1 fixture band from the enforced v2 band. |
+| 2 | **Authored course generated end to end** | **BRANCH + FIXTURE** — 3/3 scenarios PASS, recorded transcripts | Three non-Japanese goals (`single`/`one_off` bicycle repair, `short`/`committed` music analysis, `full`/`committed` soldering) each ran `course.create` → plan job → kernel-digest approval → lessons job → `lesson.page` → `course.export.read` → `course.export` against a throwaway `HERMES_HOME` on branch `wt/harness-e2e-proof`. The model and the research pages are **recorded transcripts**: 0 provider calls, $0 spend. | `docs/HARNESS-E2E.md` and `audit/adversarial/harness-e2e/STATUS.md` at `111c7e9` (content commit `4dd0f18`); `audit/adversarial/harness-e2e/evidence/{bicycle_single,music_short,soldering_full}.json`; `tests/test_harness_e2e.py` (9 tests). Reach them with `git show 111c7e9:docs/HARNESS-E2E.md`. | Does not mean a live model produced those lessons, that the web was searched live, that a check attempt was submitted on a generated objective, or that the branch is merged. The `single` scenario has 4 objectives because its plan is a **v1** fixture; the enforced v2 band is 1 unit / 1 objective (§2). |
 | 3 | **Live UI proof** (the harness loop driven in a real Desktop window) | **UNPROVEN** | The UI half of H-02 exists on `master` but is covered by jsdom/unit tests (`tests/test_desktop_create_flow.py`, `tests/test_learner_plan_flow.py`), not by a mounted Desktop window reaching a real backend on this tree. The M4 frames are a headless render against a stub transport. | `tests/test_desktop_create_flow.py` at `master`; the M4 frames and their stated limits in `docs/M4-VISUAL-MEDIA-AUDIT.md` and `docs/DEMO.md` §"Product-line measurement". | Does not mean "attempted and failed" — it means nobody has mounted the new create flow in a live window and driven it. Recording is still gated (§3). |
-| 4 | **Prepared-pack demo** | **FIXTURE**, gate NOT MET | `bundled/packs/japanese-affection-context-l0` imported by `scripts/seed-demo-course.py`. It proves a governed loop over **one** prepared pack. No video exists and the demo gate is NOT MET. | `docs/DEMO.md` (gate status, per-shot verdicts, `audit/demo-gate-5b0f124/`); `docs/REVIEW_CB017-demo-gate.md`. | Not proof of arbitrary-topic generation. This pack is a fixture in every claim in this repository; H-09 is the only card that speaks to arbitrary goals, and only on a branch, only for its three goals. |
+| 4 | **Prepared-pack demo** | **FIXTURE**, gate NOT MET | `bundled/packs/japanese-affection-context-l0` imported by `scripts/seed-demo-course.py`. It proves a governed loop over **one** prepared pack. No video exists and the demo gate is NOT MET. | `docs/DEMO.md` (gate status, per-shot verdicts, `audit/demo-gate-5b0f124/`); `docs/REVIEW_CB017-demo-gate.md`. | Not proof of arbitrary-topic generation. This pack is a fixture in every claim in this repository; H-09's own packet is on a branch (`111c7e9`, superseded by the merged H-40 packet `9f2de53`), and the live half is H-68's off-tree run with no validation record. |
 | 5 | **Product 1.0** | **UNTAGGED / UNPROVEN** | No release tag, no catalog pull request, no publication, no license. `docs/SUBMISSION.md` §0 remains closed. | `docs/SUBMISSION.md` §0 and §1 gate table; `README.md` §Status. | Nothing above moves this row. Evidence on branches is not a release candidate, and a green suite is not a gate (§5). |
 
 ## 2. Claim-by-claim corrections (procedure / media / language / export / scope)
@@ -54,13 +64,13 @@ Vocabulary, used strictly below:
 Each row is the claim a reader should take away, held to H-06/H-08/H-09 evidence. Where a doc
 disagreed with the code, the disagreement is recorded rather than resolved by silence.
 
-| Claim | Correct statement on `master` `498b1da` | Correct statement including branches | Evidence |
+| Claim | Correct statement on `master` `38ecc22` (re-derived by H-171; the `498b1da` snapshot is named where it differs) | Correct statement including branches | Evidence |
 |---|---|---|---|
-| **Procedure lens authoring** | The renderer, contract and validator are real; `master`'s `lesson-prompt` does **not** emit a `procedure` header. Before this pass the README said "no authoring path" — that is true of `master`, not of the slice. | H-06 (`00b502f`) adds the authoring path: `LESSON_SCHEMA` accepts the typed `procedure` object, `lesson-prompt.v7` requests it for a technical procedure, `_build_learner_page` projects it as segment references, and `tests/test_procedure_authoring.py` drives the real lesson job with a **fake model**. No live course has been authored through it. | `docs/M4-PROCEDURE-LAYOUT.md` at `00b502f`; `tests/test_procedure_authoring.py` |
+| **Procedure lens authoring** | The renderer, contract and validator are real, and the authoring path is on `master`: `LESSON_SCHEMA` accepts the typed `procedure` object, `lesson-prompt.v9` requests it for a technical procedure, and `_build_learner_page` projects it as segment references (H-06 `00b502f`, merged — §8). Before the H-47 docs merge the README said "no authoring path"; that was true of `498b1da`, not of `38ecc22`. | No live course has been authored through the procedure path; the evidence is `tests/test_procedure_authoring.py` driving the real lesson job with a **fake model**. | `docs/M4-PROCEDURE-LAYOUT.md`; `coursebook/generation.py` `LESSON_SCHEMA`; `tests/test_procedure_authoring.py`; ancestry `00b502f` → `0` |
 | **Media** | Plan-time media is real on `master`: every plan section declares a typed `media_need` and the capability policy adopts it (H-05). Host image/TTS generation is real (M0) but no live lesson-pane generation has run on this tree. | H-09 asserts `every_section_declares_media_need` for all three scenarios and a technical procedure with schematic rows — over recorded transcripts. | `docs/CAPABILITY-POLICY.md`, `docs/GENERATION.md`; `audit/adversarial/harness-e2e/evidence/*.json` at `111c7e9` |
-| **Language** | The L0 scaffold fields are still Japanese-named and required on **every** lesson: `check.scaffolds.romaji/furigana/english_meaning`. All 15 H-09 lessons had to set them `false`. This is review finding P1-4, still open on `master`. | H-18 (`2aca201`) is the locale-scaffold branch and is **unmerged**. Do not describe the language path as general until it merges. A language goal's audio/pronunciation path is **not covered** by H-09 at all — none of its three goals is a language goal. | `coursebook/generation.py` `LESSON_SCHEMA`; `docs/HARNESS-E2E.md` §Findings F1; `audit/adversarial/harness-e2e/STATUS.md` §"Not exercised" |
-| **Export** | On `master`, `pack.export` still refuses a course with no `pack_id` (`course_not_pack_backed`); the only authored export is Parent Studio's `parent.export`. A learner-created course cannot package itself on this tree. | H-08 (`c9c6cec`) adds `course.export.read` / `course.export` (cb.rpc **v11**, not on `master`) with a four-step gate: not pack-backed, plan approved, every page `validated`, stored final-approval hash unchanged. | `docs/PACK-AUTHORING.md` §5 at `c9c6cec`; `tests/test_course_export.py`; H-09 asserts `export_ready` and `export_produced_an_archive` per scenario |
-| **Plan scope** | **Contradiction, unresolved.** `SCOPE_EXPECTATIONS["single"]` is `objectives: (4, 5)` in `coursebook/generation.py:147-152`. `docs/COURSE-BLUEPRINT.md:42` says `single` = exactly 1 objective / 1 section. H-09's `bicycle_single` produced 4 objectives and asserted the *code's* cell. | The blueprint implementer must reconcile the two; this docs pass does not choose. Until then, any "one-off course is one session" claim is unproven at the contract level. | `coursebook/generation.py:147`; `docs/COURSE-BLUEPRINT.md:42`; H-09 F2 in `docs/HARNESS-E2E.md` |
+| **Language** | The locale-aware scaffold vocabulary is on `master` through H-18b (`9e6c5e4`): `LESSON_SCHEMA.check.scaffolds` accepts either the legacy `{romaji, furigana, english_meaning}` object (so pages authored before the change read unchanged) or an array of only the kinds the locale/level mandates (`[{kind, script?, gloss?, direction?}]`, `coursebook/localization.py:139`). A French course is not forced to declare a Japanese scaffold. | The H-18 tip `2aca201` is an M4 frame refresh and is **unmerged**; the locale code landed via `9e6c5e4`, not through it. A language goal's audio/pronunciation path is still **not covered** by H-09 — none of its three goals is a language goal. | `coursebook/generation.py` `LESSON_SCHEMA`; `coursebook/localization.py:139-160`; `docs/HARNESS-E2E.md` §Findings F1; ancestry `2aca201` → `1`, `9e6c5e4` → `0` |
+| **Export** | The general authored export is on `master` through H-08b (`18638be`, cb.rpc v13; the method is in v17): `course.export.read` / `course.export` are declared in `contracts/rpc.v17.json` and handled in `coursebook/pack_flow.py:1618,1649`, behind the four-step gate (not pack-backed, plan approved, every page `validated`, stored final-approval hash unchanged). `pack.export` still refuses a course with no `pack_id` (`course_not_pack_backed`). | The H-08 tip `c9c6cec` is **unmerged**; `18638be` is the successor that landed. No live model has produced an exported course through this path. | `contracts/rpc.v17.json`; `coursebook/pack_flow.py:1618-1758`; `tests/test_course_export.py`; H-09's branch packet asserts `export_ready` and `export_produced_an_archive` per scenario (recorded transcripts) |
+| **Plan scope** | **Not ambiguous on the current contract.** `SCOPE_EXPECTATIONS` (`coursebook/generation.py:202-235`) carries two bands per scope, each named for the contract it serves: `v1_objectives` is the pre-blueprint v1 range (single `(4, 5)`), while `blueprint_objectives` / `blueprint_units` are the v2 band (single `(1, 1)`), and only those are enforced — by the v2 plan rule at `generation.py:2790-2791`, the unit stage at `3746-3747`, and the v2 prompt at `4755-4756`. `docs/COURSE-BLUEPRINT.md:222` states single = 1 unit / 1 objective, and `tests/test_harness_e2e.py:183` asserts `(1, 1)`. | The H-09 `bicycle_single` fixture plan has 4 objectives because it is a **v1** fixture (`plan_one_off.json`); 4 is the v1 band, not a contradiction with the enforced v2 contract. Under the v2 blueprint a one-off course is exactly one unit and one objective. | `coursebook/generation.py:202-235,2790-2791,3746-3747,4755-4756`; `docs/COURSE-BLUEPRINT.md:222`; `tests/test_harness_e2e.py:183`; `tests/test_scope_copy.py` asserts the two bands are kept distinct |
 | **Research depth** | Real on `master`: `survey`/`working`/`deep` are the only accepted values, aliases map `overview`→`survey` and `thorough`→`deep`, and the budget scales with scope (a `full` course at `working` gets at least 9 queries / 14 pages). No live web was used by H-09 — its pages are a recording. | — | `coursebook/research.py:67-97`; `docs/GENERATION.md` |
 | **Plan approval** | Fail-closed on `master` since H-12 (`plan_approve`, `coursebook/domain.py:678`): empty plans refused, generated plans need a durable pass bound to the exact content hash, refusals write no transition or revision. | — | `coursebook/domain.py:678-747`; `tests/test_adversarial_round2.py` asserts the refusal |
 
@@ -85,16 +95,17 @@ document depends on it being restarted; rows 3 and 4 stay UNPROVEN and NOT MET u
 
 | Role | Commit | Note |
 |---|---|---|
-| Base of this docs branch | `498b1daeae946d988072bb7852c07b4cfbddeb8e` | `master`; suite `1177 tests OK` (§5) |
-| H-06 procedure authoring | `00b502f` | branch `wt/harness-procedure-author`, unmerged |
-| H-08 authored export | `c9c6cec` | branch `wt/harness-authored-export`, unmerged; brings cb.rpc v11 |
-| H-09 end-to-end proof | `4dd0f18` content, `111c7e9` tip | branch `wt/harness-e2e-proof`, unmerged |
-| H-18 locale scaffolds | `2aca201` | branch `wt/harness-locale-scaffolds`, unmerged |
-| H-15 validator independence | `833e335` | branch `wt/harness-validator-independence`, unmerged |
-| H-24 rubric extensibility | `491443a` | branch `wt/harness-rubric-extensibility`, unmerged |
+| Base of this docs branch | `498b1daeae946d988072bb7852c07b4cfbddeb8e` | `master` at the time; suite `1177 tests OK` (§5). The header now pins the current tree separately. |
+| H-06 procedure authoring | `00b502f` | branch `wt/harness-procedure-author`; **merged** on `38ecc22` (`merge-base --is-ancestor` → `0`) |
+| H-08 authored export | `c9c6cec` | branch `wt/harness-authored-export`; the tip is not on `master` (`→ 1`), but its successor H-08b `18638be` is (`→ 0`) and carries the export methods into cb.rpc v17 |
+| H-09 end-to-end proof | `4dd0f18` content, `111c7e9` tip | branch `wt/harness-e2e-proof`, **not** on `master` (`→ 1`); superseded by the merged H-40 packet `9f2de53` |
+| H-18 locale scaffolds | `2aca201` | branch `wt/harness-locale-scaffolds`; the tip is not on `master` (`→ 1`) and is an M4 frame refresh; the locale code is H-18b `9e6c5e4`, which is (`→ 0`) |
+| H-15 validator independence | `833e335` | branch `wt/harness-validator-independence`; **merged** (`→ 0`) |
+| H-24 rubric extensibility | `491443a` | branch `wt/harness-rubric-extensibility`; **merged** (`→ 0`), docs/registry decision only |
 
-A branch commit is not a merge. `git merge-base --is-ancestor <commit> master; echo $?` answers
-whether any of the above is on the merged tree; at this base the answer is `1` for all but `498b1da`.
+A branch commit is not a merge. `git merge-base --is-ancestor <commit> origin/master; echo $?`
+answers whether any of the above is on the merged tree; at `498b1da` the answer was `1` for all but
+`498b1da`, and §8 records the re-derived answers at `38ecc22`.
 
 Plan review reads the same distinction from the plan job's validation record rather than restating
 it: a `model_assessed` pass (including every pass under an empty `validator_model`) is shown as
@@ -148,11 +159,11 @@ doubles in the generation tests; that is exactly why H-09 exists as a separate, 
 
 This file was written against `498b1da` and landed on `master` later, through the H-47 merge
 (`t_0d97c3e7`, branch `wt/h47-docs-union`) at `097c32c48f1983de5f56d8a21676b1ca1cda3bd8`. The base
-pin in the header and every "not on `master`" verdict in §1-§3 are statements about `498b1da`, not
-about the landing commit. Several of them have since changed: at `097c32c` these are ancestors —
-H-06 `00b502f`, H-08b `18638be` (cb.rpc v13), H-15 `833e335`, H-18b `9e6c5e4`, H-24 `491443a` — and
-`111c7e9` (H-09) is still not. No row here is re-derived for a later tree; check
-`git merge-base --is-ancestor <commit> HEAD` before quoting one as current.
+pin in the header at the time and the original "not on `master`" verdicts were statements about
+`498b1da`, not about the landing commit. Several of them have since changed: at `097c32c` these are
+ancestors — H-06 `00b502f`, H-08b `18638be` (cb.rpc v13), H-15 `833e335`, H-18b `9e6c5e4`, H-24
+`491443a` — and `111c7e9` (H-09) is still not. §8 re-derives all of them for `38ecc22`; check
+`git merge-base --is-ancestor <commit> origin/master` before quoting a row as current.
 
 The H-47 landing was gated on its own commit, not on this branch's history:
 
@@ -170,9 +181,12 @@ rewritten by this docs-only merge.
 ## 6. What a reader may conclude
 
 - A course can be generated, approved, validated and exported end to end **on
-  `wt/harness-e2e-proof`, with recorded transcripts**, for three non-Japanese goals.
-- The merged tree carries the contract, create flow, approval gate, plan-time media declaration and
-  bounded research, and none of the export/procedure/locale work.
+  `wt/harness-e2e-proof`, with recorded transcripts**, for three non-Japanese goals. The merged
+  tree also carries the export, procedure and locale code those runs exercised (H-08b, H-06,
+  H-18b — §8); what remains branch-only is the evidence packet itself.
+- The merged tree carries the contract, create flow, approval gate, plan-time media declaration,
+  bounded research, validator independence, procedure authoring, authored export and locale
+  scaffolds. It does not carry a live-model proof of any of them.
 - No live UI run of the harness loop has happened, no demo is recorded, no pack but the Japanese
   fixture has been demonstrated by the demo path, and nothing is published.
 
@@ -217,3 +231,38 @@ SUMMARY total=23 fail=0 pass=23
 `S13` (CB-QA-11, auxiliary grader) remains `BLOCKED`; the lane is disabled in this build. Evidence
 document: `tests/adversarial/evidence/attack-state.json`. The previous `total=22` lines in §4/§5 are
 historical and must not be quoted as the current matrix.
+
+## 8. H-171 re-derivation of merge states at `master` `38ecc22` (2026-11-08)
+
+Run in this worktree, on `38ecc22`:
+
+```
+$ for c in 00b502f 833e335 c9c6cec 2aca201 491443a 18638be 9e6c5e4 4dd0f18 111c7e9 9f2de53; do
+    git merge-base --is-ancestor $c origin/master; echo "$c -> $?";
+  done
+00b502f -> 0      # H-06 procedure authoring          MERGED
+833e335 -> 0      # H-15 validator independence       MERGED
+c9c6cec -> 1      # H-08 authored-export tip          not merged
+2aca201 -> 1      # H-18 locale-scaffold tip          not merged
+491443a -> 0      # H-24 rubric-extensibility         MERGED
+18638be -> 0      # H-08b authored export (successor) MERGED
+9e6c5e4 -> 0      # H-18b locale/direction (successor) MERGED
+4dd0f18 -> 1      # H-09 evidence content             not merged
+111c7e9 -> 1      # H-09 evidence tip                 not merged
+9f2de53 -> 0      # H-40 re-run packet (successor)    MERGED
+```
+
+The four exit codes the H-171 card named reproduce exactly: H-15 `833e335` → `0`, H-06 `00b502f` →
+`0`, H-08 `c9c6cec` → `1`, H-18 `2aca201` → `1`. H-24 `491443a` → `0`.
+
+What that changes in the body above, and what it does not:
+
+- §1 row 1 and the §3 build table no longer call H-06, H-15 or H-24 unmerged. H-08 and H-18 are
+  unmerged **tips** whose successor commits (`18638be`, `9e6c5e4`) are on `master`; the rows say
+  both, rather than calling the feature branch-only.
+- §2's procedure, language and export rows are re-derived to the code and prompts on `38ecc22`.
+- The evidence packet is the part that is still branch-only: `111c7e9` is not an ancestor, and the
+  merged H-40 packet `9f2de53` records `provider_calls = 0`.
+- The P0-7 verdict is untouched. `docs/AUDIT-INDEX.md` §4 and §15 stay OPEN: the merged packet is
+  recorded-input only, and H-68's single live plan reached `needs_review` with no validation
+  record. No row in this document upgrades that claim.
