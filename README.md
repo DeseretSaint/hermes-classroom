@@ -36,9 +36,11 @@ been re-run on the newer tree. The default-profile demo gate `t_6a32ffe9` must m
 
 This tree also carries the post-0.1.0 product line from `docs/VISUAL_MEDIA_PLAN.md`: M0 on `master`
 at `3cead45`, M1-M3 merged on `master` at `d28e7e3`, and the M4 visual/accessibility/media evidence
-regenerated on the merged tree at `1fc0542` against `desktop/plugin.js` sha256
-`c206e1c9…232463` — reproducible with `python3 scripts/m4v-repro-check.py`, current pin in
-`docs/M4-VISUAL-MEDIA-AUDIT.md`. Phase-to-commit mapping, per-phase evidence and the gated
+regenerated on the merged tree after H-91 (H-83's Atlas Lamp composition, H-84's plain-language pass,
+H-86's wayfinding pass and H-91's gate fixes) against `desktop/plugin.js` sha256 `80725f6…347910` — reproducibility is
+checked with `python3 scripts/m4v-repro-check.py`, which reports 62/62 identical screenshots and an
+identical `audit.json` (modulo `generated_at`) on two consecutive runs at this pin; that output is
+pasted in `docs/M4-VISUAL-MEDIA-AUDIT.md`. Phase-to-commit mapping, per-phase evidence and the gated
 remainder: `docs/PRODUCT-LINE-RELEASE-NOTES.md`.
 
 The 0.1.0 rows below are the release record for `29bede7` and are deliberately not rewritten to
@@ -61,7 +63,7 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 | Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Authored and Rendered: the lesson schema and `lesson-prompt.v8` produce the typed `procedure` header, and `tests/test_procedure_authoring.py` drives the real lesson job with a fake model and asserts the served document renders the header, hazards, numbered steps, schematic rows and source card. The 7 visual frames and 28 validator/render tests remain fixture-based; no live provider run has authored one | `docs/M4-PROCEDURE-LAYOUT.md`, `docs/GENERATION.md`, `tests/test_procedure_authoring.py` |
 | Pronunciation Studio (listen, record, compare, dispute) | Rendered: 14 frames and 15 jsdom interaction tests. It is inert on every existing section because none has a narration media child; no live attempt was walked | `docs/M3-PRONUNCIATION-UI.md`, `tests/test_desktop_pronunciation.py`, `audit/visual/m3-pronunciation/` |
 | Media generation and preview | Working for the host adapter (one real PNG and one real MP3 through `docs/M0-MEDIA-PROBE.md`) and Rendered in the lesson (60 decoded images, 22 audio elements, 0 autoplay, text equivalent for each). The preview route is covered by tests, not driven live on this tree | `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `audit/visual/m4-visual/audit.json` |
-| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,102 text nodes (worst authored 6.61:1), 0 unnamed of 340 accessibility controls, no clipped text or horizontal overflow | `audit/visual/m4-visual/audit.json` (sha256 `5b0b3187…c7301` with `generated_at` removed), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
+| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,050 text nodes (worst authored 5.93:1), 0 unnamed of 364 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (pinned to plugin `80725f6…`), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
 | 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
 
 Nothing in the product line changes install status. The catalog entry is still a draft pinned to the

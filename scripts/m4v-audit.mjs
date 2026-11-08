@@ -329,9 +329,54 @@ const FOCUSABLE_SELECTOR = 'a[href], button, input, select, textarea, [tabindex]
 async function settle() {
   await evaluate(`(async () => {
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready } catch (error) {} }
+    // Media first: a native <audio>/<video> control bar is painted from the element's own state,
+    // and Chromium grows the bar (timeline, volume widget) as metadata arrives. Screenshotting
+    // before that settles captures a half-built control whose pixels depend on decode timing
+    // rather than on the shipped markup, so wait for metadata (or a definitive error) here.
+    const media = [...document.querySelectorAll('audio, video')]
+    await Promise.all(media.map((el) => new Promise((done) => {
+      if (el.readyState >= 1 || el.error) return done()
+      const finish = () => {
+        el.removeEventListener('loadedmetadata', finish)
+        el.removeEventListener('error', finish)
+        done()
+      }
+      el.addEventListener('loadedmetadata', finish)
+      el.addEventListener('error', finish)
+      setTimeout(finish, 5000)
+    })))
+    // Then images: complete is true for a decode failure too, so decode explicitly when offered.
+    const images = [...document.querySelectorAll('img')]
+    await Promise.all(images.map((img) => {
+      if (!img.complete) return new Promise((done) => {
+        img.addEventListener('load', done, { once: true })
+        img.addEventListener('error', done, { once: true })
+      })
+      return img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+    }))
     await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
     return true
   })()`)
+}
+
+/* ── the resting paint before a screenshot ───────────────────────────────────────────────────
+ * The screenshot is evidence of the frame at rest, not of where the keyboard walk stopped. The
+ * walk necessarily ends inside the last control it reaches, and when that control is a native
+ * <audio controls> the UA shadow parts report the host as activeElement: Chromium then paints a
+ * focused volume/timeline widget differently from an unfocused one. Which internal part holds
+ * focus depends on the media element's own internal readiness, so the captured pixels changed
+ * between two runs of the same module (the 1-of-62 `quest-light-1280-16` drift). Blur back to the
+ * body-focus baseline the walk starts from, settle again, then capture. Keyboard claims are read
+ * from the walk's per-stop records, not from this screenshot, so nothing is weakened.
+ */
+async function rest() {
+  await evaluate(`(() => {
+    const active = document.activeElement
+    if (active && active !== document.body && typeof active.blur === 'function') active.blur()
+    if (document.body) document.body.focus()
+    return true
+  })()`)
+  await settle()
 }
 
 const DECLARED = `(() => {
@@ -458,6 +503,8 @@ for (const frame of framesDoc.frames) {
   const height = Math.min(Math.max(measured.content_height, 400), 6000)
   await send('Emulation.setDeviceMetricsOverride', { width: frame.width, height, deviceScaleFactor: 1, mobile: false })
   await sleep(120)
+  // Capture from a defined resting focus state, never from wherever the keyboard walk stopped.
+  await rest()
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
   writeFileSync(resolve(outDir, `${frame.id}.png`), Buffer.from(shot.data, 'base64'))
   const record = {
