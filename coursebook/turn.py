@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from . import api, db, evidence, prompts, segments
+from . import api, db, evidence, practice, prompts, segments
 
 # ── classification ──────────────────────────────────────────────────────────
 
@@ -48,6 +48,8 @@ EXPLICIT_CONTROLS: dict[str, str] = {
     "skip": "skip",
     "override": "override",
     "chat": "chat",
+    "end_practice": "end_practice",
+    "cancel_practice": "cancel_practice",
 }
 
 _HINT = re.compile(
@@ -267,6 +269,191 @@ class GateOutcome:
     revision: int | None = None
     verdict: str | None = None
     attempt_id: str | None = None
+    #: Set when this turn belonged to a live conversation practice: the post-turn observer writes
+    #: the tutor's reply as a ``practice_turns`` row (never a teaching segment) and fences on
+    #: ``practice_revision``.
+    practice_session_id: str | None = None
+    practice_revision: int | None = None
+
+
+def _json_load(value: Any, default: Any) -> Any:
+    import json
+
+    try:
+        return json.loads(value) if value else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _practice_refusal(reason: str) -> str:
+    return {
+        "practice_turn_limit": (
+            "This practice has reached its last turn, so that message was not added. "
+            "Choose End practice to get your feedback."
+        ),
+        "practice_not_complete": "This practice needs one more turn before it can be graded.",
+        "practice_empty_transcript": "This practice has no learner turn to grade yet.",
+        "practice_not_open": "This practice is no longer open.",
+    }.get(reason, "Coursebook could not continue this practice, so nothing advanced.")
+
+
+def _practice_feedback(result: dict[str, Any]) -> str:
+    verdict = str(result.get("verdict") or "not_yet")
+    criteria = result.get("criteria") or []
+    target_rows = [row for row in criteria if str(row.get("id")) != "turns"]
+    met = [row for row in target_rows if row.get("met")]
+    turns_row = next((row for row in criteria if str(row.get("id")) == "turns"), None)
+    turns_text = str((turns_row or {}).get("observed") or "").strip()
+    if verdict == "pass":
+        line = "Practice complete. The transcript met every target and the turn requirement."
+    elif verdict == "partial":
+        line = f"Not yet: {len(met)} of {len(target_rows)} targets were used"
+        if turns_text:
+            line += f", over {turns_text.split(' learner')[0]} learner turns"
+        line += "."
+    elif verdict == "not_yet":
+        line = "Not yet: none of the target expressions were used in this practice."
+    else:
+        line = "The backend could not grade this practice just now. The transcript is saved; End practice again retries grading."
+    return line + " The full criteria are under Review grading."
+
+
+def _practice_turn(
+    *,
+    session_id: str,
+    binding: dict[str, Any],
+    check,
+    session,
+    declaration: dict[str, Any],
+    user_message: str,
+    explicit: str | None,
+    dispatch: Callable[[Any], dict[str, Any]],
+    revision: int,
+) -> GateOutcome:
+    """Handle one chat turn inside a live practice. No path here creates an attempt."""
+    enrollment_id = str(binding.get("enrollment_id"))
+    with db.read() as connection:
+        turns = practice.turns_for(connection, session["id"])
+    learner_count = len(practice.learner_turns(turns))
+    maximum = int((declaration.get("turns") or {}).get("max", practice.MAX_TURNS))
+    minimum = int((declaration.get("turns") or {}).get("min", practice.MIN_TURNS))
+    control = explicit if explicit in ("end_practice", "cancel_practice") else None
+
+    if control == "end_practice":
+        nonce = practice.turn_nonce(session_id, "end", int(session["revision"]))
+        response = dispatch(
+            _envelope(
+                "practice.end",
+                {
+                    "enrollment_id": enrollment_id,
+                    "check_id": session["check_id"],
+                    "check_version": int(session["check_version"]),
+                    "attempt_nonce": nonce,
+                },
+                operation_id=f"hook.practice.end.{nonce}",
+                idempotency_key=idempotency_key(session_id, nonce),
+                expected_revision=revision,
+            )
+        )
+        if not response.get("ok"):
+            error = response.get("error") or {}
+            return GateOutcome(
+                hook={"action": "block", "message": _practice_refusal(str((error.get("details") or {}).get("reason") or ""))},
+                revision=revision,
+            )
+        result = response["result"]
+        committed = int(response.get("revision", revision))
+        return GateOutcome(
+            hook={
+                "context": _practice_feedback(result) + " " + prompts.CHAT_CAPABILITY_RULE,
+            },
+            nonce=nonce,
+            revision=committed,
+            verdict=str(result.get("verdict")),
+            attempt_id=result.get("attempt_id"),
+        )
+
+    if control == "cancel_practice":
+        response = dispatch(
+            _envelope(
+                "practice.cancel",
+                {"enrollment_id": enrollment_id, "check_id": session["check_id"]},
+                operation_id=f"hook.practice.cancel.{practice.turn_nonce(session_id, 'cancel', int(session['revision']))}",
+                expected_revision=revision,
+            )
+        )
+        if not response.get("ok"):
+            return GateOutcome(hook={"action": "block", "message": _practice_refusal("practice_not_open")},
+                               revision=revision)
+        return GateOutcome(
+            hook={"context": "Practice cancelled. Every turn is kept and nothing was graded. " + prompts.CHAT_CAPABILITY_RULE},
+            revision=revision,
+        )
+
+    text = str(user_message or "").strip()
+    if not text:
+        # Empty text is not a turn; return the directive unchanged.
+        return GateOutcome(
+            hook={"context": practice.directive_for(declaration, learner_count + 1) + " " + prompts.CHAT_CAPABILITY_RULE},
+            revision=revision,
+            practice_session_id=str(session["id"]),
+            practice_revision=int(session["revision"]),
+        )
+    if learner_count >= maximum:
+        return GateOutcome(
+            hook={"action": "block", "message": _practice_refusal("practice_turn_limit")},
+            revision=revision,
+        )
+    nonce = practice.turn_nonce(session_id, text[:2000], int(session["revision"]))
+    with db.transaction() as connection:
+        fresh = connection.execute("SELECT * FROM practice_sessions WHERE id = ?", (session["id"],)).fetchone()
+        if fresh is None or fresh["state"] != "active":
+            return GateOutcome(hook={"action": "block", "message": _practice_refusal("practice_not_open")},
+                               revision=revision)
+        written, reason = practice.append_turn(
+            connection, fresh, speaker="learner", text=text, nonce=nonce, now=db.utcnow()
+        )
+        session_revision = int(fresh["revision"]) + (1 if written else 0)
+    if not written and reason == "duplicate_nonce":
+        session_revision = int(session["revision"])
+    directive = practice.directive_for(declaration, min(learner_count + 1, maximum))
+    if learner_count + 1 >= minimum and learner_count + 1 == maximum:
+        directive = directive.replace(
+            "When the learner reaches the last turn, close the scene, say the practice is complete and stop.",
+            "This is the last turn: close the scene, say the practice is complete and stop.",
+        )
+    return GateOutcome(
+        hook={"context": directive + " " + prompts.CHAT_CAPABILITY_RULE},
+        nonce=nonce,
+        revision=revision,
+        practice_session_id=str(session["id"]),
+        practice_revision=session_revision,
+    )
+
+
+def record_practice_tutor_turn(*, session_id: str | None, assistant_response: str,
+                               practice_revision: int | None) -> bool:
+    """Record the tutor's reply as a practice turn, fenced on the session's own revision.
+
+    A late callback (a newer turn already appended) is discarded, exactly as
+    ``record_assistant_snapshot`` fences on the enrollment revision. Nothing here is a teaching
+    segment: the practice transcript owns it (docs/CONVERSATION-PRACTICE.md §4).
+    """
+    if not session_id or not assistant_response or practice_revision is None:
+        return False
+    with db.transaction() as connection:
+        session = connection.execute(
+            "SELECT * FROM practice_sessions WHERE id = ?", (str(session_id),)
+        ).fetchone()
+        if session is None or session["state"] != "active":
+            return False
+        if int(session["revision"]) != int(practice_revision):
+            return False
+        practice.append_turn(
+            connection, session, speaker="tutor", text=assistant_response,
+            nonce=None, now=db.utcnow(),
+        )
+    return True
 
 
 def pre_turn(
@@ -298,6 +485,33 @@ def pre_turn(
     with db.read() as connection:
         check = _open_check(connection, objective_id)
         revision = _enrollment_revision(connection, enrollment_id)
+        live_practice = (
+            practice.active_session(
+                connection,
+                lesson_run_id=str(binding.get("lesson_run_id") or ""),
+                check_id=str(check["id"]) if check is not None else None,
+            )
+            if binding.get("lesson_run_id") and check is not None
+            else None
+        )
+        declaration = (
+            practice.declaration(_json_load(check["stimulus_json"], {})) if live_practice is not None else None
+        )
+    if live_practice is not None and declaration is not None:
+        # A live practice owns this turn. The classifier is bypassed: text that looks like a
+        # question is still a practice turn, and no practice turn can create an attempt
+        # (docs/CONVERSATION-PRACTICE.md §6.3). The learner turn is durable before the model runs.
+        return _practice_turn(
+            session_id=session_id,
+            binding=binding,
+            check=check,
+            session=live_practice,
+            declaration=declaration,
+            user_message=user_message,
+            explicit=explicit,
+            dispatch=dispatch,
+            revision=revision,
+        )
     classification = classify_inbound(user_message, open_check=check is not None, explicit=explicit)
     if not classification.creates_attempt and classification.kind not in ("hint", "skip", "override"):
         # Conversation and clarification pass through untouched: no attempt, no evidence, no retry.
