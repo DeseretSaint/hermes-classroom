@@ -23,14 +23,14 @@ TOKEN = os.environ.get("CB013_TOKEN", "cb013-test-token")
 STATE = os.environ.get("H194_STATE", "/tmp/h194-live-state.json")
 
 BRIEF = {
-    "title": "Half and quarter cups",
-    "goal": "Measure half a cup and a quarter cup without counting spoons",
-    "starting_point": "Can count whole cups",
+    "title": "Counting to ten in Japanese",
+    "goal": "Say and recognise the numbers one to ten in Japanese",
+    "starting_point": "Knows the numbers one to ten in English",
     "age_band": "8-10",
     "reading_level": "independent",
     "duration_minutes": 20,
     "setting": "home",
-    "materials": ["measuring cup", "flour", "a bowl"],
+    "materials": ["a notebook", "a pencil"],
     "exclusions": [],
     "supervision": "An adult is nearby.",
     "desired_pages": 2,
@@ -40,6 +40,10 @@ BRIEF = {
     "egress_acknowledged": True,
     "redaction_requested": False,
 }
+# `parent_brief` has no `subject_domain` key, so the capability policy resolves the domain from the
+# locale: a brief with only a locale is a *language* course. That is why the rig brief is a language
+# topic — a measuring/algebra brief declared only by locale is validated against the language plan
+# and its validator rejects it (`reason: plan_not_validated` on `plan.approve`).
 
 
 def wire_version() -> int:
