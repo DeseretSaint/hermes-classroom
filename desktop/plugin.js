@@ -7818,7 +7818,7 @@ const PRACTICE_START_COPY =
  * exactly where it was: the transcript, the session and the check are all kept. The copy says that
  * and gives the one next move, so a refusal never reads as a lost practice.
  */
-function practiceRefusalCopy(error) {
+function practiceRefusalCopy(error, options = {}) {
   const reason = error && error.details ? error.details.reason : null
   const details = (error && error.details) || {}
   if (reason === 'practice_not_complete') {
@@ -7832,10 +7832,18 @@ function practiceRefusalCopy(error) {
     return 'No learner turn is recorded yet. Answer the tutor in the lesson chat, then end the practice. The check is still open.'
   }
   if (reason === 'practice_not_open') {
+    // On a card that already shows a graded result, "press Start practice" would be an instruction
+    // the backend refuses. Say the practice is graded instead.
+    if (options.graded) {
+      return 'This practice is already graded, so there is no live practice to open or end here. Review grading shows the result the backend stored.'
+    }
     return 'There is no live practice to end. Press Start practice; the check is still open and every stored turn is kept.'
   }
   if (reason === 'practice_already_graded') {
     return 'This practice was already graded. Review grading shows the result the backend stored.'
+  }
+  if (error && error.code === 'STALE_REVISION') {
+    return 'The section moved on before this practice could be saved (another attempt or a refresh committed it). Reopen the section to practise against the current version; every stored turn is kept.'
   }
   return null
 }
@@ -7894,6 +7902,21 @@ function PracticeSurface({
   const [cancelOpen, setCancelOpen] = useState(false)
   const [criteriaOpen, setCriteriaOpen] = useState(false)
   const [ticket, setTicket] = useState(0)
+  // The `revision` prop is the section page's revision captured when this card mounted. A graded
+  // end commits the attempt and the backend answers with the *new* enrollment revision, while this
+  // card deliberately stays on screen so the learner reads the verdict. Fencing the next write on
+  // the mount-time prop therefore refuses the learner's own retry (`STALE_REVISION`) although
+  // `docs/CONVERSATION-PRACTICE.md` §5.1 allows a `not_yet` / `partial` practice again. This local
+  // fence is seeded from the prop, raised by every answer that carries `revision`, and never
+  // lowered: revisions only move forward.
+  const [fencedRevision, setFencedRevision] = useState(() => Number(revision) || 0)
+  const adoptRevision = (value) => {
+    const next = Number(value)
+    if (Number.isFinite(next) && next > 0) setFencedRevision((current) => Math.max(current, next))
+  }
+  useEffect(() => {
+    adoptRevision(revision)
+  }, [revision])
   const nonceRef = useRef(null)
   const feedbackRef = useRef(null)
 
@@ -7977,21 +8000,27 @@ function PracticeSurface({
     setPhase('starting')
     setError(null)
     setNotice(null)
-    setResult(null)
     const response = await rpc(
       'practice.start',
       { enrollment_id: enrollmentId, objective_id: objectiveId },
       {
         idempotencyKey: `cb-practice-start-${check.check_id}-${newOperationId('practice-start')}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fencedRevision
       }
     )
     setPhase('idle')
     if (!response.ok) {
+      // A stale fence names the revision the backend expects next: adopt it so the learner's
+      // second press on the same graded card is not refused a second time for the same reason.
+      adoptRevision(staleRevision(response))
       setError(response.error)
       return
     }
+    adoptRevision(response.result && response.result.revision)
     nonceRef.current = null
+    // The graded line belongs to the attempt that just closed; a started session owns the card now,
+    // so it is dropped only once the backend has confirmed the start.
+    setResult(null)
     setNotice('Practice started. Answer the tutor in the lesson chat; opening this card again shows the turns it stored.')
     reload()
   }
@@ -8012,16 +8041,18 @@ function PracticeSurface({
       },
       {
         idempotencyKey: `cb-practice-end-${check.check_id}-${nonceRef.current}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fencedRevision
       }
     )
     setPhase('idle')
     if (!response.ok) {
       // A refusal before the minimum is not a lost practice: the transcript, the session and the
       // check all stay where they are, so the same End practice can be pressed again.
+      adoptRevision(staleRevision(response))
       setError(response.error)
       return
     }
+    adoptRevision(response.result && response.result.revision)
     nonceRef.current = null
     setResult(response.result)
     // The graded line stays on screen: the check closes with the attempt, and a parent refresh
@@ -8037,13 +8068,15 @@ function PracticeSurface({
     const response = await rpc(
       'practice.cancel',
       { enrollment_id: enrollmentId, check_id: check.check_id },
-      { expectedRevision: Number(revision) || 0 }
+      { expectedRevision: fencedRevision }
     )
     setPhase('idle')
     if (!response.ok) {
+      adoptRevision(staleRevision(response))
       setError(response.error)
       return
     }
+    adoptRevision(response.result && response.result.revision)
     nonceRef.current = null
     setNotice('Practice cancelled. Every turn is kept, nothing was graded, and the check stayed open.')
     reload()
@@ -8151,13 +8184,18 @@ function PracticeSurface({
         })
       : null
 
+  const blendedState = result && result.verdict ? 'graded' : sessionState
+
+  // The counter follows the card's own state, not the stored session: on a just-graded card the
+  // stored session is still `active`, which would read "waiting for the tutor to reply" underneath
+  // a verdict.
   const counterBlock =
-    session && (sessionState === 'active' || sessionState === 'graded') && maxTurns > 0
+    session && (blendedState === 'active' || blendedState === 'graded') && maxTurns > 0
       ? jsx('p', {
           className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-          'data-cb-practice-counter': sessionState,
+          'data-cb-practice-counter': blendedState,
           children:
-            sessionState === 'active'
+            blendedState === 'active'
               ? remaining === 0
                 ? `Turn limit reached (${learnerTurns} of ${maxTurns} learner turns). End practice to grade the transcript.`
                 : `${learnerTurns} of ${maxTurns} learner turns used${
@@ -8167,7 +8205,12 @@ function PracticeSurface({
         })
       : null
 
-  const blendedState = result && result.verdict ? 'graded' : sessionState
+  // A `pass` closes the check (`_commit_attempt`): there is nothing left to practise against on this
+  // section, so the pane must not offer a button the backend will refuse with `practice_not_open`.
+  // A `partial` / `not_yet` / `needs_retry` verdict leaves the check open and keeps the retry.
+  const checkClosed = verdict === 'pass'
+  // One computed refusal: a graded card gets graded words, an open one gets the retry words.
+  const refusalCopy = error ? practiceRefusalCopy(error, { graded: Boolean(verdict) }) : null
   const controls =
     state.status !== 'ready'
       ? null
@@ -8202,18 +8245,20 @@ function PracticeSurface({
           ? jsxs('div', {
               className: 'flex flex-wrap items-center gap-2',
               children: [
-                jsx(sdk.Button, {
-                  variant: 'default',
-                  size: 'sm',
-                  disabled: busy || detached,
-                  onClick: start,
-                  children:
-                    phase === 'starting'
-                      ? 'Starting practice'
-                      : sessionState === 'none'
-                        ? 'Start practice'
-                        : 'Practice again'
-                }),
+                checkClosed
+                  ? null
+                  : jsx(sdk.Button, {
+                      variant: 'default',
+                      size: 'sm',
+                      disabled: busy || detached,
+                      onClick: start,
+                      children:
+                        phase === 'starting'
+                          ? 'Starting practice'
+                          : sessionState === 'none'
+                            ? 'Start practice'
+                            : 'Practice again'
+                    }),
                 verdict
                   ? jsx(sdk.Button, {
                       variant: 'text',
@@ -8228,12 +8273,17 @@ function PracticeSurface({
           : null
 
   const endOfSessionBlock =
-    sessionState === 'cancelled'
+    checkClosed && blendedState === 'graded'
       ? jsx(QuietNote, {
-          children: 'Practice cancelled. Every turn is kept, nothing was graded, and the check is still open.'
+          children:
+            'This section is finished: the pass closed its practice check, so there is nothing left to practise or grade here. Every stored turn stays readable, and Review grading shows what the backend recorded.'
         })
-      : sessionState === 'abandoned'
+      : sessionState === 'cancelled'
         ? jsx(QuietNote, {
+            children: 'Practice cancelled. Every turn is kept, nothing was graded, and the check is still open.'
+          })
+        : sessionState === 'abandoned'
+          ? jsx(QuietNote, {
             children:
               'This practice ended when its lesson chat detached or its run paused, so it cannot be graded from here. Start a new practice on a connected lesson.'
           })
@@ -8342,16 +8392,18 @@ function PracticeSurface({
         ? jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', role: 'status', children: notice })
         : null,
 
-      error && practiceRefusalCopy(error)
+      error && refusalCopy
         ? jsx('p', {
             className: 'max-w-prose text-sm leading-relaxed',
             role: 'status',
             'data-cb-practice-refusal': (error.details && error.details.reason) || 'refused',
-            children: practiceRefusalCopy(error)
+            children: refusalCopy
           })
         : null,
 
-      error ? jsx(ErrorLine, { error }) : null,
+      // A learner-facing refusal carries its own words; the raw wire code is only shown when the
+      // pane has nothing better to say, so a card never reads `CHECK_STALE: ...` at a learner.
+      error && !refusalCopy ? jsx(ErrorLine, { error }) : null,
 
       jsx(FocusReturningDialog, {
         open: cancelOpen,
