@@ -603,7 +603,13 @@ class ResearchTest(GenerationTestBase):
             }
         }
         run = research.run_research(
-            "x", recipe="casual", dials={"depth": "survey"}, scope="single", search=FakeSearch(page), now=NOW
+            "x", recipe="casual", dials={"depth": "survey"}, scope="single",
+            search=FakeSearch(page), now=NOW,
+            # The scope floor raises the default pass, but an explicit budget is still the
+            # hard ceiling; this test is about fetched instructions, not the floor.
+            budget=research.ResearchBudget(
+                max_queries=1, max_results_per_query=1, max_pages=1, max_sources=1
+            ),
         )
         self.assertEqual(run.status, "ok")
         self.assertEqual(len(run.queries), 1)

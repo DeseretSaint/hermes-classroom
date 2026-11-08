@@ -76,6 +76,7 @@ from .research import (
     apply_support_verdicts,
     budget_for,
     canonical_json,
+    effective_depth,
     run_research,
     sha256_of_text,
     support_status_for_contract,
@@ -6195,7 +6196,7 @@ def run_plan_job(
         effective_research_budget = research_budget
         if effective_research_budget is None:
             try:
-                effective_research_budget = budget_for(dials.get("depth"), scope)
+                effective_research_budget = budget_for(effective_depth(dials.get("depth"), scope), scope)
             except ValueError as exc:
                 raise GenerationRejected(str(exc)) from exc
         research_run = run_research(
@@ -6582,6 +6583,9 @@ def run_plan_job(
                             "level": level,
                             "subject_domain": subject_domain,
                             "scope": scope,
+                            # The effective research floor. The brief's closed dials are stored
+                            # unchanged above; this records the pass the size actually bought.
+                            "research_depth": effective_depth(dials.get("depth"), scope),
                             # The typed parent brief the plan was authored for, stored beside the
                             # plan so the lesson stage reads the same age band, page budget and
                             # media preferences the planner saw. Absent for non-parent recipes.

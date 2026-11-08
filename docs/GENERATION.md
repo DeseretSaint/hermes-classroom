@@ -140,6 +140,14 @@ A full course therefore gets a defensible pass (9 queries / 14 pages at `working
 `deep`), never the old six-page demo sample. The caps are bounded: queries ≤ 12, pages ≤ 24,
 sources ≤ 24.
 
+The **scope is also a floor**, not only a budget selector. A `single` or `short` course that
+declares `survey` runs at `working`, and a `full` course that declares `survey` or `working`
+runs at `deep`; a higher declared depth still wins. This is deliberately separate from the
+matrix above: the matrix stays the executable ceiling, while `research.effective_depth()` answers
+what pass the course size actually gets. The learner's closed `dials` object is stored unchanged,
+and the plan document records the effective pass in `research_depth` beside it. An explicitly
+passed `ResearchBudget` remains the hard ceiling even when it is smaller than the floor.
+
 * `survey` derives the goal alone; `working` adds the recipe qualifier; `deep` adds reference and
   documentation, official-guidance, common-mistake, practice, step-by-step and glossary queries,
   plus a locale-aware query (`… Japanese reference`) when a locale is declared. Queries are
