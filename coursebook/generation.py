@@ -76,6 +76,7 @@ from .research import (
     apply_support_verdicts,
     budget_for,
     canonical_json,
+    effective_depth,
     run_research,
     sha256_of_text,
     support_status_for_contract,
@@ -4585,8 +4586,24 @@ def _feedback(rejections: Sequence[dict[str, Any]]) -> str:
 
 
 def _bounded_input(payload: dict[str, Any], limit: int = 24000) -> str:
+    """Request JSON, bounded without ever cutting the document mid-token.
+
+    ``indent=1`` makes a captured prompt readable for a human. When that spelling would push the
+    request past its byte bound, the compact encoding of the *same* document is used instead —
+    every key and value survives, only the whitespace goes. Truncating the text at ``limit`` used
+    to hand the provider invalid JSON (a full-scope 40-objective plan plus a real research ledger
+    is over 24 kB indented), so a payload that cannot fit even compactly is now a typed rejection
+    rather than a silently corrupt request.
+    """
     text = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=1)
-    return text if len(text) <= limit else text[:limit]
+    if len(text) <= limit:
+        return text
+    compact = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(compact) <= limit:
+        return compact
+    raise GenerationRejected(
+        f"request payload is {len(compact)} bytes compact, over the {limit}-byte request bound"
+    )
 
 
 def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
@@ -6195,7 +6212,7 @@ def run_plan_job(
         effective_research_budget = research_budget
         if effective_research_budget is None:
             try:
-                effective_research_budget = budget_for(dials.get("depth"), scope)
+                effective_research_budget = budget_for(effective_depth(dials.get("depth"), scope), scope)
             except ValueError as exc:
                 raise GenerationRejected(str(exc)) from exc
         research_run = run_research(
@@ -6582,6 +6599,9 @@ def run_plan_job(
                             "level": level,
                             "subject_domain": subject_domain,
                             "scope": scope,
+                            # The effective research floor. The brief's closed dials are stored
+                            # unchanged above; this records the pass the size actually bought.
+                            "research_depth": effective_depth(dials.get("depth"), scope),
                             # The typed parent brief the plan was authored for, stored beside the
                             # plan so the lesson stage reads the same age band, page budget and
                             # media preferences the planner saw. Absent for non-parent recipes.

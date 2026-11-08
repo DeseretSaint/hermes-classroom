@@ -61,6 +61,8 @@ __all__ = [
     "ensure_host_tools",
     "NullSearch",
     "budget_for",
+    "effective_depth",
+    "SCOPE_MIN_DEPTH",
     "normalize_depth",
     "normalize_scope",
     "derive_queries",
@@ -258,6 +260,35 @@ def normalize_scope(value: Any) -> str:
     if text not in SCOPES:
         raise ValueError(f"unknown course scope {value!r}; expected one of {', '.join(SCOPES)}")
     return text
+
+
+#: The minimum research depth a course size buys. A full course is not authored from a
+#: goal-only survey; a short course must at least see the recipe qualifier and curriculum
+#: sequence. These are floors, not a replacement for the learner's declared depth: a higher
+#: depth still wins, and an explicit ``budget`` remains the hard ceiling.
+#:
+#: The create flow used to send ``survey`` for every course, which made the SQL budget cell
+#: (e.g. full/survey: 6 queries, 8 pages) look sufficient while ``derive_queries`` returned only
+#: the goal. The floor is recorded beside, not written into, the closed four-dial object.
+SCOPE_MIN_DEPTH: dict[str, str] = {
+    "single": "working",
+    "short": "working",
+    "full": "deep",
+}
+_DEPTH_ORDER: dict[str, int] = {"survey": 0, "working": 1, "deep": 2}
+
+
+def effective_depth(depth: Any = None, scope: Any = None) -> str:
+    """The depth a course size actually gets, raising a too-low declaration to its floor.
+
+    This is deliberately separate from :func:`budget_for`. The budget matrix remains a set of
+    ceilings and its three cells stay distinguishable for callers that inspect it; this function
+    answers the different question *"what pass will this course size run?"*.
+    """
+    declared = normalize_depth(depth)
+    scope_value = normalize_scope(scope)
+    floor = SCOPE_MIN_DEPTH[scope_value]
+    return declared if _DEPTH_ORDER[declared] >= _DEPTH_ORDER[floor] else floor
 
 
 def budget_for(depth: Any = None, scope: Any = None) -> ResearchBudget:
@@ -680,7 +711,12 @@ def run_research(
     declared cb.rpc v10 inputs; they shape the query set, never the provenance rules.
     """
     dials = dict(dials or {})
-    budget = budget or budget_for(dials.get("depth"), scope)
+    # A course size buys a floor. Keep the caller's closed dials object untouched (the plan
+    # document records exactly what the learner sent); only the effective pass uses the raised
+    # depth. An explicit budget still wins as the ceiling.
+    effective_dials = dict(dials)
+    effective_dials["depth"] = effective_depth(dials.get("depth"), scope)
+    budget = budget or budget_for(effective_dials.get("depth"), scope)
     now = now or datetime.now(timezone.utc)
     mint_id = mint_id or _mint_id
     fetched_at = _iso(now)
@@ -697,7 +733,7 @@ def run_research(
         queries = derive_queries(
             goal,
             recipe=recipe,
-            dials=dials,
+            dials=effective_dials,
             locale=locale,
             max_queries=budget.max_queries,
             subject_domain=subject_domain,
