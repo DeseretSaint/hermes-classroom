@@ -172,7 +172,9 @@ logger = logging.getLogger("coursebook.generation")
 
 #: The v1 plan prompt. H-195 adds the through-line and prerequisite-assumption requirements, so
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
-PLAN_PROMPT_VERSION = "plan-prompt.v8"
+#: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
+#: blueprint prompt, so this advances to v10.
+PLAN_PROMPT_VERSION = "plan-prompt.v10"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -182,7 +184,8 @@ PLAN_PROMPT_VERSION = "plan-prompt.v8"
 #: frozen requirement is "a distinct prompt version for the v2 schema", not a literal string that
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v9"
+#: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v11"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -3359,7 +3362,11 @@ def _plan_instructions(
     if recipe == "one_off":
         lines.append("No quiz and no homework: checks are verification checklists, spaced_review false.")
     if recipe == "committed":
-        lines.append("Spaced review is required; every objective needs independent evidence.")
+        lines.append(
+            "Spaced review is required; every objective needs independent evidence. Include at "
+            "least one graded quiz check in check_plan: the kernel refuses a committed course "
+            "with no quiz, and a check marked verification or observation does not satisfy it."
+        )
     if recipe == "casual":
         lines.append("Checks are optional self-checks; state that in evidence_note.")
     if recipe == "parent":
@@ -3559,7 +3566,11 @@ def _plan_instructions_v2(
             "check, no quiz, no homework and spaced_review false."
         )
     if recipe == "committed":
-        lines.append("Spaced review is required; every objective needs independent evidence.")
+        lines.append(
+            "Spaced review is required; every objective needs independent evidence. Include at "
+            "least one graded quiz check in check_plan: the kernel refuses a committed course "
+            "with no quiz, and a check marked verification or observation does not satisfy it."
+        )
     if recipe == "casual":
         lines.append("Checks are optional self-checks; state that in evidence_note.")
     if recipe == "parent":
@@ -5354,7 +5365,14 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
 
 #: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
 #: these from its own deep text, but introducing one is introducing a claim about the material.
-_CLAIM_ATOM = re.compile(r"\d[\d.,:/%+-]*|[A-Z]{2,}|\"[^\"]{2,}\"|“[^”]{2,}”")
+#:
+#: H-192b: a number atom stops at the end of its own digits and internal separators. The previous
+#: pattern swallowed trailing sentence punctuation (``[...]*`` over ``.,:/%+-``), so a short that
+#: ended a sentence with ``3:00.`` produced the atom ``'3:00.'`` and the gate refused a page whose
+#: deep text plainly said ``3:00`` — a live single-scope lesson was parked ``needs_review`` on
+#: exactly that false positive. Punctuation is not a claim: ``250.``, ``2:30,`` and ``93 °C`` all
+#: yield the same atom as their punctuation-free forms.
+_CLAIM_ATOM = re.compile(r"\d+(?:[.,:/]\d+)*%?|[A-Z]{2,}|\"[^\"]{2,}\"|“[^”]{2,}”")
 
 
 def _claim_atoms(text: Any) -> list[str]:

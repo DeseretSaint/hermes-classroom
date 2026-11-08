@@ -265,5 +265,57 @@ class ShapeAndRejectionLabelsTest(unittest.TestCase):
         self.assertTrue(error["retryable"])
 
 
+class ShortClaimAtomTest(unittest.TestCase):
+    """H-192b: sentence punctuation is not a claim.
+
+    A live single-scope lesson was parked ``needs_review`` because its ``blocks[1].short`` ended
+    with ``3:00.`` while the deep text said ``3:00``: the old atom pattern swallowed the period and
+    the completeness gate read a false new claim. The gate must still catch a quantity the deep
+    text genuinely lacks.
+    """
+
+    def test_sentence_final_punctuation_is_not_a_new_claim(self) -> None:
+        deep = "A finish time between 2:30 and 3:00 is the target for this recipe."
+        short = "The target finish time is 2:30 to 3:00."
+        self.assertEqual(gen._short_problems([{"short": short, "deep": deep}]), [])
+
+    def test_a_quantity_the_deep_text_lacks_is_still_a_new_claim(self) -> None:
+        deep = "A finish time between 2:30 and 3:00 is the target for this recipe."
+        short = "Target a finish time of 4:00 for this recipe."
+        problems = gen._short_problems([{"short": short, "deep": deep}])
+        self.assertTrue(problems)
+        self.assertIn("4:00", problems[0])
+
+
+class CommittedGradedCheckPromptTest(unittest.TestCase):
+    """H-192b: the plan prompt states the rule the kernel enforces.
+
+    ``enforce_plan_rules`` refuses a committed plan with no ``quiz`` check. Both plan prompts used
+    to ask only for spaced review and independent evidence, so a compliant model could answer
+    without a quiz and be rejected by a rule it was never told — measured live: two committed
+    attempts failed with ``committed courses need graded checks`` and no plan document was written.
+    """
+
+    def test_both_plan_prompts_state_the_graded_check_rule(self) -> None:
+        for builder in (gen._plan_instructions, gen._plan_instructions_v2):
+            with self.subTest(builder=builder.__name__):
+                committed = builder(
+                    recipe="committed",
+                    dials={},
+                    locale="en-US",
+                    research_status="ok",
+                    scope="short",
+                )
+                self.assertIn("graded quiz check", committed)
+                one_off = builder(
+                    recipe="one_off",
+                    dials={},
+                    locale="en-US",
+                    research_status="ok",
+                    scope="short",
+                )
+                self.assertNotIn("graded quiz check", one_off)
+
+
 if __name__ == "__main__":
     unittest.main()

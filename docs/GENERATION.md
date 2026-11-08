@@ -16,23 +16,22 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v8` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v9` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v9` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v8` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
 
-The prompt labels above are the ones **H-195** ships: the v1 plan prompt advanced `v6` → `v8` and
-the blueprint prompt `v7` → `v9` for the through-line, prerequisite-assumption and
-no-study-skills-drift requirements, and the lesson prompt advanced `v9` → `v10` for the teaching
-arc, the plain-language rule and the lesson-specific heading rule. The pipeline label moved with
-them: `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`), and it is part of every
-idempotency fingerprint, so a plan or lesson authored under `cb.gen.v1` is never silently reused
-under the H-195 rules.
+The prompt labels above are the ones **H-192b** ships: on top of H-195's labels the two plan
+prompts now also state the graded-check rule the kernel enforces for a `committed` course (at
+least one `quiz` entry in `check_plan`), so they advance `v8` → `v10` and `v9` → `v11`.
+`PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
+fingerprint, so a plan or lesson authored under an older label is never silently reused under the
+current rules.
 
 The labels in that table are not hand-copied. They are the constants in
 `coursebook/generation.py` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
