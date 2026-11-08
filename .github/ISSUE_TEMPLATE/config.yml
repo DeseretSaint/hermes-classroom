@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/DeseretSaint/hermes-classroom/security/advisories/new
+    about: Do not open a public issue for a security problem. See SECURITY.md.
+  - name: Install and troubleshooting
+    url: https://github.com/DeseretSaint/hermes-classroom/blob/e564e07b61932ad9f5e484ffa119b90f7b99e939/docs/INSTALL.md
+    about: Install, enable, verify, uninstall and troubleshooting steps.

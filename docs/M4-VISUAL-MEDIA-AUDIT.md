@@ -3,7 +3,7 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the merged master (local `master` plus `origin/master`: H-83's Atlas Lamp composition,
+regenerated on the merged release candidate (local `master` plus `origin/master`: H-83's Atlas Lamp composition,
 H-84's plain-language pass, H-86's wayfinding pass and H-91's section-crash / Library-clipping fixes)
 and is pinned to the module that ships from that tree: `desktop/plugin.js` sha256
 `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`.
@@ -49,6 +49,10 @@ PASS: two independent runs produced identical audit.json (62 frames, modulo gene
   plugin_sha256: 71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5
   reference_time: 2026-11-07T10:00:00.000Z
 ```
+
+Earlier runs at the `80725f6` module (`670de1b`, the H-91 fix this candidate contains) reported the
+same 62/62 result. Both runs measured the module that ships from the commit the run was made on; the
+`plugin_sha256` line is what makes that traceable.
 
 #### The one frame that used to drift (H-90)
 
@@ -112,7 +116,7 @@ audio players, text-only, media-unavailable.
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
-| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,050 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
+| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,266 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
 | C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 364 AX controls across the 32 measured frames; 304 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 80 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
 | C-05 No autoplay | **PASS** | 0 of 22 painted `<audio>` elements autoplay or play on load |

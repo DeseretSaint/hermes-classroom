@@ -1,0 +1,105 @@
+{
+  "measured_commit": "b33a42f5756b4cb1065c5384929f520a81d0f629",
+  "measured_commit_short": "b33a42f",
+  "measured_at": "2026-11-08",
+  "branch": "master",
+  "merge_commit": "b33a42f5756b4cb1065c5384929f520a81d0f629",
+  "tests": {
+    "command": "python3 -m unittest discover -s tests -t .",
+    "ran": 1779,
+    "skipped": 1,
+    "verdict": "OK (skipped=1)"
+  },
+  "rpc": {
+    "contract": "cb.rpc",
+    "version": 14,
+    "declared_methods": 64,
+    "handlers": 64
+  },
+  "db": {
+    "contract": "cb.db",
+    "version": 10,
+    "schema_version": 10,
+    "migrations": "0001-0010"
+  },
+  "plugin": {
+    "path": "desktop/plugin.js",
+    "sha256": "71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5"
+  },
+  "m4": {
+    "frames": 62,
+    "claims_pass": 15,
+    "claims_total": 15,
+    "text_nodes": 2266,
+    "forced_color_frames": 6,
+    "min_authored_ratio": 5.93,
+    "ax_controls": 364,
+    "ax_unnamed": 0,
+    "overflow_px": 0,
+    "source": "audit/visual/m4-visual/audit.json at this commit"
+  },
+  "m4_repro": {
+    "command": "python3 scripts/m4v-repro-check.py",
+    "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
+    "plugin_sha256": "71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5"
+  },
+  "adversarial_state": {
+    "command": "python3 tests/adversarial/attack_state.py",
+    "total": 23,
+    "pass": 23,
+    "fail": 0,
+    "blocked": 1,
+    "blocked_scenarios": ["S13"],
+    "note": "S13 is BLOCKED because the auxiliary grader lane is disabled in this release"
+  },
+  "historical_plugin_pins": [
+    {
+      "sha256": "635b7061e6a6a3d130701614fdc43829bc2c5fa8eb9f45ee4d067bb51f68d90a",
+      "commit": "48be4af",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "416ff74f27ea38d93faa561b6f70b7650bdb94354898c6b7bc6cf7cac9e7cea7",
+      "commit": "36f9a1d",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240",
+      "commit": "7d0f9cf",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "80725f67bbc8569e676100f5e8b50b0da517082546df1f602722fcdf86347910",
+      "commit": "670de1b",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "c206e1c9091400af11594a440a105cda8a6794fe3563ad15a23a10e522232463",
+      "commit": "1fc0542",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "c151974a7de0fed2662e977a001127327b3c3cf96d19a54cd49b819433f935fc",
+      "commit": "5b0f124",
+      "path": "desktop/plugin.js"
+    }
+  ],
+  "branch_only": {
+    "h85_gate": {
+      "branch": "h85-gate",
+      "commit": "46c16ed9bce8dbe2a64f8274a424e55e5331421f",
+      "verdict": "FAIL on 7d0f9cf: P0 null-runtime section crash and library clipping; both fixed on the release candidate by 670de1b"
+    },
+    "h90_repro": {
+      "branch": "h90-repro",
+      "commit": "f0e3d1d6bb889d171c747d1024edd9dfb61e8e38",
+      "base": "36f9a1d",
+      "verdict": "paint-stage settle/rest fix; 62/62 reproducible at plugin 416ff74; unmerged"
+    },
+    "h89_frequency": {
+      "branch": "wt/h89-frequency-inventory",
+      "commit": "149e428",
+      "verdict": "frequency inventory seam, 25 tests, branch suite 1682; merged into the release candidate as 53fe8c9"
+    }
+  }
+}

@@ -75,11 +75,14 @@ Also at 0.1.0:
   ready, no `blocked_reason`). Evidence: `docs/REVIEW_CB017-row9-ui.json`, `docs/REVIEW_CB017-FINAL.md` §10.
 - The CB-QA-09 route finding is P3-operational (host gateway binding), not a plugin defect: one
   gateway per host, owned by profile `default` (`docs/REVIEW_CB017-FINAL.md` §3.1).
-- `evidence.inspect` returns an open check's reference answer in the L2 projection (CB-QA-10).
+- `evidence.inspect` returned an open check's reference answer in the L2 projection (CB-QA-10) at
+  `29bede7`; this tree closes it: criteria are projected through `PUBLIC_CRITERION_FIELDS` with a
+  `check_spec_withheld` marker, and `tests/adversarial/attack_state.py` S07 passes.
 - The auxiliary open-response grader lane is disabled: it cannot distinguish an honest pass from a
   persuaded one (CB-QA-11).
-- Image and speech generation are absent; lessons emit declarative media specs and text
-  equivalents. Reminders are absent.
+- Image and speech generation were absent at `29bede7`; this tree implements them on `master` since
+  `3cead45` (M0) through the host's configured image/TTS providers, with text equivalents and honest
+  degraded states. Reminders remain absent.
 - No license file. The repository may not be redistributed until DeseretSaint adds one.
 
 ### Verification at the release commit `29bede7`

@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in Coursebook does not do what the documents say it does
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste API keys, learner data, chat transcripts or a course database.
+        Read `SUPPORT.md` first: several limitations (the one-gateway route condition, the disabled
+        grader lane, absent reminders) are working as designed and are documented there.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit
+      description: Output of `git rev-parse HEAD`.
+      placeholder: e564e07b61932ad9f5e484ffa119b90f7b99e939
+    validations:
+      required: true
+  - type: input
+    id: plugin-sha
+    attributes:
+      label: desktop/plugin.js sha256
+      description: Output of `sha256sum desktop/plugin.js`. It tells us whether a stale installed copy is in play.
+      placeholder: 71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5
+    validations:
+      required: true
+  - type: input
+    id: hermes-version
+    attributes:
+      label: Hermes Agent version and Desktop half state
+      description: Version, plus whether the Desktop plugin was enabled in Capabilities → Plugins.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows the problem, starting from a fresh window.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: Quote the document or command output that led you to expect it.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      description: The exact error text or visible result. Redact paths and labels.
+    validations:
+      required: true
+  - type: textarea
+    id: health
+    attributes:
+      label: Health block
+      description: Output of the `coursebook_status` tool, if the backend is reachable.
+      render: json
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I removed credentials, learner data and provider keys from this report.
+          required: true
+        - label: I checked `SUPPORT.md` and the known limitations list.
+          required: true

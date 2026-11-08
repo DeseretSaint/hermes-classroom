@@ -4,9 +4,19 @@ Deadline: November 11, 2026, 5:00 PM EST. Submission is three things, not one: a
 request against `hermes-agent`, a public X post with the demo that tags @NousResearch, and the
 contest form. A demo over 90 seconds fails regardless of quality.
 
-Status key: `[x]` verified on this branch, `[ ]` open, `[~]` blocked on another owner or on an open
-defect. A gate is not `[x]` because code exists; it is `[x]` because a command ran against this
-commit and passed.
+Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` partial or blocked on
+another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
+this commit and passed.
+
+Current measurement commit: **`b33a42f5756b4cb1065c5384929f520a81d0f629`** (merged `master`,
+merge of `e564e07` and `ce9fcab`, H-135). Every current-tree number in this file is re-derived there and checked by
+`python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
+`docs/RELEASE-EVIDENCE.md`.
+
+**The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
+here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
+license exists, no live Desktop window has driven this exact tree, and the operator publication gate
+in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 4, 5, 6, 10, 11.
 
 ## 0. Hard operator gate
 
@@ -16,53 +26,69 @@ explicit final sign-off in chat.** GitHub commits and pushes to the private sour
 the authorized backup path; they are not publication. Release verification and evidence collection
 may continue, but every publication gate below stays closed until that sign-off.
 
-Status of this section after the harness slice (H-11, 2026-11-07): **unchanged and closed.** No gate
-below moved. The arbitrary-topic end-to-end evidence (`docs/HARNESS-E2E.md`, branch
-`wt/harness-e2e-proof` at `111c7e9`) is engineering evidence with recorded transcripts, not
-publication evidence: it is unmerged, it used no provider, and it does not satisfy gate 7 (demo
-scenarios on the release commit) or gate 13 (a recorded demo). No tag, catalog PR or announcement
-was made. Current claim-by-claim state: `docs/HARNESS-STATUS.md`.
+Status of this section after the H-111 truth pass (2026-11-08): **unchanged and closed.** No gate
+below moved, no tag, catalog pull request or announcement was made, and no green release is claimed.
+This pass reconciled documents with measurements on the release candidate and recorded the
+branch-only evidence. The earlier harness evidence (`docs/HARNESS-E2E.md`, branch
+`wt/harness-e2e-proof` at `111c7e9`) remains unmerged engineering evidence and does not satisfy gates
+7 or 13.
 
 ## 1. Gates in order
 
 Each gate depends on the one above it. Do not start a later gate to save time; a failure there
 invalidates the earlier evidence.
 
-| # | Gate | Owner | Evidence | Status |
+| # | Gate | Owner | Evidence on `b33a42f` | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Contracts frozen | Atlas | `contracts/*.json`, `docs/REVIEW_CB001.md` | [x] |
-| 2 | Platform skeleton passes admission | Sable | `bash scripts/validate.sh` | [x] |
-| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 4` from `/health`; migrations `0001`-`0004`; 685 tests | [x] |
-| 4 | Packs import and export | Lattice | pack round-trip and export hash in the mounted trace; P17/P18/P20 PASS (`tests/adversarial/evidence/attack-packs.json`) | [x] |
-| 5 | Desktop shell with real views | Vellum | `node --check` passes; with a reachable backend `#/coursebook` mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2) | [~] chat composer only on the gateway-owning profile (P3-operational, not this plugin) |
-| 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED | [~] |
-| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` rows for every demo shot | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md`, `docs/CB017-RELEASE-VERIFICATION.md` | [x] on the release commit; gates re-run in §2 |
-| 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] owner decision — no license chosen yet |
-| 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] 0.1.0 source pushed |
-| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml`, validator output | [~] blocked on 5, 7 and 10 |
+| 1 | Contracts frozen | Atlas | `contracts/rpc.v14.json` (64 declared methods), `contracts/db.v10.json`, `docs/REVIEW_CB001.md` | [x] |
+| 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh --ref b33a42f`: admission PASS, `node --check` PASS, desktop contract tests PASS; not re-run in this docs pass | [x] |
+| 3 | Backend kernel with migrations | Cinder | `cb.db` v10 / `DB_SCHEMA_VERSION = 10`, migrations `0001`-`0010`; suite `Ran 1779 tests … OK (skipped=1)` | [x] |
+| 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 1,779-test suite on this tree, but no pack round-trip was re-driven here | [~] |
+| 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
+| 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED; not re-run in this pass | [~] |
+| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b33a42f` and no video exists. Gate 5 and the recording path must close first | [ ] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py --skip-tests` passes | [x] |
+| 9 | License present | DeseretSaint | No `LICENSE` at repository root; the decision is `t_6f2d2080`, blocked on DeseretSaint | [ ] owner decision |
+| 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
+| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins this documents commit (one commit above the code candidate `b33a42f`); validator `OK: 1 file(s) valid`. The pull request stays closed until gates 5, 7, 9 and 10 close | [~] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
 
-Gate 5 stays `[~]` for one reason, and it is neither missing code nor a plugin defect: this host
-runs one gateway, profile `default` owns it, and `hermes gateway run --force` refuses a second, so a
-window on an isolated home has no gateway and no composer. Atlas reclassified CB-QA-09 as
-P3-operational on that evidence (`docs/REVIEW_CB017-FINAL.md` §3.1). The views themselves mount and
-were captured (`docs/CB017-RELEASE-VERIFICATION.md` §2). Gates 7 and 13 still cannot start until
-the operator unblocks the recording path.
+Open gates: 7, 9, 12, 13, 14, 15. Partial: 4, 5, 6, 10, 11.
+
+Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
+fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course → section path and on
+Library header clipping, and `670de1b` (merged through `494a540`) removes both. What remains is
+CB-QA-09: this host runs one gateway owned by profile `default`, so a window on an isolated home has
+no composer (`docs/REVIEW_CB017-FINAL.md` §3.1), plus the absence of a live drive of this commit.
+Gates 7 and 13 still cannot start until the operator decides which gateway the recording runs
+against.
 
 ## 2. Release verification
 
 Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
-bash scripts/validate-plugin.sh          # the release gate: a clean export of the commit
-bash scripts/validate.sh                 # the pre-merge gate: admission on an export of the tree
-hermes plugins doctor .
-hermes plugins doctor coursebook
+python3 -m unittest discover -s tests -t .   # Ran 1779 tests, OK (skipped=1)
+bash scripts/validate-plugin.sh --ref <sha>  # the release gate: a clean export of the commit
+bash scripts/validate.sh                     # pre-merge gate: tests, syntax, admission, doctor, probe
+python3 scripts/check-docs-truth.py          # docs quote the measured values
 ```
+
+Observed by this pass on `b33a42f5756b4cb1065c5384929f520a81d0f629`:
+
+```
+Ran 1779 tests in 488.738s
+
+OK (skipped=1)
+```
+
+The release gate (`validate-plugin.sh`), the mounted backend trace (`validate.sh` step 5) and
+`hermes plugins doctor` were **not** re-run in this docs pass; the rows above that cite them cite
+the `29bede7` record in `docs/CB017-RELEASE-VERIFICATION.md` or mark the gap. `docs/RELEASE-EVIDENCE.md`
+lists exactly what was and was not measured here.
 
 `scripts/validate-plugin.sh` is the admission gate. It exports the commit with `git archive` into a
 temporary directory outside the repository, runs `hermes plugins validate <export>`,
@@ -224,32 +250,30 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified on this branch, so they are not blockers: 52/52 `cb.rpc` v7 methods mounted with no
-contract problems, schema v4 from migrations `0001`-`0004`, 685 tests and 31/31 mounted backend
-expectations under `scripts/validate.sh`, pack round-trip and export hash matching, eight
-`parent.*` methods, the replan carry with the Parent Studio plan guard, and the full
-replan → lessons → export loop on contest row 9 (export `exp_2e068c56`, content hash
-`sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond the
-row-9 drive are unverified until the gateway condition in the first row is resolved for the
-recording.
+Verified on this candidate, so they are not blockers: 64/64 `cb.rpc` v14 methods mounted with no
+contract problems, schema v10 from migrations `0001`-`0010`, 1,779 tests, pack round-trip and export
+hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
+full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
+hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
+the row-9 drive are unverified on this commit until the gateway condition in the first row is
+resolved for the recording.
 
-## 8. Review packet (as of 2026-11-06)
+## 8. Review packet (as of 2026-11-08)
 
 | Item | Value |
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
-| Release branch | `wt/cb-017-harbor-release` (local only; push is operator-gated and did not happen in this run) |
-| Release commit (pinned) | `29bede7643403cd9d608499232125e6347c680dd` — merged master: master + `da99d8a` replan carry + `6502e56` plan guard + `67d6773` CB-017 review + `26e782f` row-9 export tail |
-| Gates on the pinned commit | `validate-plugin.sh` 3/3 on 802 files; 685 tests OK; clean `git archive` install 6/6, `Installed.`; live `cb.rpc` v7 / 52 methods, `contract_problems []` (`docs/CB017-RELEASE-VERIFICATION.md` §1, §1.1) |
+| Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
+| Release candidate commit | `b33a42f5756b4cb1065c5384929f520a81d0f629` — merged master: merge of `e564e07` and `ce9fcab`, `29eb591`/`1499bfc` privacy, `27bc1d8` M4 re-pin, `53fe8c9` H-89 |
+| Measured on that commit | suite `Ran 1779 tests … OK (skipped=1)`; `cb.rpc` v14 / 64 methods / 64 handlers; `cb.db` v10; `desktop/plugin.js` sha256 `71fc4c3f…c5981a5`; M4 62 frames, 15/15 claims PASS |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
-| Verification evidence | `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
-| Catalog draft | `catalog/coursebook.yaml` pinned to `29bede7`, validator `OK: 1 file(s) valid`; not submitted |
-| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
+| Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
+| Catalog draft | `catalog/coursebook.yaml` pins this documents commit, validator `OK: 1 file(s) valid`; not submitted |
+| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and five partial (`[~]`: 4, 5, 6, 10, 11) |
 
-One gap is recorded rather than hidden: the pin is the code commit `29bede7`, and this release
-record is a docs-only commit above it, because the catalog cannot describe a commit it is not on.
-At `29bede7` the README still carries the pre-re-pin wording (674 tests, route "verdict open"), so
-the release-record commit must land on master before a catalog pull request is opened, and `sha`
-and `docs_url` move to that merge in the same change. The catalog comment says the same. The
-installed tree at `29bede7` is the one the gates ran on.
+One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
+code commit `b33a42f` one below it, because an entry cannot carry its own hash. The numbers above are
+measurements of `b33a42f`; this commit only corrects what the documents say about them. The catalog
+pull request moves `sha`, `docs_url` and the docs record together once gates 5, 7, 9 and 10 close.
+The installed tree at `b33a42f` is the one the gates ran on.

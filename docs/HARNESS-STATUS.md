@@ -1,6 +1,15 @@
 # HARNESS-STATUS — what is build-complete, what is proven, what is fixture-only
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
+
+**Current release candidate (measured by the H-111 truth pass on 2026-11-08):** merged `master`
+`b33a42f5756b4cb1065c5384929f520a81d0f629` (merge of `e564e07` and `ce9fcab`, H-135). On that commit `cb.rpc` is
+v14 with 64 declared methods and 64 handlers, `cb.db` is v10 (`contracts/db.v10.json`, migrations
+`0001`-`0010`), the suite is `Ran 1779 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
+`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`. The row-by-row body below is
+the older `498b1da` snapshot it was written against; where a row says "on `master`" or quotes a
+contract version, read it as `498b1da`, not as the current tree.
+
 Base: `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700).
 `desktop/plugin.js` on that tree: sha256 `5beed34797ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25`
 (last changed by H-02, `5b7423374a5b8d10a2fe94ce520a2613b5c8f02e`).

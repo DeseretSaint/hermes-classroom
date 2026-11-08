@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a capability or a change in behaviour
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Coursebook's design is governed: an objective, an attempt, a rubric, evidence, a permitted
+        transition and a durable record. Proposals that add a chat shortcut around that loop are
+        usually out of scope. `PREBUILD_SPEC.md`, `UX_SPEC.md` and `AUDIT.md` are the design record.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What a learner or parent cannot do today. Describe the situation, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should happen, and which surface (route, pane, RPC method, hook) owns it.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How it would be proved
+      description: The command, test, frame or capture that would show it works. "Looks right" is not evidence here.
+  - type: textarea
+    id: egress
+    attributes:
+      label: Egress effect
+      description: Does it send anything new anywhere? If so, name the destination and what is sent; `docs/PRIVACY_EGRESS.md` must be updated with it.
+  - type: checkboxes
+    id: limits
+    attributes:
+      label: Claim limits
+      options:
+        - label: This proposal does not require a learning-style diagnosis, mastery, efficacy or child-safety claim.
+          required: true
