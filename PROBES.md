@@ -16,7 +16,59 @@ the last script edit — `probes/raw/RUN.log` (full stdout of every probe),
 runs; each table below cites the 02:03 run and gives the observed spread where it matters to
 the decision.
 
+## Re-run on the release candidate — 2026-11-08 (MST)
+
+The tables below were first measured before the H-208/H-182 union. Gate 6 now rests on this
+re-run instead:
+
+| Fact | Value |
+|---|---|
+| Measured commit | `bc9f6072fc0509f151a00e303243ea6f04b47bad` (`bc9f607`, H-203 merge on the H-209 tree `ab6dc7e`; code tree unchanged, module pin identical) |
+| Shipped module | `desktop/plugin.js` sha256 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` |
+| Probe plugin | `probes/plugin/__init__.py` sha256 `36411bfe805adb9b273993d2d9d1e971a5b9b256524c030b4137212444610a3d` |
+| Host runtime | Hermes Agent v0.23.0+1.gc02e6e0.dirty, local `c02e6e01806d` (the first run was `2bd378ed1b8d`; the host moved, so this is a re-measurement on a newer runtime, not a replay of the old numbers) |
+| Profile wiring | `cbqa`; `plugins/coursebook` → this worktree and `plugins/cb-probe` → `probes/plugin`, both `realpath`-resolved and sha256-checked before the run |
+| Driver | `bash probes/setup.sh && bash probes/run_all.sh`; finished 2026-11-08 21:43 MST, exit 0, wall 1 m 57 s |
+
+**Assertion files are byte-identical to the previous committed run** except the two that embed
+measured wall-clock (`p4/assert.json` latencies, `p7/p7_hook_bypass.json` `timeout_wall_s`).
+That is the reproduction claim: the probes did not change their verdicts on this tree.
+
+| # | Probe | Expected | Observed on `bc9f607` | Artifact (sha256) |
+|---|---|---|---|---|
+| 1 | runtime/stored ids | session id stable across resume; turn id per turn; tool sees session+task, no turn | **PASS**, 8/8 checks (`turns_observed=2`) | `probes/raw/p1/assert.json` `569cce2a…` |
+| 1b | compression ids | `post_compaction` fires; ids survive compaction | **PASS** (supplementary, see below) — 34 → 12 messages, `post_compaction` `kind=summarize`, 22 messages removed, `session_id` unchanged and `task_id` still equal to it on the next turn | `probes/raw/p1/compress_long/assert.json` `de9835e7…` |
+| 2 | `pre_llm_call` replay | docs: ephemeral, nothing persisted | **FAIL (unchanged)** — sentinel stored in `api_content` (83 chars vs 30-char `content`), and a later process with injection disabled answered `PRESENT` with the sentinel at message indexes `[1,2,3]` | `probes/raw/p2/assert_storage.json` `74dfadd2…`, `turn2.txt` |
+| 3 | context discovery | only the course policy loads in an isolated cwd; in-repo parent policy leaks | **PASS** (`isolated=[COURSE]`, `repo_course=[COURSE,REPO]`, `repo_root=[REPO]`, `outside=[]`, `ignore_rules=[]`); **remote BLOCKED** — no remote backend is configured on this host | `probes/raw/p3/assert.json` `421723e2…` |
+| 4 | aux grading | fast, fail-closed, outage visible | **PASS with caveats** — p50 1.616 s / p95 3.486 s, all `json`; `timeout=0.001` → `APITimeoutError` after **3.47 s** (timeout is not a wall clock); missing pinned model silently ran `stepfun/step-3.7-flash:free` and returned `pass` in **9.84 s** | `probes/raw/p4/assert.json` `860ad0be…`, `p4_runtime_seam.json` `4e8d197a…` |
+| 5 | tool → artifact → `MEDIA:` → renderer | seam parses; gateway does not deliver plugin media; Desktop render unproven | **PASS (seam)** — 70-byte artifact + text alternative, `extract_media` finds the plain-text tag, finds nothing in a JSON tool result, plugin tool not on the auto-append allowlist. **Desktop render BLOCKED** — no renderer contribution in the skeleton and no Electron window was driven; needs a live Desktop session, which this headless host does not provide | `probes/raw/p5/assert.json` `8a866ff1…`, `p5_media_seam.json` `c208040e…` |
+| 6 | cron delivery | omitted → local; explicit target stored; duplicates duplicate | **PASS** (`local`, `local`, `telegram:999999999`, second `qa-omit`); jobs created paused and removed after inspection; DST arithmetic untested | `probes/raw/p6/assert.json` `1ce48ca7…`, `jobs.json` |
+| 7 | `submit_attempt` authority | idempotent backend door; hook fail-open and mortal | **PASS** — first/duplicate/conflict/stale as specified; `pre_llm_call` raise → turn ran; 32 s sleep with 1 s budget → turn ran in **5 s**; hook **did not fire again** on the next turn; `cbprobe submit` still `committed` while bypassed | `probes/raw/p7/assert.json` `d8b1f9bc…`, `p7_hook_bypass.json` `e70b5a02…` |
+
+**Compression segment now PASS, with its precondition named.** The operator gateway decision
+(`t_6a32ffe9`) has landed on this host: `compression.in_place` is `true`, so the #44794
+"session rotation did not occur" refusal is gone. The stock p1 transcript (8 messages) still
+refuses — `Compression refused (summary would grow the conversation): 8 messages preserved`
+(`probes/raw/p1/compress.txt`) — because `compression.protect_last_n=20` leaves almost nothing
+compressible. `probes/p1b_compress_long.sh` therefore builds a 34–38 message session and asks
+for `/compress`; the committed-script run compacted **34 → 12 messages**, fired
+`post_compaction` once (`kind=summarize`, `before_tokens=16080`, `after_tokens=14558`,
+`messages_removed=22`), kept `session_id`, and the next turn still had `task_id == session_id`
+with a fresh `turn_id` (10/10 checks in `probes/raw/p1/compress_long/assert.json`). Across the
+three executions of this procedure the numbers moved (34–38 messages, 22–26 removed) and the
+verdict did not: `compress_long.txt`, `events_compress_long.jsonl`,
+`events_after_compact.jsonl`.
+
+**Still blocked, and why:** probe 5's Desktop render (no Electron window on this host; a
+headless screenshot is not a render result) and probe 3's remote half (no remote backend
+configured). Probe 2 stays FAIL: it is a host/doc mismatch, not a Coursebook defect — the
+consequence, "treat injection as persistent; never inject secrets", is what the product
+depends on.
+
 ## Verdict table
+
+Baseline run 2026-11-06. Superseded by the 2026-11-08 re-run above, where probe 1's compression
+segment moved to PASS and every other verdict held.
 
 | # | Probe | Verdict | Decisive evidence |
 |---|---|---|---|

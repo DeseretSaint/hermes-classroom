@@ -1,0 +1,30 @@
+{
+  "probe": "p1-compaction",
+  "status": "PASS",
+  "checks": {
+    "compress_reports_compaction": true,
+    "messages_removed": 22,
+    "post_compaction_fired_once": true,
+    "post_compaction_kind_summarize": true,
+    "post_compaction_same_session": true,
+    "post_compaction_removed_messages_positive": true,
+    "turn_after_compaction_observed": true,
+    "session_id_survives": true,
+    "task_id_survives": true,
+    "turn_id_fresh_after_compaction": true
+  },
+  "compaction": {
+    "ts": "2026-11-09T04:56:18.242031+00:00",
+    "event": "post_compaction",
+    "session_id": "local-1de7a2eadd0b2b6c56138192daac51f945e62afb3c87f0389004728e3ad5b293",
+    "old_session_id": "",
+    "kind": "summarize",
+    "reason": "manual",
+    "before_tokens": 16080,
+    "after_tokens": 14558,
+    "messages_removed": 22,
+    "kw_keys": [
+      "telemetry_schema_version"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 ↪ restored workspace dir: /home/deseretsaint/.hermes/profiles/cbqa/test-root/isolated_course
-↻ Resumed session local-2b0aa1e20e904f60c6dbd58bdb98b7ddaf8c07a54e31e866757eee0d5f5ced6b "Call cb_probe_ids once and reply DONE #2" (2 user messages, 8 total messages)
+↻ Resumed session local-5dee95d41f97f1f8f77d9b0390642346a5f3a3f88b090003f32c84038acdb4d9 "Call cb_probe_ids once then reply DONE #6" (2 user messages, 8 total messages)
 🗜️ Compression refused (summary would grow the conversation): 8 messages preserved
-Approx request size: ~6,431 tokens (unchanged)
+Approx request size: ~6,427 tokens (unchanged)
 The generated summary was larger than what it would replace; no messages were removed.
 
-session_id: local-2b0aa1e20e904f60c6dbd58bdb98b7ddaf8c07a54e31e866757eee0d5f5ced6b
+session_id: local-5dee95d41f97f1f8f77d9b0390642346a5f3a3f88b090003f32c84038acdb4d9

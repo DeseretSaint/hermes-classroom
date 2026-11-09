@@ -2,15 +2,15 @@
   "scenario": "invalid_json",
   "timeout": null,
   "ok": true,
-  "elapsed_s": 10.225,
+  "elapsed_s": 3.28,
   "content_type": "json",
   "parsed": {
     "answer": 42
   },
   "provider": "nous",
   "model": "deepseek/deepseek-v4.1-flash-1017",
-  "usage": 588,
-  "text_head": "{\"answer\":42}",
+  "usage": 226,
+  "text_head": "{ \"answer\": 42 }",
   "audit": {
     "plugin_id": "cb-probe",
     "purpose": "qa-probe-grade",

@@ -2,20 +2,20 @@
   "scenario": "realistic",
   "timeout": null,
   "ok": true,
-  "elapsed_s": 2.215,
+  "elapsed_s": 3.486,
   "content_type": "json",
   "parsed": {
     "verdict": "pass",
     "criteria": [
-      "states that 6*7 equals 42",
-      "shows a correct method using repeated addition",
-      "uses a clear single sentence"
+      "States that 6*7 equals 42",
+      "Shows a correct method using repeated addition: 6+6+6+6+6+6=42",
+      "Uses a clear single sentence"
     ]
   },
   "provider": "nous",
   "model": "deepseek/deepseek-v4.1-flash-1017",
-  "usage": 1130,
-  "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"states that 6*7 equals 42\",\"shows a correct method using repeated addition\",\"uses a clear single sentence\"]}",
+  "usage": 1088,
+  "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"States that 6*7 equals 42\",\"Shows a correct method using repeated addition: 6+6+6+6+6+6=42\",\"Uses a clear single sentence\"]}",
   "audit": {
     "plugin_id": "cb-probe",
     "purpose": "qa-probe-grade",
