@@ -2221,8 +2221,11 @@ plus optional `block_id`, `selected_text`; envelope `idempotency_key` **and** `e
   headline, short, deep, source ids), the authored glossary, the objective title/evidence target,
   the selected block and at most six recent learner turns. It is capped by block count, characters
   per block and total characters. It is built from the served document, not by deleting keys from
-  the authored page, so `checks.reference_json`, `checks.rubric_json`, `stimulus.choices`,
-  `accepted_answers` and `worked_example.answer` cannot reach the model.
+  the authored page; the one redaction is the worked example's trailing `Answer:` line, removed
+  from the block body after projection so the served content-hash block id is preserved. So
+  `checks.reference_json`, `checks.rubric_json`, `stimulus.choices`, `accepted_answers` and
+  `worked_example.answer` cannot reach the model, and every block id in the envelope is an id
+  `lesson.page` serves.
 - **No tools.** The request is a JSON answer + citation ids; the module exposes `TOOLS = ()` and
   never imports a shell, browser, filesystem, network or authoring seam.
 - **Citations resolve or are omitted.** The model returns ids; the handler resolves each against

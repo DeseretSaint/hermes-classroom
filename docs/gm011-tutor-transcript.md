@@ -2,8 +2,8 @@
 
 The profile, migrations, commands, lesson document and citation resolver are real. The provider is a scripted fixture bound through the production seam; no network call was made and no model output is claimed as a live answer.
 
-- course: `crs_e897baef5d5c4e53afd780cab838dff4` objective: `obj_f0bdd52dafd34df3bac1d71a9b47e686`
-- lesson run: `run_b613f4e7b1704952952a987218b7668a` thread: `thr_21b99f7baa484bc7a2394752b3cc7278`
+- course: `crs_bf4dfab0ab7045a9b97156f4c50ec0c3` objective: `obj_a5d7ad99f61f44f9b36a205e98412297`
+- lesson run: `run_08a3c06a9c974e61a867dd16ee6951f9` thread: `thr_5da99965a46c466d8a977baa08e41ad2`
 - lesson blocks: `blk_882912e55aeb3598bcf6, blk_ab26eae8e578bba4e013`
 - context secret present: `False`
 - context includes the reference/rubric keys: `False`

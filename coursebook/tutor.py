@@ -118,29 +118,40 @@ def _text(value: Any, limit: int) -> str:
 # ── context envelope ────────────────────────────────────────────────────────
 
 
-def _without_worked_answer(page: Mapping[str, Any]) -> dict[str, Any]:
-    """A projection of the page whose worked example keeps its prompt and steps, not its answer.
-
-    The served page is learner-facing: its worked example may legitimately show the answer. The
-    tutor's provider envelope may not carry an expected response, and generation normally writes
-    the same string the open check grades. So the document projection gets the scaffold only;
-    the caller keeps the sealed answer for :func:`sealed_forms`.
-    """
-    projected = dict(page)
-    for holder in (projected, projected.get("document")):
+def _worked_example_answer(page: Mapping[str, Any]) -> str:
+    """The authored worked-example answer the envelope may not carry, or ``""``."""
+    for holder in (page, page.get("document")):
         if not isinstance(holder, Mapping):
             continue
         example = holder.get("worked_example")
-        if not isinstance(example, Mapping) or "answer" not in example:
+        if isinstance(example, Mapping) and isinstance(example.get("answer"), str):
+            answer = example["answer"].strip()
+            if answer:
+                return answer
+    return ""
+
+
+def _redact_worked_example_answer(document: dict[str, Any], page: Mapping[str, Any]) -> None:
+    """Drop the worked example's trailing ``Answer:`` line, keeping the served block id.
+
+    ``lesson_document`` hashes block content into the id, so redacting before projection would
+    mint an id ``lesson.page`` never serves. Redaction therefore happens per line *after* the
+    served document is built: the example block keeps its identity, its prompt and its steps,
+    and only the final answer line is removed.
+    """
+    answer = _worked_example_answer(page)
+    if not answer:
+        return
+    suffix = f"\nAnswer: {answer}"
+    bare = f"Answer: {answer}"
+    for block in document.get("blocks") or []:
+        if not isinstance(block, dict):
             continue
-        stripped = {key: value for key, value in example.items() if key != "answer"}
-        if holder is projected:
-            projected["worked_example"] = stripped
-        else:
-            nested = dict(projected["document"])
-            nested["worked_example"] = stripped
-            projected["document"] = nested
-    return projected
+        deep = str(block.get("deep") or "")
+        if deep == bare:
+            block["deep"] = ""
+        elif deep.endswith(suffix):
+            block["deep"] = deep[: -len(suffix)].rstrip()
 
 
 def _lesson_document(connection, objective, lesson_run_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -149,7 +160,7 @@ def _lesson_document(connection, objective, lesson_run_id: str) -> tuple[dict[st
     The authored page is preferred exactly as ``lesson.page`` prefers it; a run without one (a
     pack/composed section, a chat transcript) uses the durable ``lesson_segments`` projection.
     Answer-key material is never part of a document block, and the page's worked example answer
-    is stripped before projection so it cannot reach the provider envelope.
+    is redacted from the block body after projection so the served block ids stay intact.
     """
     kernel = _kernel()
     authored = kernel._authored_lesson_page(connection, objective)
@@ -158,10 +169,11 @@ def _lesson_document(connection, objective, lesson_run_id: str) -> tuple[dict[st
         if authored["media"]:
             page["media"] = authored["media"]
         try:
-            document = lesson_document.document_from_page(_without_worked_answer(page))
+            document = lesson_document.document_from_page(page)
         except lesson_document.LessonDocumentError:
             document = None
         if document is not None and document.get("blocks"):
+            _redact_worked_example_answer(document, page)
             return document, page
     rows = connection.execute(
         "SELECT * FROM lesson_segments WHERE lesson_run_id = ? ORDER BY ordinal LIMIT 500",

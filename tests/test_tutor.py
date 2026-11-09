@@ -282,6 +282,33 @@ class TutorAskTest(TutorCase):
         for secret in (SECRET_ANSWER, SECRET_ALT):
             self.assertNotIn(secret, history_text)
 
+    def test_tutor_context_block_ids_are_the_served_blocks(self) -> None:
+        """Every block id in the envelope is an id ``lesson.page`` actually serves.
+
+        Block ids are content hashes, so any redaction done before projection mints ids the
+        learner surface does not have. The tutor may redact a block body, never its identity.
+        """
+        self.seed_authored_page()
+        served = [block["id"] for block in self.page_blocks()]
+        self.host.replies = [{"answer": "The organelle releases energy.", "citations": []}]
+        response = self.ask()
+        self.assertTrue(response["ok"], response.get("error"))
+        request = json.loads(self.host.calls[0]["input"][0]["text"])
+        context_ids = [block["id"] for block in request["lesson_context"]["blocks"]]
+        self.assertEqual(context_ids, served)
+
+    def test_tutor_example_block_citation_resolves_to_the_served_block(self) -> None:
+        """A citation the model copies from the envelope must resolve on the learner page."""
+        self.seed_authored_page()
+        example = next(block for block in self.page_blocks() if block["role"] == "example")
+        self.host.replies = [
+            {"answer": "Start from the steps in the example.", "citations": [example["id"]]}
+        ]
+        response = self.ask(block_id=example["id"])
+        self.assertTrue(response["ok"], response.get("error"))
+        citations = response["result"]["citations"]
+        self.assertEqual([citation["id"] for citation in citations], [example["id"]])
+
     def test_tutor_withholds_the_worked_example_answer(self) -> None:
         """The second-layer guard seals the *page's* worked answer, not only the check reference."""
         worked = "oxidative phosphorylation happens at the inner membrane"
