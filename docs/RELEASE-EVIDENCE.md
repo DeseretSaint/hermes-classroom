@@ -1,43 +1,45 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
-Status: the H-203 truth pass, re-derived on the settled `master`
-`ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815` (the H-209 tree: H-208's H-183/H-189/H-192c/H-199
-integration with H-206 and the H-182/D1-D3 renderer work, the H-182/D8 residual learner copy, the
-H-182/D6 reaper/pump store scope, the validator-reject fix, and the private test `node_modules`
-isolation). Every number below was produced by a command in this pass on that commit unless a row
-names another commit. Machine-readable copy: `docs/release-evidence.json`, checked against the
-documents by `python3 scripts/check-docs-truth.py`.
+Status: the H-212 freeze pass, re-derived on the frozen `master`
+`b9f4a197e42e4f033298d94608fcb5b63640b094` (the H-210-R2 merge over `df052ea`: the live pack
+round trip that closed gate 4, plus its capture under `audit/adversarial/h210r2-pack-roundtrip/`).
+Every number below was produced by a command in this pass on that commit unless a row names another
+commit. Machine-readable copy: `docs/release-evidence.json`, checked against the documents by
+`python3 scripts/check-docs-truth.py`.
+
+The commit before it, `ab6dc7e`, is the earlier H-209 measurement tree; the numbers attributed to it
+below are that pass's record and are left as history rather than rewritten.
 
 **This is not a green release.** The suite passes, but no demo is recorded, no license exists, no
 live Desktop window has driven this exact commit, and the operator publication gate in
 `docs/SUBMISSION.md` §0 is closed. No tag, catalog pull request or announcement was made.
 
-## Measured on `ab6dc7e`
+## Measured on `b9f4a19` (frozen tree)
 
-| Fact | Value | Command |
-| --- | --- | --- |
-| Suite | `Ran 2724 tests in 533.270s`, `OK` | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v20, 73 declared methods | `contracts/rpc.v20.json` (`coursebook/contracts.py:51` `WIRE_CONTRACT_VERSION = 20`) |
-| Handlers | 73, asserted by the registry; `METHOD_HANDLERS` after importing every registering module | `coursebook/api.py`, registry test in the suite |
-| `cb.db` | v12, `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012` | `coursebook/db.py:230`, `contracts/db.v12.json` |
-| Shipped module | `desktop/plugin.js` sha256 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` | `sha256sum desktop/plugin.js` |
-| M4 audit | 62 frames, 15/15 claims PASS, 2,120 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `python3 scripts/m4v-audit.py` → `audit/visual/m4-visual/audit.json` |
-| Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
+| Fact | Value | Measured on | Command |
+| --- | --- | --- | --- |
+| Suite | `Ran 2747 tests in 410.301s`, `OK (skipped=1)` | `b9f4a19` (H-212) | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v20, 73 declared methods | `b9f4a19` (re-asserted, H-212) | `contracts/rpc.v20.json` (`coursebook/contracts.py:51` `WIRE_CONTRACT_VERSION = 20`) |
+| Handlers | 73, asserted by the registry; `METHOD_HANDLERS` after importing every registering module | `b9f4a19` (measured, H-212) | `coursebook/api.py`, registry test in the suite |
+| `cb.db` | v12, `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012` | `b9f4a19` (re-asserted, H-212) | `coursebook/db.py:230`, `contracts/db.v12.json` |
+| Shipped module | `desktop/plugin.js` sha256 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` | `b9f4a19` (re-hashed, H-212) | `sha256sum desktop/plugin.js` |
+| M4 audit | 62 frames, 15/15 claims PASS, 2,120 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `ab6dc7e` (H-203); **not regenerated** — the `cd862140` pin is unchanged on `b9f4a19`, so the audit still names this tree's module | `python3 scripts/m4v-audit.py` → `audit/visual/m4-visual/audit.json` |
+| Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `ab6dc7e` (H-203); **not re-run** on `b9f4a19` — carried as the last measurement of this matrix, not a claim about the frozen tree | `python3 tests/adversarial/attack_state.py` |
 
 The `audit.json` carries `plugin_sha256` equal to the shipped module's hash, which is what makes the
-M4 row a claim about this commit rather than a stale pin. Regenerating the audit on this tree
-(`python3 scripts/m4v-audit.py`) rewrote only `generated_at` and the recorded branch name — every
-measurement and every committed screenshot was reproduced unchanged, which is the evidence that the
-`cd862140` pin is the module the numbers describe.
+M4 row a claim about this tree rather than a stale pin: `desktop/plugin.js` is byte-identical on
+`ab6dc7e` and `b9f4a19` (`cd862140…c516`), so the audit was not regenerated and no new visual pass is
+claimed. The earlier pass regenerated it on `ab6dc7e` and reproduced every measurement and every
+committed screenshot unchanged.
 
-Two measurements moved on the settled tree and are recorded as measured rather than carried forward:
-the text-node count is **2,120** over the 56 non-forced frames (the H-183/H-189 learner-copy sweep and
-the H-182/D8 objective copy reduced painted prose on those surfaces), and `C-08` now measures **0**
-animated nodes in the four reduced-motion frames against **70** in the full-motion frames (H-152's
-transitions are real, and the preference suppresses them). The AX control count (298 over the 32
-frames with an accessibility tree), the worst authored contrast (5.93:1), and the overflow/clipping
-counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the `eed7dc7` slice, not
-this tree.
+Two measurements moved on the settled `ab6dc7e` tree and are recorded there as measured rather than
+carried forward: the text-node count is **2,120** over the 56 non-forced frames (the H-183/H-189
+learner-copy sweep and the H-182/D8 objective copy reduced painted prose on those surfaces), and
+`C-08` measures **0** animated nodes in the four reduced-motion frames against **70** in the
+full-motion frames (H-152's transitions are real, and the preference suppresses them). The AX control
+count (298 over the 32 frames with an accessibility tree), the worst authored contrast (5.93:1), and
+the overflow/clipping counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the
+`eed7dc7` slice, not this tree.
 
 ## Pack round-trip, measured live on `bc9f607`
 
@@ -151,6 +153,25 @@ dedupe capture, the input manifest record, and the drivers. That capture is a wi
 Desktop window was opened, no provider spend was incurred, no media was generated, the gateway was
 not restarted, and no M4 pin was touched.
 
+### Frozen tree `b9f4a197e42e4f033298d94608fcb5b63640b094` — H-212 re-pin (2026-11-09)
+
+The round trip above ran on `df052ea`. The frozen tree `b9f4a19` is that commit plus the H-210-R2
+merge, and the diff between them is `docs/` and `audit/` only (`docs/RELEASE-EVIDENCE.md`,
+`docs/SUBMISSION.md`, `audit/adversarial/h210r2-pack-roundtrip/`) — no product, test or contract
+file moved. So the gate-4 captures remain a measurement of this tree's behaviour, and this pass
+re-measured the release counts on `b9f4a19` rather than copying the `ab6dc7e` numbers:
+
+| Check | Result on `b9f4a19` | Command |
+| --- | --- | --- |
+| Suite | `Ran 2747 tests in 410.301s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
+| Release gate | 4/4 checks PASS on a 2786-file export (admission, `node --check`, 26 desktop contract tests, runtime contracts) | `bash scripts/validate-plugin.sh` |
+| Docs truth | `docs-truth: PASS` | `python3 scripts/check-docs-truth.py` |
+| Shipped module | `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` — unchanged from the M4 audit pin | `sha256sum desktop/plugin.js` |
+
+The M4 audit and its reproducibility run were **not** regenerated: their pin is the plugin sha, and
+that sha is the same byte-for-byte on `ab6dc7e`, `df052ea` and `b9f4a19`. No new visual pass is
+claimed. The adversarial state matrix was also not re-run on this tree; the row above says so.
+
 ## Reproducibility
 
 `python3 scripts/m4v-repro-check.py` runs the whole audit twice in isolated scratch/out trees (separate
@@ -161,18 +182,23 @@ claim about the module its `plugin_sha256` line names.
 
 ## What this pass did not measure
 
-- No live Desktop window and no mounted backend trace on `ab6dc7e`; `scripts/validate.sh` step 5 was
+- No live Desktop window and no mounted backend trace on `b9f4a19`; `scripts/validate.sh` step 5 was
   not run here (it needs a mounted backend and an isolated home).
-- `bash scripts/validate-plugin.sh` (the export admission gate) **was** re-run here on the merged
-  commit: 4/4 checks PASS on a `git archive` export of 2742 files (admission and security scan,
+- `bash scripts/validate-plugin.sh` (the export admission gate) **was** re-run in this pass on
+  `b9f4a19`: 4/4 checks PASS on a `git archive` export of 2786 files (admission and security scan,
   `node --check`, 26 desktop contract tests, `hermes plugins doctor`).
 - No provider-spend generation, no demo capture, no recording.
-- The pack round trip in the `bc9f607` section above ran against a mounted backend over HTTP, not
-  inside a Desktop window: no rendered lesson was captured, and the media defect it found is a wire
-  refusal (`artifact.get`), not a visual observation.
-- The adversarial matrix was re-run here and is green (23/23 PASS, S13 BLOCKED by design).
-- The catalog entry was not re-validated in this pass; the last recorded validation is the H-193
-  record. It is a docs pass, and the catalog pin is untouched.
+- The pack round trip in the `bc9f607` and `df052ea` sections above ran against a mounted backend over
+  HTTP, not inside a Desktop window: no rendered lesson was captured, and the media defect it found
+  is a wire refusal (`artifact.get`), not a visual observation.
+- The adversarial matrix was **not** re-run in this pass. The last measurement is the H-203 run on
+  `ab6dc7e` (23/23 PASS, S13 BLOCKED by design); `b9f4a19` is not claimed to have been re-tested.
+- The catalog entry **was** re-validated in this pass: `python3 scripts/validate_plugin_catalog.py
+  catalog/coursebook.yaml` returned `OK: 1 file(s) valid` (exit 0). Its pinned `sha` moved to this
+  pass's docs commit, one commit above the measured code commit `b9f4a19`, because an entry cannot
+  carry its own hash. The seven raw URLs (`docs_url`, `image` and the six `screenshots`) point at
+  that unpushed commit and were **not** fetched, so they stay unverified until the branch is pushed;
+  gate 11 remains `[~]`.
 
 ## Keeping this honest
 

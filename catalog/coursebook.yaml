@@ -1,18 +1,17 @@
 # Catalog entry for Coursebook. NOT SUBMITTED.
 #
-# `sha` is `1ba8ec6`, the docs commit on top of the merged release candidate `c6b658e` (H-120a
-# `cb.rpc` v16 / `cb.db` v11 amendment, `wt/h120a-contracts` @ `28b5346`, merged onto
-# `origin/master` `14a6443`). The pin is the commit whose documents and images this entry
-# quotes; an entry cannot carry its own hash, so the catalog update itself is one commit above it.
-# `version` is kept in step with `plugin.yaml` (0.1.0).
+# `sha` is `61cdb03`, the H-212 docs commit (board card t_48394407) on top of the frozen release
+# tree `b9f4a19`. The pin is the commit whose documents and images this entry quotes; an entry
+# cannot carry its own hash, so the catalog update itself is one commit above it. The measured code
+# commit is `b9f4a19`, one below the pinned docs commit, because the docs commit changes README and
+# docs only - code and pin describe the same build. `version` is kept in step with `plugin.yaml`
+# (0.1.0).
 #
-# H-181 repaired the media, not the pin. `image` and every `screenshots` entry pointed at
-# `f5b84632d7201448e43992b2c1b160f9ea8deeb3`, which is not on the remote: all seven URLs were 404
-# (checked 2026-11-08). They now point at this pinned commit, where all nine `docs/assets` PNGs
-# return 200. The pin stays at `1ba8ec6` on purpose: it is 126 commits behind `origin/master`, and
-# re-pinning to "the final commit" is not possible until a final commit exists and is named -
-# nothing on this worktree is pushed, and the H-176 Trailhead (`2b0324e`) and the H-186 demo pack
-# (`1c223cc`) are unmerged. Re-pinning to an unpushed commit would recreate the defect above.
+# The pinned commit is on the release branch and was not on the remote when this was written: this
+# pass does not push. `docs_url`, `image` and the six `screenshots` URLs therefore resolve only
+# after the branch is pushed, and all seven must be re-checked for HTTP 200 at that point. H-181
+# repaired exactly this class of defect once (all seven URLs 404ed behind a pin at a commit that was
+# never on the remote); do not submit the entry until the URLs answer.
 #
 # The entry is still withheld: gates 7, 9, 12, 13, 14 and 15 of docs/SUBMISSION.md are open
 # (live drive of this commit, demo scenarios, license, publication sign-off). CB-QA-09 is not a
@@ -20,7 +19,7 @@
 
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: 1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299
+sha: 61cdb03ee3e58294098829adbd453207957de604
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
@@ -46,15 +45,15 @@ tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/INSTALL.md
-image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-light.png
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/61cdb03ee3e58294098829adbd453207957de604/docs/INSTALL.md
+image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-overview-light.png
 screenshots:
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-library-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-textbook-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-lesson-pane-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-notebook-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-parent-studio-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-overview-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-library-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-textbook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-lesson-pane-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-notebook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/61cdb03ee3e58294098829adbd453207957de604/docs/assets/readme-parent-studio-dark.png
 readme: true
 platforms: []
 known_issues:
