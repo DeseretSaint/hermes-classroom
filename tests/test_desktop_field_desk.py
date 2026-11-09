@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -964,6 +965,12 @@ class FieldDeskRenderTest(unittest.TestCase):
     def test_the_desk_paints_only_from_the_token_layer(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
         desk = source.split("// ══ M2 — the Field Desk home", 1)[1].split("function CoursesView(", 1)[0]
+        # GM-VISUAL-SPEC §2.5's shelf edge fade is a mask declaration, not a gradient surface;
+        # drop comments and that one declaration, then keep the decorative-gradient and shadow
+        # bans for the rest of the desk.
+        desk = re.sub(r"/\*.*?\*/", "", desk, flags=re.S)
+        desk = re.sub(r"//[^\n]*", "", desk)
+        desk = re.sub(r"\n\s*const maskImage = `[^`]*`\n", "\n", desk, count=1)
         self.assertNotRegex(desk, r"#[0-9a-fA-F]{3,8}\b")
         self.assertNotIn("gradient", desk)
         self.assertNotIn("boxShadow", desk)

@@ -511,8 +511,11 @@ class MotionSourceTest(unittest.TestCase):
         self.assertNotIn("animationName", self.source)
         self.assertNotIn("boxShadow", self.source)
         self.assertNotIn("box-shadow", self.source)
-        self.assertNotIn("linear-gradient", self.source)
-        self.assertNotIn("radial-gradient", self.source)
+        # GM-VISUAL-SPEC §2.5's shelf edge fade is a mask declaration, not a gradient surface;
+        # strip only that one declaration before the decorative-gradient scan.
+        decor = re.sub(r"\n\s*const maskImage = `[^`]*`\n", "\n", self.source, count=1)
+        self.assertNotIn("linear-gradient", decor)
+        self.assertNotIn("radial-gradient", decor)
 
     def test_no_surface_named_a_beat_outside_the_ladder(self) -> None:
         ladder = re.findall(r"var\(--cb-dur-([a-z]+)\)", self.source)
