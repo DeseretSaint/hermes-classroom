@@ -620,6 +620,12 @@ def blueprint_file(role: str, title: str, text: str, objective_id: str | None, *
     }
 
 
+#: A generated page parked for review (`needs_review`) is not a learner page yet. The Pages tab
+#: names that state in the file title, because the tab's own copy calls every file here a learner
+#: page (t_3a3c6ea1). The title is display-only; the export paths and the content hash never read it.
+_PARKED_TITLE_PREFIX = "Needs review · "
+
+
 def blueprint_tabs(composed: Sequence[Mapping[str, Any]], *, limit: int = MAX_BLUEPRINT_CHARS) -> dict[str, list[dict[str, Any]]]:
     tabs: dict[str, list[dict[str, Any]]] = {
         "parent_guide": [],
@@ -632,6 +638,10 @@ def blueprint_tabs(composed: Sequence[Mapping[str, Any]], *, limit: int = MAX_BL
             continue
         files = section.get("files") or {}
         title = f"{int(section['ordinal']):02d} · {section['title']}"
+        # A parked revision is shown so the parent can review it, but never as an ordinary learner
+        # page: the title carries the state the tab copy would otherwise hide.
+        if str(section.get("lesson_state") or "") == "needs_review":
+            title = _PARKED_TITLE_PREFIX + title
         tabs["parent_guide"].append(
             blueprint_file("parent_guide", title, files.get("parent_guide", ""), section["objective_id"], limit=limit)
         )
