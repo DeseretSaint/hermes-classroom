@@ -28,6 +28,7 @@ from coursebook import db, domain, generation
 from tests.blueprint_support import (
     unit_sections_document,
     validation_pass,
+    validation_responder,
     response as blueprint_response,
 )
 from tests.kernel_support import KernelCase
@@ -69,8 +70,10 @@ class FineTuneCase(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.plan.generate": blueprint_response(plan),
-                        "coursebook.plan.validate": blueprint_response(
-                            validation_pass(), model="fake-independent-validator"
+                        "coursebook.plan.validate": validation_responder(
+                            blueprint_response,
+                            validation_pass(),
+                            model="fake-independent-validator",
                         ),
                     }
                 ),

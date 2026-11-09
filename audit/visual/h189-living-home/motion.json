@@ -1,0 +1,447 @@
+{
+  "generated_at": "2026-11-08T18:21:18.291Z",
+  "pet": "boba",
+  "frames": [
+    {
+      "id": "live-pet-1049",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": true,
+      "companionMotion": "idle",
+      "companionPainted": 2237,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 0,
+      "overflow": 0,
+      "width": 1049
+    },
+    {
+      "id": "live-no-pet-1049",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.9",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.874578",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.9; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 1,
+      "overflow": 0,
+      "width": 1049
+    },
+    {
+      "id": "live-real-artifact-cover-1049",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.567577",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "artifact",
+        "typographic"
+      ],
+      "coverAlts": [
+        "Japanese affection and register — an L0 demonstration classroom"
+      ],
+      "coverCaptions": [
+        "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting."
+      ],
+      "coverHtml": "<figure data-cb-slot-cover=\"artifact\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0px; height: 56px; min-width: 0px; padding: 0px; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-lamp); overflow: hidden; margin: 0px;\"><img alt=\"Japanese affection and register — an L0 demonstration classroom\" loading=\"lazy\" src=\"data:image/png;base",
+      "payloadCover": true,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile=",
+        "/runtime?profile=",
+        "/media/japanese-affection-context-l0%3Acontent%2Frelationship-map.png"
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 1,
+      "overflow": 0,
+      "width": 1049
+    },
+    {
+      "id": "live-typographic-cover-1049",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.9",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.81577",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.9; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 1,
+      "overflow": 0,
+      "width": 1049
+    },
+    {
+      "id": "motion-arrival-1049",
+      "captured": true,
+      "trailheadMotion": "arriving",
+      "pathMotion": "arriving",
+      "pulse": "cycle",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 0,
+      "overflow": 0,
+      "width": 1049,
+      "at": 82
+    },
+    {
+      "id": "motion-beacon-1049",
+      "captured": true,
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.9",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.9; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 17,
+      "overflow": 0,
+      "width": 1049,
+      "at": 367
+    },
+    {
+      "id": "motion-rest-1049",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 62,
+        "h": 62,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 56px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 0,
+      "overflow": 0,
+      "width": 1049
+    },
+    {
+      "id": "reduced-motion-460",
+      "trailheadMotion": "static",
+      "pathMotion": "static",
+      "pulse": "rest",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 50,
+        "h": 50,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none;",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": false,
+      "companionMotion": null,
+      "companionPainted": null,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 44px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 0,
+      "overflow": 0,
+      "width": 460
+    },
+    {
+      "id": "reduced-motion-pet-460",
+      "trailheadMotion": "static",
+      "pathMotion": "static",
+      "pulse": "rest",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 50,
+        "h": 50,
+        "opacity": "0.55",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none;",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": true,
+      "companionMotion": "static",
+      "companionPainted": 1189,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 44px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 0,
+      "overflow": 0,
+      "width": 460
+    },
+    {
+      "id": "live-pet-460",
+      "trailheadMotion": "settled",
+      "pathMotion": "settled",
+      "pulse": "cycle",
+      "pulseOpacity": "0.55",
+      "pulseRect": {
+        "w": 50,
+        "h": 50,
+        "opacity": "0.585517",
+        "border": "2px rgb(44, 74, 140)",
+        "accent": "#2c4a8c",
+        "css": "position: absolute; inset: -5px; border-radius: 50%; border-width: 2px; border-style: solid; border-color: var(--cb-accent); opacity: 0.55; pointer-events: none; transition: opacity var(--cb-dur-route) var(--cb-ease);",
+        "visibility": "visible",
+        "display": "block"
+      },
+      "companion": true,
+      "companionMotion": "idle",
+      "companionPainted": 1114,
+      "coverKinds": [
+        "typographic",
+        "typographic"
+      ],
+      "coverAlts": [],
+      "coverCaptions": [],
+      "coverHtml": "<div data-cb-slot-cover=\"typographic\" style=\"display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; height: 44px; min-width: 0px; padding: 0.3rem 0.45rem; box-sizing: border-box; background: var(--cb-paper); border-top: 2px solid var(--cb-rule); overflow: hidden;\"><span style=\"display: flex; align-items: baseline; gap: 0.35rem; min-width: 0px;\"><span aria-hidden=\"true\" style=",
+      "payloadCover": false,
+      "selectedTitle": "Small-engine maintenance",
+      "restPaths": [
+        "/runtime?profile="
+      ],
+      "shelfContours": 0,
+      "notesLine": "Field notes · 11 saved",
+      "noteRows": 0,
+      "emptyAltImages": 0,
+      "animations": 1,
+      "overflow": 0,
+      "width": 460
+    }
+  ],
+  "motion": {
+    "samples": [
+      {
+        "at": 82,
+        "trailheadMotion": "arriving",
+        "pulse": "cycle",
+        "pulseOpacity": "0.55"
+      },
+      {
+        "at": 227,
+        "trailheadMotion": "settled",
+        "pulse": "cycle",
+        "pulseOpacity": "0.55"
+      },
+      {
+        "at": 367,
+        "trailheadMotion": "settled",
+        "pulse": "cycle",
+        "pulseOpacity": "0.9"
+      },
+      {
+        "at": 648,
+        "trailheadMotion": "settled",
+        "pulse": "cycle",
+        "pulseOpacity": "0.55"
+      },
+      {
+        "at": 924,
+        "trailheadMotion": "settled",
+        "pulse": "cycle",
+        "pulseOpacity": "0.9"
+      },
+      {
+        "at": 1207,
+        "trailheadMotion": "settled",
+        "pulse": "cycle",
+        "pulseOpacity": "0.55"
+      }
+    ],
+    "arrival_captured": true,
+    "beacon_captured": true
+  }
+}

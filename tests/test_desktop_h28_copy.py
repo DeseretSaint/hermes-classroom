@@ -465,7 +465,7 @@ class CreateFlowSourceTest(unittest.TestCase):
     def test_create_receipt_is_a_disclosure(self) -> None:
         source = self.source
         self.assertIn("data-cb-create-receipt", source)
-        self.assertIn("Details and job state", source)
+        self.assertIn("Technical detail", source)
 
     def test_library_trust_moves_into_a_disclosure(self) -> None:
         source = self.source

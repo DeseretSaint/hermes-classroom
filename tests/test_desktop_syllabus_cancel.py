@@ -146,7 +146,7 @@ REQUESTED_COPY = (
     "The course will not be created until you review it."
 )
 NO_JOB_COPY = (
-    "Cancelled. Nothing further was sent — no parse job had been recorded here, "
+    "Cancelled. Nothing further was sent — nothing had been started here yet, "
     "so there was nothing to stop."
 )
 

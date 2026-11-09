@@ -25,7 +25,12 @@ import unittest
 
 from coursebook import db, generation as gen, policy, research
 
-from tests.blueprint_support import blueprint_plan, response as blueprint_response, validation_pass
+from tests.blueprint_support import (
+    blueprint_plan,
+    response as blueprint_response,
+    validation_pass,
+    validation_responder,
+)
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
     FakeLLM,
@@ -71,7 +76,9 @@ def plan_script(plan: dict | None = None) -> FakeLLM:
     return FakeLLM(
         {
             "coursebook.plan.generate": blueprint_response(plan),
-            "coursebook.plan.validate": blueprint_response(validation_pass()),
+            "coursebook.plan.validate": validation_responder(
+                blueprint_response, validation_pass()
+            ),
         }
     )
 

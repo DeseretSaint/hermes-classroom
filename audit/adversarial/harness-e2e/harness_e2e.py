@@ -432,17 +432,39 @@ class RecordedLLM:
         }
 
     # ── validation ──────────────────────────────────────────────────────────
-    def _validation(self) -> dict:
-        return {
+    def _validation(self, request=None) -> dict:
+        properties = ((request.schema if request is not None else None) or {}).get("properties", {})
+        items = ((properties.get("claim_verdicts") or {}).get("items") or {}).get("properties", {})
+        labels = (items.get("item") or {}).get("enum") or []
+        claim_verdicts = [
+            {"item": label, "support": "unverified", "reason": "recorded fixture"}
+            for label in labels
+        ]
+        if request is not None and "criteria" not in properties:
+            return {"claim_verdicts": claim_verdicts}
+        # H-192b/H-192c narrow the plan criteria schema to the pass's own batch (minItems ==
+        # maxItems == that batch), so the recorded answer must name exactly the criteria the
+        # request handed the validator — not the wide VALIDATION_CRITERIA list, which violates
+        # maxItems on every narrowed pass.
+        criteria_ids = (
+            ((((properties.get("criteria") or {}).get("items") or {})
+              .get("properties", {}).get("id", {})).get("enum"))
+            or list(gen.VALIDATION_CRITERIA)
+        )
+        result = {
             "verdict": "pass",
             "criteria": [
                 {"id": criterion, "verdict": "pass",
                  "reason": f"{criterion} checked against the recorded artifact"}
-                for criterion in gen.VALIDATION_CRITERIA
+                for criterion in criteria_ids
             ],
             "rejections": [],
-            "claim_verdicts": [],
         }
+        # A criteria pass whose schema carries no claim_verdicts must not answer with one: the
+        # pass schema is additionalProperties:False, so a stray claim verdict is a violation.
+        if "claim_verdicts" in properties:
+            result["claim_verdicts"] = claim_verdicts
+        return result
 
     def __call__(self, request):
         self.requests.append(request)
@@ -450,15 +472,15 @@ class RecordedLLM:
         if request.purpose == "coursebook.plan.generate":
             document = self._plan(payload)
         elif request.purpose == "coursebook.plan.validate":
-            document = self._validation()
+            document = self._validation(request)
         elif request.purpose == "coursebook.unit_sections.generate":
             document = self._unit_sections(payload)
         elif request.purpose == "coursebook.unit_sections.validate":
-            document = self._validation()
+            document = self._validation(request)
         elif request.purpose == "coursebook.lesson.generate":
             document = self._lesson(payload)
         elif request.purpose == "coursebook.lesson.validate":
-            document = self._validation()
+            document = self._validation(request)
         else:
             raise AssertionError(f"unexpected provider call {request.purpose!r}")
         validator = request.purpose.endswith(".validate")

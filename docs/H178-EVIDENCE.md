@@ -145,7 +145,7 @@ Not painted, and stated rather than synthesized:
   until that separate step.
 
 Measurements: `audit/visual/h178-field-stop/measurements.json`; capture: `scripts/h202-capture.mjs`.
-## 6. Driven sequence — wrong → hint → hinted retry → completion → return (H-205)
+## 6. Driven sequence — wrong → hint → hinted retry → completion → return (H-205, rechecked by H-206)
 
 Captured 2026-11-08 17:07–17:08 MST on the **after** rig, CDP **9385**, after re-pointing the rig at
 the card's base: worktree `t_9659a217` @ `2d7282a` (H-196 + H-197 merge), installed desktop plugin
@@ -168,14 +168,27 @@ root font size, theme, sha256 and the step label in `audit/visual/h205-field-seq
 | 01 | `01-answer-cold.png` | STOP 2 OF 4, step 2 of 2, answer field empty | pending `cold` — "First try, no hints if you submit now" | `0d0c0c91ef2d` |
 | 02 | `02-answer-typed.png` | wrong text typed, `Check` enabled | pending `cold` | `94cf987d876e` |
 | 03 | `03-wrong-verdict.png` | "Not quite", recorded answer, `Try again` | recorded `cold`, pending false | `bf37c2d53fd6` |
-| 04 | `04-retry-surface.png` | answer field back after `Try again` | pending `hinted` — "Hinted if you submit now" | `4b3d315ab9bc` |
-| 05 | `05-hint-recorded.png` | same screen after "I used a hint" | pending `hinted` (**pixel-identical to 04**) | `4b3d315ab9bc` |
+| 04 | `h206-recheck/04-retry-surface.png` | answer field back after `Try again` | pending `hinted` — "Hinted if you submit now" | `a53e31052661` (H-205 before: `4b3d315ab9bc`) |
+| 05 | `h206-recheck/05-hint-recorded.png` | after "I used a hint": `Hint recorded` used-state chip replaces the button; only `I saw the answer` remains | pending `hinted` (before H-206 this was **pixel-identical to 04**) | `ee0d46c87209` (before: `4b3d315ab9bc`) |
 | 06 | `06-hinted-pass.png` | graded `pass`, `Finish` | recorded `hinted` | `5bed2f88d675` |
-| 07 | `07-completion.png` | "You finished Section 2", counts, `Return to the trail` | recorded `hinted` | `8f78357f3e97` |
+| 07 | `h206-recheck/07-completion.png` | "You finished Section 2"; `0 of 4 with independent evidence · 3 to review` | recorded `hinted` | `babd14361a18` (before: `8f78357f3e97`) |
 | 08 | `08-returned-trail.png` | section page + trail, "Resume the lesson" | none (player gone) | `6b1e229e7554` |
 
 All frames: viewport `1049 × 1338`, root font size `16px`, theme `dark` (H-204 owns the frame matrix
 across widths/themes; this card only drives the sequence).
+
+**H-206 recheck.** Rows 04/05/07 were re-shot after the fix on the same rig (window restarted;
+installed plugin sha `47e04fd55a61a50d7159eb96a27fee29d70d93d6afa1ee34351ffb848474419b`,
+byte-identical to `desktop/plugin.js` on `wt/h206-field-followups`), same viewport `1049 × 1338`,
+root font `16px`, theme `dark`, DPR 0.896. The recheck drove the next version of the same check
+through one cold wrong attempt and one hinted pass; its five frames and their per-frame geometry
+live in `audit/visual/h206-recheck/` (`scripts/h206-recheck.mjs`). The H-205 before-shas are kept in
+parentheses above so the comparison survives without re-running the old module.
+
+Read from the painted DOM of the after frames: `[data-cb-assist]` contains no `I used a hint` button
+(`[data-cb-assist-used="hint_request"]`, role `status`, reads "Hint recorded"), the note becomes
+"Recorded for this attempt. This answer cannot count as independent evidence.", and the completion
+line and the section header now use one phrase — `with independent evidence`.
 
 **Backend record (`evidence.inspect`, layer 1, ordered).** Exactly one evidence-class transition on
 the check, and it is the one the chip names:
@@ -192,15 +205,17 @@ and `check.get` now returns `attempt_count: 2` for v3.
 
 ### Defects found by this run
 
-1. **No visible acknowledgement of a recorded hint.** Frame 04 and frame 05 are byte-identical
-   (`4b3d315ab9bc…`, 242,999 B). `lesson.assist` *did* record the event (row above), but the pane
-   changes nothing on screen: the pending chip was already `hinted` (driven by `attempt_count > 0`,
-   not by the hint), the assist buttons stay enabled, and no line says "hint recorded". A learner
-   cannot tell a click from a miss, and nothing stops repeat clicks. Owning specialist should add a
-   recorded-state confirmation (and consider disabling the control once recorded).
-2. **Completion copy disagrees with the trail.** Frame 07 says "0 of 4 with evidence · 3 to review"
-   while the section header/trail say "0 of 4 **With independent evidence**" — two different
-   denominators/labels for the same section on adjacent surfaces. Copy only; no state is wrong.
+1. **Fixed in H-206 — no visible acknowledgement of a recorded hint.** Frame 04 and frame 05 were
+   byte-identical (`4b3d315ab9bc…`, 242,999 B) when this run was captured. `lesson.assist` *did*
+   record the event (row above), but the pane changed nothing on screen: the pending chip was already
+   `hinted` (driven by `attempt_count > 0`, not by the hint), the assist buttons stayed enabled, and
+   nothing said "hint recorded". H-206 replaces the pressed control with a `role="status"`
+   "Hint recorded" chip, changes the note to "Recorded for this attempt…", keeps focus in the group
+   that replaced the button, and refuses a second hint event. The after rows above are the proof.
+2. **Fixed in H-206 — completion copy disagrees with the trail.** Frame 07 said "0 of 4 with
+   evidence · 3 to review" while the section header/trail said "0 of 4 **With independent
+   evidence**". The completion fact now reads `0 of 4 with independent evidence · 3 to review`, one
+   phrase in both places; no state changed.
 3. Not this card's scope, seen while reviewing the completion frame: low-contrast secondary
    controls ("Review due", "Open Coursebook") and a clipped saved-note body at the 1049 viewport.
    H-204's frame matrix should judge these.
@@ -211,5 +226,6 @@ and `check.get` now returns `attempt_count: 2` for v3.
   the frame matrix to H-204 and asked this card for the driven sequence only.
 - No before-rig (9384) capture; the comparison frames remain H-204's.
 - No changes to `desktop/plugin.js`, no M4 re-pin, no merge, no push. The only writes are the eight
-  frames, `sequence.json`, the driver `scripts/h205-drive.mjs`, and this section.
+  frames, `sequence.json`, the driver `scripts/h205-drive.mjs`, and this section. (The H-206 recheck
+  above is a later run on the next check version; it re-shot 04/05/07 and changed `plugin.js`.)
 

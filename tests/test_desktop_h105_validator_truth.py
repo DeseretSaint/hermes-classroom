@@ -270,7 +270,7 @@ class PlanValidationModelTest(unittest.TestCase):
             }
         )
         self.assertEqual(out["model"]["state"], "unrecorded")
-        self.assertIn("earlier plan version", out["html"])
+        self.assertIn("earlier version", out["html"])
         self.assertNotIn("Checked by a second model", out["html"])
 
     def test_the_finished_job_hint_reaches_a_revisit(self) -> None:

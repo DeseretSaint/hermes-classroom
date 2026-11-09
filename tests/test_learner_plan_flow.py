@@ -27,7 +27,9 @@ from tests.blueprint_support import (
     blueprint_plan,
     response as blueprint_response,
     unit_sections_document,
+    validation_answer,
     validation_pass,
+    validation_responder,
 )
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
@@ -179,8 +181,10 @@ class LearnerPlanFlowTest(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.plan.generate": blueprint_response(learner_plan()),
-                        "coursebook.plan.validate": blueprint_response(
-                            validation_pass(), model="fake-independent-validator"
+                        "coursebook.plan.validate": validation_responder(
+                            blueprint_response,
+                            validation_pass(),
+                            model="fake-independent-validator",
                         ),
                     }
                 ),
@@ -242,8 +246,10 @@ class LearnerPlanFlowTest(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.plan.generate": blueprint_response(learner_plan()),
-                        "coursebook.plan.validate": blueprint_response(
-                            validation_pass(), model="fake-independent-validator"
+                        "coursebook.plan.validate": validation_responder(
+                            blueprint_response,
+                            validation_pass(),
+                            model="fake-independent-validator",
                         ),
                     }
                 ),
@@ -401,9 +407,7 @@ class LearnerBlueprintLessonPathTest(KernelCase):
         return FakeLLM(
             {
                 "coursebook.plan.generate": blueprint_response(plan),
-                "coursebook.plan.validate": blueprint_response(
-                    validation_pass(), model="fake-independent-validator"
-                ),
+                "coursebook.plan.validate": validation_answer,
             }
         )
 

@@ -24,7 +24,7 @@ from typing import Any
 from .coursebook import __version__, executor, hooks, tools
 from .coursebook import media as media_mod
 from .coursebook import research
-from .coursebook.generation import bind_host_llm, bind_validator_llm
+from .coursebook.generation import bind_host_llm, bind_validator_llm, register_validation_output_bound
 
 logger = logging.getLogger("coursebook")
 
@@ -64,6 +64,11 @@ def register(ctx: Any) -> None:
     read_setting = getattr(ctx, "get_config", None)
     validator_provider = str(read_setting("validator_provider", "") or "") if callable(read_setting) else ""
     validator_model = str(read_setting("validator_model", "") or "") if callable(read_setting) else ""
+    # H-192c: the validator's output bound rides on a plugin-registered auxiliary task. It is
+    # declared before the validator adapter is bound, because the adapter passes its key. A host
+    # without the seam (or one that refuses the key) leaves validation uncapped, and
+    # ``coursebook_status`` reports that instead of implying a cap that is not applied.
+    register_validation_output_bound(ctx)
     bind_validator_llm(
         getattr(ctx, "llm", None), provider=validator_provider, model=validator_model
     )

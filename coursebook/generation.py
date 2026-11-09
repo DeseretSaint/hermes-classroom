@@ -37,6 +37,7 @@ The LLM seam is the host-owned plugin route (``ctx.llm``), not a raw provider ke
 from __future__ import annotations
 
 import copy
+import contextvars
 import json
 import logging
 import os
@@ -112,6 +113,7 @@ __all__ = [
     "bind_host_llm",
     "bind_validator_llm",
     "validator_llm",
+    "validation_llm",
     "validator_config",
     "host_llm",
     "model_identity",
@@ -144,8 +146,16 @@ __all__ = [
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
     "VALIDATION_CRITERIA_PASSES",
+    "CLAIM_VERDICTS_PER_PASS",
+    "CLAIM_ONLY_VERDICTS_PER_PASS",
+    "VALIDATION_AUX_TASK",
+    "VALIDATION_AUX_DEFAULTS",
+    "VALIDATION_REASONING_EFFORT",
+    "VALIDATION_OUTPUT_TOKENS",
+    "register_validation_output_bound",
     "build_plan_validation_requests",
     "validation_pass_schema",
+    "validation_claim_schema",
     "validation_pass_instructions",
     "validation_pass_criteria",
     "plan_claim_labels",
@@ -169,7 +179,9 @@ logger = logging.getLogger("coursebook.generation")
 
 #: The v1 plan prompt. H-195 adds the through-line and prerequisite-assumption requirements, so
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
-PLAN_PROMPT_VERSION = "plan-prompt.v8"
+#: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
+#: blueprint prompt, so this advances to v10.
+PLAN_PROMPT_VERSION = "plan-prompt.v10"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -179,7 +191,8 @@ PLAN_PROMPT_VERSION = "plan-prompt.v8"
 #: frozen requirement is "a distinct prompt version for the v2 schema", not a literal string that
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v9"
+#: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v11"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -195,7 +208,14 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: and ``_call_llm`` re-asks once on a shape violation. Both are changes to the instruction text,
 #: and a label is recorded in stored validation bindings and the idempotency fingerprint, so the
 #: label advances rather than wearing v3 for a third, different prompt.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v4"
+#:
+#: v5 (`t_0affea08`): the pass instructions now state the rule that makes a declared ``reject``
+#: a verdict — it must be grounded in the criteria the pass was given — because
+#: :func:`_parse_validation_answer` types an ungrounded ``reject`` as a contract violation. The
+#: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
+#: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
+#: read before answering, which is the H-191 lesson applied again.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v5"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -310,7 +330,17 @@ class GenerationError(RuntimeError):
 
 
 class GenerationRejected(GenerationError):
-    """Provider output was malformed, empty, oversized, or violated a hard rule."""
+    """Provider output was malformed, empty, oversized, or violated a hard rule.
+
+    H-192: a *content* rejection is not a backend failure. When the validator refuses a plan
+    because the artifact itself is wrong (``self_study`` delivery contradicting its own
+    ``evidence_note``), the same request will be refused again — so the job must report the
+    contract's non-retryable ``VALIDATION_FAILED`` and carry the reasons, instead of
+    ``INTERNAL_ERROR`` / ``retryable: true``. The job service reads ``code`` before falling back
+    to the exception name.
+    """
+
+    code = "VALIDATION_FAILED"
 
 
 class SyllabusPlanRefused(GenerationError):
@@ -367,7 +397,7 @@ class ProviderFailure(GenerationError):
 
 
 class ModelOutputInvalid(GenerationError):
-    """The model answered, and its answer did not match the frozen response schema.
+    """The model answered, and its answer did not match the frozen response contract.
 
     This is deliberately **not** ``ProviderFailure``: the host and the provider were healthy, so
     the job must not report an infrastructure outage (H-191: one 81-character ``item`` label threw
@@ -375,9 +405,13 @@ class ModelOutputInvalid(GenerationError):
     rejection: a malformed answer is not a verdict about the artifact, so no validation record,
     criterion row or rejection is written.
 
-    One bounded re-ask (:func:`_call_llm`) runs before this is raised; ``repair_attempted`` says
-    whether that happened, and ``violation`` carries the host's own message so the operator reads
-    the real rule that failed instead of a generic failure.
+    Two shapes reach it. A JSON-Schema violation is caught by the host's own gate, where one
+    bounded re-ask (:func:`_call_llm`) runs first; ``repair_attempted`` says whether that happened.
+    A *verdict* violation — a declared ``reject`` that names nothing it judged
+    (:func:`_declared_reject_problem`, ``t_0affea08``) — is caught after the answer is parsed and
+    costs no second call: the rule is stated in the pass instructions, and a blind re-ask is the
+    resample H-182/D1 used to pay a whole authoring cycle for. ``violation`` carries the rule that
+    failed so the operator reads it instead of a generic failure.
 
     The job service maps this to the contract's ``VALIDATION_FAILED`` (category ``validation``,
     retryable ``false``): the *payload* violated the frozen contract. A dedicated
@@ -1038,6 +1072,16 @@ class _Usage:
     #: job stops at a *call* boundary instead of waiting out a multi-minute stage. ``None``
     #: means the call is not attached to a durable job (tests, pure helpers).
     cancel_probe: Any = None
+    #: Job-scoped wait reporter (H-199). Called on the caller's thread with
+    #: ``(call_id, purpose, prompt_version, elapsed_s, state)`` when a provider call starts, on
+    #: every wait heartbeat, and once when it ends. It records durable liveness, never spend:
+    #: a call in flight has no tokens or cost to report, so nothing is invented for it.
+    wait_reporter: Any = None
+    #: Prefix for the liveness row ids of this job (H-199). Kept off the global id sequence on
+    #: purpose: a wait row is bookkeeping, and spending a generator draw on it would shift the
+    #: ids of every lesson/check/attempt that follows (the recorded harness packet pins those).
+    wait_id_prefix: str = "job"
+    _wait_seq: int = 0
     #: The validator's passes run together (H-191 follow-up), so the call ceiling and the running
     #: totals are shared between threads: reserve and record under one lock, or four passes could
     #: each see the same call count and cross a ceiling together.
@@ -1091,6 +1135,17 @@ class _Usage:
                     f"{self.unknown_calls} with unknown cost) already reaches the "
                     f"{self.budget.max_cost_usd:.4f} USD ceiling"
                 )
+
+    def wait_id(self) -> str:
+        """The liveness-row id for the next provider call of this job (H-199).
+
+        Deterministic per job and unrelated to the artifact id sequence: these rows are
+        bookkeeping, so they must not shift the ids of the lessons, checks and attempts a
+        recorded packet pins.
+        """
+        with self._lock:
+            self._wait_seq += 1
+            return f"callwait:{self.wait_id_prefix}:{self._wait_seq}"
 
     def record(
         self,
@@ -1179,6 +1234,23 @@ class _Usage:
         }
 
 
+#: Set by :func:`_call_llm` for the duration of one provider call (H-199). ``PluginLLMAdapter``
+#: reads it to hand the bounded wait an ``on_wait`` heartbeat, so a call that is still in flight
+#: leaves a durable liveness trail on the caller's connection. Thread/context-local by design:
+#: a heartbeat belongs to the call that armed it, never to another call on another thread.
+_CALL_WAIT: "contextvars.ContextVar[Any]" = contextvars.ContextVar(
+    "coursebook_call_wait", default=None
+)
+
+
+def _wait_heartbeat() -> Callable[[float], None] | None:
+    """The ``on_wait`` callable for the current provider call, or ``None``."""
+    reporter = _CALL_WAIT.get()
+    if reporter is None:
+        return None
+    return lambda elapsed_s: reporter(elapsed_s)
+
+
 class PluginLLMAdapter:
     """Production adapter over the host's ``ctx.llm`` (``PluginLlm``).
 
@@ -1192,16 +1264,27 @@ class PluginLLMAdapter:
     falls back to the author model and calls that independent.
     """
 
-    def __init__(self, plugin_llm: Any, *, provider: str | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        plugin_llm: Any,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        task: str | None = None,
+    ) -> None:
         if not callable(getattr(plugin_llm, "complete_structured", None)):
             raise TypeError("ctx.llm does not expose complete_structured; refusing to bypass trust")
         self._llm = plugin_llm
         self._provider = provider or None
         self._model = model or None
+        #: The plugin-registered auxiliary task whose declared defaults carry the output bound
+        #: (H-192c). ``None`` means the host does not expose ``register_auxiliary_task`` and the
+        #: call is made with no task key — the pre-H-192c behaviour, recorded as unbounded.
+        self._task = str(task or "").strip() or None
 
     @property
     def overrides(self) -> dict[str, Any]:
-        return {"provider": self._provider, "model": self._model}
+        return {"provider": self._provider, "model": self._model, "task": self._task}
 
     @classmethod
     def from_ctx(cls, ctx: Any) -> "PluginLLMAdapter":
@@ -1211,7 +1294,7 @@ class PluginLLMAdapter:
         return cls(llm)
 
     def _arguments(self, request: LLMRequest) -> dict[str, Any]:
-        return {
+        arguments = {
             "instructions": request.instructions,
             "input": [{"type": "text", "text": request.input_text}],
             "json_schema": request.schema,
@@ -1222,6 +1305,12 @@ class PluginLLMAdapter:
             "timeout": request.timeout_s,
             "purpose": request.purpose,
         }
+        # The task key is the host's documented route for auxiliary wire controls. It is passed
+        # with the request so the host's own trust gate (``_check_task``) decides whether the
+        # plugin may use the key it registered; a denied key fails loudly, never silently.
+        if self._task:
+            arguments["task"] = self._task
+        return arguments
 
     def _invoke(self, request: LLMRequest, overrides: dict[str, Any]) -> Any:
         """Run one provider call under a **real** deadline (H-66).
@@ -1233,6 +1322,7 @@ class PluginLLMAdapter:
         go through the capped worker pool instead, so a hung call costs at most one worker slot.
         """
         timeout_s = float(request.timeout_s)
+        on_wait = _wait_heartbeat()
         async_sibling = getattr(self._llm, "acomplete_structured", None)
         if callable(async_sibling) and not deadline_mod.has_running_loop():
             arguments = {**self._arguments(request), **overrides}
@@ -1241,6 +1331,7 @@ class PluginLLMAdapter:
                     lambda: async_sibling(**arguments),
                     timeout_s=timeout_s,
                     label=request.purpose,
+                    on_wait=on_wait,
                 )
             except deadline_mod.DeadlineExceeded as exc:
                 raise ProviderTimeout(
@@ -1260,6 +1351,7 @@ class PluginLLMAdapter:
                 ),
                 timeout_s=timeout_s,
                 label=request.purpose,
+                on_wait=on_wait,
             )
         except deadline_mod.DeadlineExceeded as exc:
             raise ProviderTimeout(
@@ -1315,6 +1407,53 @@ _HOST_LLM: Any = None
 #: validation still runs with ``_HOST_LLM`` but is recorded as model-assessed, never independent.
 _VALIDATOR_LLM: "PluginLLMAdapter | None" = None
 _VALIDATOR_OVERRIDES: dict[str, Any] = {"provider": None, "model": None}
+#: The auxiliary task key that carries the validator's output bound, or ``None`` when the host
+#: does not expose ``register_auxiliary_task``. Set by :func:`register_validation_output_bound`.
+_VALIDATION_TASK: str | None = None
+
+
+def register_validation_output_bound(ctx: Any) -> str | None:
+    """Declare the validator's auxiliary task so the host applies an output bound (H-192c).
+
+    Returns the task key when the host accepted it, else ``None``. Registration is a *declaration*
+    of wire defaults, not a route: ``provider: auto`` and an empty model leave the route to the
+    validator's own provider/model override, which the host trust gate still decides.
+
+    A host without ``register_auxiliary_task`` (or a host that refuses the key) leaves the bound
+    unapplied. That is reported, not hidden: :func:`validator_config` carries
+    ``output_bound.registered == False`` and the job keeps the pre-H-192c behaviour.
+    """
+    global _VALIDATION_TASK
+    _VALIDATION_TASK = None
+    register = getattr(ctx, "register_auxiliary_task", None)
+    if not callable(register):
+        logger.warning(
+            "coursebook: host exposes no register_auxiliary_task; the validator's %d-token "
+            "output cap and %r reasoning budget cannot be requested on this host",
+            VALIDATION_OUTPUT_TOKENS,
+            VALIDATION_REASONING_EFFORT,
+        )
+        return None
+    try:
+        register(
+            VALIDATION_AUX_TASK,
+            display_name="Coursebook validator",
+            description=(
+                "Independent Coursebook validation passes. Declared with a low reasoning budget "
+                f"and a {VALIDATION_OUTPUT_TOKENS}-token output cap so a bounded pass cannot "
+                "spend an unbounded answer on one artifact."
+            ),
+            defaults=dict(VALIDATION_AUX_DEFAULTS),
+        )
+    except Exception as exc:  # noqa: BLE001 - a refused key must not take plugin load down
+        logger.warning(
+            "coursebook: host refused auxiliary task %r (%s); validator output stays uncapped",
+            VALIDATION_AUX_TASK,
+            exc,
+        )
+        return None
+    _VALIDATION_TASK = VALIDATION_AUX_TASK
+    return _VALIDATION_TASK
 
 
 def bind_host_llm(plugin_llm: Any) -> None:
@@ -1337,12 +1476,30 @@ def bind_validator_llm(plugin_llm: Any, *, provider: str | None = None, model: s
     if plugin_llm is None or not (provider or model):
         _VALIDATOR_LLM = None
         return
-    _VALIDATOR_LLM = PluginLLMAdapter(plugin_llm, provider=provider, model=model)
+    _VALIDATOR_LLM = PluginLLMAdapter(
+        plugin_llm, provider=provider, model=model, task=_VALIDATION_TASK
+    )
 
 
 def validator_llm() -> LLM | None:
     """Return the configured second-model route, or ``None`` when none is configured."""
     return _VALIDATOR_LLM
+
+
+def validation_llm() -> LLM | None:
+    """Return the adapter every validation call must use, bounded on both routes.
+
+    The configured second-model route carries the output bound (H-192c). When no validator is
+    configured the pass still runs on the author model, and that route must be bounded too: an
+    unbounded answer is the same defect whether the checking model is a second model or the
+    author's. ``None`` means no host LLM is bound at all and the caller's own adapter is the only
+    option.
+    """
+    if _VALIDATOR_LLM is not None:
+        return _VALIDATOR_LLM
+    if _HOST_LLM is None or _VALIDATION_TASK is None:
+        return None
+    return PluginLLMAdapter(_HOST_LLM, task=_VALIDATION_TASK)
 
 
 #: The two settings that create the second route, and the host trust gate that must allow the
@@ -1395,6 +1552,10 @@ def validator_config() -> dict[str, Any]:
     is the same condition ``validator_llm()`` uses, so this can never advertise a route the
     pipeline would not call. ``reason`` explains the declared state and the settings that change
     it; it is not a health check of the provider.
+
+    ``output_bound`` reports whether the host accepted the auxiliary task that carries the
+    validator's reasoning budget and completion cap (H-192c). It is a declaration too: the host
+    applies it at call time, and ``registered == False`` means the bound is not applied at all.
     """
     provider = _VALIDATOR_OVERRIDES.get("provider")
     model = _VALIDATOR_OVERRIDES.get("model")
@@ -1404,6 +1565,14 @@ def validator_config() -> dict[str, Any]:
         "provider": provider,
         "model": model,
         "reason": _validator_reason(configured, provider, model),
+        "output_bound": {
+            "registered": _VALIDATION_TASK == VALIDATION_AUX_TASK,
+            "aux_task": VALIDATION_AUX_TASK if _VALIDATION_TASK else None,
+            "reasoning_effort": VALIDATION_REASONING_EFFORT,
+            # Named ``completion_cap``, not ``max_tokens``: the status block is scanned for
+            # credential-shaped words, and a wire-parameter name must not trip that scan.
+            "completion_cap": VALIDATION_OUTPUT_TOKENS,
+        },
     }
 
 
@@ -1458,6 +1627,48 @@ def _shape_repair_request(request: LLMRequest, violation: str, *, timeout_s: flo
     )
 
 
+@dataclass
+class _WaitHandle:
+    """The end state one provider call reports to the H-199 wait record."""
+
+    state: str = "failed"
+
+
+@contextmanager
+def _call_wait(usage: _Usage, request: LLMRequest) -> Any:
+    """Arm the wait heartbeat for one provider call, then record its end state.
+
+    The record is liveness, not spend: the row exists from the moment the call starts and is
+    updated by every heartbeat while the call is in flight, so a job that is waiting on a slow
+    provider is never indistinguishable from a dead one. A heartbeat write that fails is logged
+    and dropped — it must never turn a provider call into a failure.
+    """
+    reporter = getattr(usage, "wait_reporter", None)
+    handle = _WaitHandle()
+    if reporter is None:
+        yield handle
+        return
+    call_id = usage.wait_id() if callable(getattr(usage, "wait_id", None)) else _new_id()
+    started = time.monotonic()
+
+    def beat(elapsed_s: float) -> None:
+        reporter(call_id, request.purpose, request.prompt_version, float(elapsed_s), "waiting")
+
+    def report(elapsed_s: float, state: str) -> None:
+        try:
+            reporter(call_id, request.purpose, request.prompt_version, float(elapsed_s), state)
+        except Exception as exc:  # noqa: BLE001 - liveness reporting never decides a call
+            logger.debug("coursebook: wait record for %s failed: %s: %s", request.purpose, type(exc).__name__, exc)
+
+    token = _CALL_WAIT.set(beat)
+    report(0.0, "waiting")
+    try:
+        yield handle
+    finally:
+        _CALL_WAIT.reset(token)
+        report(round(time.monotonic() - started, 3), handle.state)
+
+
 def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: bool = True) -> LLMResponse:
     """One bounded structured call, plus at most one bounded re-ask on a shape violation.
 
@@ -1485,41 +1696,47 @@ def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: boo
     repairs = 0
     while True:
         usage.before_call(current)
-        try:
-            response = llm(current)
-        except (TimeoutError,) as exc:
-            raise ProviderTimeout(
-                f"{request.purpose} timed out: {exc}",
-                purpose=request.purpose,
-                deadline_s=deadline_s,
-            ) from exc
-        except GenerationError:
-            raise
-        except ValueError as exc:
-            # The host's structured-output gate. Not a provider outage: the answer arrived.
-            now = time.monotonic()
-            call_ms = int((now - attempt_started) * 1000)
-            usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
-            violation = _shape_violation_text(exc)
-            remaining = deadline_s - (now - started)
-            if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
-                raise ModelOutputInvalid(
-                    f"{request.purpose} returned an answer that violates its response schema "
-                    f"({request.schema_name}); this artifact has no verdict"
-                    f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+        with _call_wait(usage, current) as wait:
+            try:
+                response = llm(current)
+            except (TimeoutError,) as exc:
+                wait.state = "timeout"
+                raise ProviderTimeout(
+                    f"{request.purpose} timed out: {exc}",
                     purpose=request.purpose,
-                    schema_name=request.schema_name,
-                    violation=violation,
-                    repair_attempted=bool(repairs),
+                    deadline_s=deadline_s,
                 ) from exc
-            repairs += 1
-            attempt_started = now
-            current = _shape_repair_request(request, violation, timeout_s=remaining)
-            continue
-        except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
-            raise ProviderFailure(
-                f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
-            ) from exc
+            except GenerationError as exc:
+                wait.state = "timeout" if isinstance(exc, (ProviderTimeout, TimeoutError)) else "failed"
+                raise
+            except ValueError as exc:
+                # The host's structured-output gate. Not a provider outage: the answer arrived.
+                wait.state = "schema_rejected"
+                now = time.monotonic()
+                call_ms = int((now - attempt_started) * 1000)
+                usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
+                violation = _shape_violation_text(exc)
+                remaining = deadline_s - (now - started)
+                if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
+                    raise ModelOutputInvalid(
+                        f"{request.purpose} returned an answer that violates its response schema "
+                        f"({request.schema_name}); this artifact has no verdict"
+                        f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+                        purpose=request.purpose,
+                        schema_name=request.schema_name,
+                        violation=violation,
+                        repair_attempted=bool(repairs),
+                    ) from exc
+                repairs += 1
+                attempt_started = now
+                current = _shape_repair_request(request, violation, timeout_s=remaining)
+                continue
+            except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
+                wait.state = "failed"
+                raise ProviderFailure(
+                    f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
+                ) from exc
+            wait.state = "returned"
         duration_ms = int((time.monotonic() - started) * 1000)
         if not isinstance(response, LLMResponse):
             raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
@@ -2518,10 +2735,92 @@ VALIDATION_SCHEMA: dict[str, Any] = {
 #: * one pass over all ten criteria, with the claim-verdict set bounded to the plan's own named
 #:   claims (``plan_claim_labels``) and one-sentence reasons: **145.0 s / 8 246 tokens**.
 #:
-#: So the shipped grouping is ONE pass. The pass machinery stays because a caller may need to
-#: narrow further (a cheaper validator route, a smaller deadline): the aggregation, the
-#: narrowed schema and the merge are the same code for one pass or for several.
-VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (VALIDATION_CRITERIA,)
+#: So the shipped grouping was ONE pass until H-192b. The H-192 live measurement changed that:
+#: with the claim set batched off, the *criteria* pass became the unbounded one. On a full-scope
+#: plan it was still running at the 600 s deadline (job failed ``HOST_UNAVAILABLE``), and on a
+#: short plan it emitted 22 325 tokens / 539 s. Ten criteria reasoned over a full plan is not a
+#: fixed demand. The criteria set is therefore split into two passes of five: every pass now
+#: answers a fixed maximum (five criteria, six claims), independent of plan size, and the two
+#: halves run together (max of the two, not the sum).
+VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
+    VALIDATION_CRITERIA[:5],
+    VALIDATION_CRITERIA[5:],
+)
+
+#: Most claim-support verdicts one validation pass may demand.
+#:
+#: H-192: the criteria pass also judged the plan's own claims, so the answer demand was bounded
+#: per claim *label* but not in total. ``plan_claim_labels`` emits one label per objective, one
+#: per unit and the learner outcome; a full-scope plan (12–40 objectives) therefore demanded
+#: 13–42 claim verdicts **plus** ten criterion verdicts in a single answer. Measured live on
+#: master ``127cce1``: 376 896 ms / 29 386 completion tokens, and the answer then violated its
+#: own ``claim_verdicts`` schema (job failed ``INTERNAL_ERROR``). No deadline widening repairs
+#: that; the per-call demand has to stop growing with plan size.
+#:
+#: The criteria pass now takes at most this many claims; the rest go to claim-only passes, which
+#: carry no criteria reasoning and therefore take a larger fixed batch
+#: (``CLAIM_ONLY_VERDICTS_PER_PASS``). Every pass answers a bounded number of verdicts, however
+#: large the plan is. Six keeps a single/short plan in one call (the measured claim set was 3–5
+#: labels) while a full plan becomes a handful of small concurrent passes instead of one unbounded
+#: one.
+CLAIM_VERDICTS_PER_PASS = 6
+
+#: Most claim-support verdicts one *claim-only* pass may demand.
+#:
+#: A claim-only pass rules on no criterion, so its answer is a short support verdict per claim
+#: rather than criterion reasoning. Twelve keeps a maximum-band full plan (40 objectives, 12
+#: units, the learner outcome = 53 labels) to five claim-only passes while staying far below the
+#: unbounded 29 386-token answer H-192 measured.
+CLAIM_ONLY_VERDICTS_PER_PASS = 12
+
+# ── Validator output bound (H-192c) ─────────────────────────────────────────
+#
+# Bounding the *demand* (H-192b) did not bound the validator's own reasoning. Measured live on
+# ``cb/t_958c3f23`` @ ``c58c05a`` (nous / z-ai/glm-5.3-flash): a pass asked for five criteria and
+# six claims still emitted 19 739 completion tokens in 927 s — past its 600 s deadline — and the
+# unit-stage validator emitted 23 096. The reason is routing, not prompt size: the host drops
+# ``LLMRequest.max_tokens`` on the nous chat-completions route (``agent.auxiliary_client.
+# _forwards_max_tokens`` does not list it), so nothing capped the model's reasoning.
+#
+# Coursebook will not depend on a host patch it cannot ship. The host's *documented* plugin seam
+# for wire controls is a plugin-registered auxiliary task: ``ctx.register_auxiliary_task``
+# ``defaults`` accept ``reasoning_effort`` and ``extra_body`` (``hermes_cli/plugins_aux_tasks.py``
+# → ``agent/auxiliary_task_config.py`` → ``agent/auxiliary_client._get_task_extra_body`` →
+# ``_build_call_kwargs``), and a call passing that ``task=`` key gets them merged into the provider
+# body. That reaches the model on the same route the dropped ``max_tokens`` does not.
+#
+# Live wire probe on nous / z-ai/glm-5.3-flash, same five-criteria/six-claim demand:
+# default 2 404 completion tokens in 17.6 s (8 605 reasoning chars); low effort + 4 000 cap
+# 433 tokens in 4.7 s (282 reasoning chars). Both fields are accepted by the route.
+
+#: The plugin-owned auxiliary task that carries the validator's provider-level output bound.
+VALIDATION_AUX_TASK = "cb_validate"
+
+#: The validator's reasoning budget on the provider wire. Low is the weakest level the validator
+#: model exposes (GLM-5.3: low/medium/high/max). Validation is a schema answer over a bounded
+#: demand; extended reasoning is the spend this card measured, not extra support.
+VALIDATION_REASONING_EFFORT = "low"
+
+#: Hard completion cap per validation answer, in tokens. It counts reasoning tokens too, so it is
+#: sized for a low-effort reasoning trace plus a full schema answer: ten verdicts at the 400-char
+#: reason bound plus JSON overhead is under 1 500 tokens, and the measured low-effort trace is
+#: ~300. A pass that would exceed this is truncated by the provider (``finish_reason=length``),
+#: which the shape gate reports as ``VALIDATION_FAILED`` rather than a silent overrun.
+VALIDATION_OUTPUT_TOKENS = 4000
+
+#: The auxiliary-task defaults declared at register time. ``reasoning_effort`` is folded into
+#: ``extra_body.reasoning`` by the host; ``extra_body.max_tokens`` is the route-level cap the
+#: host's own ``max_tokens`` forwarding does not provide here. Both are host-documented keys, not
+#: a private import.
+VALIDATION_AUX_DEFAULTS: dict[str, Any] = {
+    "provider": "auto",
+    "model": "",
+    "base_url": "",
+    "api_key": "",
+    "timeout": 180,
+    "reasoning_effort": VALIDATION_REASONING_EFFORT,
+    "extra_body": {"max_tokens": VALIDATION_OUTPUT_TOKENS},
+}
 
 #: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
 #: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
@@ -2549,6 +2848,29 @@ def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
     return labels
 
 
+def validation_claim_schema(claim_labels: Sequence[str]) -> dict[str, Any]:
+    """A claim-only pass's answer: one bounded set of claim verdicts, nothing else.
+
+    The pass owns no criterion and no artifact verdict, so its schema carries neither
+    ``criteria`` nor ``rejections`` nor ``verdict``: ``additionalProperties: False`` turns a
+    stray answer of any of those into a schema violation. What it does carry is pinned to exactly
+    the labels it was given, so the answer can neither grow nor shrink with plan size.
+    """
+    claim_schema = copy.deepcopy(VALIDATION_SCHEMA["properties"]["claim_verdicts"])
+    claim_schema["minItems"] = len(claim_labels)
+    claim_schema["maxItems"] = len(claim_labels)
+    claim_schema["items"]["properties"]["item"] = {
+        "type": "string",
+        "enum": list(claim_labels),
+    }
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["claim_verdicts"],
+        "properties": {"claim_verdicts": claim_schema},
+    }
+
+
 def validation_pass_schema(
     criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> dict[str, Any]:
@@ -2561,8 +2883,11 @@ def validation_pass_schema(
 
     A pass with no claim labels does not carry ``claim_verdicts`` at all: the top-level
     ``additionalProperties: False`` then turns a stray claim verdict into a schema violation, so a
-    criteria pass cannot spend its budget re-judging support that another pass owns.
+    criteria pass cannot spend its budget re-judging support that another pass owns. A pass with
+    no criteria is a claim-only pass and gets :func:`validation_claim_schema`.
     """
+    if not criteria:
+        return validation_claim_schema(claim_labels)
     schema = copy.deepcopy(VALIDATION_SCHEMA)
     properties = schema["properties"]
     criteria_schema = properties["criteria"]
@@ -2583,10 +2908,40 @@ def validation_pass_schema(
     return schema
 
 
+#: The rule that makes a declared ``reject`` a verdict (`t_0affea08`). Stated by *both* prompt
+#: builders — the narrowed plan passes (:func:`validation_pass_instructions`) and the wide
+#: lesson/unit passes (:func:`_validation_instructions`) — because :func:`_declared_reject_problem`
+#: enforces it on every criteria pass. H-191's measured defect was a schema bound the prompt never
+#: stated; a rule the harness enforces is stated where the answer is asked for, or it is a trap.
+_DECLARED_VERDICT_RULE = (
+    " Set the top-level 'verdict' to 'pass' only when every criterion you were given is "
+    "'pass'. Set it to 'reject' only when at least one criterion you were given is 'fail' or "
+    "'unknown', or you name at least one rejection. A 'reject' that fails none of your own "
+    "criteria and names no rejection states no rule that was broken: it is not a verdict, and "
+    "the harness reports the answer as a contract failure (VALIDATION_FAILED) instead of "
+    "treating it as a refusal."
+)
+
+
 def validation_pass_instructions(
     *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> str:
     """One pass's instruction text: its criteria, its claims, and nothing else to write about."""
+    if not criteria:
+        return (
+            f"Independently judge support for exactly {len(claim_labels)} plan "
+            f"claim/claims: {', '.join(claim_labels)}. Return exactly one claim_verdicts entry "
+            "for each claim named here and no others; return no criteria, no rejections and no "
+            "overall verdict — another pass rules on the plan itself. Keep each reason to one "
+            "sentence (at most 200 characters). Use source_id only when the supplied source "
+            "ledger actually contains that source. Support is not the same as provenance: to "
+            "mark a claim 'supported' or 'partial' you must set source_id and quote in 'excerpt' "
+            "the exact words from that source that carry the claim. Without an exact quoted "
+            "excerpt the harness keeps the claim 'unverified', and a title, publisher, URL, DOI "
+            "or ISBN you cite must appear in the ledger or the verdict is flagged. 'item' is a "
+            f"short locator of at most {ITEM_REFERENCE_MAX_CHARS} characters; every explanation "
+            "goes in 'reason'."
+        )
     text = (
         f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
         f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
@@ -2594,7 +2949,7 @@ def validation_pass_instructions(
         "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
         "author's rationale, or explain your method. Reject any item that must not reach a learner, "
         "with the item reference and a concrete reason."
-    )
+    ) + _DECLARED_VERDICT_RULE
     if claim_labels:
         text += (
             " Also return a support verdict for these plan claims: "
@@ -2625,15 +2980,19 @@ def validation_pass_criteria(request: LLMRequest) -> tuple[str, ...]:
     The request is the record of what the validator was asked to judge, so the merge reads
     ownership from there instead of from a second list that could drift.
     """
+    properties = (request.schema or {}).get("properties", {})
+    criteria_block = properties.get("criteria") or {}
     enum = (
-        request.schema.get("properties", {})
-        .get("criteria", {})
-        .get("items", {})
+        criteria_block.get("items", {})
         .get("properties", {})
         .get("id", {})
         .get("enum")
     )
-    return tuple(enum or VALIDATION_CRITERIA)
+    if not enum:
+        # A claim-only pass owns no criterion. Returning the full set here would let the merge
+        # treat it as a second owner of every criterion and drop the real pass's reports.
+        return ()
+    return tuple(enum)
 
 
 def merge_validation_reports(
@@ -2649,6 +3008,16 @@ def merge_validation_reports(
     here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
     validation declare ``reject``.
 
+    A declared ``reject`` that reaches this function has already been checked against the criteria
+    its pass was given (:func:`_declared_reject_problem`, called from
+    :func:`_parse_validation_answer`): an ungrounded one is a typed contract failure and never
+    arrives here. This function combines reports; it is not the validator-contract gate, so a
+    caller that hands in raw reports (tests, replays) is responsible for the same rule.
+
+    A pass that owns no criterion is a claim-only pass (H-192): it contributes its claim verdicts
+    and nothing else. It carries no artifact verdict and no rejections, so it can neither reject
+    the artifact nor widen the reviewed criterion set.
+
     A pass's answer is filtered to the criteria it owns. On the real route the host rejects an
     out-of-pass answer against the narrowed schema before it reaches this function, so the filter
     only matters for a caller that hands in raw reports (tests, replays): it can never widen the
@@ -2662,23 +3031,24 @@ def merge_validation_reports(
     declared = "pass"
     for owned, report in passes:
         owned_ids = {str(criterion) for criterion in owned}
-        if str(report.get("verdict")) != "pass":
-            declared = "reject"
-        for entry in report.get("criteria") or []:
-            criterion = str(entry.get("id"))
-            if criterion not in owned_ids:
-                continue
-            if criterion in by_criterion:
-                raise GenerationRejected(
-                    f"validator reported criterion {criterion!r} more than once"
-                )
-            by_criterion[criterion] = dict(entry)
-        for entry in report.get("rejections") or []:
-            key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
-            if key in seen_rejections:
-                continue
-            seen_rejections.add(key)
-            rejections.append(dict(entry))
+        if owned_ids:
+            if str(report.get("verdict")) != "pass":
+                declared = "reject"
+            for entry in report.get("criteria") or []:
+                criterion = str(entry.get("id"))
+                if criterion not in owned_ids:
+                    continue
+                if criterion in by_criterion:
+                    raise GenerationRejected(
+                        f"validator reported criterion {criterion!r} more than once"
+                    )
+                by_criterion[criterion] = dict(entry)
+            for entry in report.get("rejections") or []:
+                key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
+                if key in seen_rejections:
+                    continue
+                seen_rejections.add(key)
+                rejections.append(dict(entry))
         for entry in report.get("claim_verdicts") or []:
             item = str(entry.get("item"))
             if item in seen_claims:
@@ -3274,7 +3644,11 @@ def _plan_instructions(
     if recipe == "one_off":
         lines.append("No quiz and no homework: checks are verification checklists, spaced_review false.")
     if recipe == "committed":
-        lines.append("Spaced review is required; every objective needs independent evidence.")
+        lines.append(
+            "Spaced review is required; every objective needs independent evidence. Include at "
+            "least one graded quiz check in check_plan: the kernel refuses a committed course "
+            "with no quiz, and a check marked verification or observation does not satisfy it."
+        )
     if recipe == "casual":
         lines.append("Checks are optional self-checks; state that in evidence_note.")
     if recipe == "parent":
@@ -3474,7 +3848,11 @@ def _plan_instructions_v2(
             "check, no quiz, no homework and spaced_review false."
         )
     if recipe == "committed":
-        lines.append("Spaced review is required; every objective needs independent evidence.")
+        lines.append(
+            "Spaced review is required; every objective needs independent evidence. Include at "
+            "least one graded quiz check in check_plan: the kernel refuses a committed course "
+            "with no quiz, and a check marked verification or observation does not satisfy it."
+        )
     if recipe == "casual":
         lines.append("Checks are optional self-checks; state that in evidence_note.")
     if recipe == "parent":
@@ -3690,7 +4068,7 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "response is rejected before it is read if any string is over its schema bound or any "
         "field outside the schema is returned, so put each verdict in exactly the fields the "
         "schema names."
-    )
+    ) + _DECLARED_VERDICT_RULE
     if subject == "plan":
         text += (
             " Also judge curriculum sequence under objective_alignment: every unit after the "
@@ -5269,7 +5647,14 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
 
 #: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
 #: these from its own deep text, but introducing one is introducing a claim about the material.
-_CLAIM_ATOM = re.compile(r"\d[\d.,:/%+-]*|[A-Z]{2,}|\"[^\"]{2,}\"|“[^”]{2,}”")
+#:
+#: H-192b: a number atom stops at the end of its own digits and internal separators. The previous
+#: pattern swallowed trailing sentence punctuation (``[...]*`` over ``.,:/%+-``), so a short that
+#: ended a sentence with ``3:00.`` produced the atom ``'3:00.'`` and the gate refused a page whose
+#: deep text plainly said ``3:00`` — a live single-scope lesson was parked ``needs_review`` on
+#: exactly that false positive. Punctuation is not a claim: ``250.``, ``2:30,`` and ``93 °C`` all
+#: yield the same atom as their punctuation-free forms.
+_CLAIM_ATOM = re.compile(r"\d+(?:[.,:/]\d+)*%?|[A-Z]{2,}|\"[^\"]{2,}\"|“[^”]{2,}”")
 
 
 def _claim_atoms(text: Any) -> list[str]:
@@ -5376,6 +5761,94 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
     return copy.deepcopy(parsed)
 
 
+def _declared_reject_problem(
+    document: Mapping[str, Any], owned: Sequence[str]
+) -> str | None:
+    """Why one pass's declared ``reject`` states no rule it judged, or ``None`` when it does.
+
+    H-192b splits the review into passes of five criteria, each with its own narrowed schema. A
+    pass answers only for itself, so a ``reject`` it declares has to rest on something *it* judged:
+    one of its own criteria is not ``pass`` (``fail`` — a rule was broken; or ``unknown`` — the
+    answer genuinely cannot tell), or it names at least one rejection with an item, a criterion and
+    a reason.
+
+    A ``reject`` with all of its own criteria ``pass`` and an empty rejection list is not a
+    verdict about the artifact: it names nothing an author could repair and nothing a reviewer
+    could check. Trusting it made H-182/D1 re-author a whole plan on a generic hint
+    (:func:`_feedback`'s "without itemised reasons" branch) and, when the second attempt passed,
+    discard the declared refusal anyway — so the same field meant "a verdict" when grounded and
+    "a resample request" when not. The single meaning this pipeline keeps is: a declared ``reject``
+    is a verdict, and a verdict with nothing behind it is a contract violation (``t_0affea08``).
+
+    ``unknown`` counts as a ground because it is a stated answer with a reason; a conservative
+    validator that cannot verify a criterion is rejecting on record, not on silence.
+    """
+    if str(document.get("verdict")) == "pass":
+        return None
+    criteria = [entry for entry in document.get("criteria") or [] if isinstance(entry, Mapping)]
+    if any(str(entry.get("verdict")) != "pass" for entry in criteria):
+        return None
+    if document.get("rejections"):
+        return None
+    judged = ", ".join(owned) if owned else "the criteria this task judges"
+    return (
+        "declared reject while failing, leaving unknown and naming a rejection for none of the "
+        f"criteria it was given ({judged}); a declared reject must name at least one criterion it "
+        "did not pass, or at least one rejection"
+    )
+
+
+def _parse_validation_answer(
+    response: LLMResponse, request: LLMRequest, *, what: str
+) -> dict[str, Any]:
+    """Parse one validator answer, typing a shape or verdict violation as a contract failure.
+
+    H-192: a validator answer that violates its own narrowed schema at the plan stage used to
+    surface as ``INTERNAL_ERROR`` / retryable (see ``jobs.error_json`` for the full-scope sample).
+    The answer arrived and the host was healthy; the *payload* violated the frozen contract, so
+    the honest label is :class:`ModelOutputInvalid` → ``VALIDATION_FAILED``, non-retryable. A
+    blind re-run spends the same call to get the same malformed answer.
+
+    The schema checked is the pass's own narrowed schema, always. H-192b splits the criteria set
+    across passes, so a criteria pass now owns five criteria: judging its answer against the wide
+    ten-criterion ``VALIDATION_SCHEMA`` would reject every honest answer (``criteria`` too short).
+    The request's schema *is* the contract the validator was handed; the merge, not this parse,
+    is what guarantees the union is the full reviewed set.
+
+    ``t_0affea08`` adds the one verdict rule the schema cannot express usefully: a declared
+    ``reject`` must be grounded in the criteria this pass was given (see
+    :func:`_declared_reject_problem`). It is checked here, not in the schema, so a seam that does
+    not enforce the schema cannot wave it through, and the operator reads one precise rule instead
+    of a JSON-Schema ``if/then`` message. No extra call is made: the pass instructions
+    (``validation-prompt.v5``) state the rule before the answer, and the alternative — a blind
+    validator re-ask — is the same resample H-182/D1 was paying an authoring cycle for.
+    """
+    schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
+    try:
+        document = _parse_structured(
+            response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
+        )
+    except GenerationRejected as exc:
+        raise ModelOutputInvalid(
+            str(exc),
+            purpose=request.purpose,
+            schema_name=request.schema_name,
+            violation=str(exc),
+        ) from exc
+    if "verdict" in (schema.get("properties") or {}):
+        problem = _declared_reject_problem(
+            document, validation_pass_criteria(request)
+        )
+        if problem is not None:
+            raise ModelOutputInvalid(
+                f"{what} is not a verdict: {problem}",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=problem,
+            )
+    return document
+
+
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
     """Structural guarantee that validation is a second, different call.
 
@@ -5413,6 +5886,12 @@ def validation_verdict(
     ``independence`` is the *observed* model identity comparison (see
     :func:`validation_independence`). A pass from the author's own model is stored as
     ``model_assessed`` and is never reported as independent validation.
+
+    The declared verdict is honoured, never recomputed into a pass: an artifact is not approvable
+    because its criteria happened to read well when the validator said ``reject``. The one
+    precondition is upstream — a declared ``reject`` must be grounded in the criteria that pass was
+    given (:func:`_declared_reject_problem`), so a ``reject`` arriving here always names something a
+    reviewer can read (``t_0affea08``).
     """
     allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
@@ -5470,18 +5949,60 @@ def validation_verdict(
     }
 
 
-def _feedback(rejections: Sequence[dict[str, Any]]) -> str:
-    if not rejections:
-        return "The independent validator rejected the previous attempt without itemised reasons; " \
-               "fix the objective/source alignment and try again."
-    lines = ["The independent validator rejected the previous attempt for these reasons:"]
-    for entry in rejections[:8]:
+def _refusal_reasons(verdict: Mapping[str, Any]) -> list[str]:
+    """The refusal's own words, in the order a reader can act on them.
+
+    A refusal is stored and shown as text, so an empty reason is a visible defect: the old
+    ``f"criteria failed: {', '.join(verdict['failed'])}"`` renders as ``"criteria failed: "``
+    when the declared ``reject`` rests on an ``unknown`` criterion rather than a failed one
+    (``t_0affea08``). Rejections come first — they name an item and usually a fix — then failed
+    criteria, then the criteria the pass genuinely could not verify. The last line is only
+    reachable from a refusal the pipeline synthesised itself (a generator that broke deterministic
+    rules twice); :func:`_declared_reject_problem` keeps it out of a validator answer.
+    """
+    reasons = [
+        f"{entry.get('item')}: {entry.get('reason')}"
+        for entry in verdict.get("rejections") or []
+    ]
+    if reasons:
+        return reasons
+    failed = [str(name) for name in verdict.get("failed") or []]
+    if failed:
+        return [f"criteria failed: {', '.join(failed)}"]
+    unknown = [str(name) for name in verdict.get("unknown") or []]
+    if unknown:
+        return [f"criteria could not be verified: {', '.join(unknown)}"]
+    return ["the validator did not clear this artifact"]
+
+
+def _feedback(verdict: Mapping[str, Any]) -> str:
+    """The repair instruction for one refusal: every reason the validator actually gave.
+
+    A rejection carries an item, a criterion and often a fix hint; a failed criterion carries its
+    own ``reason``. Both are the author's repair list, so a refusal that failed a criterion without
+    itemising a rejection is still repairable instead of falling back to the generic
+    "fix the objective/source alignment" sentence (which names no rule and repairs nothing).
+    """
+    lines: list[str] = []
+    for entry in verdict.get("rejections") or []:
         lines.append(
             f"- item {entry.get('item')} ({entry.get('criterion')}): {entry.get('reason')}"
         )
         if entry.get("fix_hint"):
             lines.append(f"  fix: {entry['fix_hint']}")
-    return "\n".join(lines)
+    if not lines:
+        for entry in verdict.get("criteria") or []:
+            if str(entry.get("verdict")) == "pass":
+                continue
+            lines.append(
+                f"- criterion {entry.get('id')} ({entry.get('verdict')}): {entry.get('reason')}"
+            )
+    if not lines:
+        return (
+            "The independent validator rejected the previous attempt without itemised reasons; "
+            "fix the objective/source alignment and try again."
+        )
+    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines[:8]])
 
 
 #: Local request-size guard per declared scope. This is not a provider limit: it exists so a
@@ -5783,14 +6304,14 @@ def build_plan_validation_requests(
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
 ) -> list[LLMRequest]:
-    """The plan's independent validation, as one request per criteria pass.
+    """The plan's independent validation, as one request per validation pass.
 
     H-191 follow-up: one call demanding ten verdicts *and* a support verdict per claim did not
-    finish inside the declared deadline on the measured route. The same reviewed set is now judged
-    by ``VALIDATION_CRITERIA_PASSES`` — each pass carries its own narrowed schema, all passes carry
-    the same payload and prompt version, and they run together (see
-    :func:`_run_validation_passes`). The claim labels are distributed across the passes so no
-    single pass owns the whole support judgement.
+    finish inside the declared deadline on the measured route. H-192: the plan's claim set is
+    unbounded by plan size, so it cannot ride on one pass either. ``_validation_pass_plan`` gives
+    each criteria pass one fixed-size batch of claims and turns the remainder into claim-only
+    passes; each pass carries its own narrowed schema, all passes carry the same payload and
+    prompt version, and they run together (see :func:`_run_validation_passes`).
 
     Every pass has the same ``purpose`` and the same declared deadline: the purpose still means
     "the plan's validation", the usage record still attributes the spend to it, and an operator's
@@ -5843,7 +6364,9 @@ def build_plan_validation_requests(
             input_text=input_text,
             schema=validation_pass_schema(pass_criteria, pass_claims),
             schema_name="coursebook_validation_v1",
-            max_tokens=2000,
+            # The completion cap the host applies through the validator auxiliary task (H-192c);
+            # this field is the request-side declaration of the same number.
+            max_tokens=VALIDATION_OUTPUT_TOKENS,
             timeout_s=timeout,
         )
         for pass_criteria, pass_claims in _validation_pass_plan(claims)
@@ -5853,20 +6376,22 @@ def build_plan_validation_requests(
 def _validation_pass_plan(
     claim_labels: Sequence[str],
 ) -> list[tuple[tuple[str, ...], tuple[str, ...]]]:
-    """Pair each criteria pass with its share of the claim labels, in a stable order.
+    """Pair each criteria pass with one bounded batch of claim labels, in a stable order.
 
-    Claims are distributed round-robin so a plan with many objectives (a full-course plan) does not
-    load the whole support judgement onto one pass. A pass with no share carries no
-    ``claim_verdicts`` at all, which the narrowed schema enforces.
+    H-192: claims no longer all ride on one pass. Each criteria pass takes at most
+    ``CLAIM_VERDICTS_PER_PASS`` labels; the remaining labels are cut into fixed batches of
+    ``CLAIM_ONLY_VERDICTS_PER_PASS`` and become claim-only passes. Consequently no answer's claim
+    count grows with plan size: a full-scope plan is a handful of bounded passes instead of one
+    13–42-verdict answer.
     """
-    passes = len(VALIDATION_CRITERIA_PASSES)
-    shares: list[list[str]] = [[] for _ in range(passes)]
-    for index, label in enumerate(claim_labels):
-        shares[index % passes].append(label)
-    return [
-        (VALIDATION_CRITERIA_PASSES[index], tuple(shares[index]))
-        for index in range(passes)
-    ]
+    plan: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
+    remaining = list(claim_labels)
+    for criteria in VALIDATION_CRITERIA_PASSES:
+        plan.append((criteria, tuple(remaining[:CLAIM_VERDICTS_PER_PASS])))
+        del remaining[:CLAIM_VERDICTS_PER_PASS]
+    for index in range(0, len(remaining), CLAIM_ONLY_VERDICTS_PER_PASS):
+        plan.append(((), tuple(remaining[index : index + CLAIM_ONLY_VERDICTS_PER_PASS])))
+    return plan
 
 
 def build_lesson_request(
@@ -5987,7 +6512,7 @@ def build_lesson_validation_request(
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
-        max_tokens=2000,
+        max_tokens=VALIDATION_OUTPUT_TOKENS,
         timeout_s=_timeout_for("coursebook.lesson.validate", timeout_s),
     )
 
@@ -6182,6 +6707,23 @@ _GENERATION_DDL: tuple[str, ...] = (
         failures_json TEXT NOT NULL DEFAULT '[]',
         reason TEXT,
         created_at TEXT NOT NULL
+    )
+    """,
+    # H-199: one row per provider call attempt, written when the call starts and updated while
+    # it is in flight. It records *liveness*, never spend: a call that has not returned has no
+    # tokens and no cost, so none are written. A row left in ``waiting`` is the honest record of
+    # a call that overran its deadline and was cut off (its usage is unknown, not zero).
+    """
+    CREATE TABLE IF NOT EXISTS gen_call_waits (
+        id TEXT PRIMARY KEY,
+        job_id TEXT,
+        purpose TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        state TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        heartbeat_at TEXT NOT NULL,
+        elapsed_ms INTEGER NOT NULL DEFAULT 0,
+        beats INTEGER NOT NULL DEFAULT 0
     )
     """,
 )
@@ -6754,6 +7296,66 @@ def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Us
             )
 
 
+def _record_call_wait(
+    connection: sqlite3.Connection,
+    call_id: str,
+    job_id: str | None,
+    purpose: str,
+    prompt_version: str,
+    elapsed_s: float,
+    state: str,
+) -> None:
+    """Upsert the H-199 liveness row for one provider call attempt.
+
+    Written from the caller's thread (the bounded wait heartbeats there), so it uses the job's
+    own connection and a short transaction. It never runs while the call is inside a provider
+    request; the beat fires *between* wait slices, which is exactly the no-transaction window.
+    """
+    stamp = _now_iso(None)
+    elapsed_ms = max(0, int(float(elapsed_s) * 1000))
+    with _transaction(connection):
+        existing = connection.execute(
+            "SELECT beats FROM gen_call_waits WHERE id = ?", (call_id,)
+        ).fetchone()
+        if existing is None:
+            connection.execute(
+                "INSERT INTO gen_call_waits (id, job_id, purpose, prompt_version, state, started_at,"
+                " heartbeat_at, elapsed_ms, beats) VALUES (?,?,?,?,?,?,?,?,0)",
+                (call_id, job_id, purpose, prompt_version, state, stamp, stamp, elapsed_ms),
+            )
+            return
+        beats = int(dict(existing)["beats"] if isinstance(existing, sqlite3.Row) else existing[0])
+        connection.execute(
+            "UPDATE gen_call_waits SET state = ?, heartbeat_at = ?, elapsed_ms = ?, beats = ?"
+            " WHERE id = ?",
+            (
+                state,
+                stamp,
+                elapsed_ms,
+                beats if state != "waiting" else beats + 1,
+                call_id,
+            ),
+        )
+
+
+def call_waits(connection: sqlite3.Connection, job_id: str | None = None, *, limit: int = 50) -> list[dict[str, Any]]:
+    """Read the liveness records for one job (or the most recent overall).
+
+    A reader uses this to tell "the job is waiting on a provider call" from "the job is dead":
+    ``state == 'waiting'`` with a recent ``heartbeat_at`` is a call in flight; a row left
+    ``waiting`` with a stale heartbeat is a call that was cut off at its deadline.
+    """
+    ensure_schema(connection)
+    sql = "SELECT * FROM gen_call_waits"
+    params: tuple[Any, ...] = ()
+    if job_id is not None:
+        sql += " WHERE job_id = ?"
+        params = (str(job_id),)
+    sql += " ORDER BY started_at DESC, rowid DESC LIMIT ?"
+    rows = connection.execute(sql, params + (max(1, int(limit)),)).fetchall()
+    return [dict(row) for row in rows]
+
+
 def _persist_research(
     connection: sqlite3.Connection,
     *,
@@ -7154,7 +7756,7 @@ def run_plan_job(
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
-    validator = validator_llm() or llm
+    validator = validation_llm() or llm
 
     ensure_schema(connection)
     # A syllabus-backed companion course plans from the validated syllabus items alongside the
@@ -7319,9 +7921,8 @@ def run_plan_job(
             reports = [
                 (
                     validation_pass_criteria(validation_request),
-                    _parse_structured(
-                        validation_response, VALIDATION_SCHEMA, what="plan validation",
-                        max_bytes=MAX_VALIDATION_BYTES,
+                    _parse_validation_answer(
+                        validation_response, validation_request, what="plan validation"
                     ),
                 )
                 for validation_request, validation_response in zip(
@@ -7330,7 +7931,14 @@ def run_plan_job(
             ]
             report = merge_validation_reports(reports)
             validation_request = validation_requests[0]
-            validation_response = validation_responses[0]
+            # H-192b: the review is several passes. Provenance is recorded from an answering
+            # pass; when one pass needed a shape re-ask, report *that* pass's count rather than
+            # pretending the review was first-time clean (all passes answer with the same model,
+            # so identity is unchanged).
+            validation_response = max(
+                validation_responses,
+                key=lambda item: int(getattr(item, "shape_repair_attempts", 0) or 0),
+            )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
             )
@@ -7343,13 +7951,11 @@ def run_plan_job(
             if verdict["verdict"] == "pass":
                 plan = candidate
                 break
-            rejection_reasons = [
-                f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-            ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+            rejection_reasons = _refusal_reasons(verdict)
             if attempt == 2:
                 plan = candidate
                 break
-            feedback = _feedback(verdict["rejections"])
+            feedback = _feedback(verdict)
 
         assert plan is not None and plan_request is not None
         if verdict is None:
@@ -7949,6 +8555,34 @@ def build_unit_sections_request(
     )
 
 
+def _unit_plan_brief(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """The plan context one unit's validation needs, bounded by the unit, not the course.
+
+    H-192b: this request used to carry the whole plan document. On a short committed course the
+    serialised request then measured 26 799 bytes against the scope's 24 000-byte bound, so the
+    unit stage failed before any section was validated (job ``VALIDATION_FAILED``). The validator
+    rules on this unit's sections against this unit's objectives; it needs the plan's intent and
+    the checks that cover *these* objectives, not every objective and unit in the course. Extra
+    course length no longer grows this payload.
+    """
+    ordinals = {int(obj["ordinal"]) for obj in objectives}
+    check_plan = [
+        dict(item)
+        for item in plan.get("check_plan") or []
+        if isinstance(item, Mapping) and int(item.get("objective_ref") or 0) in ordinals
+    ]
+    brief = {
+        "title": plan.get("title"),
+        "scope": plan.get("scope"),
+        "delivery": plan.get("delivery"),
+        "learner_outcome": plan.get("learner_outcome"),
+        "check_plan": check_plan,
+    }
+    return {key: value for key, value in brief.items() if value not in (None, [], "")}
+
+
 def build_unit_sections_validation_request(
     *,
     plan: dict[str, Any],
@@ -7967,7 +8601,7 @@ def build_unit_sections_validation_request(
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
-        "plan": plan,
+        "plan_brief": _unit_plan_brief(plan, objectives),
         "unit": unit,
         "objectives": list(objectives),
         "sections": list(sections),
@@ -7983,7 +8617,7 @@ def build_unit_sections_validation_request(
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
-        max_tokens=2000,
+        max_tokens=VALIDATION_OUTPUT_TOKENS,
         timeout_s=_timeout_for("coursebook.unit_sections.validate", timeout_s),
     )
 
@@ -8250,7 +8884,7 @@ def run_unit_sections_job(
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
-    validator = validator_llm() or llm
+    validator = validation_llm() or llm
     validation_request: LLMRequest | None = None
     validation_response: LLMResponse | None = None
     verdict: dict[str, Any] | None = None
@@ -8315,11 +8949,8 @@ def run_unit_sections_job(
             assert request is not None
             assert_separate_pass(request, validation_request)
             validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_structured(
-                validation_response,
-                VALIDATION_SCHEMA,
-                what="unit sections validation",
-                max_bytes=MAX_VALIDATION_BYTES,
+            report = _parse_validation_answer(
+                validation_response, validation_request, what="unit sections validation"
             )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
@@ -8333,14 +8964,12 @@ def run_unit_sections_job(
             if verdict["verdict"] == "pass":
                 authored = batch
                 break
-            rejection_reasons = [
-                f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-            ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+            rejection_reasons = _refusal_reasons(verdict)
             if attempt == 2:
                 # A rejected batch is not a partial unit to finish later: the validator refused
                 # it, so it is discarded and the job fails with its reasons (transactional unit).
                 break
-            feedback = _feedback(verdict["rejections"])
+            feedback = _feedback(verdict)
 
         if verdict is None or verdict["verdict"] != "pass":
             # Deterministic rule violations, malformed batches and validator rejections all take
@@ -9030,6 +9659,13 @@ def run_lesson_job(
     resolved_budget = budget or lesson_cost_budget(len(section_rows), brief_budget_usd=brief.get("budget_usd"))
     preflight = assert_cost_preflight(len(section_rows), budget=resolved_budget)
     usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
+    # H-199: every provider call in this stage records a durable liveness row (start, heartbeat,
+    # end), so a job waiting on a slow provider is visible as *waiting*, not as a dead job with
+    # zero usage rows. The reporter runs on this thread, so it uses this job's connection.
+    usage.wait_id_prefix = str(job_id or "job")
+    usage.wait_reporter = lambda call_id, purpose, prompt_version, elapsed_s, state: _record_call_wait(
+        connection, call_id, job_id, purpose, prompt_version, elapsed_s, state
+    )
 
     lesson_summaries: list[dict[str, Any]] = []
     try:
@@ -9354,9 +9990,9 @@ def _author_section(
             subject_domain=subject_domain,
         )
         assert_separate_pass(request, validation_request)
-        validation_response = _call_llm(validator_llm() or llm, validation_request, usage)
-        report = _parse_structured(
-            validation_response, VALIDATION_SCHEMA, what="lesson validation", max_bytes=MAX_VALIDATION_BYTES
+        validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
+        report = _parse_validation_answer(
+            validation_response, validation_request, what="lesson validation"
         )
         independence = validation_independence(
             model_identity(response), model_identity(validation_response)
@@ -9370,13 +10006,11 @@ def _author_section(
         if verdict["verdict"] == "pass":
             lesson = candidate
             break
-        rejection_reasons = [
-            f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-        ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+        rejection_reasons = _refusal_reasons(verdict)
         if attempt == 2:
             lesson = candidate
             break
-        feedback = _feedback(verdict["rejections"])
+        feedback = _feedback(verdict)
 
     assert lesson is not None and request is not None
     if verdict is None:

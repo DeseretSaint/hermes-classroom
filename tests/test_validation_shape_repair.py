@@ -67,18 +67,94 @@ def _claim_verdicts_for(request: gen.LLMRequest | None) -> list[dict]:
     ]
 
 
+def _claim_block(request: gen.LLMRequest | None) -> dict:
+    return (((request.schema if request is not None else None) or {}).get("properties") or {})
+
+
+def _with_claims(document: dict, request: gen.LLMRequest | None) -> dict:
+    """Carry claim verdicts only for a pass whose schema carries them.
+
+    A criteria pass with no claims, or a pass whose claim batch is empty, has no
+    ``claim_verdicts`` property and ``additionalProperties: false``; a stray empty list would be
+    rejected by the narrowed schema before the recorded shape under test is reached.
+    """
+    if "claim_verdicts" in _claim_block(request):
+        document["claim_verdicts"] = _claim_verdicts_for(request)
+    else:
+        document.pop("claim_verdicts", None)
+    return document
+
+
+def _owned_criteria(request: gen.LLMRequest | None) -> list[str]:
+    """The criteria this pass owns, read from its narrowed schema."""
+    block = ((request.schema if request is not None else None) or {}).get("properties", {}).get(
+        "criteria"
+    ) or {}
+    enum = (((block.get("items") or {}).get("properties") or {}).get("id") or {}).get("enum")
+    return list(enum or gen.VALIDATION_CRITERIA)
+
+
+def _narrow_to_pass(document: dict, request: gen.LLMRequest | None) -> dict:
+    """Answer exactly the pass: its criteria, its rejections, its claims.
+
+    H-192b splits the review into passes of five criteria, so a recorded ten-criterion answer
+    would fail the narrowed schema on ``criteria`` (too long) before the shape under test is
+    reached. Narrowing keeps the recorded text and only removes what another pass owns.
+    """
+    owned = set(_owned_criteria(request))
+    document["criteria"] = [
+        entry for entry in document.get("criteria") or [] if entry.get("id") in owned
+    ]
+    document["rejections"] = [
+        entry for entry in document.get("rejections") or [] if entry.get("criterion") in owned
+    ]
+    return _with_claims(document, request)
+
+
 def measured_document(request: gen.LLMRequest | None = None) -> dict:
     """The recorded validator answer: schema-minimal, with the measured over-long ``item``."""
     document = json.loads(json.dumps(fixture("validation_measured_item_81")))
-    document["claim_verdicts"] = _claim_verdicts_for(request)
-    return document
+    return _narrow_to_pass(document, request)
 
 
 def clean_document(request: gen.LLMRequest | None = None) -> dict:
     """A schema-valid validator answer with no claim coupling (the ledger stays untouched)."""
     document = json.loads(json.dumps(fixture("validation_pass")))
-    document["claim_verdicts"] = _claim_verdicts_for(request)
-    return document
+    return _narrow_to_pass(document, request)
+
+
+def _owns_measured_rejection(request: gen.LLMRequest | None) -> bool:
+    """Does this pass own the criterion the measured rejection names?
+
+    The recorded answer rejects ``evidence_target_fit``, which H-192b puts in the second pass
+    only. ``_narrow_to_pass`` therefore strips that rejection from the first pass, leaving a
+    document that still *declares* ``reject`` while failing no criterion of its own. H-182 reads a
+    declared refusal as a plan that can be re-authored, so serving the recorded answer to the
+    pass that does not own the rejection turned the shape repair under test into a second
+    ``plan.generate`` — decided by thread order, not by the behaviour. The answer is served to
+    the owning pass, where the over-long ``item`` is the violation the test is about.
+    """
+    measured = (fixture("validation_measured_item_81").get("rejections") or [{}])[0]
+    criterion = str(measured.get("criterion") or "")
+    return bool(criterion) and criterion in _owned_criteria(request)
+
+
+class FirstValidationAnswerMalformed:
+    """Recorded-answer script: exactly one plan-validate call gets the measured 81-char answer.
+
+    H-192b splits plan validation into two passes that run together, so a per-call list would
+    depend on thread order; the recorded answer is served to the pass that owns the criterion it
+    rejects (H-182: a refusal on any pass re-authors the plan, so a refusal must land where its
+    rejection is schema-valid). Its repair and every other pass answer cleanly, and it never
+    repeats.
+    """
+
+    def __call__(self, request: gen.LLMRequest) -> dict:
+        if request.prompt_version.endswith(gen.REPAIR_PROMPT_SUFFIX):
+            return clean_document(request)
+        if _owns_measured_rejection(request):
+            return measured_document(request)
+        return clean_document(request)
 
 
 class HostStructuredSeam:
@@ -88,10 +164,18 @@ class HostStructuredSeam:
     ``json_schema`` and raises ``ValueError`` for the whole document when it does not match
     (``agent.plugin_llm._parse_structured_text``). This double does the same check with the same
     library call, so an 81-character ``item`` fails here for exactly the reason it failed live.
+
+    A script entry is either a list (one recorded answer per call, popped in order) or a callable
+    applied to every call of that purpose (``(request) -> document``). The callable form exists
+    because H-192b made the plan validation two passes: a per-call list would depend on which
+    thread reached the seam first, while the recorded-answer property under test does not.
     """
 
-    def __init__(self, script: dict[str, list], *, models: dict[str, str] | None = None) -> None:
-        self.script = {purpose: list(items) for purpose, items in script.items()}
+    def __init__(self, script: dict[str, object], *, models: dict[str, str] | None = None) -> None:
+        self.script = {
+            purpose: list(items) if isinstance(items, list) else items
+            for purpose, items in script.items()
+        }
         self.models = models or {
             "coursebook.plan.generate": "author-model",
             "coursebook.plan.validate": "second-opinion-model",
@@ -101,10 +185,14 @@ class HostStructuredSeam:
     def __call__(self, request: gen.LLMRequest) -> gen.LLMResponse:
         self.requests.append(request)
         items = self.script.get(request.purpose)
-        if not items:
+        if callable(items) and not isinstance(items, list):
+            document = items(request)
+        elif not items:
             raise AssertionError(f"unexpected provider call {request.purpose!r}: script exhausted")
-        item = items.pop(0)
-        document = item(request) if callable(item) else item
+        else:
+            assert isinstance(items, list)
+            item = items.pop(0)
+            document = item(request) if callable(item) else item
         text = json.dumps(document, ensure_ascii=False)
         parsed = json.loads(text)
         if request.schema is not None:
@@ -199,7 +287,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
     def test_the_prompt_label_advanced_with_the_instruction_text(self) -> None:
         # A label is part of stored validation bindings and the idempotency fingerprint; a
         # different instruction text under a reused label is never silently accepted.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v4")
+        # v5 (`t_0affea08`) added the declared-reject rule to the pass instructions; the label
+        # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v5")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):
@@ -207,14 +297,25 @@ class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document, clean_document],
+                "coursebook.plan.validate": FirstValidationAnswerMalformed(),
             }
         )
         result = self.run_plan(seam)
 
         validate_calls = seam.calls_for("coursebook.plan.validate")
-        self.assertEqual(len(validate_calls), 2, "exactly one re-ask")
-        first, repair = validate_calls
+        repairs = [
+            call
+            for call in validate_calls
+            if call.prompt_version.endswith(gen.REPAIR_PROMPT_SUFFIX)
+        ]
+        self.assertEqual(len(repairs), 1, "exactly one re-ask")
+        repair = repairs[0]
+        first = next(
+            call for call in validate_calls if call is not repair and call.schema is repair.schema
+        )
+        self.assertEqual(
+            len(validate_calls), len(gen.VALIDATION_CRITERIA_PASSES) + 1, validate_calls
+        )
 
         # The re-ask is a distinct call: different instructions, marked prompt version, same
         # pass (system prompt, schema and input bytes unchanged).
@@ -262,18 +363,18 @@ class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):
             tokens = json.loads(row["tokens_json"])
             if str(tokens.get("purpose") or "").endswith(".validate"):
                 per_validate.append(tokens)
-        self.assertEqual(len(per_validate), 2, per_validate)
+        self.assertEqual(len(per_validate), len(validate_calls), per_validate)
         self.assertEqual(
             result["usage"]["calls"], result["usage"]["by_purpose"]["coursebook.plan.validate"]["calls"]
             + result["usage"]["by_purpose"]["coursebook.plan.generate"]["calls"],
         )
-        self.assertEqual(result["validation"]["cost"]["calls"], 2)
+        self.assertEqual(result["validation"]["cost"]["calls"], len(validate_calls))
 
     def test_the_author_pass_gets_the_same_single_re_ask(self) -> None:
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [{"verdict": "pass"}, plan_document],
-                "coursebook.plan.validate": [clean_document],
+                "coursebook.plan.validate": clean_document,
             }
         )
         result = self.run_plan(seam)
@@ -291,13 +392,13 @@ class SecondViolationIsTypedNotAnOutageTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document, measured_document],
+                "coursebook.plan.validate": measured_document,
             }
         )
         with self.assertRaises(gen.ModelOutputInvalid) as caught:
             self.run_plan(seam)
         error = caught.exception
-        self.assertEqual(len(seam.calls_for("coursebook.plan.validate")), 2)
+        self.assertGreaterEqual(len(seam.calls_for("coursebook.plan.validate")), 2)
         self.assertEqual(error.code, "VALIDATION_FAILED")
         self.assertEqual(error.purpose, "coursebook.plan.validate")
         self.assertEqual(error.schema_name, "coursebook_validation_v1")
@@ -340,7 +441,7 @@ class JobReportsTheTruthTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document, measured_document],
+                "coursebook.plan.validate": measured_document,
             }
         )
         connection = self.connection

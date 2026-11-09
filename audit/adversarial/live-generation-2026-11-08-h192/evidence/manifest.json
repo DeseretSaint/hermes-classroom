@@ -1,0 +1,24 @@
+{
+  "files": {
+    "full.json": {
+      "bytes": 7944,
+      "sha256": "6dbcff263c3562114d5b5aff430e2c529cd20ea72a6bd74f4e97a23d377ccce8"
+    },
+    "manifest.json": {
+      "bytes": 681,
+      "sha256": "7b907ecaadffec008e5757ccd158ee19c5171df3bc84b2bd45fab6db9f8ca719"
+    },
+    "short.json": {
+      "bytes": 4938,
+      "sha256": "67c1e3206a8b4188fb26ab2fd67b9526a897b0cc5f6ca94f26d9321d6dcb859d"
+    },
+    "single.json": {
+      "bytes": 22218,
+      "sha256": "e09750a9456b019cf30f4ab5fbf9fe27cd7cea565cd0dc50a3f107c92229f5a2"
+    },
+    "summary.json": {
+      "bytes": 20673,
+      "sha256": "f4fd65c8dc80ac95a6b56b4f6d380d7cf09d71a5c1958f7fb80833b7b08003a3"
+    }
+  }
+}

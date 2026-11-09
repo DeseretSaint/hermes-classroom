@@ -215,16 +215,46 @@ def _unsourced(document: dict) -> dict:
 
 
 def validation_from_fixture(name: str = "validation_pass"):
+    from tests.blueprint_support import narrowed_validation_answer
+
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
+        properties = (request.schema or {}).get("properties", {})
+        if "criteria" not in properties:
+            # H-192: a claim-only pass has no criteria in its narrowed schema, so the
+            # ten-criterion fixture is not a legal answer for it.
+            labels = (
+                ((properties.get("claim_verdicts") or {}).get("items") or {})
+                .get("properties", {})
+                .get("item", {})
+                .get("enum")
+                or []
+            )
+            return response(
+                {
+                    "claim_verdicts": [
+                        {
+                            "item": label,
+                            "support": "unverified",
+                            "reason": "not assessed by this fixture",
+                        }
+                        for label in labels
+                    ]
+                },
+                model="fake-validator",
+            )
         document = fixture(name)
         ids = source_ids_from(request)
         if ids:
             document = json.loads(canonical_json(document).replace("SRC_ALPHA", ids[0]))
         else:
             document["claim_verdicts"] = []
-        return response(document, model="fake-validator")
+        # H-192b/H-192c narrow a criteria pass to its own criteria batch and claim batch; a
+        # fixture authored against the wide schema answers both wrongly unless it is aligned to
+        # the request's own vocabulary.
+        return response(narrowed_validation_answer(request, document), model="fake-validator")
 
     return build
+
 
 
 def lesson_from_request(name: str = "lesson_ja"):
@@ -672,7 +702,12 @@ class PlanJobTest(GenerationTestBase):
         self.assertFalse(tokens["unknown_cost"])
 
     def test_full_scope_deep_brief_runs_a_full_bounded_pass_and_keeps_failures(self) -> None:
-        from tests.blueprint_support import blueprint_plan, response as support_response, validation_pass
+        from tests.blueprint_support import (
+            blueprint_plan,
+            response as support_response,
+            validation_pass,
+            validation_responder,
+        )
 
         seam = ExpandingSearch(fail_suffixes=("/3",))
         scoped = blueprint_plan(scope="full", units=2, objectives_per_unit=6)
@@ -682,7 +717,9 @@ class PlanJobTest(GenerationTestBase):
             FakeLLM(
                 {
                     "coursebook.plan.generate": support_response(scoped),
-                    "coursebook.plan.validate": support_response(validation_pass()),
+                    "coursebook.plan.validate": validation_responder(
+                        support_response, validation_pass()
+                    ),
                 }
             ),
             seam,
@@ -853,10 +890,16 @@ class PlanJobTest(GenerationTestBase):
     def test_validator_cannot_pass_with_a_failed_criterion(self) -> None:
         tampered = fixture("validation_pass")
         tampered["criteria"][3]["verdict"] = "fail"  # answer_uniqueness
+
+        def tampered_answer(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
+            return response(narrowed_validation_answer(request, tampered), model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(tampered, model="fake-validator"),
+                "coursebook.plan.validate": tampered_answer,
             }
         )
         result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
@@ -864,17 +907,25 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(result["status"], "needs_review")
 
     def test_validator_must_answer_every_criterion(self) -> None:
-        partial = fixture("validation_pass")
-        partial["criteria"] = partial["criteria"][:5]
+        # H-192b/H-192c: a pass schema pins ``criteria`` to exactly the batch it was handed, so an
+        # answer that skips a criterion of its own pass is not a legal answer at all. The wide
+        # "validator omitted criteria" guard still exists for a merged report; a narrowed pass is
+        # rejected at parse time, before any report is merged.
+        def partial(request: gen.LLMRequest) -> gen.LLMResponse:
+            answer = json.loads(validation_from_fixture()(request).text)
+            answer["criteria"] = answer["criteria"][:-1]
+            return response(answer, model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(partial, model="fake-validator"),
+                "coursebook.plan.validate": partial,
             }
         )
-        with self.assertRaises(gen.GenerationRejected) as raised:
+        with self.assertRaises(gen.ModelOutputInvalid) as raised:
             gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
-        self.assertIn("omitted criteria", str(raised.exception))
+        self.assertIn("plan validation", str(raised.exception))
+        self.assertIn("criteria", str(raised.exception))
 
     def test_rejected_plan_regenerates_once_with_reasons_then_records_conflict(self) -> None:
         conflict = fixture("validation_pass")
@@ -895,12 +946,16 @@ class PlanJobTest(GenerationTestBase):
                 "reason": "conflict",
             }
         ]
+        def conflict_answer(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
+            document = _with_source(conflict, request)
+            return response(narrowed_validation_answer(request, document), model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(
-                    _with_source(conflict, request), model="fake-validator"
-                ),
+                "coursebook.plan.validate": conflict_answer,
             }
         )
         result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
@@ -1859,12 +1914,14 @@ class SourceTrustTest(GenerationTestBase):
         base = fixture("validation_pass")
 
         def unlinked(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
             ids = source_ids_from(request)
             document = json.loads(canonical_json(base).replace("SRC_ALPHA", ids[0]))
             for entry in document["claim_verdicts"]:
                 entry.pop("excerpt", None)
                 entry.pop("evidence_quote", None)
-            return response(document, model="fake-validator")
+            return response(narrowed_validation_answer(request, document), model="fake-validator")
 
         llm = FakeLLM(
             {
