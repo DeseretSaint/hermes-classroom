@@ -97,7 +97,9 @@ class ScriptedLLM:
         if request.purpose == "coursebook.plan.generate":
             return response(self.plan)
         if request.purpose == "coursebook.plan.validate":
-            return response(self.validation)
+            from tests.blueprint_support import narrowed_validation_answer
+
+            return response(narrowed_validation_answer(request, self.validation))
         raise AssertionError(f"unexpected provider call {request.purpose!r}")
 
 

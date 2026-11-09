@@ -175,6 +175,87 @@ def response(payload: dict, *, model: str = "fake-model") -> gen.LLMResponse:
     )
 
 
+def narrowed_validation_answer(request: gen.LLMRequest, document: dict[str, Any]) -> dict[str, Any]:
+    """Align a fixture's validation answer with the schema the pass was actually handed.
+
+    H-192b/H-192c split plan validation into bounded passes and narrow both ``criteria`` and
+    ``claim_verdicts`` to exactly the batch in the request (``minItems == maxItems``). A fixture
+    authored against the wide ten-criterion schema is therefore not a legal answer to a narrowed
+    pass: it returns ten criteria where five were asked for, and no claim verdict where one per
+    label is required. This derives both id sets from the request schema, keeps any verdict the
+    fixture already carries for an id in the batch, and fills the rest from the request's own
+    vocabulary — the same thing the live validator is told to do.
+    """
+    properties = (request.schema or {}).get("properties", {})
+    aligned = json.loads(json.dumps(document))
+
+    criteria_enum = (
+        (((properties.get("criteria") or {}).get("items") or {})
+         .get("properties", {}).get("id", {})).get("enum")
+        or []
+    )
+    if criteria_enum:
+        by_id = {
+            entry.get("id"): entry
+            for entry in aligned.get("criteria") or []
+            if isinstance(entry, dict)
+        }
+        aligned["criteria"] = [
+            by_id.get(criterion)
+            or {
+                "id": criterion,
+                "verdict": "pass",
+                "reason": "nothing in the artifact contradicts this criterion",
+            }
+            for criterion in criteria_enum
+        ]
+        rejections = aligned.get("rejections")
+        if isinstance(rejections, list):
+            # A rejection names a criterion, and the pass narrowed that vocabulary too: a batch
+            # may only reject inside its own batch.
+            aligned["rejections"] = [
+                entry
+                for entry in rejections
+                if not isinstance(entry, dict) or entry.get("criterion") in criteria_enum
+            ]
+
+    claim_enum = (
+        (((properties.get("claim_verdicts") or {}).get("items") or {})
+         .get("properties", {}).get("item", {})).get("enum")
+        or []
+    )
+    if claim_enum:
+        by_item = {
+            entry.get("item"): entry
+            for entry in aligned.get("claim_verdicts") or []
+            if isinstance(entry, dict)
+        }
+        aligned["claim_verdicts"] = [
+            by_item.get(label)
+            or {"item": label, "support": "unverified", "reason": "not assessed by this fixture"}
+            for label in claim_enum
+        ]
+    elif "claim_verdicts" in aligned:
+        # The pass schema carries no claim_verdicts and is additionalProperties: False.
+        aligned.pop("claim_verdicts")
+    return aligned
+
+
+def validation_responder(responder, document: dict[str, Any], *, model: str | None = None):
+    """Wrap a constant validation document in a responder aligned to the pass it answers.
+
+    H-192b/H-192c narrow each plan-validation pass to its own criteria and claim batch, so a
+    constant answer authored against the wide schema is not schema-valid for a narrowed pass.
+    This keeps the call sites' model naming while answering the request that was actually made.
+    """
+
+    def build(request: gen.LLMRequest):
+        aligned = narrowed_validation_answer(request, document)
+        return responder(aligned, model=model) if model else responder(aligned)
+
+    return build
+
+
 def validation_pass() -> dict[str, Any]:
     return {
         "verdict": "pass",
@@ -195,10 +276,12 @@ def validation_answer(request: gen.LLMRequest) -> dict[str, Any]:
 
     A claim-only pass has no criteria in its narrowed schema, so the ten-criterion document is not
     a legal answer for it; this derives the claim set from the request like the live validator.
+    A criteria pass may also own a claim batch, so the criteria answer is aligned to whatever the
+    schema narrowed to rather than assumed wide.
     """
     properties = (request.schema or {}).get("properties", {})
     if "criteria" in properties:
-        return validation_pass()
+        return narrowed_validation_answer(request, validation_pass())
     labels = (
         ((properties.get("claim_verdicts") or {}).get("items") or {})
         .get("properties", {})
