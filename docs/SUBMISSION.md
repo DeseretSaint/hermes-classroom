@@ -21,7 +21,9 @@ Every current-tree number in this file is re-derived there and checked by
 The tree carries `cb.rpc` v20 (73 declared methods, 73 handlers) and `cb.db` v12 (schema v12,
 migrations `0001`-`0012`): v20 is additive over v19 — `parent.blueprint.read` now returns the
 `sections[]` identity a fine-tune call needs (section id, objective, ordinal, title, lesson
-state/version, page hash) and adds no method — and v19 itself added the fine-tune commands
+state/version, page hash) and both it and `course.outline`'s `outline_plan` return the optional
+`plan.validation` approval provenance (the durable answer to "may this version be approved?") — and
+adds no method — and v19 itself added the fine-tune commands
 (`plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read`,
 `parent.final.approve`); v12 adds the two fine-tune ledgers (`plan_revisions`, `lesson_revisions`)
 in migration `0012_fine_tune_revisions`. The suite is `Ran 2242 tests … OK (skipped=1)` at the

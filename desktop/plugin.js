@@ -22387,7 +22387,10 @@ const PLAN_VALIDATION_LINES = Object.freeze({
   independent: 'Checked by a second model',
   same_model: 'Checked by the same model',
   unidentified: 'Checked by a model that could not be identified',
-  unrecorded: 'No validator record is stored for this version'
+  unrecorded: 'No validator record is stored for this version',
+  rejected: 'The validator refused this version',
+  manual: 'Edited by you; this version has no validator record',
+  stale: 'Its validation record covers earlier bytes'
 })
 
 /**
@@ -22437,6 +22440,57 @@ function planValidationModelName(identity) {
  */
 function planValidationView({ job, jobHint, plan, reading, learner }) {
   const planId = plan && plan.plan_id ? String(plan.plan_id) : null
+  // H-182/D3: the durable projection names this exact version's fate. It is read before either
+  // job line, so a refused or edited version never renders "no record" and a pass is never
+  // borrowed from a job that wrote a different version.
+  const durable = plan && plan.validation ? plan.validation : null
+  if (durable && durable.manual_authoring === true) {
+    return {
+      state: 'manual',
+      independence: 'unidentified',
+      outcome: durable.outcome || 'not_validated',
+      line: PLAN_VALIDATION_LINES.manual,
+      validatorModel: null,
+      generatorModel: null,
+      factsUnverified: Boolean(durable.facts_unverified),
+      configure: false,
+      warning: null,
+      note: null,
+      detail: [
+        'This plan version was edited by its owner. Approval is a human review of that outline; nothing here claims a validation pass.'
+      ]
+    }
+  }
+  if (durable && durable.reason === 'plan_validation_stale') {
+    return {
+      state: 'stale',
+      independence: 'unidentified',
+      outcome: durable.outcome || null,
+      line: PLAN_VALIDATION_LINES.stale,
+      validatorModel: null,
+      generatorModel: null,
+      factsUnverified: Boolean(durable.facts_unverified),
+      configure: false,
+      warning: null,
+      note: null,
+      detail: ['The plan changed after it was validated, so the recorded pass covers different bytes.']
+    }
+  }
+  if (durable && (durable.verdict === 'reject' || durable.outcome === 'rejected')) {
+    return {
+      state: 'rejected',
+      independence: durable.independence || 'unidentified',
+      outcome: 'rejected',
+      line: PLAN_VALIDATION_LINES.rejected,
+      validatorModel: null,
+      generatorModel: null,
+      factsUnverified: Boolean(durable.facts_unverified),
+      configure: false,
+      warning: null,
+      note: null,
+      detail: ['The stored record for this version is a refusal; the review panel above explains it.']
+    }
+  }
   const sources = [job, jobHint].filter(Boolean)
   let checkpoint = null
   let mismatched = false
@@ -22451,6 +22505,32 @@ function planValidationView({ job, jobHint, plan, reading, learner }) {
     break
   }
   if (!checkpoint) {
+    // A durable pass still names who checked this version even when the job line is no longer on
+    // the page (jobs.list is bounded). The independence is the stored one, never upgraded here.
+    if (durable && durable.approvable === true && durable.source && durable.source !== 'manual') {
+      const independence = durable.independence || 'unidentified'
+      const configure = !learner && (independence === 'same_model' || independence === 'unidentified')
+      const detail = [
+        VALIDATION_OUTCOME_COPY[durable.outcome] || 'The stored record passed this version.',
+        'The job line for this run is no longer on the page; this comes from the stored record.'
+      ]
+      if (configure) detail.push(PLAN_VALIDATION_SETTINGS_HINT)
+      return {
+        state: independence,
+        independence,
+        outcome: durable.outcome || null,
+        line: PLAN_VALIDATION_LINES[independence],
+        validatorModel: null,
+        generatorModel: null,
+        factsUnverified: Boolean(durable.facts_unverified),
+        configure,
+        warning: null,
+        note: durable.facts_unverified
+          ? 'The facts were not checked against sources, so this is not factual verification.'
+          : null,
+        detail
+      }
+    }
     // While the owning job is still being read, stay silent rather than claim "no record".
     if (reading && !mismatched) return null
     return {
@@ -22571,22 +22651,53 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
  * The rejection review model. `null` means there is nothing to repair: the job is still running,
  * it finished with a usable draft, or it failed in a way a fresh job cannot repeat.
  */
-function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
-  if (!job || !job.state) return null
-  const checkpoint = job.checkpoint || {}
-  const validation = checkpoint.validation || {}
-  const reasons = Array.isArray(checkpoint.rejection_reasons) ? checkpoint.rejection_reasons : []
-  const failedRun = PLAN_RUN_TERMINAL_FAILURE.has(job.state)
-  const validatorRejected =
-    checkpoint.validation_verdict === 'reject' ||
-    validation.outcome === 'rejected' ||
-    (checkpoint.generation_state === 'needs_review' && checkpoint.validation_verdict === 'reject')
+function planRejectView({ job, plan, planValidation, objectiveCount, surface, goal, title }) {
+  const planId = plan && plan.plan_id ? String(plan.plan_id) : null
+  const checkpoint = (job && job.checkpoint) || {}
+  const checkpointPlanId = checkpoint.plan_id ? String(checkpoint.plan_id) : null
+  // A job explains only the plan version it wrote. After "Try again" the screen polls the *new*
+  // job, which has no checkpoint yet; reading the old job's refusal through it is how the panel
+  // used to disappear and reveal an Approve control for the rejected draft. The durable
+  // `plan.validation` projection is the authority for the version on screen, and a job from
+  // another version never contributes reasons.
+  const jobBelongsToPlan = !planId || !checkpointPlanId || checkpointPlanId === planId
+  const validation = (jobBelongsToPlan && checkpoint.validation) || {}
+  const jobReasons =
+    jobBelongsToPlan && Array.isArray(checkpoint.rejection_reasons) ? checkpoint.rejection_reasons : []
+  const stored = planValidation || null
+  // Only a recorded refusal is a rejection. A version with no record of its own (a carried
+  // replan, or a draft whose job line is gone) is *not approvable*, but it was not rejected and
+  // must not borrow this panel's copy. The durable projection wins over the job line: after an
+  // edit the job still carries the pre-edit refusal, while the stored record is the parent's
+  // manual decision and the panel must step away.
+  const durableRefusal = Boolean(
+    stored &&
+      (stored.verdict === 'reject' ||
+        (!stored.verdict && stored.manual_authoring !== true && stored.outcome === 'rejected'))
+  )
+  const jobRefusal = Boolean(
+    jobBelongsToPlan && (checkpoint.validation_verdict === 'reject' || validation.outcome === 'rejected')
+  )
+  const validatorRejected = durableRefusal || (jobRefusal && !stored)
+  // Reasons travel only with a refusal record; a manual or carried version keeps its history in
+  // the document, not in a panel that would claim it is still refused.
+  const storedReasons = durableRefusal && stored && Array.isArray(stored.reasons) ? stored.reasons : []
+  const reasons = jobReasons.length > 0 ? jobReasons : storedReasons
+  const failedRun = Boolean(
+    job &&
+      job.state &&
+      PLAN_RUN_TERMINAL_FAILURE.has(job.state) &&
+      (!jobBelongsToPlan || !planId || !checkpointPlanId || checkpointPlanId === planId)
+  )
   if (!failedRun && !validatorRejected) return null
 
   const learner = surface === 'learner'
-  const goalText = String(goal || (job.brief && job.brief.goal) || '').trim()
+  const goalText = String(goal || (job && job.brief && job.brief.goal) || '').trim()
   const titleText = String(title || '').trim()
   const spoken = goalText ? `“${goalText}”` : titleText ? `“${titleText}”` : 'this course'
+  // H-182/D2: a retry that the backend answered by replaying the stored draft is named as such.
+  // The renderer never repeats the old "research another pass" claim for a reused result.
+  const replayed = checkpoint.reused === true
 
   if (failedRun) {
     const cancelled = job.state === 'cancelled'
@@ -22641,13 +22752,23 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
       where: 'The whole plan: no objective was written',
       action: learner
         ? { id: 'change_goal', label: 'Change the goal' }
-        : { id: 'try_again', label: 'Try again' }
+        : { id: 'try_again', label: 'Try again' },
+      secondary: null
     },
     unsourced: {
       title: 'The plan could not show where its facts came from',
-      body: `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. The draft is saved, so nothing is lost; running the same brief gives research another pass, and no lesson is written until this check clears.`,
+      body: replayed
+        ? `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. This run returned the draft that was already refused instead of starting a new attempt, so nothing about it changed; the draft is saved and nothing was lost.`
+        : `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. The draft is saved, so nothing is lost. ${
+            learner
+              ? 'Trying again runs the research pass again and writes a new plan version; if the sources still do not cover it, this same check refuses the new attempt.'
+              : 'Run research again to start a new attempt — it runs the research pass from scratch and writes a new plan version, never this draft again — or edit the objectives to what the sources you have can actually support, then approve that as your own plan.'
+          }`,
       where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
-      action: { id: 'try_again', label: 'Try again' }
+      action: learner
+        ? { id: 'try_again', label: 'Try again' }
+        : { id: 'edit_plan', label: 'Edit the plan' },
+      secondary: learner ? null : { id: 'try_again', label: 'Run research again' }
     },
     structural: {
       title: 'The outline does not fit together yet',
@@ -22655,7 +22776,8 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
       where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
       action: learner
         ? { id: 'try_again', label: 'Try again' }
-        : { id: 'edit_plan', label: 'Edit the plan' }
+        : { id: 'edit_plan', label: 'Edit the plan' },
+      secondary: learner ? null : { id: 'try_again', label: 'Run research again' }
     }
   }
   const copy = models[kind]
@@ -22674,6 +22796,7 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
     where: copy.where,
     detail,
     action: copy.action,
+    secondary: copy.secondary || null,
     draftKept: Boolean(plan),
     reasons: reasons.map(plainPlanReason)
   }
@@ -22710,12 +22833,23 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
       }),
       jsx('div', {
         className: 'flex flex-wrap items-center gap-2',
-        children: jsx(CbAction, {
-          variant: 'primary',
-          disabled: busy,
-          onClick: onAction,
-          children: busy ? 'Starting' : model.action.label
-        })
+        children: [
+          jsx(CbAction, {
+            variant: 'primary',
+            disabled: busy,
+            onClick: () => onAction(model.action.id),
+            children: busy ? 'Starting' : model.action.label
+          }),
+          model.secondary && !busy
+            ? jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'text',
+                'data-cb-plan-reject-secondary': model.secondary.id,
+                onClick: () => onAction(model.secondary.id),
+                children: model.secondary.label
+              })
+            : null
+        ]
       }),
       error ? jsx('div', { children: error }) : null,
       jsxs('details', {
@@ -23992,9 +24126,18 @@ function StudioPlanView({
   // Editing changes the draft the refusal was about. Once an edit is saved the panel steps away:
   // approval is then a deliberate human decision on a different outline, not a silent retry.
   const [rejectionHandled, setRejectionHandled] = useState(false)
+  // H-182/D3: approvability is a durable backend fact about *this version*, read from the same
+  // gate `plan.approve` fences on. It is never inferred from whichever job line is being polled:
+  // that inference is what rendered an Approve control for a rejected draft while a retry ran.
+  const planValidation =
+    (book && book.data && book.data.plan && book.data.plan.validation) ||
+    (plan && plan.validation) ||
+    null
+  const approvable = Boolean(planValidation && planValidation.approvable === true)
   const rejection = planRejectView({
     job: planRun,
     plan,
+    planValidation,
     objectiveCount: objectives.length,
     surface,
     goal:
@@ -24140,7 +24283,19 @@ function StudioPlanView({
     let hash = planHash
     if (supported('parent.blueprint.read')) {
       const fresh = await rpc('parent.blueprint.read', { course_id: course.course_id })
-      const freshHash = fresh && fresh.ok && fresh.result && fresh.result.plan ? fresh.result.plan.plan_hash : null
+      const freshPlan = fresh && fresh.ok && fresh.result && fresh.result.plan ? fresh.result.plan : null
+      // H-182/D3 belt: the same read carries the durable gate. A version the backend says is not
+      // approvable is never sent to `plan.approve` from this screen.
+      if (freshPlan && freshPlan.validation && freshPlan.validation.approvable !== true) {
+        setBusy(false)
+        setError(
+          freshPlan.validation.reason === 'plan_validation_stale'
+            ? 'This version changed after it was validated, so approval is withheld. Re-read the plan or run a new version.'
+            : 'This version has no passing validation record, so approval is withheld. Repair the plan above or run a new version.'
+        )
+        return
+      }
+      const freshHash = freshPlan ? freshPlan.plan_hash : null
       if (freshHash) hash = freshHash
     }
     if (!hash) {
@@ -24218,15 +24373,17 @@ function StudioPlanView({
     startEditing()
   }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
 
-  // H-103: the one repair action on a rejected plan.
+  // H-103/H-182: the repair actions on a rejected plan.
   //
-  // `edit_plan` opens the existing editor on this draft. `change_goal` hands the same choices back
-  // to the create form so a new goal is a new course, not a silent overwrite. `try_again` re-queues
-  // the brief the job itself stored under a key derived from that job, so a double click replays the
-  // same run and the rejected draft is never deleted.
-  const runPlanRepair = useCallback(async () => {
+  // `edit_plan` opens the existing editor on this draft, and saving is the parent's explicit
+  // manual decision: the plan is then approvable *as manual*, never as validated. `change_goal`
+  // hands the same choices back to the create form so a new goal is a new course, not a silent
+  // overwrite. `try_again` queues a new job from the brief this job stored; the backend no longer
+  // replays a rejected draft to a new job, so this is a real new attempt and the notice only
+  // claims a fresh run when the answer is actually a new job.
+  const runPlanRepair = useCallback(async (actionId) => {
     if (!shownRejection || rejectBusy) return
-    const action = shownRejection.action.id
+    const action = actionId || shownRejection.action.id
     if (action === 'edit_plan') {
       startEditing()
       return
@@ -24271,10 +24428,16 @@ function StudioPlanView({
       )
       return
     }
+    const newJobId = response.result && response.result.job_id
+    if (!newJobId || newJobId === source.job_id) {
+      // The backend replayed the refused run. Do not claim a fresh pass that did not start.
+      setRejectError('The planning service answered with the run that already finished, so nothing new started. The refused draft is unchanged; try again shortly.')
+      return
+    }
     // A new job id is a new attempt: the next click gets its own key instead of replaying this one.
-    retryPlanKey.current = { jobId: response.result.job_id, key: null }
-    setRetryPlanJobId(response.result.job_id)
-    setNotice('A fresh planning run started from the same brief. The rejected draft stays readable until a new plan replaces it.')
+    retryPlanKey.current = { jobId: newJobId, key: null }
+    setRetryPlanJobId(newJobId)
+    setNotice('A new planning run started from the same brief: research runs again and the draft it writes is a new version. The refused draft stays readable until a new plan replaces it.')
     if (onChanged) onChanged()
   }, [shownRejection, rejectBusy, startEditing, onChangeGoal, planRun, course, onChanged])
 
@@ -24381,9 +24544,10 @@ function StudioPlanView({
                 ? jsx(CbAction, { size: 'sm', variant: 'primary', disabled: busy, onClick: savePlan, children: busy ? 'Saving' : 'Save changes' })
                 : null,
               editing ? jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: cancelEditing, children: 'Cancel' }) : null,
-              isDraft && !editing
+              isDraft && !editing && approvable
                 ? jsx(CbAction, {
                     variant: 'primary',
+                    'data-cb-plan-approve': 'approvable',
                     disabled: busy || !supported('plan.approve') || Boolean(syllabusGate && syllabusGate.required && !syllabusGate.ready),
                     onClick: approvePlan,
                     children: 'Approve plan'
@@ -24427,6 +24591,24 @@ function StudioPlanView({
             reading: Boolean(activePlanJobId && !planRun),
             learner
           }),
+      shownRejection
+        ? null
+        : isDraft && !editing && !approvable
+          ? jsx('div', {
+              className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+              'data-cb-plan-approval-gate': (planValidation && planValidation.reason) || 'no_record',
+              children:
+                planValidation && planValidation.reason === 'plan_validation_stale'
+                  ? 'This version cannot be approved: it changed after its validation record was written, so that record covers different bytes. Run a new plan version, or edit the plan to take ownership of it as your own outline.'
+                  : planValidation && (planValidation.verdict === 'reject' || planValidation.outcome === 'rejected')
+                    ? 'This version cannot be approved: the validator refused it. Repair it above; approving a refused draft is never offered.'
+                    : planValidation && planValidation.manual_authoring === true
+                      ? 'This version was edited by you, so approval is a human review of your own outline; it is not presented as validated.'
+                      : planValidation && planValidation.verdict
+                        ? 'This version cannot be approved: no passing validation record is stored for it. Edit the plan to own it, or run a new plan version.'
+                        : 'Approval is withheld until this version has a validation record: a draft with no record is not approvable.'
+            })
+          : null,
       shownRejection
         ? null
         : jsx(QuietNote, {

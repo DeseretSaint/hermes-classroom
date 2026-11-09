@@ -4083,6 +4083,9 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "validation": {
+                        "$ref": "#/$defs/plan_validation"
                       }
                     },
                     "required": [
@@ -8197,6 +8200,128 @@
         }
       }
     },
+    "plan_validation": {
+      "type": "object",
+      "description": "H-182/D3 additive amendment: the durable answer to 'may `plan.approve` be pressed for this exact plan version?'. Computed by the same function the command fences on, so a review surface cannot fail open on a rejected or unvalidated draft, and an explicit manual authoring decision (`source: manual`) stays approvable as a human review — never as a validation claim.",
+      "additionalProperties": false,
+      "required": [
+        "approvable",
+        "source",
+        "verdict",
+        "outcome",
+        "independence",
+        "facts_unverified",
+        "reasons",
+        "reason",
+        "detail",
+        "manual_authoring"
+      ],
+      "properties": {
+        "approvable": {
+          "type": "boolean"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "generated_validated",
+                "model_assessed_pass",
+                "manual"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verdict": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "pass",
+                "reject",
+                "not_validated"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "independently_validated",
+                "model_assessed",
+                "rejected",
+                "not_validated"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "independence": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "independent",
+                "same_model",
+                "unidentified"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "facts_unverified": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "reason": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "plan_not_validated",
+                "plan_validation_stale"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "oneOf": [
+            {
+              "type": "string",
+              "maxLength": 500
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manual_authoring": {
+          "type": "boolean"
+        }
+      }
+    },
     "outline_plan": {
       "type": "object",
       "description": "The plan the outline is the index of: the same plan `library.list` counts an enrollment against (approved preferred, otherwise the highest version). A draft state is what the Plan tab shows the learner to approve; it is not an error.",
@@ -8242,6 +8367,9 @@
           "items": {
             "$ref": "#/$defs/outline_unit"
           }
+        },
+        "validation": {
+          "$ref": "#/$defs/plan_validation"
         }
       }
     },

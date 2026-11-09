@@ -207,6 +207,11 @@ class _Resolvers:
                     "validation_verdict": result.get("validation_verdict"),
                     "validation": result.get("validation"),
                     "approval_provenance": result.get("approval_provenance"),
+                    # H-182/D2: whether this run authored a new attempt or replayed a stored one,
+                    # and — when a rejected draft was deliberately not replayed — what was
+                    # declined. Plan review reads this instead of assuming a retry researched.
+                    "reused": bool(result.get("reused")),
+                    "reuse_declined": result.get("reuse_declined"),
                     # H-44: how the domain was chosen travels with the job, so a `general`
                     # fallback is visible on the run record rather than only in a log line.
                     "domain_provenance": result.get("domain_provenance"),

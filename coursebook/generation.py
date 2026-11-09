@@ -7650,22 +7650,41 @@ def run_plan_job(
             (course_id, fingerprint),
         ).fetchone()
     )
+    reuse_declined: dict[str, Any] | None = None
     if existing is not None:
         result = _load_json(existing["result_json"], {})
-        result["reused"] = True
-        if "validation" not in result:
-            # A result cached before H-15 carries no provenance. Derive it from the stored record;
-            # an unreadable identity stays ``unidentified`` and is never upgraded on reuse.
-            record = validation_record(connection, result.get("validation_id"))
-            result["validation"] = record
-            result["approval_provenance"] = {
-                "outcome": (record or {}).get("outcome"),
-                "independent": bool((record or {}).get("independent")),
-                "facts_unverified": bool((record or {}).get("facts_unverified")),
-                "needs_review": (record or {}).get("outcome") != OUTCOME_INDEPENDENT,
-                "warning": (record or {}).get("warning"),
-            }
-        return result
+        # H-182/D2: the cache answers a *job* replay, never a user's "Try again". A rejected
+        # draft used to be served to the next job verbatim, so the retry finished in seconds with
+        # the identical plan hash while the screen claimed research had run again. A new job id
+        # for the same brief is a new attempt: research runs again and a new plan version is
+        # written. The result that wrote *this* job, an explicit manual-authoring record, and any
+        # passing plan are still reusable (that is what keeps a reconnect free).
+        cached_job_id = str(result.get("job_id") or "")
+        cached_verdict = str(result.get("validation_verdict") or "")
+        cached_manual = result.get("manual_authoring") is True
+        same_job = bool(job_id) and cached_job_id == str(job_id)
+        if same_job or cached_manual or cached_verdict == "pass":
+            result["reused"] = True
+            if "validation" not in result:
+                # A result cached before H-15 carries no provenance. Derive it from the stored
+                # record; an unreadable identity stays ``unidentified`` and is never upgraded on
+                # reuse.
+                record = validation_record(connection, result.get("validation_id"))
+                result["validation"] = record
+                result["approval_provenance"] = {
+                    "outcome": (record or {}).get("outcome"),
+                    "independent": bool((record or {}).get("independent")),
+                    "facts_unverified": bool((record or {}).get("facts_unverified")),
+                    "needs_review": (record or {}).get("outcome") != OUTCOME_INDEPENDENT,
+                    "warning": (record or {}).get("warning"),
+                }
+            return result
+        reuse_declined = {
+            "reason": "rejected_draft_not_replayed",
+            "previous_plan_id": result.get("plan_id"),
+            "previous_job_id": cached_job_id or None,
+            "previous_validation_verdict": cached_verdict or None,
+        }
 
     try:
         # The depth dial and declared scope choose the executable research cell (H-04). A caller
@@ -7886,6 +7905,10 @@ def run_plan_job(
             # Always present, on both paths: a caller must be able to tell a fresh author from a
             # reuse without a ``KeyError``. (CB-011: the cache path set this; the author path did not.)
             "reused": False,
+            # H-182/D2: present only when a rejected draft was deliberately not replayed. It names
+            # what was declined so a reviewer can tell "research ran again" from "the old answer
+            # came back".
+            "reuse_declined": reuse_declined,
             "validation_id": None,
             "validation_verdict": verdict["verdict"],
             "plan_schema": plan.get("plan_schema"),
