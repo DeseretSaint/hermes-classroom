@@ -1,0 +1,91 @@
+{
+  "card": "GM-013",
+  "variant": "specimen",
+  "sentinel": "⟨answer-key⟩",
+  "pdfs": {
+    "a4": {
+      "path": "docs/gm-visual/print/pack-specimen-a4.pdf",
+      "sha256": "9d58dd5d4c17f10109afdcb703951723248670ff76f4156eb6a1a24c3e610798",
+      "bytes": 242434,
+      "pages": 5,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sentinel_pages": [
+        3
+      ],
+      "per_page": [
+        {
+          "page": 1,
+          "chars": 756,
+          "has_sentinel": false
+        },
+        {
+          "page": 2,
+          "chars": 518,
+          "has_sentinel": false
+        },
+        {
+          "page": 3,
+          "chars": 461,
+          "has_sentinel": true
+        },
+        {
+          "page": 4,
+          "chars": 674,
+          "has_sentinel": false
+        },
+        {
+          "page": 5,
+          "chars": 596,
+          "has_sentinel": false
+        }
+      ]
+    },
+    "letter": {
+      "path": "docs/gm-visual/print/pack-specimen-letter.pdf",
+      "sha256": "a8c5970b6b9bad508c703939b66814b3e337304e040d7563b991ae4bc0601650",
+      "bytes": 243076,
+      "pages": 5,
+      "page_size": "612 x 792 pts (letter)",
+      "sentinel_pages": [
+        3
+      ],
+      "per_page": [
+        {
+          "page": 1,
+          "chars": 756,
+          "has_sentinel": false
+        },
+        {
+          "page": 2,
+          "chars": 518,
+          "has_sentinel": false
+        },
+        {
+          "page": 3,
+          "chars": 461,
+          "has_sentinel": true
+        },
+        {
+          "page": 4,
+          "chars": 674,
+          "has_sentinel": false
+        },
+        {
+          "page": 5,
+          "chars": 596,
+          "has_sentinel": false
+        }
+      ]
+    }
+  },
+  "page_images": [
+    "docs/gm-visual/print/page-1.png",
+    "docs/gm-visual/print/page-2.png",
+    "docs/gm-visual/print/page-3.png",
+    "docs/gm-visual/print/page-4.png",
+    "docs/gm-visual/print/page-5.png"
+  ],
+  "page_image_count": 5,
+  "answer_key_separated": true,
+  "html_sha256": "f20d3d41696e84afa43c4d997cceeff4c396dc63af483324dd7eb455ad0311d1"
+}

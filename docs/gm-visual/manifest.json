@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "card": "GM-013",
+  "lane": "host-composed reference boards",
+  "palette_source": "contracts/cb.tokens.v2.json",
+  "palette_tokens_used": [
+    "paper",
+    "paper-raised",
+    "ink",
+    "ink-soft",
+    "rule",
+    "lamp",
+    "lamp-soft",
+    "accent"
+  ],
+  "rules": {
+    "text": "no <text> element in any plate",
+    "state_hues_forbidden": [
+      "ochre",
+      "coral",
+      "plum"
+    ],
+    "model_call": "none",
+    "licence": "CC0-1.0 (our own work)",
+    "role": "orientation"
+  },
+  "boards": {
+    "japanese-lantern-district.svg": {
+      "sha256": "05eb83c0d820914f94a6d49f3a9afa99864c078b4c8e9bcddda7c76510d29af4",
+      "bytes": 2232,
+      "width": 640,
+      "height": 360,
+      "role": "orientation",
+      "produced_by": "scripts/build_gm_visual_assets.py",
+      "model": null,
+      "prompt": null,
+      "licence": "CC0-1.0",
+      "note": "Japanese L0 course world — lantern district / cafe lesson. Grammar field_atlas (lantern variant). Motifs: paper lantern with ink cap and one horizontal rib; cafe counter edge with two stools; noren doorway panel; cup with steam. Textless; orientation only."
+    },
+    "head-gasket-service-bay.svg": {
+      "sha256": "87f7cfb069f345d32031cd166b8715e88bcb6b92639e8a05080c0c40c2c4a977",
+      "bytes": 2372,
+      "width": 640,
+      "height": 360,
+      "role": "orientation",
+      "produced_by": "scripts/build_gm_visual_assets.py",
+      "model": null,
+      "prompt": null,
+      "licence": "CC0-1.0",
+      "note": "Head gasket course world — service bay / workshop manual. Grammar workshop_manual. Motifs: two-post lift and crossbeam; tool wall with wrench silhouettes; component tray with gasket ring; open blank shop manual. Textless; never a torque, clearance or sequence authority."
+    },
+    "astronomy-observatory.svg": {
+      "sha256": "2670d8a2539b4e10af447567a19c242f979862c07c2505850064fd753de778f7",
+      "bytes": 2483,
+      "width": 640,
+      "height": 360,
+      "role": "orientation",
+      "produced_by": "scripts/build_gm_visual_assets.py",
+      "model": null,
+      "prompt": null,
+      "licence": "CC0-1.0",
+      "note": "Astronomy course world — observatory. Grammar observatory. Motifs: dome slit and telescope on a pier; plotted star-chart grid with one circle mark; horizon line. Textless; the chart is decorative, never a measurement."
+    },
+    "sourdough-kitchen-table.svg": {
+      "sha256": "2e489b92bdb1eee3ead6549b0431a4c7349f67d06498c1826735ef626f18809b",
+      "bytes": 1815,
+      "width": 640,
+      "height": 360,
+      "role": "orientation",
+      "produced_by": "scripts/build_gm_visual_assets.py",
+      "model": null,
+      "prompt": null,
+      "licence": "CC0-1.0",
+      "note": "Sourdough course world — kitchen table. Grammar kitchen_table. Motifs: coiled banneton with three arcs; scored dough dome; bench scraper; linen fold and stoneware jars. Textless; no temperature, timing or recipe value."
+    },
+    "anti-generic-swap.svg": {
+      "sha256": "f80714e03fde69ea3ac71a33d8d3b2ce6617b7180e429f7cec2b8ab429f46251",
+      "bytes": 2885,
+      "width": 640,
+      "height": 430,
+      "role": "review-instrument",
+      "produced_by": "scripts/build_gm_visual_assets.py",
+      "model": null,
+      "prompt": null,
+      "licence": "CC0-1.0",
+      "note": "Anti-generic swap instrument: the Japanese plate beside the same composition with head-gasket motifs. A diagram, not a plate; labels are allowed here only."
+    }
+  }
+}

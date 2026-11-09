@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>GM-013 subject-world boards</title>
+<style>
+  body { margin:0; background:#f7f1e4; color:#1a1713;
+         font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { width:1320px; padding:24px; }
+  h1 { font-family: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif;
+       font-size:28px; font-weight:600; margin:0 0 4px; }
+  p.note { font-size:13px; color:#5c5347; margin:0 0 20px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+  .card { border:1px solid #d7cbb4; background:#fffcf3; padding:12px; }
+  .card h2 { font-family: ui-serif, Georgia, serif; font-size:16px; font-weight:600; margin:0 0 8px; }
+  .card img { width:100%; display:block; }
+  .card p { font-size:12px; color:#5c5347; margin:8px 0 0; line-height:1.45; }
+  .full { grid-column: 1 / -1; }
+</style></head>
+<body><div class="wrap">
+  <h1>GM-013 subject-world reference boards</h1>
+  <p class="note">Host-composed from <code>contracts/cb.tokens.v2.json</code>. No model call, no stock art, no text in a plate. Plates are orientation only.</p>
+  <div class="grid">
+    <div class="card"><h2>Japanese L0 — lantern district / cafe</h2><img src="japanese-lantern-district.svg" alt=""><p>field_atlas (lantern variant). Lantern with ink cap and rib; counter and stools; noren; cup and steam.</p></div>
+    <div class="card"><h2>Head gasket — service bay / workshop manual</h2><img src="head-gasket-service-bay.svg" alt=""><p>workshop_manual. Lift and crossbeam; tool wall; component tray with gasket ring; blank manual. No torque or sequence.</p></div>
+    <div class="card"><h2>Astronomy — observatory</h2><img src="astronomy-observatory.svg" alt=""><p>observatory. Dome slit and telescope; plotted chart; horizon. The chart is decorative, never a measurement.</p></div>
+    <div class="card"><h2>Sourdough — kitchen table</h2><img src="sourdough-kitchen-table.svg" alt=""><p>kitchen_table. Banneton coils; scored dough; scraper; linen and jars. No temperature or recipe value.</p></div>
+    <div class="card full"><h2>Anti-generic swap check</h2><img src="anti-generic-swap.svg" alt=""><p>The same composition with the subject swapped. If plate B still reads as Japanese, the plate is rejected.</p></div>
+  </div>
+</div></body></html>
