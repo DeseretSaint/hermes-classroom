@@ -102,7 +102,10 @@ def _validator_status() -> dict[str, Any]:
     The values come from ``generation.validator_config()`` — the same settings ``register`` used
     to bind the route. This says nothing about whether the provider answered; a configured route
     still fails loudly at call time if the host trust gate refuses the override. Read locally: no
-    secret is involved, and the block is exactly ``{configured, provider, model, reason}``.
+    secret is involved, and the block is exactly
+    ``{configured, provider, model, reason, output_bound}``. ``output_bound`` is the declared
+    validator output cap (H-192c): ``registered`` is false when the host would not accept the
+    auxiliary task, which means no cap is applied.
     """
     try:
         from . import generation
@@ -113,6 +116,7 @@ def _validator_status() -> dict[str, Any]:
             "provider": config.get("provider"),
             "model": config.get("model"),
             "reason": str(config.get("reason") or ""),
+            "output_bound": dict(config.get("output_bound") or {}),
         }
     except Exception as exc:  # noqa: BLE001 - a status read must never take the tool down
         return {

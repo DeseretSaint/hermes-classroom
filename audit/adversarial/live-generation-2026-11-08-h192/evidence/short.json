@@ -1,0 +1,149 @@
+{
+  "course": {
+    "course_id": "crs_3bcd33762ab349b9bf56be23fa927efa",
+    "plan_id": "pln_30f450b8781b4ffc91d2fd248fcf13e8",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_62cc1fa7fa744776aefc2451cb6d1e0d",
+    "revision": 0
+  },
+  "finished_at": "2026-11-08T22:59:42Z",
+  "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_30f450b8781b4ffc91d2fd248fcf13e8\"}}",
+      "generation_digest": "sha256:0840bd77b2db13cdb589dfaa11d7827d136ba6500adea26ec7b168c3368e0f21",
+      "kernel_digest": "sha256:0840bd77b2db13cdb589dfaa11d7827d136ba6500adea26ec7b168c3368e0f21",
+      "kernel_digest_source": "parent.blueprint.read",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-08T22:59:42Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-08T22:59:42Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-08T22:59:42Z"
+    },
+    "plan": {
+      "elapsed_s": 1145.5,
+      "facts": {
+        "approved_at": null,
+        "generation": null,
+        "objectives": [],
+        "plan_hash": "sha256:0840bd77b2db13cdb589dfaa11d7827d136ba6500adea26ec7b168c3368e0f21",
+        "plan_id": "pln_30f450b8781b4ffc91d2fd248fcf13e8",
+        "plan_state": "draft",
+        "units": []
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_7ac6773c590940f79de35e54c703c82c",
+        "brief": {
+          "course_id": "crs_3bcd33762ab349b9bf56be23fa927efa",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_62cc1fa7fa744776aefc2451cb6d1e0d",
+          "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+          "recipe": "committed",
+          "scope": "short",
+          "stage": "plan",
+          "subject_domain": "general"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {},
+        "created_at": "2026-11-08T22:40:36Z",
+        "error": null,
+        "job_id": "job_1007fea8914c45f2b9529a8c966a83be",
+        "kind": "plan",
+        "lease": {
+          "expires_at": "2026-11-08T23:00:37Z",
+          "owner": "worker-5dbb704a380e"
+        },
+        "operation_id": "h187-jobs-create-1794177636918279427",
+        "progress": {
+          "message": "",
+          "stage": "queued",
+          "steps_done": 0,
+          "steps_total": null
+        },
+        "state": "running",
+        "updated_at": "2026-11-08T22:58:37Z"
+      },
+      "job_id": "job_1007fea8914c45f2b9529a8c966a83be",
+      "label": "plan",
+      "pump": {
+        "bound_exceeded": true,
+        "cancel": {
+          "job_id": "job_1007fea8914c45f2b9529a8c966a83be",
+          "state": "cancel_requested"
+        }
+      },
+      "started_at": "2026-11-08T22:40:36Z",
+      "terminal_state": "running",
+      "thread_alive": true,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_1007fea8914c45f2b9529a8c966a83be",
+    "state": "queued"
+  },
+  "recipe": "committed",
+  "schema_version": 11,
+  "scope": "short",
+  "started_at": "2026-11-08T22:40:36Z",
+  "subject_domain": "general",
+  "tag": "short",
+  "title": "Plan and cook a high-protein week",
+  "total_elapsed_s": 1146.0,
+  "usage": {
+    "events": [],
+    "totals": {
+      "by_model": {},
+      "calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}

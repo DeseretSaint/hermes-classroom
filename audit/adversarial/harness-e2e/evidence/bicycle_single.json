@@ -31,7 +31,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "000000000000001d",
+      "lesson_id": "000000000000001e",
       "page": {
         "check": {
           "assistance_policy": {
@@ -97,7 +97,7 @@
           ]
         }
       },
-      "section_id": "0000000000000017",
+      "section_id": "0000000000000018",
       "state": "validated"
     }
   ],
@@ -112,15 +112,15 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v9",
+      "prompt_version": "plan-prompt.v11",
       "warning": null
     },
     "attempt_rows": [
       {
-        "check_id": "000000000000001e",
+        "check_id": "000000000000001f",
         "evidence_class": "self_reported",
         "grading_provenance_json": "{\"confirmed_items\":3,\"declared_items\":3,\"grader\":\"provider-free:confirmation\",\"reference_sha256\":\"sha256:c9f28941ee122f56fd10f7feabd55f3e9e7dd93b9578ffa9ce14457718805d39\"}",
-        "id": "att_00000000000000000000000000000026",
+        "id": "att_00000000000000000000000000000027",
         "state": "committed",
         "verdict": "pass"
       }
@@ -148,7 +148,7 @@
     "plan_scope": "single",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v9",
+    "prompt_version": "plan-prompt.v11",
     "schema_name": "coursebook_plan_v2",
     "sections": 1,
     "units": 1,
@@ -302,7 +302,7 @@
     },
     "grading": [
       {
-        "check_id": "000000000000001e",
+        "check_id": "000000000000001f",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -313,9 +313,9 @@
         "submit": {
           "contract_version": 20,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000025",
+          "operation_id": "op-h40-attempt-submit-000026",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000026",
+            "attempt_id": "att_00000000000000000000000000000027",
             "criteria": [
               {
                 "id": "item_1",
@@ -349,7 +349,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "000000000000001e",
+          "check_id": "000000000000001f",
           "evidence_target": "procedure",
           "state": "open",
           "version": 1
@@ -372,7 +372,7 @@
             "source_ids": []
           },
           {
-            "check_id": "000000000000001e",
+            "check_id": "000000000000001f",
             "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel. Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so the hand check stays the last step.",
             "headline": "Seat the bead, then check the brakes",
             "id": "blk_3cc7cf2f48c0416a82be",
@@ -402,10 +402,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "000000000000001e",
-        "content_hash": "sha256:b1a250a6bb9b3d3a9a3fd68ec1d91c2a6bcec472f9864708c868fd82461222e8",
+        "check_id": "000000000000001f",
+        "content_hash": "sha256:cbfd2848a4525095251fdab59a96ca1e6ff80e15dbce3a37dbb273832e094e3a",
         "direction": "ltr",
-        "document_id": "doc_b1a250a6bb9b3d3a9a3f",
+        "document_id": "doc_cbfd2848a4525095251f",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -471,13 +471,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000001c",
+          "job_id": "job_0000000000000000000000000000001d",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000001e",
+              "check_id": "000000000000001f",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -485,9 +485,9 @@
                 "prompt_version": "lesson-prompt.v10",
                 "provider": "recorded"
               },
-              "lesson_id": "000000000000001d",
+              "lesson_id": "000000000000001e",
               "reused": false,
-              "section_id": "0000000000000017",
+              "section_id": "0000000000000018",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -511,7 +511,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000001f",
+              "validation_id": "0000000000000020",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -620,7 +620,7 @@
           1,
           1
         ],
-        "prompt_version": "plan-prompt.v9",
+        "prompt_version": "plan-prompt.v11",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -647,7 +647,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v9",
+          "prompt_version": "plan-prompt.v11",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -662,7 +662,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v9",
+          "prompt_version": "plan-prompt.v11",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -707,22 +707,22 @@
               "unknown_cost": false
             },
             "coursebook.plan.validate": {
-              "calls": 1,
+              "calls": 2,
               "cost_usd": 0.0,
               "unknown_cost": false
             }
           },
-          "calls": 2,
+          "calls": 3,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 2146,
-          "output_tokens": 740,
+          "input_tokens": 3221,
+          "output_tokens": 814,
           "unknown_calls": 0,
           "unknown_cost": false
         },
         "validation": {
           "cost": {
-            "calls": 1,
+            "calls": 2,
             "cost_usd": 0.0,
             "unknown_cost": false
           },
@@ -793,7 +793,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000016",
+          "job_id": "job_00000000000000000000000000000017",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 1,
@@ -803,7 +803,7 @@
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000017"
+            "0000000000000018"
           ],
           "sections": 1,
           "stage": "unit_sections",
@@ -830,12 +830,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1442,
+            "input_tokens": 1049,
             "output_tokens": 431,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000018",
+          "validation_id": "0000000000000019",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1

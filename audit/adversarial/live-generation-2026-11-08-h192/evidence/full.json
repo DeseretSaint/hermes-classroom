@@ -1,0 +1,246 @@
+{
+  "course": {
+    "course_id": "crs_8e23cfc5ee9c4a8f979391d42c0cd022",
+    "plan_id": "pln_ae198934f7b142f8a8098bd4329b4424",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "deep",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_ffe1e91e8b904a07b5cb2de491bb1c39",
+    "revision": 0
+  },
+  "finished_at": "2026-11-08T22:58:27Z",
+  "goal": "Read a business report statistically: averages, spread, sampling and correlation",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_ae198934f7b142f8a8098bd4329b4424\"}}",
+      "generation_digest": "sha256:0bc7568f934563fc9c3307a1ebaef98ea12ffd098bc266ee0eafc4e46d73a9d4",
+      "kernel_digest": "sha256:0bc7568f934563fc9c3307a1ebaef98ea12ffd098bc266ee0eafc4e46d73a9d4",
+      "kernel_digest_source": "parent.blueprint.read",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-08T22:58:27Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-08T22:58:27Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-08T22:58:27Z"
+    },
+    "plan": {
+      "elapsed_s": 1070.5,
+      "facts": {
+        "approved_at": null,
+        "generation": null,
+        "objectives": [],
+        "plan_hash": "sha256:0bc7568f934563fc9c3307a1ebaef98ea12ffd098bc266ee0eafc4e46d73a9d4",
+        "plan_id": "pln_ae198934f7b142f8a8098bd4329b4424",
+        "plan_state": "draft",
+        "units": []
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_bf8593b0a4ae42158f4fa7e4b169fb8c",
+        "brief": {
+          "course_id": "crs_8e23cfc5ee9c4a8f979391d42c0cd022",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "deep",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_ffe1e91e8b904a07b5cb2de491bb1c39",
+          "goal": "Read a business report statistically: averages, spread, sampling and correlation",
+          "recipe": "committed",
+          "scope": "full",
+          "stage": "plan",
+          "subject_domain": "mathematics"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {},
+        "created_at": "2026-11-08T22:40:36Z",
+        "error": {
+          "category": "capability",
+          "code": "HOST_UNAVAILABLE",
+          "details": {
+            "deadline_s": 600.0,
+            "duration_ms": 927035,
+            "purpose": "coursebook.plan.validate"
+          },
+          "message": "coursebook.plan.validate took 927035ms, over its 600.0s deadline",
+          "retryable": true
+        },
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h187-jobs-create-1794177636899702568",
+        "progress": {
+          "message": "",
+          "stage": "queued",
+          "steps_done": 0,
+          "steps_total": null
+        },
+        "state": "failed",
+        "updated_at": "2026-11-08T22:58:26Z"
+      },
+      "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+      "label": "plan",
+      "pump": {
+        "done_at_s": 1070.0,
+        "finished": [
+          "job_71fb411f378e4f0184e77334364da3cc"
+        ]
+      },
+      "started_at": "2026-11-08T22:40:36Z",
+      "terminal_state": "failed",
+      "thread_alive": false,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 1070.5,
+          "message": "",
+          "stage": "queued",
+          "state": "failed"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+    "state": "queued"
+  },
+  "recipe": "committed",
+  "schema_version": 11,
+  "scope": "full",
+  "started_at": "2026-11-08T22:40:36Z",
+  "subject_domain": "mathematics",
+  "tag": "full",
+  "title": "Practical statistics for business reports",
+  "total_elapsed_s": 1071.0,
+  "usage": {
+    "events": [
+      {
+        "duration_ms": 83045,
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:26Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 9254,
+          "output_tokens": 17006,
+          "prompt_version": "plan-prompt.v11",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 31691,
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:26Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 11521,
+          "output_tokens": 2388,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 183949,
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:26Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 11616,
+          "output_tokens": 11893,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 258581,
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:26Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 11970,
+          "output_tokens": 2868,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 927035,
+        "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:26Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 11975,
+          "output_tokens": 19739,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      }
+    ],
+    "totals": {
+      "by_model": {
+        "nous/deepseek/deepseek-v4.1-flash-1017": {
+          "calls": 2,
+          "total_tokens": 0
+        },
+        "nous/z-ai/glm-5.3-flash": {
+          "calls": 3,
+          "total_tokens": 0
+        }
+      },
+      "calls": 5,
+      "input_tokens": 56336,
+      "output_tokens": 53894,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}
