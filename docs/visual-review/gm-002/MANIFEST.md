@@ -1,9 +1,14 @@
 # GM-002 evidence manifest — global Home and course-home split
 
-Branch: `wt/gm-002-home`   Commit: `PLACEHOLDER`   Captured: 2026-11-09   Captured by: `vellum`
+Branch: `wt/gm-002-home`   Commit: `7fcf352`   Captured: 2026-11-09   Captured by: `vellum`
 App build: the isolated Desktop window from `scripts/cb013-live-window.sh` with
 `desktop/plugin.js` copied from this commit (`plugin_sha256` in `live-evidence.json`).
 Viewports: 1049 / 900 / 460 CSS px · Modes: light, dark · Text scale: 100, 200
+
+Every frame below was re-captured at `plugin_sha256`
+`8fcd6ac7e6c89e2b4cabab6841b7cbcd4d2f3ee552afb4323aebe93050bdcbe7` after the shelf-copy
+guard in `7fcf352` (a card no longer repeats its own title or next step as a goal
+paragraph), so the packet is tied to the code it describes.
 
 The operator's installed Desktop plugin was **not** modified: the rig is a separate
 `COURSEBOOK_TEST_STATE` home with its own userdata and its own backend
