@@ -20,6 +20,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.desktop_node_modules import stage_desktop_node_modules, write_sdk_stub
 from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -417,17 +418,10 @@ class Harness(unittest.TestCase):
         cls.root = Path(cls.tmp.name)
         (cls.root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
         (cls.root / "harness.mjs").write_text(HARNESS, encoding="utf-8")
-        (cls.root / "node_modules").symlink_to(modules, target_is_directory=True)
-        sdk = cls.root / "node_modules" / "@hermes" / "plugin-sdk"
-        if sdk.exists():
-            for child in sdk.iterdir():
-                if child.is_file():
-                    child.unlink()
-        sdk.mkdir(parents=True, exist_ok=True)
-        (sdk / "package.json").write_text(
-            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
-        )
-        (sdk / "index.js").write_text(SETTINGS_SDK_STUB, encoding="utf-8")
+        # Private node_modules: the SDK stub must never be written through a
+        # symlink into the host's shared install (H-208 cross-suite flake).
+        stage_desktop_node_modules(cls.root)
+        write_sdk_stub(cls.root, SETTINGS_SDK_STUB)
 
     @classmethod
     def tearDownClass(cls) -> None:

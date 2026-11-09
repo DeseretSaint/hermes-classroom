@@ -20,6 +20,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.desktop_node_modules import stage_desktop_node_modules, write_sdk_stub
 from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -85,25 +86,17 @@ def _run() -> dict:
         root = Path(tmp)
         (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
         (root / "harness.mjs").write_text(HARNESS, encoding="utf-8")
-        (root / "node_modules").symlink_to(modules, target_is_directory=True)
-        sdk_dir = root / "node_modules" / "@hermes" / "plugin-sdk"
-        sdk_dir.mkdir(parents=True, exist_ok=True)
-        index_js = sdk_dir / "index.js"
-        index_js_original = index_js.read_text(encoding="utf-8") if index_js.exists() else None
-        index_js.write_text(STUB, encoding="utf-8")
-        try:
-            completed = subprocess.run(
-                ["node", "harness.mjs"],
-                cwd=root,
-                capture_output=True,
-                text=True,
-                timeout=180,
-            )
-        finally:
-            if index_js_original is None:
-                index_js.unlink(missing_ok=True)
-            else:
-                index_js.write_text(index_js_original, encoding="utf-8")
+        # Private node_modules: the SDK stub must never be written through a
+        # symlink into the host's shared install (H-208 cross-suite flake).
+        stage_desktop_node_modules(root)
+        write_sdk_stub(root, STUB)
+        completed = subprocess.run(
+            ["node", "harness.mjs"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
         if completed.returncode != 0:
             raise AssertionError(f"node harness failed:\n{completed.stdout}\n{completed.stderr}")
         return json.loads(completed.stdout)
