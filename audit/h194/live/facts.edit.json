@@ -1,0 +1,87 @@
+{
+  "phase": "edit",
+  "viewport": {
+    "width": 1280,
+    "height": 1200
+  },
+  "started_at": "2026-11-09T00:16:10.753Z",
+  "theme": {
+    "attribute": null,
+    "colorScheme": "dark",
+    "background": "color(srgb 0.0509804 0.0625882 0.0810196)",
+    "color": "color(srgb 0.901961 0.929412 0.952941 / 0.94)"
+  },
+  "rowMatch": {
+    "total": 6,
+    "matches": [
+      {
+        "courseId": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "text": "JC Japanese café basics, revised Start Name one warm and one cold thing in the kitchen (revised again) 0 of 4 with evidence Lesson plan for a child updated 1 min ago Open plan"
+      }
+    ]
+  },
+  "courseId": "crs_3ea89399cb7b4385a6baba8e02883150",
+  "opened": true,
+  "before": {
+    "order": "obj_2b36ae673495412aaa53db93aee66688,obj_49f2ba0b0a14457491c63d64dc0145b9,obj_f5c5f65769414bd99a4bdce7cf83d6d9,obj_ae1e76dd18734e34962c7f947f5472fa",
+    "rows": [
+      {
+        "id": "obj_2b36ae673495412aaa53db93aee66688",
+        "title": "Name one warm and one cold thing in the kitchen (revised again)",
+        "chip": "needs_review",
+        "moveDownDisabled": false
+      },
+      {
+        "id": "obj_49f2ba0b0a14457491c63d64dc0145b9",
+        "title": "Sort picture cards into warm and cold",
+        "chip": "needs_review",
+        "moveDownDisabled": false
+      },
+      {
+        "id": "obj_f5c5f65769414bd99a4bdce7cf83d6d9",
+        "title": "Say why the kettle is a grown-up job",
+        "chip": "needs_review",
+        "moveDownDisabled": false
+      },
+      {
+        "id": "obj_ae1e76dd18734e34962c7f947f5472fa",
+        "title": "Explain one example in their own words",
+        "chip": "needs_review",
+        "moveDownDisabled": true
+      }
+    ]
+  },
+  "editor": {
+    "objectiveId": "obj_2b36ae673495412aaa53db93aee66688",
+    "titleField": "Name one warm and one cold thing in the kitchen (revised again) (revised)",
+    "pageTitleField": "Name one warm and one cold thing in the kitchen (revised again) page (revised)",
+    "dirty": true
+  },
+  "afterEdit": {
+    "notice": "Section page saved as a new revision that needs review before export. Every stored attempt and the previous page version are untouched.",
+    "chips": [
+      "needs_review",
+      "needs_review",
+      "needs_review",
+      "needs_review"
+    ],
+    "titles": [
+      "Name one warm and one cold thing in the kitchen (revised again) page (revised)",
+      "Sort picture cards into warm and cold",
+      "Say why the kettle is a grown-up job",
+      "Explain one example in their own words"
+    ]
+  },
+  "reorder": {
+    "order": "obj_49f2ba0b0a14457491c63d64dc0145b9,obj_2b36ae673495412aaa53db93aee66688,obj_f5c5f65769414bd99a4bdce7cf83d6d9,obj_ae1e76dd18734e34962c7f947f5472fa",
+    "notice": "Order saved. 1. Sort picture cards into warm and cold · 2. Name one warm and one cold thing in the kitchen (revised again) page (revised) · 3. Say why the kettle is a grown-up job · 4. Explain one example in their own words",
+    "undo": "prv_2f43b5b14e4a4f69bac58edcfbf83766",
+    "rows": [
+      "Sort picture cards into warm and cold",
+      "Name one warm and one cold thing in the kitchen (revised again) page (revised)",
+      "Say why the kettle is a grown-up job",
+      "Explain one example in their own words"
+    ]
+  },
+  "finished_at": "2026-11-09T00:16:17.334Z"
+}

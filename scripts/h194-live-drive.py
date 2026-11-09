@@ -278,6 +278,156 @@ def resume(job_id: str) -> dict:
     return state
 
 
+def _state_with_edits() -> dict:
+    """Load the seed state and derive which section the UI edited and which one it did not.
+
+    The seed records the objective ids in plan order. The live UI phase edits the FIRST row and
+    only that row; everything else is untouched, so the untouched section is the next id in the
+    recorded order. This is read from state, never guessed by title.
+    """
+    state = load()
+    ids = [row["objective_id"] for row in state.get("objectives") or []]
+    if len(ids) < 2:
+        raise SystemExit(f"state {STATE} carries {len(ids)} objectives; the pass needs at least two")
+    state["edited_objective_id"] = ids[0]
+    state["untouched_objective_id"] = ids[1]
+    return state
+
+
+def continue_untouched() -> dict:
+    """After the UI edit, before approval: the untouched section still serves, and export refuses.
+
+    Calls the two commands a read of an unedited section goes through (``lesson.page`` then
+    ``lesson.begin``) and then ``parent.export``. The export MUST be refused with
+    ``changes_need_review`` — a ready export here means the fine-tune did not reach the gate.
+    """
+    state = _state_with_edits()
+    untouched = state["untouched_objective_id"]
+    outline = ok("course.outline", {"enrollment_id": state["enrollment_id"]})
+    titles = {row["objective_id"]: row["title"] for row in outline.get("objectives") or []}
+    if untouched not in titles:
+        raise SystemExit(f"untouched objective {untouched} is not on the current outline: {sorted(titles)}")
+
+    page = ok("lesson.page", {"enrollment_id": state["enrollment_id"], "objective_id": untouched})
+    document = page.get("document") or {}
+    begin = ok(
+        "lesson.begin",
+        {"enrollment_id": state["enrollment_id"], "objective_id": untouched, "mode": "resume"},
+        key=f"h194-untouched-begin-{time.time_ns()}",
+    )
+
+    export_response = call(
+        "parent.export",
+        {"enrollment_id": state["enrollment_id"]},
+        key=f"h194-export-blocked-{time.time_ns()}",
+    )
+    refusal = export_response.get("error") or {}
+    reason = (refusal.get("details") or {}).get("reason")
+    blob = json.dumps(refusal)
+    fact = {
+        "course_id": state["course_id"],
+        "edited_objective_id": state["edited_objective_id"],
+        "untouched_objective_id": untouched,
+        "untouched_title": titles[untouched],
+        "untouched_page": {
+            "state": page.get("state"),
+            "document_state": document.get("state"),
+            "section_title": document.get("section_title"),
+            "block_count": len(document.get("blocks") or []),
+            "document_id": document.get("document_id"),
+        },
+        "untouched_begin": {
+            "lesson_run_id": begin.get("lesson_run_id"),
+            "run_state": begin.get("run_state"),
+            "resume": begin.get("resume"),
+            "revision": begin.get("revision"),
+        },
+        "export_before_approval": {
+            "ok": bool(export_response.get("ok")),
+            "code": refusal.get("code"),
+            "message": refusal.get("message"),
+            "reason": reason,
+            "details": refusal.get("details"),
+        },
+        "expected_reason": "changes_need_review",
+        "reason_matches_h194_gate": reason == "changes_need_review",
+    }
+    out = os.environ.get("H194_FACTS")
+    if out:
+        with open(out, "w", encoding="utf-8") as handle:
+            json.dump(fact, handle, indent=2)
+    print(json.dumps(fact, indent=2))
+    if export_response.get("ok"):
+        raise SystemExit("parent.export SUCCEEDED before approval; the H-194 review gate did not hold")
+    if reason != "changes_need_review" and "changes_need_review" not in blob:
+        raise SystemExit(
+            f"parent.export refused, but not with changes_need_review; measured reason={reason!r}: {blob}"
+        )
+    return fact
+
+
+def export_now() -> dict:
+    """After the UI approval: ``parent.export`` must now succeed and write a stored pack."""
+    state = _state_with_edits()
+    result = ok(
+        "parent.export",
+        {"enrollment_id": state["enrollment_id"]},
+        key=f"h194-export-allowed-{time.time_ns()}",
+    )
+    artifacts = [
+        {"kind": item.get("kind"), "filename": item.get("filename"), "sha256": item.get("sha256"),
+         "byte_size": item.get("byte_size")}
+        for item in result.get("artifacts") or []
+    ]
+    fact = {
+        "course_id": state["course_id"],
+        "export_ok": True,
+        "pack_id": result.get("pack_id"),
+        "content_hash": result.get("content_hash"),
+        "export_id": result.get("export_id"),
+        "artifacts": artifacts,
+    }
+    out = os.environ.get("H194_FACTS")
+    if out:
+        with open(out, "w", encoding="utf-8") as handle:
+            json.dump(fact, handle, indent=2)
+    print(json.dumps(fact, indent=2))
+    return fact
+
+
+def preapprove() -> dict:
+    """Give an already-approved real plan its active lesson-set approval (rig preparation only).
+
+    Some real courses reached an approved plan with generated pages but no active
+    ``final_approvals`` row (their earlier approval was invalidated by an edit). H-194 needs the
+    export gate to start READY so the fine-tune pass can prove it turns ready → changes_need_review
+    → ready. This calls the same backend command the UI's approve button calls.
+    """
+    state = load()
+    book = ok("parent.blueprint.read", {"course_id": state["course_id"]})
+    result = ok(
+        "parent.final.approve",
+        {
+            "enrollment_id": state["enrollment_id"],
+            "plan_id": state["plan_id"] if state.get("plan_id") else (book.get("plan") or {}).get("plan_id"),
+            "plan_hash": (book.get("plan") or {}).get("plan_hash"),
+            "content_hash": book.get("content_hash"),
+        },
+        expected_revision=state.get("revision", 0),
+        key=f"h194-preapprove-{time.time_ns()}",
+    )
+    state["revision"] = result.get("revision")
+    state["final_approval"] = result.get("state")
+    state["content_hash"] = result.get("content_hash")
+    save(state)
+    export = call("parent.export", {"enrollment_id": state["enrollment_id"]},
+                  key=f"h194-preapprove-export-{time.time_ns()}")
+    fact = {"approval": state["final_approval"], "content_hash": state["content_hash"],
+            "export_ok": bool(export.get("ok")), "export_error": export.get("error")}
+    print(json.dumps(fact, indent=2))
+    return fact
+
+
 def main() -> int:
     command = sys.argv[1] if len(sys.argv) > 1 else "status"
     if command == "seed":
@@ -292,6 +442,12 @@ def main() -> int:
         status()
     elif command == "verify":
         verify()
+    elif command == "continue-untouched":
+        continue_untouched()
+    elif command == "export":
+        export_now()
+    elif command == "preapprove":
+        preapprove()
     else:
         raise SystemExit(f"unknown command {command}")
     return 0
