@@ -33,6 +33,7 @@ from typing import Any, Callable, Sequence
 
 from . import db, generation, job_service, media as media_mod, research
 from . import syllabus as syllabus_mod
+from . import world as world_mod
 
 logger = logging.getLogger("coursebook.executor")
 
@@ -472,7 +473,8 @@ def resolvers(*, llm: Any = None, search: Any = None, now: datetime | None = Non
     resolved_llm = llm  # resolved lazily at stage run so an idle tick never raises
     resolved_search = _resolve_search(search)
     return {JOB_KIND: _Resolvers(resolved_llm, resolved_search, now),
-            IMPORT_KIND: _ImportResolvers()}
+            IMPORT_KIND: _ImportResolvers(),
+            **world_mod.resolvers(now=now)}
 
 
 def pump_once(

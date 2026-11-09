@@ -49,6 +49,7 @@ from . import (
     sources as source_ledger,
     takehome as takehome_pack,
     validators,
+    world as world_mod,
 )
 from .api import RpcError
 from .contracts import method_names
@@ -75,6 +76,9 @@ HANDLERS.update(pronunciation.HANDLERS)
 # module reads the live contract, so a build without the six takehome.* methods stays
 # NOT_IMPLEMENTED instead of inventing a method.
 HANDLERS.update(takehome_pack.HANDLERS)
+# The world commands register here for the same reason: a build whose contract lacks the world
+# methods stays NOT_IMPLEMENTED instead of inventing a method.
+HANDLERS.update(world_mod.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
 KERNEL_METHODS: tuple[str, ...] = (

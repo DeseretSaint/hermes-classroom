@@ -1,0 +1,18 @@
+GM-003 test evidence (branch wt/gm-003-world)
+
+Focused: python3 -m unittest tests.test_world -v
+  Ran 10 tests ... OK
+  (8 required names + test_world_methods_are_wired_to_the_frozen_manifest, inherited by both
+   handler test classes)
+
+Regression set: python3 -m unittest tests.test_world tests.test_workers tests.test_cost_ceilings
+  tests.test_artifacts tests.test_rpc tests.test_contracts tests.test_gm_contract
+  Ran 269 tests ... OK
+
+Full suite: python3 -m unittest discover -s tests -t .
+  Ran 2779 tests in 540.862s
+  OK (skipped=1)
+  exit 0
+
+No provider key or account id appears in this evidence. The media seam in tests is a local fake
+that counts calls and returns deterministic PNG bytes.
