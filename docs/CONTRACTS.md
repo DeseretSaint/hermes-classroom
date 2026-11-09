@@ -30,7 +30,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
 | `cb.rpc` | `contracts/rpc.v21.json` | 21 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v13.json` | 13 | Cinder | migrations, every command, evidence views |
+| `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
@@ -39,10 +39,10 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 The v1 **to v20** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
 `rpc.v18.json`, `rpc.v19.json` and `rpc.v20.json`), the
-v1 **to v12** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
-`db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json` and `db.v12.json`), and the v1
+v1 **to v13** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
+`db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json`, `db.v12.json` and `db.v13.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v20.json`, `db.v12.json`,
+as immutable history: the superseded current files are `rpc.v20.json`, `db.v13.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -2234,13 +2234,40 @@ Regression guard: `tests/test_gm_contract.py` pins the enum values, the manifest
 `db.v12 -> db.v13` diff, and a real v12-to-v13 round trip on a disposable database proving the
 legacy course reads Textbook and the attempt/evidence/check rows are byte-identical afterwards.
 
+## cb.db v14 delta (GM-005) — a pack revision belongs to the pack, not to its source slot
+
+`cb.db` v14 is v13 with **one unique key removed** by
+`0014_takehome_pack_revision_scope.sql`; there is no new table, column, index, default, CHECK or
+foreign key, and no row is rewritten or backfilled.
+
+* `takehome_packs` in v13 carried `UNIQUE (source_course_id, source_objective_id,
+  source_lesson_version, audience, kind, revision)`. A pack's `revision` is its own
+  compare-and-swap counter — `takehome.create` starts a new pack at `0` and `approve` / `export`
+  increment that same row — so keying it to the source slot made a second pack for a re-opened
+  lesson unable to progress: after the first pack was `approved` (revision 1) or `exported`
+  (revision 2), the new draft was legal at revision 0 but its first approve/export moved it to a
+  revision number the predecessor row already held, and the write failed with `IntegrityError`.
+* 0014 rebuilds the table without that key (same rows, same values) and recreates its two indexes.
+  Duplicate **drafts** for one source slot are still refused in `takehome.create`, which returns
+  the existing draft row instead of inserting a second one; `id` remains the pack identity.
+* The wire contract does not move: `cb.rpc` stays v21 and the `takehome.*` request/response shapes,
+  error codes and vocabulary are unchanged.
+
+Regression guard: `tests/test_gm_contract.py::GmTakeHomeRevisionScopeTest` pins the additive
+`db.v13 -> db.v14` diff (every other table's columns, indexes and uniques byte-equal), the
+append-only migration plan, and a real v13-to-v14 round trip on a disposable database proving
+three existing pack rows survive byte-identical and a second draft at revision 0 can be inserted
+for the same source slot.
+
 ## v21 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
 
 `cb.rpc` v21 is v20 with **one family appended**: `takehome.sources`, `takehome.preview`,
 `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`, exactly the names and
 field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. No v1-v20 method, request
 shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
-value moves; `cb.db`, `cb.errors`, `cb.jobs`, `cb.pack` and `cb.projection` are untouched.
+value moves; `cb.errors`, `cb.jobs`, `cb.pack` and `cb.projection` are untouched, and `cb.db` moves
+to v14 only in storage (one constraint removed from `takehome_packs`, see the cb.db v14 delta
+above).
 `rpc.v20.json` stays byte-identical on disk (sha256
 `81cf882fb6f9dddc5caf7706b9dfe23d1ace2d4dea16c11e4e0281cbdf150f07`) and `x-supersedes` names
 `.../rpc/v20`.

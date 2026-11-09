@@ -569,6 +569,68 @@ class TakeHomeBindingTest(TakeHomeCase):
         self.assertEqual(second["content_hash"], self.preview(seeded)["content_hash"])
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM takehome_packs WHERE state = 'draft'"), 1)
 
+    def test_takehome_reopened_pack_approves_after_an_approved_pack(self) -> None:
+        """A second pack for the same source can progress when its predecessor is approved.
+
+        The revision is a per-pack counter, so a fresh draft at revision 0 must not collide with
+        the approved row that already holds revision 1 for the same source slot.
+        """
+        seeded = self.seed_course()
+        self.approved_pack(seeded)
+        preview = self.preview(seeded)
+        second = self.ok(
+            "takehome.create",
+            self._create_payload(seeded, "Take-home: searing, round two"),
+            expected_revision=0,
+            idempotency_key="key-reopen-approve-create",
+        )["result"]
+        approved = self.ok(
+            "takehome.approve",
+            {"pack_id": second["pack_id"], "preview_hash": preview["preview_hash"]},
+            expected_revision=second["revision"],
+            idempotency_key="key-reopen-approve-approve",
+        )["result"]
+        self.assertEqual(approved["state"], "approved")
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM takehome_packs WHERE state = 'approved'"), 2
+        )
+
+    def test_takehome_reopened_pack_exports_after_an_exported_pack(self) -> None:
+        """Re-opening an exported lesson yields a second exported pack and its own artifact."""
+        seeded = self.seed_course()
+        first = self.exported_pack(seeded)
+        preview = self.preview(seeded)
+        second = self.ok(
+            "takehome.create",
+            self._create_payload(seeded, "Take-home: searing reprint"),
+            expected_revision=0,
+            idempotency_key="key-reopen-export-create",
+        )["result"]
+        self.ok(
+            "takehome.approve",
+            {"pack_id": second["pack_id"], "preview_hash": preview["preview_hash"]},
+            expected_revision=second["revision"],
+            idempotency_key="key-reopen-export-approve",
+        )
+        exported = self.ok(
+            "takehome.export",
+            {"pack_id": second["pack_id"]},
+            expected_revision=second["revision"] + 1,
+            idempotency_key="key-reopen-export-export",
+        )["result"]
+        self.assertEqual(exported["state"], "exported")
+        self.assertNotEqual(exported["artifact_id"], first["artifact_id"])
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM takehome_packs WHERE state = 'exported'"), 2
+        )
+        self.assertEqual(
+            self.scalar(
+                "SELECT COUNT(*) FROM artifacts WHERE id IN (?, ?)",
+                (first["artifact_id"], exported["artifact_id"]),
+            ),
+            2,
+        )
+
     def test_takehome_create_reuses_an_existing_draft(self) -> None:
         """Two creates for the same source with different keys are one draft, not two."""
         seeded = self.seed_course()

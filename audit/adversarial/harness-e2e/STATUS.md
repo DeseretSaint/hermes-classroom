@@ -467,7 +467,8 @@ PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
   packet: FRESH — every evidence file and harness input matches manifest.json
 ```
 
-The complete evidence diff is `contract_version: 20 -> 21` (8 sites across the three scenario files)
-plus the manifest hashes those bytes determine. GM-015 re-audits this packet on the integrated tree;
+The complete evidence diff is `contract_version: 20 -> 21` (5 sites across the three scenario
+files: 1 in `bicycle_single.json`, 2 in `music_short.json`, 2 in `soldering_full.json`) plus the
+3 `manifest.json` hashes those bytes determine. GM-015 re-audits this packet on the integrated tree;
 the re-run preserves provenance because the harness, transcripts and assertions are unchanged and
 the diff is the live contract constant only.

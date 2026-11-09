@@ -1810,7 +1810,7 @@ class V6AmendmentTest(unittest.TestCase):
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v21.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
@@ -2708,7 +2708,7 @@ class V10AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v21.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
@@ -3036,7 +3036,7 @@ class V11AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v21.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -3328,7 +3328,7 @@ class V14AmendmentTest(unittest.TestCase):
         note = current["tables"]["evidence"]["columns"]["note"]
         self.assertEqual(note["type"], "TEXT")
         self.assertTrue(note["nullable"], "a pre-v9 evidence row has no note and must stay valid")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_the_migration_is_forward_only_and_rewrites_no_row(self) -> None:
         plan = contracts.contract("cb.db")["migration_plan"]
@@ -3417,7 +3417,7 @@ class DbV10AmendmentTest(unittest.TestCase):
                 current["tables"][table].get("indexes"), spec.get("indexes"),
                 f"{table} indexes changed",
             )
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_hook_errors_is_diagnostics_and_names_only_the_snapshot_loss(self) -> None:
         table = contracts.contract("cb.db")["tables"]["hook_errors"]
@@ -4014,7 +4014,7 @@ class V17AmendmentTest(unittest.TestCase):
     def test_no_error_code_job_table_or_vocabulary_moved(self) -> None:
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 13)
+        self.assertEqual(contracts.contract_version("cb.db"), 14)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
 
     def test_docs_publish_the_v17_delta(self) -> None:
@@ -4194,7 +4194,7 @@ class V20AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.rpc"), 21)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 13)
+        self.assertEqual(contracts.contract_version("cb.db"), 14)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
@@ -4262,7 +4262,7 @@ class V21AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.rpc"), 21)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 13)
+        self.assertEqual(contracts.contract_version("cb.db"), 14)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 

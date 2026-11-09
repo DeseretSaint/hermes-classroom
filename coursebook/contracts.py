@@ -31,7 +31,7 @@ CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
     "cb.rpc": "rpc.v21.json",
-    "cb.db": "db.v13.json",
+    "cb.db": "db.v14.json",
     "cb.jobs": "jobs.v5.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
     # version. v2 adds the optional root ``media[]`` link; v1 stays byte-identical and is still
