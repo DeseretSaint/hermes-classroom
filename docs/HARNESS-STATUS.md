@@ -2,18 +2,16 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current tree (measured 2026-11-08, re-derived by H-171):** `origin/master`
-`38ecc2279129f1cf43ea95fe8173b53834309176`. On it `cb.rpc` is v17
-(`coursebook/contracts.py:51`) with 68 declared methods and 68 handlers, `cb.db` is v11
-(`contracts/db.v11.json`, `DB_SCHEMA_VERSION = 11` in `coursebook/db.py:214`, migrations
-`0001`-`0011`), `desktop/plugin.js` is sha256
-`179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`, and the recorded suite is
-`Ran 2242 tests … OK (skipped=1)`.
+**Current tree (measured 2026-11-08, re-derived by H-203):** `origin/master`
+`ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`. On it `cb.rpc` is v20
+(`coursebook/contracts.py:51`) with 73 declared methods and 73 handlers, `cb.db` is v12
+(`contracts/db.v12.json`, `DB_SCHEMA_VERSION = 12` in `coursebook/db.py:230`, migrations
+`0001`-`0012`), `desktop/plugin.js` is sha256
+`cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`, and the recorded suite is
+`Ran 2724 tests in 533.270s … OK`.
 
 The suite, contract, schema and pin values are the record in `docs/release-evidence.json`, measured
-at `eed7dc717f6503d4172b6b0ebf4cec2fa663fc37`. That commit is an ancestor of `38ecc22`, and
-`git diff --stat eed7dc7 38ecc22 -- coursebook desktop contracts tests` is empty, so the record
-still describes the current tree; only docs and audit artifacts changed on top of it.
+at `ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`.
 
 **Historical snapshot label — not current.** The row-by-row body (§1-§7) is a snapshot written
 against `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700), where the
@@ -311,4 +309,4 @@ measured by reverting `coursebook/deadline.py` (the same suite then failed `6.0 
 `plan.validate` and unit-section bounds are untouched (H-192b owns them).
 
 Measured: `python3 -m unittest tests.test_h199_lesson_deadline` → 9 tests OK; full suite
-`python3 -m unittest discover -s tests -t .` → `Ran 2522 tests … OK`.
+`python3 -m unittest discover -s tests -t .` → `Ran 2724 tests in 533.270s … OK` at `ab6dc7e`.

@@ -315,7 +315,7 @@ Provisioning is deliberate and narrow: `GET /health` (and `health.get` over RPC)
 and applies migrations on first contact. Enabling the plugin, loading it, and the three chat hooks do
 not create anything (CB-014-R1). So on a brand-new home, `coursebook_status` asked **before** any
 health check reports `db.ready: false` and `schema_version: null`; that is an unprovisioned profile,
-not a broken install. Open the pane, or call `health.get`, once and it reports ready at v11.
+not a broken install. Open the pane, or call `health.get`, once and it reports ready at v12.
 
 The route mount depends on the window reaching a backend, which is why the demo gate stays open:
 on this host an isolated home cannot start a gateway, and a shell with no gateway renders the
