@@ -2143,3 +2143,58 @@ added.
 Regression guard: `tests/test_h194_fine_tune.py` (`BlueprintSectionIdentityTest` — one row per
 composed section with the digest, and `lesson.revise` accepting that digest unchanged with no test
 helper recomputing it) and `tests/test_contracts.py` for the v20 delta.
+
+## H-194e correction — one export gate, and a revision keeps its check (no wire change)
+
+Measured on the live store by the H-194 pass (card `t_05b53f68`, evidence `audit/h194/live/`): after
+`lesson.revise` stored a section page-title revision and `parent.final.approve` returned active, the
+review surface answered `data-cb-review-export="ready"` while `parent.export` refused
+`POLICY_VIOLATION no_generated_content` ("section '…' has no check"). Two independent defects shared
+that moment.
+
+**1. A page revision keeps its check.** `domain.lesson_revise` wrote a new `gen_lessons` row and left
+`gen_lesson_checks` — keyed by `lesson_id` — with no row for it, so every authored revision shipped a
+section with zero checks. The check belongs to the **objective**, not to one page version: the
+revision now copies the previous revision's `gen_lesson_checks` binding (`check_id`, `objective_ref`)
+to the new row. The check row itself is never rewritten by an edit, so `lesson.revise` refuses a page
+payload that changes the page's `check` projection (`VALIDATION_FAILED`,
+`reason: check_not_page_editable`): the learner page would otherwise ask one question while the pack
+graded against the stored reference answer. A new check is `lesson.regenerate`, not an edit.
+
+A revision written before this fix (the live `audit/h194/live/` store) carries no binding of its own.
+The next revision of that section inherits the newest binding in the section, so the section heals on
+one more edit without a data migration; `cb.db` is untouched. Until it is edited again (or
+regenerated), such a section still reports `no_generated_content` — an honest reading of the stored
+rows, now visible from the review surface as well as the export.
+
+**2. One gate, one order.** `domain._export_status` (what `parent.blueprint.read` and
+`parent.review.read` serve as `parent_export_status`) and `pack_flow.parent_export` now call the same
+`parent_authoring.export_gate`, so the review surface can no longer call a content set `ready` that
+the export refuses. The frozen order is:
+
+1. `plan_not_approved` — the plan is not approved;
+2. `no_generated_content` — no composed section has a generated page (the same refusal
+   `parent.final.approve` makes);
+3. `no_generated_content` — a generated page's section binds no check, or that check declares no
+   reference answer. This is checked **before** `no_final_approval` because approving cannot repair
+   a checkless section; the refusal carries `problems[]` naming each section;
+4. `no_final_approval` — no active `final_approvals` row;
+5. `changes_need_review` — the active approval's `content_hash` no longer matches the recomputed one.
+
+The one visible consequence of the ordering: a course with no generated pages and no approval used
+to answer `no_final_approval` from `parent.export` and `no_generated_content` from the status read;
+both now answer `no_generated_content`, matching what `parent.final.approve` refuses with.
+`parent.final.approve` keeps its own refusal set (plan approved, content exists, hash matches): it
+binds what a human approved, and exportability is the gate's answer, not a second approval rule.
+
+**No wire change.** No method, request field, response key, error code, job kind, enum value or
+`additionalProperties` moves; `blocked_reason` keeps its four values, with the check-level refusal
+reported under `no_generated_content`. `cb.rpc` stays **v20** and `cb.db` stays **v12** — the fix is
+handler behaviour, not shape. `parent_export_status`'s description ("ready is exactly
+`no_final_approval`, `changes_need_review`, `plan_not_approved` and `no_generated_content` all being
+absent") remains exact.
+
+Regression guard: `tests/test_h194_fine_tune.py::ExportedPageRevisionTest` — a title revision keeps
+its `check_id`, pre-approval both surfaces answer `no_final_approval`, the export succeeds after
+approval, a checkless page answers `no_generated_content` from both surfaces (before and after an
+approval), and a page payload that rewrites `check` is refused with nothing written.

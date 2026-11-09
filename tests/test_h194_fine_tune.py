@@ -606,5 +606,201 @@ class BlueprintSectionIdentityTest(FineTuneCase):
         )
 
 
+class ExportedPageRevisionTest(FineTuneCase):
+    """H-194e: a page-title revision stays exportable, and one gate answers for both surfaces.
+
+    Measured on the real store: after ``lesson.revise`` stored a section's page-title revision and
+    ``parent.final.approve`` returned active, the review surface answered ``ready`` while
+    ``parent.export`` refused ``no_generated_content`` ("section ... has no check"). The cause was
+    two-fold: the new ``gen_lessons`` row was written with no ``gen_lesson_checks`` binding, and
+    ``parent_export_status`` never ran the check-level gate the export runs.
+    """
+
+    def latest_page(self, section_id: str) -> dict:
+        return json.loads(
+            str(
+                self.scalar(
+                    "SELECT page_json FROM gen_lessons WHERE section_id = ? ORDER BY version DESC LIMIT 1",
+                    (section_id,),
+                )
+            )
+        )
+
+    def section_identity(self, course_id: str, section_id: str) -> dict:
+        return next(
+            entry
+            for entry in self.ok("parent.blueprint.read", {"course_id": course_id})["result"]["sections"]
+            if entry["section_id"] == section_id
+        )
+
+    def revise_title(self, course: dict, section_id: str, title: str, *, revision: int | None = None) -> dict:
+        target = self.section_identity(course["course_id"], section_id)
+        return self.ok(
+            "lesson.revise",
+            {
+                "enrollment_id": course["enrollment_id"],
+                "plan_id": course["plan_id"],
+                "section_id": section_id,
+                "expected_page_hash": target["page_hash"],
+                "title": title,
+                "page": {"section_title": title},
+            },
+            expected_revision=course["revision"] if revision is None else revision,
+            idempotency_key=(
+                f"h194e-revise-{section_id}-"
+                f"{hashlib.sha1(title.encode('utf-8')).hexdigest()[:12]}"
+            ),
+        )["result"]
+
+    def approve_content(self, course: dict, revision: int) -> dict:
+        book = self.ok("parent.blueprint.read", {"course_id": course["course_id"]})["result"]
+        return self.ok(
+            "parent.final.approve",
+            {
+                "enrollment_id": course["enrollment_id"],
+                "plan_id": course["plan_id"],
+                "plan_hash": book["plan"]["plan_hash"],
+                "content_hash": book["content_hash"],
+            },
+            expected_revision=revision,
+            idempotency_key=f"h194e-approve-{revision}",
+        )["result"]
+
+    def test_a_page_title_revision_keeps_its_check_and_exports_after_approval(self) -> None:
+        course = self.authored_course()
+        section_id = str(course["sections"][0]["id"])
+        original_check = str(
+            self.scalar(
+                "SELECT g.check_id FROM gen_lesson_checks g JOIN gen_lessons l ON l.id = g.lesson_id"
+                " WHERE l.section_id = ? ORDER BY l.version DESC LIMIT 1",
+                (section_id,),
+            )
+        )
+        revised = self.revise_title(course, section_id, "A corrected section title")
+        # The check binding follows the revision; the check row itself is not duplicated.
+        self.assertEqual(
+            [
+                (str(row["check_id"]), int(row["objective_ref"]))
+                for row in self.rows(
+                    "SELECT check_id, objective_ref FROM gen_lesson_checks WHERE lesson_id = ?",
+                    (revised["lesson_id"],),
+                )
+            ],
+            [(original_check, 1)],
+        )
+        # Pre-approval both surfaces name the same blocker.
+        review = self.ok("parent.review.read", {"course_id": course["course_id"]})["result"]
+        self.assertEqual(review["export"], {"ready": False, "blocked_reason": "no_final_approval"})
+        refusal = self.err(
+            "parent.export", {"enrollment_id": course["enrollment_id"]},
+            idempotency_key="h194e-export-preapproval",
+        )
+        self.assertEqual(refusal["details"]["reason"], "no_final_approval")
+        # Approving the exact new bytes clears both, and the export really writes the pack.
+        approval = self.approve_content(course, course["revision"] + 1)
+        self.assertEqual(approval["state"], "active")
+        review = self.ok("parent.review.read", {"course_id": course["course_id"]})["result"]
+        self.assertEqual(review["export"], {"ready": True, "blocked_reason": None})
+        exported = self.ok(
+            "parent.export", {"enrollment_id": course["enrollment_id"]},
+            idempotency_key="h194e-export-after-approval",
+        )["result"]
+        self.assertEqual(exported["content_hash"], approval["content_hash"])
+        roles = {item["role"] for item in exported["files"]}
+        self.assertEqual(roles, {"parent_guide", "learner_page", "answer_guide"})
+        self.assertEqual(
+            str(self.scalar("SELECT state FROM gen_lessons WHERE id = ?", (revised["lesson_id"],))),
+            "parent_approved",
+        )
+
+    def test_the_review_gate_and_parent_export_share_one_gate_order(self) -> None:
+        course = self.authored_course()
+        section_id = str(course["sections"][0]["id"])
+        revised = self.revise_title(course, section_id, "A title before the check is lost")
+        # A generated page whose section binds no check: the state the H-194 live pass produced
+        # before the revise fix. Both surfaces must name it, and name it before the approval gap.
+        self.execute("DELETE FROM gen_lesson_checks WHERE lesson_id = ?", (revised["lesson_id"],))
+        review = self.ok("parent.review.read", {"course_id": course["course_id"]})["result"]
+        self.assertEqual(
+            review["export"], {"ready": False, "blocked_reason": "no_generated_content"}
+        )
+        refusal = self.err(
+            "parent.export", {"enrollment_id": course["enrollment_id"]},
+            idempotency_key="h194e-export-checkless",
+        )
+        self.assertEqual(refusal["code"], "POLICY_VIOLATION")
+        self.assertEqual(refusal["details"]["reason"], "no_generated_content")
+        self.assertTrue(
+            any("has no check" in problem for problem in refusal["details"]["problems"]),
+            refusal["details"],
+        )
+        # Approval cannot repair it, so it is not offered as the next step.
+        self.approve_content(course, course["revision"] + 1)
+        status = self.ok("parent.review.read", {"course_id": course["course_id"]})["result"]
+        self.assertEqual(
+            status["export"], {"ready": False, "blocked_reason": "no_generated_content"}
+        )
+        refused_again = self.err(
+            "parent.export", {"enrollment_id": course["enrollment_id"]},
+            idempotency_key="h194e-export-checkless-approved",
+        )
+        self.assertEqual(refused_again["details"]["reason"], "no_generated_content")
+
+    def test_a_pre_fix_checkless_revision_heals_on_its_next_revision(self) -> None:
+        # The live H-194d store carries revisions written before this fix: a v2 lesson with no
+        # `gen_lesson_checks` row. Editing it again must restore the section's check, not copy an
+        # empty binding set and leave the section permanently unexportable.
+        course = self.authored_course()
+        section_id = str(course["sections"][0]["id"])
+        original_check = str(
+            self.scalar(
+                "SELECT check_id FROM gen_lesson_checks WHERE lesson_id = ("
+                " SELECT id FROM gen_lessons WHERE section_id = ? ORDER BY version DESC LIMIT 1)",
+                (section_id,),
+            )
+        )
+        revised = self.revise_title(course, section_id, "A title written before the fix")
+        self.execute("DELETE FROM gen_lesson_checks WHERE lesson_id = ?", (revised["lesson_id"],))
+        healed = self.revise_title(
+            course, section_id, "A title written after the fix", revision=course["revision"] + 1
+        )
+        self.assertEqual(
+            [
+                str(row["check_id"])
+                for row in self.rows(
+                    "SELECT check_id FROM gen_lesson_checks WHERE lesson_id = ?",
+                    (healed["lesson_id"],),
+                )
+            ],
+            [original_check],
+        )
+
+    def test_a_page_revision_cannot_silently_rewrite_the_check(self) -> None:
+        course = self.authored_course()
+        section_id = str(course["sections"][0]["id"])
+        target = self.section_identity(course["course_id"], section_id)
+        page = self.latest_page(section_id)
+        page["check"]["stimulus"]["prompt"] = "A question the stored reference answer cannot grade"
+        refusal = self.err(
+            "lesson.revise",
+            {
+                "enrollment_id": course["enrollment_id"],
+                "plan_id": course["plan_id"],
+                "section_id": section_id,
+                "expected_page_hash": target["page_hash"],
+                "page": {"check": page["check"]},
+            },
+            expected_revision=course["revision"],
+            idempotency_key="h194e-revise-check",
+        )
+        self.assertEqual(refusal["code"], "VALIDATION_FAILED")
+        self.assertEqual(refusal["details"]["reason"], "check_not_page_editable")
+        self.assertEqual(
+            int(self.scalar("SELECT COUNT(*) FROM gen_lessons WHERE section_id = ?", (section_id,))),
+            1,
+        )
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM lesson_revisions")), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

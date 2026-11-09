@@ -517,6 +517,69 @@ def validated_sections(
     return validated, problems
 
 
+def check_problems(composed: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Sections whose check cannot produce a ``cb.pack`` check entry, named by ordinal.
+
+    The check belongs to the objective, not to a page version: an authored revision keeps the
+    section's ``gen_lesson_checks`` binding (``domain.lesson.revise``), so a page that is merely
+    re-titled still exports. What still blocks, and what this names, is a page with no bound check
+    row or a check with no declared reference answer — the two refusals ``build_pack`` makes.
+    """
+    problems: list[str] = []
+    for section in composed:
+        if section.get("page") is None:
+            continue
+        label = f"section {int(section['ordinal'])} ({str(section.get('title') or 'untitled')})"
+        check = section.get("check")
+        if check is None:
+            problems.append(f"{label} has no check; lessons must validate before export.")
+            continue
+        reference = _load(check["reference_json"], {})
+        if not str(reference.get("reference_answer") or "").strip():
+            problems.append(f"{label} check {check['id']} declares no reference answer.")
+    return problems
+
+
+def export_gate(
+    plan: Any,
+    composed: Sequence[Mapping[str, Any]],
+    approval: Any,
+    content_hash: str,
+    *,
+    has_content: bool | None = None,
+) -> tuple[str | None, list[str]]:
+    """The single export gate, in the one order ``parent_export_status`` and ``parent.export`` share.
+
+    ``(None, [])`` means the export would be accepted now. Otherwise the first absent precondition
+    is the reason, with the per-section problems when the content itself blocks. The order is
+    structural, not cosmetic:
+
+    1. the plan is approved — nothing below it can exist without that;
+    2. some section has a generated page — ``parent.final.approve`` refuses the same way;
+    3. every generated page binds a check with a reference answer — an approval cannot repair a
+       checkless section, so this must be reported before ``no_final_approval``, or the parent
+       would approve and only then learn the content is still unexportable;
+    4. an active final approval exists;
+    5. the approval's hash equals the recomputed content hash (``changes_need_review``).
+
+    ``has_content`` overrides step 2 for a pack-backed course, whose tabs come from the pack rather
+    than from ``gen_plan_sections`` and which has no authored sections to check.
+    """
+    if plan is None or str(plan["state"]) != "approved":
+        return "plan_not_approved", []
+    content_ready = ready_sections(composed) if has_content is None else has_content
+    if not content_ready:
+        return "no_generated_content", []
+    problems = check_problems(composed)
+    if problems:
+        return "no_generated_content", problems
+    if approval is None or str(approval["state"]) != "active":
+        return "no_final_approval", []
+    if str(approval["content_hash"]) != str(content_hash):
+        return "changes_need_review", []
+    return None, []
+
+
 def content_hash(course_id: str, plan_id: str, plan_hash: str, composed: Sequence[Mapping[str, Any]]) -> str:
     """The frozen v6 definition. Depends only on the served text, never on a file name."""
     payload = {

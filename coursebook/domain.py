@@ -4579,17 +4579,16 @@ def _approval_view(row: Any) -> dict[str, Any]:
 
 def _export_status(plan: Any, composed: Sequence[dict[str, Any]], approval: Any, content_hash: str,
                    *, has_content: bool | None = None) -> dict[str, Any]:
-    """Derive `parent_export_status`. Ready means every blocker is absent; one reason otherwise."""
-    if plan is None or str(plan["state"]) != "approved":
-        return {"ready": False, "blocked_reason": "plan_not_approved"}
-    content_ready = authoring.ready_sections(composed) if has_content is None else has_content
-    if not content_ready:
-        return {"ready": False, "blocked_reason": "no_generated_content"}
-    if approval is None or str(approval["state"]) != "active":
-        return {"ready": False, "blocked_reason": "no_final_approval"}
-    if str(approval["content_hash"]) != str(content_hash):
-        return {"ready": False, "blocked_reason": "changes_need_review"}
-    return {"ready": True, "blocked_reason": None}
+    """Derive `parent_export_status`. Ready means every blocker is absent; one reason otherwise.
+
+    H-194e: the reason is computed by the same gate `parent.export` runs
+    (`authoring.export_gate`), in the same order, so the review gate can never say `ready` for a
+    content set the export refuses — including a generated page whose section binds no check.
+    """
+    reason, _problems = authoring.export_gate(
+        plan, composed, approval, content_hash, has_content=has_content
+    )
+    return {"ready": reason is None, "blocked_reason": reason}
 
 
 def _blueprint_sources(connection, course_id: str) -> list[dict[str, Any]]:
@@ -5445,6 +5444,17 @@ def lesson_revise(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                 "VALIDATION_FAILED", "the requested revision changes nothing on this section.",
                 field="page",
             )
+        # H-194e: a page revision keeps the section's stored check binding, so it must not rewrite
+        # the page's `check` projection either: the learner page would then ask one question while
+        # the pack grades against the stored reference answer. A new check is `lesson.regenerate`.
+        if "check" in changed_fields:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "lesson.revise cannot change a section's check; regenerate the section to author a new one.",
+                field="page.check",
+                reason="check_not_page_editable",
+                section_id=str(payload["section_id"]),
+            )
         attempts = _section_evidence_attempts(connection, str(lesson["id"]))
         confirmed = bool(payload.get("confirm_evidence_consequence"))
         if attempts and not confirmed:
@@ -5498,6 +5508,26 @@ def lesson_revise(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                 _json_dump(revised), lesson["media_json"], lesson["parent_notes_json"],
                 lesson["rejection_reasons_json"], lesson["policy_json"], now, now,
             ),
+        )
+        # H-194e: the check belongs to the objective, not to one page version. The new revision
+        # carries the previous revision's `gen_lesson_checks` binding, so a re-titled (or
+        # re-worded) page still exports; the check row itself is never rewritten by an edit, which
+        # is why a page revision cannot change the `check` projection (refused above).
+        connection.execute(
+            "INSERT INTO gen_lesson_checks (lesson_id, check_id, objective_ref)"
+            " SELECT ?, check_id, objective_ref FROM gen_lesson_checks WHERE lesson_id = ?",
+            (new_lesson_id, str(lesson["id"])),
+        )
+        # A revision written before this fix (a v12 store) carries no binding of its own. The
+        # section's check is still the objective's check, so the next revision inherits the newest
+        # binding in the section instead of staying checkless and permanently unexportable.
+        connection.execute(
+            "INSERT OR IGNORE INTO gen_lesson_checks (lesson_id, check_id, objective_ref)"
+            " SELECT ?, g.check_id, g.objective_ref FROM gen_lesson_checks g"
+            " JOIN gen_lessons l ON l.id = g.lesson_id"
+            " WHERE l.section_id = ? AND l.plan_hash = ?"
+            " ORDER BY l.version DESC, g.rowid DESC LIMIT 1",
+            (new_lesson_id, str(payload["section_id"]), digest),
         )
         if objective is not None and payload.get("title") is not None:
             connection.execute(

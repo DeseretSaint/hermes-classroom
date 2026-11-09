@@ -55,6 +55,15 @@ summarises those records and does not re-verify them.
   change. Evidence: `docs/H66-EVIDENCE.md`, `docs/ARCHITECTURE.md` §8, `probes/h66-liveness.py`,
   `tests/test_h66_liveness.py`.
 
+- H-194e: a page-title revision of a section lost its check and became unexportable. `lesson.revise`
+  now copies the previous revision's `gen_lesson_checks` binding to the new `gen_lessons` row (the
+  check belongs to the objective, not to a page version; a pre-fix checkless revision inherits the
+  newest binding in its section on the next edit) and refuses a page payload that rewrites the
+  page's `check` projection; `parent_export_status` and `parent.export` now run one shared gate
+  (`parent_authoring.export_gate`) in one order, so the review surface cannot answer `ready` for a
+  content set the export refuses. No wire change; `cb.rpc` stays v20 and `cb.db` stays v12. Evidence:
+  `docs/CONTRACTS.md` "H-194e correction", `tests/test_h194_fine_tune.py::ExportedPageRevisionTest`.
+
 ### Known limitations at 0.1.0
 
 Verbatim from `docs/REVIEW_CB017-FINAL.md` §9:

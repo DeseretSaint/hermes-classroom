@@ -40,7 +40,7 @@ import warnings
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from . import PACKAGE_ID, __version__, api, db
 from . import archive, artifacts, packs, segments, validators
@@ -1132,6 +1132,26 @@ def _blocked(reason: str, message: str, **details: Any) -> RpcError:
     return RpcError.of("POLICY_VIOLATION", message, reason=reason, **details)
 
 
+#: The one message per gate reason, so the refusal reads the same from every caller.
+_EXPORT_GATE_MESSAGES: dict[str, str] = {
+    "plan_not_approved": "the plan must be approved before the authored course can be exported.",
+    "no_generated_content": "this course has no generated lesson content to export.",
+    "no_final_approval": (
+        "the generated lessons have not been approved; approve them before exporting."
+    ),
+    "changes_need_review": (
+        "the authored content changed since it was approved; re-approve before exporting."
+    ),
+}
+
+
+def _export_gate_message(reason: str, problems: Sequence[str]) -> str:
+    """The gate's human message. A check-level refusal names the first blocking section."""
+    if reason == "no_generated_content" and problems:
+        return problems[0]
+    return _EXPORT_GATE_MESSAGES.get(reason, "this course cannot be exported as it stands.")
+
+
 def _adopt_artifact(
     connection,
     *,
@@ -1247,42 +1267,31 @@ def parent_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                 course_id=str(course["id"]),
             )
         plan = authoring.current_plan(connection, str(course["id"]))
-        if plan is None or str(plan["state"]) != "approved":
-            raise _blocked(
-                "plan_not_approved",
-                "the plan must be approved before the authored course can be exported.",
-                course_id=str(course["id"]),
-            )
         approval = _row(
             connection,
             "SELECT * FROM final_approvals WHERE course_id = ? AND state = 'active'"
             " ORDER BY approved_at DESC LIMIT 1",
             (course["id"],),
         )
-        if approval is None:
-            raise _blocked(
-                "no_final_approval",
-                "the generated lessons have not been approved; approve them before exporting.",
-                course_id=str(course["id"]),
+        composed: list[dict[str, Any]] = []
+        current_content = ""
+        if plan is not None:
+            plan_digest = authoring.plan_hash(connection, plan)
+            composed = authoring.sections(connection, course, plan)
+            current_content = authoring.content_hash(
+                str(course["id"]), str(plan["id"]), plan_digest, composed
             )
-        plan_digest = authoring.plan_hash(connection, plan)
-        composed = authoring.sections(connection, course, plan)
-        if not authoring.ready_sections(composed):
-            raise _blocked(
-                "no_generated_content",
-                "this course has no generated lesson content to export.",
-                course_id=str(course["id"]),
-            )
-        current_content = authoring.content_hash(
-            str(course["id"]), str(plan["id"]), plan_digest, composed
-        )
-        if str(approval["content_hash"]) != current_content:
-            raise _blocked(
-                "changes_need_review",
-                "the authored content changed since it was approved; re-approve before exporting.",
-                current_content_hash=current_content,
-                approved_content_hash=str(approval["content_hash"]),
-            )
+        # H-194e: one gate, one order, shared with `parent_export_status`. A content set the
+        # review surface calls `ready` is exactly a content set this command accepts.
+        reason, problems = authoring.export_gate(plan, composed, approval, current_content)
+        if reason is not None:
+            details: dict[str, Any] = {"course_id": str(course["id"])}
+            if problems:
+                details["problems"] = problems
+            if reason == "changes_need_review" and approval is not None:
+                details["current_content_hash"] = current_content
+                details["approved_content_hash"] = str(approval["content_hash"])
+            raise _blocked(reason, _export_gate_message(reason, problems), **details)
         course_id = str(course["id"])
         plan_id = str(plan["id"])
 
