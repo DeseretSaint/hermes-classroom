@@ -1,51 +1,51 @@
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a67de34c0>
-  for key, value in x.items():
-ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a67de34c0>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa970b4c0>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541ac50>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd64d0>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541af20>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd67a0>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b5b0>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd6e30>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b010>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd6890>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b1f0>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd7010>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b880>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd6f20>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541ae30>
-  for key, value in x.items():
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa970b4c0>
+  memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b1f0>
-  for key, value in x.items():
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd66b0>
+  memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a6541b880>
-  for key, value in x.items():
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd7010>
+  memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a67de34c0>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6bd6f20>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa970b4c0>
   obj, end = self.scan_once(s, idx)
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 coursebook: ignoring COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS='nonsense' (not a number); using 240.00s
 coursebook: host refused auxiliary task 'cb_validate' (reserved key); validator output stays uncapped
 coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
-coursebook: job job_6f45869128b7424a83eaba3689bde6e4 was already cancelling; closing it cancelled after an unreadable state read
-coursebook: cancel state unreadable for job job_7c585cdb45a242bfa051e0c1f744edb1 (attempt 1/3): RuntimeError
-coursebook: cancel state unreadable for job job_aa7bd6baec6c4d238df08947a1144b4f (attempt 1/3): RuntimeError
-coursebook: cancel state unreadable for job job_aa7bd6baec6c4d238df08947a1144b4f (attempt 2/3): RuntimeError
-coursebook: cancel state unreadable for job job_aa7bd6baec6c4d238df08947a1144b4f (attempt 3/3): RuntimeError
-coursebook: job job_aa7bd6baec6c4d238df08947a1144b4f stopped at plan: cancel state unreadable (job job_aa7bd6baec6c4d238df08947a1144b4f cancel state could not be read after 3 attempts (RuntimeError))
-coursebook: cancel state unreadable for job job_41d9d54010d34943b1f90e0552fa10d4 (attempt 1/3): RuntimeError
-coursebook: cancel state unreadable for job job_41d9d54010d34943b1f90e0552fa10d4 (attempt 2/3): RuntimeError
-coursebook: cancel state unreadable for job job_41d9d54010d34943b1f90e0552fa10d4 (attempt 3/3): RuntimeError
+coursebook: job job_8e360e410656422d838917d37ecf0d2d was already cancelling; closing it cancelled after an unreadable state read
+coursebook: cancel state unreadable for job job_a963994eeee146acaea6b3780a308b50 (attempt 1/3): RuntimeError
+coursebook: cancel state unreadable for job job_254838e6a7584ee19be4ade69d2a2560 (attempt 1/3): RuntimeError
+coursebook: cancel state unreadable for job job_254838e6a7584ee19be4ade69d2a2560 (attempt 2/3): RuntimeError
+coursebook: cancel state unreadable for job job_254838e6a7584ee19be4ade69d2a2560 (attempt 3/3): RuntimeError
+coursebook: job job_254838e6a7584ee19be4ade69d2a2560 stopped at plan: cancel state unreadable (job job_254838e6a7584ee19be4ade69d2a2560 cancel state could not be read after 3 attempts (RuntimeError))
+coursebook: cancel state unreadable for job job_f324b379257f4676b23c9792e5aa143d (attempt 1/3): RuntimeError
+coursebook: cancel state unreadable for job job_f324b379257f4676b23c9792e5aa143d (attempt 2/3): RuntimeError
+coursebook: cancel state unreadable for job job_f324b379257f4676b23c9792e5aa143d (attempt 3/3): RuntimeError
 coursebook job tick started on its own thread: kind=plan interval=0.1s limit=5
 coursebook job reaper: running->interrupted=1 cancel->cancelled=0
 coursebook job tick started on its own thread: kind=plan interval=0.1s limit=5
@@ -82,18 +82,18 @@ pronunciation: recogniser raised RuntimeError
   manifest = validate_and_audit(staged)
 /home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/coursebook/pack_flow.py:735: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
   manifest = validate_and_audit(staged)
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f9a65554a90>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8aa6d08310>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f99e4f5d300>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a1ee9cb80>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
-/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f99e4f5da80>
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:174: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a1ee9d300>
   memo[id(x)] = y
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
 ----------------------------------------------------------------------
-Ran 2836 tests in 539.892s
+Ran 2855 tests in 570.062s
 
 OK (skipped=1)
 exit=0

@@ -31,7 +31,7 @@ test_workshop_section_prompts_have_no_procedure_title (tests.test_world.WorldPro
 test_world_prompts_are_textless (tests.test_world.WorldPromptTest.test_world_prompts_are_textless) ... ok
 
 ----------------------------------------------------------------------
-Ran 31 tests in 12.373s
+Ran 31 tests in 17.881s
 
 OK
 exit=0
