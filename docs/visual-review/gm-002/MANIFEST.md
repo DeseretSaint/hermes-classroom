@@ -1,14 +1,17 @@
 # GM-002 evidence manifest — global Home and course-home split
 
-Branch: `wt/gm-002-home`   Commit: `7fcf352`   Captured: 2026-11-09   Captured by: `vellum`
+Branch: `wt/gm-002-home`   Commit: `aaba9ca`   Captured: 2026-11-09   Captured by: `vellum`
 App build: the isolated Desktop window from `scripts/cb013-live-window.sh` with
 `desktop/plugin.js` copied from this commit (`plugin_sha256` in `live-evidence.json`).
 Viewports: 1049 / 900 / 460 CSS px · Modes: light, dark · Text scale: 100, 200
 
-Every frame below was re-captured at `plugin_sha256`
-`8fcd6ac7e6c89e2b4cabab6841b7cbcd4d2f3ee552afb4323aebe93050bdcbe7` after the shelf-copy
-guard in `7fcf352` (a card no longer repeats its own title or next step as a goal
-paragraph), so the packet is tied to the code it describes.
+Every frame below was captured at `plugin_sha256`
+`a6476fb19c71ded960c9a70027b8330b162a8550a79aa4e8fcd7cca918c45c3b`, the module at `aaba9ca`.
+This packet is the round-3 recapture: the shelf card now owns its title (the paper cover prints
+only the monogram and subject, so no card repeats its heading), the `overflow` cell is taken with
+the shelf tray actually scrolled to its end, and global Home carries `--full` cells at 200 % text
+where the pane scrolls. The frames are committed separately from the implementation; the plugin
+sha pins the exact module that was driven.
 
 The operator's installed Desktop plugin was **not** modified: the rig is a separate
 `COURSEBOOK_TEST_STATE` home with its own userdata and its own backend
@@ -28,7 +31,9 @@ RPC-error states.
 
 Viewport calibration: this Electron build runs the page at ≈0.896 zoom, so `Emulation` width is
 calibrated until `window.innerWidth` is exactly the named CSS width. `live-evidence.json` records
-the measured `innerWidth` for every frame.
+the measured `innerWidth` for every frame. Full-page cells grow the emulated viewport until the
+shell's scrolling pane (`main#cb-main-content`) fits in one frame; `documentElement` never scrolls
+here, so measuring it was what produced a cut-off "full" shot in the previous packet.
 
 ## Fault switches (README §1 rule 5)
 
@@ -52,10 +57,12 @@ Concept frame: `home-generic-first-open.png` (invitation band + shelf). Tokens/t
 | home.global--900--light--100--default.png | 900 | light | 100 | default | first collapse; no page overflow |
 | home.global--460--light--100--default.png | 460 | light | 100 | default | cards stack; no page overflow |
 | home.global--1049--light--200--default.png | 1049 | light | 200 | default | root 32 px; invitation and actions wrap |
+| home.global--1049--light--200--full.png | 1049 | light | 200 | full | full pane capture: content 1106 px inside a 1498 px viewport (`captured_height`/`content_height` in evidence) |
 | home.global--460--light--200--default.png | 460 | light | 200 | default | narrow + 200 % |
+| home.global--460--light--200--full.png | 460 | light | 200 | full | full pane capture: content 3400 px inside a 3972 px viewport; shelf and `See all` both in frame |
 | home.global--1049--light--100--focus.png | 1049 | light | 100 | focus | Tab reaches the primary "Start a new course"; authored 2 px `--cb-accent` ring (`data-cb-focus-ring="visible"`) |
 | home.global--1049--light--100--reduced-motion.png | 1049 | light | 100 | reduced-motion | reduced-motion setting + emulated media; static frame |
-| home.global--1049--light--100--overflow.png | 1049 | light | 100 | overflow | shelf tray scrolled horizontally; the document itself does not overflow |
+| home.global--1049--light--100--overflow.png | 1049 | light | 100 | overflow | shelf tray scrolled to its end (`scrollLeft` 557.8 of 1496 px, 938 px client); trailing card cut at the right edge; the document itself does not overflow |
 | home.global--1049--light--100--loading.png | 1049 | light | 100 | loading | proxy switch; loader + "Nothing already saved is lost while this read is in flight." |
 | home.global--1049--light--100--error.png | 1049 | light | 100 | error | "Your courses could not be read" + Try again; explicitly not an empty library |
 | home.global--1049--light--100--offline.png | 1049 | light | 100 | offline | "Offline. Lessons, notes and review keep working…" over the last-read shelf |

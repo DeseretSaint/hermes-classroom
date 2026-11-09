@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-11-09T21:37:35.951Z",
+  "generated_at": "2026-11-09T22:44:10.612Z",
   "kind": "live capture from the isolated Electron window (Page.captureScreenshot)",
   "window": "scripts/cb013-live-window.sh",
   "backend": "127.0.0.1:44279",
   "state_dir": "/home/deseretsaint/.hermes/coursebook-test-gm002-140344",
-  "plugin_sha256": "8fcd6ac7e6c89e2b4cabab6841b7cbcd4d2f3ee552afb4323aebe93050bdcbe7",
+  "plugin_sha256": "a6476fb19c71ded960c9a70027b8330b162a8550a79aa4e8fcd7cca918c45c3b",
   "frames": [
     {
       "id": "home.global--1049--light--100--default",
       "file": "home.global--1049--light--100--default.png",
-      "md5": "dc317fbc252e5b38ea0b18e8c8e82bc4",
-      "bytes": 96103,
+      "md5": "884ecc9a912f61c24990fc4c2707171a",
+      "bytes": 73643,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -29,13 +29,13 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--1049--dark--100--default",
       "file": "home.global--1049--dark--100--default.png",
-      "md5": "74de43117965da992d414f85d08dc99c",
-      "bytes": 95828,
+      "md5": "ec9e0f3bc65520fcecc5cf97d139e7ad",
+      "bytes": 73727,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -58,13 +58,13 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--900--light--100--default",
       "file": "home.global--900--light--100--default.png",
-      "md5": "132e2162809cf0c3e2c93aa806251072",
-      "bytes": 90456,
+      "md5": "cca67131f4fdcb75c2709e40d4ab9e33",
+      "bytes": 71651,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -87,13 +87,13 @@
       "pageOverflow": false,
       "innerWidth": 900,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--460--light--100--default",
       "file": "home.global--460--light--100--default.png",
-      "md5": "e6631a34b9ecb8ebc22b312339bd7974",
-      "bytes": 82163,
+      "md5": "e573e7eeeafcdd178c19b3aaa60847a1",
+      "bytes": 62429,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -116,13 +116,13 @@
       "pageOverflow": false,
       "innerWidth": 460,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--1049--light--200--default",
       "file": "home.global--1049--light--200--default.png",
-      "md5": "6d454f766de9f97dabf6389eb46c9b4f",
-      "bytes": 121769,
+      "md5": "7d39adcb3391d195bdb1c66ad44c0cfe",
+      "bytes": 109002,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -145,7 +145,7 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "32px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--460--light--200--default",
@@ -174,13 +174,13 @@
       "pageOverflow": false,
       "innerWidth": 460,
       "rootFont": "32px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--1049--light--100--focus",
       "file": "home.global--1049--light--100--focus.png",
-      "md5": "09bb6061274ffac5f30b70b4c9102023",
-      "bytes": 97035,
+      "md5": "9c677b5a6e26672fdeacb450063fd4ec",
+      "bytes": 73844,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -203,7 +203,7 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio",
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg",
       "focus_target": {
         "label": "Start a new course",
         "outline": "solid 1.1156px rgb(44, 74, 140)",
@@ -213,8 +213,8 @@
     {
       "id": "home.global--1049--light--100--reduced-motion",
       "file": "home.global--1049--light--100--reduced-motion.png",
-      "md5": "286a5f047638d8ba141f3afbf69cfc0f",
-      "bytes": 97271,
+      "md5": "af05b32d517637c3a1fb48a2d824841c",
+      "bytes": 74810,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -237,13 +237,13 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg"
     },
     {
       "id": "home.global--1049--light--100--overflow",
       "file": "home.global--1049--light--100--overflow.png",
-      "md5": "286a5f047638d8ba141f3afbf69cfc0f",
-      "bytes": 97271,
+      "md5": "1ad820d504e970f4a908b4155fda91b6",
+      "bytes": 73655,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -266,8 +266,13 @@
       "pageOverflow": false,
       "innerWidth": 1049,
       "rootFont": "16px",
-      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA Japanese affection and register — an L0 demonstratio",
-      "note": "shelf scrolls horizontally; the page itself must not overflow"
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg",
+      "note": "shelf tray scrolled to its end; trailing card cut at the right edge; the page itself must not overflow",
+      "shelf_scroll": {
+        "scrollLeft": 557.80029296875,
+        "scrollWidth": 1496,
+        "clientWidth": 938
+      }
     },
     {
       "id": "home.course--1049--light--100--default",
@@ -442,8 +447,8 @@
     {
       "id": "home.course--1049--light--100--focus",
       "file": "home.course--1049--light--100--focus.png",
-      "md5": "2dffede9292f2e2b1518e8595ade6133",
-      "bytes": 124164,
+      "md5": "652ca24aff97ae6c64ff8564c73a63cc",
+      "bytes": 124143,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -505,8 +510,8 @@
     {
       "id": "home.course--1049--light--100--plan-in-review",
       "file": "home.course--1049--light--100--plan-in-review.png",
-      "md5": "f815629bd6ac80fe65255c22218f23a2",
-      "bytes": 116395,
+      "md5": "56937c0797130af5e1c90c609f3d5dd1",
+      "bytes": 116343,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -556,8 +561,8 @@
     {
       "id": "home.global--1049--light--100--loading",
       "file": "home.global--1049--light--100--loading.png",
-      "md5": "a0ad51ebc7dfbac56be37fe4ee6227d9",
-      "bytes": 40206,
+      "md5": "4b84df17bfafb78035531c6c68bc3b84",
+      "bytes": 40207,
       "hash": "#/coursebook",
       "home": "loading",
       "shelf": "loading",
@@ -582,8 +587,8 @@
     {
       "id": "home.course--1049--light--100--loading",
       "file": "home.course--1049--light--100--loading.png",
-      "md5": "635eaab435a280b2c2aab134d4c9cf62",
-      "bytes": 33511,
+      "md5": "9edbd283c30737138245e87aa8f4f71a",
+      "bytes": 33401,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -634,8 +639,8 @@
     {
       "id": "home.course--1049--light--100--error",
       "file": "home.course--1049--light--100--error.png",
-      "md5": "aab301122b83ac71c60e96dbf7c11a59",
-      "bytes": 87374,
+      "md5": "58095f1dba157398da15b52c200ec4a3",
+      "bytes": 87331,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -660,8 +665,8 @@
     {
       "id": "home.global--1049--light--100--offline",
       "file": "home.global--1049--light--100--offline.png",
-      "md5": "6132e16a90a33eaf4b262d4151e85a77",
-      "bytes": 108162,
+      "md5": "edd1e060778fb7e9662597df649d4815",
+      "bytes": 86651,
       "hash": "#/coursebook",
       "home": "ready",
       "shelf": "ready",
@@ -710,10 +715,70 @@
       "failure_switch": "migrated empty Coursebook database"
     },
     {
+      "id": "home.global--1049--light--200--full",
+      "file": "home.global--1049--light--200--full.png",
+      "md5": "755a47708eff711f41307f4ee4048a05",
+      "bytes": 143221,
+      "hash": "#/coursebook",
+      "home": "ready",
+      "shelf": "ready",
+      "cards": 6,
+      "mode": "light",
+      "paper": "rgb(247, 241, 228)",
+      "primary": "Start a new course",
+      "primaryBg": "rgb(232, 169, 58)",
+      "primaryOutline": "none 2.2312px rgb(26, 23, 19)",
+      "focusRing": "none",
+      "active": null,
+      "courseHome": false,
+      "continuePlate": 0,
+      "trailhead": null,
+      "shelfScrolls": true,
+      "pageOverflow": false,
+      "innerWidth": 1049,
+      "innerHeight": 1498,
+      "rootFont": "32px",
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg",
+      "full_page": true,
+      "captured_height": 1498,
+      "content_height": 1106,
+      "scroll_container": "cb-main-content"
+    },
+    {
+      "id": "home.global--460--light--200--full",
+      "file": "home.global--460--light--200--full.png",
+      "md5": "efa836fc3616caede6ed9270da99ec73",
+      "bytes": 236506,
+      "hash": "#/coursebook",
+      "home": "ready",
+      "shelf": "ready",
+      "cards": 6,
+      "mode": "light",
+      "paper": "rgb(247, 241, 228)",
+      "primary": "Start a new course",
+      "primaryBg": "rgb(232, 169, 58)",
+      "primaryOutline": "none 2.2312px rgb(26, 23, 19)",
+      "focusRing": "none",
+      "active": null,
+      "courseHome": false,
+      "continuePlate": 0,
+      "trailhead": null,
+      "shelfScrolls": false,
+      "pageOverflow": false,
+      "innerWidth": 460,
+      "innerHeight": 3972,
+      "rootFont": "32px",
+      "textHead": "Skip to course content COURSEBOOK Home Default view · Game · Child-safe defaults · Session · 15 min Settings Home Courses Workshop Parent Studio What will you learn next? Pick a course, or chart a new one. Start a new course Browse the library Your courses See all JA ja-JP Review 3 objectives Japanese affection and reg",
+      "full_page": true,
+      "captured_height": 3972,
+      "content_height": 3400,
+      "scroll_container": "cb-main-content"
+    },
+    {
       "id": "home.course--460--light--100--full",
       "file": "home.course--460--light--100--full.png",
-      "md5": "23a77de186fd18067ef9b84bcf2cd873",
-      "bytes": 109616,
+      "md5": "5a5882040075e19ec6beb9bcc496e17c",
+      "bytes": 127924,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -731,16 +796,19 @@
       "shelfScrolls": null,
       "pageOverflow": false,
       "innerWidth": 460,
+      "innerHeight": 1586,
       "rootFont": "16px",
       "textHead": "Skip to course content COURSEBOOK Course Default view · Game · Child-safe defaults · Session · 15 min Back to Home Settings Home Courses Workshop Parent Studio THE REVIEW IS DUE Japanese affection and register — an L0 demonstration classroom Section 1 of 4 · Tell everyday affection from a direct romantic declaration is",
       "full_page": true,
-      "captured_height": 1004
+      "captured_height": 1586,
+      "content_height": 1309,
+      "scroll_container": "cb-main-content"
     },
     {
       "id": "home.course--460--light--200--full",
       "file": "home.course--460--light--200--full.png",
-      "md5": "265bd3378c123d0339b6eb5973d0129d",
-      "bytes": 83029,
+      "md5": "9ca69ccd7de4ebe3ac7867f40c54589c",
+      "bytes": 305490,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -758,16 +826,19 @@
       "shelfScrolls": null,
       "pageOverflow": false,
       "innerWidth": 460,
+      "innerHeight": 4382,
       "rootFont": "32px",
       "textHead": "Skip to course content COURSEBOOK Course Default view · Game · Child-safe defaults · Session · 15 min Back to Home Settings Home Courses Workshop Parent Studio THE REVIEW IS DUE Japanese affection and register — an L0 demonstration classroom Section 1 of 4 · Tell everyday affection from a direct romantic declaration is",
       "full_page": true,
-      "captured_height": 1004
+      "captured_height": 4382,
+      "content_height": 3794,
+      "scroll_container": "cb-main-content"
     },
     {
       "id": "home.course--900--light--100--full",
       "file": "home.course--900--light--100--full.png",
-      "md5": "c5745f86320e25eb98c140fde477c858",
-      "bytes": 132252,
+      "md5": "bcdb7b58d5aca0f6042a624c13b8030a",
+      "bytes": 140761,
       "hash": "#/coursebook",
       "home": null,
       "shelf": null,
@@ -785,10 +856,13 @@
       "shelfScrolls": null,
       "pageOverflow": false,
       "innerWidth": 900,
+      "innerHeight": 1430,
       "rootFont": "16px",
       "textHead": "Skip to course content COURSEBOOK Course Default view · Game · Child-safe defaults · Session · 15 min Back to Home Settings Home Courses Workshop Parent Studio THE REVIEW IS DUE Japanese affection and register — an L0 demonstration classroom Section 1 of 4 · Tell everyday affection from a direct romantic declaration is",
       "full_page": true,
-      "captured_height": 1004
+      "captured_height": 1430,
+      "content_height": 1216,
+      "scroll_container": "cb-main-content"
     }
   ]
 }

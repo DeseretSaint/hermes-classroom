@@ -12,10 +12,10 @@ Screen: `home.global` (concept F1 `home-generic-first-open.png`) and `home.cours
 | Composition | 4 | 4 | invitation band + one shelf row with authored card widths (17/13/15 rem), not an equal grid; course home keeps the existing trail composition |
 | Type | 5 | 5 | six-step scale only; invitation at `heading`, card titles at `lead`, no authored sizes |
 | Palette and texture | 5 | 5 | parchment/ink/ochre/coral tokens only; no raw hex in the render; dark frame from the same table |
-| Illustration | 4 | 4 | text-derived paper covers with subject monogram (and real artifact when a row carries one); course world hero is GM-004 |
+| Illustration | 4 | 4 | text-derived paper covers with the subject monogram and subject only; the card heading is the single title (and a real artifact when a row carries one); course world hero is GM-004 |
 | Card/game system | 4 | 4 | tactile cards with real next step and a real `world.read` mode badge; no stars, ratings or XP |
 | State coverage | 5 | 5 | empty, loading, error, offline, overflow for Home; loading, error, no-outline for course home |
-| Responsiveness | 5 | 5 | 1049/900/460, 200 % text (root 32 px), no horizontal document overflow in any frame |
+| Responsiveness | 5 | 5 | 1049/900/460, 200 % text (root 32 px), no horizontal document overflow in any frame; global Home carries `--full` cells at 1049/200 and 460/200 showing the whole shelf and `See all` |
 | Truth | 5 | 5 | every label DOM text; mode badge only from a real read; no invented progress |
 
 Known gaps carried into review:
@@ -26,5 +26,12 @@ Known gaps carried into review:
 - Cards use paper covers because no course world exists yet (GM-004 owns the hero/cover art).
 - `home.course` world states (running/partial/stale) and `course-end` are GM-004 scope; this packet
   captures default, no-world, plan-in-review, loading, error and the responsive/focus cells.
+
+Round-3 resubmission (commit `aaba9ca`, plugin `a6476fb1…`): the three defects from review round 2
+are fixed and recaptured live — the `overflow` cell is now taken with the shelf tray scrolled to
+its end and its bytes are asserted distinct from `default`/`reduced-motion`; every shelf card paints
+its title once (the paper cover prints monogram + subject only, and `test_card_prints_its_title_once`
+counts painted text); global Home has `--full` cells at 1049/200 and 460/200 showing the shelf and
+`See all` below the invitation band.
 
 Verdict: **REQUEST REVIEW** — reviewer decides.
