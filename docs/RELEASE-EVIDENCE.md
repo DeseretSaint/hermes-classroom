@@ -39,6 +39,67 @@ frames with an accessibility tree), the worst authored contrast (5.93:1), and th
 counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the `eed7dc7` slice, not
 this tree.
 
+## Pack round-trip, measured live on `bc9f607`
+
+Gate 4 was re-driven as a live round trip rather than inferred from the suite. The measurement
+commit is `bc9f6072fc0509f151a00e303243ea6f04b47bad` (the H-203 documentation merge over
+`ab6dc7e`); `sha256sum desktop/plugin.js` on that commit is
+`cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`, the same module the M4 audit is
+pinned to, so the pack bytes and the shipped Desktop half are the same objects the rest of this
+document describes.
+
+Two isolated homes were installed from this checkout (`scripts/install-local.sh --home <home>`,
+admission gates PASS in both) and each was served by its own `hermes serve --isolated` backend, so
+every call below crossed the mounted `POST /api/plugins/coursebook/rpc` route with a `cb.rpc` v20
+envelope — no handler was imported into the measuring process. Store A imported
+`japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0 from archives built by the
+repository's own deterministic writer; store B was a fresh home that received only the two archives
+store A exported.
+
+| Step | Store A (`44319`) | Store B (`44320`, fresh) |
+| --- | --- | --- |
+| `packs.intake` | `available: true`, `can_grant: true` | same route, same answer |
+| `pack.preview` (Japanese) | `hashes_match: true`, 8 files, 46,425 expanded bytes, trust `integrity_verified` / `automated_checks_passed` / `model_assessed_support` | identical integrity and manifest |
+| `pack.import` (Japanese, `fresh`) | `crs_9a4e2069…` / `enr_502aec74…` | a new course over re-imported bytes |
+| `pack.import` (Japanese, `resume`) | returns the same `course_id`/`enrollment_id` — no duplicate course | — |
+| `pack.import` (demo, `fresh`) | `crs_a978326b…` / `enr_32e88ca5…` | — |
+| Structure after import | Japanese 4 objectives / 4 sections / 4 checks; demo 2 / 2 / 2; lesson pages carry 4 teaching + 3 media + 4 check segments (Japanese) and 2 + 1 + 2 (demo) | the same counts, segment for segment |
+| `pack.export` attempt 1 | `content_hash` `sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9`, 8 files, 40,363 bytes, artifact `art_6b4acc2a…` | Japanese export `sha256:5343526d…`, 40,363 bytes |
+| `pack.export` attempt 2 (same store) | **identical** `content_hash`, identical `artifact_id`, identical archive sha256 `sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0` | demo export also identical on its two attempts: `sha256:ff5594a8…`, 6,516 bytes |
+| Re-import input bytes | — | the exported archive is byte-for-byte the archive that was imported (`sha256:4aefd708…` both ways) |
+
+The demo pack exported with `content_hash`
+`sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d` and archive
+`sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e` on both attempts and in
+both stores. The export is deterministic because the writer sorts entries and stamps every one with a
+fixed `1980-01-01` timestamp; a nondeterministic hash would have shown up as two different archive
+digests, and did not.
+
+`course.export` was probed on the pack-backed enrollment and refused with its contract's own typed
+reason, `course_pack_backed` ("this course was imported from a pack; use pack.export for its stored
+content") — recorded here so the naming in the gate row is not mistaken for a different method
+having run.
+
+### Media in the round trip
+
+Four media objects were adopted in each store — the three Japanese links
+(`content/cover-16x9.png`, `content/narration-polite-confession.mp3`,
+`content/relationship-map.png`) and the demo cover. None was dropped, re-encoded or re-fetched: every
+declared file's bytes hash to its manifest entry in both stores (all 8 Japanese files and all 5 demo
+files), the artifact object store holds exactly those four content addresses in both stores, and the
+`media[]` links carry a path, a section path and a caption only — no URL exists to re-fetch. The
+lesson pages carry the media segments at the section the manifest names (2 on Japanese objective 1,
+1 on objective 2).
+
+**One defect, measured:** `artifact.get` cannot mint a download handle for a pack media artifact.
+All three Japanese media rows answer `INTERNAL_ERROR` — `artifact.get handler returned a result
+outside the contract at content_hash: '<64 hex>' does not match '^sha256:[a-f0-9]{64}$'` — because
+`coursebook/artifacts.py` stores the digest unprefixed in the `artifacts` row while
+`coursebook/domain.py:artifact_get` returns the row value verbatim. The export artifact is
+unaffected (it is stored prefixed and returns its handle normally), which is why the round trip and
+the export hash are green while the learner-facing media fetch is not. That failing step is why gate
+4 stays `[~]`; the repair is tracked separately and no product code was changed in this pass.
+
 ## Reproducibility
 
 `python3 scripts/m4v-repro-check.py` runs the whole audit twice in isolated scratch/out trees (separate
@@ -55,6 +116,9 @@ claim about the module its `plugin_sha256` line names.
   commit: 4/4 checks PASS on a `git archive` export of 2742 files (admission and security scan,
   `node --check`, 26 desktop contract tests, `hermes plugins doctor`).
 - No provider-spend generation, no demo capture, no recording.
+- The pack round trip in the `bc9f607` section above ran against a mounted backend over HTTP, not
+  inside a Desktop window: no rendered lesson was captured, and the media defect it found is a wire
+  refusal (`artifact.get`), not a visual observation.
 - The adversarial matrix was re-run here and is green (23/23 PASS, S13 BLOCKED by design).
 - The catalog entry was not re-validated in this pass; the last recorded validation is the H-193
   record. It is a docs pass, and the catalog pin is untouched.
