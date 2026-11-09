@@ -1,0 +1,26 @@
+# GM-001 verification transcript (real command output)
+
+Mon Nov  9 06:45:59 PM UTC 2026
+
+## $ python3 -m unittest tests.test_gm_contract
+----------------------------------------------------------------------
+Ran 22 tests in 0.217s
+
+OK
+
+## $ python3 -m unittest tests.test_kernel_schema
+----------------------------------------------------------------------
+Ran 12 tests in 1.673s
+
+OK
+
+## $ python3 -m unittest tests.test_contracts
+----------------------------------------------------------------------
+Ran 171 tests in 2.154s
+
+OK
+
+## $ python3 -m unittest discover -s tests -t . (full backend suite)
+Ran 2769 tests in 410.375s
+
+OK (skipped=1)
