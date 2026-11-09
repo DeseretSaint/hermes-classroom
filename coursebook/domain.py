@@ -3128,23 +3128,26 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     return int(result["revision"]), result
 
 
-def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
-    """The authored page for this objective, whatever its validation strength (H-185/H-194).
+#: ``lesson.page`` copy when an authored page exists but no one approved it (``needs_review``).
+#: The page is not served and its check is not opened; saying "no teaching content yet" would be
+#: a false statement about a section that does have an authored page (t_3a3c6ea1).
+_VIEW_NOTE_PARKED_REVIEW = (
+    "A generated lesson page exists for this section but is awaiting review, so it is not "
+    "served until it is approved. Its check stays closed until then."
+)
+
+#: ``gen_lessons`` states a learner may be offered: independently validated, assessed by its own
+#: author model (honestly labelled), or an authored edit an adult signed off.
+_SERVABLE_LESSON_STATES = ("validated", "model_assessed", "parent_approved")
+
+
+def _authored_lesson_rows(connection, objective) -> list[Any]:
+    """Every ``gen_lessons`` revision for this objective's section, newest first.
 
     ``gen_lessons`` is keyed by ``(section, plan_hash, version)`` and the section names its
     objective refs, so the objective is the only join key the kernel has. A profile that has never
     run the pipeline has no ``gen_*`` tables: that is a normal course built from packs or chat
     segments, not an error, and it stays on the segment projection.
-
-    The **latest** revision is returned: an authored edit supersedes the generated page it was
-    made from without deleting it, and a parent-approved edit is served as ``parent_approved`` —
-    never relabelled as independently validated. A profile that never fine-tunes has exactly one
-    version-1 row, so its read is unchanged.
-
-    Only a page a learner may be offered is returned. ``validated`` and ``model_assessed`` are
-    pages the validator cleared (one honestly labelled); ``parent_approved`` is an authored edit
-    the human signed off. A ``needs_review`` row is content no one approved, so it is refused here
-    exactly as before H-194 and the caller falls back to the durable segment projection.
     """
     try:
         document = connection.execute(
@@ -3152,23 +3155,43 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
             (str(objective["plan_id"]),),
         ).fetchone()
         if document is None:
-            return None
+            return []
         section = connection.execute(
             "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
             " AND json_extract(objective_refs_json, '$[0]') = ? ORDER BY ordinal LIMIT 1",
             (str(objective["plan_id"]), str(document["plan_hash"]), int(objective["ordinal"])),
         ).fetchone()
         if section is None:
-            return None
-        lesson = connection.execute(
-            "SELECT id, page_json, state, validation_id, media_json, version FROM gen_lessons"
-            " WHERE section_id = ? AND plan_hash = ?"
-            " AND state IN ('validated', 'model_assessed', 'parent_approved')"
-            " ORDER BY version DESC, rowid DESC LIMIT 1",
+            return []
+        return connection.execute(
+            "SELECT id, page_json, state, validation_id, media_json, version, rejection_reasons_json"
+            " FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
+            " ORDER BY version DESC, rowid DESC",
             (str(section["id"]), str(document["plan_hash"])),
-        ).fetchone()
+        ).fetchall()
     except sqlite3.OperationalError:
-        return None
+        return []
+
+
+def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
+    """The authored page for this objective, whatever its validation strength (H-185/H-194).
+
+    The **latest** served revision is returned: an authored edit supersedes the generated page it
+    was made from without deleting it, and a parent-approved edit is served as ``parent_approved`` —
+    never relabelled as independently validated. A profile that never fine-tunes has exactly one
+    version-1 row, so its read is unchanged.
+
+    Only a page a learner may be offered is returned. ``validated`` and ``model_assessed`` are
+    pages the validator cleared (one honestly labelled); ``parent_approved`` is an authored edit
+    the human signed off. A ``needs_review`` row is content no one approved, so it is refused here
+    exactly as before H-194 and the caller falls back to the durable segment projection (or names
+    the parked state — ``_parked_lesson_page``).
+    """
+    lesson = next(
+        (row for row in _authored_lesson_rows(connection, objective)
+         if str(row["state"]) in _SERVABLE_LESSON_STATES),
+        None,
+    )
     if lesson is None:
         return None
     page = _json_load(lesson["page_json"], None)
@@ -3181,6 +3204,31 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
         "media": generation.stored_lesson_media(dict(lesson)),
         "lesson_id": str(lesson["id"]),
         "version": int(lesson["version"]),
+    }
+
+
+def _parked_lesson_page(connection, objective) -> dict[str, Any] | None:
+    """The newest authored revision when it exists but is parked for review, else ``None``.
+
+    Read-only and never a served page: it only lets ``lesson.page`` name the real state instead of
+    claiming the section has no teaching content. The check is not touched here, and the empty
+    document's ``check_id`` stays null because no block exists to attach it to.
+    """
+    rows = _authored_lesson_rows(connection, objective)
+    if not rows:
+        return None
+    lesson = rows[0]
+    if str(lesson["state"]) != "needs_review":
+        return None
+    page = _json_load(lesson["page_json"], None)
+    if not isinstance(page, dict) or not page:
+        return None
+    reasons = _json_load(lesson["rejection_reasons_json"], [])
+    return {
+        "state": "needs_review",
+        "lesson_id": str(lesson["id"]),
+        "version": int(lesson["version"]),
+        "rejection_reasons": reasons if isinstance(reasons, list) else [],
     }
 
 
@@ -3303,6 +3351,10 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         provenance = None
         authored_incomplete = False
         authored = _authored_lesson_page(connection, objective)
+        # t_3a3c6ea1: a section whose newest authored revision is parked (`needs_review`) has a
+        # page that no one approved. `_authored_lesson_page` correctly refuses it; remember that
+        # so the empty document can name the real state instead of claiming nothing was authored.
+        parked = _parked_lesson_page(connection, objective) if authored is None else None
         if authored is not None:
             page = dict(authored["page"])
             # H-194: a pending authored edit (`needs_review`) is never returned by
@@ -3348,6 +3400,12 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     "The generated lesson page is missing teaching segments; the lessons job "
                     "owns this page."
                 )
+            elif parked is not None and not document["blocks"]:
+                # t_3a3c6ea1: an authored page exists and is parked for review. "This section has
+                # no teaching content yet" is false here; name the parked state. The page is still
+                # not served and no check is attached, because an empty document has no block for
+                # one (H-185/H-194 unchanged).
+                document["view_note"] = _VIEW_NOTE_PARKED_REVIEW
     result = {
         "enrollment_id": enrollment["id"],
         "course": {"course_id": course["id"], "title": course["title"]},
