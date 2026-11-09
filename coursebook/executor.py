@@ -525,9 +525,16 @@ async def _tick_loop(interval: float) -> None:
 def _reaper_loop(interval: float) -> None:
     """Reconcile expired leases on a fixed cadence, independent of the pump (H-66)."""
     wait = max(float(interval), 0.5)
+    last_skip: str | None = None
     while not _STOP.is_set():
         try:
             result = job_service.reconcile_expired()
+            skipped = result.get("reason") if result.get("skipped") else None
+            if skipped and skipped != last_skip:
+                # Say it once. A store that has not been migrated yet is a normal startup state,
+                # not a failure; repeating the same line every five seconds is the defect.
+                logger.info("coursebook job reaper waiting: %s", skipped)
+            last_skip = skipped
             if result.get("interrupted") or result.get("cancelled"):
                 logger.warning(
                     "coursebook job reaper: running->interrupted=%s cancel->cancelled=%s",
@@ -544,20 +551,35 @@ def _start_reaper(interval: float | None = None) -> Any:
 
     The pump thread is deliberately *not* responsible for this: a pump stuck inside one job is
     exactly the case where the database must still be reconciled by another thread.
+
+    The **store root is resolved here**, in the registering context, and pinned inside the thread
+    (H-182/D6). A background thread has no request scope, so resolving ``get_hermes_home()`` from
+    inside the loop read a home with no ``jobs`` table in the isolated ``hermes serve`` topology —
+    and ``connect()`` created that empty file — producing ``no such table: jobs`` every five
+    seconds. Pinning the registering context's resolution makes the reaper read exactly the database
+    the RPC reads.
     """
     global _REAPER_THREAD
     if _REAPER_THREAD is not None and _REAPER_THREAD.is_alive():
         return _REAPER_THREAD
     delay = REAPER_SECONDS if interval is None else float(interval)
     context = contextvars.copy_context()  # keep the profile-local home override
+    scope = db.store_scope()
+
+    def loop() -> None:
+        with db.use_store_scope(scope):
+            _reaper_loop(delay)
+
     _REAPER_THREAD = threading.Thread(
         target=context.run,
-        args=(_reaper_loop, delay),
+        args=(loop,),
         name="coursebook-job-reaper",
         daemon=True,
     )
     _REAPER_THREAD.start()
-    logger.info("coursebook job reaper started: interval=%.1fs", delay)
+    logger.info(
+        "coursebook job reaper started: interval=%.1fs store=%s", delay, scope
+    )
     return _REAPER_THREAD
 
 
@@ -602,10 +624,14 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
         # under the caller's context so a profile-local home override reaches the pump.
         coro = _tick_loop(configured)
         tick_context = contextvars.copy_context()
+        tick_scope = db.store_scope()
 
         def run() -> None:
             try:
-                asyncio.run(coro)
+                # Same pin as the reaper (H-182/D6): the pump reads the store the RPC reads,
+                # even when this thread has no request scope of its own.
+                with db.use_store_scope(tick_scope):
+                    asyncio.run(coro)
             except Exception:  # noqa: BLE001 - a dead tick must not take the process down
                 logger.exception("coursebook job tick thread stopped")
 

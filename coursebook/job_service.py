@@ -912,7 +912,13 @@ def run_pending(
     resolver stays ``queued`` rather than being failed: the family may be implemented by another
     package, and inventing a failure would be a false statement. ``resolvers`` build stages from
     the persisted brief, so a retry after edit never needs the original form.
+
+    A store with no schema yet has no jobs to drain by definition (H-182/D6): the pump starts at
+    plugin registration, before any Coursebook action has migrated anything, and opening the file
+    then raised ``no such table: jobs`` (and created the empty database) on every tick.
     """
+    if db.applied_schema_version() is None:
+        return []
     with db.read() as connection:
         rows = connection.execute(
             "SELECT id, kind, brief_json FROM jobs WHERE state = 'queued' ORDER BY created_at LIMIT ?",
@@ -977,7 +983,7 @@ def _default_store() -> Any:
     return ArtifactStore()
 
 
-def reconcile_expired(*, now: datetime | None = None) -> dict[str, int]:
+def reconcile_expired(*, now: datetime | None = None) -> dict[str, Any]:
     """Move **expired-lease** live rows to a terminal/honest state; safe to call repeatedly.
 
     This is the live-process twin of :func:`reconcile_startup` and exists because that pass runs
@@ -993,7 +999,19 @@ def reconcile_expired(*, now: datetime | None = None) -> dict[str, int]:
 
     No artifact reconciliation here: this runs every few seconds, and only the startup pass may
     sweep files.
+
+    A store with **no schema yet** is a skip, not a failure (H-182/D6). The reaper starts at plugin
+    registration, before the first Coursebook action has migrated anything, and opening the file
+    then both created an empty database and raised ``no such table: jobs`` every five seconds. Absent
+    is not unreadable: a *migrated* store that cannot be read still raises exactly as before.
     """
+    if db.applied_schema_version() is None:
+        return {
+            "interrupted": 0,
+            "cancelled": 0,
+            "skipped": True,
+            "reason": "database has no schema yet",
+        }
     moment = _now(now)
     stamp = _iso(moment)
     with db.read() as connection:
