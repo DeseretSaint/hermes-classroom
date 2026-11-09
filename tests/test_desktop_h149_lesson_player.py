@@ -339,7 +339,7 @@ class PlayerCloseTest(H149RenderTest):
         html = self.render({"kind": "close", "ordinal": 2,
                             "progress": {"total_objectives": 4, "independent": 2, "review_due": 1}})
         self.assertIn("You finished Section 2", html)
-        self.assertIn("2 of 4 with evidence", html)
+        self.assertIn("2 of 4 with independent evidence", html)
         self.assertIn("1 to review", html)
         self.assertIn("Return to the trail", html)
         self.assertEqual(html.count('data-variant="default"'), 1)

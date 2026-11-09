@@ -239,13 +239,44 @@ const chip = () => {
 await waitFor(() => document.querySelector('[data-cb-choice-group]'))
 await sleep(200)
 const group = document.querySelector('[data-cb-choice-group]')
+const used = () => {
+  const node = document.querySelector('[data-cb-assist-used]')
+  return node ? { kind: node.getAttribute('data-cb-assist-used'), text: node.textContent.trim() } : null
+}
+const hintButtons = () =>
+  Array.from(document.querySelectorAll('button')).filter((item) => item.textContent.trim() === 'I used a hint')
 const initial = chip()
+const initialUsed = used()
 
 if (payload.mode === 'assist') {
   button('I used a hint').click()
   await waitFor(() => chip() && chip().value === 'hinted')
 }
+// H-206: after one recorded hint the control must have left, and a second click must find no
+// control to land on (nothing that could look like a second hint).
+let secondHint = null
+if (payload.mode === 'assist') {
+  const again = button('I used a hint')
+  secondHint = again ? 'still_available' : 'gone'
+  if (again) {
+    again.click()
+    await sleep(150)
+  }
+}
 const afterAssist = chip()
+const afterAssistUsed = used()
+const assistState = document.querySelector('[data-cb-assist]')
+  ? document.querySelector('[data-cb-assist]').getAttribute('data-cb-assist-state')
+  : null
+// H-206: the pressed button is replaced; focus must land on the group that replaced it, not body.
+const focusAfterAssist =
+  document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-cb-assist') !== null
+    ? 'assist-group'
+    : document.activeElement
+      ? document.activeElement.tagName
+      : null
+const hintButtonCount = hintButtons().length
+const assistCalls = calls.filter((name) => name === 'lesson.assist').length
 
 const keyEvent = new window.KeyboardEvent('keydown', { key: payload.key || '2', bubbles: true, cancelable: true })
 const target = document.querySelector('[data-cb-choice="1"]') || group
@@ -273,7 +304,14 @@ process.stdout.write(
     calls,
     submitted,
     initial,
+    initialUsed,
     afterAssist,
+    afterAssistUsed,
+    assistState,
+    focusAfterAssist,
+    secondHint,
+    hintButtonCount,
+    assistCalls,
     afterSubmit,
     selected,
     keyWorked,
@@ -417,6 +455,11 @@ class IntegrityChipTest(FieldStopBase):
         )
         self.assertEqual(out["initial"]["value"], "hinted")
         self.assertIn("A hint was recorded before this answer", out["initial"]["text"])
+        # H-206: a hint recorded in the chat already puts the pane's control in its used state, so
+        # the learner cannot record the same hint again from here.
+        self.assertEqual(out["initialUsed"]["kind"], "hint_request")
+        self.assertIn("Hint recorded", out["initialUsed"]["text"])
+        self.assertEqual(out["hintButtonCount"], 0)
 
     def test_a_prior_committed_attempt_is_at_least_hinted(self) -> None:
         out = self.live({"check": check_payload(attempt_count=1), "implemented": ["check.get"], "mode": "plain"})
@@ -472,6 +515,24 @@ class IntegrityChipTest(FieldStopBase):
         # The assist returned revision 4; the submit after it must fence on that revision, not the
         # page's stale 3, or the backend refuses it as STALE_REVISION (review round 1, item 3).
         self.assertEqual(out["submitted"]["revision"], 4)
+
+    def test_the_hint_control_shows_its_used_state_and_cannot_record_twice(self) -> None:
+        """H-206: one click must be visible, final, and impossible to repeat as a second hint."""
+        out = self.live(
+            {
+                "check": check_payload(attempt_count=0),
+                "implemented": ["check.get", "lesson.assist", "evidence.inspect"],
+                "events": [],
+                "mode": "assist",
+            }
+        )
+        self.assertEqual(out["assistState"], "hinted")
+        self.assertEqual(out["afterAssistUsed"]["kind"], "hint_request")
+        self.assertIn("Hint recorded", out["afterAssistUsed"]["text"])
+        self.assertEqual(out["focusAfterAssist"], "assist-group")
+        self.assertEqual(out["secondHint"], "gone")
+        self.assertEqual(out["hintButtonCount"], 0)
+        self.assertEqual(out["assistCalls"], 1)
 
 
 class ChoiceSurfaceTest(FieldStopBase):
@@ -530,7 +591,7 @@ class FieldStopCloseTest(FieldStopBase):
             {"kind": "close", "progress": {"total_objectives": 4, "independent": 3, "review_due": 0}, "evidenceClass": "cold"}
         )
         self.assertIn("You finished Section 2", html)
-        self.assertIn("3 of 4 with evidence", html)
+        self.assertIn("3 of 4 with independent evidence", html)
         self.assertIn("Return to the trail", html)
         self.assertIn("Read the section", html)
         self.assertIn('data-cb-evidence-chip="cold"', html)
