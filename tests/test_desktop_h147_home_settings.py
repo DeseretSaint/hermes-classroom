@@ -493,7 +493,9 @@ class HomeSettingsSheetTest(Harness):
         for label in opened["sectionLabels"]:
             self.assertEqual(label["id"], label["headingId"])
         self.assertTrue(opened["focus"]["inSheet"], opened["focus"])
-        self.assertEqual(opened["toggles"]["haptics"], "false")
+        # H-183: Haptics is an availability note, not a switch. The learner sees no control there.
+        self.assertNotIn("haptics", opened["toggles"])
+        self.assertIn('data-cb-settings-unavailable="haptics"', result["sheetHtml"])
         self.assertEqual(opened["toggles"]["sound"], "false")
         # Both the trigger and every section reset meet the 44 px target.
         self.assertEqual({reset["minHeight"] for reset in opened["resetButtons"]}, {"44px"})
@@ -648,12 +650,75 @@ class HomeSettingsCopyTest(Harness):
         self.assertEqual(result["saveButtons"], 0)
         self.assertNotIn("save", [button.lower() for button in opened["buttons"]])
 
-    def test_haptics_is_a_desktop_no_op_that_never_claims_a_response(self):
+    def test_home_copy_names_no_internal_machinery(self):
+        """H-183: the default Home desk never speaks in jobs, queues or revisions."""
+        import re
+
+        result = self.mount([])
+        text = result["steps"][0]["bodyText"] or ""
+        for pattern in (
+            r"lessons job",
+            r"\bjobs?\b",
+            r"\bqueued\b",
+            r"\bqueue\b",
+            r"\brevision\b",
+            r"\breconcile\b",
+            r"JOB_FAILED",
+        ):
+            self.assertIsNone(re.search(pattern, text, re.I), f"Home shows {pattern!r}: {text}")
+
+    def test_haptics_is_an_availability_note_not_a_switch(self):
         result = self.mount([{"kind": "open"}], storage_name="haptics.json")
         html = result["sheetHtml"]
         self.assertIn("Not available on desktop", html)
-        self.assertIn("never claims a haptic response", html)
-        self.assertEqual(result["steps"][1]["toggles"]["haptics"], "false")
+        self.assertIn("never offers a vibration response", html)
+        # H-183: no disabled switch either. The honest desktop default is a sentence, not a control.
+        self.assertNotIn("haptics", result["steps"][1]["toggles"])
+        self.assertIn('data-cb-settings-unavailable="haptics"', html)
+        unavailable = html.split('data-cb-settings-unavailable="haptics"')[1].split("</section>")[0]
+        self.assertNotIn("<input", unavailable)
+        self.assertNotIn('role="switch"', unavailable)
+
+    def test_every_settings_control_has_a_reader_outside_the_sheet(self):
+        """H-183: a preference with no reader is a defect, not a setting."""
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        start = source.index("function HomeSettingsSheet(")
+        end = source.index("function HomeDefaultsLine(")
+        sheet = source[start:end]
+        outside = source[:start] + source[end:]
+        readers = {
+            "appearance": "homePrefs.appearance",
+            "default-view": "prefs.defaultMode",
+            "classroom": "prefs.classrooms",
+            "session-length": "prefs.sessionMinutes",
+            "sound": "prefs.sound",
+            "companion": "prefs.companion",
+            "reduced-motion": "homePrefs.reducedMotion",
+        }
+        for control, reader in readers.items():
+            with self.subTest(control=control):
+                self.assertIn(f"'{control}'", sheet, f"{control} is not rendered")
+                self.assertIn(reader, outside, f"{control} has no reader outside the sheet: {reader}")
+        # Haptics emits no control key at all, so it can never be counted as a setting.
+        self.assertIn("'data-cb-settings-unavailable': 'haptics'", sheet)
+        self.assertNotIn("'data-cb-settings-toggle': 'haptics'", source)
+        self.assertNotIn("'data-cb-settings-control': 'haptics'", source)
+
+    def test_session_length_setting_reaches_the_home_line_it_claims_to_change(self):
+        result = self.mount(
+            [{"kind": "open"}, {"kind": "option", "section": "session-length", "value": "20"}],
+            storage_name="session-length.json",
+        )
+        self.assertEqual(result["steps"][0]["sessionMinutes"], "15")
+        self.assertEqual(result["steps"][2]["sessionMinutes"], "20")
+        self.assertIn("Session", result["steps"][0]["homeDefaultsText"] or "")
+
+    def test_companion_setting_reaches_the_surfaces_that_draw_the_companion(self):
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        # The stored choice is read by the route and handed to the plates that draw a pet.
+        self.assertIn("companionEnabled: !prefs || prefs.companion !== false", source)
+        self.assertIn("useStudyCompanion(companionEnabled === true)", source)
+        self.assertIn("useStudyCompanion(companionEnabled !== false)", source)
 
 
 class SectionDefaultViewTest(Harness):

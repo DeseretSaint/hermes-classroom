@@ -542,7 +542,7 @@ class SyllabusDesktopTest(unittest.TestCase):
         out = self.run_case({"kind": "stale", "input": {"revision": 3, "counts": {"conflict": 1, "stale": 1}, "planRevision": 2}})
         text = " ".join(out["lines"])
         self.assertIn("marked stale", text)
-        self.assertIn("syllabus revision 2", text)
+        self.assertIn("version 2 of your syllabus", text)
         self.assertEqual(out["pending"], 2)
         self.assertNotIn("regenerat", text.lower())
 
