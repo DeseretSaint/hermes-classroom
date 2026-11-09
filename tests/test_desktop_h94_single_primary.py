@@ -167,29 +167,18 @@ class DeskFactsLineTest(unittest.TestCase):
         self.assertEqual(self.html.count('data-variant="default"'), 1, self.html)
 
     def test_the_desk_has_one_facts_line_not_three_cards(self) -> None:
-        self.assertEqual(self.html.count("data-cb-desk-facts="), 1, self.html)
-        self.assertIn('data-cb-desk-facts="3"', self.html)
+        # H-189 removed the plate's own facts line: it repeated the route's evidence count and the
+        # current stop's state word inside the plate, so the route was said twice. The one count
+        # now lives in the route header and the plate carries no stat strip at all.
+        self.assertNotIn("data-cb-desk-facts=", self.html)
         self.assertNotIn("data-cb-desk-stats", self.html)
         self.assertNotIn("data-cb-desk-stat=", self.html)
         self.assertNotRegex(self.html, r"grid-template-columns:\s*repeat\(3")
 
-    def test_the_facts_are_state_evidence_and_due_now(self) -> None:
-        self.assertIn("This section", self.html)
-        self.assertIn("Review due", self.html)
-        self.assertIn("1 of 4", self.html)
-        self.assertIn("With evidence", self.html)
-        self.assertIn("Due now", self.html)
-
-    def test_zero_due_is_omitted_rather_than_shown_as_a_card(self) -> None:
-        outline = json.loads(json.dumps(OUTLINE))
-        for objective in outline["objectives"]:
-            objective["state"] = "introduced"
-            objective["independent"] = False
-        html = _render(
-            {"kind": "desk", "library": library(library_row()), "outline": outline, "estimate": None}
-        )
-        self.assertIn('data-cb-desk-facts="2"', html)
-        self.assertNotIn("Due now", html)
+    def test_the_route_header_carries_the_one_evidence_count(self) -> None:
+        self.assertEqual(self.html.count("with evidence"), 1, self.html)
+        self.assertIn("1 of 4 sections with evidence", self.html)
+        self.assertEqual(self.html.count("data-cb-tally-caption"), 1, self.html)
 
 
 if __name__ == "__main__":

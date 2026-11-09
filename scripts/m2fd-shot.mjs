@@ -121,6 +121,12 @@ const MEASURE = `(() => {
     first_run_contour: Boolean(document.querySelector('[data-cb-first-run-contour]')),
     companion_present: Boolean(document.querySelector('[data-cb-companion] canvas')),
     companion_motion: (document.querySelector('[data-cb-companion]') || {}).getAttribute?.('data-cb-companion-motion') || null,
+    slot_covers: [...document.querySelectorAll('[data-cb-slot-cover]')].map((node) => node.getAttribute('data-cb-slot-cover')),
+    slot_cover_alts: [...document.querySelectorAll('[data-cb-slot-cover] img')].map((node) => node.getAttribute('alt')),
+    shelf_contours: document.querySelectorAll('[data-cb-classroom-shelf] [data-cb-course-contour]').length,
+    field_notes_line: (document.querySelector('[data-cb-field-notes-line]') || {}).innerText || null,
+    field_note_rows: document.querySelectorAll('[data-cb-field-note]').length,
+    empty_alt_images: document.querySelectorAll('img[alt=""]').length,
     shelf_courses: document.querySelectorAll('[data-cb-slot-tab]').length,
     trailhead_order: (() => {
       const path = document.querySelector('[data-cb-path]')

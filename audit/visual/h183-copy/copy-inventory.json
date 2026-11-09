@@ -1,0 +1,91 @@
+{
+  "surfaces": {
+    "after-first-run-dark-1049-16.html": [],
+    "after-first-run-light-1049-16.html": [],
+    "after-first-run-light-1049-32.html": [],
+    "after-first-run-light-460-16.html": [],
+    "after-home-dark-1049-16.html": [],
+    "after-home-light-1049-16.html": [],
+    "after-home-light-1049-32.html": [],
+    "after-home-light-460-16.html": [],
+    "after-lesson-empty-dark-1049-16.html": [],
+    "after-lesson-empty-light-1049-16.html": [],
+    "after-lesson-empty-light-1049-32.html": [],
+    "after-lesson-empty-light-460-16.html": [],
+    "after-lesson-failed-dark-1049-16.html": [],
+    "after-lesson-failed-light-1049-16.html": [],
+    "after-lesson-failed-light-1049-32.html": [],
+    "after-lesson-failed-light-460-16.html": [],
+    "after-settings-dark-1049-16.html": [],
+    "after-settings-light-1049-16.html": [],
+    "after-settings-light-1049-32.html": [],
+    "after-settings-light-460-16.html": [],
+    "check-after/01-quest-light-wide.html": [],
+    "check-after/02-quest-dark-wide.html": [],
+    "check-after/03-quest-light-460.html": [],
+    "check-after/05-quest-light-460-200pct.html": []
+  },
+  "source": {
+    "desktop/plugin.js": {
+      "learner_copy": [],
+      "technical_context": [
+        {
+          "pattern": "not registered",
+          "kind": "build-registration machinery",
+          "found": "not registered",
+          "line": 436,
+          "text": "Coursebook is not registered"
+        },
+        {
+          "pattern": "not registered",
+          "kind": "build-registration machinery",
+          "found": "not registered",
+          "line": 761,
+          "text": "Coursebook is not registered"
+        },
+        {
+          "pattern": "not registered",
+          "kind": "build-registration machinery",
+          "found": "not registered",
+          "line": 766,
+          "text": "Coursebook is not registered"
+        },
+        {
+          "pattern": "\\bjobs?\\b",
+          "kind": "backend machinery",
+          "found": "job",
+          "line": 6501,
+          "text": "Plan job"
+        },
+        {
+          "pattern": "\\bjobs?\\b",
+          "kind": "backend machinery",
+          "found": "job",
+          "line": 15077,
+          "text": "${job.error.code}: "
+        },
+        {
+          "pattern": "\\bjobs?\\b",
+          "kind": "backend machinery",
+          "found": "job",
+          "line": 15078,
+          "text": "${code}${job.error.message || 'No reason was recorded.'}"
+        },
+        {
+          "pattern": "\\brevision\\b",
+          "kind": "backend machinery",
+          "found": "revision",
+          "line": 21797,
+          "text": "You are the operator \u00b7 revision ${revision}"
+        },
+        {
+          "pattern": "\\brevision\\b",
+          "kind": "backend machinery",
+          "found": "revision",
+          "line": 21797,
+          "text": "You are the operator \u00b7 revision ${revision}"
+        }
+      ]
+    }
+  }
+}

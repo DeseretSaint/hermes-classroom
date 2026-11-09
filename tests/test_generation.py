@@ -216,6 +216,30 @@ def _unsourced(document: dict) -> dict:
 
 def validation_from_fixture(name: str = "validation_pass"):
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
+        properties = (request.schema or {}).get("properties", {})
+        if "criteria" not in properties:
+            # H-192: a claim-only pass has no criteria in its narrowed schema, so the
+            # ten-criterion fixture is not a legal answer for it.
+            labels = (
+                ((properties.get("claim_verdicts") or {}).get("items") or {})
+                .get("properties", {})
+                .get("item", {})
+                .get("enum")
+                or []
+            )
+            return response(
+                {
+                    "claim_verdicts": [
+                        {
+                            "item": label,
+                            "support": "unverified",
+                            "reason": "not assessed by this fixture",
+                        }
+                        for label in labels
+                    ]
+                },
+                model="fake-validator",
+            )
         document = fixture(name)
         ids = source_ids_from(request)
         if ids:

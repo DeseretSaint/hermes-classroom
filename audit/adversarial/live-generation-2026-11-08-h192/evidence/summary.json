@@ -1,0 +1,562 @@
+{
+  "packet": "h192-live-acceptance-2026-11-08",
+  "scopes": {
+    "full": {
+      "acceptance": {
+        "approve_ok": false,
+        "full_has_prerequisite_edge": false,
+        "full_has_two_units": false,
+        "lesson_served": false,
+        "lesson_validated": false,
+        "no_rejection": true,
+        "objectives_in_band": false,
+        "plan_authored": false,
+        "plan_job_completed": false,
+        "provider_and_model_recorded": true,
+        "research_real": false,
+        "units_in_band": false,
+        "validation_independent": false,
+        "validation_outcome_acceptable": false
+      },
+      "acceptance_pass": false,
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_ae198934f7b142f8a8098bd4329b4424\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Read a business report statistically: averages, spread, sampling and correlation",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 1070.5,
+      "plan_hash": "sha256:0bc7568f934563fc9c3307a1ebaef98ea12ffd098bc266ee0eafc4e46d73a9d4",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "committed",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "full",
+      "served_lesson": {},
+      "shape_violations": null,
+      "tag": "full",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "units_in_document": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 83045,
+            "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:26Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v11",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 31691,
+            "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:26Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 183949,
+            "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:26Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 258581,
+            "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:26Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 927035,
+            "job_id": "job_71fb411f378e4f0184e77334364da3cc",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:26Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 2,
+              "total_tokens": "redacted"
+            },
+            "nous/z-ai/glm-5.3-flash": {
+              "calls": 3,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 5,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18,
+      "worker_ok": true
+    },
+    "short": {
+      "acceptance": {
+        "approve_ok": false,
+        "lesson_served": false,
+        "lesson_validated": false,
+        "no_rejection": true,
+        "objectives_in_band": false,
+        "plan_authored": false,
+        "plan_job_completed": false,
+        "provider_and_model_recorded": false,
+        "research_real": false,
+        "units_in_band": false,
+        "validation_independent": false,
+        "validation_outcome_acceptable": false
+      },
+      "acceptance_pass": false,
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_30f450b8781b4ffc91d2fd248fcf13e8\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+      "independence": null,
+      "job_terminal_state": "running",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 1145.5,
+      "plan_hash": "sha256:0840bd77b2db13cdb589dfaa11d7827d136ba6500adea26ec7b168c3368e0f21",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "committed",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "short",
+      "served_lesson": {},
+      "shape_violations": null,
+      "tag": "short",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "units_in_document": [],
+      "usage": {
+        "events": [],
+        "totals": {
+          "by_model": {},
+          "calls": 0,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18,
+      "worker_ok": true
+    },
+    "single": {
+      "acceptance": {
+        "approve_ok": true,
+        "lesson_served": false,
+        "lesson_validated": false,
+        "no_rejection": true,
+        "objectives_in_band": true,
+        "plan_authored": true,
+        "plan_job_completed": true,
+        "provider_and_model_recorded": true,
+        "research_real": true,
+        "units_in_band": true,
+        "validation_independent": true,
+        "validation_outcome_acceptable": true
+      },
+      "acceptance_pass": false,
+      "approve_error": null,
+      "approve_ok": true,
+      "approve_result": {
+        "plan_hash": "sha256:5a07cd3a5fc77aa4582a7bbbcbadb7dfaa4d5e546f9c8c72d746af7ef2fd5511",
+        "revision": 1
+      },
+      "check_plan_count": 1,
+      "error": null,
+      "facts_unverified": false,
+      "generation_state": "draft",
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+      "independence": "independent",
+      "job_terminal_state": "completed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [
+        {
+          "checkpoint": {
+            "budget": {
+              "max_calls": 4,
+              "max_cost_usd": 0.75,
+              "source": "declared"
+            },
+            "last_stage": "unit_sections",
+            "next_unit_ordinal": null,
+            "owners": 1,
+            "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+            "plan_id": "pln_60692743a6e8425e90b026f981a75326",
+            "reviews": 0,
+            "sections": 1,
+            "state": "validated",
+            "unit_ordinal": 1,
+            "units_complete": [],
+            "units_total": 1
+          },
+          "elapsed_s": 666.3,
+          "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+          "terminal_state": "failed"
+        }
+      ],
+      "objective_count": 1,
+      "plan_elapsed_s": 386.2,
+      "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+      "plan_schema": "coursebook.plan.v2",
+      "plan_state": "draft",
+      "plan_state_after_approve": "approved",
+      "recipe": "one_off",
+      "rejection_reasons": [],
+      "research_failure_count": 0,
+      "research_queries": [
+        "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+        "Brew a pour-over coffee whose strength stays consistent from cup to cup official procedure steps safety limits"
+      ],
+      "research_query_count": 2,
+      "research_reason": null,
+      "research_source_count": 4,
+      "research_sources": [
+        {
+          "excerpt_chars": 600,
+          "fetched_at": "2026-11-08T22:40:37Z",
+          "source_id": "71732f9d98d34ffc",
+          "support": null,
+          "title": "Pour-over coffee - NCA - About Coffee",
+          "url": "https://www.aboutcoffee.org/brewing/pour-over-coffee/"
+        },
+        {
+          "excerpt_chars": 600,
+          "fetched_at": "2026-11-08T22:40:37Z",
+          "source_id": "eeedee65b72f26ff",
+          "support": null,
+          "title": "Pour-over technique \u00b7 Coffearium",
+          "url": "https://coffearium.org/entries/pour-over-technique/"
+        },
+        {
+          "excerpt_chars": 600,
+          "fetched_at": "2026-11-08T22:40:37Z",
+          "source_id": "9c3f15a8824f2787",
+          "support": null,
+          "title": "Pour Over Coffee: What It Is & Why It Matters",
+          "url": "https://keithlyons.org/coffee-encyclopedia/pour-over"
+        },
+        {
+          "excerpt_chars": 600,
+          "fetched_at": "2026-11-08T22:40:37Z",
+          "source_id": "0f7208c3e9320661",
+          "support": null,
+          "title": "Mastering Pour-Over Technique: Every Variable That Matters",
+          "url": "https://podiumcoffeeclub.com/blogs/blog/pour-over-technique"
+        }
+      ],
+      "research_status": "ok",
+      "scope": "single",
+      "served_lesson": {},
+      "shape_violations": 0,
+      "tag": "single",
+      "time_estimate_weeks": 1,
+      "unit_count": 1,
+      "units": [
+        {
+          "ordinal": 1,
+          "prerequisite_refs": [],
+          "target_lessons": 1,
+          "title": "Set up, safety-check and repeat a recorded pour-over recipe"
+        }
+      ],
+      "units_in_document": [
+        {
+          "ordinal": 1,
+          "prerequisites": [],
+          "title": "Set up, safety-check and repeat a recorded pour-over recipe"
+        }
+      ],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 32387,
+            "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:47:01Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v11",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 43835,
+            "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:47:01Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 344841,
+            "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:47:01Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 5776,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:56:08Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "unit-sections-prompt.v1",
+              "purpose": "coursebook.unit_sections.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 320641,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:56:08Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.unit_sections.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 4703,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:56:08Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "unit-sections-prompt.v1",
+              "purpose": "coursebook.unit_sections.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 214478,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:56:08Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.unit_sections.validate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 64008,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:07Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "lesson-prompt.v10",
+              "purpose": "coursebook.lesson.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 54625,
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T22:58:07Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "lesson-prompt.v10",
+              "purpose": "coursebook.lesson.generate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 5,
+              "total_tokens": "redacted"
+            },
+            "nous/z-ai/glm-5.3-flash": {
+              "calls": 4,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 9,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": "independently_validated",
+      "validation_verdict": "pass",
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18,
+      "worker_ok": true
+    }
+  }
+}

@@ -139,10 +139,12 @@ class ValidatorStatusTest(unittest.TestCase):
 
     def test_an_empty_install_reports_no_validator_route(self) -> None:
         block = self._block()
-        self.assertEqual(set(block), {"configured", "provider", "model", "reason"})
+        self.assertEqual(set(block), {"configured", "provider", "model", "reason", "output_bound"})
         self.assertIs(block["configured"], False)
         self.assertIsNone(block["provider"])
         self.assertIsNone(block["model"])
+        # H-192c: the declared output cap is reported, and not registered on an unbound host.
+        self.assertIs(block["output_bound"]["registered"], False)
         reason = block["reason"]
         self.assertIn("plugins.entries.coursebook.settings.validator_model", reason)
         self.assertIn("plugins.entries.coursebook.settings.validator_provider", reason)
@@ -167,9 +169,11 @@ class ValidatorStatusTest(unittest.TestCase):
                 "provider": "anthropic",
                 "model": "claude-sonnet-4",
                 "reason": block["reason"],
+                "output_bound": block["output_bound"],
             },
         )
         self.assertIn("not that it answered", block["reason"])
+        self.assertEqual(block["output_bound"]["completion_cap"], self.generation.VALIDATION_OUTPUT_TOKENS)
         for forbidden in ("api_key", "apikey", "token", "secret", "credential", "password"):
             self.assertNotIn(forbidden, raw.lower())
 

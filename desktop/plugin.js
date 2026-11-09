@@ -1194,10 +1194,24 @@ function EvidenceLine({ summary }) {
 
 function ErrorLine({ error }) {
   if (!error) return null
-  const code = error.code ? `${error.code}: ` : ''
-  return jsx('div', {
+  const code = error.code ? String(error.code) : ''
+  // H-183: the learner reads the sentence. The typed code is inspection evidence, so it sits behind
+  // the same `Technical detail` disclosure the rest of the surface uses.
+  return jsxs('div', {
     className: 'mt-2 text-xs text-(--ui-text-secondary)',
-    children: `${code}${describeError(error)}`
+    children: [
+      jsx('div', { children: describeError(error) }),
+      code
+        ? jsxs('details', {
+            'data-cb-error-technical': '',
+            style: { color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: code })
+            ]
+          })
+        : null
+    ]
   })
 }
 
@@ -2691,7 +2705,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
     settled,
     dueCount,
     sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
-    nextLabel: next.label || 'The backend did not record a next step for this course.',
+    nextLabel: next.label || 'No next step was recorded for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
     estimateLabel: deskEstimateLabel(estimate),
@@ -3222,15 +3236,168 @@ function focusRingVisible(node) {
   }
 }
 
-/** One classroom tile on the shelf: its own contour, name, next stop and last touch. */
-function SlotTab({ slot, isCurrent, onSelect }) {
+/**
+ * H-189 — the classroom cover.
+ *
+ * The owner's verdict on the drawn contour was that it read as code, not as a place: an
+ * `aria-hidden` ridge drawing above each name, with no course fact inside it. So a classroom now
+ * carries one of exactly two covers, and neither is invented here:
+ *
+ *   * an authored artifact, only when a `library.list` row actually declares one
+ *     (`row.cover = { artifact_id, caption, … }`), served through the one media route and always
+ *     with a non-empty `alt` plus the authored text equivalent visible underneath;
+ *   * otherwise a quiet typographic paper cover: the classroom's own name, the subject it records
+ *     (level/locale when the backend recorded one), and its monogram. No illustration, no ridge
+ *     line, no equalizer.
+ *
+ * The two classrooms on a shelf are told apart by their names and subjects, never by decoration.
+ * A row with no cover and no caption therefore cannot produce an empty `alt`: it produces type.
+ */
+function cbCoverMedia(row) {
+  const cover = row && row.cover
+  if (!cover || typeof cover !== 'object') return null
+  const artifactId = cover.artifact_id || cover.artifact
+  if (!artifactId) return null
+  const caption = typeof cover.caption === 'string' ? cover.caption.trim() : ''
+  // No caption means no `alt`, and an image with an empty `alt` is a decorative lie about a
+  // teaching artifact. Type is the honest fallback, not an empty alt.
+  if (!caption) return null
+  return {
+    artifact_id: String(artifactId),
+    caption,
+    text_equivalent:
+      typeof cover.text_equivalent === 'string' && cover.text_equivalent.trim()
+        ? cover.text_equivalent.trim()
+        : caption,
+    provenance: typeof cover.provenance === 'string' ? cover.provenance : null
+  }
+}
+
+/** The subject a classroom records, in the backend's own words, or nothing. */
+function cbCoverSubject(row) {
+  const level = row && typeof row.level_label === 'string' ? row.level_label.trim() : ''
+  if (level) return level
+  const locale = row && typeof row.locale === 'string' ? row.locale.trim() : ''
+  if (locale) return locale
+  return null
+}
+
+function ClassroomCover({ slot, compact }) {
+  const row = slot.row || {}
+  const media = cbCoverMedia(row)
+  // One hook, called every render: an absent artifact is a synchronous text state, not a request.
+  const preview = useArtifactPreview(media ? media.artifact_id : null)
+  const subject = cbCoverSubject(row)
+  const height = compact ? 44 : 56
+  const frame = {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: '0.1rem',
+    height: `${height}px`,
+    minWidth: 0,
+    padding: '0.3rem 0.45rem',
+    boxSizing: 'border-box',
+    background: 'var(--cb-paper)',
+    borderTop: '2px solid var(--cb-rule)',
+    overflow: 'hidden'
+  }
+  if (media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url) {
+    return jsxs('figure', {
+      'data-cb-slot-cover': 'artifact',
+      style: { ...frame, margin: 0, padding: 0, gap: 0, borderTop: '2px solid var(--cb-lamp)' },
+      children: [
+        jsx('img', {
+          alt: media.caption,
+          src: preview.data_url,
+          loading: 'lazy',
+          style: { display: 'block', width: '100%', height: `${height}px`, objectFit: 'cover' }
+        }, 'image'),
+        // The authored text equivalent stays readable, so the cover is never only a picture.
+        jsx('figcaption', {
+          'data-cb-slot-cover-caption': '',
+          style: {
+            padding: '0.15rem 0.45rem 0.25rem',
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.caption,
+            lineHeight: 1.35,
+            color: 'var(--cb-ink-soft)',
+            overflowWrap: 'anywhere'
+          },
+          children: media.text_equivalent
+        }, 'caption')
+      ]
+    })
+  }
+  return jsxs('div', {
+    'data-cb-slot-cover': 'typographic',
+    style: frame,
+    children: [
+      jsxs('span', {
+        style: { display: 'flex', alignItems: 'baseline', gap: '0.35rem', minWidth: 0 },
+        children: [
+          jsx('span', {
+            'aria-hidden': 'true',
+            style: {
+              flex: '0 0 auto',
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: courseStampText(slot.name || (row && row.title) || 'Coursebook')
+          }, 'monogram'),
+          jsx('span', {
+            'data-cb-slot-cover-title': '',
+            style: {
+              minWidth: 0,
+              fontFamily: CB_SERIF,
+              fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
+              fontWeight: 600,
+              lineHeight: 1.25,
+              color: 'var(--cb-ink)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            },
+            children: slot.name || (row && row.title) || 'Classroom'
+          }, 'title')
+        ]
+      }),
+      subject
+        ? jsx('span', {
+            'data-cb-slot-cover-subject': '',
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.3,
+              color: 'var(--cb-ink-soft)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            },
+            children: subject
+          }, 'subject')
+        : null
+    ]
+  })
+}
+
+/** One classroom tile on the shelf: its own cover, name, next stop and last touch. */
+function SlotTab({ slot, isCurrent, onSelect, compact }) {
   const [focused, setFocused] = useState(false)
+  const motion = useCbMotion()
+  // H-189: switching classrooms has one visible consequence — the newly selected card settles.
+  // It is one beat on the card that changed, re-armed by the course id, never a looping entrance.
+  const landed = useCbSelectionSettle(motion, `${slot.course_id}|${isCurrent ? 'current' : 'available'}`)
   const row = slot.row || {}
   const next = row.next_step && row.next_step.label ? row.next_step.label : null
   return jsxs('button', {
     type: 'button',
     'data-cb-slot-tab': slot.course_id,
     'data-cb-slot-state': isCurrent ? 'current' : 'available',
+    'data-cb-slot-motion': motion.reduced ? 'static' : landed ? 'settled' : 'settling',
     'data-cb-focus-ring': focused ? 'visible' : 'none',
     'aria-current': isCurrent ? 'true' : undefined,
     onFocus: (event) => setFocused(focusRingVisible(event.currentTarget)),
@@ -3258,18 +3425,16 @@ function SlotTab({ slot, isCurrent, onSelect }) {
       fontFamily: CB_SANS,
       fontSize: CB_TYPE.meta,
       color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-      overflowWrap: 'anywhere'
+      overflowWrap: 'anywhere',
+      ...cbSettleFrame(motion, landed, { beat: 'route', props: 'opacity, transform', from: 'translateY(3px)', fromOpacity: 0.9 })
     },
     children: [
-      jsx('span', {
-        'aria-hidden': 'true',
-        style: { height: '34px', overflow: 'hidden' },
-        children: jsx(CourseContour, { row, title: slot.name, height: 34, opacity: isCurrent ? 0.7 : 0.4 })
-      }, 'contour'),
+      jsx(ClassroomCover, { slot, compact }, 'cover'),
       jsx('span', {
         style: { fontWeight: isCurrent ? 600 : 400, lineHeight: 1.35 },
         children: slot.name
       }, 'name'),
+
       jsx('span', {
         'data-cb-slot-next': next ? 'recorded' : 'none',
         style: { fontSize: CB_TYPE.caption, lineHeight: 1.35, color: 'var(--cb-ink-soft)' },
@@ -3295,6 +3460,8 @@ function SlotTab({ slot, isCurrent, onSelect }) {
 function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
   const all = hub && Array.isArray(hub.all) ? hub.all : []
   if (all.length === 0) return null
+  const width = useCbViewportWidth()
+  const compact = width > 0 && width < 620
   const active = selected || all[0]
   const useSelect = all.length > HUB_SLOT_LIMIT
   const nameCount = {}
@@ -3361,11 +3528,10 @@ function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
         jsxs('div', {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem', minWidth: 0 },
           children: [
-            jsx('span', {
-              'aria-hidden': 'true',
-              style: { width: '5.5rem', height: '2.4rem', overflow: 'hidden', flex: '0 0 auto' },
-              children: jsx(CourseContour, { row: active.row, title: active.name, height: 38, opacity: 0.55 })
-            }, 'contour'),
+            jsx('div', {
+              style: { width: '11rem', maxWidth: '100%', flex: '0 0 auto', minWidth: 0 },
+              children: jsx(ClassroomCover, { slot: active, compact }, 'cover')
+            }, 'cover'),
             jsx('span', {
               style: {
                 fontFamily: CB_SANS,
@@ -3437,7 +3603,7 @@ function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.4rem', minWidth: 0 },
           children: all.map((slot) => {
             const isCurrent = slot.course_id === active.course_id
-            return jsx(SlotTab, { slot, isCurrent, onSelect }, slot.course_id)
+            return jsx(SlotTab, { slot, isCurrent, onSelect, compact }, slot.course_id)
           })
         }, 'tabs'),
         current('current'),
@@ -3617,48 +3783,62 @@ function useStudyCompanion(enabled) {
 }
 
 /**
- * One frame of the real sheet: frame 0 of the row named `idle` in `stateRows` (row 0 when the
- * host names no rows). Static by construction, so reduced motion needs no branch. The canvas is
- * `aria-hidden`; the pet's own display name is the visible adjacent copy.
+ * The learner's own pet, one frame at a time.
+ *
+ * H-189: the sheet already carries an `idle` row, so the companion uses it at a deliberately low
+ * cadence (about 2.4 frames a second) instead of freezing on frame 0. Three rules keep it from
+ * becoming decoration:
+ *
+ *   * reduced motion (or a sheet with one frame) paints frame 0 and never starts a timer;
+ *   * a hidden document stops the timer, so a background tab does no drawing;
+ *   * the frames come only from the host's own `pet.info` sheet — there is no second avatar, no
+ *     dialogue and no invented pose.
+ *
+ * The canvas stays `aria-hidden`; the adjacent name is the visible copy.
  */
 function StudyCompanion({ info, size, label }) {
   const canvasRef = useRef(null)
+  const imageRef = useRef(null)
+  const motion = useCbMotion()
+  const visible = useCbPageVisible()
+  const [loaded, setLoaded] = useState(0)
+  const [frame, setFrame] = useState(0)
   const px = Number(size) || 64
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !info) return undefined
-    const frameW = Number(info.frameW) || 0
-    const frameH = Number(info.frameH) || 0
-    if (!frameW || !frameH) return undefined
-    const rows = Array.isArray(info.stateRows) ? info.stateRows : []
-    const idle = rows.findIndex((row) => String(row).toLowerCase() === 'idle')
-    const row = idle >= 0 ? idle : 0
-    let cancelled = false
-    const paint = (image) => {
-      if (cancelled) return
-      try {
-        const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1
-        canvas.width = Math.max(1, Math.round(px * ratio))
-        canvas.height = Math.max(1, Math.round(px * ratio))
-        const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null
-        if (!ctx) return
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.imageSmoothingEnabled = true
-        ctx.imageSmoothingQuality = 'high'
-        ctx.drawImage(image, 0, row * frameH, frameW, frameH, 0, 0, canvas.width, canvas.height)
-      } catch (error) {
-        // A canvas that cannot paint is not a reason to lose the Continue action.
-      }
+  const frameW = info ? Number(info.frameW) || 0 : 0
+  const frameH = info ? Number(info.frameH) || 0 : 0
+  const rows = info && Array.isArray(info.stateRows) ? info.stateRows : []
+  const idle = rows.findIndex((name) => String(name).toLowerCase() === 'idle')
+  const row = idle >= 0 ? idle : 0
+
+  // Frames in the idle row: the host's own per-state count when it names one, else the sheet width
+  // divided by one frame. A sheet with no readable width is one frame, which is a valid answer.
+  const framesInRow = () => {
+    const image = imageRef.current
+    if (!image || !frameW) return 1
+    const named = info && info.framesByState && typeof info.framesByState === 'object' ? info.framesByState : null
+    if (named) {
+      const key = rows[row] !== undefined ? rows[row] : String(row)
+      const count = Number(named[key])
+      if (Number.isFinite(count) && count > 0) return Math.floor(count)
     }
-    // The decoded sheet is the cache: once the image is in memory the base64 payload is dropped,
-    // so a spritesheet is not held twice for the life of the route.
+    const width = Number(image.naturalWidth || image.width) || 0
+    return Math.max(1, Math.floor(width / frameW))
+  }
+  const total = loaded ? framesInRow() : 1
+  const animating = !motion.reduced && visible && loaded && total > 1
+
+  // Load (or reuse) the one decoded sheet. The base64 payload is dropped once decoded so a
+  // spritesheet is never held twice for the life of the route.
+  useEffect(() => {
+    if (!info || !frameW || !frameH) return undefined
     const key = `${info.slug || ''}|${info.spritesheetRevision || ''}|${frameW}x${frameH}`
     let image = CB_COMPANION_SHEETS.get(key)
     if (!image) {
       if (!info.spritesheetBase64 || typeof Image === 'undefined') return undefined
       image = new Image()
       image.onload = () => {
-        paint(image)
+        imageRef.current = image
+        setLoaded((count) => count + 1)
         try {
           delete info.spritesheetBase64
         } catch (error) {
@@ -3667,23 +3847,58 @@ function StudyCompanion({ info, size, label }) {
       }
       image.src = `data:${info.mime || 'image/webp'};base64,${info.spritesheetBase64}`
       CB_COMPANION_SHEETS.set(key, image)
-    } else if (image.complete && image.naturalWidth > 0) {
-      paint(image)
-    } else if (typeof image.addEventListener === 'function') {
-      const onLoad = () => paint(image)
-      image.addEventListener('load', onLoad)
-      return () => {
-        cancelled = true
-        image.removeEventListener('load', onLoad)
+      return undefined
+    }
+    imageRef.current = image
+    if (image.complete && image.naturalWidth > 0) {
+      setLoaded((count) => count + 1)
+      return undefined
+    }
+    if (typeof image.addEventListener === 'function') {
+      const onLoad = () => {
+        imageRef.current = image
+        setLoaded((count) => count + 1)
       }
+      image.addEventListener('load', onLoad)
+      return () => image.removeEventListener('load', onLoad)
     }
-    return () => {
-      cancelled = true
+    return undefined
+  }, [info, frameW, frameH])
+
+  // Paint the current idle frame. Reduced motion always paints frame 0.
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const image = imageRef.current
+    if (!canvas || !image || !frameW || !frameH) return
+    try {
+      const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1
+      canvas.width = Math.max(1, Math.round(px * ratio))
+      canvas.height = Math.max(1, Math.round(px * ratio))
+      const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null
+      if (!ctx) return
+      const index = motion.reduced ? 0 : Math.min(frame, Math.max(0, total - 1))
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(image, index * frameW, row * frameH, frameW, frameH, 0, 0, canvas.width, canvas.height)
+    } catch (error) {
+      // A canvas that cannot paint is not a reason to lose the Continue action.
     }
-  }, [info, px])
+  }, [loaded, frame, px, motion.reduced, frameW, frameH, row, total])
+
+  // The idle cadence: one timer, low tempo, and only while the page is visible and motion is on.
+  useEffect(() => {
+    if (!animating || typeof window === 'undefined' || typeof window.setInterval !== 'function') {
+      setFrame(0)
+      return undefined
+    }
+    const timer = window.setInterval(() => setFrame((index) => (index + 1) % total), 420)
+    return () => window.clearInterval(timer)
+  }, [animating, total])
+
   return jsxs('div', {
     'data-cb-companion': 'ready',
-    'data-cb-companion-motion': 'static',
+    'data-cb-companion-motion': animating ? 'idle' : 'static',
     style: { display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 },
     children: [
       jsx('canvas', {
@@ -3753,6 +3968,13 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
   const viewportWidth = useCbViewportWidth()
   const compact = viewportWidth > 0 && viewportWidth < 620
+  // H-189: the trailhead arrives once, on the route beat, and re-arms when the learner switches
+  // classroom. Reduced motion paints the resting frame at once.
+  const motion = useCbMotion()
+  const arrival = useCbSelectionSettle(motion, desk.row && desk.row.course_id ? desk.row.course_id : 'none')
+  const edgeFrame = cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(6px)', fromOpacity: 0.35 })
+  const bandFrame = cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(-4px)', fromOpacity: 0.45 })
+
   // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
   // so a failed outline read never disables the one primary action.
   const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
@@ -3888,14 +4110,18 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
             : null
         ]
       }, 'actions'),
-      // Counts come after the action, and only the counts the backend recorded.
-      jsx(DeskFacts, { desk }, 'facts')
+      // H-189 hierarchy: the old facts line repeated the path's own evidence count and the current
+      // stop's state word inside the plate, so the plate said the route twice before the route.
+      // The one count now lives in the route header; the plate keeps only what it alone knows —
+      // position, estimate and last touch.
+      null
     ]
   }, 'copy')
   return jsxs('section', {
     'data-cb-continue': '',
     'data-cb-trailhead': '',
     'data-cb-continue-compact': compact ? 'true' : 'false',
+    'data-cb-trailhead-motion': motion.reduced ? 'static' : arrival ? 'settled' : 'arriving',
     'data-cb-trail-palette': isParent ? 'parent' : 'learner',
     style: {
       display: 'flex',
@@ -3913,7 +4139,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
       compact
         ? jsx('div', {
             'aria-hidden': 'true',
-            style: { height: '26px', opacity: 0.5 },
+            style: { height: '26px', opacity: 0.5, ...(bandFrame || {}) },
             children: jsx(CourseContour, { row: desk.row, title: courseTitle, height: 26 })
           }, 'band')
         : null,
@@ -3933,7 +4159,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
             ? null
             : jsxs('div', {
                 'data-cb-trailhead-edge': '',
-                style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', minWidth: 0 },
+                style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', minWidth: 0, ...(edgeFrame || {}) },
                 children: [
                   jsx('div', {
                     'aria-hidden': 'true',
@@ -4374,8 +4600,14 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
   const motion = useCbMotion()
   const routeSettle = useCbSettled(motion, true)
   const pet = useStudyCompanion(companionEnabled !== false)
+  // H-189: the route arrives once. The whole route column settles on the route beat, re-armed when
+  // the selected classroom changes, so a switch has one visible consequence.
+  const arrival = useCbSelectionSettle(motion, desk.row ? desk.row.course_id : 'none')
   const compact = width > 0 && width < 620
   const objectives = Array.isArray(desk.objectives) ? desk.objectives : []
+  // H-189: one gentle cycle on the current stop, then it rests. Running only when a route exists.
+  // Declared before any early return so the hook order is identical in every state.
+  const pulse = useCbStopPulse(motion, objectives.length > 0)
   // A failed route read is its own state (H-146). Continue still works from the row's next step;
   // the path says what it could not read and offers the retry, rather than claiming the course is
   // empty. H-148 owns the checkpoint geometry; this branch is the read state it did not carry.
@@ -4413,7 +4645,14 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
   return jsxs('section', {
     'data-cb-path': '',
     'data-cb-path-layout': compact ? 'compact' : 'full',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '100%' },
+    'data-cb-path-motion': motion.reduced ? 'static' : arrival ? 'settled' : 'arriving',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      maxWidth: '100%',
+      ...(cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(4px)', fromOpacity: 0.92 }) || {})
+    },
     children: [
       jsx(PlateHead, {
         label: 'The route',
@@ -4426,11 +4665,22 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
             children: runParts.join(' · ')
           })
         : null,
+      // H-189 hierarchy: the route is the one object. The old twelve-bar tally painted the same
+      // evidence a second time above the nodes; the count now lives as one caption line, and the
+      // nodes themselves carry the state.
       objectives.length
-        ? jsx(EvidenceTally, {
-            objectives,
-            phone: compact,
-            caption
+        ? jsx('p', {
+            'data-cb-tally-caption': '',
+            'data-cb-path-caption': '',
+            style: {
+              margin: 0,
+              maxWidth: CB_MEASURE,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.45,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: caption
           })
         : jsx('p', {
             'data-cb-path-empty': '',
@@ -4438,32 +4688,198 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
             children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
           }),
       objectives.length
-        ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', maxWidth: '100%' },
-            children: [
-              jsx(PathPlace, { kind: 'start', label: 'Start', x: center }, 'start'),
-              jsx('ol', {
-                'aria-label': 'Course route',
-                style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
-                children: objectives.map((objective, nodeIndex) =>
-                  jsx(PathStop, {
-                    objective,
-                    nodeIndex,
-                    compact,
-                    gutter,
-                    center,
-                    currentId,
-                    nextId,
-                    showCompanion,
-                    pet,
-                    motion,
-                    routeSettle,
-                    onOpenSection
-                  }, objective.objective_id)
-                )
-              }),
-              jsx(PathPlace, { kind: 'end', label: 'Course end', x: cbPathStopX(objectives.length - 1, compact) }, 'end')
-            ]
+        ? jsx('ol', {
+            'aria-label': 'Course route',
+            style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
+            children: objectives.map((objective, nodeIndex) => {
+              const tone = cbPathTone(objective.state)
+              const kind = cbPathNodeKind(objective, currentId, nextId)
+              const size = cbPathNodeSize(kind, compact)
+              const isCurrent = kind === 'current'
+              const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
+              const checkWord = cbCheckStateWord(objective.check_state)
+              const attempts = Math.max(0, Number(objective.attempt_count) || 0)
+              const detailOpen = kind === 'current' || kind === 'next'
+              // The route settle is one beat for the whole list: at most eight nodes, 40 ms apart.
+              const inBeat = routeSettle.active && nodeIndex < CB_PATH_SETTLE_NODES
+              const settleStyle = inBeat
+                ? cbSettleFrame(motion, routeSettle.settled, {
+                    beat: 'route',
+                    props: 'opacity, transform',
+                    delay: nodeIndex * CB_PATH_SETTLE_STAGGER_MS
+                  }) || {}
+                : {}
+              return jsx(
+                'li',
+                {
+                  'data-cb-path-node': objective.objective_id,
+                  'data-cb-path-node-motion': inBeat ? 'settle' : 'static',
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    ...settleStyle
+                  },
+                  children: [
+                  jsx('span', {
+                    'aria-hidden': 'true',
+                    style: {
+                      position: 'absolute',
+                      left: `${Math.round(gutter / 2)}px`,
+                      top: 0,
+                      bottom: 0,
+                      width: '1px',
+                      background: 'var(--cb-rule)'
+                    }
+                  }, 'spine'),
+                  jsx(CbAction, {
+                    variant: 'row',
+                    className: 'w-full justify-start',
+                    'aria-current': isCurrent ? 'step' : undefined,
+                    'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+                    state: isCurrent ? 'selected' : 'rest',
+                    style: { padding: 0, display: 'block', minHeight: '44px' },
+                    onClick: () => onOpenSection(objective.objective_id),
+                    children: jsxs('span', {
+                      'data-cb-path-open': objective.objective_id,
+                      'data-cb-path-item': objective.objective_id,
+                      'data-cb-path-state': objective.state,
+                      'data-cb-path-check': objective.check_state || 'none',
+                      'data-cb-path-kind': kind,
+                      'data-cb-path-current': isCurrent ? 'true' : 'false',
+                      'data-cb-path-node-size': String(size),
+                      style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                        width: '100%',
+                        padding: `0.55rem 0.1rem 0.55rem ${gutter}px`,
+                        position: 'relative',
+                        boxSizing: 'border-box',
+                        textAlign: 'left',
+                        color: 'var(--cb-ink)',
+                        fontSize: CB_TYPE.meta,
+                        borderTop: '1px solid var(--cb-rule)',
+                        background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
+                      },
+                      children: [
+                        jsx('span', {
+                          'data-cb-path-marker': objective.objective_id,
+                          'data-cb-path-marker-check': objective.check_state || 'none',
+                          'aria-hidden': 'true',
+                          style: {
+                            ...cbPathMarkerStyle(tone, kind, size),
+                            left: `${Math.round((gutter - size) / 2)}px`,
+                            top: '0.55rem'
+                          },
+                          children: [
+                            isCurrent
+                              ? jsx('span', {
+                                  // H-189: the current stop's one gentle cycle, two legs up and
+                                  // down, then the ring rests. No loop, no timer left behind.
+                                  'data-cb-path-pulse': pulse.running ? 'cycle' : 'rest',
+                                  style: {
+                                    position: 'absolute',
+                                    inset: '-5px',
+                                    borderRadius: '50%',
+                                    borderWidth: '2px',
+                                    borderStyle: 'solid',
+                                    borderColor: 'var(--cb-accent)',
+                                    opacity: pulse.scale,
+                                    pointerEvents: 'none',
+                                    ...(motion.transition('opacity', 'route')
+                                      ? { transition: motion.transition('opacity', 'route') }
+                                      : {})
+                                  }
+                                }, 'pulse')
+                              : null,
+                            jsx('span', { children: String(objective.ordinal).padStart(2, '0') }, 'ordinal')
+                          ]
+                        }),
+                        jsxs('span', {
+                          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.55rem', minWidth: 0 },
+                          children: [
+                            jsx('span', {
+                              style: {
+                                flex: '1 1 8rem',
+                                minWidth: 0,
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'normal',
+                                fontFamily: CB_SERIF,
+                                fontSize: isCurrent ? CB_TYPE.body : CB_TYPE.meta,
+                                fontWeight: 600,
+                                lineHeight: 1.35
+                              },
+                              children: objective.title
+                            }),
+                            jsx('span', {
+                              'data-cb-path-word': '',
+                              style: {
+                                flex: '0 0 auto',
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.caption,
+                                fontWeight: 600,
+                                color: cbPathToneColor(tone),
+                                border: `1px solid ${cbPathToneColor(tone)}`,
+                                borderRadius: '999px',
+                                padding: '0.05rem 0.45rem',
+                                whiteSpace: 'nowrap'
+                              },
+                              children: stateWord
+                            }),
+                            jsx('span', {
+                              'data-cb-path-check-word': '',
+                              style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                              children: checkWord
+                            })
+                          ]
+                        })
+                      ]
+                    })
+                  }),
+                  jsxs('details', {
+                    'data-cb-path-detail': objective.objective_id,
+                    open: detailOpen,
+                    style: { marginLeft: `${gutter}px`, padding: '0 0.1rem 0.55rem 0' },
+                    children: [
+                      jsx('summary', {
+                        'data-cb-path-detail-toggle': '',
+                        style: {
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          minHeight: compact ? '2.75rem' : '2rem',
+                          fontFamily: CB_SANS,
+                          fontSize: CB_TYPE.caption,
+                          color: 'var(--cb-ink-soft)'
+                        },
+                        children: `Details for checkpoint ${objective.ordinal}`
+                      }),
+                      jsxs('div', {
+                        'data-cb-path-detail-body': '',
+                        style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', paddingTop: '0.25rem' },
+                        children: [
+                          jsx(CheckpointDetailRow, {
+                            label: 'Evidence target',
+                            value: objective.evidence_target ? learnerEvidenceTarget(objective.evidence_target) : 'Not recorded'
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Committed attempts',
+                            value: attempts === 0 ? 'No committed attempts yet' : `${attempts} committed attempt${attempts === 1 ? '' : 's'}`
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Last opened',
+                            value: objective.last_opened_at ? whenLabel(objective.last_opened_at) : 'Not opened yet'
+                          }),
+                          jsx(CheckpointDetailRow, { label: 'Check', value: checkWord })
+                        ]
+                      })
+                    ]
+                  })
+                  ]
+                }
+              )
+            })
           })
         : null
     ]
@@ -4564,6 +4980,44 @@ function stripExcerpt(entry) {
  * last few things this course saved, each one able to return to its exact block. It reads only
  * `notebook.list`; it never writes, never invents an empty row and never hides a failed read.
  */
+/**
+ * H-189 — Field Notes on Home is one tertiary line, not a feed.
+ *
+ * The owner's note was that the strip filled Home with an audit list. Home is the trailhead; the
+ * Notebook is the notes surface. So this renders exactly one quiet line — the backends's own saved
+ * count — and the whole line is the door to the Notebook. Loading, failure and an empty notebook
+ * are said in the same single line; none of them expands into a list.
+ */
+function FieldNotesLine({ notes, stale, onShowNotebook }) {
+  if (!notes) return null
+  const status = notes.status ? notes.status : 'idle'
+  const entries = notes.data && Array.isArray(notes.data.entries) ? notes.data.entries : []
+  const count = entries.length
+  let text
+  if (status === 'loading' && !notes.data) text = 'Field notes · reading'
+  else if (status === 'error' && !notes.data) text = 'Field notes · could not be read'
+  else if (count === 0) text = 'Field notes · nothing saved yet'
+  else text = `Field notes · ${count} saved`
+  return jsx('div', {
+    'data-cb-field-notes-line': status === 'ready' && count > 0 ? 'ready' : status,
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem', minWidth: 0 },
+    children: jsx(CbAction, {
+      variant: 'tertiary',
+      onClick: onShowNotebook,
+      'aria-describedby': 'cb-field-notes-count',
+      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 500, minHeight: '44px' },
+      children: jsxs('span', {
+        id: 'cb-field-notes-count',
+        style: { color: 'var(--cb-ink-soft)' },
+        children: [
+          jsx('span', { 'data-cb-field-notes-count': String(count), children: text }, 'count'),
+          stale ? jsx('span', { children: ' · paused until the desk reconnects' }, 'stale') : null
+        ]
+      })
+    })
+  })
+}
+
 function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenSection, onShowNotebook, onRetry }) {
   const status = notes && notes.status ? notes.status : 'idle'
   const entries = notes && notes.data && Array.isArray(notes.data.entries) ? notes.data.entries : []
@@ -5146,25 +5600,22 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
             },
             'companion'
           ),
+          // H-183: a desktop has no haptic engine, so this is an availability note, never a switch.
+          // A disabled toggle would still promise a setting the host cannot honour.
           jsx(
             CbSettingsSection,
             {
               id: 'haptics',
               title: 'Haptics',
-              description:
-                'Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing.',
+              description: 'Not available on desktop.',
               resetLabel: 'Haptics are always off on desktop',
               atDefault: true,
               onReset: () => {},
-              children: jsx('div', {
-                'data-cb-settings-toggle': 'haptics',
-                children: jsx(sdk.ToggleRow, {
-                  checked: false,
-                  disabled: true,
-                  label: 'Haptics',
-                  description: 'A desktop has no haptic engine to drive.',
-                  onChange: () => {}
-                })
+              children: jsx('p', {
+                'data-cb-settings-unavailable': 'haptics',
+                style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children:
+                  'A desktop has no haptic engine, so Coursebook never offers a vibration response. There is nothing here to switch on or off.'
               })
             },
             'haptics'
@@ -5435,16 +5886,7 @@ function FieldDeskHome({
     { desk, busy, onPrimary, onOpenSection, onSeePlan, onRetryEstimate, companionEnabled },
     'continue'
   )
-  const notesCard = jsx(FieldNotesStrip, {
-    notes,
-    courseTitle: desk.row && desk.row.title ? desk.row.title : null,
-    current: desk.current || null,
-    sections: desk.objectives || [],
-    stale,
-    onOpenSection,
-    onShowNotebook,
-    onRetry
-  }, 'notes')
+  const notesCard = jsx(FieldNotesLine, { notes, stale, onShowNotebook }, 'notes')
   const pathCard = jsx(CheckpointPath, {
     desk,
     onOpenSection,
@@ -6109,7 +6551,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibr
                 jsx(StatusRow, { label: 'Attempts', value: String((deleteScope.counts || {}).attempts || 0) }),
                 jsx(StatusRow, { label: 'Notebook entries', value: String((deleteScope.counts || {}).notebook_entries || 0) }),
                 jsx(StatusRow, { label: 'Lesson runs', value: String((deleteScope.counts || {}).lesson_runs || 0) }),
-                jsx(StatusRow, { label: 'Jobs', value: String((deleteScope.counts || {}).jobs || 0) }),
+                jsx(StatusRow, { label: 'Background tasks', value: String((deleteScope.counts || {}).jobs || 0) }),
                 jsx(StatusRow, { label: 'Course and plan kept', value: (deleteScope.preserved || {}).course ? 'yes' : 'no' }),
                 jsx(StatusRow, { label: 'Hermes transcripts kept', value: (deleteScope.preserved || {}).hermes_transcripts ? 'yes' : 'no' })
               ]
@@ -6205,7 +6647,7 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
   const technical = [
     provenance.pack_id ? { label: 'Pack ID', value: provenance.pack_id } : null,
     provenance.pack_version ? { label: 'Pack version', value: `v${provenance.pack_version}` } : null,
-    { label: 'Record revision', value: String(row.revision == null ? 0 : row.revision) }
+    { label: 'Record version', value: String(row.revision == null ? 0 : row.revision) }
   ].filter(Boolean)
   return jsxs('div', {
     className: 'flex min-w-0 flex-1 flex-col gap-3',
@@ -6928,7 +7370,7 @@ function GoalGallery({ examples, onChoose }) {
 const CREATE_RESULT_COPY = {
   lead: 'Your plan is being researched; this may take several minutes and you can leave this page.',
   body: 'When it arrives it opens here. Approve the plan to start the first lesson; no lesson is written before that.',
-  details: 'Details and job state'
+  details: 'Technical detail'
 }
 
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
@@ -7198,7 +7640,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
         message:
           describeError(outcome.error) +
           (outcome.stage === 'jobs.create'
-            ? ' The course and its draft plan are saved. Retrying starts the same job, not a second one.'
+            ? ' The course and its draft plan are saved. Trying again continues the same plan; it does not create a second course.'
             : '')
       })
       return
@@ -7800,15 +8242,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
               }),
-              // A failed plan job keeps the ids it already wrote. One calm line, not a receipt wall:
-              // the same key retries the same job.
+              // A failed plan keeps what it already wrote. One calm line, not a receipt wall: the
+              // same attempt is continued, never a second course.
               recoverable
                 ? jsx('div', {
                     'data-cb-create-recoverable': '',
                     className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                    children: `Course ${recoverable.courseId}${
-                      recoverable.enrollmentId ? ` and enrolment ${recoverable.enrollmentId}` : ''
-                    } are saved. Retrying starts the same plan job, not a second one.`
+                    children:
+                      'This course and its enrolment are saved. Trying again continues the same plan; it does not create a second course.'
                   })
                 : null,
               error ? jsx(ErrorLine, { error }) : null
@@ -7839,7 +8280,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 disabled: submitting,
                 onClick: submit,
                 variant: 'primary',
-                children: submitting ? 'Creating course' : recoverable ? 'Retry the plan job' : 'Create course'
+                children: submitting ? 'Creating course' : recoverable ? 'Try again' : 'Create course'
               }),
           // One row of actions: the primary is the only filled control; Back is secondary; Cancel
           // is tertiary and sits at the far edge on every step.
@@ -7933,9 +8374,9 @@ const SYLLABUS_COPY = Object.freeze({
     'Some items could not be tied to a quote in your file. Check the ones marked below, or upload a cleaner copy.',
   storage: 'Your file stays on this profile. The parse and the alignment are sent to the model provider you have configured, and only after you acknowledge that.',
   alignmentGate: 'Review the mapping before a course is built. Conflict or stale items block approval.',
-  researchMinutes: 'Research and authoring may take several minutes. The plan appears when the backend finishes it.',
-  staleLead: 'Your syllabus changed. The earlier mapping was made against the old revision, so it is marked stale.',
-  staleAction: 'Check the new revision, then review the mapping again. Your approved plan and lessons are kept as they were.',
+  researchMinutes: 'Research and authoring may take several minutes. The plan appears here when it is ready.',
+  staleLead: 'Your syllabus changed. The earlier mapping was made against the previous version, so it is marked stale.',
+  staleAction: 'Check the new version, then review the mapping again. Your approved plan and lessons are kept as they were.',
   startsCompanion: 'Create companion course',
   coversLine: (covered, total) => `This course covers ${covered} of ${total} syllabus weeks.`
 })
@@ -7964,7 +8405,7 @@ const SYLLABUS_REASON_COPY = Object.freeze({
   deadline_passed: 'The plan schedules work after the date in your syllabus.',
   scope_exceeded: 'The plan claims more than this item asks for.',
   ignored_assessment: 'The plan claims coverage while ignoring this assessment.',
-  revision_changed: 'The syllabus revision changed after this mapping was made.',
+  revision_changed: 'The syllabus version changed after this mapping was made.',
   plan_superseded: 'The plan was replaced after this mapping was made.'
 })
 
@@ -8506,10 +8947,10 @@ function syllabusStaleNotice({ revision, counts, planRevision }) {
   const lines = [SYLLABUS_COPY.staleLead]
   if (pending > 0) lines.push(`${pending} mapping${pending === 1 ? '' : 's'} need another look.`)
   if (planRevision !== undefined && planRevision !== null) {
-    lines.push(`Your approved plan is still the one aligned to syllabus revision ${planRevision}; it stays readable.`)
+    lines.push(`Your approved plan is still the one aligned to version ${planRevision} of your syllabus; it stays readable.`)
   }
   lines.push(SYLLABUS_COPY.staleAction)
-  return { revision: Number(revision) || 0, pending, lines, action: 'Check the new revision' }
+  return { revision: Number(revision) || 0, pending, lines, action: 'Check the new version' }
 }
 
 /**
@@ -8836,7 +9277,7 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
             children: [
               jsx('div', { className: 'text-sm font-medium', children: 'This mapping is out of date' }),
               jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.staleAction }),
-              onRealign ? jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onRealign, disabled: Boolean(busy), children: 'Check the new revision' }) : null
+              onRealign ? jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onRealign, disabled: Boolean(busy), children: 'Check the new version' }) : null
             ]
           })
         : null,
@@ -8906,7 +9347,7 @@ function syllabusPlanGate({ binding, planState, rowsReady }) {
     Number(binding.reviewed_revision) === Number(binding.revision)
   const ready = Boolean(reviewed) && !stale
   const reason = stale
-    ? 'Your syllabus changed. This course stays as it was until the new revision is mapped and reviewed; approval is blocked.'
+    ? 'Your syllabus changed. This course stays as it was until the new version is mapped and reviewed; approval is blocked.'
     : !rowsReady
       ? 'Map the draft plan to your syllabus before approving it.'
       : !reviewed
@@ -9011,7 +9452,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
     })
     setBusy(false)
     if (!outcome.ok) {
-      setError(outcome.error || { code: 'INTERNAL_ERROR', message: 'The mapping job could not be started.' })
+      setError(outcome.error || { code: 'INTERNAL_ERROR', message: 'The mapping could not be started.' })
       return
     }
     setAligning(true)
@@ -9084,7 +9525,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
             className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
             'data-cb-align-stale': 'true',
             children: [
-              jsx('div', { className: 'text-sm font-medium', children: 'Your syllabus has a new revision' }),
+              jsx('div', { className: 'text-sm font-medium', children: 'You added a new version of your syllabus' }),
               jsx('div', {
                 className: 'max-w-prose text-xs text-(--ui-text-secondary)',
                 children:
@@ -9381,7 +9822,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         ? jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
           jsx('div', {
             className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+            children: 'Cancelled. Nothing further was sent — nothing had been started here yet, so there was nothing to stop.'
           }),
           jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Close' })
         ] })
@@ -9526,7 +9967,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
         jsx('div', {
           className: 'max-w-prose text-sm',
-          children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+            children: 'Cancelled. Nothing further was sent — nothing had been started here yet, so there was nothing to stop.'
         }),
         close
       ] })
@@ -9621,7 +10062,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
     parsed: target,
     blocks: (target && target.blocks) || [],
     busy: Boolean(busy),
-    continueLabel: revisionOnly ? 'Check the new revision' : null,
+    continueLabel: revisionOnly ? 'Check the new version' : null,
     onBack: onCancel,
     onContinue: () => {
       if (revisionOnly) {
@@ -12248,7 +12689,7 @@ function AttemptControls({
         : jsx(QuietNote, {
             children: supports('lesson.assist')
               ? 'Hints and shown answers are recorded against the next attempt.'
-              : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+              : 'No hint and no shown answer are offered on this check. Work it out from the section text.'
           }),
 
       jsx('p', {
@@ -12440,7 +12881,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
           onChange: (event) => setTags(event.target.value),
           placeholder: 'register, politeness'
         }),
-        supports('notebook.save') ? null : jsx(QuietNote, { children: 'notebook.save is not registered on this backend.' }),
+        supports('notebook.save') ? null : jsx(QuietNote, { children: 'Saving to the notebook is not available in this build.' }),
         error ? jsx(ErrorLine, { error }) : null
       ]
     })
@@ -12634,7 +13075,12 @@ function useCbMode() {
  */
 const CB_MOTION = Object.freeze({
   press: '100ms',
-  route: '180ms',
+  /**
+   * H-189: the route/edge beat is the trailhead's one arrival. 280 ms sits inside the card's
+   * authored 240-320 ms window and inside the 600 ms ceiling; the path settles its eight nodes
+   * 40 ms apart on the same rung, so a route paints once and then rests.
+   */
+  route: '280ms',
   verdict: '160ms',
   complete: '600ms',
   /** The reduced-motion crossfade ceiling (M3): the state still changes, it does not travel. */
@@ -12825,6 +13271,81 @@ function useCbSettle(motion, options) {
     fromOpacity: spec.fromOpacity,
     delay: Math.max(0, Number(spec.index) || 0) * (Number(spec.staggerMs) || 0)
   }) || {}
+}
+
+/**
+ * H-189 — one settle per selection change.
+ *
+ * `useCbSettled` settles a node once for the life of the mount. A course switch needs the new
+ * card to land again, so this re-arms whenever `token` changes: the card paints at its start
+ * position for one frame, then transitions to rest once and stays there. Reduced motion returns
+ * `true` immediately — the state change survives, the travel does not.
+ */
+function useCbSelectionSettle(motion, token) {
+  const live =
+    !motion.reduced && typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+  const [landed, setLanded] = useState(!live)
+  useEffect(() => {
+    if (!live) {
+      setLanded(true)
+      return undefined
+    }
+    setLanded(false)
+    const frame = window.requestAnimationFrame(() => setLanded(true))
+    return () => {
+      if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame)
+    }
+  }, [token, live])
+  return live ? landed : true
+}
+
+/**
+ * H-189 — the current stop's one gentle cycle.
+ *
+ * The card asks for a ring that lifts from 0.55 to 0.9, runs **two** cycles and stops. This is a
+ * finite state machine, not a stylesheet loop: each leg is one `route`-beat opacity transition, and
+ * after four legs the last timer is gone, so nothing repeats. Reduced motion (or no timers) returns
+ * `pulse: false` and the ring keeps its static resting opacity.
+ *
+ * Returns `{ scale, running }`; the caller reads `scale` as the ring's opacity.
+ */
+function useCbStopPulse(motion, enabled) {
+  const running =
+    enabled !== false && !motion.reduced && typeof window !== 'undefined' && typeof window.setTimeout === 'function'
+  const [leg, setLeg] = useState(0)
+  useEffect(() => {
+    if (!running) {
+      setLeg(0)
+      return undefined
+    }
+    const timers = []
+    const duration = 280
+    // 0 -> 1 -> 0 -> 1 -> 0 is two full cycles; the final 0 is the rest frame, then it stops.
+    for (let step = 1; step <= 4; step += 1) {
+      timers.push(window.setTimeout(() => setLeg(step % 2 === 0 ? 0 : 1), step * duration))
+    }
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [running])
+  return { running, scale: running ? (leg === 1 ? 0.9 : 0.55) : 0.55 }
+}
+
+/** True while the document is visible; a hidden page stops painting frames. */
+function useCbPageVisible() {
+  const read = () =>
+    typeof document === 'undefined' || !document || document.visibilityState === undefined
+      ? true
+      : document.visibilityState !== 'hidden'
+  const [visible, setVisible] = useState(read)
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document || typeof document.addEventListener !== 'function') {
+      return undefined
+    }
+    const onChange = () => setVisible(read())
+    onChange()
+    document.addEventListener('visibilitychange', onChange)
+    return () => document.removeEventListener('visibilitychange', onChange)
+  }, [])
+  return visible
 }
 
 
@@ -16541,13 +17062,14 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     if (target && typeof target.focus === 'function') target.focus()
   }, [focusBlockId, focusIndex, view, step])
   if (blocks.length === 0) {
-    // H-174: an approved lesson page with no blocks is incomplete, not a chat prompt. The lessons
-    // job authors this page; a teaching turn adds runtime segments, it does not write the page.
+    // H-174/H-183: an approved lesson page with no blocks is incomplete, not a chat prompt. The
+    // page is written by Coursebook from the approved plan; a teaching turn adds runtime segments,
+    // it does not write the page.
     return jsx(EmptyState, {
       title: 'This lesson page has no blocks yet',
       description:
         (document && document.view_note) ||
-        'The lessons job writes this page. It exists, but it carries no teaching blocks yet; re-run the job from Plan to replace it.'
+        'The page exists, but it carries no teaching blocks yet. Writing it again from Plan replaces this placeholder.'
     })
   }
   const checkId = document.check_id
@@ -16693,7 +17215,7 @@ function lessonsJobFrom(jobs) {
 function lessonJobError(job) {
   if (!job || !job.error) return null
   const code = job.error.code ? `${job.error.code}: ` : ''
-  return `${code}${job.error.message || 'The job stopped without a message.'}`
+  return `${code}${job.error.message || 'No reason was recorded.'}`
 }
 
 function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
@@ -16724,6 +17246,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     blockCount: blocks.length,
     segmentCount: segments.length,
     error,
+    // H-183: the typed reason is evidence, not learner copy. The readiness panel puts this behind
+    // its own `Technical detail` disclosure; no default sentence carries the code.
+    technical: error,
     // A job that settles as completed but wrote no lessons for this plan version is not running
     // and did not fail: it is the `not_started`/`incomplete` fact the plan surface already reports.
     lessonsReported: Number((job && job.checkpoint && job.checkpoint.lessons) || 0)
@@ -16766,11 +17291,11 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     return {
       ...base,
       state: 'failed',
-      headline: 'The lessons job stopped',
+      headline: 'This lesson page could not be written',
       detail:
-        (error ? `${error} ` : '') +
-        'The approved plan is unchanged. Re-running the lessons job writes the missing pages; nothing is rewritten from a template.',
-      action: { kind: 'retry', label: 'Retry the lessons job' },
+        'The approved plan is unchanged and every page already written is kept. ' +
+        'Write this page again; nothing is rebuilt from a template. The reason is under Technical detail.',
+      action: { kind: 'retry', label: 'Write this page again' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
   }
@@ -16778,12 +17303,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     return {
       ...base,
       state: 'running',
-      headline:
-        jobState === 'queued'
-          ? 'The lessons job is queued'
-          : 'The lessons job is writing lesson pages',
+      headline: 'This lesson page is being written',
       detail:
-        'Lesson pages come from the lessons job, one page per approved section. This section appears when the job writes it.',
+        'Coursebook writes one page for each approved section. This page appears here as soon as it is ready; nothing on screen is invented while you wait.',
       action: { kind: 'check', label: 'Check again' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
@@ -16791,13 +17313,13 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
   if (document && (planApproved || !planProvided)) {
     // A saved page with no blocks is incomplete whatever the plan says; naming the plan here would
     // hide the fact that a page exists. A draft plan's document is handled by `unapproved` below,
-    // because the job cannot write that page until the plan is approved.
+    // because the page cannot be written until the plan is approved.
     return {
       ...base,
       state: 'incomplete',
       headline: 'This lesson page is incomplete',
       detail:
-        'The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.',
+        'The page exists but has no teaching blocks yet. Writing it again from Plan replaces this placeholder.',
       action: { kind: 'plan', label: 'Open the plan' },
       secondary: null
     }
@@ -16810,20 +17332,20 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
       state: 'no_page',
       headline: 'This section has no lesson page yet',
       detail:
-        'Lesson pages are written by the lessons job from an approved plan. Open Plan to see that job’s state; nothing is invented here.',
+        'Lesson pages are written from an approved plan. Open Plan to see where this one stands; nothing is invented to fill the gap.',
       action: { kind: 'plan', label: 'View the plan' },
       secondary: null
     }
   }
   if (!planApproved) {
-    // An unapproved plan outranks an empty document: the lessons job cannot write a page for a plan
-    // that is not approved, so "re-run the job" would be the wrong instruction here.
+    // An unapproved plan outranks an empty document: no page can be written for a plan that is not
+    // approved, so "write it again" would be the wrong instruction here.
     return {
       ...base,
       state: 'unapproved',
       headline: plan ? 'The plan is not approved yet' : 'The plan has not been written yet',
       detail: plan
-        ? 'Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.'
+        ? 'Lesson pages are written after the plan is approved. Approve the plan in Plan, then Coursebook writes one page per section.'
         : 'Lesson pages are written from an approved plan. Open Plan to write one; nothing is invented to fill the gap.',
       action: { kind: 'plan', label: 'Open the plan' },
       secondary: null
@@ -16832,9 +17354,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
   return {
     ...base,
     state: 'not_started',
-    headline: 'The lessons job has not run yet',
+    headline: 'This lesson page is not written yet',
     detail:
-      'The plan is approved. The lessons job writes one page per section; it has not started for this course yet.',
+      'The plan is approved. Coursebook writes one page for each section, and this one has not been written yet.',
     action: { kind: 'plan', label: 'View the plan' },
     secondary: null
   }
@@ -16926,6 +17448,17 @@ function LessonReadinessPanel({
               color: compact ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
             },
             children: body
+          })
+        : null,
+      // H-183: a typed failure reason is inspection evidence, never the sentence a learner reads.
+      readiness.technical
+        ? jsxs('details', {
+            'data-cb-readiness-technical': '',
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: readiness.technical })
+            ]
           })
         : null,
       primaryAction || secondaryAction
@@ -17875,8 +18408,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
               }),
               jsx(StatusRow, {
                 label: 'Enrolment',
-                value: enrollmentStatusLabel(row.enrollment_status),
-                detail: `revision ${row.revision}`
+                value: enrollmentStatusLabel(row.enrollment_status)
               }),
               jsx(StatusRow, {
                 label: 'Evidence',
@@ -18618,24 +19150,11 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                     jsxs('div', {
                       className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
-                        jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: entry.kind }),
                         jsx('span', {
-                          'data-cb-note-section': entry.objective_id,
-                          children: `Section · ${sectionTitles[entry.objective_id] || entry.objective_id}`
+                          'data-cb-note-lesson': sectionTitles[entry.objective_id] || 'This lesson',
+                          children: sectionTitles[entry.objective_id] || 'This lesson'
                         }),
-                        readNotebookRef(entry.source_ref).source_ids.length > 0
-                          ? jsx('span', {
-                              children: `Source · ${readNotebookRef(entry.source_ref).source_ids.join(', ')}`
-                            })
-                          : null,
                         row.title ? jsx('span', { children: `Course · ${row.title}` }) : null
-                      ]
-                    }),
-                    jsxs('div', {
-                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
-                      children: [
-                        (entry.tags || []).map((item) => jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: item }, item)),
-                        jsx('span', { children: `saved ${whenLabel(entry.created_at)}` })
                       ]
                     }),
                     jsxs('div', {
@@ -18646,12 +19165,6 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                           size: 'sm',
                           onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
                           children: 'Open in textbook'
-                        }),
-                        jsx(sdk.Button, {
-                          variant: 'text',
-                          size: 'sm',
-                          onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
-                          children: 'Continue from here'
                         }),
                         readNotebookRef(entry.source_ref).artifact_id
                           ? jsx(sdk.Button, {
@@ -18680,6 +19193,36 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                           size: 'sm',
                           onClick: () => setPendingRemove(entry),
                           children: 'Remove from notebook'
+                        })
+                      ]
+                    }),
+                    // H-189: the saved row's machine-facing anchors (kind enum, tag enums, the
+                    // objective id, source ids, the saved-from metadata) live here, behind the
+                    // existing Technical detail disclosure. The learner-facing row above is the
+                    // note, the lesson and one way back.
+                    jsxs('details', {
+                      'data-cb-note-technical': entry.entry_id,
+                      className: 'text-xs text-(--ui-text-secondary)',
+                      children: [
+                        jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+                        jsxs('div', {
+                          className: 'flex flex-col gap-1 pt-1',
+                          children: [
+                            jsx('span', {
+                              'data-cb-note-section': entry.objective_id,
+                              children: `Section id · ${entry.objective_id || 'not recorded'}`
+                            }),
+                            jsx('span', { children: `Saved from · ${entry.kind || 'not recorded'}` }),
+                            readNotebookRef(entry.source_ref).source_ids.length > 0
+                              ? jsx('span', {
+                                  children: `Source · ${readNotebookRef(entry.source_ref).source_ids.join(', ')}`
+                                })
+                              : null,
+                            (entry.tags || []).length > 0
+                              ? jsx('span', { children: `Tags · ${(entry.tags || []).join(', ')}` })
+                              : null,
+                            jsx('span', { children: `Saved ${whenLabel(entry.created_at)}` })
+                          ]
                         })
                       ]
                     }),
@@ -20190,14 +20733,14 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     [objectiveId, pageObjectiveId, row, page.data, profile, refresh, openSection]
   )
 
-  // H-174: re-run the failed lessons job from the brief it stored, keyed by that job so a double
-  // click replays one run. The page never invents content and never fakes a page: the job writes it.
+  // H-174/H-183: write the failed page again from the brief it stored, keyed by that run so a
+  // double click replays one attempt. The page never invents content and never fakes a page.
   const [readinessBusy, setReadinessBusy] = useState(false)
   const retryLessonsKey = useRef(null)
   const retryLessonsJob = useCallback(async () => {
     const job = lessonsJobFrom(jobs.data)
     if (!job || !job.brief || !job.job_id) {
-      setNotice('The lessons job could not be read yet, so it cannot be re-run from here. Open Plan to start it.')
+      setNotice('The saved plan could not be read yet, so this page cannot be written from here. Open Plan to start it.')
       selectView('plan')
       return
     }
@@ -20214,12 +20757,12 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     setReadinessBusy(false)
     if (!response.ok) {
       setNotice(
-        `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)} The plan and the pages already written are unchanged.`
+        'This page could not be written again. The plan and every page already written are unchanged.'
       )
       return
     }
     retryLessonsKey.current = { jobId: response.result.job_id, key: null }
-    setNotice('The lessons job was queued again from its saved brief. Pages already written at this plan version are kept.')
+    setNotice('Writing this page again. Pages already written for this plan are kept.')
     refresh()
   }, [jobs.data, refresh])
 
@@ -20857,7 +21400,7 @@ function LessonPaneBody({ binding, storedId }) {
               ? review.data.total_overdue > 0
                 ? `${review.data.total_overdue} due for review`
                 : 'Nothing due'
-              : 'Review queue unavailable'
+              : 'Review is unavailable right now'
           }),
           jsx('span', { children: '·' }),
           jsx('span', { children: `${Number((row.evidence_summary || {}).independent || 0)} independent` }),
@@ -21120,18 +21663,18 @@ function JobStateText({ job }) {
   const progress = job.progress || {}
   const message = progress.message ? ` — ${progress.message}` : ''
   if (job.state === 'queued') {
-    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
+    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Waiting to start. Nothing is spent until it begins.' })
   }
   if (job.state === 'cancel_requested' || job.state === 'cancelling') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: 'Cancelling. The current provider call is not aborted; the job stops before its next step.'
+      children: 'Stopping. The step already under way finishes, then this stops before the next one.'
     })
   }
   if (job.state === 'running') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: `Working${progress.stage ? ` (${progress.stage})` : ''}${message}`
+      children: `Working on it${message}`
     })
   }
   if (job.state === 'completed' || job.state === 'completed_late') {
@@ -21140,7 +21683,7 @@ function JobStateText({ job }) {
   if (job.state === 'interrupted_requires_retry') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: 'Interrupted: the worker stopped mid-job. Its checkpoint was kept; run the stage again to finish it.'
+      children: 'It stopped early. The work already saved is kept; start the stage again to finish it.'
     })
   }
   if (job.state === 'cancelled') {
@@ -21153,8 +21696,18 @@ function JobStateText({ job }) {
   return jsxs('div', {
     className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
     children: [
-      jsx('div', { children: `Failed${error.code ? ` (${error.code})` : ''}.` }),
-      error.message ? jsx('div', { className: 'text-(--ui-text-secondary)', children: error.message }) : null
+      jsx('div', { children: 'It stopped before finishing.' }),
+      error.message ? jsx('div', { className: 'text-(--ui-text-secondary)', children: error.message }) : null,
+      error.code
+        ? jsxs('details', {
+            'data-cb-job-technical': '',
+            style: { color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: error.code })
+            ]
+          })
+        : null
     ]
   })
 }
@@ -21651,7 +22204,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
             className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
             children: [
               jsx('div', { children: `${error.code ? error.code + ': ' : ''}${error.message}` }),
-              jsx('div', { className: 'text-(--ui-text-secondary)', children: 'The brief was not saved and no job was queued.' })
+              jsx('div', { className: 'text-(--ui-text-secondary)', children: 'The brief was not saved, and nothing was started.' })
             ]
           })
         : null,
@@ -21663,7 +22216,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
             variant: 'primary',
             disabled: busy || problems.length > 0 || !supported,
             onClick: submit,
-            children: busy ? 'Saving the brief' : 'Create the course and queue the plan'
+            children: busy ? 'Saving the brief' : 'Create the course and start the plan'
           }),
           jsx(sdk.Button, { variant: 'secondary', onClick: onCancel, children: 'Cancel' })
         ]
@@ -21747,7 +22300,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
     return jsx(sdk.ErrorState, {
       title: 'This course has no parent brief',
       description:
-        'It was not created by parent.brief.create, or the job row that stores it is gone. Nothing is reconstructed from a form.',
+        'It was not created by parent.brief.create, or the saved record that stores it is gone. Nothing is reconstructed from a form.',
       children: jsx(sdk.Button, { variant: 'secondary', onClick: briefQuery.reload, children: 'Try again' })
     })
   }
@@ -21784,7 +22337,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
         className: 'flex flex-col',
         children: rows.map((row) => jsx(PackReviewLine, { label: row.label, value: row.value }, row.label))
       }),
-      jsx(CbLabel, { children: 'Plan job' }),
+      jsx(CbLabel, { children: 'Plan' }),
       jsxs('div', {
         className: 'flex flex-col gap-1',
         children: [
@@ -21982,7 +22535,7 @@ function planValidationView({ job, jobHint, plan, reading, learner }) {
       detail: [
         'No validation record is bound to this exact plan version, so nothing here claims a second model.',
         mismatched
-          ? 'The plan job read here checked an earlier plan version; a carried version is a copy, not a re-check.'
+          ? 'This plan was checked against an earlier version; a carried version is a copy, not a re-check.'
           : null
       ].filter(Boolean)
     }
@@ -22123,15 +22676,15 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
       body: cancelled
         ? draftKept
           ? `You stopped this run for ${spoken}. A draft plan had already been written, so it stays here, unapproved; nothing was deleted.`
-          : `No plan was written for ${spoken}. Your goal and every choice you made are saved on this job, so running it again repeats the same brief rather than starting over.`
+          : `No plan was written for ${spoken}. Your goal and every choice you made are saved with this plan, so running it again repeats the same brief rather than starting over.`
         : draftKept
           ? `The run stopped before it finished, but a draft plan for ${spoken} had already been written. It stays here, unapproved; running the brief again does not create a second course.`
-          : `No plan was written for ${spoken}. The brief is saved on the job; running it again sends the same brief and does not create a second course.`,
-      where: cancelled ? 'The run, before the plan was approved' : 'The plan job, before the plan was approved',
+          : `No plan was written for ${spoken}. The brief is saved; running it again sends the same brief and does not create a second course.`,
+      where: cancelled ? 'The run, before the plan was approved' : 'The plan, before it was approved',
       detail: [
-        errorCode ? `Run error: ${plainPlanReason(errorCode)}` : 'No plan record was written for this run.',
+        errorCode ? `What happened: ${plainPlanReason(errorCode)}` : 'No plan record was written for this run.',
         job.state === 'interrupted_requires_retry'
-          ? 'The worker lease expired; the job is safe to start again.'
+          ? 'The previous attempt stopped early; it is safe to start again.'
           : draftKept
             ? 'A draft plan exists and is readable; it is not approved.'
             : 'Nothing was approved, and no lesson pages exist.'
@@ -22182,7 +22735,7 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
   if (validation.outcome) detail.push(VALIDATION_OUTCOME_COPY[validation.outcome] || 'The validator did not pass this draft.')
   if (validation.independence) detail.push(VALIDATION_INDEPENDENCE_COPY[validation.independence] || VALIDATION_INDEPENDENCE_COPY.unidentified)
   if (validation.research_status) detail.push(RESEARCH_STATUS_COPY[validation.research_status] || `Research status: ${plainPlanReason(validation.research_status)}`)
-  if (detail.length === 0) detail.push('The plan job recorded no detailed reason for this refusal.')
+  if (detail.length === 0) detail.push('No detailed reason was recorded for this refusal.')
 
   return {
     kind,
@@ -23630,7 +24183,7 @@ function StudioPlanView({
       if (nextRevision !== null) onRevision(nextRevision)
       setError(
         `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)}` +
-          (nextRevision !== null ? ' The course revision was refreshed; press Save changes again.' : '') +
+          (nextRevision !== null ? ' The course was updated elsewhere; press Save changes again.' : '') +
           (details.reason === 'plan_not_draft'
             ? ' This plan is approved; start a new plan version to change it.'
             : details.reason === 'objective_in_use'
@@ -23679,7 +24232,7 @@ function StudioPlanView({
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
           (hashMismatch ? ' The plan was re-read; press Approve plan again.' : '') +
-          (nextRevision !== null ? ' The course revision was refreshed; press Approve plan again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Approve plan again.' : '')
       )
       return
     }
@@ -23725,7 +24278,7 @@ function StudioPlanView({
       if (nextRevision !== null) onRevision(nextRevision)
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
-          (nextRevision !== null ? ' The course revision was refreshed; press Start a new plan version again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Start a new plan version again.' : '')
       )
       return
     }
@@ -23768,7 +24321,7 @@ function StudioPlanView({
     }
     const source = planRun
     if (!source || !source.brief || !source.job_id) {
-      setRejectError('The saved brief could not be read yet, so this run cannot be repeated. Try again once the job line finishes reading.')
+      setRejectError('The saved brief could not be read yet, so this run cannot be repeated. Try again once the plan finishes reading.')
       return
     }
     setRejectBusy(true)
@@ -23862,8 +24415,8 @@ function StudioPlanView({
       description: planJobId
         ? 'Research and drafting run in the background; this screen fills itself when the plan is written. Nothing is shown from a template, and there is no progress percentage to show.'
         : learner
-          ? 'This course has no plan job attached. Start a new course to generate one; nothing is invented to fill the gap.'
-          : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
+          ? 'This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap.'
+          : 'No plan is attached to this course, so there is nothing to review. Start a new brief.',
       children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null
     })
   }
@@ -24210,7 +24763,7 @@ function StudioPlanView({
               jsx(CbLabel, { children: 'Sources and review notes' }),
               jsx(QuietNote, {
                 children:
-                  'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
+                  'Sources come from the research that produced this plan. If research was unavailable the plan says so; no citation is invented here.'
               }),
               jsx(SourceProvenancePanel, {
                 sources,
@@ -24220,7 +24773,7 @@ function StudioPlanView({
                 dense: true,
                 emptyTitle: 'No source is recorded for this plan',
                 emptyDescription:
-                  'The plan job recorded no source. Nothing on this plan is presented as cited, and no excerpt is invented to fill the gap.',
+                  'No source was recorded for this plan. Nothing on this plan is presented as cited, and no excerpt is invented to fill the gap.',
                 extra: jsx(ProvenanceInventoryRow, {
                   vocabulary: planRun && planRun.checkpoint ? planRun.checkpoint.vocabulary : null
                 })
@@ -24368,7 +24921,7 @@ function LearnerPlanView({
       approved && !lessonsReady && !lessonsFailed
         ? jsx(QuietNote, {
             children:
-              'The outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, not generated content.'
+              'The outline is approved. Coursebook writes the lesson pages below; the section list is the approved outline.'
           })
         : null,
       approved && objectives.length > 0 && onOpenSection
@@ -24437,7 +24990,7 @@ function StudioBlueprintView({ book }) {
     learner_pages: 'These are the learner pages. No answer key is included here — answers live in their own tab and are a different file role.',
     answers: 'The answer guide. It is served by course id only, so it is never reachable from a learner’s lesson surface, and export keeps it out of the learner pages.',
     narration: 'The narration script you read aloud. It is text, not an audio file, and it is also inside the parent guide.',
-    sources: 'Every source the plan job recorded, with the support verdict it earned.'
+    sources: 'Every source this plan recorded, with the support verdict it earned.'
   }[tab]
 
   return jsxs('div', {
@@ -24460,7 +25013,7 @@ function StudioBlueprintView({ book }) {
             onRetry: book.reload,
             emptyTitle: 'No source is recorded for this course',
             emptyDescription:
-              'The plan job recorded no source for this course. Nothing here is presented as cited, and no excerpt is invented to fill the gap.',
+              'No source was recorded for this course. Nothing here is presented as cited, and no excerpt is invented to fill the gap.',
             intro: notice
           })
         : files.length === 0
@@ -24551,7 +25104,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
       if (nextRevision !== null && typeof onRevision === 'function') onRevision(nextRevision)
       setApproveError(
         describeError(response.error) +
-          (nextRevision !== null ? ' The course revision was refreshed; press Approve this lesson set again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Approve this lesson set again.' : '')
       )
       return
     }
@@ -24834,7 +25387,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
     children: [
       jsx(QuietNote, {
         children:
-          'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only job is to seed your next brief.'
+          'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only purpose is to seed your next brief.'
       }),
       jsx(CbLabel, { children: 'How did it go?' }),
       jsx(StudioViewPicker, {

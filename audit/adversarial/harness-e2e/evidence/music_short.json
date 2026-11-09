@@ -30,7 +30,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "0000000000000029",
+      "lesson_id": "000000000000002a",
       "page": {
         "check": {
           "assistance_policy": {
@@ -83,11 +83,11 @@
           ]
         }
       },
-      "section_id": "000000000000001b",
+      "section_id": "000000000000001c",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000002c",
+      "lesson_id": "000000000000002d",
       "page": {
         "check": {
           "assistance_policy": {
@@ -140,11 +140,11 @@
           ]
         }
       },
-      "section_id": "000000000000001c",
+      "section_id": "000000000000001d",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000035",
+      "lesson_id": "0000000000000036",
       "page": {
         "check": {
           "assistance_policy": {
@@ -197,11 +197,11 @@
           ]
         }
       },
-      "section_id": "0000000000000022",
+      "section_id": "0000000000000023",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000038",
+      "lesson_id": "0000000000000039",
       "page": {
         "check": {
           "assistance_policy": {
@@ -254,7 +254,7 @@
           ]
         }
       },
-      "section_id": "0000000000000023",
+      "section_id": "0000000000000024",
       "state": "validated"
     }
   ],
@@ -269,23 +269,23 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v9",
+      "prompt_version": "plan-prompt.v11",
       "warning": null
     },
     "attempt_rows": [
       {
-        "check_id": "000000000000002a",
+        "check_id": "000000000000002b",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:0dc22ab9b0b5b6a81c38f48f085431aa3781495261260fcf81e4267e6ee6c95e\"}",
-        "id": "att_00000000000000000000000000000043",
+        "id": "att_00000000000000000000000000000044",
         "state": "committed",
         "verdict": "pass"
       },
       {
-        "check_id": "000000000000002d",
+        "check_id": "000000000000002e",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:2538e74a9294c63a9d98bb35ae53263ee91d48a4af8013b6284fae9f5d33513e\"}",
-        "id": "att_00000000000000000000000000000049",
+        "id": "att_0000000000000000000000000000004a",
         "state": "committed",
         "verdict": "not_yet"
       }
@@ -340,7 +340,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v9",
+    "prompt_version": "plan-prompt.v11",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -550,7 +550,7 @@
     },
     "grading": [
       {
-        "check_id": "000000000000002a",
+        "check_id": "000000000000002b",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -561,9 +561,9 @@
         "submit": {
           "contract_version": 20,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000042",
+          "operation_id": "op-h40-attempt-submit-000043",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000043",
+            "attempt_id": "att_00000000000000000000000000000044",
             "criteria": [
               {
                 "id": "c1",
@@ -580,7 +580,7 @@
         }
       },
       {
-        "check_id": "000000000000002d",
+        "check_id": "000000000000002e",
         "label": "wrong",
         "objective_ordinal": 2,
         "open": {
@@ -591,9 +591,9 @@
         "submit": {
           "contract_version": 20,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-000048",
+          "operation_id": "op-h40-attempt-submit-000049",
           "result": {
-            "attempt_id": "att_00000000000000000000000000000049",
+            "attempt_id": "att_0000000000000000000000000000004a",
             "criteria": [
               {
                 "id": "c1",
@@ -617,7 +617,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "000000000000002a",
+          "check_id": "000000000000002b",
           "evidence_target": "recall",
           "state": "open",
           "version": 1
@@ -640,7 +640,7 @@
             "source_ids": []
           },
           {
-            "check_id": "000000000000002a",
+            "check_id": "000000000000002b",
             "deep": "From C, the fifth note arrives after the same four-semitone step plus three more. If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
             "headline": "Check the count at the keyboard",
             "id": "blk_3a4ba5f3ceb53d6609b4",
@@ -670,10 +670,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "000000000000002a",
-        "content_hash": "sha256:050cc16710975fa506d4697a265dfd94deb3fb118062a9807d478806d05d857c",
+        "check_id": "000000000000002b",
+        "content_hash": "sha256:99475acbaeef26653bf1ef2f3e78ca79560ee1369ecd07a3526304a76aae8d06",
         "direction": "ltr",
-        "document_id": "doc_050cc16710975fa506d4",
+        "document_id": "doc_99475acbaeef26653bf1",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -739,13 +739,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000028",
+          "job_id": "job_00000000000000000000000000000029",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000002a",
+              "check_id": "000000000000002b",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -753,48 +753,7 @@
                 "prompt_version": "lesson-prompt.v10",
                 "provider": "recorded"
               },
-              "lesson_id": "0000000000000029",
-              "reused": false,
-              "section_id": "000000000000001b",
-              "state": "validated",
-              "validation": {
-                "cost_usd": null,
-                "facts_unverified": false,
-                "generator": {
-                  "known": true,
-                  "model": "recorded-transcript-h40",
-                  "provider": "recorded"
-                },
-                "independence": "independent",
-                "independent": true,
-                "outcome": "independently_validated",
-                "research_status": "ok",
-                "shape_violations": 0,
-                "validator": {
-                  "known": true,
-                  "model": "recorded-validator-h40",
-                  "provider": "recorded"
-                },
-                "verdict": "pass",
-                "waived_unknown": [],
-                "warning": null
-              },
-              "validation_id": "000000000000002b",
-              "validation_model": "recorded-validator-h40",
-              "validation_verdict": "pass"
-            },
-            {
-              "audit_state": "passed",
-              "check_enabled": true,
-              "check_id": "000000000000002d",
-              "generation": {
-                "known": true,
-                "model": "recorded-transcript-h40",
-                "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v10",
-                "provider": "recorded"
-              },
-              "lesson_id": "000000000000002c",
+              "lesson_id": "000000000000002a",
               "reused": false,
               "section_id": "000000000000001c",
               "state": "validated",
@@ -820,7 +779,48 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000002e",
+              "validation_id": "000000000000002c",
+              "validation_model": "recorded-validator-h40",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "000000000000002e",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
+              "lesson_id": "000000000000002d",
+              "reused": false,
+              "section_id": "000000000000001d",
+              "state": "validated",
+              "validation": {
+                "cost_usd": null,
+                "facts_unverified": false,
+                "generator": {
+                  "known": true,
+                  "model": "recorded-transcript-h40",
+                  "provider": "recorded"
+                },
+                "independence": "independent",
+                "independent": true,
+                "outcome": "independently_validated",
+                "research_status": "ok",
+                "shape_violations": 0,
+                "validator": {
+                  "known": true,
+                  "model": "recorded-validator-h40",
+                  "provider": "recorded"
+                },
+                "verdict": "pass",
+                "waived_unknown": [],
+                "warning": null
+              },
+              "validation_id": "000000000000002f",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -885,13 +885,13 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000034",
+          "job_id": "job_00000000000000000000000000000035",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000036",
+              "check_id": "0000000000000037",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -899,48 +899,7 @@
                 "prompt_version": "lesson-prompt.v10",
                 "provider": "recorded"
               },
-              "lesson_id": "0000000000000035",
-              "reused": false,
-              "section_id": "0000000000000022",
-              "state": "validated",
-              "validation": {
-                "cost_usd": null,
-                "facts_unverified": false,
-                "generator": {
-                  "known": true,
-                  "model": "recorded-transcript-h40",
-                  "provider": "recorded"
-                },
-                "independence": "independent",
-                "independent": true,
-                "outcome": "independently_validated",
-                "research_status": "ok",
-                "shape_violations": 0,
-                "validator": {
-                  "known": true,
-                  "model": "recorded-validator-h40",
-                  "provider": "recorded"
-                },
-                "verdict": "pass",
-                "waived_unknown": [],
-                "warning": null
-              },
-              "validation_id": "0000000000000037",
-              "validation_model": "recorded-validator-h40",
-              "validation_verdict": "pass"
-            },
-            {
-              "audit_state": "passed",
-              "check_enabled": true,
-              "check_id": "0000000000000039",
-              "generation": {
-                "known": true,
-                "model": "recorded-transcript-h40",
-                "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v10",
-                "provider": "recorded"
-              },
-              "lesson_id": "0000000000000038",
+              "lesson_id": "0000000000000036",
               "reused": false,
               "section_id": "0000000000000023",
               "state": "validated",
@@ -966,7 +925,48 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000003a",
+              "validation_id": "0000000000000038",
+              "validation_model": "recorded-validator-h40",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "000000000000003a",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
+              "lesson_id": "0000000000000039",
+              "reused": false,
+              "section_id": "0000000000000024",
+              "state": "validated",
+              "validation": {
+                "cost_usd": null,
+                "facts_unverified": false,
+                "generator": {
+                  "known": true,
+                  "model": "recorded-transcript-h40",
+                  "provider": "recorded"
+                },
+                "independence": "independent",
+                "independent": true,
+                "outcome": "independently_validated",
+                "research_status": "ok",
+                "shape_violations": 0,
+                "validator": {
+                  "known": true,
+                  "model": "recorded-validator-h40",
+                  "provider": "recorded"
+                },
+                "verdict": "pass",
+                "waived_unknown": [],
+                "warning": null
+              },
+              "validation_id": "000000000000003b",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1166,7 +1166,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v9",
+        "prompt_version": "plan-prompt.v11",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1193,7 +1193,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v9",
+          "prompt_version": "plan-prompt.v11",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1208,7 +1208,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v9",
+          "prompt_version": "plan-prompt.v11",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -1255,22 +1255,22 @@
               "unknown_cost": false
             },
             "coursebook.plan.validate": {
-              "calls": 1,
+              "calls": 2,
               "cost_usd": 0.0,
               "unknown_cost": false
             }
           },
-          "calls": 2,
+          "calls": 3,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 2297,
-          "output_tokens": 996,
+          "input_tokens": 3584,
+          "output_tokens": 1153,
           "unknown_calls": 0,
           "unknown_cost": false
         },
         "validation": {
           "cost": {
-            "calls": 1,
+            "calls": 2,
             "cost_usd": 0.0,
             "unknown_cost": false
           },
@@ -1345,7 +1345,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000001a",
+          "job_id": "job_0000000000000000000000000000001b",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
@@ -1355,8 +1355,8 @@
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "000000000000001b",
-            "000000000000001c"
+            "000000000000001c",
+            "000000000000001d"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -1383,12 +1383,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1940,
+            "input_tokens": 1262,
             "output_tokens": 525,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "000000000000001d",
+          "validation_id": "000000000000001e",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1
@@ -1404,7 +1404,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000021",
+          "job_id": "job_00000000000000000000000000000022",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
@@ -1414,8 +1414,8 @@
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000022",
-            "0000000000000023"
+            "0000000000000023",
+            "0000000000000024"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -1442,12 +1442,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1957,
+            "input_tokens": 1280,
             "output_tokens": 524,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000024",
+          "validation_id": "0000000000000025",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 2

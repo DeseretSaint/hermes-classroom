@@ -16,23 +16,22 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v8` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v9` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v9` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v8` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
 
-The prompt labels above are the ones **H-195** ships: the v1 plan prompt advanced `v6` → `v8` and
-the blueprint prompt `v7` → `v9` for the through-line, prerequisite-assumption and
-no-study-skills-drift requirements, and the lesson prompt advanced `v9` → `v10` for the teaching
-arc, the plain-language rule and the lesson-specific heading rule. The pipeline label moved with
-them: `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`), and it is part of every
-idempotency fingerprint, so a plan or lesson authored under `cb.gen.v1` is never silently reused
-under the H-195 rules.
+The prompt labels above are the ones **H-192b** ships: on top of H-195's labels the two plan
+prompts now also state the graded-check rule the kernel enforces for a `committed` course (at
+least one `quiz` entry in `check_plan`), so they advance `v8` → `v10` and `v9` → `v11`.
+`PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
+fingerprint, so a plan or lesson authored under an older label is never silently reused under the
+current rules.
 
 The labels in that table are not hand-copied. They are the constants in
 `coursebook/generation.py` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
@@ -95,6 +94,23 @@ the results to the pipeline, which persists them.
 nowhere else. A host without `ctx.llm` leaves both unbound; `host_llm()` then raises a typed
 `GenerationRejected` instead of falling back to any provider, so failing closed is the intended
 behaviour.
+
+**The validator's output is bounded on the provider wire (H-192c).** `LLMRequest.max_tokens` is
+sent on every call, but the host does **not** forward it on the nous chat-completions route
+(`agent/auxiliary_client._forwards_max_tokens` excludes it), and a validation pass answered by
+the validator's own reasoning therefore had no cap: measured live on `cb/t_958c3f23` @ `c58c05a`,
+a five-criteria/six-claim pass emitted 19 739 completion tokens in 927 s and missed its 600 s
+deadline. Widening the deadline is not a repair. `register(ctx)` instead calls
+`register_validation_output_bound(ctx)`, which declares one plugin-owned auxiliary task
+(`cb_validate`) with host-documented `defaults`: `reasoning_effort: "low"` and
+`extra_body.max_tokens: 4000`. Both reach the provider body through the host's own task-config
+merge (`hermes_cli/plugins_aux_tasks.py` → `agent/auxiliary_task_config.py` →
+`agent/auxiliary_client._get_task_extra_body` → `_build_call_kwargs`), on the same route that
+drops the `max_tokens` argument. Every validation call — the configured second-model route and
+the author-model fallback — passes `task="cb_validate"`; authoring calls do not. A host without
+`register_auxiliary_task`, or one that refuses the key, leaves validation uncapped and
+`coursebook_status` reports `output_bound.registered: false` rather than implying a cap. This is
+a host-documented seam, not a private import; no host patch is required.
 
 **Provenance is what the provider reported (H-195).** `generation_provenance(response, request)`
 records `{provider, model, known, prompt_version, pipeline_version}` on the plan document
@@ -636,6 +652,34 @@ explanations belong in `reason`, and the same `ITEM_REFERENCE_MAX_CHARS` constan
 `VALIDATION_SCHEMA` and the instruction text, so the limit the model is told can never drift from
 the limit it is checked against. Widening it would have accepted a claim where a locator is
 expected and still failed on the next 250-character prose label.
+
+### 7.2 Validation demand is bounded per pass, independent of plan size
+
+H-192 measured the remaining failure on master `127cce1`: the plan validator judged the ten
+criteria **and** every claim in one answer. `plan_claim_labels` emits one label per objective, one
+per unit and the learner outcome, so a full-scope plan (12–40 objectives) demanded 13–42 claim
+verdicts on top of the ten criteria: 376 896 ms / 29 386 completion tokens, then a schema
+violation. A single-scope plan exceeded 600 s with no answer at all. The H-191 bound was per claim
+label, not in the total number of labels.
+
+The demand is now cut into fixed-size batches (`CLAIM_VERDICTS_PER_PASS = 6` on a criteria pass,
+`CLAIM_ONLY_VERDICTS_PER_PASS = 12` on a claim-only pass):
+
+* the criteria pass takes at most one batch of claim labels and still judges all ten criteria;
+* the remaining labels become **claim-only** passes, each with a narrowed schema that carries
+  `claim_verdicts` and nothing else — no `criteria`, no `rejections`, no artifact `verdict`;
+* `merge_validation_reports` merges the ten criteria from the owning pass(es) and the claim
+  verdicts from every pass; a claim-only pass cannot reject the artifact or widen the review;
+* `_run_validation_passes` submits all passes together, so wall time stays at the slowest pass.
+
+Consequently no single answer's output grows with plan size. A plan whose claim set fits one batch
+(the measured single-scope plan: 3–5 labels) still makes exactly one call. The deadline is
+unchanged: the repair is a smaller answer demand, not more time.
+
+A validator answer that violates its own narrowed schema is `ModelOutputInvalid` →
+`VALIDATION_FAILED` (`retryable: false`) at the plan, unit-sections and lesson stages, and a
+validator *content* rejection (`GenerationRejected`) carries `code = "VALIDATION_FAILED"` too — a
+refusal that repeats on every retry is not an `INTERNAL_ERROR` and not retryable.
 
 ## 8. The lesson document: one validated document, many views
 
