@@ -609,6 +609,18 @@
             "unmet": []
           }
         ],
+        "validation": {
+          "approvable": true,
+          "detail": null,
+          "facts_unverified": false,
+          "independence": "independent",
+          "manual_authoring": false,
+          "outcome": "independently_validated",
+          "reason": null,
+          "reasons": [],
+          "source": "generated_validated",
+          "verdict": "pass"
+        },
         "version": 1
       },
       "total": 1,
@@ -685,6 +697,7 @@
           "status": "ok"
         },
         "research_id": "000000000000000b",
+        "reuse_declined": null,
         "reused": false,
         "scope": "single",
         "scope_cap_weeks": 1,

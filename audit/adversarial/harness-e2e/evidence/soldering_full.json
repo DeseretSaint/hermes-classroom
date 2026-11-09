@@ -2854,6 +2854,18 @@
             ]
           }
         ],
+        "validation": {
+          "approvable": true,
+          "detail": null,
+          "facts_unverified": false,
+          "independence": "independent",
+          "manual_authoring": false,
+          "outcome": "independently_validated",
+          "reason": null,
+          "reasons": [],
+          "source": "generated_validated",
+          "verdict": "pass"
+        },
         "version": 1
       },
       "total": 12,
@@ -2938,6 +2950,7 @@
           "status": "ok"
         },
         "research_id": "0000000000000020",
+        "reuse_declined": null,
         "reused": false,
         "scope": "full",
         "scope_cap_weeks": 104,
