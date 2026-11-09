@@ -1,0 +1,952 @@
+{
+  "artifact_get_resolutions": [
+    {
+      "archive_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+      "artifact_id": "art_7c6342ddeef5425ea19cff786dcedfff",
+      "boundary": "export",
+      "content_hash": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+      "handle_http": 200,
+      "handle_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "archive_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+      "artifact_id": "art_56453b5d198446009db2c75d6743da80",
+      "boundary": "export",
+      "content_hash": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+      "handle_http": 200,
+      "handle_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+      "ok": true,
+      "pack": "demo",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+      "boundary": "media:storeA",
+      "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "ok": true,
+      "pack": "demo",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+      "boundary": "media:storeA",
+      "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+      "boundary": "media:storeA",
+      "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+      "boundary": "media:storeA",
+      "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_23635abb1dcc43e385269ae935cdcda0",
+      "boundary": "media:storeB",
+      "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "ok": true,
+      "pack": "demo",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_b66fac4b091d447ca863d61e4e9aeab7",
+      "boundary": "media:storeB",
+      "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_a50dafa840c843d18f6ef1ac800154ed",
+      "boundary": "media:storeB",
+      "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    },
+    {
+      "artifact_id": "art_345647a5aff34e849662cb9aacf9b932",
+      "boundary": "media:storeB",
+      "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "declared": true,
+      "handle_http": 200,
+      "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "ok": true,
+      "pack": "japanese",
+      "prefixes": 1,
+      "shape_ok": true,
+      "shape_problems": []
+    }
+  ],
+  "backends": {
+    "storeA": "http://127.0.0.1:44339",
+    "storeB": "http://127.0.0.1:44340"
+  },
+  "branch": "wt/h210r2-pack-recheck",
+  "checks": [
+    {
+      "check": "release tree is the merged re-check branch",
+      "detail": {
+        "branch": "wt/h210r2-pack-recheck",
+        "capture_commit": "df052eaeced56ddd7238e4fb5804110ea7b36e95",
+        "head": "df052eaeced56ddd7238e4fb5804110ea7b36e95"
+      },
+      "ok": true
+    },
+    {
+      "check": "artifact.get repair 160c522 is an ancestor of the measured commit",
+      "detail": {
+        "ancestor": "160c522"
+      },
+      "ok": true
+    },
+    {
+      "check": "desktop/plugin.js sha256",
+      "detail": {
+        "expect_m4_pin": true,
+        "sha256": "sha256:cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516"
+      },
+      "ok": true
+    },
+    {
+      "check": "wire version is cb.rpc v20",
+      "detail": {
+        "storeA": 20,
+        "storeB": 20
+      },
+      "ok": true
+    },
+    {
+      "check": "packs intake available on both backends",
+      "detail": {
+        "storeA": {
+          "available": true,
+          "can_grant": true,
+          "ok": true,
+          "staging_root": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeA/plugin-data/coursebook/pack-staging"
+        },
+        "storeB": {
+          "available": true,
+          "can_grant": true,
+          "ok": true,
+          "staging_root": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeB/plugin-data/coursebook/pack-staging"
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.preview japanese matches the bundled manifest on both stores",
+      "detail": {
+        "expected": {
+          "bytes": 40363,
+          "checks": 4,
+          "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+          "files": 8,
+          "media": {
+            "content/cover-16x9.png": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+            "content/narration-polite-confession.mp3": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+            "content/relationship-map.png": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+          },
+          "media_count": 3,
+          "objectives": 4,
+          "pack_version": "2.1.0",
+          "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/inputs/japanese-affection-context-l0-2.1.0.zip",
+          "sections": 4,
+          "zip_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+        },
+        "storeA": {
+          "code": null,
+          "expanded_bytes": 46425,
+          "file_count": 8,
+          "hashes_match": true,
+          "manifest": {
+            "checks": 4,
+            "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+            "files": 8,
+            "media": 3,
+            "objectives": 4,
+            "sections": 4
+          },
+          "ok": true,
+          "trust": {
+            "labels": [
+              "integrity_verified",
+              "automated_checks_passed",
+              "model_assessed_support"
+            ]
+          }
+        },
+        "storeB": {
+          "code": null,
+          "expanded_bytes": 46425,
+          "file_count": 8,
+          "hashes_match": true,
+          "manifest": {
+            "checks": 4,
+            "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+            "files": 8,
+            "media": 3,
+            "objectives": 4,
+            "sections": 4
+          },
+          "ok": true,
+          "trust": {
+            "labels": [
+              "integrity_verified",
+              "automated_checks_passed",
+              "model_assessed_support"
+            ]
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.import japanese succeeded on both stores",
+      "detail": {
+        "storeA": {
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "enrollment_id": "enr_27534a2e68e54b07ba2deb6676fe8dab",
+          "pack_id": "japanese-affection-context-l0",
+          "revision": 0
+        },
+        "storeB": {
+          "course_id": "crs_02e3002cf5a44b668ae5da9faa31dcdd",
+          "enrollment_id": "enr_1ea84ae541f54d5989f048ea34595425",
+          "pack_id": "japanese-affection-context-l0",
+          "revision": 0
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.preview demo matches the bundled manifest on both stores",
+      "detail": {
+        "expected": {
+          "bytes": 6516,
+          "checks": 2,
+          "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+          "files": 5,
+          "media": {
+            "content/cover-16x9.png": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+          },
+          "media_count": 1,
+          "objectives": 2,
+          "pack_version": "2.0.0",
+          "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/inputs/technical-demo-pack-2.0.0.zip",
+          "sections": 2,
+          "zip_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+        },
+        "storeA": {
+          "code": null,
+          "expanded_bytes": 10953,
+          "file_count": 5,
+          "hashes_match": true,
+          "manifest": {
+            "checks": 2,
+            "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+            "files": 5,
+            "media": 1,
+            "objectives": 2,
+            "sections": 2
+          },
+          "ok": true,
+          "trust": {
+            "labels": [
+              "integrity_verified",
+              "automated_checks_passed"
+            ]
+          }
+        },
+        "storeB": {
+          "code": null,
+          "expanded_bytes": 10953,
+          "file_count": 5,
+          "hashes_match": true,
+          "manifest": {
+            "checks": 2,
+            "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+            "files": 5,
+            "media": 1,
+            "objectives": 2,
+            "sections": 2
+          },
+          "ok": true,
+          "trust": {
+            "labels": [
+              "integrity_verified",
+              "automated_checks_passed"
+            ]
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.import demo succeeded on both stores",
+      "detail": {
+        "storeA": {
+          "course_id": "crs_380690eaa39b4fd4bf82745d5f0211f7",
+          "enrollment_id": "enr_9f01ec515fb8479dbdfddf417f282643",
+          "pack_id": "technical-demo-pack",
+          "revision": 0
+        },
+        "storeB": {
+          "course_id": "crs_4495ab058f8f403bb2661c062b55b88a",
+          "enrollment_id": "enr_2cde4686bfcd4eaeada23d7b1af3370b",
+          "pack_id": "technical-demo-pack",
+          "revision": 0
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "second import of the same pack in resume mode keeps one course/enrollment",
+      "detail": {
+        "first": {
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "enrollment_id": "enr_27534a2e68e54b07ba2deb6676fe8dab",
+          "pack_id": "japanese-affection-context-l0",
+          "revision": 0
+        },
+        "resume": {
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "enrollment_id": "enr_27534a2e68e54b07ba2deb6676fe8dab",
+          "pack_id": "japanese-affection-context-l0",
+          "revision": 0
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "structure after re-import is 4/4/4 in both stores",
+      "detail": {
+        "expected": {
+          "checks": 4,
+          "objectives": 4,
+          "sections": 4
+        },
+        "storeA": {
+          "outline_total": 4,
+          "page_objectives": 4,
+          "preview": {
+            "checks": 4,
+            "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+            "files": 8,
+            "media": 3,
+            "objectives": 4,
+            "sections": 4
+          },
+          "segments": {
+            "check_prompt": 4,
+            "media": 3,
+            "teaching": 4
+          }
+        },
+        "storeB": {
+          "outline_total": 4,
+          "page_objectives": 4,
+          "preview": {
+            "checks": 4,
+            "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+            "files": 8,
+            "media": 3,
+            "objectives": 4,
+            "sections": 4
+          },
+          "segments": {
+            "check_prompt": 4,
+            "media": 3,
+            "teaching": 4
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "structure after re-import is 2/2/2 in both stores",
+      "detail": {
+        "expected": {
+          "checks": 2,
+          "objectives": 2,
+          "sections": 2
+        },
+        "storeA": {
+          "outline_total": 2,
+          "page_objectives": 2,
+          "preview": {
+            "checks": 2,
+            "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+            "files": 5,
+            "media": 1,
+            "objectives": 2,
+            "sections": 2
+          },
+          "segments": {
+            "check_prompt": 2,
+            "media": 1,
+            "teaching": 2
+          }
+        },
+        "storeB": {
+          "outline_total": 2,
+          "page_objectives": 2,
+          "preview": {
+            "checks": 2,
+            "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+            "files": 5,
+            "media": 1,
+            "objectives": 2,
+            "sections": 2
+          },
+          "segments": {
+            "check_prompt": 2,
+            "media": 1,
+            "teaching": 2
+          }
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.export japanese is deterministic on the same store (two attempts)",
+      "detail": {
+        "attempt_1": {
+          "artifact_id": "art_7c6342ddeef5425ea19cff786dcedfff",
+          "bytes": 40363,
+          "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+          "file_count": 8
+        },
+        "attempt_2": {
+          "artifact_id": "art_7c6342ddeef5425ea19cff786dcedfff",
+          "bytes": 40363,
+          "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+          "file_count": 8
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.export japanese content_hash is unchanged after a fresh-store re-import",
+      "detail": {
+        "storeA": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+        "storeB": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9"
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.export demo is deterministic on the same store (two attempts)",
+      "detail": {
+        "attempt_1": {
+          "artifact_id": "art_56453b5d198446009db2c75d6743da80",
+          "bytes": 6516,
+          "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+          "file_count": 5
+        },
+        "attempt_2": {
+          "artifact_id": "art_56453b5d198446009db2c75d6743da80",
+          "bytes": 6516,
+          "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+          "file_count": 5
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "pack.export demo content_hash is unchanged after a fresh-store re-import",
+      "detail": {
+        "storeA": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+        "storeB": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d"
+      },
+      "ok": true
+    },
+    {
+      "check": "exported Japanese archive sha256 is sha256:4aefd708\u2026 on both stores",
+      "detail": {
+        "storeA": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "storeB": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+      },
+      "ok": true
+    },
+    {
+      "check": "Japanese export archive is byte-identical to the imported archive",
+      "detail": {
+        "export": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "input": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+      },
+      "ok": true
+    },
+    {
+      "check": "demo export archive sha256 is sha256:747c61fd\u2026 on both stores",
+      "detail": {
+        "storeA": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "storeB": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+      },
+      "ok": true
+    },
+    {
+      "check": "demo export archive is byte-identical to the imported archive",
+      "detail": {
+        "export": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "input": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+      },
+      "ok": true
+    },
+    {
+      "check": "Japanese pack content_hash is sha256:5343526d\u2026",
+      "detail": {
+        "export": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9"
+      },
+      "ok": true
+    },
+    {
+      "check": "artifact.get on the japanese export artifact is contract-valid, single-prefixed and fetchable",
+      "detail": {
+        "archive_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "artifact_id": "art_7c6342ddeef5425ea19cff786dcedfff",
+        "boundary": "export",
+        "content_hash": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "handle_http": 200,
+        "handle_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "ok": true,
+        "pack": "japanese",
+        "prefixes": 1,
+        "shape_ok": true,
+        "shape_problems": []
+      },
+      "ok": true
+    },
+    {
+      "check": "artifact.get on the demo export artifact is contract-valid, single-prefixed and fetchable",
+      "detail": {
+        "archive_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "artifact_id": "art_56453b5d198446009db2c75d6743da80",
+        "boundary": "export",
+        "content_hash": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "handle_http": 200,
+        "handle_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "ok": true,
+        "pack": "demo",
+        "prefixes": 1,
+        "shape_ok": true,
+        "shape_problems": []
+      },
+      "ok": true
+    },
+    {
+      "check": "both packs declare four media links (three Japanese + one demo)",
+      "detail": {
+        "demo": [
+          "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+        ],
+        "japanese": [
+          "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        ]
+      },
+      "ok": true
+    },
+    {
+      "check": "every media segment resolves through artifact.get on storeA",
+      "detail": {
+        "demo:1:art_5a5e40d3f63e45458096447b020ce47f": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:1:art_9ac6aa21d1384819b5bd101735bef16a": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:2:art_5d9864fc24bf48129f0e3d3b39c11b63": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:3:art_e414216072634f9a8708bec7e9a5b8a3": {
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "every media content_hash on storeA is labelled, contract-valid and matches the bytes the handle returned",
+      "detail": {
+        "demo:1:art_5a5e40d3f63e45458096447b020ce47f": {
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+        },
+        "japanese:1:art_9ac6aa21d1384819b5bd101735bef16a": {
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        },
+        "japanese:2:art_5d9864fc24bf48129f0e3d3b39c11b63": {
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+        },
+        "japanese:3:art_e414216072634f9a8708bec7e9a5b8a3": {
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "the media hashes on storeA are exactly the four digests both manifests declare",
+      "detail": {
+        "declared": [
+          "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        ],
+        "extra": [],
+        "fetched": [
+          "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        ],
+        "missing": []
+      },
+      "ok": true
+    },
+    {
+      "check": "every media segment resolves through artifact.get on storeB",
+      "detail": {
+        "demo:1:art_23635abb1dcc43e385269ae935cdcda0": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:1:art_b66fac4b091d447ca863d61e4e9aeab7": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:2:art_a50dafa840c843d18f6ef1ac800154ed": {
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        "japanese:3:art_345647a5aff34e849662cb9aacf9b932": {
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "every media content_hash on storeB is labelled, contract-valid and matches the bytes the handle returned",
+      "detail": {
+        "demo:1:art_23635abb1dcc43e385269ae935cdcda0": {
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+        },
+        "japanese:1:art_b66fac4b091d447ca863d61e4e9aeab7": {
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        },
+        "japanese:2:art_a50dafa840c843d18f6ef1ac800154ed": {
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+        },
+        "japanese:3:art_345647a5aff34e849662cb9aacf9b932": {
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "the media hashes on storeB are exactly the four digests both manifests declare",
+      "detail": {
+        "declared": [
+          "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        ],
+        "extra": [],
+        "fetched": [
+          "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+        ],
+        "missing": []
+      },
+      "ok": true
+    },
+    {
+      "check": "artifact.get resolved six distinct content digests over ten live calls (four media segments in each of two stores, plus two export archives)",
+      "detail": {
+        "calls": 10,
+        "distinct_digests": 6,
+        "failures": []
+      },
+      "ok": true
+    },
+    {
+      "check": "store A holds one labelled row per artifact before the legacy injection",
+      "detail": {
+        "row_count": 6,
+        "spellings": [
+          "labelled"
+        ]
+      },
+      "ok": true
+    },
+    {
+      "check": "the injected pre-repair rows store the bare 64-hex spelling",
+      "detail": {
+        "injected": [
+          {
+            "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+            "kind": "audio",
+            "now": "dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+            "was": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+          },
+          {
+            "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+            "kind": "visual",
+            "now": "8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+            "was": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+          },
+          {
+            "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+            "kind": "visual",
+            "now": "8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+            "was": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+          },
+          {
+            "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+            "kind": "visual",
+            "now": "fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+            "was": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+          }
+        ],
+        "row_count": 6
+      },
+      "ok": true
+    },
+    {
+      "check": "two more live imports create no duplicate (content_hash, kind) row",
+      "detail": {
+        "duplicates": [],
+        "row_count": 6,
+        "spellings": [
+          "bare",
+          "labelled"
+        ]
+      },
+      "ok": true
+    },
+    {
+      "check": "the legacy rows keep the spelling they already had (no read path rewrites a row)",
+      "detail": {
+        "legacy_rows": [
+          {
+            "bytes": 22272,
+            "content_hash": "dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+            "id": "art_e414216072634f9a8708bec7e9a5b8a3",
+            "kind": "audio",
+            "ref_count": 4
+          },
+          {
+            "bytes": 3784,
+            "content_hash": "8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+            "id": "art_5a5e40d3f63e45458096447b020ce47f",
+            "kind": "visual",
+            "ref_count": 1
+          },
+          {
+            "bytes": 6948,
+            "content_hash": "8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+            "id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+            "kind": "visual",
+            "ref_count": 4
+          },
+          {
+            "bytes": 3804,
+            "content_hash": "fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+            "id": "art_9ac6aa21d1384819b5bd101735bef16a",
+            "kind": "visual",
+            "ref_count": 4
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "check": "the three legacy Japanese media rows absorbed the labelled re-imports through ref_count",
+      "detail": {
+        "japanese_rows": [
+          "art_e414216072634f9a8708bec7e9a5b8a3",
+          "art_5d9864fc24bf48129f0e3d3b39c11b63",
+          "art_9ac6aa21d1384819b5bd101735bef16a"
+        ],
+        "ref_count": {
+          "art_5a5e40d3f63e45458096447b020ce47f": 1,
+          "art_5d9864fc24bf48129f0e3d3b39c11b63": 4,
+          "art_9ac6aa21d1384819b5bd101735bef16a": 4,
+          "art_e414216072634f9a8708bec7e9a5b8a3": 4
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "artifact.get normalises a legacy bare row to the labelled contract hash on read",
+      "detail": {
+        "art_5a5e40d3f63e45458096447b020ce47f": {
+          "code": null,
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "ok": true
+        },
+        "art_5d9864fc24bf48129f0e3d3b39c11b63": {
+          "code": null,
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "ok": true
+        },
+        "art_9ac6aa21d1384819b5bd101735bef16a": {
+          "code": null,
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "ok": true
+        },
+        "art_e414216072634f9a8708bec7e9a5b8a3": {
+          "code": null,
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "the same legacy rows still resolve with labelled hashes after the labelled re-imports",
+      "detail": {
+        "art_5a5e40d3f63e45458096447b020ce47f": {
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "handle_sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "ok": true
+        },
+        "art_5d9864fc24bf48129f0e3d3b39c11b63": {
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "handle_sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "ok": true
+        },
+        "art_9ac6aa21d1384819b5bd101735bef16a": {
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "handle_sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "ok": true
+        },
+        "art_e414216072634f9a8708bec7e9a5b8a3": {
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "handle_sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    {
+      "check": "every fetched media/export hash is a labelled digest matching the bytes the handle returned",
+      "detail": {
+        "mismatches": []
+      },
+      "ok": true
+    }
+  ],
+  "desktop_plugin_sha256": "sha256:cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516",
+  "generated_at": "2026-11-09T05:55:39Z",
+  "hashes": {
+    "declared_media": {
+      "demo": [
+        "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+      ],
+      "japanese": [
+        "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+      ]
+    },
+    "demo": {
+      "archive_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+      "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+      "input_archive_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+    },
+    "japanese": {
+      "archive_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+      "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+      "input_archive_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+    }
+  },
+  "release_commit": "df052eaeced56ddd7238e4fb5804110ea7b36e95",
+  "route": "live HTTP POST /api/plugins/coursebook/rpc (?profile=), two isolated `hermes serve --isolated` homes",
+  "summary": {
+    "failed": [],
+    "passed": 39,
+    "total": 39
+  },
+  "wire_version": 20
+}

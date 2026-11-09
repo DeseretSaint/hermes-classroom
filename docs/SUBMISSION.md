@@ -30,7 +30,7 @@ measured commit `ab6dc7e`.
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 license exists, no live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 4, 5, 6, 10, 11.
+in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10, 11.
 
 ## 0. Hard operator gate
 
@@ -57,7 +57,7 @@ invalidates the earlier evidence.
 | 1 | Contracts frozen | Atlas | `contracts/rpc.v20.json` (73 declared methods), `contracts/db.v12.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh` on `ab6dc7e`: admission PASS, `node --check` PASS, desktop contract tests PASS, runtime contracts PASS — 4/4 on 2742 files | [x] |
 | 3 | Backend kernel with migrations | Cinder | At `ab6dc7e`: `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`; suite `Ran 2724 tests in 533.270s … OK` | [x] |
-| 4 | Packs import and export | Lattice | Re-driven live on `bc9f607` (the H-203 docs merge over `ab6dc7e`; `desktop/plugin.js` is still `cd862140…`) through the mounted HTTP `cb.rpc` v20 route: `pack.preview` → `pack.import` for `japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0, `pack.export` twice on the same store with byte-identical results (`content_hash` `sha256:5343526d…`, archive sha256 `sha256:4aefd708…`; the exported archive equals the imported archive byte-for-byte), then a fresh-store re-import with the same objectives / sections / checks (Japanese 4 / 4 / 4, demo 2 / 2 / 2) and the same media bytes. **Still open, now only in evidence:** a pack's linked media could not be fetched on `bc9f607` — `artifact.get` answered `INTERNAL_ERROR` for all three Japanese media rows because the row stores an unprefixed digest and the contract requires `sha256:<64 hex>`. That defect was repaired in `160c522` and merged here as `8fd4ec2` (`artifact.get` labels the stored hash at every read boundary; new rows written labelled, legacy bare rows normalised on read). Gate stays `[~]` until `t_a7761dfc` re-drives this same round trip on the merged tree and proves every media segment resolves — the repair landing is not the gate | [~] |
+| 4 | Packs import and export | Lattice | Re-driven live on `df052eaeced56ddd7238e4fb5804110ea7b36e95` (the merged release tree: the H-210-R1 `artifact.get` repair `160c522` folded in as `8fd4ec2`; `desktop/plugin.js` still `cd862140…`) through the mounted HTTP `cb.rpc` v20 route against two isolated backends: `pack.preview` → `pack.import` for `japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0, `pack.export` twice on the same store with byte-identical results (`content_hash` `sha256:5343526d…`, archive sha256 `sha256:4aefd708…`; demo `sha256:ff5594a8…` / `sha256:747c61fd…`; the exported archive equals the imported archive byte-for-byte), then a fresh-store re-import with the same objectives / sections / checks (Japanese 4 / 4 / 4, demo 2 / 2 / 2) and the same media bytes. The step that answered `INTERNAL_ERROR` on `bc9f607` now passes: `artifact.get` resolves **every** media segment of both packs on both stores — four media links, ten live calls, six distinct digests including the two export archives — each response contract-valid with a single-prefixed `sha256:<64 hex>` matching the manifest and a download handle whose fetched bytes hash to that same digest. The legacy bare spelling was reproduced in an isolated store: a bare row reads back labelled and a later labelled import dedupes into it instead of adding a row. Evidence: `audit/adversarial/h210r2-pack-roundtrip/` (39/39 assertions PASS) | [x] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `ab6dc7e` and no video exists. Gate 5 and the recording path must close first | [ ] |
@@ -70,7 +70,7 @@ invalidates the earlier evidence.
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
 
-Open gates: 7, 9, 12, 13, 14, 15. Partial: 4, 5, 6, 10, 11.
+Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10, 11.
 
 Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
 fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course → section path and on
@@ -285,7 +285,7 @@ resolved for the recording.
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
 | Catalog draft | `catalog/coursebook.yaml` pins this documents commit, validator `OK: 1 file(s) valid`; not submitted |
-| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and five partial (`[~]`: 4, 5, 6, 10, 11) |
+| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
 code commit `ab6dc7e` one below it, because an entry cannot carry its own hash. The numbers above are

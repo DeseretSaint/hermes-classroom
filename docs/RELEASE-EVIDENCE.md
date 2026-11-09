@@ -97,8 +97,59 @@ outside the contract at content_hash: '<64 hex>' does not match '^sha256:[a-f0-9
 `coursebook/artifacts.py` stores the digest unprefixed in the `artifacts` row while
 `coursebook/domain.py:artifact_get` returns the row value verbatim. The export artifact is
 unaffected (it is stored prefixed and returns its handle normally), which is why the round trip and
-the export hash are green while the learner-facing media fetch is not. That failing step is why gate
-4 stays `[~]`; the repair is tracked separately and no product code was changed in this pass.
+the export hash is green while the learner-facing media fetch is not. That failing step is why gate
+4 stayed `[~]` after that pass; the repair is tracked separately and no product code was changed in
+that pass.
+
+### Re-run on the merged release tree `df052eaeced56ddd7238e4fb5804110ea7b36e95` — gate 4 closed
+
+The repair landed as `160c522` (H-210-R1: `artifact.get` labels the stored content hash at every read
+boundary; new rows are written labelled, legacy bare rows are normalised on read, and the
+`(content_hash, kind)` dedupe matches both spellings) and was folded into this tree as `8fd4ec2`.
+The round trip above was then re-driven, live, on
+`df052eaeced56ddd7238e4fb5804110ea7b36e95` — `wt/h210r2-pack-recheck`, the merged release tree with
+`desktop/plugin.js` still `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`. Two
+isolated homes were installed from that checkout (`scripts/install-local.sh --home <home>`, admission
+gates PASS in both), each served by its own `hermes serve --isolated` (`:44339`, `:44340`), and every
+call crossed the mounted `POST /api/plugins/coursebook/rpc` route with a `cb.rpc` v20 envelope.
+
+Every number in the `bc9f607` table above reproduced unchanged: `pack.preview` `hashes_match: true`
+(Japanese 8 files / 46,425 expanded bytes, demo 5 files / 10,953), `pack.import` on both stores, the
+`resume` replay returning the same `course_id`/`enrollment_id`, Japanese 4 / 4 / 4 and demo 2 / 2 / 2
+objectives / sections / checks with lesson pages carrying 4 teaching + 3 media + 4 check segments
+(2 + 1 + 2 for the demo), `pack.export` identical on both attempts and in the fresh store
+(`content_hash` `sha256:5343526d…`, archive `sha256:4aefd708…` for the Japanese pack;
+`sha256:ff5594a8…` / `sha256:747c61fd…` for the demo), the exported archive byte-for-byte equal to
+the imported archive, and the same media bytes in both stores. `course.export` on the pack-backed
+enrollment still refuses with `course_pack_backed`.
+
+The step that failed on `bc9f607` now passes. `artifact.get` resolved every media segment of both
+packs in both stores — four media links, ten live calls, six distinct digests including the two
+export archives — each response contract-valid (`kind` in the enum, `mime` matching the contract
+pattern, non-negative `bytes`, `sha256:<64 hex>` with exactly one prefix, a session-bound handle
+under `/api/plugins/coursebook/artifacts/`), with the answered digest equal to the sha256 of the
+bytes the handle returned and equal to the manifest's declared `media[]` digest:
+
+| Pack media | `content_hash` answered = sha256 of the fetched bytes |
+| --- | --- |
+| Japanese `content/cover-16x9.png` (3,804 bytes) | `sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8` |
+| Japanese `content/relationship-map.png` (6,948 bytes) | `sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d` |
+| Japanese `content/narration-polite-confession.mp3` (22,272 bytes) | `sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349` |
+| Demo `content/cover-16x9.png` (3,784 bytes) | `sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a` |
+
+The two export artifacts still answer a single-prefixed hash and a fetchable handle
+(`sha256:4aefd708…`, 40,363 bytes and `sha256:747c61fd…`, 6,516 bytes) — no double prefix and no
+behaviour change. The dual-spelling dedupe was reproduced live rather than assumed: after a
+consistent database backup, the four pack media rows in the isolated store were rewritten to the
+bare `<64 hex>` spelling they had before `160c522`; `artifact.get` answered the labelled form for
+each, the stored spelling stayed bare, and two further imports of the same pack left the `artifacts`
+table at six rows, absorbing the labelled writes through `ref_count` instead of adding siblings.
+
+Evidence is committed beside this record at `audit/adversarial/h210r2-pack-roundtrip/`:
+`assertions.json` (39 / 39 verdicts computed from the captures), the two backend captures, the
+dedupe capture, the input manifest record, and the drivers. That capture is a wire measurement: no
+Desktop window was opened, no provider spend was incurred, no media was generated, the gateway was
+not restarted, and no M4 pin was touched.
 
 ## Reproducibility
 

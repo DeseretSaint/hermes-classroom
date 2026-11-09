@@ -1,0 +1,44 @@
+{
+  "total": 39,
+  "passed": 39,
+  "failed": []
+}
+PASS release tree is the merged re-check branch
+PASS artifact.get repair 160c522 is an ancestor of the measured commit
+PASS desktop/plugin.js sha256
+PASS wire version is cb.rpc v20
+PASS packs intake available on both backends
+PASS pack.preview japanese matches the bundled manifest on both stores
+PASS pack.import japanese succeeded on both stores
+PASS pack.preview demo matches the bundled manifest on both stores
+PASS pack.import demo succeeded on both stores
+PASS second import of the same pack in resume mode keeps one course/enrollment
+PASS structure after re-import is 4/4/4 in both stores
+PASS structure after re-import is 2/2/2 in both stores
+PASS pack.export japanese is deterministic on the same store (two attempts)
+PASS pack.export japanese content_hash is unchanged after a fresh-store re-import
+PASS pack.export demo is deterministic on the same store (two attempts)
+PASS pack.export demo content_hash is unchanged after a fresh-store re-import
+PASS exported Japanese archive sha256 is sha256:4aefd708… on both stores
+PASS Japanese export archive is byte-identical to the imported archive
+PASS demo export archive sha256 is sha256:747c61fd… on both stores
+PASS demo export archive is byte-identical to the imported archive
+PASS Japanese pack content_hash is sha256:5343526d…
+PASS artifact.get on the japanese export artifact is contract-valid, single-prefixed and fetchable
+PASS artifact.get on the demo export artifact is contract-valid, single-prefixed and fetchable
+PASS both packs declare four media links (three Japanese + one demo)
+PASS every media segment resolves through artifact.get on storeA
+PASS every media content_hash on storeA is labelled, contract-valid and matches the bytes the handle returned
+PASS the media hashes on storeA are exactly the four digests both manifests declare
+PASS every media segment resolves through artifact.get on storeB
+PASS every media content_hash on storeB is labelled, contract-valid and matches the bytes the handle returned
+PASS the media hashes on storeB are exactly the four digests both manifests declare
+PASS artifact.get resolved six distinct content digests over ten live calls (four media segments in each of two stores, plus two export archives)
+PASS store A holds one labelled row per artifact before the legacy injection
+PASS the injected pre-repair rows store the bare 64-hex spelling
+PASS two more live imports create no duplicate (content_hash, kind) row
+PASS the legacy rows keep the spelling they already had (no read path rewrites a row)
+PASS the three legacy Japanese media rows absorbed the labelled re-imports through ref_count
+PASS artifact.get normalises a legacy bare row to the labelled contract hash on read
+PASS the same legacy rows still resolve with labelled hashes after the labelled re-imports
+PASS every fetched media/export hash is a labelled digest matching the bytes the handle returned

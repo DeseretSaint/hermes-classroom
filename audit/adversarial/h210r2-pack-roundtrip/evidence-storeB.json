@@ -1,0 +1,1826 @@
+{
+  "base": "http://127.0.0.1:44340",
+  "export_demo": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-export-1794203674943319709",
+    "result": {
+      "artifact_id": "art_94383d59556f40ed9d6492a708259122",
+      "bytes": 6516,
+      "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+      "file_count": 5
+    },
+    "revision": 0
+  },
+  "export_files": {
+    "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeB/plugin-data/coursebook/pack-exports/japanese-affection-context-l0-2.1.0-5343526daa29a310.zip": {
+      "bytes": 40363,
+      "sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+    },
+    "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeB/plugin-data/coursebook/pack-exports/technical-demo-pack-2.0.0-ff5594a816570084.zip": {
+      "bytes": 6516,
+      "sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+    }
+  },
+  "export_japanese": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-export-1794203674902182132",
+    "result": {
+      "artifact_id": "art_634c8f8bfeb04fa384a24dd63f68e530",
+      "bytes": 40363,
+      "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+      "file_count": 8
+    },
+    "revision": 0
+  },
+  "grant_demo": {
+    "http": 200,
+    "response": {
+      "ok": true,
+      "staged_id": "stg-b23bd824d117a1e10a7c854bf3fa0689"
+    }
+  },
+  "grant_japanese": {
+    "http": 200,
+    "response": {
+      "ok": true,
+      "staged_id": "stg-92f1b68d7f2aed2525eaa531c68719b0"
+    }
+  },
+  "import_demo": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-import-1794203674745679750",
+    "result": {
+      "course_id": "crs_4495ab058f8f403bb2661c062b55b88a",
+      "enrollment_id": "enr_2cde4686bfcd4eaeada23d7b1af3370b",
+      "pack_id": "technical-demo-pack",
+      "revision": 0
+    },
+    "revision": 0
+  },
+  "import_japanese": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-import-1794203674506122591",
+    "result": {
+      "course_id": "crs_02e3002cf5a44b668ae5da9faa31dcdd",
+      "enrollment_id": "enr_1ea84ae541f54d5989f048ea34595425",
+      "pack_id": "japanese-affection-context-l0",
+      "revision": 0
+    },
+    "revision": 0
+  },
+  "inspect_demo": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-inspect-1794203674870792719",
+    "result": {
+      "integrity": {
+        "expanded_bytes": 10953,
+        "file_count": 5,
+        "hashes_match": true
+      },
+      "manifest": {
+        "accessibility_notes": [
+          "Plain markdown; every field name is written as literal text so it survives a screen reader.",
+          "The cover plate has a text equivalent on its file record and the caption 'Cover plate \u2014 illustration, not a technical diagram.' beside it; nothing in the course depends on seeing it."
+        ],
+        "attribution": "Original teaching text and cover plate: Coursebook demo pack. No third-party text or media is bundled.",
+        "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+        "content_notes": [
+          "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
+          "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
+          "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+          "2.0.0 adds one composed cover plate (content/cover-plate.png) and moves the document to cb.pack v2 so the plate can be linked through media[]. The plate is decorative: it is not a diagram of the manifest schema and states no field, count or rule."
+        ],
+        "contract": "cb.pack",
+        "contract_version": 2,
+        "contributors": [
+          {
+            "name": "Coursebook demo pack",
+            "role": "author"
+          }
+        ],
+        "default_dials": {
+          "assessment": "self_check",
+          "autonomy": "independent",
+          "depth": "survey",
+          "pace": "light"
+        },
+        "files": [
+          {
+            "bytes": 3784,
+            "description": "Press Plate cover for this pack (16:9 master): five flat inks, printed deterministically. Decorative material; it is not a schema diagram and has no text.",
+            "mime": "image/png",
+            "path": "content/cover-16x9.png",
+            "role": "visual",
+            "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+          },
+          {
+            "bytes": 3162,
+            "description": "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 master for a 3:2 card). Same plate, same five inks.",
+            "mime": "image/png",
+            "path": "content/cover-3x2.png",
+            "role": "visual",
+            "sha256": "sha256:3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+          },
+          {
+            "bytes": 1765,
+            "mime": "text/markdown",
+            "path": "content/section-01-anatomy.md",
+            "role": "section",
+            "sha256": "sha256:5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c"
+          },
+          {
+            "bytes": 1341,
+            "mime": "text/markdown",
+            "path": "content/section-02-labels.md",
+            "role": "section",
+            "sha256": "sha256:83890e910b8b1d45b5613c01cb2634cf49c0e7cfe0ee8bcb9f4e8d1371ea343a"
+          },
+          {
+            "bytes": 901,
+            "mime": "text/markdown",
+            "path": "content/source-notes.md",
+            "role": "source_note",
+            "sha256": "sha256:66cd8b84c57c4a29b0935143ca8a78303547706f23f39514b0715707668c8c63"
+          }
+        ],
+        "level_label": "Technical \u00b7 for pack readers",
+        "license": {
+          "id": "CC0-1.0",
+          "note": "Original Coursebook-authored teaching text and Press Plate about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "locale": "en-US",
+        "media": [
+          {
+            "caption": "Pack visual \u2014 generated plate; not a diagram of the course.",
+            "path": "content/cover-16x9.png",
+            "section_path": "content/section-01-anatomy.md"
+          }
+        ],
+        "minimum_coursebook_version": "0.1.0",
+        "objectives": [
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "files",
+                  "the files field",
+                  "files array",
+                  "file list"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-anatomy-files-1",
+                "evidence_target": "comprehension",
+                "locale": "en-US",
+                "reference_answer": "the files list",
+                "rubric": [
+                  "Names files[]",
+                  "Does not name objectives[] or sources[]",
+                  "Says each record's bytes must match its declared size and hash"
+                ],
+                "stimulus": "A pack's manifest declares every file it ships, each with a path, mime, size and sha256. Which manifest field holds that list?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 6,
+            "evidence_criteria": [
+              "Names the field that lists every shipped file",
+              "Says what each file record must match"
+            ],
+            "evidence_target": "comprehension",
+            "objective_id": "obj-manifest-anatomy",
+            "ordinal": 1,
+            "sections": [
+              {
+                "path": "content/section-01-anatomy.md",
+                "section_id": "sec-anatomy",
+                "title": "Anatomy of a pack"
+              }
+            ],
+            "title": "Read what a pack manifest declares"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "unreviewed",
+                  "no human review",
+                  "no human review recorded",
+                  "nobody has reviewed it"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-label-unreviewed-1",
+                "evidence_target": "discrimination",
+                "locale": "en-US",
+                "reference_answer": "that check has no recorded human review",
+                "rubric": [
+                  "Says no human review of that check is recorded",
+                  "Does not read it as a failed or unsafe pack",
+                  "Does not read a matching hash as a human review"
+                ],
+                "stimulus": "A pack's check carries audit_state \"unreviewed\". What does that record mean, and what does it not mean?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 6,
+            "evidence_criteria": [
+              "Separates a hash match from a human review",
+              "Reads audit_state as a recorded fact about review"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-label-meaning",
+            "ordinal": 2,
+            "sections": [
+              {
+                "path": "content/section-02-labels.md",
+                "section_id": "sec-labels",
+                "title": "What a label can and cannot prove"
+              }
+            ],
+            "title": "Say what an unreviewed check record means"
+          }
+        ],
+        "pack_id": "technical-demo-pack",
+        "pack_version": "2.0.0",
+        "recipe": "one_off",
+        "safety_notes": [
+          "Text plus one decorative cover plate. No external services, no learner data, and no image that carries a technical claim."
+        ],
+        "subtitle": "Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
+        "title": "Technical demo: reading a pack before you install it"
+      },
+      "pack": {
+        "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+        "expanded_bytes": 10953,
+        "file_count": 5,
+        "installed_at": "2026-11-09T05:54:34Z",
+        "license": {
+          "id": "CC0-1.0",
+          "note": "Original Coursebook-authored teaching text and Press Plate about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "pack_id": "technical-demo-pack",
+        "pack_version": "2.0.0",
+        "recipe": "one_off",
+        "revision": 0,
+        "source": "local",
+        "state": "installed"
+      },
+      "trust": {
+        "labels": [
+          "integrity_verified",
+          "automated_checks_passed"
+        ]
+      }
+    },
+    "revision": 0
+  },
+  "inspect_japanese": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-inspect-1794203674850198711",
+    "result": {
+      "integrity": {
+        "expanded_bytes": 46425,
+        "file_count": 8,
+        "hashes_match": true
+      },
+      "manifest": {
+        "accessibility_notes": [
+          "Every Japanese line carries romaji and an English meaning.",
+          "The relationship schematic has a text equivalent on its file record and a short caption beside it on the lesson page.",
+          "The cover plate is illustration only: it has a text equivalent on its file record and the caption 'Cover plate \u2014 illustration, not a technical diagram.' beside it. Nothing in the course depends on seeing it.",
+          "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
+          "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
+        ],
+        "attribution": "Original teaching text, cover plate, schematic and narration: Coursebook demo pack. The cover plate and the schematic are host-composed, deterministic artwork built from the Atlas Lamp token palette; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
+        "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+        "content_notes": [
+          "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
+          "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
+          "L0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a scaffold that fades; a romaji-only answer is not evidence of reading Japanese.",
+          "Register is taught as a function of addressee, relationship and setting, not as one correct translation of the English phrase 'I love you'.",
+          "Culture claims are kept narrow and attributed; regional, generational and personal variation is stated in the lesson rather than smoothed away.",
+          "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
+          "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer.",
+          "2.1.0 adds one composed cover plate (content/cover-plate.png), linked first in media[] so the Workshop storefront, the Library row and the course detail show the same plate. It is decorative illustration: it carries no register facts. The relationship map remains the pack's deterministic schematic and the only visual that states them. No wording, check or source changed."
+        ],
+        "contract": "cb.pack",
+        "contract_version": 2,
+        "contributors": [
+          {
+            "name": "Coursebook demo pack",
+            "role": "author"
+          },
+          {
+            "name": "Kokoro-82M voice jf_alpha (synthetic; no human speaker)",
+            "role": "narrator"
+          }
+        ],
+        "default_dials": {
+          "assessment": "self_check",
+          "autonomy": "guided",
+          "depth": "survey",
+          "pace": "light"
+        },
+        "files": [
+          {
+            "bytes": 3804,
+            "description": "Press Plate cover for this pack (16:9 master): five flat inks, printed deterministically. Decorative material; it carries no register facts and no text.",
+            "mime": "image/png",
+            "path": "content/cover-16x9.png",
+            "role": "visual",
+            "sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a pale gold field across the lower half, a wide shallow indigo band rising across it, one near-black rule along the field's edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the course, not a photograph, and it carries no text."
+          },
+          {
+            "bytes": 3153,
+            "description": "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 master for a 3:2 card). Same plate, same five inks.",
+            "mime": "image/png",
+            "path": "content/cover-3x2.png",
+            "role": "visual",
+            "sha256": "sha256:41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a pale gold field across the lower half, a wide shallow indigo band rising across it, one near-black rule along the field's edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the course, not a photograph, and it carries no text."
+          },
+          {
+            "bytes": 22272,
+            "description": "One synthesized Japanese narration clip of the polite first-confession line. Kokoro-82M voice jf_alpha (Apache-2.0), generated offline on 2026-11-07; no human speaker was recorded.",
+            "mime": "audio/mpeg",
+            "path": "content/narration-polite-confession.mp3",
+            "role": "narration",
+            "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+            "text_equivalent": "\u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) \u2014 polite register: \"I like you. Please go out with me.\" One line, spoken as the first-confession example the pack teaches. Synthetic speech, not a native-speaker pronunciation model."
+          },
+          {
+            "bytes": 6948,
+            "description": "Relationship and register map drawn deterministically for the demo pack.",
+            "mime": "image/png",
+            "path": "content/relationship-map.png",
+            "role": "visual",
+            "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+            "text_equivalent": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting."
+          },
+          {
+            "bytes": 2382,
+            "mime": "text/markdown",
+            "path": "content/section-01-two-ways.md",
+            "role": "section",
+            "sha256": "sha256:806201f9ca7bbf11e8921eb2486121926aeb8a8a2574ec2d8d9a336eedb5f1e8"
+          },
+          {
+            "bytes": 2523,
+            "mime": "text/markdown",
+            "path": "content/section-02-choosing.md",
+            "role": "section",
+            "sha256": "sha256:2098fe3d56cd888489f7682f6c62dbeb6a7e61ea47d071a4f8597824ecc0e7c0"
+          },
+          {
+            "bytes": 2092,
+            "mime": "text/markdown",
+            "path": "content/section-03-new-context.md",
+            "role": "section",
+            "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
+          },
+          {
+            "bytes": 3251,
+            "mime": "text/markdown",
+            "path": "content/source-notes.md",
+            "role": "source_note",
+            "sha256": "sha256:5090c5b0c58635d3889cb819ff2c984ad6ce5ad8a65ca48142b858fa3d0f048e"
+          }
+        ],
+        "level_label": "CEFR A1 \u00b7 ab initio (L0)",
+        "license": {
+          "id": "unspecified",
+          "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            },
+            {
+              "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/relationship-map.png"
+            },
+            {
+              "attribution": "Synthetic speech generated locally with Kokoro-82M (hexgrad/Kokoro-82M, Apache-2.0), voice jf_alpha, on 2026-11-07. No human speaker was recorded. Not a native-speaker pronunciation reference.",
+              "license_id": "Apache-2.0",
+              "path": "content/narration-polite-confession.mp3"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "locale": "ja-JP",
+        "media": [
+          {
+            "caption": "Pack visual \u2014 generated plate; not a diagram of the course.",
+            "path": "content/cover-16x9.png",
+            "section_path": "content/section-01-two-ways.md"
+          },
+          {
+            "caption": "\u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) \u2014 \"I like you. Please go out with me.\"",
+            "path": "content/narration-polite-confession.mp3",
+            "section_path": "content/section-02-choosing.md"
+          },
+          {
+            "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "path": "content/relationship-map.png",
+            "section_path": "content/section-01-two-ways.md"
+          }
+        ],
+        "minimum_coursebook_version": "0.1.0",
+        "objectives": [
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "B",
+                  "b",
+                  "confession",
+                  "the confession"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-discrimination-1",
+                "evidence_target": "discrimination",
+                "locale": "ja-JP",
+                "reference_answer": "B (romantic confession)",
+                "rubric": [
+                  "Chooses B as the romantic confession",
+                  "Chooses A as affection between friends",
+                  "Names a cue: the request \u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044 (tsukiatte kudasai), the polite \u3067\u3059 form, or the private setting"
+                ],
+                "stimulus": "Two lines are shown. A: \u3046\u3093\u3001\u597d\u304d\u3060\u3088\u3002 (un, suki da yo.) said to a friend after an outing. B: \u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 8,
+            "evidence_criteria": [
+              "Names which line is the romantic confession",
+              "Names which line is affection between friends",
+              "Points at the cue (form or request) that changes the reading"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-context-discrimination",
+            "ordinal": 1,
+            "sections": [
+              {
+                "path": "content/section-01-two-ways.md",
+                "section_id": "sec-two-ways",
+                "title": "Two ways of saying it"
+              }
+            ],
+            "title": "Tell everyday affection from a direct romantic declaration"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "\u597d\u304d\u3067\u3059",
+                  "\u3059\u304d\u3067\u3059",
+                  "suki desu",
+                  "suki desu."
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-polite-selection-1",
+                "evidence_target": "comprehension",
+                "locale": "ja-JP",
+                "reference_answer": "\u597d\u304d\u3067\u3059 (suki desu)",
+                "rubric": [
+                  "Selects the polite \u597d\u304d\u3067\u3059 line",
+                  "Explains that the addressee is not close and the setting is deliberate",
+                  "Does not select the intimate line for a first confession"
+                ],
+                "stimulus": "Context: an adult speaker, an adult addressee they respect but do not know well, a private setting, a first confession, standard polite register. Which line from this pack fits, and why?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 10,
+            "evidence_criteria": [
+              "Selects the polite line for a first confession",
+              "Relates the choice to the addressee and setting"
+            ],
+            "evidence_target": "comprehension",
+            "objective_id": "obj-polite-selection",
+            "ordinal": 2,
+            "sections": [
+              {
+                "path": "content/section-02-choosing.md",
+                "section_id": "sec-choosing",
+                "title": "Choosing by addressee and setting"
+              }
+            ],
+            "title": "Choose the polite expression for a first confession"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "\u611b\u3057\u3066\u308b",
+                  "\u3042\u3044\u3057\u3066\u308b",
+                  "aishiteru",
+                  "aishiteru."
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-intimate-recall-1",
+                "evidence_target": "recall",
+                "locale": "ja-JP",
+                "reference_answer": "\u611b\u3057\u3066\u308b (aishiteru)",
+                "rubric": [
+                  "Produces \u611b\u3057\u3066\u308b (aishiteru), in script or romaji",
+                  "Does not produce the first-confession request",
+                  "Keeps the setting private and the addressee a long-term partner"
+                ],
+                "stimulus": "New context, no answer visible: you are at home with your spouse of ten years, in a private moment, and the feeling is settled and deep rather than new. Write the line you would use.",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 8,
+            "evidence_criteria": [
+              "Produces the intimate line in a new, non-identical context",
+              "Does not reuse the first-confession line for a settled partnership"
+            ],
+            "evidence_target": "recall",
+            "objective_id": "obj-intimate-recall",
+            "ordinal": 3,
+            "sections": [
+              {
+                "path": "content/section-03-new-context.md",
+                "section_id": "sec-new-context",
+                "title": "A new context"
+              }
+            ],
+            "title": "Recall the intimate declaration in a new context"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "A",
+                  "a",
+                  "casual",
+                  "casual register",
+                  "suki da yo",
+                  "suki dayo"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-friend-public-choice-1",
+                "evidence_target": "discrimination",
+                "locale": "ja-JP",
+                "reference_answer": "A (casual register)",
+                "rubric": [
+                  "Chooses the casual register for a close friend in public",
+                  "Does not choose the polite or intimate register for that relationship",
+                  "Keeps the choice tied to the addressee and the public setting"
+                ],
+                "stimulus": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 7,
+            "evidence_criteria": [
+              "Picks the casual register for a close friend in public",
+              "Does not apply the intimate line to a friend in public",
+              "Reads the choice from the addressee and the public setting"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-register-transfer",
+            "ordinal": 4,
+            "sections": [
+              {
+                "path": "content/section-03-new-context.md",
+                "section_id": "sec-new-context-2",
+                "title": "A close friend in public"
+              }
+            ],
+            "title": "Choose the register for a close friend in public"
+          }
+        ],
+        "pack_id": "japanese-affection-context-l0",
+        "pack_version": "2.1.0",
+        "recipe": "casual",
+        "safety_notes": [
+          "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack implements no listening check and no pronunciation score, so no listening evidence is claimed.",
+          "The topic is affection and confession, written for adult self-study; there is no explicit material."
+        ],
+        "sources": [
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. \u00a9 The Japan Foundation; cited as a curriculum reference only.",
+            "publisher": "The Japan Foundation",
+            "source_id": "src-jf-marugoto-a1",
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "title": "Marugoto: Japanese Language and Culture, Starter (A1) \u2014 Coursebook for Communicative Language Activities, table of contents",
+            "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. \u00a9 The Japan Foundation; quoted only for the romaji/script policy fact.",
+            "publisher": "The Japan Foundation",
+            "source_id": "src-jf-marugoto-teaching",
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "title": "How to teach with Marugoto (teacher FAQ)",
+            "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wiktionary-suki",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Wiktionary \u2014 \u597d\u304d (suki)",
+            "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wiktionary-aisuru",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Wiktionary \u2014 \u611b\u3059\u308b (aisuru)",
+            "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Language-school guidance used as a secondary usage source.",
+            "publisher": "Shinjuku Japanese Language Institute (SNG)",
+            "source_id": "src-sng-love",
+            "source_type": "secondary",
+            "support_status": "model_assessed",
+            "title": "Learn how to say \"I love you\" in Japanese",
+            "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wikipedia content is CC BY-SA 4.0; used only for general framing.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wikipedia-keigo",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Honorific speech in Japanese",
+            "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese"
+          }
+        ],
+        "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
+        "title": "Japanese affection and register \u2014 a Sample L0 classroom"
+      },
+      "pack": {
+        "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+        "expanded_bytes": 46425,
+        "file_count": 8,
+        "installed_at": "2026-11-09T05:54:34Z",
+        "license": {
+          "id": "unspecified",
+          "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            },
+            {
+              "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/relationship-map.png"
+            },
+            {
+              "attribution": "Synthetic speech generated locally with Kokoro-82M (hexgrad/Kokoro-82M, Apache-2.0), voice jf_alpha, on 2026-11-07. No human speaker was recorded. Not a native-speaker pronunciation reference.",
+              "license_id": "Apache-2.0",
+              "path": "content/narration-polite-confession.mp3"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "pack_id": "japanese-affection-context-l0",
+        "pack_version": "2.1.0",
+        "recipe": "casual",
+        "revision": 0,
+        "source": "local",
+        "state": "installed"
+      },
+      "trust": {
+        "labels": [
+          "integrity_verified",
+          "automated_checks_passed",
+          "model_assessed_support"
+        ]
+      }
+    },
+    "revision": 0
+  },
+  "media_artifacts": {
+    "demo:1:art_23635abb1dcc43e385269ae935cdcda0": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203674895635471",
+        "result": {
+          "artifact_id": "art_23635abb1dcc43e385269ae935cdcda0",
+          "bytes": 3784,
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "course_id": "crs_4495ab058f8f403bb2661c062b55b88a",
+          "download": {
+            "expires_at": "2026-11-09T05:59:34.899452+00:00",
+            "handle": "art_23635abb1dcc43e385269ae935cdcda0_1794203974",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_23635abb1dcc43e385269ae935cdcda0_1794203974"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "handle": {
+        "bytes": 3784,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "url": "/api/plugins/coursebook/artifacts/art_23635abb1dcc43e385269ae935cdcda0_1794203974"
+      },
+      "pack": "demo",
+      "segment": {
+        "artifact_id": "art_23635abb1dcc43e385269ae935cdcda0",
+        "caption": null,
+        "objective_id": "obj_00a736274093414a931d87b848f78a5b",
+        "path": null,
+        "segment_id": "seg_95da88339baa456aa84e91f92bedaac3"
+      }
+    },
+    "japanese:1:art_b66fac4b091d447ca863d61e4e9aeab7": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203674875417211",
+        "result": {
+          "artifact_id": "art_b66fac4b091d447ca863d61e4e9aeab7",
+          "bytes": 3804,
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "course_id": "crs_02e3002cf5a44b668ae5da9faa31dcdd",
+          "download": {
+            "expires_at": "2026-11-09T05:59:34.878189+00:00",
+            "handle": "art_b66fac4b091d447ca863d61e4e9aeab7_1794203974",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_b66fac4b091d447ca863d61e4e9aeab7_1794203974"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "handle": {
+        "bytes": 3804,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "url": "/api/plugins/coursebook/artifacts/art_b66fac4b091d447ca863d61e4e9aeab7_1794203974"
+      },
+      "pack": "japanese",
+      "segment": {
+        "artifact_id": "art_b66fac4b091d447ca863d61e4e9aeab7",
+        "caption": null,
+        "objective_id": "obj_aa7d260ca36a4900a1666116940410ac",
+        "path": null,
+        "segment_id": "seg_92697e2053574af384f48874070f1220"
+      }
+    },
+    "japanese:2:art_a50dafa840c843d18f6ef1ac800154ed": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203674881958352",
+        "result": {
+          "artifact_id": "art_a50dafa840c843d18f6ef1ac800154ed",
+          "bytes": 6948,
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "course_id": "crs_02e3002cf5a44b668ae5da9faa31dcdd",
+          "download": {
+            "expires_at": "2026-11-09T05:59:34.885668+00:00",
+            "handle": "art_a50dafa840c843d18f6ef1ac800154ed_1794203974",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_a50dafa840c843d18f6ef1ac800154ed_1794203974"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "handle": {
+        "bytes": 6948,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "url": "/api/plugins/coursebook/artifacts/art_a50dafa840c843d18f6ef1ac800154ed_1794203974"
+      },
+      "pack": "japanese",
+      "segment": {
+        "artifact_id": "art_a50dafa840c843d18f6ef1ac800154ed",
+        "caption": null,
+        "objective_id": "obj_aa7d260ca36a4900a1666116940410ac",
+        "path": null,
+        "segment_id": "seg_5fe3dd9e5b384ca78986e2490adfaa79"
+      }
+    },
+    "japanese:3:art_345647a5aff34e849662cb9aacf9b932": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203674888753692",
+        "result": {
+          "artifact_id": "art_345647a5aff34e849662cb9aacf9b932",
+          "bytes": 22272,
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "course_id": "crs_02e3002cf5a44b668ae5da9faa31dcdd",
+          "download": {
+            "expires_at": "2026-11-09T05:59:34.892387+00:00",
+            "handle": "art_345647a5aff34e849662cb9aacf9b932_1794203974",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_345647a5aff34e849662cb9aacf9b932_1794203974"
+          },
+          "kind": "audio",
+          "mime": "audio/mpeg",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "handle": {
+        "bytes": 22272,
+        "content_type": "audio/mpeg",
+        "http": 200,
+        "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "url": "/api/plugins/coursebook/artifacts/art_345647a5aff34e849662cb9aacf9b932_1794203974"
+      },
+      "pack": "japanese",
+      "segment": {
+        "artifact_id": "art_345647a5aff34e849662cb9aacf9b932",
+        "caption": null,
+        "objective_id": "obj_06571be094334d188172ba0357bcf825",
+        "path": null,
+        "segment_id": "seg_8ddcc7ad03d84ffeb745c41d089daf55"
+      }
+    }
+  },
+  "packs_intake": {
+    "http": 200,
+    "response": {
+      "available": true,
+      "can_grant": true,
+      "ok": true,
+      "staging_root": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeB/plugin-data/coursebook/pack-staging"
+    }
+  },
+  "pages_demo": {
+    "media_artifact_ids": [
+      "art_23635abb1dcc43e385269ae935cdcda0"
+    ],
+    "media_segments": [
+      {
+        "artifact_id": "art_23635abb1dcc43e385269ae935cdcda0",
+        "caption": null,
+        "objective_id": "obj_00a736274093414a931d87b848f78a5b",
+        "path": null,
+        "segment_id": "seg_95da88339baa456aa84e91f92bedaac3"
+      }
+    ],
+    "objectives": 2,
+    "outline_total": 2,
+    "pages": [
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "media": 1,
+          "teaching": 1
+        },
+        "objective_id": "obj_00a736274093414a931d87b848f78a5b",
+        "ok": true,
+        "segments": 3,
+        "title": "Read what a pack manifest declares"
+      },
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "teaching": 1
+        },
+        "objective_id": "obj_318c2833786446b4b9fd812af2a79d52",
+        "ok": true,
+        "segments": 2,
+        "title": "Say what an unreviewed check record means"
+      }
+    ],
+    "segment_totals": {
+      "check_prompt": 2,
+      "media": 1,
+      "teaching": 2
+    }
+  },
+  "pages_japanese": {
+    "media_artifact_ids": [
+      "art_b66fac4b091d447ca863d61e4e9aeab7",
+      "art_a50dafa840c843d18f6ef1ac800154ed",
+      "art_345647a5aff34e849662cb9aacf9b932"
+    ],
+    "media_segments": [
+      {
+        "artifact_id": "art_b66fac4b091d447ca863d61e4e9aeab7",
+        "caption": null,
+        "objective_id": "obj_aa7d260ca36a4900a1666116940410ac",
+        "path": null,
+        "segment_id": "seg_92697e2053574af384f48874070f1220"
+      },
+      {
+        "artifact_id": "art_a50dafa840c843d18f6ef1ac800154ed",
+        "caption": null,
+        "objective_id": "obj_aa7d260ca36a4900a1666116940410ac",
+        "path": null,
+        "segment_id": "seg_5fe3dd9e5b384ca78986e2490adfaa79"
+      },
+      {
+        "artifact_id": "art_345647a5aff34e849662cb9aacf9b932",
+        "caption": null,
+        "objective_id": "obj_06571be094334d188172ba0357bcf825",
+        "path": null,
+        "segment_id": "seg_8ddcc7ad03d84ffeb745c41d089daf55"
+      }
+    ],
+    "objectives": 4,
+    "outline_total": 4,
+    "pages": [
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "media": 2,
+          "teaching": 1
+        },
+        "objective_id": "obj_aa7d260ca36a4900a1666116940410ac",
+        "ok": true,
+        "segments": 4,
+        "title": "Tell everyday affection from a direct romantic declaration"
+      },
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "media": 1,
+          "teaching": 1
+        },
+        "objective_id": "obj_06571be094334d188172ba0357bcf825",
+        "ok": true,
+        "segments": 3,
+        "title": "Choose the polite expression for a first confession"
+      },
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "teaching": 1
+        },
+        "objective_id": "obj_14d8526277fd4cfd87c8c402e7800be6",
+        "ok": true,
+        "segments": 2,
+        "title": "Recall the intimate declaration in a new context"
+      },
+      {
+        "error": null,
+        "kinds": {
+          "check_prompt": 1,
+          "teaching": 1
+        },
+        "objective_id": "obj_d848d094758846dc865f3baa25abe628",
+        "ok": true,
+        "segments": 2,
+        "title": "Choose the register for a close friend in public"
+      }
+    ],
+    "segment_totals": {
+      "check_prompt": 4,
+      "media": 3,
+      "teaching": 4
+    }
+  },
+  "preview_demo": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-preview-1794203674739458027",
+    "result": {
+      "integrity": {
+        "expanded_bytes": 10953,
+        "file_count": 5,
+        "hashes_match": true
+      },
+      "manifest": {
+        "accessibility_notes": [
+          "Plain markdown; every field name is written as literal text so it survives a screen reader.",
+          "The cover plate has a text equivalent on its file record and the caption 'Cover plate \u2014 illustration, not a technical diagram.' beside it; nothing in the course depends on seeing it."
+        ],
+        "attribution": "Original teaching text and cover plate: Coursebook demo pack. No third-party text or media is bundled.",
+        "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+        "content_notes": [
+          "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
+          "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
+          "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+          "2.0.0 adds one composed cover plate (content/cover-plate.png) and moves the document to cb.pack v2 so the plate can be linked through media[]. The plate is decorative: it is not a diagram of the manifest schema and states no field, count or rule."
+        ],
+        "contract": "cb.pack",
+        "contract_version": 2,
+        "contributors": [
+          {
+            "name": "Coursebook demo pack",
+            "role": "author"
+          }
+        ],
+        "default_dials": {
+          "assessment": "self_check",
+          "autonomy": "independent",
+          "depth": "survey",
+          "pace": "light"
+        },
+        "files": [
+          {
+            "bytes": 3784,
+            "description": "Press Plate cover for this pack (16:9 master): five flat inks, printed deterministically. Decorative material; it is not a schema diagram and has no text.",
+            "mime": "image/png",
+            "path": "content/cover-16x9.png",
+            "role": "visual",
+            "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+          },
+          {
+            "bytes": 3162,
+            "description": "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 master for a 3:2 card). Same plate, same five inks.",
+            "mime": "image/png",
+            "path": "content/cover-3x2.png",
+            "role": "visual",
+            "sha256": "sha256:3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a solid near-black half with a pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along the bottom. Decorative material only: it is not a diagram of the pack format and carries no text."
+          },
+          {
+            "bytes": 1765,
+            "mime": "text/markdown",
+            "path": "content/section-01-anatomy.md",
+            "role": "section",
+            "sha256": "sha256:5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c"
+          },
+          {
+            "bytes": 1341,
+            "mime": "text/markdown",
+            "path": "content/section-02-labels.md",
+            "role": "section",
+            "sha256": "sha256:83890e910b8b1d45b5613c01cb2634cf49c0e7cfe0ee8bcb9f4e8d1371ea343a"
+          },
+          {
+            "bytes": 901,
+            "mime": "text/markdown",
+            "path": "content/source-notes.md",
+            "role": "source_note",
+            "sha256": "sha256:66cd8b84c57c4a29b0935143ca8a78303547706f23f39514b0715707668c8c63"
+          }
+        ],
+        "level_label": "Technical \u00b7 for pack readers",
+        "license": {
+          "id": "CC0-1.0",
+          "note": "Original Coursebook-authored teaching text and Press Plate about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "locale": "en-US",
+        "media": [
+          {
+            "caption": "Pack visual \u2014 generated plate; not a diagram of the course.",
+            "path": "content/cover-16x9.png",
+            "section_path": "content/section-01-anatomy.md"
+          }
+        ],
+        "minimum_coursebook_version": "0.1.0",
+        "objectives": [
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "files",
+                  "the files field",
+                  "files array",
+                  "file list"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-anatomy-files-1",
+                "evidence_target": "comprehension",
+                "locale": "en-US",
+                "reference_answer": "the files list",
+                "rubric": [
+                  "Names files[]",
+                  "Does not name objectives[] or sources[]",
+                  "Says each record's bytes must match its declared size and hash"
+                ],
+                "stimulus": "A pack's manifest declares every file it ships, each with a path, mime, size and sha256. Which manifest field holds that list?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 6,
+            "evidence_criteria": [
+              "Names the field that lists every shipped file",
+              "Says what each file record must match"
+            ],
+            "evidence_target": "comprehension",
+            "objective_id": "obj-manifest-anatomy",
+            "ordinal": 1,
+            "sections": [
+              {
+                "path": "content/section-01-anatomy.md",
+                "section_id": "sec-anatomy",
+                "title": "Anatomy of a pack"
+              }
+            ],
+            "title": "Read what a pack manifest declares"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "unreviewed",
+                  "no human review",
+                  "no human review recorded",
+                  "nobody has reviewed it"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-label-unreviewed-1",
+                "evidence_target": "discrimination",
+                "locale": "en-US",
+                "reference_answer": "that check has no recorded human review",
+                "rubric": [
+                  "Says no human review of that check is recorded",
+                  "Does not read it as a failed or unsafe pack",
+                  "Does not read a matching hash as a human review"
+                ],
+                "stimulus": "A pack's check carries audit_state \"unreviewed\". What does that record mean, and what does it not mean?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 6,
+            "evidence_criteria": [
+              "Separates a hash match from a human review",
+              "Reads audit_state as a recorded fact about review"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-label-meaning",
+            "ordinal": 2,
+            "sections": [
+              {
+                "path": "content/section-02-labels.md",
+                "section_id": "sec-labels",
+                "title": "What a label can and cannot prove"
+              }
+            ],
+            "title": "Say what an unreviewed check record means"
+          }
+        ],
+        "pack_id": "technical-demo-pack",
+        "pack_version": "2.0.0",
+        "recipe": "one_off",
+        "safety_notes": [
+          "Text plus one decorative cover plate. No external services, no learner data, and no image that carries a technical claim."
+        ],
+        "subtitle": "Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
+        "title": "Technical demo: reading a pack before you install it"
+      },
+      "trust": {
+        "labels": [
+          "integrity_verified",
+          "automated_checks_passed"
+        ]
+      }
+    },
+    "revision": 0
+  },
+  "preview_japanese": {
+    "contract_version": 20,
+    "http": 200,
+    "ok": true,
+    "operation_id": "h210r2-pack-preview-1794203674495539274",
+    "result": {
+      "integrity": {
+        "expanded_bytes": 46425,
+        "file_count": 8,
+        "hashes_match": true
+      },
+      "manifest": {
+        "accessibility_notes": [
+          "Every Japanese line carries romaji and an English meaning.",
+          "The relationship schematic has a text equivalent on its file record and a short caption beside it on the lesson page.",
+          "The cover plate is illustration only: it has a text equivalent on its file record and the caption 'Cover plate \u2014 illustration, not a technical diagram.' beside it. Nothing in the course depends on seeing it.",
+          "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
+          "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
+        ],
+        "attribution": "Original teaching text, cover plate, schematic and narration: Coursebook demo pack. The cover plate and the schematic are host-composed, deterministic artwork built from the Atlas Lamp token palette; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
+        "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+        "content_notes": [
+          "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
+          "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
+          "L0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a scaffold that fades; a romaji-only answer is not evidence of reading Japanese.",
+          "Register is taught as a function of addressee, relationship and setting, not as one correct translation of the English phrase 'I love you'.",
+          "Culture claims are kept narrow and attributed; regional, generational and personal variation is stated in the lesson rather than smoothed away.",
+          "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
+          "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer.",
+          "2.1.0 adds one composed cover plate (content/cover-plate.png), linked first in media[] so the Workshop storefront, the Library row and the course detail show the same plate. It is decorative illustration: it carries no register facts. The relationship map remains the pack's deterministic schematic and the only visual that states them. No wording, check or source changed."
+        ],
+        "contract": "cb.pack",
+        "contract_version": 2,
+        "contributors": [
+          {
+            "name": "Coursebook demo pack",
+            "role": "author"
+          },
+          {
+            "name": "Kokoro-82M voice jf_alpha (synthetic; no human speaker)",
+            "role": "narrator"
+          }
+        ],
+        "default_dials": {
+          "assessment": "self_check",
+          "autonomy": "guided",
+          "depth": "survey",
+          "pace": "light"
+        },
+        "files": [
+          {
+            "bytes": 3804,
+            "description": "Press Plate cover for this pack (16:9 master): five flat inks, printed deterministically. Decorative material; it carries no register facts and no text.",
+            "mime": "image/png",
+            "path": "content/cover-16x9.png",
+            "role": "visual",
+            "sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a pale gold field across the lower half, a wide shallow indigo band rising across it, one near-black rule along the field's edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the course, not a photograph, and it carries no text."
+          },
+          {
+            "bytes": 3153,
+            "description": "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 master for a 3:2 card). Same plate, same five inks.",
+            "mime": "image/png",
+            "path": "content/cover-3x2.png",
+            "role": "visual",
+            "sha256": "sha256:41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+            "text_equivalent": "Pack visual: a flat printed plate in five inks \u2014 warm paper, a pale gold field across the lower half, a wide shallow indigo band rising across it, one near-black rule along the field's edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the course, not a photograph, and it carries no text."
+          },
+          {
+            "bytes": 22272,
+            "description": "One synthesized Japanese narration clip of the polite first-confession line. Kokoro-82M voice jf_alpha (Apache-2.0), generated offline on 2026-11-07; no human speaker was recorded.",
+            "mime": "audio/mpeg",
+            "path": "content/narration-polite-confession.mp3",
+            "role": "narration",
+            "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+            "text_equivalent": "\u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) \u2014 polite register: \"I like you. Please go out with me.\" One line, spoken as the first-confession example the pack teaches. Synthetic speech, not a native-speaker pronunciation model."
+          },
+          {
+            "bytes": 6948,
+            "description": "Relationship and register map drawn deterministically for the demo pack.",
+            "mime": "image/png",
+            "path": "content/relationship-map.png",
+            "role": "visual",
+            "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+            "text_equivalent": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting."
+          },
+          {
+            "bytes": 2382,
+            "mime": "text/markdown",
+            "path": "content/section-01-two-ways.md",
+            "role": "section",
+            "sha256": "sha256:806201f9ca7bbf11e8921eb2486121926aeb8a8a2574ec2d8d9a336eedb5f1e8"
+          },
+          {
+            "bytes": 2523,
+            "mime": "text/markdown",
+            "path": "content/section-02-choosing.md",
+            "role": "section",
+            "sha256": "sha256:2098fe3d56cd888489f7682f6c62dbeb6a7e61ea47d071a4f8597824ecc0e7c0"
+          },
+          {
+            "bytes": 2092,
+            "mime": "text/markdown",
+            "path": "content/section-03-new-context.md",
+            "role": "section",
+            "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
+          },
+          {
+            "bytes": 3251,
+            "mime": "text/markdown",
+            "path": "content/source-notes.md",
+            "role": "source_note",
+            "sha256": "sha256:5090c5b0c58635d3889cb819ff2c984ad6ce5ad8a65ca48142b858fa3d0f048e"
+          }
+        ],
+        "level_label": "CEFR A1 \u00b7 ab initio (L0)",
+        "license": {
+          "id": "unspecified",
+          "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+          "per_artifact": [
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-16x9.png"
+            },
+            {
+              "attribution": "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder (bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no gradient, no grain, no photograph, no model call, no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/cover-3x2.png"
+            },
+            {
+              "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+              "license_id": "CC0-1.0",
+              "path": "content/relationship-map.png"
+            },
+            {
+              "attribution": "Synthetic speech generated locally with Kokoro-82M (hexgrad/Kokoro-82M, Apache-2.0), voice jf_alpha, on 2026-11-07. No human speaker was recorded. Not a native-speaker pronunciation reference.",
+              "license_id": "Apache-2.0",
+              "path": "content/narration-polite-confession.mp3"
+            }
+          ],
+          "redistribution": "local_only"
+        },
+        "locale": "ja-JP",
+        "media": [
+          {
+            "caption": "Pack visual \u2014 generated plate; not a diagram of the course.",
+            "path": "content/cover-16x9.png",
+            "section_path": "content/section-01-two-ways.md"
+          },
+          {
+            "caption": "\u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) \u2014 \"I like you. Please go out with me.\"",
+            "path": "content/narration-polite-confession.mp3",
+            "section_path": "content/section-02-choosing.md"
+          },
+          {
+            "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "path": "content/relationship-map.png",
+            "section_path": "content/section-01-two-ways.md"
+          }
+        ],
+        "minimum_coursebook_version": "0.1.0",
+        "objectives": [
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "B",
+                  "b",
+                  "confession",
+                  "the confession"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-discrimination-1",
+                "evidence_target": "discrimination",
+                "locale": "ja-JP",
+                "reference_answer": "B (romantic confession)",
+                "rubric": [
+                  "Chooses B as the romantic confession",
+                  "Chooses A as affection between friends",
+                  "Names a cue: the request \u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044 (tsukiatte kudasai), the polite \u3067\u3059 form, or the private setting"
+                ],
+                "stimulus": "Two lines are shown. A: \u3046\u3093\u3001\u597d\u304d\u3060\u3088\u3002 (un, suki da yo.) said to a friend after an outing. B: \u597d\u304d\u3067\u3059\u3002\u4ed8\u304d\u5408\u3063\u3066\u304f\u3060\u3055\u3044\u3002 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 8,
+            "evidence_criteria": [
+              "Names which line is the romantic confession",
+              "Names which line is affection between friends",
+              "Points at the cue (form or request) that changes the reading"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-context-discrimination",
+            "ordinal": 1,
+            "sections": [
+              {
+                "path": "content/section-01-two-ways.md",
+                "section_id": "sec-two-ways",
+                "title": "Two ways of saying it"
+              }
+            ],
+            "title": "Tell everyday affection from a direct romantic declaration"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "\u597d\u304d\u3067\u3059",
+                  "\u3059\u304d\u3067\u3059",
+                  "suki desu",
+                  "suki desu."
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-polite-selection-1",
+                "evidence_target": "comprehension",
+                "locale": "ja-JP",
+                "reference_answer": "\u597d\u304d\u3067\u3059 (suki desu)",
+                "rubric": [
+                  "Selects the polite \u597d\u304d\u3067\u3059 line",
+                  "Explains that the addressee is not close and the setting is deliberate",
+                  "Does not select the intimate line for a first confession"
+                ],
+                "stimulus": "Context: an adult speaker, an adult addressee they respect but do not know well, a private setting, a first confession, standard polite register. Which line from this pack fits, and why?",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 10,
+            "evidence_criteria": [
+              "Selects the polite line for a first confession",
+              "Relates the choice to the addressee and setting"
+            ],
+            "evidence_target": "comprehension",
+            "objective_id": "obj-polite-selection",
+            "ordinal": 2,
+            "sections": [
+              {
+                "path": "content/section-02-choosing.md",
+                "section_id": "sec-choosing",
+                "title": "Choosing by addressee and setting"
+              }
+            ],
+            "title": "Choose the polite expression for a first confession"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "\u611b\u3057\u3066\u308b",
+                  "\u3042\u3044\u3057\u3066\u308b",
+                  "aishiteru",
+                  "aishiteru."
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-intimate-recall-1",
+                "evidence_target": "recall",
+                "locale": "ja-JP",
+                "reference_answer": "\u611b\u3057\u3066\u308b (aishiteru)",
+                "rubric": [
+                  "Produces \u611b\u3057\u3066\u308b (aishiteru), in script or romaji",
+                  "Does not produce the first-confession request",
+                  "Keeps the setting private and the addressee a long-term partner"
+                ],
+                "stimulus": "New context, no answer visible: you are at home with your spouse of ten years, in a private moment, and the feeling is settled and deep rather than new. Write the line you would use.",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 8,
+            "evidence_criteria": [
+              "Produces the intimate line in a new, non-identical context",
+              "Does not reuse the first-confession line for a settled partnership"
+            ],
+            "evidence_target": "recall",
+            "objective_id": "obj-intimate-recall",
+            "ordinal": 3,
+            "sections": [
+              {
+                "path": "content/section-03-new-context.md",
+                "section_id": "sec-new-context",
+                "title": "A new context"
+              }
+            ],
+            "title": "Recall the intimate declaration in a new context"
+          },
+          {
+            "checks": [
+              {
+                "accepted_alternatives": [
+                  "A",
+                  "a",
+                  "casual",
+                  "casual register",
+                  "suki da yo",
+                  "suki dayo"
+                ],
+                "audit_state": "unreviewed",
+                "check_id": "chk-friend-public-choice-1",
+                "evidence_target": "discrimination",
+                "locale": "ja-JP",
+                "reference_answer": "A (casual register)",
+                "rubric": [
+                  "Chooses the casual register for a close friend in public",
+                  "Does not choose the polite or intimate register for that relationship",
+                  "Keeps the choice tied to the addressee and the public setting"
+                ],
+                "stimulus": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
+                "version": 1
+              }
+            ],
+            "estimated_minutes": 7,
+            "evidence_criteria": [
+              "Picks the casual register for a close friend in public",
+              "Does not apply the intimate line to a friend in public",
+              "Reads the choice from the addressee and the public setting"
+            ],
+            "evidence_target": "discrimination",
+            "objective_id": "obj-register-transfer",
+            "ordinal": 4,
+            "sections": [
+              {
+                "path": "content/section-03-new-context.md",
+                "section_id": "sec-new-context-2",
+                "title": "A close friend in public"
+              }
+            ],
+            "title": "Choose the register for a close friend in public"
+          }
+        ],
+        "pack_id": "japanese-affection-context-l0",
+        "pack_version": "2.1.0",
+        "recipe": "casual",
+        "safety_notes": [
+          "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack implements no listening check and no pronunciation score, so no listening evidence is claimed.",
+          "The topic is affection and confession, written for adult self-study; there is no explicit material."
+        ],
+        "sources": [
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. \u00a9 The Japan Foundation; cited as a curriculum reference only.",
+            "publisher": "The Japan Foundation",
+            "source_id": "src-jf-marugoto-a1",
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "title": "Marugoto: Japanese Language and Culture, Starter (A1) \u2014 Coursebook for Communicative Language Activities, table of contents",
+            "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. \u00a9 The Japan Foundation; quoted only for the romaji/script policy fact.",
+            "publisher": "The Japan Foundation",
+            "source_id": "src-jf-marugoto-teaching",
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "title": "How to teach with Marugoto (teacher FAQ)",
+            "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wiktionary-suki",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Wiktionary \u2014 \u597d\u304d (suki)",
+            "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wiktionary-aisuru",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Wiktionary \u2014 \u611b\u3059\u308b (aisuru)",
+            "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Language-school guidance used as a secondary usage source.",
+            "publisher": "Shinjuku Japanese Language Institute (SNG)",
+            "source_id": "src-sng-love",
+            "source_type": "secondary",
+            "support_status": "model_assessed",
+            "title": "Learn how to say \"I love you\" in Japanese",
+            "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/"
+          },
+          {
+            "bundled": false,
+            "fetched_at": "2026-11-06",
+            "license_note": "Linked, not bundled. Wikipedia content is CC BY-SA 4.0; used only for general framing.",
+            "publisher": "Wikimedia Foundation",
+            "source_id": "src-wikipedia-keigo",
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "title": "Honorific speech in Japanese",
+            "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese"
+          }
+        ],
+        "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
+        "title": "Japanese affection and register \u2014 a Sample L0 classroom"
+      },
+      "trust": {
+        "labels": [
+          "integrity_verified",
+          "automated_checks_passed",
+          "model_assessed_support"
+        ]
+      }
+    },
+    "revision": 0
+  },
+  "reimport_inputs": {
+    "demo": {
+      "bytes": 6516,
+      "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeA/plugin-data/coursebook/pack-exports/technical-demo-pack-2.0.0-ff5594a816570084.zip",
+      "sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+    },
+    "japanese": {
+      "bytes": 40363,
+      "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeA/plugin-data/coursebook/pack-exports/japanese-affection-context-l0-2.1.0-5343526daa29a310.zip",
+      "sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+    }
+  },
+  "runtime": {
+    "http": 200,
+    "response": {
+      "backend_package": "coursebook_plugin_backend",
+      "contract_methods": 73,
+      "contract_problems": [],
+      "db_path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeB/plugin-data/coursebook/data.db",
+      "implemented_methods": [
+        "artifact.get",
+        "attempt.dispute",
+        "attempt.override",
+        "attempt.submit",
+        "binding.abandon",
+        "binding.get",
+        "check.get",
+        "check.open",
+        "course.create",
+        "course.export",
+        "course.export.read",
+        "course.get",
+        "course.outline",
+        "enrollment.create",
+        "enrollment.delete",
+        "enrollment.update",
+        "evidence.disputes",
+        "evidence.inspect",
+        "health.get",
+        "jobs.cancel",
+        "jobs.create",
+        "jobs.get",
+        "jobs.list",
+        "lesson.assist",
+        "lesson.begin",
+        "lesson.page",
+        "lesson.regenerate",
+        "lesson.revise",
+        "library.list",
+        "notebook.delete",
+        "notebook.list",
+        "notebook.save",
+        "notebook.update",
+        "observation.record",
+        "pack.delete",
+        "pack.export",
+        "pack.import",
+        "pack.inspect",
+        "pack.list",
+        "pack.preview",
+        "parent.blueprint.read",
+        "parent.brief.create",
+        "parent.brief.get",
+        "parent.export",
+        "parent.final.approve",
+        "parent.plan.edit",
+        "parent.reflection.list",
+        "parent.reflection.record",
+        "parent.review.read",
+        "plan.approve",
+        "plan.edit",
+        "plan.replan",
+        "plan.undo",
+        "practice.cancel",
+        "practice.end",
+        "practice.start",
+        "practice.state",
+        "progression.challenge_out",
+        "pronunciation.attempt",
+        "pronunciation.dispute",
+        "quiz.history",
+        "review.action",
+        "review.queue",
+        "schema.get",
+        "source.revalidate",
+        "syllabus.align",
+        "syllabus.alignment.get",
+        "syllabus.alignment.review",
+        "syllabus.delete",
+        "syllabus.get",
+        "syllabus.intake.create",
+        "syllabus.parse",
+        "usage.summary"
+      ],
+      "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_a7761dfc",
+      "single_home_flag": "HERMES_COURSEBOOK_SINGLE_HOME",
+      "single_home_host": true,
+      "single_home_pin": null,
+      "single_home_pinned": false,
+      "wire_contract": "cb.rpc",
+      "wire_version": 20
+    }
+  },
+  "store": "storeB",
+  "wire_version": 20
+}
