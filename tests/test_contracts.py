@@ -3228,7 +3228,8 @@ class V14AmendmentTest(unittest.TestCase):
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v13.json"])
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v21.json")
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 21)
-        # v21 supersedes v20; v20, v19, v18, v17, v16, v15 and v14 remain frozen predecessors pinned on disk.
+        # v21 supersedes v20; v20, v19, v18, v17, v16, v15 and v14 remain frozen predecessors
+        # pinned on disk.
         self.assertEqual(contracts.contract("cb.rpc")["x-supersedes"],
                          "https://contracts.coursebook.hermes/rpc/v20")
 
@@ -3987,7 +3988,7 @@ class V17AmendmentTest(unittest.TestCase):
                     {"recorded", "missing", "unreadable"},
                 )
 
-    def test_the_wire_echo_moved_to_twenty_everywhere(self) -> None:
+    def test_the_wire_echo_moved_to_the_current_version(self) -> None:
         current = contracts.contract("cb.rpc")
         echoes = _wire_echoes(current)
         self.assertEqual(len(echoes), 4, echoes)

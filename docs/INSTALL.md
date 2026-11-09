@@ -303,19 +303,19 @@ once (opening the pane does that), the observed shape is:
 | `plugin_version` | `0.1.0` | The package on disk is the one that answered |
 | `contract_version` | `20` | `cb.rpc` v20 is loaded |
 | `db.ready` | `true` | The store is provisioned and migrated |
-| `db.schema_version` | `12` | Migrations `0001`-`0012` applied |
+| `db.schema_version` | `13` | Migrations `0001`-`0013` applied |
 | `implemented_methods` | 73 names | Every method `cb.rpc` v20 declares has a handler |
 | `contracts` | 7 entries | Each frozen contract with its version and hash |
 
 The pane reports the same health block: backend `cb.rpc v20`, plugin 0.1.0, database ready at schema
-v12, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
+v13, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
 offers `Open Coursebook` and says no durable chat is bound yet.
 
 Provisioning is deliberate and narrow: `GET /health` (and `health.get` over RPC) creates the store
 and applies migrations on first contact. Enabling the plugin, loading it, and the three chat hooks do
 not create anything (CB-014-R1). So on a brand-new home, `coursebook_status` asked **before** any
 health check reports `db.ready: false` and `schema_version: null`; that is an unprovisioned profile,
-not a broken install. Open the pane, or call `health.get`, once and it reports ready at v12.
+not a broken install. Open the pane, or call `health.get`, once and it reports ready at v13.
 
 The route mount depends on the window reaching a backend, which is why the demo gate stays open:
 on this host an isolated home cannot start a gateway, and a shell with no gateway renders the
