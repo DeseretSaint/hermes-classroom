@@ -890,10 +890,16 @@ class PlanJobTest(GenerationTestBase):
     def test_validator_cannot_pass_with_a_failed_criterion(self) -> None:
         tampered = fixture("validation_pass")
         tampered["criteria"][3]["verdict"] = "fail"  # answer_uniqueness
+
+        def tampered_answer(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
+            return response(narrowed_validation_answer(request, tampered), model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(tampered, model="fake-validator"),
+                "coursebook.plan.validate": tampered_answer,
             }
         )
         result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
@@ -901,17 +907,25 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(result["status"], "needs_review")
 
     def test_validator_must_answer_every_criterion(self) -> None:
-        partial = fixture("validation_pass")
-        partial["criteria"] = partial["criteria"][:5]
+        # H-192b/H-192c: a pass schema pins ``criteria`` to exactly the batch it was handed, so an
+        # answer that skips a criterion of its own pass is not a legal answer at all. The wide
+        # "validator omitted criteria" guard still exists for a merged report; a narrowed pass is
+        # rejected at parse time, before any report is merged.
+        def partial(request: gen.LLMRequest) -> gen.LLMResponse:
+            answer = json.loads(validation_from_fixture()(request).text)
+            answer["criteria"] = answer["criteria"][:-1]
+            return response(answer, model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(partial, model="fake-validator"),
+                "coursebook.plan.validate": partial,
             }
         )
-        with self.assertRaises(gen.GenerationRejected) as raised:
+        with self.assertRaises(gen.ModelOutputInvalid) as raised:
             gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
-        self.assertIn("omitted criteria", str(raised.exception))
+        self.assertIn("plan validation", str(raised.exception))
+        self.assertIn("criteria", str(raised.exception))
 
     def test_rejected_plan_regenerates_once_with_reasons_then_records_conflict(self) -> None:
         conflict = fixture("validation_pass")
@@ -932,12 +946,16 @@ class PlanJobTest(GenerationTestBase):
                 "reason": "conflict",
             }
         ]
+        def conflict_answer(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
+            document = _with_source(conflict, request)
+            return response(narrowed_validation_answer(request, document), model="fake-validator")
+
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": lambda request: response(
-                    _with_source(conflict, request), model="fake-validator"
-                ),
+                "coursebook.plan.validate": conflict_answer,
             }
         )
         result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
@@ -1896,12 +1914,14 @@ class SourceTrustTest(GenerationTestBase):
         base = fixture("validation_pass")
 
         def unlinked(request: gen.LLMRequest) -> gen.LLMResponse:
+            from tests.blueprint_support import narrowed_validation_answer
+
             ids = source_ids_from(request)
             document = json.loads(canonical_json(base).replace("SRC_ALPHA", ids[0]))
             for entry in document["claim_verdicts"]:
                 entry.pop("excerpt", None)
                 entry.pop("evidence_quote", None)
-            return response(document, model="fake-validator")
+            return response(narrowed_validation_answer(request, document), model="fake-validator")
 
         llm = FakeLLM(
             {

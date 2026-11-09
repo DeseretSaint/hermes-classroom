@@ -3294,13 +3294,12 @@ function ClassroomCover({ slot, compact }) {
     flexDirection: 'column',
     justifyContent: 'center',
     gap: '0.1rem',
-    height: `${height}px`,
+    minHeight: `${height}px`,
     minWidth: 0,
     padding: '0.3rem 0.45rem',
     boxSizing: 'border-box',
     background: 'var(--cb-paper)',
-    borderTop: '2px solid var(--cb-rule)',
-    overflow: 'hidden'
+    borderTop: '2px solid var(--cb-rule)'
   }
   if (media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url) {
     return jsxs('figure', {
@@ -3357,9 +3356,7 @@ function ClassroomCover({ slot, compact }) {
               fontWeight: 600,
               lineHeight: 1.25,
               color: 'var(--cb-ink)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              overflowWrap: 'anywhere'
             },
             children: slot.name || (row && row.title) || 'Classroom'
           }, 'title')
@@ -3373,9 +3370,7 @@ function ClassroomCover({ slot, compact }) {
               fontSize: CB_TYPE.caption,
               lineHeight: 1.3,
               color: 'var(--cb-ink-soft)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              overflowWrap: 'anywhere'
             },
             children: subject
           }, 'subject')
