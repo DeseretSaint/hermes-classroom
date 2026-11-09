@@ -59,9 +59,14 @@ first live run replaces this table with measured values.
 - A Textbook course queues no world job at creation
   (`world.world_job_on_create("textbook") is False`): no spend, no assets.
 
-## Round-5 fence cost
+## Round-6 content fence cost
 
-The presentation fence (motif threshold, token ownership, mood/role lexicon, digit/unit/
-instruction refusal) is pure local validation. It runs before any world row, job or provider
-call, so a refused request costs **0** image calls and 0 provider tokens; it does not add a
-model call to a successful request either. The 3-board + kit estimate above is unchanged.
+Round 6 extends the same pure local validation to the two free-text paths that reach a plate
+prompt: caller `brief_patch.motifs`, and derived objective titles promoted into motifs. A caller
+motif that names a number, unit, part number or answer instruction is refused before any world
+row, job or provider call (**0** image calls). A derived course title/goal is not refused: the
+prompt substitutes the grammar label and omits the capability clause, so a successful request
+still costs exactly the 3 boards + kit in the table above, with no extra model call.
+
+A bare-string `forbidden` patch is a `VALIDATION_FAILED` before spend; it is no longer exploded
+per character into eleven nonsense negatives.

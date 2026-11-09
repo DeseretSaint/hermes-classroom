@@ -560,8 +560,22 @@ def build_prompt(
 
     motifs = list(typed.motifs) or list(record.subject_cues)
     motif_text = ", ".join(motifs[:6]) if motifs else ", ".join(record.motifs)
-    subject = typed.title.strip() or record.label
-    capability = typed.end_capability.strip()
+    # A legitimate course title may contain digits ("Japanese 101"), so the course is never
+    # refused for its own subject text. Only the *prompt* is sanitised: when the title or
+    # capability names a number, unit, part number or answer instruction (I2), the plate falls
+    # back to the grammar label and the capability clause is omitted. The persisted WorldBrief
+    # keeps the verbatim course strings; this substitution is prompt-local and is not a
+    # cache-key change (the key already covers the brief it was derived from).
+    raw_subject = typed.title.strip()
+    subject = (
+        raw_subject
+        if raw_subject and not _names_numbers_or_answer_content(raw_subject)
+        else record.label
+    )
+    raw_capability = typed.end_capability.strip()
+    capability = (
+        raw_capability if not _names_numbers_or_answer_content(raw_capability) else ""
+    )
     # A service world is the grammar's business, not a keyword in the caller's text: 'trades'
     # selects workshop_manual and must keep the workshop hard negatives even if safety_class is
     # reported as none.
@@ -956,7 +970,15 @@ def _derive_brief(connection: Any, course_id: str) -> WorldBrief:
         cues = list(record.subject_cues)
         for title in titles:
             cleaned = title.strip().rstrip(".").lower()
-            if cleaned and cleaned not in motifs and len(cleaned) <= 64:
+            # A promoted objective title becomes positive prompt content. Never promote one
+            # that names a torque value, unit, part number or answer instruction: the grammar
+            # cues still carry the scene (I1b / plan §10C).
+            if (
+                cleaned
+                and cleaned not in motifs
+                and len(cleaned) <= 64
+                and not _names_numbers_or_answer_content(cleaned)
+            ):
                 motifs.append(cleaned)
     for cue in cues:
         if cue not in motifs:
@@ -1377,7 +1399,14 @@ def presentation_motif_problems(
     non-native motifs is already a generic swap — the project's own ``anti_generic_problems()``
     fails at two shared motifs — so the patch threshold must not be looser than the test.
     One genuine subject addition is allowed.
+
+    Before ownership, a motif is content-scanned: a plate is orientation only, so a caller
+    motif may never name a number, unit, part number or answer instruction (plan §4.4 rules 1
+    and 5). This is the same fence ``tone``/``audience``/``forbidden`` already carry.
     """
+    for motif in motifs:
+        if _names_numbers_or_answer_content(motif):
+            return ("presentation_names_number_or_answer_content",)
     native_vocabulary = _grammar_phrase_tokens(grammar)
     native = sum(1 for motif in motifs if _phrase_tokens(motif) in native_vocabulary)
     non_native = len(motifs) - native
@@ -2074,10 +2103,19 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 grammar=grammar,
             )
         patched_forbidden = []
-        if isinstance(raw_patch, Mapping):
-            patched_forbidden = [
-                str(item) for item in (raw_patch.get("forbidden") or ()) if str(item).strip()
-            ]
+        if isinstance(raw_patch, Mapping) and "forbidden" in raw_patch:
+            raw_forbidden = raw_patch.get("forbidden") or ()
+            if not isinstance(raw_forbidden, (list, tuple)) or any(
+                not isinstance(item, str) for item in raw_forbidden
+            ):
+                # A bare string here was iterated per character ("brand logos" → eleven
+                # negatives), so the shape is validated before spend like motifs.
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "brief_patch.forbidden must be a list of string motifs.",
+                    field="forbidden",
+                )
+            patched_forbidden = [item for item in raw_forbidden if item.strip()]
         forbidden_problems = forbidden_presentation_problems(patched_forbidden)
         if forbidden_problems:
             item, reason = forbidden_problems[0]
@@ -2099,6 +2137,7 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                     problems[0],
                     "a patched motif set may add one subject-specific cue but not a second "
                     "non-native motif; a generic swap is refused before spend.",
+                    field="motifs",
                     grammar=grammar,
                     motifs=patched_motifs,
                 )

@@ -151,10 +151,34 @@ What the shipped fence does and does not claim:
   or provider call, on both `concepts` and `kit`.
 - It refuses a motif set with two or more non-native motifs, and any motif/text that borrows
   another grammar's distinctive vocabulary token.
-- It refuses digits, units and label/answer instructions anywhere in `tone`/`audience`/
-  `forbidden`.
+- It refuses digits, units and label/answer instructions in `tone`, `audience`, `forbidden`
+  **and caller-supplied `motifs`**, before any world row, job or provider call.
+- It never promotes an approved objective title carrying a torque value, unit, part number or
+  answer instruction into a motif; the grammar's own cues carry the scene instead.
+- For a course whose own title/goal contains such text (a legitimate title may contain digits,
+  e.g. `Japanese 101`), the course is **not refused**. The plate prompt substitutes the grammar
+  label for the subject and omits the capability clause; the persisted `WorldBrief` keeps the
+  verbatim course strings, so this is prompt-local and not a cache-key change.
 - It accepts one genuine subject-specific motif (`four-cylinder block`) and mood/role text
   (`practical, calm, cold overhead light`, `apprentice technicians`). It does not claim to be a
   semantic classifier; a word that is neither another grammar's vocabulary nor in the mood
   lexicon is refused rather than silently dropped.
+
+## Review round 6 — sentinel changes requested (I1, I2, S1–S3)
+
+Round 6 confirmed H1–H5 fixed and found the same orientation-only rule still reachable through
+two unscanned free-text paths. All three defects and both should-fix items are fixed here,
+tests first.
+
+Red evidence: `audit/gm-003/red-attempt6.txt` (4 tests, 10 subtest failures, every case
+"world.generate unexpectedly succeeded" or the wrong error code). Green:
+`audit/gm-003/green-attempt6.txt` (4 OK), then `audit/gm-003/full-attempt6.log`.
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **I1a** caller `brief_patch.motifs` reached the prompt with `answer key 1-2-3-4`, `part number 8AB`, `torque sequence 90 ft-lb` | `presentation_motif_problems()` content-scans every caller motif with `_names_numbers_or_answer_content()` **before** the native/non-native count and refuses `POLICY_VIOLATION reason=presentation_names_number_or_answer_content` (field `motifs`) before spend | `test_presentation_motifs_cannot_name_numbers_or_answer_content` |
+| **I1b** a promoted objective title (`Torque sequence 90 ft-lb`) became a positive motif | `_derive_brief()` promotes a title only when it does not name a number/unit/instruction; grammar cues still carry the scene | `test_technical_world_never_carries_torque_or_sequence` (plan §10C name) |
+| **I2** derived course `title`/`goal` were interpolated verbatim, so a course created elsewhere could inject `90 ft-lb` / `answer key` without any patch | `build_prompt()` sanitises only the prompt text: the subject falls back to the grammar label and the capability clause is omitted when `_names_numbers_or_answer_content()` matches. The course is accepted and the stored brief stays verbatim | `test_course_subject_text_cannot_name_numbers_or_answer_content` |
+| **S2** a bare-string `forbidden` was iterated per character | the handler requires a list/tuple of strings and refuses `VALIDATION_FAILED` (field `forbidden`) before spend | `test_forbidden_patch_must_be_a_list` |
+| **S3** README/cost note did not state the residual paths | this section and the bullets above; `docs/GM-003-WORLD-COST.md` records the round-6 fence cost | — |
 
