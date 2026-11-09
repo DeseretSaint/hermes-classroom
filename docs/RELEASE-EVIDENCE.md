@@ -193,12 +193,15 @@ claim about the module its `plugin_sha256` line names.
   is a wire refusal (`artifact.get`), not a visual observation.
 - The adversarial matrix was **not** re-run in this pass. The last measurement is the H-203 run on
   `ab6dc7e` (23/23 PASS, S13 BLOCKED by design); `b9f4a19` is not claimed to have been re-tested.
-- The catalog entry **was** re-validated in this pass: `python3 scripts/validate_plugin_catalog.py
-  catalog/coursebook.yaml` returned `OK: 1 file(s) valid` (exit 0). Its pinned `sha` moved to this
+- The catalog entry **was** re-validated in this pass with the catalog validator from a `hermes-agent`
+  checkout: `python3 scripts/validate_plugin_catalog.py catalog/coursebook.yaml` returned `OK: 1
+  file(s) valid` (exit 0). Its pinned `sha` moved to this
   pass's docs commit, one commit above the measured code commit `b9f4a19`, because an entry cannot
-  carry its own hash. The seven raw URLs (`docs_url`, `image` and the six `screenshots`) point at
-  that unpushed commit and were **not** fetched, so they stay unverified until the branch is pushed;
-  gate 11 remains `[~]`.
+  carry its own hash. That commit is now on `origin/master` (H-212 merged and pushed 2026-11-09), and
+  all seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09:
+  HTTP 200 for each, with every PNG body hashing to the same sha256 as `docs/assets/<name>.png` at
+  `61cdb03`. Gate 11 is `[x]` on that evidence; the pull request itself stays closed until gates 5, 7,
+  9 and 10 close.
 
 ## Keeping this honest
 

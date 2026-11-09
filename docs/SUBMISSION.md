@@ -31,7 +31,7 @@ at the measured commit `b9f4a19`.
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 license exists, no live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10, 11.
+in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10.
 
 ## 0. Hard operator gate
 
@@ -65,13 +65,13 @@ invalidates the earlier evidence.
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `b9f4a19` | [x] |
 | 9 | License present | DeseretSaint | No `LICENSE` at repository root; the decision is `t_6f2d2080`, blocked on DeseretSaint | [ ] owner decision |
 | 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
-| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins this documents commit (one commit above the frozen code commit `b9f4a19`); validator `OK: 1 file(s) valid`. The pull request stays closed until gates 5, 7, 9 and 10 close, and the pinned commit's raw asset URLs must be re-checked for 200 once the release branch is pushed (H-181) | [~] |
+| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The pull request stays closed until gates 5, 7, 9 and 10 close | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
 
-Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10, 11.
+Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10.
 
 Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
 fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course → section path and on

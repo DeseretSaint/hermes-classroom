@@ -5,13 +5,14 @@
 # cannot carry its own hash, so the catalog update itself is one commit above it. The measured code
 # commit is `b9f4a19`, one below the pinned docs commit, because the docs commit changes README and
 # docs only - code and pin describe the same build. `version` is kept in step with `plugin.yaml`
-# (0.1.0).
+# (0.1.0). Later docs-only commits may land above this pin; the pin names the build, and `b9f4a19`
+# remains the measured code commit.
 #
-# The pinned commit is on the release branch and was not on the remote when this was written: this
-# pass does not push. `docs_url`, `image` and the six `screenshots` URLs therefore resolve only
-# after the branch is pushed, and all seven must be re-checked for HTTP 200 at that point. H-181
+# The pinned commit is on `origin/master`: H-212 was merged and pushed on 2026-11-09. All seven raw
+# URLs (`docs_url`, `image` and the six `screenshots`) were fetched that day and every one returned
+# HTTP 200, each PNG hashing to the same bytes as `docs/assets/<name>.png` at `61cdb03`. H-181
 # repaired exactly this class of defect once (all seven URLs 404ed behind a pin at a commit that was
-# never on the remote); do not submit the entry until the URLs answer.
+# never on the remote), so the check is recorded rather than assumed; re-run it if the pin moves.
 #
 # The entry is still withheld: gates 7, 9, 12, 13, 14 and 15 of docs/SUBMISSION.md are open
 # (live drive of this commit, demo scenarios, license, publication sign-off). CB-QA-09 is not a
