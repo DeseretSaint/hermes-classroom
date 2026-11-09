@@ -266,3 +266,49 @@ What that changes in the body above, and what it does not:
 - The P0-7 verdict is untouched. `docs/AUDIT-INDEX.md` §4 and §15 stay OPEN: the merged packet is
   recorded-input only, and H-68's single live plan reached `needs_review` with no validation
   record. No row in this document upgrades that claim.
+
+## 9. H-199 — provider deadlines on the call path (branch `wt/h199-lesson-liveness`)
+
+Measured on `master` `127cce1` with real host seams, twice in one pass: a lessons job failed at
+**888.4 s** against a 420 s deadline, and another sat **16+ minutes** against a configured 600 s
+deadline with **zero usage rows** and no timeout at all. The deadline was a post-hoc elapsed-time
+verdict, not a cancellation: `asyncio.wait_for` cannot fire while the host's async sibling blocks
+its own loop thread, and when the sibling awaits `asyncio.to_thread` it is `asyncio.run`'s
+executor shutdown that keeps the caller waiting *after* the timeout fired.
+
+**Now bounded on the call path** (`coursebook/deadline.py`, `coursebook/generation.py`):
+
+- `run_async_bounded` runs the host's async sibling on a supervised daemon thread with its own
+  event loop and waits on an event **on the calling thread's clock**. The caller returns at the
+  deadline (deadline + a few ms of scheduling) whatever the loop thread is doing; the coroutine's
+  task is cancelled best-effort and the worker is abandoned. A cap (`MAX_ASYNC_CALLS = 8`) means a
+  provider that hangs forever cannot grow the process one abandoned loop per retry; a full cap is
+  a typed `CallCapacityExhausted` → `ProviderFailure` → `HOST_UNAVAILABLE`.
+- The synchronous pool path (`run_bounded`) keeps its capped workers and uses the same wait.
+- `lesson.generate` therefore fails in bounded wall time with `HOST_UNAVAILABLE`
+  (`ProviderTimeout` → `_error_code`), keeping the existing partial-sections recovery message
+  ("N of M sections are saved … create a new lessons job for that plan to continue without
+  re-authoring them"). Already-saved sections are reused on retry; only missing sections are
+  authored.
+- **Liveness while waiting:** each provider call of the lesson stage upserts a row in
+  `gen_call_waits` (`id, job_id, purpose, prompt_version, state, started_at, heartbeat_at,
+  elapsed_ms, beats`) when it starts, on every wait heartbeat (`WAIT_HEARTBEAT_SECONDS = 5`), and
+  once when it ends (`returned` / `timeout` / `schema_rejected` / `failed`). A row in `waiting`
+  with a fresh `heartbeat_at` is a call in flight; a row left `waiting` with a stale heartbeat is a
+  call that was cut off. The row records **liveness, not spend**: an in-flight call has no tokens
+  or cost, so none are written, and a timed-out call's spend stays unknown rather than zero.
+- The heartbeat write runs on the caller's thread between wait slices, so it uses the job's own
+  connection and never runs inside a provider request or a caller transaction.
+
+**Still provider-bound (not claimed):** the wall time is the *deadline*, not a fast answer — a slow
+route still costs its full declared bound (300 s `lesson.generate` by default, operator-overridable
+via `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS`). An abandoned call may keep running and billing
+at the provider after Coursebook stops waiting; nothing records its tokens or cost, because nothing
+measured them. The abandoned worker thread lives until the host returns (capped, daemon). No live
+provider was re-run as proof of this change — the proof is nine offline tests plus the red baseline
+measured by reverting `coursebook/deadline.py` (the same suite then failed `6.0 s not less than
+2.0` and `DeadlineExceeded not raised`, i.e. one blocking shape overran and the other never fired).
+`plan.validate` and unit-section bounds are untouched (H-192b owns them).
+
+Measured: `python3 -m unittest tests.test_h199_lesson_deadline` → 9 tests OK; full suite
+`python3 -m unittest discover -s tests -t .` → `Ran 2522 tests … OK`.
