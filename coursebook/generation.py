@@ -37,6 +37,7 @@ The LLM seam is the host-owned plugin route (``ctx.llm``), not a raw provider ke
 from __future__ import annotations
 
 import copy
+import contextvars
 import json
 import logging
 import os
@@ -1038,6 +1039,16 @@ class _Usage:
     #: job stops at a *call* boundary instead of waiting out a multi-minute stage. ``None``
     #: means the call is not attached to a durable job (tests, pure helpers).
     cancel_probe: Any = None
+    #: Job-scoped wait reporter (H-199). Called on the caller's thread with
+    #: ``(call_id, purpose, prompt_version, elapsed_s, state)`` when a provider call starts, on
+    #: every wait heartbeat, and once when it ends. It records durable liveness, never spend:
+    #: a call in flight has no tokens or cost to report, so nothing is invented for it.
+    wait_reporter: Any = None
+    #: Prefix for the liveness row ids of this job (H-199). Kept off the global id sequence on
+    #: purpose: a wait row is bookkeeping, and spending a generator draw on it would shift the
+    #: ids of every lesson/check/attempt that follows (the recorded harness packet pins those).
+    wait_id_prefix: str = "job"
+    _wait_seq: int = 0
     #: The validator's passes run together (H-191 follow-up), so the call ceiling and the running
     #: totals are shared between threads: reserve and record under one lock, or four passes could
     #: each see the same call count and cross a ceiling together.
@@ -1091,6 +1102,17 @@ class _Usage:
                     f"{self.unknown_calls} with unknown cost) already reaches the "
                     f"{self.budget.max_cost_usd:.4f} USD ceiling"
                 )
+
+    def wait_id(self) -> str:
+        """The liveness-row id for the next provider call of this job (H-199).
+
+        Deterministic per job and unrelated to the artifact id sequence: these rows are
+        bookkeeping, so they must not shift the ids of the lessons, checks and attempts a
+        recorded packet pins.
+        """
+        with self._lock:
+            self._wait_seq += 1
+            return f"callwait:{self.wait_id_prefix}:{self._wait_seq}"
 
     def record(
         self,
@@ -1179,6 +1201,23 @@ class _Usage:
         }
 
 
+#: Set by :func:`_call_llm` for the duration of one provider call (H-199). ``PluginLLMAdapter``
+#: reads it to hand the bounded wait an ``on_wait`` heartbeat, so a call that is still in flight
+#: leaves a durable liveness trail on the caller's connection. Thread/context-local by design:
+#: a heartbeat belongs to the call that armed it, never to another call on another thread.
+_CALL_WAIT: "contextvars.ContextVar[Any]" = contextvars.ContextVar(
+    "coursebook_call_wait", default=None
+)
+
+
+def _wait_heartbeat() -> Callable[[float], None] | None:
+    """The ``on_wait`` callable for the current provider call, or ``None``."""
+    reporter = _CALL_WAIT.get()
+    if reporter is None:
+        return None
+    return lambda elapsed_s: reporter(elapsed_s)
+
+
 class PluginLLMAdapter:
     """Production adapter over the host's ``ctx.llm`` (``PluginLlm``).
 
@@ -1233,6 +1272,7 @@ class PluginLLMAdapter:
         go through the capped worker pool instead, so a hung call costs at most one worker slot.
         """
         timeout_s = float(request.timeout_s)
+        on_wait = _wait_heartbeat()
         async_sibling = getattr(self._llm, "acomplete_structured", None)
         if callable(async_sibling) and not deadline_mod.has_running_loop():
             arguments = {**self._arguments(request), **overrides}
@@ -1241,6 +1281,7 @@ class PluginLLMAdapter:
                     lambda: async_sibling(**arguments),
                     timeout_s=timeout_s,
                     label=request.purpose,
+                    on_wait=on_wait,
                 )
             except deadline_mod.DeadlineExceeded as exc:
                 raise ProviderTimeout(
@@ -1260,6 +1301,7 @@ class PluginLLMAdapter:
                 ),
                 timeout_s=timeout_s,
                 label=request.purpose,
+                on_wait=on_wait,
             )
         except deadline_mod.DeadlineExceeded as exc:
             raise ProviderTimeout(
@@ -1458,6 +1500,48 @@ def _shape_repair_request(request: LLMRequest, violation: str, *, timeout_s: flo
     )
 
 
+@dataclass
+class _WaitHandle:
+    """The end state one provider call reports to the H-199 wait record."""
+
+    state: str = "failed"
+
+
+@contextmanager
+def _call_wait(usage: _Usage, request: LLMRequest) -> Any:
+    """Arm the wait heartbeat for one provider call, then record its end state.
+
+    The record is liveness, not spend: the row exists from the moment the call starts and is
+    updated by every heartbeat while the call is in flight, so a job that is waiting on a slow
+    provider is never indistinguishable from a dead one. A heartbeat write that fails is logged
+    and dropped — it must never turn a provider call into a failure.
+    """
+    reporter = getattr(usage, "wait_reporter", None)
+    handle = _WaitHandle()
+    if reporter is None:
+        yield handle
+        return
+    call_id = usage.wait_id() if callable(getattr(usage, "wait_id", None)) else _new_id()
+    started = time.monotonic()
+
+    def beat(elapsed_s: float) -> None:
+        reporter(call_id, request.purpose, request.prompt_version, float(elapsed_s), "waiting")
+
+    def report(elapsed_s: float, state: str) -> None:
+        try:
+            reporter(call_id, request.purpose, request.prompt_version, float(elapsed_s), state)
+        except Exception as exc:  # noqa: BLE001 - liveness reporting never decides a call
+            logger.debug("coursebook: wait record for %s failed: %s: %s", request.purpose, type(exc).__name__, exc)
+
+    token = _CALL_WAIT.set(beat)
+    report(0.0, "waiting")
+    try:
+        yield handle
+    finally:
+        _CALL_WAIT.reset(token)
+        report(round(time.monotonic() - started, 3), handle.state)
+
+
 def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: bool = True) -> LLMResponse:
     """One bounded structured call, plus at most one bounded re-ask on a shape violation.
 
@@ -1485,41 +1569,47 @@ def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: boo
     repairs = 0
     while True:
         usage.before_call(current)
-        try:
-            response = llm(current)
-        except (TimeoutError,) as exc:
-            raise ProviderTimeout(
-                f"{request.purpose} timed out: {exc}",
-                purpose=request.purpose,
-                deadline_s=deadline_s,
-            ) from exc
-        except GenerationError:
-            raise
-        except ValueError as exc:
-            # The host's structured-output gate. Not a provider outage: the answer arrived.
-            now = time.monotonic()
-            call_ms = int((now - attempt_started) * 1000)
-            usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
-            violation = _shape_violation_text(exc)
-            remaining = deadline_s - (now - started)
-            if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
-                raise ModelOutputInvalid(
-                    f"{request.purpose} returned an answer that violates its response schema "
-                    f"({request.schema_name}); this artifact has no verdict"
-                    f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+        with _call_wait(usage, current) as wait:
+            try:
+                response = llm(current)
+            except (TimeoutError,) as exc:
+                wait.state = "timeout"
+                raise ProviderTimeout(
+                    f"{request.purpose} timed out: {exc}",
                     purpose=request.purpose,
-                    schema_name=request.schema_name,
-                    violation=violation,
-                    repair_attempted=bool(repairs),
+                    deadline_s=deadline_s,
                 ) from exc
-            repairs += 1
-            attempt_started = now
-            current = _shape_repair_request(request, violation, timeout_s=remaining)
-            continue
-        except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
-            raise ProviderFailure(
-                f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
-            ) from exc
+            except GenerationError as exc:
+                wait.state = "timeout" if isinstance(exc, (ProviderTimeout, TimeoutError)) else "failed"
+                raise
+            except ValueError as exc:
+                # The host's structured-output gate. Not a provider outage: the answer arrived.
+                wait.state = "schema_rejected"
+                now = time.monotonic()
+                call_ms = int((now - attempt_started) * 1000)
+                usage.record(request, LLMResponse(), call_ms, outcome="schema_rejected")
+                violation = _shape_violation_text(exc)
+                remaining = deadline_s - (now - started)
+                if not repair_shape or repairs >= 1 or remaining < MIN_SHAPE_REPAIR_SECONDS:
+                    raise ModelOutputInvalid(
+                        f"{request.purpose} returned an answer that violates its response schema "
+                        f"({request.schema_name}); this artifact has no verdict"
+                        f"{' — one shape re-ask also failed' if repairs else ''}: {violation}",
+                        purpose=request.purpose,
+                        schema_name=request.schema_name,
+                        violation=violation,
+                        repair_attempted=bool(repairs),
+                    ) from exc
+                repairs += 1
+                attempt_started = now
+                current = _shape_repair_request(request, violation, timeout_s=remaining)
+                continue
+            except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
+                wait.state = "failed"
+                raise ProviderFailure(
+                    f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
+                ) from exc
+            wait.state = "returned"
         duration_ms = int((time.monotonic() - started) * 1000)
         if not isinstance(response, LLMResponse):
             raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
@@ -6184,6 +6274,23 @@ _GENERATION_DDL: tuple[str, ...] = (
         created_at TEXT NOT NULL
     )
     """,
+    # H-199: one row per provider call attempt, written when the call starts and updated while
+    # it is in flight. It records *liveness*, never spend: a call that has not returned has no
+    # tokens and no cost, so none are written. A row left in ``waiting`` is the honest record of
+    # a call that overran its deadline and was cut off (its usage is unknown, not zero).
+    """
+    CREATE TABLE IF NOT EXISTS gen_call_waits (
+        id TEXT PRIMARY KEY,
+        job_id TEXT,
+        purpose TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        state TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        heartbeat_at TEXT NOT NULL,
+        elapsed_ms INTEGER NOT NULL DEFAULT 0,
+        beats INTEGER NOT NULL DEFAULT 0
+    )
+    """,
 )
 
 
@@ -6752,6 +6859,66 @@ def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Us
                     recorded_at,
                 ),
             )
+
+
+def _record_call_wait(
+    connection: sqlite3.Connection,
+    call_id: str,
+    job_id: str | None,
+    purpose: str,
+    prompt_version: str,
+    elapsed_s: float,
+    state: str,
+) -> None:
+    """Upsert the H-199 liveness row for one provider call attempt.
+
+    Written from the caller's thread (the bounded wait heartbeats there), so it uses the job's
+    own connection and a short transaction. It never runs while the call is inside a provider
+    request; the beat fires *between* wait slices, which is exactly the no-transaction window.
+    """
+    stamp = _now_iso(None)
+    elapsed_ms = max(0, int(float(elapsed_s) * 1000))
+    with _transaction(connection):
+        existing = connection.execute(
+            "SELECT beats FROM gen_call_waits WHERE id = ?", (call_id,)
+        ).fetchone()
+        if existing is None:
+            connection.execute(
+                "INSERT INTO gen_call_waits (id, job_id, purpose, prompt_version, state, started_at,"
+                " heartbeat_at, elapsed_ms, beats) VALUES (?,?,?,?,?,?,?,?,0)",
+                (call_id, job_id, purpose, prompt_version, state, stamp, stamp, elapsed_ms),
+            )
+            return
+        beats = int(dict(existing)["beats"] if isinstance(existing, sqlite3.Row) else existing[0])
+        connection.execute(
+            "UPDATE gen_call_waits SET state = ?, heartbeat_at = ?, elapsed_ms = ?, beats = ?"
+            " WHERE id = ?",
+            (
+                state,
+                stamp,
+                elapsed_ms,
+                beats if state != "waiting" else beats + 1,
+                call_id,
+            ),
+        )
+
+
+def call_waits(connection: sqlite3.Connection, job_id: str | None = None, *, limit: int = 50) -> list[dict[str, Any]]:
+    """Read the liveness records for one job (or the most recent overall).
+
+    A reader uses this to tell "the job is waiting on a provider call" from "the job is dead":
+    ``state == 'waiting'`` with a recent ``heartbeat_at`` is a call in flight; a row left
+    ``waiting`` with a stale heartbeat is a call that was cut off at its deadline.
+    """
+    ensure_schema(connection)
+    sql = "SELECT * FROM gen_call_waits"
+    params: tuple[Any, ...] = ()
+    if job_id is not None:
+        sql += " WHERE job_id = ?"
+        params = (str(job_id),)
+    sql += " ORDER BY started_at DESC, rowid DESC LIMIT ?"
+    rows = connection.execute(sql, params + (max(1, int(limit)),)).fetchall()
+    return [dict(row) for row in rows]
 
 
 def _persist_research(
@@ -9007,6 +9174,13 @@ def run_lesson_job(
     resolved_budget = budget or lesson_cost_budget(len(section_rows), brief_budget_usd=brief.get("budget_usd"))
     preflight = assert_cost_preflight(len(section_rows), budget=resolved_budget)
     usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
+    # H-199: every provider call in this stage records a durable liveness row (start, heartbeat,
+    # end), so a job waiting on a slow provider is visible as *waiting*, not as a dead job with
+    # zero usage rows. The reporter runs on this thread, so it uses this job's connection.
+    usage.wait_id_prefix = str(job_id or "job")
+    usage.wait_reporter = lambda call_id, purpose, prompt_version, elapsed_s, state: _record_call_wait(
+        connection, call_id, job_id, purpose, prompt_version, elapsed_s, state
+    )
 
     lesson_summaries: list[dict[str, Any]] = []
     try:
