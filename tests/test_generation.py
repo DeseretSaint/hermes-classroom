@@ -215,6 +215,8 @@ def _unsourced(document: dict) -> dict:
 
 
 def validation_from_fixture(name: str = "validation_pass"):
+    from tests.blueprint_support import narrowed_validation_answer
+
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
         properties = (request.schema or {}).get("properties", {})
         if "criteria" not in properties:
@@ -246,9 +248,13 @@ def validation_from_fixture(name: str = "validation_pass"):
             document = json.loads(canonical_json(document).replace("SRC_ALPHA", ids[0]))
         else:
             document["claim_verdicts"] = []
-        return response(document, model="fake-validator")
+        # H-192b/H-192c narrow a criteria pass to its own criteria batch and claim batch; a
+        # fixture authored against the wide schema answers both wrongly unless it is aligned to
+        # the request's own vocabulary.
+        return response(narrowed_validation_answer(request, document), model="fake-validator")
 
     return build
+
 
 
 def lesson_from_request(name: str = "lesson_ja"):
@@ -696,7 +702,12 @@ class PlanJobTest(GenerationTestBase):
         self.assertFalse(tokens["unknown_cost"])
 
     def test_full_scope_deep_brief_runs_a_full_bounded_pass_and_keeps_failures(self) -> None:
-        from tests.blueprint_support import blueprint_plan, response as support_response, validation_pass
+        from tests.blueprint_support import (
+            blueprint_plan,
+            response as support_response,
+            validation_pass,
+            validation_responder,
+        )
 
         seam = ExpandingSearch(fail_suffixes=("/3",))
         scoped = blueprint_plan(scope="full", units=2, objectives_per_unit=6)
@@ -706,7 +717,9 @@ class PlanJobTest(GenerationTestBase):
             FakeLLM(
                 {
                     "coursebook.plan.generate": support_response(scoped),
-                    "coursebook.plan.validate": support_response(validation_pass()),
+                    "coursebook.plan.validate": validation_responder(
+                        support_response, validation_pass()
+                    ),
                 }
             ),
             seam,

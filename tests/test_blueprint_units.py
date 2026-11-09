@@ -18,6 +18,7 @@ from tests.blueprint_support import (
     blueprint_plan,
     response,
     unit_sections_document,
+    validation_answer,
     validation_pass,
 )
 from tests.kernel_support import KernelCase
@@ -29,25 +30,11 @@ T0 = NOW
 def _validation_answer(request: gen.LLMRequest) -> dict:
     """Answer exactly the pass handed in: H-192 splits large plans across bounded passes.
 
-    A claim-only pass carries no criteria, so the ten-criterion fixture answer is not schema-valid
-    for it; this helper derives the claim set from the request the way the live validator does.
+    A claim-only pass carries no criteria and a criteria pass carries only its own batch, so the
+    wide ten-criterion fixture answer is not schema-valid for either; the shared helper narrows it
+    to the request's own criteria and claim labels.
     """
-    properties = (request.schema or {}).get("properties", {})
-    if "criteria" in properties:
-        return validation_pass()
-    labels = (
-        ((properties.get("claim_verdicts") or {}).get("items") or {})
-        .get("properties", {})
-        .get("item", {})
-        .get("enum")
-        or []
-    )
-    return {
-        "claim_verdicts": [
-            {"item": label, "support": "unverified", "reason": "not assessed by this fixture"}
-            for label in labels
-        ]
-    }
+    return validation_answer(request)
 
 
 def _plan_rules(plan: dict, *, recipe: str = "casual", ledger=(), locale=None, scope=None) -> None:

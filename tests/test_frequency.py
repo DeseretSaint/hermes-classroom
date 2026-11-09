@@ -25,6 +25,7 @@ from tests.blueprint_support import (
     blueprint_plan,
     response as support_response,
     validation_pass,
+    validation_responder,
 )
 from tests.test_generation import (
     FakeLLM,
@@ -252,8 +253,8 @@ class PlanJobVocabularyTest(unittest.TestCase):
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": support_response(plan),
-                "coursebook.plan.validate": support_response(
-                    validation_pass(), model="fake-validator"
+                "coursebook.plan.validate": validation_responder(
+                    support_response, validation_pass(), model="fake-validator"
                 ),
             }
         )

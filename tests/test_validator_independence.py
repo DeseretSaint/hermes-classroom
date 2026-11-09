@@ -76,11 +76,15 @@ class ScriptedLLM:
         if request.purpose == "coursebook.plan.generate":
             return response(self.plan, model=self.model)
         if request.purpose == "coursebook.plan.validate":
-            return response(self.validation, model=self.model)
+            from tests.blueprint_support import narrowed_validation_answer
+
+            return response(narrowed_validation_answer(request, self.validation), model=self.model)
         if request.purpose == "coursebook.lesson.generate":
             return lesson_from_request()(request)
         if request.purpose == "coursebook.lesson.validate":
-            return response(self.validation, model=self.model)
+            from tests.blueprint_support import narrowed_validation_answer
+
+            return response(narrowed_validation_answer(request, self.validation), model=self.model)
         raise AssertionError(f"unexpected provider call {request.purpose!r}")
 
 
