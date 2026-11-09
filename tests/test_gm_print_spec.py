@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import unittest
@@ -28,6 +29,50 @@ BUILDER = ROOT / "scripts" / "build_gm_print_proof.py"
 SENTINEL = "\u27e8answer-key\u27e9"
 ANSWER_HEADING = "EXPECTED RESPONSE"
 PARENT_LABEL = "PARENT ONLY"
+
+BACKTICK = re.compile(r"`([^`\n]+)`")
+BRACE_RANGE = re.compile(r"\{(\d+)\.\.(\d+)\}")
+BRACE_LIST = re.compile(r"\{([^{}]+,[^{}]+)\}")
+
+
+def expand_braces(token: str) -> list[str]:
+    """Expand ``page-{1..5}.png`` / ``pack-specimen-{a4,letter}.html`` into concrete names."""
+    match = BRACE_RANGE.search(token)
+    if match:
+        low, high = int(match.group(1)), int(match.group(2))
+        out: list[str] = []
+        for number in range(low, high + 1):
+            out.extend(expand_braces(token[: match.start()] + str(number) + token[match.end():]))
+        return out
+    match = BRACE_LIST.search(token)
+    if match:
+        out = []
+        for part in match.group(1).split(","):
+            out.extend(expand_braces(token[: match.start()] + part.strip() + token[match.end():]))
+        return out
+    return [token]
+
+
+def repo_paths(text: str) -> list[str]:
+    """Backticked tokens that name a path inside this repo.
+
+    A token counts only when it has a slash, contains no prose markers, and its first segment is a
+    real top-level directory. That keeps bare file names (``pack.pdf``), export-time names
+    (``answer-guide.pdf``) and ``~`` host paths out, while catching every citation a downstream
+    worker would try to open.
+    """
+    found: set[str] = set()
+    for raw in BACKTICK.findall(text):
+        token = raw.strip()
+        if any(ch in token for ch in "\u2026<>* ") or token.startswith(("~/", "/", "http")):
+            continue
+        if "/" not in token:
+            continue
+        if not (ROOT / token.split("/")[0]).is_dir():
+            continue
+        for candidate in expand_braces(token.rstrip("/")):
+            found.add(candidate)
+    return sorted(found)
 
 
 def page_text(pdf: Path, page: int) -> str | None:
@@ -136,6 +181,34 @@ class TestPrintProof(unittest.TestCase):
         builder = BUILDER.read_text(encoding="utf-8")
         self.assertIn("print-to-pdf", builder)
         self.assertIn("answer_key_separated", builder)
+        # the spec must name the variant HTML the builder actually emits, not a single hand-authored
+        # file. This is the drift the reviewer caught: the spec cited pack-specimen.html.
+        self.assertIn('for variant in ("a4", "letter")', builder)
+        self.assertIn('f"pack-specimen-{variant}.html"', builder)
+        for variant in ("a4", "letter"):
+            self.assertIn(f"docs/gm-visual/print/pack-specimen-{variant}.html", repo_paths(spec))
+        self.assertNotIn("docs/gm-visual/print/pack-specimen.html", spec)
+        # and it must be honest about where the print CSS lives
+        self.assertIn("scripts/build_gm_print_proof.py", spec)
+        self.assertNotIn("pack-specimen.html` \u2014 the print stylesheet", spec)
+
+    def test_every_repo_path_named_in_the_print_spec_exists(self):
+        named = repo_paths(SPEC.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(named), 5, f"path scanner found too few paths to be meaningful: {named}")
+        missing = [path for path in named if not (ROOT / path).exists()]
+        self.assertEqual([], missing, f"GM-PRINT-SPEC.md cites paths that are not on disk: {missing}")
+        # the scanner must actually see the CSS/proof artefacts, so a silently broken regex fails loudly
+        for required in (
+            "scripts/build_gm_print_proof.py",
+            "tests/test_gm_print_spec.py",
+            "docs/gm-visual/print/proof.json",
+            "docs/gm-visual/print/pack-specimen-a4.html",
+            "docs/gm-visual/print/pack-specimen-letter.html",
+            "docs/gm-visual/print/page-1.png",
+            "docs/gm-visual/print/page-5.png",
+        ):
+            self.assertIn(required, named, f"path scanner missed {required}")
+
 
 
 if __name__ == "__main__":

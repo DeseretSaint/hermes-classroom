@@ -138,6 +138,14 @@ class TestSubjectWorlds(unittest.TestCase):
             self.assertIn("anti-generic swap check", chunk, f"{key} has no swap check")
             self.assertIn("must never become", chunk, f"{key} does not say what a motif must not become")
 
+    def test_every_board_reference_resolves_to_a_file(self):
+        refs = re.findall(r"`(docs/[^`]+)`", WORLDS.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(refs), 4, "no board references found")
+        missing = [ref for ref in refs if not (ROOT / ref).exists()]
+        self.assertEqual([], missing, f"GM-SUBJECT-WORLDS.md cites missing paths: {missing}")
+        for name in [plate for plate in PLATE_FILES if "swap" not in plate]:
+            self.assertIn(f"docs/gm-visual/boards/{name}", refs, f"{name} is not named by full path")
+
     def test_no_world_borrows_a_state_hue(self):
         text = WORLDS.read_text(encoding="utf-8").lower()
         for hue in ("`ochre`", "`coral`", "`plum`"):

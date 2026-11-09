@@ -37,7 +37,7 @@ a state. No gradients, no shadows, no glow, no grain, no watermark.
 
 ## 1. Japanese L0 — lantern district / cafe lesson
 
-**Board:** `boards/japanese-lantern-district.svg`
+**Board:** `docs/gm-visual/boards/japanese-lantern-district.svg`
 **Grammar:** `field_atlas` (lantern variant) · **domain:** language · **level:** L0 · **safety:** none
 **Subject accent:** `lamp` only (lantern light)
 
@@ -68,7 +68,7 @@ learner's own city.
 
 ## 2. Head gasket — service bay / workshop manual
 
-**Board:** `boards/head-gasket-service-bay.svg`
+**Board:** `docs/gm-visual/boards/head-gasket-service-bay.svg`
 **Grammar:** `workshop_manual` · **domain:** technical_procedure · **level:** novice · **safety:** workshop
 **Subject accent:** none (ink + `lamp-soft` only)
 
@@ -99,7 +99,7 @@ permission.
 
 ## 3. Astronomy — observatory
 
-**Board:** `boards/astronomy-observatory.svg`
+**Board:** `docs/gm-visual/boards/astronomy-observatory.svg`
 **Grammar:** `observatory` · **domain:** natural_science · **level:** novice · **safety:** none
 **Subject accent:** `accent` (night field) — the one blue band
 
@@ -125,7 +125,7 @@ or any institution mark, a photograph-like sky used as data.
 
 ## 4. Sourdough — kitchen table
 
-**Board:** `boards/sourdough-kitchen-table.svg`
+**Board:** `docs/gm-visual/boards/sourdough-kitchen-table.svg`
 **Grammar:** `kitchen_table` · **domain:** cooking/home_skill · **level:** novice · **safety:** food
 **Subject accent:** `field` (one herb-green band, optional)
 

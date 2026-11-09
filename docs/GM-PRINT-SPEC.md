@@ -8,7 +8,11 @@ source lesson's exact text and check content, binds to `source_course_id`, `sour
 `source_lesson_version` and `content_hash`, and never regenerates the lesson to print it.
 
 Proof artifacts in this card:
-- `docs/gm-visual/print/pack-specimen.html` — the print stylesheet and page anatomy, as source.
+- `scripts/build_gm_print_proof.py` — the source of the print stylesheet, the `@page` rules and the
+  five page bodies. It writes both variant HTML files listed below; there is no single hand-authored
+  `pack-specimen.html`, and no stylesheet outside the builder.
+- `docs/gm-visual/print/pack-specimen-{a4,letter}.html` — generated build output (one per page box),
+  committed so the print CSS can be read without re-running Chromium. Never hand-edited.
 - `docs/gm-visual/print/pack-specimen-a4.pdf`, `…-letter.pdf` — built by
   `scripts/build_gm_print_proof.py` through headless Chromium.
 - `docs/gm-visual/print/page-{1..5}.png` — A4 renders at 110 dpi for review.
@@ -175,7 +179,7 @@ One plate, one caption, one text equivalent, one provenance line. The caption wo
 
 ```
 python3 scripts/build_gm_print_proof.py
-  ├─ writes docs/gm-visual/print/pack-specimen.html          (print stylesheet, @page rules)
+  ├─ writes docs/gm-visual/print/pack-specimen-{a4,letter}.html  (print stylesheet, @page rules)
   ├─ chromium --headless --print-to-pdf=A4   → pack-specimen-a4.pdf
   ├─ chromium --headless --print-to-pdf=Letter→ pack-specimen-letter.pdf
   ├─ pdftoppm -r 110                          → page-1..5.png
@@ -187,7 +191,8 @@ python3 scripts/build_gm_print_proof.py
 `tests/test_gm_print_spec.py` re-runs the checkable half without a browser: it asserts the PDF exists,
 has 5 pages, is A4 and Letter at the named boxes, that `⟨answer-key⟩` occurs only on page 3, that the
 learner page contains no expected-response string, that every page carries a caption or a header, and
-that the print CSS declares the A4 and Letter margins from §2.
+that the print CSS declares the A4 and Letter margins from §2, and that every repo-relative path
+named in this spec exists on disk (so the proof path cannot drift from the builder again).
 
 **What the proof does not claim.** Chromium does not emit a tagged PDF here, so this pack does not
 claim PDF/UA conformance or a certified reading order; it claims selectable text, real margins,
