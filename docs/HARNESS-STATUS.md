@@ -2,16 +2,16 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current tree (measured 2026-11-08, re-derived by H-203):** `origin/master`
-`ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`. On it `cb.rpc` is v20
+**Current tree (frozen, measured 2026-11-09, re-derived by H-212):** `origin/master`
+`b9f4a197e42e4f033298d94608fcb5b63640b094`. On it `cb.rpc` is v20
 (`coursebook/contracts.py:51`) with 73 declared methods and 73 handlers, `cb.db` is v12
 (`contracts/db.v12.json`, `DB_SCHEMA_VERSION = 12` in `coursebook/db.py:230`, migrations
 `0001`-`0012`), `desktop/plugin.js` is sha256
 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`, and the recorded suite is
-`Ran 2724 tests in 533.270s … OK`.
+`Ran 2747 tests in 410.301s … OK (skipped=1)`.
 
 The suite, contract, schema and pin values are the record in `docs/release-evidence.json`, measured
-at `ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`.
+at `b9f4a197e42e4f033298d94608fcb5b63640b094`.
 
 **Historical snapshot label — not current.** The row-by-row body (§1-§7) is a snapshot written
 against `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700), where the
@@ -309,4 +309,5 @@ measured by reverting `coursebook/deadline.py` (the same suite then failed `6.0 
 `plan.validate` and unit-section bounds are untouched (H-192b owns them).
 
 Measured: `python3 -m unittest tests.test_h199_lesson_deadline` → 9 tests OK; full suite
-`python3 -m unittest discover -s tests -t .` → `Ran 2724 tests in 533.270s … OK` at `ab6dc7e`.
+`python3 -m unittest discover -s tests -t .` → `Ran 2747 tests in 410.301s … OK (skipped=1)` at
+`b9f4a19` (re-measured by H-212 on the frozen tree).
