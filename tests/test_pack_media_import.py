@@ -311,6 +311,46 @@ class UnchangedAndRefusedTest(PackMediaCase):
         self.assertEqual(self.counts(), before)
 
 
+class ShippedPackMediaResolutionTest(PackMediaCase):
+    """H-210-R1: every imported media artifact must resolve through ``artifact.get``.
+
+    The shipped pack is the exact v2 fixture the live round trip failed on: three ``media[]``
+    links (cover plate, relationship map, narration). The import media path used to store the
+    bare digest, so ``artifact.get`` answered ``INTERNAL_ERROR`` and a learner had no handle.
+    """
+
+    def test_every_media_segment_resolves_through_artifact_get(self) -> None:
+        manifest, files = archive.read_directory(JAPANESE)
+        self.assertEqual(len(manifest["media"]), 3, "the shipped fixture is the three-link pack")
+        first = self.import_pack(self.grant(manifest, files, "shipped-1.zip"))
+        # Re-import into the same store: rows are reused, and the reused ids must still resolve.
+        second = self.import_pack(self.grant(manifest, files, "shipped-2.zip"))
+        self.assertNotEqual(first["course_id"], second["course_id"])
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts"))), 3)
+
+        segments = self.media_segments()
+        self.assertGreaterEqual(len(segments), 3)
+        resolved = set()
+        for segment in segments:
+            artifact_id = str(segment["artifact_id"])
+            resolved.add(artifact_id)
+            result = self.ok("artifact.get", {"artifact_id": artifact_id})["result"]
+            self.assertRegex(result["content_hash"], r"^sha256:[a-f0-9]{64}$")
+            rows = self.rows("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
+            self.assertNotIn(str(rows[0]["path"]), repr(result), "a filesystem path must never reach the caller")
+
+            stored = json.loads(rows[0]["provenance_json"])
+            declared = manifest_file_hash(manifest, stored["pack_file"])
+            self.assertEqual(result["content_hash"], declared)
+            self.assertNotIn("sha256:sha256:", result["content_hash"])
+
+            path, mime, size = pack_flow.open_artifact(result["download"]["handle"])
+            self.assertEqual(path.read_bytes(), files[stored["pack_file"]])
+            self.assertEqual(mime, rows[0]["mime"])
+            self.assertEqual(size, len(files[stored["pack_file"]]))
+        self.assertEqual(len(resolved), 3, "all three linked media artifacts must be fetchable")
+
+
 def manifest_file_hash(manifest: dict, path: str) -> str:
     for entry in manifest["files"]:
         if entry["path"] == path:

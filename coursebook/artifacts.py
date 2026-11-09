@@ -44,6 +44,42 @@ REFERENCE_LABEL = "Sourced reference — see the cited source and its permission
 #: Kinds the ``artifacts`` table accepts (``cb.db`` v2).
 ARTIFACT_KINDS = ("visual", "audio", "pdf", "pack", "export", "other")
 
+#: ``artifacts.content_hash`` holds a sha256 of the object bytes. Rows written by
+#: :meth:`ArtifactStore.record` before H-210-R1 stored the bare 64-hex digest while
+#: ``pack.export``/``course.export`` wrote the labelled ``sha256:<64 hex>`` form, so the column is
+#: **mixed by history**. The invariant every reader must honour:
+#:
+#: * write new rows in the labelled form (:func:`labelled_hash`);
+#: * read the column only through :func:`labelled_hash` / :func:`bare_hash`, never by string
+#:   equality against one convention;
+#: * look a row up by digest only through :func:`hash_forms`, so a legacy bare row and a labelled
+#:   row still dedupe to one ``(content_hash, kind)`` record.
+#:
+#: Object files on disk stay named by the bare digest: :attr:`Staged.content_hash` is filesystem
+#: identity, not the stored column value.
+_SHA256_BARE = re.compile(r"^[a-f0-9]{64}$")
+
+
+def bare_hash(value: Any) -> str:
+    """The bare 64-hex digest of any accepted ``content_hash`` spelling."""
+    text = str(value or "").strip()
+    return text[7:] if text.startswith("sha256:") else text
+
+
+def labelled_hash(value: Any) -> str:
+    """``sha256:<64 hex>`` for any accepted spelling. Idempotent; never double-prefixes."""
+    return "sha256:" + bare_hash(value)
+
+
+def hash_forms(value: Any) -> tuple[str, str]:
+    """Both accepted spellings of one digest, for a ``(content_hash, kind)`` lookup.
+
+    A dedupe query must match either form: the same bytes written by the import media path
+    (legacy bare) and by an export (labelled) have to resolve to one row.
+    """
+    return (bare_hash(value), labelled_hash(value))
+
+
 #: Roles a media spec may declare. Role, not MIME, decides the honesty label.
 MEDIA_ROLES = ("sourced_technical", "schematic", "illustration", "narration", "document", "export")
 
@@ -556,9 +592,14 @@ class ArtifactStore:
         reconciliation removes; the reverse order would leave a row pointing at no file.
         """
         stamp = _iso(_now(now))
+        bare = bare_hash(staged.content_hash)
+        if not _SHA256_BARE.match(bare):
+            raise UnsafeMedia("artifact content hash is not a sha256 digest")
+        # A legacy row holds the bare digest; new rows hold the labelled form. Match both so the
+        # same bytes never become two rows on a store written across the H-210-R1 repair.
         existing = connection.execute(
-            "SELECT * FROM artifacts WHERE content_hash = ? AND kind = ?",
-            (staged.content_hash, staged.kind),
+            "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = ?",
+            (*hash_forms(bare), staged.kind),
         ).fetchone()
         if existing is not None:
             connection.execute(
@@ -574,7 +615,7 @@ class ArtifactStore:
                 artifact_id,
                 course_id,
                 staged.kind,
-                staged.content_hash,
+                labelled_hash(bare),
                 path,
                 staged.bytes,
                 staged.mime,
@@ -624,9 +665,11 @@ class ArtifactStore:
         """
         row = None
         if content_hash:
+            # ``content_hash`` may arrive bare (a legacy caller) or labelled (a digest). Match both
+            # stored spellings; see the module invariant above.
             row = connection.execute(
-                "SELECT * FROM artifacts WHERE content_hash = ? AND kind = ?",
-                (content_hash, kind),
+                "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = ?",
+                (*hash_forms(content_hash), kind),
             ).fetchone()
         if row is None and spec_fingerprint and source_fingerprint:
             row = connection.execute(
@@ -688,7 +731,7 @@ def artifact_view(row: Any, *, ref_bump: int = 0) -> dict[str, Any]:
         "artifact_id": row["id"],
         "course_id": row["course_id"],
         "kind": row["kind"],
-        "content_hash": f"sha256:{row['content_hash']}",
+        "content_hash": labelled_hash(row["content_hash"]),
         "bytes": int(row["bytes"]),
         "mime": row["mime"],
         "provenance": provenance,

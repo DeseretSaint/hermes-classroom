@@ -33,6 +33,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 from . import (
     api,
+    artifacts,
     bindings,
     db,
     evidence,
@@ -200,12 +201,12 @@ def _row(connection, sql: str, params: tuple = ()) -> Any:
 def _labelled_digest(value: Any) -> str:
     """``sha256:<hex>`` for an artifact row, whatever form the row stored.
 
-    ``artifacts.ArtifactStore.record`` stores the bare hex digest; ``pack.export`` writes the
-    labelled form. cb.rpc's ``artifacts[].content_hash`` is always the labelled form, so the read
-    projection normalises instead of leaking either storage convention onto the wire.
+    The column is mixed by history (bare hex from ``ArtifactStore.record`` before H-210-R1,
+    labelled from the export paths), so every read projection normalises instead of leaking
+    either storage convention onto the wire. ``artifacts.labelled_hash`` is idempotent, so a row
+    that already carries the prefix is never double-prefixed.
     """
-    text = str(value or "")
-    return text if text.startswith("sha256:") else f"sha256:{text}"
+    return artifacts.labelled_hash(value)
 
 
 def _one(connection, sql: str, params: tuple = ()) -> dict[str, Any]:
@@ -3478,7 +3479,7 @@ def artifact_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
         "kind": artifact["kind"],
         "mime": mime,
         "bytes": int(artifact["bytes"]),
-        "content_hash": artifact["content_hash"],
+        "content_hash": _labelled_digest(artifact["content_hash"]),
         "provenance": {
             "generator": provenance.get("generator"),
             "model": provenance.get("model"),
