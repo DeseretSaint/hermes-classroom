@@ -3356,6 +3356,7 @@ function ClassroomCover({ slot, compact }) {
               fontWeight: 600,
               lineHeight: 1.25,
               color: 'var(--cb-ink)',
+              whiteSpace: 'normal',
               overflowWrap: 'anywhere'
             },
             children: slot.name || (row && row.title) || 'Classroom'
@@ -3370,6 +3371,7 @@ function ClassroomCover({ slot, compact }) {
               fontSize: CB_TYPE.caption,
               lineHeight: 1.3,
               color: 'var(--cb-ink-soft)',
+              whiteSpace: 'normal',
               overflowWrap: 'anywhere'
             },
             children: subject
