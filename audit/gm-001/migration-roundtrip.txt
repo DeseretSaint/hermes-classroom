@@ -1,0 +1,15 @@
+migrations applied before: 12
+courses has presentation_mode before: False
+before attempts     rows= 1 digest=sha256:481665645288fba095a6624b11b8779cd0e54b488da005a645456b717672f98f
+before evidence     rows= 1 digest=sha256:cc47641c0cb4e76c3dd8c5e1fdec3edf9b11375ac0bb71f4c0495074b9009836
+before checks       rows= 1 digest=sha256:e3c79468c61760c39c7d46b5b5e85c265a6408130dc5d950a3f12532421e0dbb
+before transitions  rows= 0 digest=sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
+db.migrate() returned: 13
+after  attempts     rows= 1 digest=sha256:481665645288fba095a6624b11b8779cd0e54b488da005a645456b717672f98f  identical=True
+after  evidence     rows= 1 digest=sha256:cc47641c0cb4e76c3dd8c5e1fdec3edf9b11375ac0bb71f4c0495074b9009836  identical=True
+after  checks       rows= 1 digest=sha256:e3c79468c61760c39c7d46b5b5e85c265a6408130dc5d950a3f12532421e0dbb  identical=True
+after  transitions  rows= 0 digest=sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945  identical=True
+stored presentation_mode after upgrade: None
+read fallback: textbook
+gm tables present: True | table count: 45
+schema_migrations max: 13

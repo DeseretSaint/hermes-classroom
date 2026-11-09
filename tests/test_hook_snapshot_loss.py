@@ -218,8 +218,8 @@ class V9ToV10Upgrade(unittest.TestCase):
             connection.close()
 
         self.assertEqual(db.applied_schema_version(), 9)
-        self.assertEqual(db.migrate(), 12)
-        self.assertEqual(db.applied_schema_version(), 12)
+        self.assertEqual(db.migrate(), 13)
+        self.assertEqual(db.applied_schema_version(), 13)
         with db.read() as connection:
             self.assertEqual(
                 connection.execute(

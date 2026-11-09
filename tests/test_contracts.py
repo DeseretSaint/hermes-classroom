@@ -1809,7 +1809,7 @@ class V6AmendmentTest(unittest.TestCase):
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v20.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v12.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
@@ -2707,7 +2707,7 @@ class V10AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v20.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v12.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
@@ -3035,7 +3035,7 @@ class V11AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v20.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v12.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -3117,23 +3117,26 @@ class V13AmendmentTest(unittest.TestCase):
     def test_v13_adds_no_db_table_column_or_migration(self) -> None:
         # v13 froze against cb.db v8 and touched no storage. The v8 snapshot is still on disk as
         # shipped; cb.db has since moved to v9 for H-53's one nullable `evidence.note` column, to
-        # v10 for H-124's `hook_errors` diagnostics table, and to v11 for H-120's two practice
-        # tables, and those three additions are the whole delta between the v13-era inventory and
-        # today's.
+        # v10 for H-124's `hook_errors` diagnostics table, to v11 for H-120's two practice
+        # tables, to v12 for H-194's two fine-tune ledgers and to v13 for GM-001's Game Mode
+        # storage (eight tables plus nullable courses.presentation_mode). Those are the whole
+        # delta between the v13-era inventory and today's.
         v8 = _document("db.v8.json")
         current = contracts.contract("cb.db")
         self.assertEqual(v8["schema_version"], 8)
         self.assertEqual(
             set(current["tables"]) - set(v8["tables"]),
             {"hook_errors", "practice_sessions", "practice_turns",
-             "plan_revisions", "lesson_revisions"},
+             "plan_revisions", "lesson_revisions", "course_worlds", "world_assets",
+             "takehome_packs", "homework_tasks", "homework_events", "game_engagement",
+             "tutor_threads", "tutor_turns"},
         )
         added = {
             (table, column)
             for table, spec in v8["tables"].items()
             for column in set(current["tables"][table]["columns"]) - set(spec["columns"])
         }
-        self.assertEqual(added, {("evidence", "note")})
+        self.assertEqual(added, {("evidence", "note"), ("courses", "presentation_mode")})
         self.assertEqual(current["migration_plan"][: len(v8["migration_plan"])], v8["migration_plan"])
 
     def test_the_export_methods_have_a_review_read_and_a_hash_fenced_write(self) -> None:
@@ -3324,7 +3327,7 @@ class V14AmendmentTest(unittest.TestCase):
         note = current["tables"]["evidence"]["columns"]["note"]
         self.assertEqual(note["type"], "TEXT")
         self.assertTrue(note["nullable"], "a pre-v9 evidence row has no note and must stay valid")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v12.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
 
     def test_the_migration_is_forward_only_and_rewrites_no_row(self) -> None:
         plan = contracts.contract("cb.db")["migration_plan"]
@@ -3390,22 +3393,30 @@ class DbV10AmendmentTest(unittest.TestCase):
                 f"{table} indexes changed",
             )
         # v11 is additive over v10 too: two new tables, and no v10 table, column or index moves.
-        # v12 adds the two fine-tune ledgers and changes no v10 table either.
+        # v12 adds the two fine-tune ledgers, v13 adds the eight Game Mode tables and exactly one
+        # nullable column (courses.presentation_mode), and neither moves a v10 table or index.
         current = contracts.contract("cb.db")
         self.assertEqual(
             set(current["tables"]) - set(v10["tables"]),
-            {"practice_sessions", "practice_turns", "plan_revisions", "lesson_revisions"},
+            {"practice_sessions", "practice_turns", "plan_revisions", "lesson_revisions",
+             "course_worlds", "world_assets", "takehome_packs", "homework_tasks",
+             "homework_events", "game_engagement", "tutor_threads", "tutor_turns"},
         )
         self.assertEqual(set(v10["tables"]) - set(current["tables"]), set(), "v11 dropped a table")
         for table, spec in v10["tables"].items():
+            expected_columns = dict(spec["columns"])
+            if table == "courses":
+                expected_columns["presentation_mode"] = (
+                    current["tables"]["courses"]["columns"]["presentation_mode"]
+                )
             self.assertEqual(
-                current["tables"][table]["columns"], spec["columns"], f"{table} columns changed"
+                current["tables"][table]["columns"], expected_columns, f"{table} columns changed"
             )
             self.assertEqual(
                 current["tables"][table].get("indexes"), spec.get("indexes"),
                 f"{table} indexes changed",
             )
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v12.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
 
     def test_hook_errors_is_diagnostics_and_names_only_the_snapshot_loss(self) -> None:
         table = contracts.contract("cb.db")["tables"]["hook_errors"]
@@ -4002,7 +4013,7 @@ class V17AmendmentTest(unittest.TestCase):
     def test_no_error_code_job_table_or_vocabulary_moved(self) -> None:
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 12)
+        self.assertEqual(contracts.contract_version("cb.db"), 13)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
 
     def test_docs_publish_the_v17_delta(self) -> None:
@@ -4182,7 +4193,7 @@ class V20AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.rpc"), 20)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 12)
+        self.assertEqual(contracts.contract_version("cb.db"), 13)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 

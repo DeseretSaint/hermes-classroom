@@ -4,9 +4,9 @@ Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
 **Current tree (frozen, measured 2026-11-09, re-derived by H-212):** `origin/master`
 `b9f4a197e42e4f033298d94608fcb5b63640b094`. On it `cb.rpc` is v20
-(`coursebook/contracts.py:51`) with 73 declared methods and 73 handlers, `cb.db` is v12
-(`contracts/db.v12.json`, `DB_SCHEMA_VERSION = 12` in `coursebook/db.py:230`, migrations
-`0001`-`0012`), `desktop/plugin.js` is sha256
+(`coursebook/contracts.py:51`) with 73 declared methods and 73 handlers, `cb.db` is v13
+(`contracts/db.v13.json`, `DB_SCHEMA_VERSION = 13` in `coursebook/db.py:230`, migrations
+`0001`-`0013`), `desktop/plugin.js` is sha256
 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`, and the recorded suite is
 `Ran 2747 tests in 410.301s … OK (skipped=1)`.
 

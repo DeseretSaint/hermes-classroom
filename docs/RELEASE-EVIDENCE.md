@@ -21,7 +21,7 @@ live Desktop window has driven this exact commit, and the operator publication g
 | Suite | `Ran 2747 tests in 410.301s`, `OK (skipped=1)` | `b9f4a19` (H-212) | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v20, 73 declared methods | `b9f4a19` (re-asserted, H-212) | `contracts/rpc.v20.json` (`coursebook/contracts.py:51` `WIRE_CONTRACT_VERSION = 20`) |
 | Handlers | 73, asserted by the registry; `METHOD_HANDLERS` after importing every registering module | `b9f4a19` (measured, H-212) | `coursebook/api.py`, registry test in the suite |
-| `cb.db` | v12, `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012` | `b9f4a19` (re-asserted, H-212) | `coursebook/db.py:230`, `contracts/db.v12.json` |
+| `cb.db` | v13, `DB_SCHEMA_VERSION = 13`, migrations `0001`-`0013` | `4e3d6c6` (GM-001 contract freeze) | `coursebook/db.py:230`, `contracts/db.v13.json` |
 | Shipped module | `desktop/plugin.js` sha256 `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` | `b9f4a19` (re-hashed, H-212) | `sha256sum desktop/plugin.js` |
 | M4 audit | 62 frames, 15/15 claims PASS, 2,120 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `ab6dc7e` (H-203); **not regenerated** — the `cd862140` pin is unchanged on `b9f4a19`, so the audit still names this tree's module | `python3 scripts/m4v-audit.py` → `audit/visual/m4-visual/audit.json` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `ab6dc7e` (H-203); **not re-run** on `b9f4a19` — carried as the last measurement of this matrix, not a claim about the frozen tree | `python3 tests/adversarial/attack_state.py` |

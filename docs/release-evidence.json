@@ -22,10 +22,10 @@
   },
   "db": {
     "contract": "cb.db",
-    "version": 12,
-    "schema_version": 12,
-    "migrations": "0001-0012",
-    "note": "re-asserted on b9f4a19 in the H-212 pass: coursebook/db.py DB_SCHEMA_VERSION = 12; contracts/db.v12.json schema_version 12; migrations 0001_initial.sql through 0012_fine_tune_revisions.sql"
+    "version": 13,
+    "schema_version": 13,
+    "migrations": "0001-0013",
+    "note": "re-asserted on 4e3d6c6 for GM-001: coursebook/db.py DB_SCHEMA_VERSION = 13; contracts/db.v13.json schema_version 13; migrations 0001_initial.sql through 0013_game_mode_contracts.sql. v13 is additive over v12: nullable courses.presentation_mode plus eight Game Mode tables, no rewrite and no backfill. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
   },
   "plugin": {
     "path": "desktop/plugin.js",
