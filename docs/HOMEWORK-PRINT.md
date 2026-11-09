@@ -78,6 +78,10 @@ and refuses to write `MANIFEST.json` if any page loses its last body sentence. I
 `chromium`, `pdfinfo`, `pdftotext` and `pdftoppm` on `PATH`, and a system font with Japanese
 coverage (`Noto Sans CJK JP` is used when present). Nothing is uploaded or sent.
 
+Re-running rewrites each PDF's creation timestamp, so the recorded SHA-256 changes even when the
+pages are identical. Regenerate and commit the whole set together; do not mix old and new files
+under one manifest.
+
 ## Print rules encoded in the template
 
 - A4 (210 × 297 mm) and Letter (8.5 × 11 in) page boxes with zero `@page` margin and an explicit
