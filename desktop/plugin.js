@@ -24688,7 +24688,12 @@ function StudioPlanView({
                       }),
                       jsx('div', {
                         className: 'text-xs text-(--ui-text-secondary)',
-                        children: `State: ${objective.state} · check: ${objective.check_state}`
+                        'data-cb-objective-state': objective.state || 'none',
+                        'data-cb-objective-check': objective.check_state || 'none',
+                        // The authoring row still shows the plan gate's own state, in the same
+                        // words the trail and the path use. The backend enum is the `data-*`
+                        // attribute for evidence inspection, never the sentence a parent reads.
+                        children: `${OBJECTIVE_STATE_COPY[objective.state] || 'State not recorded'} · ${cbCheckStateWord(objective.check_state)}`
                       })
                     ]
                   },
@@ -28438,6 +28443,7 @@ export {
   AttemptVerdict,
   StudioExportPanel,
   StudioFineTunePanel,
+  StudioPlanView,
   StudioReviewDiff,
   fineTuneChip,
   fineTuneCriteriaText,
