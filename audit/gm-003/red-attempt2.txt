@@ -1,0 +1,74 @@
+FFF......F...
+======================================================================
+FAIL: test_brief_patch_cannot_reclassify_a_technical_course (tests.test_world.WorldFailureAndModeTest.test_brief_patch_cannot_reclassify_a_technical_course)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 437, in test_brief_patch_cannot_reclassify_a_technical_course
+    error = self.err(
+        "world.generate",
+    ...<11 lines>...
+        idempotency_key="reclassify-1",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 207, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 185, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_concept_failure_leaves_named_terminal_state (tests.test_world.WorldFailureAndModeTest.test_concept_failure_leaves_named_terminal_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 418, in test_concept_failure_leaves_named_terminal_state
+    self.assertEqual(read["world"]["state"], "failed")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'concepts_generating' != 'failed'
+- concepts_generating
++ failed
+
+
+======================================================================
+FAIL: test_kit_requires_an_approved_style (tests.test_world.WorldFailureAndModeTest.test_kit_requires_an_approved_style)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 491, in test_kit_requires_an_approved_style
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key="kit-gate-1",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 207, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 185, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_head_gasket_never_field_atlas (tests.test_world.WorldPolicyTest.test_head_gasket_never_field_atlas)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 69, in test_head_gasket_never_field_atlas
+    with self.assertRaises(world.WorldPolicyViolation) as caught:
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorldPolicyViolation not raised
+
+----------------------------------------------------------------------
+Ran 13 tests in 11.896s
+
+FAILED (failures=4)

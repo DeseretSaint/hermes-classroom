@@ -45,8 +45,13 @@ first live run replaces this table with measured values.
 
 ## Failure honesty
 
-- Provider unavailable: world state `unavailable`, job error `HOST_UNAVAILABLE`, no asset row and
-  no placeholder. The course stays readable in Textbook fallback.
+- Provider unavailable at any stage: world state `unavailable` or `failed`, job error
+  `HOST_UNAVAILABLE`, no asset row and no placeholder. The course stays readable in Textbook
+  fallback.
+- Concept-stage provider failure (all three boards refused): the world is terminal `failed` with
+  `error_json = {'reason': 'provider_unavailable', 'missing_roles': ['style_board:<direction>', …]}`,
+  `concepts` holds only the boards that really succeeded, and the job re-raises the provider
+  failure. No concept is fabricated and no asset row is written for a refused plate.
 - Partial provider failure: the plates that succeeded remain real `world_assets` rows (retry
   reuses them); the world state is `failed`, `error_json.missing_roles` names the exact roles, and
   the job checkpoint carries the same list. Final approval refuses a partial world with

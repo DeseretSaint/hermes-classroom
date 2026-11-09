@@ -357,7 +357,13 @@ class WorldPolicy:
         """Return *grammar* if this brief may use it; otherwise raise ``WorldPolicyViolation``."""
         record = grammar_record(grammar)
         typed = _as_brief(brief)
-        if typed.needs_service_grammar and record.name not in _TECHNICAL_ALLOWED:
+        # Derive the restriction from the selected grammar, not from a keyword list: a domain
+        # alias (``trades``, ``engineering``, ...) that selects ``workshop_manual`` must be
+        # fenced exactly like a declared technical procedure.
+        needs_service = (
+            typed.needs_service_grammar or WorldPolicy.select(typed) == "workshop_manual"
+        )
+        if needs_service and record.name not in _TECHNICAL_ALLOWED:
             raise WorldPolicyViolation(
                 "technical_world_needs_service_grammar",
                 f"a technical procedure cannot use the {record.name!r} grammar; "
@@ -915,12 +921,19 @@ def _derive_brief(connection: Any, course_id: str) -> WorldBrief:
     titles = [str(row["title"]) for row in objectives if row["title"]]
     subject = str(course["subject_domain"] or "unknown_subject")
     grammar = WorldPolicy.select({"subject_domain": subject, "end_capability": course["goal"] or ""})
-    cues = list(grammar_record(grammar).subject_cues)
+    record = grammar_record(grammar)
     motifs: list[str] = []
-    for title in titles:
-        cleaned = title.strip().rstrip(".").lower()
-        if cleaned and cleaned not in motifs and len(cleaned) <= 64:
-            motifs.append(cleaned)
+    if grammar == "workshop_manual":
+        # A service world is orientation only. Section titles name procedures ("removing the
+        # head"), so they are never promoted to image motifs; the grammar's place and object
+        # cues carry the scene instead.
+        cues = list(record.motifs) + list(record.subject_cues)
+    else:
+        cues = list(record.subject_cues)
+        for title in titles:
+            cleaned = title.strip().rstrip(".").lower()
+            if cleaned and cleaned not in motifs and len(cleaned) <= 64:
+                motifs.append(cleaned)
     for cue in cues:
         if cue not in motifs:
             motifs.append(cue)
@@ -941,32 +954,41 @@ def _derive_brief(connection: Any, course_id: str) -> WorldBrief:
     )
 
 
+#: ``brief_patch`` may change presentation only. ``subject_domain``, ``end_capability`` and
+#: ``safety_class`` are re-derived from the course row on every generate; reclassifying a course
+#: is a course mutation (GM-002 ``course.mode.set`` / course.edit), never a world request.
+CLASSIFICATION_BRIEF_FIELDS: tuple[str, ...] = (
+    "subject_domain",
+    "end_capability",
+    "safety_class",
+)
+
+#: The closed set of keys a caller may patch in a ``world.generate`` request.
+BRIEF_PATCH_FIELDS: frozenset[str] = frozenset(
+    {"tone", "motifs", "forbidden", "audience", "level"}
+)
+
+
 def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> WorldBrief:
+    """Merge presentation overrides over the course-derived brief.
+
+    The course row is authoritative for classification (``subject_domain``, ``end_capability``,
+    ``safety_class``), title and sections: a client cannot turn a head-gasket course into a
+    language course by patching the request. Only ``BRIEF_PATCH_FIELDS`` are honoured.
+    """
+    authoritative = _derive_brief(connection, course_id)
     stored = _json_load(row["brief_json"], None) if row is not None else None
-    base = (
-        WorldBrief.from_mapping(stored)
-        if isinstance(stored, dict) and stored
-        else _derive_brief(connection, course_id)
-    )
-    if not isinstance(patch, Mapping):
-        return base
-    merged = {
-        "course_id": base.course_id,
-        "title": base.title,
-        "subject_domain": base.subject_domain,
-        "end_capability": base.end_capability,
-        "audience": base.audience,
-        "level": base.level,
-        "locale": base.locale,
-        "tone": base.tone,
-        "safety_class": base.safety_class,
-        "motifs": list(base.motifs),
-        "forbidden": list(base.forbidden),
-        "sections": [{"id": sid, "title": title} for sid, title in base.sections],
-    }
-    for key, value in patch.items():
-        if key in merged:
-            merged[key] = value
+    presentation: dict[str, Any] = {}
+    if isinstance(stored, Mapping):
+        for field in BRIEF_PATCH_FIELDS:
+            if field in stored:
+                presentation[field] = stored[field]
+    if isinstance(patch, Mapping):
+        for field in BRIEF_PATCH_FIELDS:
+            if field in patch:
+                presentation[field] = patch[field]
+    merged = authoritative.as_dict()
+    merged.update(presentation)
     return WorldBrief.from_mapping(merged)
 
 
@@ -1063,6 +1085,8 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
         entries: list[dict[str, Any]] = []
         artifact_ids: list[str] = []
         usage: list[Any] = []
+        missing: list[str] = []
+        failure: WorldMediaFailure | None = None
         for board in boards:
             key = cache_key(
                 brief, grammar, "style_board", board.style_id, None,
@@ -1075,7 +1099,14 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                 artifact_id = str(existing["artifact_id"])
                 generation_ms = 0
             else:
-                data, mime, generation_ms = _generate_plate(board)
+                try:
+                    data, mime, generation_ms = _generate_plate(board)
+                except WorldMediaFailure as exc:
+                    # A refused board is a named missing role, not a fabricated plate. Boards
+                    # that did succeed are kept so a retry reuses them from the cache.
+                    missing.append(f"style_board:{board.style_id.split('--')[-1]}")
+                    failure = failure or exc
+                    continue
                 record = store.save(
                     course_id=brief.course_id,
                     kind="visual",
@@ -1112,6 +1143,18 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                     "textless": True,
                 }
             )
+        if missing:
+            with db_transaction() as connection:
+                _set_world_state(
+                    connection,
+                    world_id,
+                    state="failed",
+                    concepts_json=_json_dump(entries),
+                    error_json=_json_dump(
+                        {"reason": "provider_unavailable", "missing_roles": missing}
+                    ),
+                )
+            raise failure or WorldMediaFailure("no concept board could be produced")
         with db_transaction() as connection:
             _set_world_state(
                 connection,
@@ -1495,6 +1538,24 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         raise RpcError.of(
             "VALIDATION_FAILED", "stage must be 'concepts' or 'kit'.", field="stage", stage=stage
         )
+    raw_patch = payload.get("brief_patch")
+    if raw_patch is not None and not isinstance(raw_patch, Mapping):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "brief_patch must be an object of presentation fields.",
+            field="brief_patch",
+        )
+    if isinstance(raw_patch, Mapping):
+        reclassifying = [field for field in CLASSIFICATION_BRIEF_FIELDS if field in raw_patch]
+        unknown = reclassifying or sorted(set(raw_patch) - BRIEF_PATCH_FIELDS)
+        if unknown:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "brief_patch may only change presentation fields; classification is a course "
+                "mutation, not a world request.",
+                field=unknown[0],
+                allowed=sorted(BRIEF_PATCH_FIELDS),
+            )
     with db.transaction() as connection:
         replay = _replay(connection, key, method, payload_hash)
         if replay is not None:
@@ -1533,6 +1594,17 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                     "generate and choose a concept board before requesting the kit.",
                 )
             wanted = str(style_id or "")
+            state = str(row["state"]) if row is not None else ""
+            chosen_id = str(row["selected_concept_id"] or "") if row is not None else ""
+            # A kit is spendable only after the style choice that hash-fenced a board. A failed
+            # kit may be retried with the same selection; a never-approved world may not.
+            if state not in ("style_selected", "kit_generating", "failed") or chosen_id != wanted:
+                raise _policy_error(
+                    "style_not_selected",
+                    "approve one concept board before requesting the kit.",
+                    state=state,
+                    style_id=wanted,
+                )
             selected_concept = next(
                 (item for item in concepts if str(item.get("style_id")) == wanted), None
             )

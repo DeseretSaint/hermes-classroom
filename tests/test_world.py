@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import unittest
 
-from coursebook import api, executor, world
+from coursebook import api, domain, executor, world
 from coursebook import gm_contract
-from tests.kernel_support import KernelCase
+from tests.kernel_support import KernelCase, criteria_with, numeric_spec
 from tests.world_fixtures import (
     GENERIC_SWAP_BRIEF,
     HEAD_GASKET_BRIEF,
@@ -61,6 +61,14 @@ class WorldPolicyTest(unittest.TestCase):
         joined = " ".join(record.motifs).lower()
         self.assertIn("service bay", joined)
         self.assertIn("tool wall", joined)
+
+        # A trades brief selects the service grammar too, and cannot be forced into the
+        # decorative field atlas just because the keyword list missed the domain name (D4).
+        trades = {"subject_domain": "trades", "title": "Wire a socket", "motifs": []}
+        self.assertEqual(world.WorldPolicy.select(trades), "workshop_manual")
+        with self.assertRaises(world.WorldPolicyViolation) as caught:
+            world.WorldPolicy.assert_allowed(trades, "field_atlas")
+        self.assertEqual(caught.exception.reason, "technical_world_needs_service_grammar")
 
     def test_world_style_swap_rejects_generic_art(self) -> None:
         japanese_grammar = world.WorldPolicy.select(JAPANESE_L0_BRIEF)
@@ -334,7 +342,27 @@ class WorldMediaJobTest(WorldHandlerMixin, KernelCase):
 class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
     def setUp(self) -> None:
         super().setUp()
-        self.course_id, self.plan_id = self.new_course()
+        # The course row is the authority for subject_domain / end_capability / safety_class:
+        # the fixture is a real technical course, not a braising course relabelled by a patch.
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Replace a head gasket",
+                "recipe": "committed",
+                "goal": "Replace a head gasket on a four-cylinder engine",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.course_id = created["course_id"]
+        self.plan_id = created["plan_id"]
+        for title in ("Before you lift the car", "Removing the head"):
+            domain.record_objective(
+                self.plan_id,
+                title=title,
+                evidence_target="procedure",
+                criteria=criteria_with(numeric_spec()),
+            )
         self.fake = FakeWorldMedia()
         world.bind_media(self.fake)
 
@@ -348,22 +376,10 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         with db.read() as connection:
             return int(connection.execute(sql).fetchone()[0])
 
-    def _technical_patch(self) -> dict:
-        return {
-            "subject_domain": "technical_procedure",
-            "safety_class": "workshop",
-            "end_capability": "Replace a head gasket on a four-cylinder engine",
-            "motifs": ["service bay", "car on a lift", "tool wall", "component trays"],
-            "sections": [
-                {"id": "s1", "title": "Before you lift the car"},
-                {"id": "s2", "title": "Removing the head"},
-            ],
-        }
-
     def _concepts_then_style(self) -> tuple[dict, dict]:
         self.ok(
             "world.generate",
-            {"course_id": self.course_id, "stage": "concepts", "brief_patch": self._technical_patch()},
+            {"course_id": self.course_id, "stage": "concepts"},
             expected_revision=0,
             idempotency_key="g-concepts",
         )
@@ -384,10 +400,124 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         after = self.ok("world.read", {"course_id": self.course_id})["result"]
         return after, approved
 
+    def test_concept_failure_leaves_named_terminal_state(self) -> None:
+        # D1: a provider refusal on the concept stage must not leave the world stuck in
+        # concepts_generating with error:null; it is a terminal, named failure.
+        self.fake.fail_when = "style board"
+        self.ok(
+            "world.generate",
+            {"course_id": self.course_id, "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="concept-fail-1",
+        )
+        view = executor.pump_once(limit=1)[0]
+        self.assertEqual(view["state"], "failed")
+        self.assertEqual(view["error"]["code"], "HOST_UNAVAILABLE")
+
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        self.assertEqual(read["world"]["state"], "failed")
+        self.assertEqual(read["world"]["error"]["reason"], "provider_unavailable")
+        self.assertEqual(
+            read["world"]["error"]["missing_roles"],
+            ["style_board:authored", "style_board:warm-paper", "style_board:night-ink"],
+        )
+        self.assertEqual(read["fallback"], "textbook")
+        self.assertEqual(read["world"]["concepts"], [])
+        self.assertEqual(self.count("SELECT COUNT(*) FROM world_assets"), 0)
+        self.assertEqual(
+            self.count(
+                "SELECT COUNT(*) FROM world_assets WHERE artifact_id NOT IN"
+                " (SELECT id FROM artifacts)"
+            ),
+            0,
+        )
+
+    def test_brief_patch_cannot_reclassify_a_technical_course(self) -> None:
+        # D2: WorldPolicy must select on the course row, never on caller-supplied intent.
+        error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {
+                    "subject_domain": "language",
+                    "safety_class": "none",
+                    "end_capability": "Order a coffee",
+                    "motifs": ["lantern district", "cafe counter"],
+                },
+            },
+            expected_revision=0,
+            idempotency_key="reclassify-1",
+        )
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["field"], "subject_domain")
+        # Rejected before any spend or state change.
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+
+        # Presentation fields are patchable; classification is not.
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"tone": "practical, calm, competent"},
+            },
+            expected_revision=0,
+            idempotency_key="reclassify-2",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        self.assertEqual(read["world"]["brief"]["subject_domain"], "technical_procedure")
+        self.assertEqual(read["world"]["brief"]["safety_class"], "workshop")
+        style_ids = [item["style_id"] for item in read["world"]["concepts"]]
+        self.assertTrue(style_ids)
+        self.assertTrue(
+            all(item.startswith("workshop_manual--") for item in style_ids), style_ids
+        )
+        # AI art is orientation only: a section title that names the procedure must not become
+        # an image motif ("removing the head" is instruction, not place or mood).
+        motifs = [str(item).lower() for item in read["world"]["brief"]["motifs"]]
+        self.assertNotIn("removing the head", motifs)
+        self.assertNotIn("before you lift the car", motifs)
+        self.assertIn("service bay", motifs)
+
+    def test_kit_requires_an_approved_style(self) -> None:
+        # D3: a kit is not spendable until a concept board has been approved.
+        self.ok(
+            "world.generate",
+            {"course_id": self.course_id, "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="kit-gate-concepts",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        self.assertEqual(read["world"]["state"], "concepts_ready")
+        board = read["world"]["concepts"][0]
+        error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+            },
+            expected_revision=read["revision"],
+            idempotency_key="kit-gate-1",
+        )
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "style_not_selected")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
     def test_partial_world_failure_names_missing_roles(self) -> None:
         read, approved = self._concepts_then_style()
         self.assertEqual(approved["state"], "style_selected")
-        self.fake.fail_when = "Section scene s2"
+        sections = read["world"]["brief"]["sections"]
+        self.assertEqual(
+            [item["title"] for item in sections],
+            ["Before you lift the car", "Removing the head"],
+        )
+        first_id, second_id = (item["id"] for item in sections)
+        self.fake.fail_when = f"Section scene {second_id}"
 
         queued = self.ok(
             "world.generate",
@@ -402,17 +532,19 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         view = executor.pump_once(limit=1)[0]
         self.assertEqual(view["state"], "failed")
         self.assertEqual(view["error"]["code"], "POLICY_VIOLATION")
-        self.assertEqual(view["checkpoint"]["missing_roles"], ["section:s2"])
+        self.assertEqual(view["checkpoint"]["missing_roles"], [f"section:{second_id}"])
 
         after = self.ok("world.read", {"course_id": self.course_id})["result"]
         self.assertEqual(after["world"]["state"], "failed")
-        self.assertEqual(after["world"]["error"]["missing_roles"], ["section:s2"])
+        self.assertEqual(
+            after["world"]["error"]["missing_roles"], [f"section:{second_id}"]
+        )
         self.assertEqual(after["fallback"], "textbook")
         roles = {(item["role"], item["section_key"]) for item in after["world"]["assets"]}
         self.assertIn(("hero", ""), roles)
         self.assertIn(("cover", ""), roles)
-        self.assertIn(("section", "s1"), roles)
-        self.assertNotIn(("section", "s2"), roles)
+        self.assertIn(("section", first_id), roles)
+        self.assertNotIn(("section", second_id), roles)
 
         # No fabricated asset: every world_asset row points at a real artifact the provider made.
         self.assertEqual(
@@ -458,7 +590,7 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         roles_after = {
             (item["role"], item["section_key"]) for item in completed["world"]["assets"]
         }
-        self.assertIn(("section", "s2"), roles_after)
+        self.assertIn(("section", second_id), roles_after)
 
     def test_world_approval_hash_fence(self) -> None:
         read, style = self._concepts_then_style()
@@ -549,6 +681,9 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
 
     def test_textbook_generates_no_world_job(self) -> None:
         # A Textbook course is created plan-first: no world row, no media job, no asset.
+        # The create-time auto-queue hook for Game courses is owned by the Home/mode card
+        # (GM-002, `course.mode.set`); `world_job_on_create` is the gate it must call, and it
+        # must stay false for Textbook so this assertion remains meaningful once wired.
         self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
         self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
         read = self.ok("world.read", {"course_id": self.course_id})["result"]

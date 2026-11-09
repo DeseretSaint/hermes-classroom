@@ -47,6 +47,25 @@ This is deliberate, not an omission: it avoids rewriting the ten historical cont
 tests and avoids racing GM-002/GM-005/GM-009, which are parallel backend cards that would each
 otherwise need the same single manifest bump.
 
+## Review round 2 — sentinel changes requested (D1–D4)
+
+Reviewer verdict on `f1adddc` reproduced two blockers and two should-fix defects; all four are
+fixed in this branch with failing tests written first.
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **D1** concept-stage provider failure left `course_worlds.state='concepts_generating'` with `error:null` | `_concept_stage` now catches `WorldMediaFailure` per board, keeps the boards that succeeded, writes `state='failed'` with `{'reason':'provider_unavailable','missing_roles':['style_board:<direction>',…]}`, then re-raises | `test_concept_failure_leaves_named_terminal_state` |
+| **D2** `brief_patch` could override `subject_domain`/`end_capability`/`safety_class`, turning a head-gasket course into a field atlas | `_merged_brief` always re-derives classification, title and sections from the course row; `brief_patch` is a closed whitelist (`tone`, `motifs`, `forbidden`, `audience`, `level`) and any classification key is refused `VALIDATION_FAILED` before spend | `test_brief_patch_cannot_reclassify_a_technical_course` |
+| **D3** (should-fix) kit was accepted at `concepts_ready` with no style approval | kit requires `selected_concept_id == style_id` and state in `style_selected`/`kit_generating`/`failed`; a failed kit retry keeps its selection | `test_kit_requires_an_approved_style` |
+| **D4** (should-fix) `trades` selected `workshop_manual` but could be forced to `field_atlas` | the technical fence derives from the *selected grammar*, not the keyword list | `test_head_gasket_never_field_atlas` (trades case) |
+
+The technical fixture now comes from `course.create(subject_domain='technical_procedure',
+goal='Replace a head gasket on a four-cylinder engine')` with real objectives, not a patch on a
+braising course. The concept failure test proves no fabricated asset is written.
+
+Red-then-green evidence: `audit/gm-003/red-attempt2.txt` (4 failures for the intended reasons)
+and `audit/gm-003/green-attempt2.txt` (13 OK).
+
 ## TDD trail
 
 Each slice was written as a failing test first and observed red before implementation:
@@ -54,3 +73,9 @@ import error (`coursebook.world` absent) → policy green; `AttributeError: buil
 builder green; `AttributeError: bind_media`/`cache_key` → job green; missing
 `world_job_on_create` and an empty-assets failure → partial/mode green; a stale-revision failure
 in the approval test was fixed as a test bug (the snapshot predated the style approval), then green.
+
+Round 2 followed the same cycle: the four new assertions were run against `f1adddc` and failed
+(concepts stuck `concepts_generating`; reclassification patch "unexpectedly succeeded"; kit queued
+at `concepts_ready`; trades forced into `field_atlas` with no violation) before any production
+edit. Only then were `_concept_stage`, `_merged_brief`, the patch whitelist and the kit gate
+changed.

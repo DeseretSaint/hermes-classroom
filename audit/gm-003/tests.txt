@@ -1,18 +1,33 @@
-GM-003 test evidence (branch wt/gm-003-world)
+GM-003 test evidence (branch wt/gm-003-world — review round 2)
 
 Focused: python3 -m unittest tests.test_world -v
-  Ran 10 tests ... OK
-  (8 required names + test_world_methods_are_wired_to_the_frozen_manifest, inherited by both
-   handler test classes)
+  Ran 13 tests ... OK
+  (all 8 required names + test_world_methods_are_wired_to_the_frozen_manifest, plus the
+   review-round-2 tests test_concept_failure_leaves_named_terminal_state,
+   test_brief_patch_cannot_reclassify_a_technical_course and
+   test_kit_requires_an_approved_style)
 
 Regression set: python3 -m unittest tests.test_world tests.test_workers tests.test_cost_ceilings
   tests.test_artifacts tests.test_rpc tests.test_contracts tests.test_gm_contract
-  Ran 269 tests ... OK
+  Ran 272 tests ... OK
+  (sentinel's 269-test set plus the three added tests)
+
+Red state (review round 2, before the code fix): audit/gm-003/red-attempt2.txt
+  FAILED (failures=4)
+  - test_concept_failure_leaves_named_terminal_state: 'concepts_generating' != 'failed'
+  - test_brief_patch_cannot_reclassify_a_technical_course: world.generate unexpectedly succeeded
+  - test_kit_requires_an_approved_style: world.generate unexpectedly succeeded
+  - test_head_gasket_never_field_atlas: WorldPolicyViolation not raised (trades -> field_atlas)
+  A later red run for the orientation rule failed with:
+  AssertionError: 'removing the head' unexpectedly found in [...brief motifs...]
+
+Green state: audit/gm-003/green-attempt2.txt
+  Ran 13 tests ... OK
 
 Full suite: python3 -m unittest discover -s tests -t .
-  Ran 2779 tests in 540.862s
+  Ran 2782 tests in 600.080s
   OK (skipped=1)
   exit 0
 
 No provider key or account id appears in this evidence. The media seam in tests is a local fake
-that counts calls and returns deterministic PNG bytes.
+that counts calls and returns deterministic PNG bytes; no live provider call was made.
