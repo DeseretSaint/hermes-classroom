@@ -30,6 +30,9 @@ CONFIG_KEYS: tuple[str, ...] = (
     "status_include_contracts",
     "validator_model",
     "validator_provider",
+    # Read by coursebook.engagement, not by this module: declared here because this tuple is the
+    # one list the manifest-drift test compares against ``plugin.yaml``'s config_schema.
+    "game_feedback",
 )
 DEFAULT_STATUS_INCLUDE_CONTRACTS = True
 
