@@ -2610,9 +2610,12 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
   const [keyboardFocus, setKeyboardFocus] = useState(false)
   const title = row.title || (slot && slot.name) || 'Untitled course'
   const next = learnerNextLabel(row.next_step && row.next_step.label)
-  // The goal paragraph carries a stored goal or the course's own subtitle. It must not fall back
-  // to the same next-step sentence the meta row already prints, or every card repeats itself.
-  const goal = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
+  // The goal paragraph carries a stored goal or the course's own subtitle. It must not repeat
+  // the card title or the next-step sentence the meta row already prints, or every card repeats
+  // itself: real authored rows often store `subtitle` identical to `title`.
+  const goalCandidate = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
+  const sameText = (a, b) => String(a).trim().toLowerCase().replace(/\s+/g, ' ') === String(b).trim().toLowerCase().replace(/\s+/g, ' ')
+  const goal = goalCandidate && !sameText(goalCandidate, title) && !sameText(goalCandidate, next) ? goalCandidate : ''
   const open = () => {
     if (onOpen) onOpen(slot)
   }

@@ -352,6 +352,16 @@ class CoursebookHomeTest(Base):
         self.assertEqual(html.count("Review the plan"), 1,
                          "the shelf card printed its next step twice")
 
+    def test_card_does_not_repeat_its_title_as_the_goal(self) -> None:
+        # Authored rows often carry `subtitle` equal to `title`. Printing both paints the same
+        # sentence twice on the card, so the goal paragraph is suppressed when it adds nothing.
+        repeated = self.home(rows=[row(1, title="Engine diagnostics", subtitle="Engine diagnostics")])
+        self.assertNotIn("data-cb-home-card-goal", repeated,
+                         "the shelf card painted its own title a second time as the goal line")
+        distinct = self.home(rows=[row(1, title="Engine diagnostics", subtitle="Find the misfire fast")])
+        self.assertIn("data-cb-home-card-goal", distinct, "a real subtitle was dropped")
+        self.assertIn("Find the misfire fast", distinct)
+
     def test_card_shows_real_next_step_and_mode_badge(self) -> None:
         html = self.home(
             rows=[row(1, title="Small-engine maintenance", next_step={"kind": "resume_lesson", "label": "Resume this lesson"})],
