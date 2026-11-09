@@ -867,7 +867,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5370,
+            "input_tokens": 4330,
             "output_tokens": 1813,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1013,7 +1013,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5430,
+            "input_tokens": 4404,
             "output_tokens": 1870,
             "unknown_calls": 0,
             "unknown_cost": false
