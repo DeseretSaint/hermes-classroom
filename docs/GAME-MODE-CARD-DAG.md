@@ -51,3 +51,27 @@ authoritative product plan is `docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md`; the pre-b
   UI maker. The final integration card is not written by the QA reviewer.
 - A green test suite alone does not close a visual card. A pack proof alone does not close a
   content card. Every close is a named review.
+
+## Created card IDs
+
+Created on board `coursebook` on 2026-11-09. These are the board handles for the graph above.
+
+| Card | Board id | Status at creation |
+|---|---|---|
+| GM-001 | `t_ee0345b5` | running |
+| GM-013 | `t_e00442ed` | todo (GM-001 running) |
+| GM-002 | `t_5e7e8e08` | todo (GM-001 running) |
+| GM-003 | `t_8a98eff8` | todo (GM-001 running) |
+| GM-005 | `t_417a76e7` | todo (GM-001 running) |
+| GM-007 | `t_958daca7` | todo (GM-001 running) |
+| GM-009 | `t_971b7a47` | todo (GM-001 running) |
+| GM-004 | `t_af131c02` | todo (GM-001 running) |
+| GM-006 | `t_1b360207` | todo (GM-001 running) |
+| GM-014 | `t_a5058d1f` | todo (GM-001 running) |
+| GM-008 | `t_69a789eb` | todo (GM-001 running) |
+| GM-011 | `t_28a67930` | todo (GM-001 running) |
+| GM-010 | `t_ebf058fa` | todo (GM-001 running) |
+| GM-012 | `t_35652a2f` | todo (GM-001 running) |
+| GM-015 | `t_ec0fcc1d` | todo (GM-001 running) |
+| GM-016 | `t_11e21405` | todo (GM-001 running) |
+| GM-017 | `t_cfcb5927` | todo (GM-001 running) |
