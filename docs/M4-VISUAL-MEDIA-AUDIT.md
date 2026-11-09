@@ -3,18 +3,18 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the integration slice that lands `cb.rpc` v17 (H-159a) and the H-106/H-159b provenance
-pane, then slice B (H-151/H-160's action primitive and two measured fixes, H-120c's practice revision
-fence, H-152's motion ladder and H-121's export/share), on the H-158 UI batch union
-(H-145/146/147/148/149/150/153/154/156/157), final code commit `eed7dc7`,
-and is pinned to the module that slice produces: `desktop/plugin.js` sha256
-`179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`.
+regenerated on the settled H-209 tree `ab6dc7e` (H-208's H-183/H-189/H-192c/H-199 integration with
+H-206 and the H-182/D1-D3 renderer work, the H-182/D8 residual learner copy, the H-182/D6
+reaper/pump store scope, the validator-reject fix, and the private test `node_modules` isolation),
+and is pinned to the module that tree produces: `desktop/plugin.js` sha256
+`cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`.
 
-That module is the one that ships from the merge `eed7dc7`, the commit this audit was
+That module is the one that ships from the merge `ab6dc7e`, the commit this audit was
 regenerated for, so this is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
-`0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710` (`d54c124`, the `cb.rpc` v17 +
-provenance slice), is history for that slice, as is
+`a11a769f6131b365555b9a4efae9cf942baa843f78bcdd0237f0170d6a0aba61` (the `4dacf07` settled tree), is
+history for that tree, as is the `eed7dc7` slice's
+`179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163` and
 `8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` (`c41ee83`, merged as `b7c53e4`)
 for the UI batch union,
 `0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` (`625c939`) for the H-120b tree
@@ -22,7 +22,7 @@ and `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5` for the H
 those `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
 
 This is **not** publication evidence. Nothing here was published, tagged or opened as a catalog PR;
-the slice it measures is merged to `master` (`eed7dc7`) and the audit makes no claim that Coursebook
+the slice it measures is merged to `master` (`ab6dc7e`) and the audit makes no claim that Coursebook
 is installable.
 
 One command regenerates every number and every screenshot; a second proves the result is not a
@@ -44,37 +44,30 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
-**Re-pin at `179db275` (UI/behaviour slice B, final code commit `eed7dc7`).** `desktop/plugin.js`
-moved again with H-151/H-160 (one `CbAction` primitive, one type hierarchy, Courses' primary and the
-section-route wrap), H-120c's graded-practice fence, H-152's motion ladder and H-121's export/share,
-so the audit was regenerated on the merged tree:
+**Re-pin at `cd862140` (settled H-209 tree, `ab6dc7e`).** `desktop/plugin.js` moved with H-208's
+H-183/H-189/H-192c/H-199 integration, H-206 and the H-182/D1-D3 renderer work, then H-182/D8's
+residual learner copy and H-182/D6's store scope, so the audit was regenerated on the settled tree:
 `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-`plugin_sha256: 179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`. The 56
-non-forced frames still measure **2,416** text nodes and the 32 frames with an accessibility tree
-still measure **298** AX controls: the new controls are inside the same surfaces those frames mount,
-so the counts hold. The C-04 row's 298 controls are 52 fewer than the `625c939` record's 364, and the
-Field Quest and Field Desk movement that carries the text total is attributed per frame and per hunk
-in [Per-frame delta attribution (H-161)](#per-frame-delta-attribution-h-161) below — that section's
-base is the `f87bf99` record (plugin `8347331f`), so its per-frame numbers are the 364→298 step and
-not the numbers at this pin. Minimum authored contrast is unchanged at 5.93:1 with 0 plugin-authored failures,
-0 clipped text and 0 px horizontal overflow. The one changed claim is **C-08**: the four
-reduced-motion frames paint 0 animated nodes and the full-motion frames paint 40, because H-152 ships
-real transitions and the reduced preference now suppresses them. The render harness was made
-deterministic in the same pass (it pins `window.requestAnimationFrame` and waits for two identical
-serializations); without that, a one-frame motion beat committed outside `act` raced the serializer
-and `animated_nodes_full` differed between two runs of the same module. The reproducibility pair
-quoted below was re-run at this pin as part of the same pass.
+`plugin_sha256: cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`. The 56
+non-forced frames now measure **2,120** text nodes (the learner-copy sweep reduced painted prose on the
+Quest and Field Desk surfaces) while the 32 frames with an accessibility tree still measure **298** AX
+controls and the worst authored contrast is unchanged at 5.93:1. C-08 now measures **0** animated nodes
+in the four reduced-motion frames against **70** in full motion: H-152's transitions are real and the
+preference suppresses them. Regenerating the audit rewrote only `generated_at` and the recorded branch
+name; every measurement and every committed screenshot reproduced unchanged, which is what pins the
+numbers to `cd862140`. The reproducibility pair quoted below was re-run at this pin as part of the same
+pass.
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`179db275…`), verbatim (scratch roots elided):
+Run back to back on this pin (`cd862140…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-bi1tf7ew/run-a
-run B → …/cb-m4v-repro-bi1tf7ew/run-b
+run A → …/cb-m4v-repro-h7llz0nl/run-a
+run B → …/cb-m4v-repro-h7llz0nl/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163
+  plugin_sha256: cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
@@ -146,13 +139,13 @@ audio players, text-only, media-unavailable.
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
-| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,416 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
+| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,120 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
 | C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 298 AX controls across the 32 measured frames; 268 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 60 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex`. The `625c939` record measured 364 AX controls and 304 Tab stops; the per-frame comparison puts the whole delta on two surfaces — Quest (`images`/`audio` 1→0, text 49→32, AX 21→10) and Field Desk (text 43→81) — and each of those deltas is now attributed to a commit and hunk inside the union in [Per-frame delta attribution (H-161)](#per-frame-delta-attribution-h-161); both verdicts are *intended*, and no control moved from named/reachable to unnamed/unreachable |
 | C-05 No autoplay | **PASS** | 0 of 12 painted `<audio>` elements autoplay or play on load |
 | C-06 Every instructional image has a text equivalent | **PASS** | 50 images, 0 without `alt`, 0 of 86 media frames without a caption/text equivalent |
 | C-07 Every audio has a transcript | **PASS** | 12 audio elements, 0 without an accessible transcript/`aria-label` |
-| C-08 Reduced motion respected | **PASS** (trivial) | 0 animated/transitioned nodes in reduced **and** full frames — the module paints no motion to suppress; the preference is read and recorded |
+| C-08 Reduced motion respected | **PASS** | 0 animated/transitioned nodes in the four reduced-motion frames against 70 in the full-motion frames — H-152 ships real transitions and the preference suppresses them |
 | C-09 Forced colors stays readable | **PASS** | 6 forced-colors frames, 0 authored failures, 0 clipped, 0 overflow |
 | C-10 Media-unavailable leaves the lesson readable | **PASS** | 6 frames: 0 images, 0 audio, honest message + caption retained |
 | C-11 Text-only path renders media as text | **PASS** | 6 frames: 0 players, 0 broken frames, text equivalent retained |
@@ -211,7 +204,9 @@ non-forced.
 | Field Desk text 41→81 (430→810, +380) | +38 × 10 frames (+304 over the 8 non-forced frames) | H-148 `a27231d`, merged into the union at `434ddc3` | `CheckpointPath` replaces `PathPreview`: each checkpoint gains a state word, a check-state word, a `<summary>` "Details for checkpoint N" disclosure, and — for the current and next checkpoint — four label/value rows (evidence target, committed attempts, last opened, check) |
 
 Sum check: `−170` (Quest) `+380` (Field Desk) = the `+210` the two records differ by across all 62
-frames; over the 56 non-forced frames the claim counts, `+304 − 170 = +134`, which is `2,282 → 2,416`.
+frames; over the 56 non-forced frames the claim counts, `+304 − 170 = +134`, which is `2,282 → 2,416`
+in the `8347331f`/`eed7dc7` record — history here, not the current tree, which measures **2,120** after
+the H-183/H-189 learner-copy sweep.
 AX `−11 × 6 = −66` is `364 → 298`; Tab stops `−6 × 6 = −36` is `304 → 268`; images `−1 × 10` and
 audio `−1 × 10` are `60 → 50` and `22 → 12`. No other frame moves any of the four measures.
 
@@ -286,9 +281,9 @@ its caption in all six media-unavailable frames — unchanged from before except
   `tests/fixtures/media/cb-media-audio.mp3` — real speech of the documented utterance (synthesized
   once with the free Edge speech service and re-encoded to raw MPEG frames; sha256 recorded in
   `audit.json.summary.media_fixtures`), not the M0 MP3 — and they decode as `audio/mpeg`.
-- The reduced-motion claim is trivially satisfied: the module has no CSS transition or animation
-  at all in any mode. There is no motion theatre to suppress, but this gate also cannot claim a
-  suppression that never occurs.
+- The reduced-motion claim is measured, not vacuous: H-152 ships real transitions, so the four
+  reduced-motion frames paint 0 animated nodes while the full-motion frames paint 70. The preference
+  suppresses motion that would otherwise paint.
 - No user-facing "text-only / reduced data" preference exists in the shipped plugin. The
   text-only variant exercised here is the no-artifact fallback path the plan describes.
 - No screen-reader run on a real AT: names come from the Chromium accessibility tree, not NVDA or

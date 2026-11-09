@@ -8,12 +8,10 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
-Current measurement commit: **`eed7dc717f6503d4172b6b0ebf4cec2fa663fc37`** (merged `master`, the integration slice that lands `cb.rpc` v17 —
-H-159a's six source-provenance fields on `lesson.page` — and the H-106/H-159b provenance pane that reads them, then slice B: H-151/H-160 action primitive and type hierarchy with the two measured H-151 fixes, H-120c practice revision fence, H-152 motion and H-121 export/share, merged onto the H-158 UI batch union —
-H-145 Home launcher, H-146 classroom rail, H-147 Home settings, H-148 path truth, H-149 lesson player,
-H-150 library shelf, H-153 first run, H-154 mastery policy, H-156 parent/child defaults, H-157 course
-detail and Field Quest — which sits on the H-120b conversation-practice surface `625c939`, on
-the H-105 + `cb.rpc` v16 union `39659b7` and the H-155 engagement audit `ac301a1`).
+Current measurement commit: **`ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`** (merged `master`, the settled
+H-209 union: H-208's H-183/H-189/H-192c/H-199 integration with H-206 and the H-182/D1-D3 renderer
+work, the H-182/D8 residual learner copy, the H-182/D6 reaper/pump store scope, the validator-reject
+fix, and the private test `node_modules` isolation).
 Every current-tree number in this file is re-derived there and checked by
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
@@ -26,9 +24,8 @@ state/version, page hash) and both it and `course.outline`'s `outline_plan` retu
 adds no method — and v19 itself added the fine-tune commands
 (`plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read`,
 `parent.final.approve`); v12 adds the two fine-tune ledgers (`plan_revisions`, `lesson_revisions`)
-in migration `0012_fine_tune_revisions`. The suite is `Ran 2242 tests … OK (skipped=1)` at the
-measured commit `eed7dc7`, measured independently of the branch, and `Ran 2511 tests … OK` on this
-H-194 tree.
+in migration `0012_fine_tune_revisions`. The suite is `Ran 2724 tests in 533.270s … OK` at the
+measured commit `ab6dc7e`.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -55,16 +52,16 @@ branch-only evidence. The earlier harness evidence (`docs/HARNESS-E2E.md`, branc
 Each gate depends on the one above it. Do not start a later gate to save time; a failure there
 invalidates the earlier evidence.
 
-| # | Gate | Owner | Evidence on `eed7dc7` | Status |
+| # | Gate | Owner | Evidence on `ab6dc7e` | Status |
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/rpc.v20.json` (73 declared methods), `contracts/db.v12.json`, `docs/REVIEW_CB001.md` | [x] |
-| 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh --ref b33a42f`: admission PASS, `node --check` PASS, desktop contract tests PASS; not re-run in this docs pass | [x] |
-| 3 | Backend kernel with migrations | Cinder | At `eed7dc7`: `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 2242 tests … OK (skipped=1)`. The H-194 tree is `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`, `Ran 2511 tests … OK` | [x] |
-| 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 2,242-test suite on this tree, but no pack round-trip was re-driven here | [~] |
+| 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh` on `ab6dc7e`: admission PASS, `node --check` PASS, desktop contract tests PASS, runtime contracts PASS — 4/4 on 2742 files | [x] |
+| 3 | Backend kernel with migrations | Cinder | At `ab6dc7e`: `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`; suite `Ran 2724 tests in 533.270s … OK` | [x] |
+| 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 2,724-test suite on this tree, but no pack round-trip was re-driven here | [~] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED; not re-run in this pass | [~] |
-| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `eed7dc7` and no video exists. Gate 5 and the recording path must close first | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py --skip-tests` passes | [x] |
+| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `ab6dc7e` and no video exists. Gate 5 and the recording path must close first | [ ] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `ab6dc7e` | [x] |
 | 9 | License present | DeseretSaint | No `LICENSE` at repository root; the decision is `t_6f2d2080`, blocked on DeseretSaint | [ ] owner decision |
 | 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins this documents commit (one commit above the code candidate `b33a42f`); validator `OK: 1 file(s) valid`. The pull request stays closed until gates 5, 7, 9 and 10 close | [~] |
@@ -88,22 +85,23 @@ against.
 Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
-python3 -m unittest discover -s tests -t .   # Ran 2242 tests, OK (skipped=1)
+python3 -m unittest discover -s tests -t .   # Ran 2724 tests in 533.270s, OK
 bash scripts/validate-plugin.sh --ref <sha>  # the release gate: a clean export of the commit
 bash scripts/validate.sh                     # pre-merge gate: tests, syntax, admission, doctor, probe
 python3 scripts/check-docs-truth.py          # docs quote the measured values
 ```
 
-Observed by this pass on `eed7dc717f6503d4172b6b0ebf4cec2fa663fc37`:
+Observed by this pass on `ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815`:
 
 ```
-Ran 2242 tests in 290.870s
+Ran 2724 tests in 533.270s
 
-OK (skipped=1)
+OK
 ```
 
-The release gate (`validate-plugin.sh`), the mounted backend trace (`validate.sh` step 5) and
-`hermes plugins doctor` were **not** re-run in this docs pass; the rows above that cite them cite
+The release gate (`validate-plugin.sh`) was re-run in this pass on `ab6dc7e`: 4/4 checks PASS on a
+2742-file export. The mounted backend trace (`validate.sh` step 5) and `hermes plugins doctor` against
+a live gateway were **not** re-run in this docs pass; the rows above that cite the mounted trace cite
 the `29bede7` record in `docs/CB017-RELEASE-VERIFICATION.md` or mark the gap. `docs/RELEASE-EVIDENCE.md`
 lists exactly what was and was not measured here.
 
@@ -267,8 +265,8 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified on this candidate, so they are not blockers: 68/68 `cb.rpc` v17 methods mounted with no
-contract problems, schema v11 from migrations `0001`-`0011`, 2,242 tests, pack round-trip and export
+Verified on this candidate, so they are not blockers: 73/73 `cb.rpc` v20 methods mounted with no
+contract problems, schema v12 from migrations `0001`-`0012`, 2,724 tests, pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
 hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
@@ -281,8 +279,8 @@ resolved for the recording.
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
-| Release candidate commit | `eed7dc717f6503d4172b6b0ebf4cec2fa663fc37` — merged master: the `cb.rpc` v17 + H-106 provenance integration slice (H-159a/H-159b) plus the UI/behaviour slice B (H-151/H-160, H-120c, H-152, H-121) on the H-158 UI batch union (H-145/146/147/148/149/150/153/154/156/157), which sits on the H-120b conversation-practice surface (`625c939`), the H-105 + `cb.rpc` v16 / `cb.db` v11 union (`39659b7`) and the H-155 engagement audit (`ac301a1`) |
-| Measured on that commit | suite `Ran 2242 tests … OK (skipped=1)`; `cb.rpc` v17 / 68 methods / 68 handlers; `cb.db` v11; `desktop/plugin.js` sha256 `179db275…ccb163`; M4 62 frames, 15/15 claims PASS |
+| Release candidate commit | `ab6dc7e3e769dcfa8c8ce5bb2b9425dffb3de815` — merged master: the settled H-209 union (H-208's H-183/H-189/H-192c/H-199 integration with H-206 and the H-182/D1-D3 renderer work, the H-182/D8 residual learner copy, the H-182/D6 reaper/pump store scope, the validator-reject fix, and the private test `node_modules` isolation) |
+| Measured on that commit | suite `Ran 2724 tests in 533.270s … OK`; `cb.rpc` v20 / 73 methods / 73 handlers; `cb.db` v12; `desktop/plugin.js` sha256 `cd862140…c516`; M4 62 frames, 15/15 claims PASS |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
@@ -290,8 +288,8 @@ resolved for the recording.
 | Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and five partial (`[~]`: 4, 5, 6, 10, 11) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
-code commit `eed7dc7` one below it, because an entry cannot carry its own hash. The numbers above are
-measurements of `eed7dc7`; the catalog update after this file only corrects what the documents say
+code commit `ab6dc7e` one below it, because an entry cannot carry its own hash. The numbers above are
+measurements of `ab6dc7e`; the catalog update after this file only corrects what the documents say
 about them. The catalog
 pull request moves `sha`, `docs_url` and the docs record together once gates 5, 7, 9 and 10 close.
-The installed tree at `eed7dc7` is the one the gates ran on.
+The installed tree at `ab6dc7e` is the one the gates ran on.
