@@ -58,3 +58,10 @@ first live run replaces this table with measured values.
   `POLICY_VIOLATION reason=partial_world`.
 - A Textbook course queues no world job at creation
   (`world.world_job_on_create("textbook") is False`): no spend, no assets.
+
+## Round-5 fence cost
+
+The presentation fence (motif threshold, token ownership, mood/role lexicon, digit/unit/
+instruction refusal) is pure local validation. It runs before any world row, job or provider
+call, so a refused request costs **0** image calls and 0 provider tokens; it does not add a
+model call to a successful request either. The 3-board + kit estimate above is unchanged.

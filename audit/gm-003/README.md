@@ -1,7 +1,7 @@
 # GM-003 evidence
 
-Branch: `wt/gm-003-world` (rebased on `origin/master` `ffe2156`, which carries GM-001 `4e3d6c6`
-and migration 0013; no master merge, no push, no gateway restart).
+Branch: `wt/gm-003-world` (rebased on `origin/master` `5721389`, which carries GM-001 `4e3d6c6`,
+migration 0013 and the published `rpc.v21.json`; no master merge, no push, no gateway restart).
 
 ## Named tests
 
@@ -111,7 +111,7 @@ into every prompt. Both are fixed with tests first. Red evidence:
 | Defect | Fix | Regression test |
 |---|---|---|
 | **G1** paraphrased decorative motifs still turned a head gasket into a lantern district | The runtime form of plan §4.4 rule 2 now runs on the merged brief before any row, job or spend: a patched motif set must keep at least two grammar-native subject cues, and other-subject motifs may never outnumber them (`POLICY_VIOLATION reason=presentation_motifs_not_subject_specific`). Native cues are also sorted ahead of caller additions, so a decorative cluster cannot lead the scene. Applies to both `concepts` and `kit` | `test_technical_world_rejects_paraphrased_decorative_motifs` |
-| **G2** free-text `tone`/`audience` bypassed the fence | Both fields are scanned with the case/plural-normalised foreign-vocabulary check and refused `POLICY_VIOLATION reason=presentation_names_foreign_grammar` with the offending field and phrase, before spend | `test_technical_world_rejects_scene_text_in_tone_or_audience` |
+| **G2** free-text `tone`/`audience` bypassed the fence | Both fields are scanned against other grammars' vocabulary and refused `POLICY_VIOLATION reason=presentation_names_foreign_grammar` with the offending field and phrase, before spend. **Correction (round 5):** this was phrase-exact and was bypassed by a paraphrase; it is superseded by the token-level + mood-lexicon fence described below | `test_technical_world_rejects_scene_text_in_tone_or_audience` |
 | **G3** (should-fix) README overclaimed that rule 2 held at runtime; the anti-generic test only saw fixtures | Claim corrected in this section; `test_world_style_swap_rejects_generic_art`'s generated-brief counterpart now asserts through the handler path that the stored brief keeps the field-atlas cues and yields no `anti_generic_problems` against the head-gasket brief | `test_world_cache_prevents_duplicate_spend` (generated-brief assertions) |
 | **G4** (should-fix) derived objective titles were subject to the ownership fence | The ownership and anti-generic fences now inspect the caller's `brief_patch` only; derived course content (objective titles promoted into motifs) is not re-fenced as if it were a presentation patch | `test_derived_objective_titles_are_not_presentation_fenced` |
 
@@ -119,3 +119,42 @@ The anti-generic runtime invariant is a majority/at-least-two rule over normaliz
 vocabulary, not a second copy of `anti_generic_problems()`: the swap test compares two chosen
 briefs, while generation only has one brief and must judge the patched motif mix. `four-cylinder
 block` / `engine block cutaway` remains a legitimate workshop patch.
+
+**Correction (round 5):** the paragraph above described the round-4 threshold, which was
+`non_native <= native`. That was looser than `anti_generic_problems()` (which fails at **two**
+shared motifs), so two paraphrased decorative motifs passed. The shipped rule is now
+`non_native < 2` on the caller's patch, for **every** grammar including the default
+`field_atlas`.
+
+## Review round 5 — sentinel changes requested (H1–H6)
+
+Round 5 reproduced F2 and the exact G1/G2 repros as fixed, then found four blockers inside the
+same card rule (`head gasket is a service bay/workshop manual, never a lantern district`) plus
+two should-fix defects. All six are fixed in this branch, tests first.
+
+Red evidence: `audit/gm-003/red-attempt5.txt` (5 tests, 9 subtest failures — every case
+"world.generate unexpectedly succeeded", i.e. the fence was absent). Green:
+`audit/gm-003/green-attempt5.txt` (27 OK) and the full-suite log named below.
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **H1** rule-2 fence skipped for the default grammar (`field_atlas`), so a language course could be patched into a service bay | the presentation-motif fence now runs for **every** grammar, judging the caller's `brief_patch` plus the native top-up (derived titles stay exempt, G4) | `test_default_grammar_patch_cannot_smuggle_foreign_motifs` |
+| **H2** two paraphrased decorative motifs (`non_native == native == 2`) were accepted on concepts and kit | the patch threshold is `non_native < 2`: one genuine subject addition is allowed, two non-native motifs is already the generic swap `anti_generic_problems()` rejects. Motif ownership is now token-level, so a paraphrase that borrows another grammar's distinctive token (`paper lanterns`, `izakaya counter`) is refused `motif_not_in_grammar` before spend | `test_technical_world_rejects_two_paraphrased_decorative_motifs` |
+| **H3** presentation text was phrase-exact, so `paper lanterns and izakaya counters under night-market neon` / `regulars at a sake bar` reached the prompt | `tone` and `audience` are validated against a closed **mood/role lexicon** and refused when they use another grammar's distinctive token; unknown words are refused `presentation_text_not_mood_vocabulary` rather than interpolated. This replaces the phrase-exact scan | `test_technical_world_rejects_paraphrased_scene_text` |
+| **H4** free text could put `90 ft-lb`, a part number or an answer-key instruction into the plate request | a digit/unit/instruction fence refuses `POLICY_VIOLATION reason=presentation_names_number_or_answer_content` for `tone`, `audience` **and** `forbidden` entries before spend. A "motif to avoid" may still name a scene (F2's `forbidden: ['lantern district']` is legal) | `test_presentation_text_cannot_name_numbers_or_answer_content` |
+| **H5** (should-fix) `level` was accepted and hashed in the cache key but never rendered | `level` is no longer a `brief_patch` field: a learner-level change is a course mutation, so a level-only patch is refused `VALIDATION_FAILED` before spend instead of buying identical plates under a new key | `test_level_patch_changes_the_plate_or_is_refused` |
+| **H6** (should-fix) README overclaimed the round-4 fences | this section and the corrections above; the explicit shipped rules are `non_native < 2` for motifs, a mood/role lexicon for text, and number/unit/instruction refusal | — |
+
+What the shipped fence does and does not claim:
+
+- It runs on the **caller's** presentation patch, for every grammar, before any world row, job
+  or provider call, on both `concepts` and `kit`.
+- It refuses a motif set with two or more non-native motifs, and any motif/text that borrows
+  another grammar's distinctive vocabulary token.
+- It refuses digits, units and label/answer instructions anywhere in `tone`/`audience`/
+  `forbidden`.
+- It accepts one genuine subject-specific motif (`four-cylinder block`) and mood/role text
+  (`practical, calm, cold overhead light`, `apprentice technicians`). It does not claim to be a
+  semantic classifier; a word that is neither another grammar's vocabulary nor in the mood
+  lexicon is refused rather than silently dropped.
+

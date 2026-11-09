@@ -987,21 +987,239 @@ CLASSIFICATION_BRIEF_FIELDS: tuple[str, ...] = (
     "safety_class",
 )
 
-#: The closed set of keys a caller may patch in a ``world.generate`` request.
+#: The closed set of keys a caller may patch in a ``world.generate`` request. ``level`` is not
+#: here: changing a learner's level is a course mutation, and a level-only patch that never
+#: renders would buy identical plates for a new cache key (H5).
 BRIEF_PATCH_FIELDS: frozenset[str] = frozenset(
-    {"tone", "motifs", "forbidden", "audience", "level"}
+    {"tone", "motifs", "forbidden", "audience"}
+)
+
+#: Tokens that appear in several grammars' vocabulary or are generic mood/lighting words. They
+#: never prove ownership on their own, so a legal presentation word ("cold overhead light") is
+#: not mistaken for another subject's scene.
+_GENERIC_VOCABULARY_TOKENS: frozenset[str] = frozenset(
+    {
+        "and",
+        "the",
+        "with",
+        "from",
+        "into",
+        "over",
+        "under",
+        "one",
+        "two",
+        "light",
+        "lamp",
+        "warm",
+        "cool",
+        "cold",
+        "soft",
+        "quiet",
+        "low",
+        "line",
+        "open",
+        "work",
+        "field",
+        "paper",
+        "desk",
+        "table",
+        "wall",
+        "sky",
+        "night",
+        "day",
+        "source",
+        "single",
+        "left",
+        "right",
+        "top",
+        "body",
+        "note",
+        "book",
+        "card",
+        "stand",
+    }
+)
+
+#: Mood/lighting vocabulary a caller may use for ``tone``. Free text is not interpolated into a
+#: scene description: only these words reach the prompt, so a paraphrase of another art
+#: direction (or a procedure/answer instruction) cannot ride a whitelisted field into the plate.
+MOOD_TOKENS: frozenset[str] = frozenset(
+    {
+        "calm",
+        "practical",
+        "competent",
+        "warm",
+        "everyday",
+        "unhurried",
+        "wry",
+        "coastal",
+        "cold",
+        "cool",
+        "quiet",
+        "bright",
+        "soft",
+        "precise",
+        "patient",
+        "curious",
+        "playful",
+        "serious",
+        "energetic",
+        "gentle",
+        "confident",
+        "grounded",
+        "focused",
+        "airy",
+        "dark",
+        "moody",
+        "minimal",
+        "documentary",
+        "editorial",
+        "handmade",
+        "analog",
+        "natural",
+        "clean",
+        "restrained",
+        "vivid",
+        "muted",
+        "crisp",
+        "steady",
+        "measured",
+        "brisk",
+        "spare",
+        "rich",
+        "overhead",
+        "window",
+        "daylight",
+        "evening",
+        "morning",
+        "neutral",
+        "rustic",
+        "industrial",
+        "light",
+    }
+)
+
+#: Role vocabulary a caller may use for ``audience``.
+AUDIENCE_TOKENS: frozenset[str] = frozenset(
+    {
+        "adult",
+        "learner",
+        "apprentice",
+        "technician",
+        "nurse",
+        "night",
+        "shift",
+        "hobbyist",
+        "student",
+        "professional",
+        "parent",
+        "beginner",
+        "commuter",
+        "cook",
+        "reader",
+        "traveller",
+        "traveler",
+        "researcher",
+        "engineer",
+        "operator",
+        "enthusiast",
+        "audience",
+        "newcomer",
+        "veteran",
+        "practitioner",
+        "staff",
+        "crew",
+        "regular",
+        "local",
+        "visitor",
+    }
+)
+
+_TONE_LEXICON = MOOD_TOKENS
+_AUDIENCE_LEXICON = AUDIENCE_TOKENS
+
+#: Unit and instruction vocabulary that must never reach a plate request (plan §4.4 rules 1/5).
+_UNIT_TOKENS: frozenset[str] = frozenset(
+    {
+        "ft",
+        "lb",
+        "lbs",
+        "nm",
+        "mm",
+        "cm",
+        "psi",
+        "kg",
+        "mph",
+        "amp",
+        "volt",
+        "degree",
+        "degrees",
+        "foot",
+        "pound",
+        "pounds",
+        "inch",
+        "inches",
+    }
+)
+
+_INSTRUCTION_TOKENS: frozenset[str] = frozenset(
+    {
+        "ignore",
+        "render",
+        "draw",
+        "drawn",
+        "write",
+        "spell",
+        "say",
+        "label",
+        "letter",
+        "caption",
+        "title",
+        "answer",
+        "key",
+        "instruction",
+        "sequence",
+        "step",
+        "torque",
+        "measurement",
+        "part",
+        "number",
+        "bolt",
+        "order",
+    }
 )
 
 
+def _grammar_vocabulary_tokens(grammar: str) -> frozenset[str]:
+    return frozenset(
+        token for phrase in _grammar_phrase_tokens(grammar) for token in phrase
+    )
+
+
+def _distinctive_tokens(grammar: str) -> frozenset[str]:
+    """Tokens that identify a grammar's subject vocabulary after generic words are removed."""
+    return _grammar_vocabulary_tokens(grammar) - _GENERIC_VOCABULARY_TOKENS
+
+
 def _motif_owner_grammars(motif: str) -> frozenset[str]:
-    """Which grammar(s) author this motif. Unknown subject-specific motifs own none."""
+    """Which grammar(s) author this motif.
+
+    Exact authored vocabulary always counts. A paraphrase also counts when it uses a token that
+    is distinctive to another grammar's vocabulary: ``paper lanterns`` owns ``lantern``, so it is
+    the field atlas, not an unknown subject cue. Unknown but subject-specific motifs own none.
+    """
     normalized = str(motif).strip().lower()
+    tokens = set(_phrase_tokens(motif))
     owners: set[str] = set()
     for name, record in GRAMMARS.items():
         vocabulary = {item.lower() for item in (*record.motifs, *record.subject_cues)}
         if normalized in vocabulary:
             owners.add(name)
+            continue
+        if tokens & _distinctive_tokens(name):
+            owners.add(name)
     return frozenset(owners)
+
 
 
 def foreign_grammar_motifs(
@@ -1057,43 +1275,96 @@ def _is_native_motif(motif: Any, grammar: str) -> bool:
     return _phrase_tokens(motif) in _grammar_phrase_tokens(grammar)
 
 
-#: Free-text presentation fields that are interpolated into the image prompt.
+#: Presentation fields that are interpolated into the image prompt.
 PRESENTATION_TEXT_FIELDS: tuple[str, ...] = ("tone", "audience")
+
+#: Lexicon each presentation field is restricted to. Unknown words are refused rather than
+#: interpolated, so free text cannot smuggle a scene, a number or an answer instruction in.
+_PRESENTATION_LEXICON: dict[str, frozenset[str]] = {
+    "tone": _TONE_LEXICON,
+    "audience": _AUDIENCE_LEXICON,
+}
+
+
+def _names_numbers_or_answer_content(value: Any) -> bool:
+    """Digits, units, or an imperative that names text/labels/answer content."""
+    import re
+
+    text = str(value)
+    if re.search(r"\d", text):
+        return True
+    tokens = set(_phrase_tokens(text))
+    return bool(tokens & (_UNIT_TOKENS | _INSTRUCTION_TOKENS))
 
 
 def foreign_presentation_text(
     fields: Mapping[str, Any], grammar: str
 ) -> list[tuple[str, str, tuple[str, ...]]]:
-    """Presentation text that names another grammar's scene.
+    """Presentation text that names another grammar's scene (token-level ownership).
 
-    ``tone`` and ``audience`` reach the image prompt verbatim, so they are part of the same
-    fence as ``motifs``: a workshop world may describe a calm, practical mood but not a lantern
-    district. Matching is case- and plural-normalised and vocabulary-based, so a paraphrase of
-    another art direction is refused instead of only the exact authored phrase.
+    ``tone`` and ``audience`` reach the image prompt, so they are part of the same fence as
+    ``motifs``: a workshop world may describe a calm, practical mood but not a lantern district.
+    Matching is case/plural-normalised and token-based, so a paraphrase ("paper lanterns",
+    "night market") is refused instead of only the exact authored phrase.
     """
     selected = grammar_record(grammar).name
-    vocabulary: dict[tuple[str, ...], set[str]] = {}
-    for name in GRAMMARS:
-        if name == selected:
-            continue
-        for phrase in _grammar_phrase_tokens(name):
-            if len(phrase) == 1 and len(phrase[0]) < 4:
-                continue
-            vocabulary.setdefault(phrase, set()).add(name)
     problems: list[tuple[str, str, tuple[str, ...]]] = []
     for field in PRESENTATION_TEXT_FIELDS:
         if field not in fields:
             continue
-        tokens = _phrase_tokens(fields[field])
-        for phrase, owners in vocabulary.items():
-            width = len(phrase)
-            windows = (
-                tokens[index : index + width] == phrase
-                for index in range(len(tokens) - width + 1)
-            )
-            if any(windows):
-                problems.append((field, " ".join(phrase), tuple(sorted(owners))))
+        tokens = set(_phrase_tokens(fields[field]))
+        for name in GRAMMARS:
+            if name == selected:
+                continue
+            hits = sorted(tokens & _distinctive_tokens(name))
+            if hits:
+                problems.append((field, hits[0], (name,)))
                 break
+    return problems
+
+
+def presentation_text_problems(
+    fields: Mapping[str, Any], grammar: str
+) -> list[tuple[str, str, str]]:
+    """Validate free-text presentation fields before they reach a prompt.
+
+    Returns ``(field, reason, detail)`` triples. The fences, in order:
+
+    1. ``presentation_names_number_or_answer_content`` — digits, units or label/answer wording.
+    2. ``presentation_names_foreign_grammar`` — another grammar's distinctive vocabulary.
+    3. ``presentation_text_not_mood_vocabulary`` — anything outside the mood/role lexicon.
+
+    Rule 3 is the one that makes the fence finite: a block-list of every paraphrase of every
+    other art direction does not exist, but a mood lexicon does.
+    """
+    problems: list[tuple[str, str, str]] = []
+    for field in PRESENTATION_TEXT_FIELDS:
+        if field not in fields:
+            continue
+        value = fields[field]
+        if _names_numbers_or_answer_content(value):
+            problems.append((field, "presentation_names_number_or_answer_content", str(value)))
+            continue
+        foreign = foreign_presentation_text({field: value}, grammar)
+        if foreign:
+            _field, detail, owners = foreign[0]
+            problems.append((field, "presentation_names_foreign_grammar", detail))
+            continue
+        tokens = set(_phrase_tokens(value))
+        unknown = sorted(tokens - _PRESENTATION_LEXICON[field])
+        if unknown:
+            problems.append(
+                (field, "presentation_text_not_mood_vocabulary", ", ".join(unknown))
+            )
+    return problems
+
+
+def forbidden_presentation_problems(items: Sequence[Any]) -> list[tuple[str, str]]:
+    """Validate "motifs to avoid": negatives may name a scene, never a value or an instruction."""
+    problems: list[tuple[str, str]] = []
+    for item in items:
+        if _names_numbers_or_answer_content(item):
+            problems.append((str(item), "presentation_names_number_or_answer_content"))
     return problems
 
 
@@ -1102,14 +1373,15 @@ def presentation_motif_problems(
 ) -> tuple[str, ...]:
     """The runtime form of the anti-generic rule for a caller-supplied motif set.
 
-    Plan §4.4 rule 2: a world keeps at least two of its grammar's own cues, and another
-    subject's motifs may never outnumber them. Unknown but subject-specific motifs are allowed
-    (a 'four-cylinder block' in a service bay is real), paraphrased decorative clusters are not.
+    Plan §4.4 rule 2: a patched motif set may add subject-specific cues, but two or more
+    non-native motifs is already a generic swap — the project's own ``anti_generic_problems()``
+    fails at two shared motifs — so the patch threshold must not be looser than the test.
+    One genuine subject addition is allowed.
     """
     native_vocabulary = _grammar_phrase_tokens(grammar)
     native = sum(1 for motif in motifs if _phrase_tokens(motif) in native_vocabulary)
     non_native = len(motifs) - native
-    if native < 2 or (non_native and non_native > native):
+    if non_native >= 2:
         return ("presentation_motifs_not_subject_specific",)
     return ()
 
@@ -1770,30 +2042,65 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 grammar=grammar,
                 owner_grammars=list(owners),
             )
-        foreign_text = foreign_presentation_text(patched_text, grammar)
+        foreign_text = presentation_text_problems(patched_text, grammar)
         if foreign_text:
-            field, phrase, owners = foreign_text[0]
+            field, reason, detail = foreign_text[0]
+            if reason == "presentation_names_foreign_grammar":
+                owner = grammar
+                for name in GRAMMARS:
+                    if name != grammar and detail in _distinctive_tokens(name):
+                        owner = name
+                        break
+                message = (
+                    f"brief_patch.{field} names the {owner!r} art direction, not {grammar!r}; "
+                    "presentation text may describe this world's mood but never another "
+                    "subject's scene."
+                )
+            elif reason == "presentation_names_number_or_answer_content":
+                message = (
+                    f"brief_patch.{field} names a number, unit, label or answer instruction; "
+                    "a plate is orientation only, never a procedure, measurement or answer."
+                )
+            else:
+                message = (
+                    f"brief_patch.{field} uses words outside the mood/role vocabulary "
+                    f"({detail!r}); a world may set a mood, never a scene description."
+                )
             raise _policy_error(
-                "presentation_names_foreign_grammar",
-                f"brief_patch.{field} names the {owners[0]!r} art direction, not {grammar!r}; "
-                "presentation text may describe this world's mood but never another "
-                "subject's scene.",
+                reason,
+                message,
                 field=field,
-                phrase=phrase,
+                phrase=detail,
                 grammar=grammar,
-                owner_grammars=list(owners),
             )
-        if patched_motifs and grammar != DEFAULT_GRAMMAR:
-            # Plan §4.4 rule 2 at runtime: a paraphrase of another art direction is not
-            # exempt just because it is not exact authored vocabulary.
-            problems = presentation_motif_problems(brief.motifs, grammar)
+        patched_forbidden = []
+        if isinstance(raw_patch, Mapping):
+            patched_forbidden = [
+                str(item) for item in (raw_patch.get("forbidden") or ()) if str(item).strip()
+            ]
+        forbidden_problems = forbidden_presentation_problems(patched_forbidden)
+        if forbidden_problems:
+            item, reason = forbidden_problems[0]
+            raise _policy_error(
+                reason,
+                "a 'motifs to avoid' entry may name a scene, never a number, unit, label or "
+                "answer instruction.",
+                field="forbidden",
+                phrase=item,
+                grammar=grammar,
+            )
+        if patched_motifs:
+            # Plan §4.4 rule 2 at runtime, for every grammar including the default: a patch may
+            # add one genuine subject cue, but two or more non-native motifs is already the
+            # generic swap the project's own anti-generic test rejects.
+            problems = presentation_motif_problems(patched_motifs, grammar)
             if problems:
                 raise _policy_error(
                     problems[0],
-                    "a patched motif set must keep at least two of this grammar's own "
-                    "subject cues, and other subjects' motifs may not outnumber them.",
+                    "a patched motif set may add one subject-specific cue but not a second "
+                    "non-native motif; a generic swap is refused before spend.",
                     grammar=grammar,
-                    motifs=list(brief.motifs),
+                    motifs=patched_motifs,
                 )
         if row is None:
             if stage != "concepts":
