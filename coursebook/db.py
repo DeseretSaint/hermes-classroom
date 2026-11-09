@@ -23,7 +23,9 @@ One path is an exception, and it is deliberate: under :data:`SINGLE_HOME_FLAG` t
 opened through the host's private ``hermes_cli.sqlite_util.open_db`` (:func:`_host_open_db`),
 because the public seam takes a filename and would re-resolve the escaped profile. That coupling is
 guarded — module, attribute and call shape — and fails as :class:`HostSeamUnavailable` naming the
-moved surface (``docs/ARCHITECTURE.md`` §"Host seam debt", H-115-D4).
+moved surface (``docs/ARCHITECTURE.md`` §"Host seam debt", H-115-D4). A **background worker** pinned
+with :func:`use_store_scope` takes the same path-based open for the same reason: ``plugin_db`` would
+re-resolve the ambient home and reopen a different (or brand-new, empty) database (H-182/D6).
 """
 
 from __future__ import annotations
@@ -35,6 +37,7 @@ import os
 import sqlite3
 import threading
 from contextlib import contextmanager
+from contextvars import ContextVar, Token
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator, cast
@@ -58,6 +61,19 @@ SINGLE_HOME_FLAG = "HERMES_COURSEBOOK_SINGLE_HOME"
 
 _TX_DEPTH = 0
 _TX_LOCK = threading.Lock()
+
+#: The store root a **background worker** was pinned to when it was started (H-182/D6).
+#:
+#: The RPC path always runs inside a request that carries a profile scope, so ``plugin_db`` (or the
+#: single-home pin) resolves the right home. A reaper/pump thread has no request: it resolves
+#: ``get_hermes_home()`` from whatever context the plugin loader happened to leave behind. In the
+#: isolated ``hermes serve`` topology that was a home with no ``jobs`` table (and ``connect()``
+#: *created* the file), so the reaper raised ``no such table: jobs`` every five seconds and H-66
+#: reconciliation never ran. ``executor.start_tick`` captures :func:`store_scope` in the registering
+#: context — the same resolution the RPC would get — and installs it here inside the thread, so a
+#: background worker reads exactly the database the pane reads. It is a context variable, not a
+#: module global, so one profile's worker can never redirect another's connection.
+_STORE_SCOPE: ContextVar[Path | None] = ContextVar("coursebook_store_scope", default=None)
 
 
 class DatabaseUnavailable(RuntimeError):
@@ -307,13 +323,42 @@ def store_root() -> Path:
     call. Existence probes and other reads must use this one: a lifecycle hook or a health read
     that has found nothing must leave the filesystem exactly as it found it (``PREBUILD_SPEC.md``
     §6/§7, CB-014-R1 R1/R3).
+
+    A pinned background scope wins over every ambient rule (:func:`store_scope`).
     """
+    scoped = _STORE_SCOPE.get()
+    if scoped is not None:
+        return scoped
     pinned = single_home_pin()
     if pinned is not None:
         return pinned / "plugin-data" / PACKAGE_ID
     from hermes_constants import get_hermes_home
 
     return get_hermes_home() / "plugin-data" / PACKAGE_ID
+
+
+def store_scope() -> Path:
+    """The store root **this** context resolves to, for a worker started from it (H-182/D6).
+
+    Call it in the context that will outlive the worker's start (the plugin loader, a request, a
+    test) and hand the result to :func:`use_store_scope` inside the worker thread. Resolving here
+    — not in the thread — is the whole point: it uses the same rule a request uses.
+    """
+    return store_root()
+
+
+@contextmanager
+def use_store_scope(root: Path | str | None) -> Iterator[None]:
+    """Pin this context (and threads started under it) to one store root.
+
+    ``None`` clears the pin. Only a background worker sets this; the RPC path never does, so a
+    request keeps the host's per-profile resolution.
+    """
+    token: Token = _STORE_SCOPE.set(Path(root) if root is not None else None)
+    try:
+        yield
+    finally:
+        _STORE_SCOPE.reset(token)
 
 
 def data_root() -> Path:
@@ -369,7 +414,13 @@ def connect() -> sqlite3.Connection:
     the request's ``?profile=`` scope again.
     """
     try:
-        if single_home_pin() is None:
+        scoped = _STORE_SCOPE.get()
+        if scoped is not None:
+            # A background worker was pinned to one store root (`use_store_scope`). Open that
+            # exact file: `plugin_db` resolves the directory from the ambient home, which is the
+            # drift this pin exists to stop (H-182/D6).
+            connection = _host_open_db(scoped / "data.db")
+        elif single_home_pin() is None:
             from plugins.plugin_storage import plugin_db
 
             connection = plugin_db(PACKAGE_ID)
