@@ -138,6 +138,72 @@ class TutorCase(KernelCase):
                 ),
             )
 
+    def seed_authored_page(self, *, answer: str = SECRET_ANSWER) -> None:
+        """Serve an authored page whose worked-example answer *is* the check's expected answer.
+
+        This is the ordinary authored shape: generation writes a worked example whose answer is
+        the same string the check grades. ``lesson.page`` may show it to the learner, but the
+        tutor's provider envelope must not carry it.
+        """
+        with db.read() as connection:
+            generation.ensure_schema(connection)
+        plan_hash = domain.plan_hash(self.plan_id)
+        now = db.utcnow()
+        with db.transaction() as connection:
+            ordinal = connection.execute(
+                "SELECT ordinal FROM objectives WHERE id = ?", (self.objective_id,)
+            ).fetchone()["ordinal"]
+            connection.execute(
+                "INSERT INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint,"
+                " plan_hash, document_json, research_json, generation_state, result_json, created_at)"
+                " VALUES (?, ?, ?, 'fp-tutor', ?, '{}', '{}', 'validated', '{}', ?)",
+                ("gpd_tutor_test", self.plan_id, self.course_id, plan_hash, now),
+            )
+            connection.execute(
+                "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title,"
+                " lesson_intent, objective_refs_json, context_needs_json, source_ids_json)"
+                " VALUES (?, ?, 1, ?, 'Cell respiration', 'Explain the organelle', ?, '[]', '[]')",
+                ("gps_tutor_test", self.plan_id, plan_hash, json.dumps([ordinal])),
+            )
+            page = {
+                "section_title": "Cell respiration",
+                "segments": [
+                    {
+                        "kind": "explain",
+                        "heading": "Where the energy comes from",
+                        "body": "Cells release usable energy by breaking down glucose in a series "
+                        "of steps.",
+                    }
+                ],
+                "worked_example": {
+                    "prompt": "Name the organelle that releases usable energy.",
+                    "steps": [
+                        "Recall where glucose is broken down",
+                        "Name the structure that does it",
+                    ],
+                    "answer": answer,
+                },
+                "learner_explanation": "The lesson keeps the steps separate so you can name each one.",
+                # A private note is not a learner-facing context source either.
+                "parent_notes": WORKED_EXAMPLE_SECRET,
+                "sources": [],
+                "media": [],
+            }
+            connection.execute(
+                "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state,"
+                " page_json, media_json, rejection_reasons_json, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, 1, 'validated', ?, '[]', '[]', ?, ?)",
+                (
+                    "gln_tutor_test",
+                    self.plan_id,
+                    "gps_tutor_test",
+                    plan_hash,
+                    json.dumps(page),
+                    now,
+                    now,
+                ),
+            )
+
     # ── helpers ────────────────────────────────────────────────────────
     def ask(self, *, question: str = "What does the organelle do?", mode: str = "ask",
             block_id: str | None = None, selected_text: str | None = None,
@@ -174,6 +240,9 @@ class TutorCase(KernelCase):
 
 class TutorAskTest(TutorCase):
     def test_tutor_context_excludes_answer_key(self) -> None:
+        # The authored page is the ordinary served shape and its worked example's answer is the
+        # same string the check grades: the exact leak this test exists to catch.
+        self.seed_authored_page()
         blocks = self.page_blocks()
         self.assertTrue(blocks)
         self.host.replies = [
@@ -188,6 +257,10 @@ class TutorAskTest(TutorCase):
         sent = self.context_text()
         for secret in (SECRET_ANSWER, SECRET_ALT, WORKED_EXAMPLE_SECRET):
             self.assertNotIn(secret, sent, "answer key reached the tutor context")
+        # The worked example's answer line is not projected either. The prompt and steps are
+        # legitimate scaffolding and must survive.
+        self.assertNotIn("Answer:", sent, "the worked example's answer line reached the context")
+        self.assertIn("Recall where glucose is broken down", sent)
         # The sealed spec keys themselves are not sent, even with a benign value.
         for forbidden in ("reference_json", "rubric_json", "accepted_answers", "worked_example"):
             self.assertNotIn(forbidden, sent)
@@ -208,6 +281,18 @@ class TutorAskTest(TutorCase):
         history_text = json.dumps(history, ensure_ascii=False)
         for secret in (SECRET_ANSWER, SECRET_ALT):
             self.assertNotIn(secret, history_text)
+
+    def test_tutor_withholds_the_worked_example_answer(self) -> None:
+        """The second-layer guard seals the *page's* worked answer, not only the check reference."""
+        worked = "oxidative phosphorylation happens at the inner membrane"
+        self.seed_authored_page(answer=worked)
+        blocks = self.page_blocks()
+        self.host.replies = [{"answer": f"The answer is {worked}.", "citations": []}]
+        response = self.ask(block_id=blocks[0]["id"])
+        self.assertTrue(response["ok"], response.get("error"))
+        self.assertEqual(response["result"]["state"], "answer_withheld")
+        self.assertEqual(response["result"]["citations"], [])
+        self.assertNotIn(worked, self.context_text())
 
     def test_tutor_has_no_tool_or_shell_access(self) -> None:
         import coursebook.tutor as tutor

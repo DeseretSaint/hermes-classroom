@@ -118,13 +118,38 @@ def _text(value: Any, limit: int) -> str:
 # ── context envelope ────────────────────────────────────────────────────────
 
 
+def _without_worked_answer(page: Mapping[str, Any]) -> dict[str, Any]:
+    """A projection of the page whose worked example keeps its prompt and steps, not its answer.
+
+    The served page is learner-facing: its worked example may legitimately show the answer. The
+    tutor's provider envelope may not carry an expected response, and generation normally writes
+    the same string the open check grades. So the document projection gets the scaffold only;
+    the caller keeps the sealed answer for :func:`sealed_forms`.
+    """
+    projected = dict(page)
+    for holder in (projected, projected.get("document")):
+        if not isinstance(holder, Mapping):
+            continue
+        example = holder.get("worked_example")
+        if not isinstance(example, Mapping) or "answer" not in example:
+            continue
+        stripped = {key: value for key, value in example.items() if key != "answer"}
+        if holder is projected:
+            projected["worked_example"] = stripped
+        else:
+            nested = dict(projected["document"])
+            nested["worked_example"] = stripped
+            projected["document"] = nested
+    return projected
+
+
 def _lesson_document(connection, objective, lesson_run_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
     """The served document for this run, plus the authored page when one exists.
 
     The authored page is preferred exactly as ``lesson.page`` prefers it; a run without one (a
     pack/composed section, a chat transcript) uses the durable ``lesson_segments`` projection.
-    Answer-key material is never part of a document block, and the page's worked example is not
-    read into the context at all.
+    Answer-key material is never part of a document block, and the page's worked example answer
+    is stripped before projection so it cannot reach the provider envelope.
     """
     kernel = _kernel()
     authored = kernel._authored_lesson_page(connection, objective)
@@ -133,7 +158,7 @@ def _lesson_document(connection, objective, lesson_run_id: str) -> tuple[dict[st
         if authored["media"]:
             page["media"] = authored["media"]
         try:
-            document = lesson_document.document_from_page(page)
+            document = lesson_document.document_from_page(_without_worked_answer(page))
         except lesson_document.LessonDocumentError:
             document = None
         if document is not None and document.get("blocks"):
@@ -382,6 +407,7 @@ def _resolved_context(connection, payload: Mapping[str, Any]) -> dict[str, Any]:
         "check": check,
         "stimulus": stimulus,
         "assist": assist,
+        "page": page,
         "context": context,
     }
 
@@ -712,7 +738,9 @@ def ask(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[st
 
     state = "answered"
     if check_open:
-        forms = sealed_forms(kernel._json_load(resolved["check"]["reference_json"], {}))
+        forms = sealed_forms(
+            kernel._json_load(resolved["check"]["reference_json"], {}), resolved.get("page")
+        )
         if leaks_answer(answer, forms):
             answer = WITHHELD_ANSWER
             citations = []
