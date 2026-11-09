@@ -6724,26 +6724,133 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
 /**
  * How much course a brief asks for. Contract enum: `single` | `short` | `full`.
  *
- * H-28 (UX-02/UX-09) makes scope the first question and gives each answer one sentence saying what
- * the learner receives. The ids stay exactly the contract's; only the words a person reads change.
+ * H-179 — the learner chooses a journey, not a scope label. Each row carries the shape's name, a
+ * one-line consequence, and the two numbers that are actually enforced:
+ *
+ *   sections  `coursebook/generation.py` authors one section per blueprint objective, so the
+ *             section band is `SCOPE_EXPECTATIONS[key]["blueprint_objectives"]`: (1,1), (3,6),
+ *             (12,40). `tests/test_desktop_create_flow` re-reads that Python table and refuses
+ *             drift, so this is a checked copy rather than a second authority.
+ *   trail     how many stops the card's schematic draws. It is the band's floor, capped at six so
+ *             the miniature stays a trail; `full` carries a dashed tail because its band is open.
+ *
+ * The research floor is not duplicated here: `SCOPE_MIN_DEPTH` below is the same table
+ * `coursebook.research.effective_depth()` applies.
  */
 const COURSE_SCOPES = [
   {
     id: 'single',
-    label: 'A single lesson',
-    consequence: 'One lesson with one check — best when you have a task in front of you today.'
+    label: 'One lesson',
+    sections: [1, 1],
+    trail: 1,
+    consequence: 'One stop: a single section with one check, for a task in front of you today.'
   },
   {
     id: 'short',
-    label: 'A short course (a few sessions)',
-    consequence: 'A few sessions that build on each other, each with its own check.'
+    label: 'Short course',
+    sections: [3, 6],
+    trail: 3,
+    consequence: 'A few stops that build on each other, each with its own check.'
   },
   {
     id: 'full',
-    label: 'A full course (weeks or months)',
-    consequence: 'A longer course split into units; you review the plan before any lesson is written.'
+    label: 'Full course',
+    sections: [12, 40],
+    trail: 6,
+    consequence: 'A long trail split into units, planned in full before a lesson is written.'
   }
 ]
+
+/** The section count as the backend states it: an exact number or the band it enforces. */
+function scopeSectionBand(scope) {
+  const found = COURSE_SCOPES.find((option) => option.id === scope)
+  if (!found) return ''
+  const [low, high] = found.sections
+  return low === high ? plural(low, 'section', 'sections') : `${low}–${high} sections`
+}
+
+/** One card's facts: the sections the plan will author and the research depth it will run. */
+function scopeFacts(scope) {
+  const band = scopeSectionBand(scope)
+  if (!band) return ''
+  return `${band} · ${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} research depth · several minutes`
+}
+
+/**
+ * The small trail a shape card carries (H-179). Same route language as the path: one line, stops
+ * left to right, the first stop marked. It is decorative and `aria-hidden`; the band beside it is
+ * the number a learner can hold the backend to, and the dashed tail only appears where the band
+ * is open, so the miniature never claims a fixed length the plan does not promise.
+ */
+function CbShapeTrail({ scope, height }) {
+  const found = COURSE_SCOPES.find((option) => option.id === scope)
+  const stops = found ? found.trail : 3
+  const open = stops > 1
+  const bend = scope === 'full' ? 2 : 1
+  const points = []
+  for (let index = 0; index < stops; index += 1) {
+    const t = stops === 1 ? 0.35 : index / (stops - 1)
+    points.push({
+      x: 6 + t * (open ? 96 : 108),
+      y: 22 - Math.sin(t * Math.PI * bend) * (scope === 'single' ? 4 : 7)
+    })
+  }
+  const last = points[points.length - 1]
+  const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ')
+  return jsxs('svg', {
+    'data-cb-scope-trail': scope || '',
+    'aria-hidden': 'true',
+    focusable: 'false',
+    viewBox: '0 0 120 40',
+    preserveAspectRatio: 'none',
+    style: { display: 'block', width: '100%', height: `${Number(height) || 40}px`, overflow: 'hidden' },
+    children: [
+      jsx('path', {
+        d: line,
+        fill: 'none',
+        stroke: 'var(--cb-ink-soft)',
+        strokeWidth: '1.5',
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        opacity: 0.6
+      }, 'line'),
+      open
+        ? jsx('path', {
+            d: `M${last.x.toFixed(1)} ${last.y.toFixed(1)} L116 ${last.y.toFixed(1)}`,
+            fill: 'none',
+            stroke: 'var(--cb-rule)',
+            strokeWidth: '1.5',
+            strokeDasharray: '2 3',
+            strokeLinecap: 'round'
+          }, 'tail')
+        : null,
+      ...points.map((point, index) =>
+        jsx('circle', {
+          cx: point.x.toFixed(1),
+          cy: point.y.toFixed(1),
+          r: index === 0 ? 4 : 3,
+          fill: index === 0 ? 'var(--cb-lamp)' : 'var(--cb-paper)',
+          stroke: index === 0 ? 'var(--cb-lamp)' : 'var(--cb-ink-soft)',
+          strokeWidth: '1.5'
+        }, `stop-${index}`)
+      )
+    ]
+  })
+}
+
+/**
+ * H-179: the four learner uses, as one segmented choice instead of a stack of rows. Labels are
+ * short enough for the track at a 460px route; the plain consequence underneath is the recipe's
+ * own description from `RECIPE_COPY`, so the control adds no second copy authority and the words
+ * "recipe" and "dials" never reach the screen. `parent` is not a learner choice: Parent Studio is
+ * a separate entry on the rail.
+ */
+const CB_USE_OPTIONS = Object.freeze([
+  { id: 'one_off', label: 'One task' },
+  { id: 'casual', label: 'Little at a time' },
+  { id: 'committed', label: 'A steady plan' },
+  { id: 'companion', label: 'Alongside study' }
+])
 
 /**
  * Honest time expectation per scope. No invented minutes: a plan has no `time_estimate` until it
@@ -6950,14 +7057,14 @@ function effectiveDepth(depth, scope) {
  * The three steps, in the words a learner uses, each with the next thing that will happen.
  *
  * H-170: the goal is first. The first-run plate promises "name one goal, review the plan", so the
- * flow has to open on the goal field — a first-time learner should never be asked "a single
- * lesson, a short course or a full course" before they have said what they want to learn. Size
- * stays a required choice on step 2 (no default is preselected) and Review still gates the single
- * mutation.
+ * flow has to open on the goal field — a first-time learner should never be asked "one lesson, a
+ * short course or a full course" before they have said what they want to learn. Size stays a
+ * required choice on step 2 (no default is preselected) and Review still gates the single
+ * mutation. H-179 renames the middle step to what it now is: the shape of the journey.
  */
 const CREATE_STEP_SPINE = Object.freeze([
-  { n: 1, name: 'Goal', next: 'Next: choose how much course you want.' },
-  { n: 2, name: 'Size', next: 'Next: review what will be created.' },
+  { n: 1, name: 'Goal', next: 'Next: choose the shape of the course.' },
+  { n: 2, name: 'Shape', next: 'Next: check the trailhead before it is created.' },
   { n: 3, name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
 
@@ -7024,11 +7131,19 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const [revision, setRevision] = useState(0)
   const [error, setError] = useState(null)
   const keyRef = useRef(null)
+  const scopeCardRefs = useRef([])
+  const [focusScopeId, setFocusScopeId] = useState(null)
+  // The route column, not the window: in a narrow window (a chat and the explorer open) the route
+  // can be ~200px wide, where a four-option SDK track would scroll sideways. The uses fall back to
+  // a 2×2 segmented block there — still one choice, still no second primary.
+  const routeWidth = useCbViewportWidth()
+  const narrowUses = routeWidth > 0 && routeWidth < 380
 
   const goalInvalid = step === 1 && goal.trim().length === 0
-  // Goal step needs the goal (the title is suggested from it), size step needs a scope. Review has
-  // everything, so it is never blocked by this gate.
-  const canAdvance = step === 1 ? goal.trim().length > 0 && title.trim().length > 0 : Boolean(scope)
+  // H-179: the goal alone opens the flow. The course name is suggested and optional — it lives
+  // behind `Name (optional)` and can never block Continue. The shape step still needs a real
+  // choice, and Review has everything, so it is never blocked by this gate.
+  const canAdvance = step === 1 ? goal.trim().length > 0 : Boolean(scope)
 
   const changeGoal = useCallback(
     (next) => {
@@ -7064,7 +7179,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     const outcome = await startLearnerPlan({
       call: rpc,
       key: keyRef.current,
-      title: title.trim(),
+      // The name is optional, the contract's title is not: an empty field falls back to the
+      // suggestion the learner has been reading since step 1, never to an invented name.
+      title: title.trim() || suggestedTitle(goal),
       goal: goal.trim(),
       recipe,
       dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
@@ -7163,7 +7280,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     })
   }
 
-  const stepTitle = step === 1 ? 'What do you want to be able to do?' : step === 2 ? 'How much course do you want?' : 'Review and create'
+  const stepTitle =
+    step === 1
+      ? 'What do you want to be able to do?'
+      : step === 2
+        ? 'What shape should this course take?'
+        : 'Your trailhead'
+  // The name the learner will see: theirs if they typed one, else the suggestion from the goal.
+  const displayTitle = title.trim() || suggestedTitle(goal)
 
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col gap-4 py-2',
@@ -7213,8 +7337,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children: CREATE_STEP_SPINE[step - 1].next
               })
             ]
-          }),
-          jsx(sdk.Button, { onClick: onCancel, size: 'sm', variant: 'text', children: 'Cancel' })
+          })
         ]
       }),
       step === 1
@@ -7245,25 +7368,38 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   jsx(GoalGallery, { onChoose: changeGoal })
                 ]
               }),
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
+              jsxs('details', {
+                'data-cb-title-disclosure': '',
+                className: 'text-xs',
                 children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
-                  jsx(sdk.Input, {
-                    id: 'cb-title',
-                    onChange: (event) => {
-                      setTitleEdited(true)
-                      setTitle(event.target.value)
-                    },
-                    placeholder: TITLE_PLACEHOLDER,
-                    value: title
+                  jsx('summary', {
+                    className: 'cursor-pointer text-xs text-(--ui-text-secondary)',
+                    children: [
+                      jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Name (optional)' }, 'label'),
+                      jsx('span', { children: displayTitle ? ` — ${displayTitle}` : ' — suggested from your goal' }, 'value')
+                    ]
                   }),
-                  jsx('div', {
-                    'data-cb-title-hint': '',
-                    className: 'text-xs text-(--ui-text-secondary)',
-                    children: titleEdited
-                      ? 'This is the name you will see in your course list.'
-                      : 'Suggested from your goal — edit it if you like. This is the name you will see in your course list.'
+                  jsxs('div', {
+                    className: 'mt-2 flex flex-col gap-1.5',
+                    children: [
+                      jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Course name' }),
+                      jsx(sdk.Input, {
+                        id: 'cb-title',
+                        onChange: (event) => {
+                          setTitleEdited(true)
+                          setTitle(event.target.value)
+                        },
+                        placeholder: TITLE_PLACEHOLDER,
+                        value: title
+                      }),
+                      jsx('div', {
+                        'data-cb-title-hint': '',
+                        className: 'text-xs text-(--ui-text-secondary)',
+                        children: titleEdited
+                          ? 'This is the name you will see in your course list.'
+                          : 'Suggested from your goal — edit it if you like. This is the name you will see in your course list.'
+                      })
+                    ]
                   })
                 ]
               })
@@ -7276,46 +7412,126 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             children: [
               jsx('p', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: 'Pick how much course you want. Nothing is created yet, and you can go back at any point.'
+                children: 'Pick the shape of the journey. Nothing is created yet, and you can go back at any point.'
               }),
               jsx('div', {
                 role: 'listbox',
-                'aria-label': 'How much course you want',
-                className: 'flex flex-col gap-1.5',
-                children: COURSE_SCOPES.map((option) => {
+                'aria-label': 'The shape of this course',
+                'data-cb-scope-cards': '',
+                onKeyDown: (event) => {
+                  // A listbox is one tab stop: arrows move the choice and the focus together.
+                  const keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
+                  if (event.key === 'Home' || event.key === 'End') {
+                    const index = event.key === 'Home' ? 0 : COURSE_SCOPES.length - 1
+                    event.preventDefault()
+                    chooseScope(COURSE_SCOPES[index].id)
+                    const node = scopeCardRefs.current[index]
+                    if (node && node.focus) node.focus()
+                    return
+                  }
+                  const delta = keys[event.key]
+                  if (!delta) return
+                  event.preventDefault()
+                  const ids = COURSE_SCOPES.map((entry) => entry.id)
+                  const current = Math.max(0, ids.indexOf(scope))
+                  const next = (current + delta + ids.length) % ids.length
+                  chooseScope(ids[next])
+                  const node = scopeCardRefs.current[next]
+                  if (node && node.focus) node.focus()
+                },
+                style: {
+                  display: 'grid',
+                  // `min(100%, 15rem)` keeps the track inside a 200px route: at that width the
+                  // card takes the column instead of overflowing it, and the text wraps.
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 15rem), 1fr))',
+                  gap: '0.6rem',
+                  minWidth: 0
+                },
+                children: COURSE_SCOPES.map((option, index) => {
                   const selected = scope === option.id
                   // H-64: the whole card is the hit target and carries the selected state in words
-                  // as well as in `aria-selected`. The small "Choose" button left most of the card
-                  // dead to a click and made the state hard to see.
+                  // as well as in `aria-selected`. H-179: the card is the shape — name, trail,
+                  // consequence and the two numbers the plan will honour — not a radio row.
                   return jsx(
                     'button',
                     {
                       type: 'button',
                       role: 'option',
+                      ref: (node) => {
+                        scopeCardRefs.current[index] = node
+                      },
                       'aria-selected': selected,
                       'data-cb-scope-option': option.id,
+                      'data-cb-scope-selected': selected ? 'true' : 'false',
                       onClick: () => chooseScope(option.id),
-                      className: `flex w-full items-start justify-between gap-3 rounded-[2.5px] border px-3 py-2.5 text-left transition-colors ${
-                        selected
-                          ? 'border-(--cb-accent) bg-(--cb-accent-soft)'
-                          : 'border-(--cb-rule) hover:border-(--cb-accent)'
-                      }`,
+                      onFocus: () => setFocusScopeId(option.id),
+                      onBlur: () => setFocusScopeId(null),
+                      style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.35rem',
+                        minWidth: 0,
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '0.7rem 0.8rem 0.75rem',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        color: 'var(--cb-ink)',
+                        background: selected ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
+                        border: selected ? '2px solid var(--cb-lamp)' : '1px solid var(--cb-rule)',
+                        borderRadius: '2px',
+                        outline: focusScopeId === option.id ? '2px solid var(--cb-accent)' : 'none',
+                        outlineOffset: '2px'
+                      },
                       children: [
                         jsxs('span', {
-                          className: 'flex min-w-0 flex-col gap-0.5',
+                          style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem' },
                           children: [
-                            jsx('span', { className: 'text-xs font-medium', children: option.label }),
                             jsx('span', {
-                              className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                              children: option.consequence
+                              style: {
+                                fontFamily: CB_SERIF,
+                                fontSize: CB_TYPE.lead,
+                                fontWeight: 600,
+                                letterSpacing: '-0.01em'
+                              },
+                              children: option.label
+                            }),
+                            jsx('span', {
+                              style: {
+                                flexShrink: 0,
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.caption,
+                                fontWeight: 600,
+                                color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)'
+                              },
+                              children: selected ? 'Selected' : 'Choose'
                             })
                           ]
                         }),
                         jsx('span', {
-                          className: selected
-                            ? 'shrink-0 text-xs font-medium'
-                            : 'shrink-0 text-xs text-(--ui-text-secondary)',
-                          children: selected ? 'Selected' : 'Choose'
+                          'aria-hidden': 'true',
+                          style: { display: 'block', height: '34px', margin: '0.05rem 0 0.1rem' },
+                          children: jsx(CbShapeTrail, { scope: option.id, height: 34 })
+                        }),
+                        jsx('span', {
+                          style: {
+                            fontFamily: CB_SANS,
+                            fontSize: CB_TYPE.caption,
+                            lineHeight: 1.5,
+                            color: 'var(--cb-ink)'
+                          },
+                          children: option.consequence
+                        }),
+                        jsx('span', {
+                          'data-cb-scope-facts': option.id,
+                          style: {
+                            fontFamily: CB_SANS,
+                            fontSize: CB_TYPE.caption,
+                            lineHeight: 1.45,
+                            color: 'var(--cb-ink-soft)'
+                          },
+                          children: scopeFacts(option.id)
                         })
                       ]
                     },
@@ -7329,29 +7545,70 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 id: 'cb-scope-time',
                 children: scope
                   ? planTimingCopy(scope)
-                  : 'Choose one option above to continue. Nothing is generated until you review the plan on the last step.'
+                  : 'Choose one shape above to continue. Nothing is generated until you review the trailhead on the last step.'
               }),
               jsxs('div', {
-                className: 'flex flex-col',
+                'data-cb-use-choice': '',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
                 children: [
-                  jsx('div', { className: 'mb-1 text-xs font-medium text-(--ui-text-secondary)', children: 'What kind of course is this?' }),
-                  RECIPES.filter((id) => id !== 'parent').map((id) =>
-                    jsx(sdk.ListRow, {
-                      action: jsx(sdk.Button, {
-                        'aria-pressed': recipe === id,
-                        onClick: () => chooseRecipe(id),
-                        size: 'sm',
-                        variant: recipe === id ? 'secondary' : 'outline',
-                        children: recipe === id ? 'Selected' : 'Choose'
-                      }),
-                      description: RECIPE_COPY[id].description,
-                      title: RECIPE_COPY[id].title
-                    }, id)
-                  ),
                   jsx('div', {
-                    className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
-                    children: 'Preparing lessons for a child is a different path: Parent Studio, not a learner course.'
-                  })
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink-soft)' },
+                    children: 'How you will use it'
+                  }, 'label'),
+                  // The SDK track is one unwrapping row; at 200% text it scrolls inside its own
+                  // width instead of pushing the route sideways. Below a 420px route the track
+                  // cannot hold four options at all, so the same choice becomes a 2×2 block of
+                  // pressed buttons — one choice either way, and no horizontal scrolling.
+                  jsx('div', {
+                    style: { maxWidth: '100%', overflowX: narrowUses ? 'visible' : 'auto', paddingBottom: '2px' },
+                    children: narrowUses
+                      ? jsx('div', {
+                          role: 'group',
+                          'aria-label': 'How you will use it',
+                          style: {
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: '0.35rem',
+                            minWidth: 0
+                          },
+                          children: CB_USE_OPTIONS.map((option) => {
+                            const chosen = recipe === option.id
+                            return jsx(sdk.Button, {
+                              'aria-pressed': chosen,
+                              onClick: () => chooseRecipe(option.id),
+                              variant: chosen ? 'secondary' : 'outline',
+                              style: {
+                                minHeight: '44px',
+                                justifyContent: 'center',
+                                whiteSpace: 'normal',
+                                textAlign: 'center',
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.meta,
+                                fontWeight: 600
+                              },
+                              children: option.label
+                            }, option.id)
+                          })
+                        })
+                      : jsx(sdk.SegmentedControl, {
+                          onChange: chooseRecipe,
+                          options: CB_USE_OPTIONS,
+                          sizing: 'content',
+                          value: recipe
+                        })
+                  }, 'control'),
+                  jsx('div', {
+                    'aria-live': 'polite',
+                    'data-cb-use-consequence': '',
+                    style: {
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.caption,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-ink-soft)',
+                      maxWidth: '54ch'
+                    },
+                    children: (RECIPE_COPY[recipe] || {}).description || ''
+                  }, 'consequence')
                 ]
               }),
               jsxs('details', {
@@ -7453,42 +7710,105 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
         ? jsxs('div', {
             className: 'flex flex-col gap-3',
             children: [
-              jsxs('div', {
-                className: 'flex flex-col',
+              jsxs('section', {
+                'data-cb-create-preview': '',
+                'data-cb-create-shape': scope || '',
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  padding: '0.9rem 1rem 1rem',
+                  background: 'var(--cb-lamp-soft)',
+                  borderTop: '3px solid var(--cb-lamp)',
+                  minWidth: 0,
+                  boxSizing: 'border-box'
+                },
                 children: [
-                  jsx(StatusRow, {
-                    label: 'What you get',
-                    value: (COURSE_SCOPES.find((option) => option.id === scope) || {}).label || 'Not chosen'
-                  }),
-                  jsx(StatusRow, { label: 'Goal', value: jsx('span', { className: 'max-w-[36ch] break-words', children: goal.trim() }) }),
-                  jsx(StatusRow, { label: 'Name', value: title.trim() }),
-                  jsx(StatusRow, { label: 'How you will use it', value: RECIPE_COPY[recipe].title }),
-                  jsx(StatusRow, { label: 'Pace', value: dialLabel('pace', dials.pace) }),
-                  jsx(StatusRow, { label: 'Depth', value: dialLabel('depth', dials.depth) }),
-                  jsx(StatusRow, { label: 'Checks', value: dialLabel('assessment', dials.assessment) }),
-                  jsx(StatusRow, { label: 'Guidance', value: dialLabel('autonomy', dials.autonomy) }),
-                  level.trim() ? jsx(StatusRow, { label: 'Starting point', value: level.trim() }) : null,
-                  subjectDomain.trim() ? jsx(StatusRow, { label: 'Subject', value: subjectDomain.trim() }) : null,
-                  locale.trim() ? jsx(StatusRow, { label: 'Language / locale', value: locale.trim() }) : null
+                  jsx('div', {
+                    style: {
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.caption,
+                      fontWeight: 600,
+                      letterSpacing: '0.08em',
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: 'THE TRAILHEAD'
+                  }, 'label'),
+                  jsx('h3', {
+                    'data-cb-create-preview-title': '',
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.heading,
+                      fontWeight: 600,
+                      lineHeight: 1.25,
+                      letterSpacing: '-0.015em',
+                      color: 'var(--cb-ink)',
+                      overflowWrap: 'break-word'
+                    },
+                    children: displayTitle || 'A course for this goal'
+                  }, 'title'),
+                  jsx('div', {
+                    'aria-hidden': 'true',
+                    style: { height: '58px', opacity: 0.8, margin: '0.1rem 0 0.15rem' },
+                    children: jsx(CbShapeTrail, { scope, height: 58 })
+                  }, 'trail'),
+                  jsx('div', {
+                    'data-cb-create-preview-shape': '',
+                    style: {
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.meta,
+                      color: 'var(--cb-ink)',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '0.15rem 0.6rem'
+                    },
+                    children: [
+                      jsx('span', { style: { fontWeight: 600 }, children: (COURSE_SCOPES.find((option) => option.id === scope) || {}).label || 'Shape not chosen' }, 'shape'),
+                      jsx('span', { children: scopeSectionBand(scope) || 'sections not stated' }, 'sections'),
+                      jsx('span', {
+                        'data-cb-create-preview-depth': scope,
+                        children: scope ? `${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} research depth` : 'depth from the plan'
+                      }, 'depth')
+                    ]
+                  }, 'facts'),
+                  jsxs('p', {
+                    'data-cb-create-preview-first': '',
+                    style: {
+                      margin: 0,
+                      maxWidth: '54ch',
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.body,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-ink)'
+                    },
+                    children: [
+                      jsx('span', { style: { fontWeight: 600 }, children: 'First stop' }, 'label'),
+                      jsx('span', { children: ' — section 1, the first section the draft plan proposes for this goal.' }, 'text')
+                    ]
+                  }, 'first')
                 ]
               }),
-              jsx('div', {
-                'data-cb-create-confirm': '',
+              jsx('p', {
+                'data-cb-create-facts': '',
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
                   'Create course writes the course and one draft plan. The plan then opens here for you to ' +
                   'approve, and no lesson is written until you do.'
               }),
-              jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: planTimingCopy(scope) }),
+              jsx('div', {
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: planTimingCopy(scope)
+              }),
+              // A failed plan job keeps the ids it already wrote. One calm line, not a receipt wall:
+              // the same key retries the same job.
               recoverable
-                ? jsxs('div', {
-                    className: 'flex flex-col',
-                    children: [
-                      jsx(StatusRow, { label: 'Course saved', value: recoverable.courseId }),
-                      recoverable.enrollmentId
-                        ? jsx(StatusRow, { label: 'Enrollment saved', value: recoverable.enrollmentId })
-                        : null
-                    ]
+                ? jsx('div', {
+                    'data-cb-create-recoverable': '',
+                    className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: `Course ${recoverable.courseId}${
+                      recoverable.enrollmentId ? ` and enrolment ${recoverable.enrollmentId}` : ''
+                    } are saved. Retrying starts the same plan job, not a second one.`
                   })
                 : null,
               error ? jsx(ErrorLine, { error }) : null
@@ -7499,7 +7819,12 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
         className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3',
         children: [
           step > 1
-            ? jsx(sdk.Button, { onClick: () => setStep(step - 1), size: 'sm', variant: 'secondary', disabled: submitting, children: 'Back' })
+            ? jsx(CbAction, {
+                onClick: () => setStep(step - 1),
+                variant: 'secondary',
+                disabled: submitting,
+                children: 'Back'
+              })
             : null,
           step < 3
             ? jsx(CbAction, {
@@ -7515,7 +7840,16 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 onClick: submit,
                 variant: 'primary',
                 children: submitting ? 'Creating course' : recoverable ? 'Retry the plan job' : 'Create course'
-              })
+              }),
+          // One row of actions: the primary is the only filled control; Back is secondary; Cancel
+          // is tertiary and sits at the far edge on every step.
+          jsx(CbAction, {
+            onClick: onCancel,
+            variant: 'tertiary',
+            disabled: submitting,
+            style: { marginLeft: 'auto' },
+            children: 'Cancel'
+          })
         ]
       })
     ]
@@ -12379,18 +12713,57 @@ function cbReducedMotionMedia() {
   return null
 }
 
-function useCbMotion() {
-  const [preference, setPreference] = useState(() => cbMotionPreference(cbReducedMotionMedia()))
+/**
+ * The learner's own motion setting and the OS preference are one answer. A nested surface cannot
+ * see the route's props, so the route publishes its effective choice here: `useCbMotion()` below it
+ * reads the same answer the settings sheet shows instead of shipping a switch with no reader.
+ * `null` means "follow the OS", which is what `system` means.
+ */
+const cbMotionListeners = new Set()
+let cbMotionPublished = null
+function publishCbMotion(motion) {
+  const next = motion && motion.reduced === true ? 'reduced' : null
+  if (next === cbMotionPublished) return
+  cbMotionPublished = next
+  for (const listener of cbMotionListeners) listener()
+}
+
+/**
+ * The OS answer alone. The route must publish its effective choice without reading its own
+ * publication, or a learner who once chose `reduce` could never get motion back.
+ */
+function useCbReducedMedia() {
+  const [reduced, setReduced] = useState(() => cbMotionPreference(cbReducedMotionMedia()) === 'reduced')
   useEffect(() => {
     const media = cbReducedMotionMedia()
     if (!media) return undefined
-    const onChange = () => setPreference(cbMotionPreference(media))
-    onChange()
-    if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange)
-    else if (typeof media.addListener === 'function') media.addListener(onChange)
+    const sync = () => setReduced(cbMotionPreference(media) === 'reduced')
+    sync()
+    if (typeof media.addEventListener === 'function') media.addEventListener('change', sync)
+    else if (typeof media.addListener === 'function') media.addListener(sync)
     return () => {
-      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', onChange)
-      else if (typeof media.removeListener === 'function') media.removeListener(onChange)
+      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', sync)
+      else if (typeof media.removeListener === 'function') media.removeListener(sync)
+    }
+  }, [])
+  return reduced
+}
+
+function useCbMotion() {
+  const [preference, setPreference] = useState(
+    () => cbMotionPublished || cbMotionPreference(cbReducedMotionMedia())
+  )
+  useEffect(() => {
+    const media = cbReducedMotionMedia()
+    const sync = () => setPreference(cbMotionPublished || cbMotionPreference(media))
+    cbMotionListeners.add(sync)
+    sync()
+    if (typeof media?.addEventListener === 'function') media.addEventListener('change', sync)
+    else if (typeof media?.addListener === 'function') media.addListener(sync)
+    return () => {
+      cbMotionListeners.delete(sync)
+      if (typeof media?.removeEventListener === 'function') media.removeEventListener('change', sync)
+      else if (typeof media?.removeListener === 'function') media.removeListener(sync)
     }
   }, [])
   return cbMotionFor(preference)
@@ -25343,8 +25716,13 @@ function CoursebookPage() {
   // layer stops at this root, so Hermes chrome keeps its own theme untouched.
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, homePrefs.appearance)
-  const systemMotion = useCbMotion()
-  const cbMotion = homePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
+  const systemReduced = useCbReducedMedia()
+  const cbMotion = homePrefs.reducedMotion === 'reduce' || systemReduced ? cbMotionFor('reduced') : cbMotionFor('full')
+  // H-179: the setting is published to the surfaces below, so `Reduce motion` actually reaches
+  // every CbAction whether the learner picked it or the OS asked for it.
+  useEffect(() => {
+    publishCbMotion(cbMotion)
+  }, [cbMotion.reduced])
   const online = useOnline()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsTriggerRef = useRef(null)
@@ -25857,8 +26235,11 @@ function CoursebookPane() {
   const [panePrefs] = useCbHomePrefs()
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, panePrefs.appearance)
-  const systemMotion = useCbMotion()
-  const cbMotion = panePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
+  const systemReduced = useCbReducedMedia()
+  const cbMotion = panePrefs.reducedMotion === 'reduce' || systemReduced ? cbMotionFor('reduced') : cbMotionFor('full')
+  useEffect(() => {
+    publishCbMotion(cbMotion)
+  }, [cbMotion.reduced])
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
@@ -26220,6 +26601,10 @@ export {
   CB_TYPE_STEPS,
   COURSE_SCOPES,
   CREATE_RESULT_COPY,
+  CB_USE_OPTIONS,
+  scopeSectionBand,
+  scopeFacts,
+  CbShapeTrail,
   FieldDesk,
   deskEstimateState,
   CreateCourseFlow,

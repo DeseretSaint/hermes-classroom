@@ -521,9 +521,24 @@ class MotionSourceTest(unittest.TestCase):
             [("press", "100ms"), ("route", "180ms"), ("verdict", "160ms"), ("complete", "600ms"), ("fade", "120ms")],
         )
 
+    def test_the_learner_motion_setting_reaches_the_one_hook(self) -> None:
+        # H-179: the settings sheet's `Reduce motion` publishes into the one motion hook, so the
+        # switch has a real reader below the route instead of only painting `data-cb-motion`.
+        self.assertIn("function publishCbMotion(motion)", self.source)
+        self.assertIn("cbMotionListeners.add(sync)", self.source)
+        route = self.source[self.source.index("function CoursebookPage()"):]
+        route = route[: route.index("const online = useOnline()")]
+        self.assertIn("publishCbMotion(cbMotion)", route)
+        pane = self.source[self.source.index("function CoursebookPane()"):]
+        pane = pane[: pane.index("const scopeProfile = currentScope().profile")]
+        self.assertIn("publishCbMotion(cbMotion)", pane)
+
     def test_the_only_utility_transition_is_colour_only(self) -> None:
         utilities = re.findall(r"transition-(colors|transform|opacity|all)\b", self.source)
-        self.assertEqual(utilities, ["colors"], utilities)
+        # H-179 replaced the create card's colour-only utility with inline token borders, so the
+        # inventory may be empty — but nothing but a colour transition may ever appear.
+        for name in utilities:
+            self.assertEqual(name, "colors", utilities)
 
     def test_no_decorative_beat_survives(self) -> None:
         # Out of scope by card: seal draw, beacon loop, hover lift, parallax, confetti, shake.

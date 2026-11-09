@@ -1,0 +1,1553 @@
+{
+  "phase": "before",
+  "steps": [
+    {
+      "label": "step1-empty",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-1049-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-460-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": false,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 227,
+            "h": 99
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 227,
+            "h": 115
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 227,
+            "h": 134
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 191,
+            "h": 118
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 191,
+            "h": 134
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 191,
+            "h": 154
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-ask-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 227,
+            "h": 99
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 227,
+            "h": 115
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 227,
+            "h": 134
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-ask-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 191,
+            "h": 118
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+          "box": {
+            "w": 191,
+            "h": 134
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 191,
+            "h": 154
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-after-keyboard",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 227,
+            "h": 99
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 227,
+            "h": 115
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 227,
+            "h": 134
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 191,
+            "h": 118
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 191,
+            "h": 134
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 191,
+            "h": 154
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 377,
+            "h": 79
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 227,
+            "h": 99
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 227,
+            "h": 115
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 227,
+            "h": 134
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 191,
+            "h": 118
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 191,
+            "h": 134
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 191,
+            "h": 154
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-460-text200",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+          "box": {
+            "w": 153,
+            "h": 805
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Selected",
+          "box": {
+            "w": 153,
+            "h": 745
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose",
+          "box": {
+            "w": 153,
+            "h": 823
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview",
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-460-text200",
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Review and create",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    }
+  ],
+  "continueStep1": true,
+  "pickedShort": true,
+  "keyboard": {
+    "ringBefore": {
+      "tag": "BUTTON",
+      "id": "short",
+      "outline": "none 2.2312px rgb(26, 23, 19)"
+    },
+    "ringAfter": {
+      "tag": "BUTTON",
+      "id": "short",
+      "outline": "auto 1.1156px rgb(229, 151, 0)",
+      "selected": "true"
+    },
+    "selected": 1
+  },
+  "reducedMotion": {
+    "animations": 0,
+    "running": 0,
+    "transitions": 128
+  },
+  "continueStep2": true
+}

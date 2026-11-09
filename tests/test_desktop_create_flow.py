@@ -12,6 +12,7 @@ together are the evidence that goal → plan job → review → approve → less
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -31,11 +32,15 @@ def _source() -> str:
 HARNESS = """
 import {
   COURSE_SCOPES,
+  CB_USE_OPTIONS,
+  CreateCourseFlow,
   courseCreatePayload,
   createStartStep,
   effectiveDepth,
   planJobBrief,
   planTimingCopy,
+  scopeFacts,
+  scopeSectionBand,
   SCOPE_MIN_DEPTH,
   startLearnerPlan,
   suggestedTitle
@@ -120,8 +125,27 @@ if (payload.kind === 'sequence') {
   output = {
     scopes: COURSE_SCOPES,
     copy: Object.fromEntries(COURSE_SCOPES.map((scope) => [scope.id, planTimingCopy(scope.id)])),
-    fallback: planTimingCopy(null)
+    fallback: planTimingCopy(null),
+    // H-179: the shape each card states and the one track of uses.
+    facts: Object.fromEntries(COURSE_SCOPES.map((scope) => [scope.id, scopeFacts(scope.id)])),
+    bands: Object.fromEntries(COURSE_SCOPES.map((scope) => [scope.id, scopeSectionBand(scope.id)])),
+    uses: CB_USE_OPTIONS,
+    trails: Object.fromEntries(COURSE_SCOPES.map((scope) => [scope.id, scope.trail]))
   }
+} else if (payload.kind === 'render') {
+  // H-179: a real render of the shape step and the trailhead preview, so the primary count is
+  // read from markup rather than counted in the source.
+  const React = (await import('react')).default
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const seed = payload.step === 2
+    ? { goal: DECISION.goal }
+    : { goal: DECISION.goal, scope: payload.scope || 'short', title: 'Coffee in Kyoto', dials: DECISION.dials, recipe: 'casual' }
+  const html = renderToStaticMarkup(React.createElement(CreateCourseFlow, {
+    seed,
+    onCancel: () => {},
+    onCreated: () => {}
+  }))
+  output = { html }
 } else if (payload.kind === 'step') {
   output = {
     fresh: createStartStep(null),
@@ -349,6 +373,98 @@ class CreateFlowSequenceTest(unittest.TestCase):
         # The payload keeps the closed four-dial object: no key is dropped or renamed here.
         for key in ("pace", "depth", "assessment", "autonomy"):
             self.assertIn(f"{key}:", source[source.index("const DIALS = {"):source.index("const DIALS = {") + 900])
+
+    # ── H-179: the shape chooser ────────────────────────────────────────────
+    def test_the_section_band_is_the_backend_scope_table(self) -> None:
+        """A card's number is the backend's own band, not a UI guess."""
+        out = self.run_case({"kind": "copy"})
+        generation = (ROOT / "coursebook" / "generation.py").read_text(encoding="utf-8")
+        block = generation[generation.index("SCOPE_EXPECTATIONS"):]
+        block = block[: block.index("\n}\n")]
+        expected = {}
+        for scope in ("single", "short", "full"):
+            body = block[block.index(f'"{scope}":'):]
+            body = body[: body.index('"note"')]
+            band = re.search(r'"blueprint_objectives":\s*\((\d+),\s*(\d+)\)', body)
+            self.assertIsNotNone(band, scope)
+            expected[scope] = [int(band.group(1)), int(band.group(2))]
+        self.assertEqual({row["id"]: row["sections"] for row in out["scopes"]}, expected)
+        # The words match the numbers: one section, a band, a band.
+        self.assertEqual(out["bands"]["single"], "1 section")
+        self.assertEqual(out["bands"]["short"], f"{expected['short'][0]}–{expected['short'][1]} sections")
+        self.assertEqual(out["bands"]["full"], f"{expected['full'][0]}–{expected['full'][1]} sections")
+
+    def test_each_shape_states_its_sections_and_research_floor(self) -> None:
+        out = self.run_case({"kind": "copy"})
+        for scope in ("single", "short", "full"):
+            facts = out["facts"][scope]
+            self.assertIn(out["bands"][scope], facts)
+            self.assertIn("research depth", facts)
+            self.assertIn("several minutes", facts.lower())
+            # No invented minute count anywhere on a card.
+            self.assertNotRegex(facts, r"\d+\s*(min|minute|hour)")
+
+    def test_the_trail_preview_stays_a_schematic(self) -> None:
+        out = self.run_case({"kind": "copy"})
+        self.assertEqual(out["trails"], {"single": 1, "short": 3, "full": 6})
+        # The dot count never claims more than the band's floor, and only open bands get a tail.
+        for row in out["scopes"]:
+            self.assertLessEqual(row["trail"], row["sections"][1], row["id"])
+            self.assertEqual(row["trail"] > 1, row["sections"][1] > row["sections"][0], row["id"])
+
+    def test_the_use_choice_is_four_plain_options_and_no_parent(self) -> None:
+        out = self.run_case({"kind": "copy"})
+        ids = [option["id"] for option in out["uses"]]
+        self.assertEqual(ids, ["one_off", "casual", "committed", "companion"])
+        self.assertNotIn("parent", ids)
+        for option in out["uses"]:
+            self.assertNotIn(option["id"], option["label"])
+            self.assertLessEqual(len(option["label"]), 18, option["label"])
+
+    def test_the_flow_keeps_exactly_one_primary(self) -> None:
+        # Rendered markup, not a source count: step 2 (the shape) and step 3 (the trailhead) each
+        # paint exactly one filled action, and Cancel is a tertiary control in the same row.
+        for step in (2, 3):
+            html = self.run_case({"kind": "render", "step": step})["html"]
+            self.assertEqual(html.count('data-cb-action="primary"'), 1, f"step {step}")
+            self.assertIn('data-cb-action="tertiary"', html, f"step {step}")
+            self.assertIn("Cancel", html, f"step {step}")
+
+    def test_the_review_step_is_a_trailhead_not_a_status_wall(self) -> None:
+        source = _source()
+        step3 = source[source.index("      step === 3\n"):source.index("      jsxs('div', {\n        className: 'flex flex-wrap items-center gap-2 border-t")]
+        self.assertNotIn("StatusRow", step3)
+        self.assertIn("'data-cb-create-preview': ''", step3)
+        self.assertIn("THE TRAILHEAD", step3)
+        self.assertIn("First stop", step3)
+        self.assertIn("data-cb-create-facts", source)
+        self.assertIn("no lesson is written until you do", step3)
+        # The name that will be created is the preview's title.
+        self.assertIn("children: displayTitle", step3)
+        # And the render says the same thing a learner reads.
+        html = self.run_case({"kind": "render", "step": 3})["html"]
+        self.assertIn("THE TRAILHEAD", html)
+        self.assertIn("Coffee in Kyoto", html)
+        self.assertIn("Short course", html)
+        self.assertIn("First stop", html)
+        self.assertIn("no lesson is written until you do", html)
+        self.assertIn("Create course", html)
+        self.assertIn("data-cb-create-preview-shape", html)
+
+    def test_the_name_is_optional_and_never_blocks_continue(self) -> None:
+        source = _source()
+        self.assertIn("children: 'Name (optional)'", source)
+        self.assertIn("'data-cb-title-disclosure': ''", source)
+        self.assertIn("const canAdvance = step === 1 ? goal.trim().length > 0 : Boolean(scope)", source)
+        # An empty name still sends a title the contract accepts: the suggestion, never invention.
+        self.assertIn("title: title.trim() || suggestedTitle(goal),", source)
+
+    def test_the_shape_step_offers_no_learner_parent_path(self) -> None:
+        source = _source()
+        block = source[source.index("function CreateCourseFlow"):source.index("// ══ H-27")]
+        self.assertNotIn("RECIPES.filter", block)
+        self.assertNotIn("Preparing lessons for a child", block)
+        self.assertNotIn("What kind of course is this?", block)
 
 
 class CreateFlowWiringTest(unittest.TestCase):

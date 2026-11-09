@@ -1,0 +1,1601 @@
+{
+  "phase": "after",
+  "steps": [
+    {
+      "label": "step1-empty",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "",
+      "titleValue": "",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-goal-help",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step1-goal-1049-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step1-goal-460-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: choose the shape of the course.",
+      "heading": "What do you want to be able to do?",
+      "cards": [],
+      "goalValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleValue": "Order coffee and ask for the bill in Kyoto, politely",
+      "titleInDisclosure": true,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 141
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 239
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 212
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-ask-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 141
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-ask-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-ask-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "false",
+          "text": "Short course Choose A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 239
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 212
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-after-keyboard",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 377,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 141
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 239
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 212
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step2-chosen-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 141
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 384,
+            "h": 159
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 227,
+            "h": 176
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 194
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 239
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 191,
+            "h": 212
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step2-chosen-460-text200",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Next: check the trailhead before it is created.",
+      "heading": "What shape should this course take?",
+      "cards": [
+        {
+          "id": "single",
+          "selected": "false",
+          "text": "One lesson Choose One stop: a single section with one check, for a task in front of you today. 1 section · Working research depth · several minutes",
+          "box": {
+            "w": 153,
+            "h": 868
+          }
+        },
+        {
+          "id": "short",
+          "selected": "true",
+          "text": "Short course Selected A few stops that build on each other, each with its own check. 3–6 sections · Working research depth · several minutes",
+          "box": {
+            "w": 153,
+            "h": 867
+          }
+        },
+        {
+          "id": "full",
+          "selected": "false",
+          "text": "Full course Choose A long trail split into units, planned in full before a lesson is written. 12–40 sections · Deep research depth · several minutes",
+          "box": {
+            "w": 153,
+            "h": 796
+          }
+        }
+      ],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": "How you will use it One task Little at a time A steady plan Alongside study Short sessions you pick up when you have ten minutes, with no schedule to keep.",
+      "tuneOpen": false,
+      "primaryLabels": [
+        "Continue"
+      ],
+      "continueDisabled": false,
+      "describedBy": null,
+      "preview": null,
+      "confirm": null,
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview",
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-1049-light",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-900-light",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-460-light",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "light"
+    },
+    {
+      "label": "step3-preview-1049-dark",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 407,
+      "docOverflowX": 0,
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-900-dark",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 257,
+      "docOverflowX": 0,
+      "innerWidth": 900,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-460-dark",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "16px",
+      "scope": "dark"
+    },
+    {
+      "label": "step3-preview-460-text200",
+      "hash": "#/coursebook",
+      "step": "3",
+      "spine": [
+        "1Goal",
+        "2Shape",
+        "3Review"
+      ],
+      "next": "Create the course, then review the draft plan.",
+      "heading": "Your trailhead",
+      "cards": [],
+      "goalValue": null,
+      "titleValue": null,
+      "titleInDisclosure": null,
+      "useChoice": null,
+      "tuneOpen": null,
+      "primaryLabels": [
+        "Create course"
+      ],
+      "continueDisabled": null,
+      "describedBy": null,
+      "preview": "THE TRAILHEAD Order coffee and ask for the bill in Kyoto, politely Short course 3–6 sections Working research depth First stop — section 1, the first section the draft plan proposes for this goal.",
+      "confirm": "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "statusRows": 0,
+      "overflowX": 0,
+      "routeWidth": 214,
+      "docOverflowX": 0,
+      "innerWidth": 459,
+      "rootFont": "32px",
+      "scope": "light"
+    }
+  ],
+  "continueStep1": true,
+  "pickedShort": true,
+  "keyboard": {
+    "ringBefore": {
+      "tag": "BUTTON",
+      "id": "short",
+      "outline": "none 2.2312px rgb(26, 23, 19)"
+    },
+    "ringAfter": {
+      "tag": "BUTTON",
+      "id": "single",
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "selected": "true"
+    },
+    "selected": 1
+  },
+  "reducedMotion": {
+    "animations": 0,
+    "running": 0,
+    "ownControls": 6,
+    "ownWithTransition": 0,
+    "ownWithAnimation": 0
+  },
+  "continueStep2": true,
+  "submitClicked": true,
+  "submit": {
+    "appeared": true,
+    "elapsedMs": 1708,
+    "receipt": "Details and job state",
+    "lead": "Your plan is being researched; this may take several minutes and you can leave this page.",
+    "body": [
+      "When it arrives it opens here. Approve the plan to start the first lesson; no lesson is written before that.",
+      "A short course of a few sessions. Research and drafting may take several minutes."
+    ],
+    "primaries": []
+  }
+}
