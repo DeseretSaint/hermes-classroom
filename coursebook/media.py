@@ -680,7 +680,7 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
     if len(data) != size:
         return {"ok": False, "code": "INTERNAL_ERROR", "message": "artifact size does not match its record"}
     digest = hashlib.sha256(data).hexdigest()
-    if digest != str(row["content_hash"]):
+    if digest != artifacts.bare_hash(row["content_hash"]):
         return {"ok": False, "code": "INTERNAL_ERROR", "message": "artifact hash does not match its record"}
     # Re-derive the type from the bytes and demand they are render-safe. The hash only proves the
     # file matches the row; it says nothing about whether the row's ``mime`` describes the file.

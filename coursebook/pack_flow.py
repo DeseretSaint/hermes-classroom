@@ -505,7 +505,8 @@ def _discard_adopted_objects(paths: list[Path]) -> None:
         with db.read() as connection:
             for path in paths:
                 row = connection.execute(
-                    "SELECT 1 FROM artifacts WHERE content_hash = ? LIMIT 1", (path.name,)
+                    "SELECT 1 FROM artifacts WHERE content_hash IN (?, ?) LIMIT 1",
+                    artifacts.hash_forms(path.name),
                 ).fetchone()
                 if row is None:
                     path.unlink(missing_ok=True)
@@ -1072,8 +1073,8 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # that actually changed produces a new digest and therefore a new row.
         existing = _row(
             connection,
-            "SELECT * FROM artifacts WHERE content_hash = ? AND kind = 'export'",
-            (file_digest,),
+            "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = 'export'",
+            artifacts.hash_forms(file_digest),
         )
         if existing is not None:
             artifact_id = str(existing["id"])
@@ -1097,7 +1098,7 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 (
                     artifact_id,
                     course["id"],
-                    file_digest,
+                    artifacts.labelled_hash(file_digest),
                     str(destination),
                     size,
                     json.dumps(
@@ -1171,8 +1172,8 @@ def _adopt_artifact(
     """
     existing = _row(
         connection,
-        "SELECT * FROM artifacts WHERE content_hash = ? AND kind = ?",
-        (data_hash, kind),
+        "SELECT * FROM artifacts WHERE content_hash IN (?, ?) AND kind = ?",
+        (*artifacts.hash_forms(data_hash), kind),
     )
     if existing is not None:
         artifact_id = str(existing["id"])
@@ -1195,7 +1196,7 @@ def _adopt_artifact(
             artifact_id,
             course_id,
             kind,
-            data_hash,
+            artifacts.labelled_hash(data_hash),
             str(path),
             size,
             mime,
@@ -1224,7 +1225,7 @@ def _artifact_ref(connection, artifact_id: str) -> dict[str, Any]:
         "kind": str(row["kind"]),
         "mime": str(row["mime"]),
         "bytes": int(row["bytes"]),
-        "content_hash": str(row["content_hash"]),
+        "content_hash": artifacts.labelled_hash(row["content_hash"]),
     }
 
 
@@ -2035,7 +2036,7 @@ def open_artifact(handle: str) -> tuple[Path, str, int]:
     if path.stat().st_size != int(row["bytes"]):
         raise RpcError.of("INTERNAL_ERROR", "artifact file size does not match its record")
     digest = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
-    if digest != str(row["content_hash"]):
+    if digest != artifacts.labelled_hash(row["content_hash"]):
         raise RpcError.of("INTERNAL_ERROR", "artifact file hash does not match its record")
     return path, str(row["mime"]), int(row["bytes"])
 

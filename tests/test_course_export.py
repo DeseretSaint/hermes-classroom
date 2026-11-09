@@ -640,6 +640,31 @@ class CourseExportWriteTest(AuthoredCourseCase):
         )
         self.assertEqual(self.artifacts(), 1)
 
+    def test_artifact_get_labels_the_export_hash_once_and_resolves_its_handle(self) -> None:
+        """H-210-R1 regression: the export path still stores prefixed; no double prefix, no drift."""
+        seeded = self.seed_course()
+        self.seed_validated_lessons(seeded)
+        reviewed = self.ok(
+            "course.export.read", {"enrollment_id": seeded["enrollment_id"]}
+        )["result"]["content_hash"]
+        result = self.export(seeded["enrollment_id"], reviewed, key="key-artifact-get")
+        artifact = result["artifacts"][0]
+        fetched = self.ok("artifact.get", {"artifact_id": artifact["artifact_id"]})["result"]
+        self.assertEqual(fetched["content_hash"], artifact["content_hash"])
+        self.assertRegex(fetched["content_hash"], r"^sha256:[a-f0-9]{64}$")
+        self.assertNotIn("sha256:sha256:", fetched["content_hash"])
+        self.assertTrue(fetched["download"]["url"].endswith(fetched["download"]["handle"]))
+
+        archive = self.archive_path(result)
+        path, mime, size = pack_flow.open_artifact(fetched["download"]["handle"])
+        self.assertEqual(path.read_bytes(), archive.read_bytes())
+        self.assertEqual(mime, "application/zip")
+        self.assertEqual(size, len(archive.read_bytes()))
+        # A second read answers identically and still points at the one export row.
+        again = self.ok("artifact.get", {"artifact_id": artifact["artifact_id"]})["result"]
+        self.assertEqual(again["content_hash"], fetched["content_hash"])
+        self.assertEqual(self.artifacts(), 1)
+
     def test_the_export_requires_a_validated_hash_not_just_any_hash(self) -> None:
         seeded = self.seed_course()
         self.seed_validated_lessons(seeded)

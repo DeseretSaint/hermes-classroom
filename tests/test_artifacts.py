@@ -153,6 +153,57 @@ class StoreTest(KernelCase):
         objects = [p for p in (Path(self.home) / "artifacts" / "objects").rglob("*") if p.is_file()]
         self.assertEqual(len(objects), 1)
 
+    def test_a_legacy_bare_row_dedupes_with_a_labelled_write(self) -> None:
+        """H-210-R1: a row written before the repair (bare digest) is still one artifact."""
+        digest = artifacts.sha256_bytes(PNG)
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, ref_count, created_at)"
+            " VALUES ('art_legacy_bare', ?, 'visual', ?, '/legacy/png', ?, 'image/png',"
+            " '{\"text_equivalent\": \"A\"}', 1, '2026-01-01T00:00:00+00:00')",
+            (self.course_id, digest, len(PNG)),
+        )
+        second = self.store.save(
+            course_id=self.course_id, kind="visual", data=PNG, mime="image/png",
+            provenance={"text_equivalent": "A"},
+        )
+        self.assertEqual(second["artifact_id"], "art_legacy_bare", "the bare row must be reused")
+        self.assertEqual(second["content_hash"], "sha256:" + digest)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 1)
+        self.assertEqual(self.scalar("SELECT ref_count FROM artifacts"), 2)
+        # The legacy row keeps its stored spelling; only the projection is labelled.
+        self.assertEqual(self.scalar("SELECT content_hash FROM artifacts"), digest)
+
+    def test_new_writes_store_the_labelled_form_and_keep_the_bare_object_name(self) -> None:
+        """A new write is stored in the labelled form and keeps the bare object-file name."""
+        artifact = self.store.save(
+            course_id=self.course_id, kind="visual", data=PNG, mime="image/png",
+            provenance={"text_equivalent": "A"},
+        )
+        digest = artifacts.sha256_bytes(PNG)
+        self.assertEqual(self.scalar("SELECT content_hash FROM artifacts"), "sha256:" + digest)
+        path = Path(self.rows("SELECT path FROM artifacts WHERE id = ?", (artifact["artifact_id"],))[0]["path"])
+        self.assertEqual(path.name, digest, "the object file stays named by the bare digest")
+
+    def test_lookup_matches_either_digest_spelling(self) -> None:
+        digest = artifacts.sha256_bytes(PNG)
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, ref_count, created_at)"
+            " VALUES ('art_legacy_bare', ?, 'visual', ?, '/legacy/png', ?, 'image/png', '{}', 1,"
+            " '2026-01-01T00:00:00+00:00')",
+            (self.course_id, digest, len(PNG)),
+        )
+        with db.read() as connection:
+            by_bare = self.store.lookup(connection, kind="visual", content_hash=digest)
+            by_labelled = self.store.lookup(connection, kind="visual", content_hash="sha256:" + digest)
+        self.assertIsNotNone(by_bare)
+        self.assertIsNotNone(by_labelled)
+        assert by_bare is not None and by_labelled is not None
+        self.assertEqual(by_bare["artifact_id"], "art_legacy_bare")
+        self.assertEqual(by_labelled["artifact_id"], "art_legacy_bare")
+        self.assertEqual(by_labelled["content_hash"], "sha256:" + digest)
+
     def test_cache_lookup_by_spec_and_source_hash(self) -> None:
         spec_fp = artifacts.spec_hash({"x": 1})
         source_fp = artifacts.source_hash(["page one"])

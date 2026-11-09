@@ -406,6 +406,48 @@ class ArtifactGetTest(KernelCase):
         self.assertNotIn("private", repr(result), "a filesystem path must never reach the caller")
         self.assertEqual(self.err("artifact.get", {"artifact_id": "art_missing_0001"})["code"], "NOT_FOUND")
 
+    def test_a_prefixed_row_is_not_double_prefixed(self) -> None:
+        course_id, _ = self.new_course()
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, ref_count, created_at)"
+            " VALUES ('art_0001_z', ?, 'export', 'sha256:" + "d" * 64 + "', '/srv/coursebook/exports/z.zip',"
+            " 512, 'application/zip', '{}', 1, '2026-01-01T00:00:00+00:00')",
+            (course_id,),
+        )
+        result = self.ok("artifact.get", {"artifact_id": "art_0001_z"})["result"]
+        self.assertEqual(result["content_hash"], "sha256:" + "d" * 64)
+        self.assertNotIn("sha256:sha256:", result["content_hash"])
+        self.assertTrue(result["download"]["handle"])
+        self.assertTrue(result["download"]["url"].endswith(result["download"]["handle"]))
+
+    def test_a_bare_hex_row_is_labelled_on_the_wire(self) -> None:
+        """H-210-R1: import media rows stored the bare digest and ``artifact.get`` echoed it.
+
+        The row keeps whatever it stored (no silent rewrite), but the read boundary must answer
+        the contract's ``sha256:<64 hex>`` and hand out a working download handle.
+        """
+        course_id, _ = self.new_course()
+        digest = "c" * 64
+        self.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime,"
+            " provenance_json, ref_count, created_at)"
+            " VALUES ('art_0002_y', ?, 'audio', ?, '/srv/coursebook/artifacts/cc/cc.mp3',"
+            " 4096, 'audio/mpeg', '{\"generator\": \"coursebook.pack_import\", \"text_equivalent\":"
+            " \"liked it\"}', 1, '2026-01-01T00:00:00+00:00')",
+            (course_id, digest),
+        )
+        result = self.ok("artifact.get", {"artifact_id": "art_0002_y"})["result"]
+        self.assertEqual(result["content_hash"], "sha256:" + digest)
+        self.assertRegex(result["content_hash"], r"^sha256:[a-f0-9]{64}$")
+        self.assertTrue(result["download"]["handle"])
+        self.assertRegex(result["download"]["url"], r"^/api/plugins/coursebook/artifacts/[A-Za-z0-9_-]+$")
+        self.assertTrue(result["download"]["url"].endswith(result["download"]["handle"]))
+        self.assertEqual(result["provenance"]["generator"], "coursebook.pack_import")
+        # Reading a row must not rewrite its stored spelling (no silently changed row meaning).
+        self.assertEqual(self.scalar("SELECT content_hash FROM artifacts WHERE id = 'art_0002_y'"), digest)
+
+
 
 class RegistryTest(unittest.TestCase):
     def test_every_v2_method_is_registered_unless_another_package_owns_it(self) -> None:
