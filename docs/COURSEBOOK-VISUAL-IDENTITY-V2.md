@@ -886,6 +886,9 @@ Acceptance for the whole card:
 ## 9. What this spec refuses
 
 - No XP, streak, league, level, mastery percentage, progress ring or invented goal. Ever.
+  **Exception (owner amendment, 2026-11-09):** Game mode may show the separate play layer
+  defined in `GAME-MODE-AND-TUTOR-RAIL-PLAN.md` §10B. It is not evidence or mastery; Textbook,
+  Guided and Parent Studio remain free of it.
 - No gradient, shadow, glass, blur, glow or pseudo-3D. The lit page is a flat field.
 - No second icon set, icon font, or unreconciled external asset. Icons remain sdk.Codicon only. One approved illustration lane may supply a course cover or empty-state figure from a permissively licensed or host-generated asset, composed in the Atlas Lamp language, recorded in docs/ASSET-PROVENANCE.md, and never presented as evidence, a technical authority, or a trademark.
 - No new route, RPC method, pack field, grade rule or chat surface.
