@@ -65,7 +65,9 @@ class WayfindingTest(unittest.TestCase):
         # A non-colour cue: weight plus a lamp underline, not a fill alone.
         self.assertIn("fontWeight: current ? 600 : 400", body)
         self.assertIn("borderBottom: current ? '2px solid var(--cb-lamp)'", body)
-        self.assertIn("jsx(CbDestinationNav, { value: destination, onChange: changeDestination })", self.source)
+        # GM-002: the course home is a step inside Home, so the nav also gets the way back to the
+        # library when Home is already current.
+        self.assertIn("jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome })", self.source)
         self.assertNotIn("options: DESTINATIONS,\n                sizing: 'content'", self.source)
 
     def test_new_course_is_the_catalog_primary_and_yields_to_a_course(self) -> None:

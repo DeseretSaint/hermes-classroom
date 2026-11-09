@@ -176,6 +176,20 @@ await act(async () => { root.render(route.render()) })
 await flush(160)
 const surfaces = [snapshot('home')]
 
+// GM-002: the path (and its row-variant checkpoint actions) lives on the selected course's home,
+// one step in from the library Home.
+const shelfCard = document.querySelector('[data-cb-home-card] button')
+if (shelfCard) {
+  await act(async () => { shelfCard.click() })
+  await flush(240)
+  surfaces.push(snapshot('course-home'))
+  await act(async () => {
+    const back = document.querySelector('[data-cb-home-back]')
+    if (back) back.click()
+  })
+  await flush(240)
+}
+
 const navTo = async (destination) => {
   const button = document.querySelector(`[data-cb-nav-item="${destination}"]`)
   if (!button) throw new Error('no destination nav item ' + destination)

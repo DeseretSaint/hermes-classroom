@@ -39,7 +39,11 @@ def _latest_rpc() -> dict:
 #: a runtime gate — `/runtime.implemented_methods` decides, and the honest "not in this build" state
 #: expires by itself when Cinder's handlers land. Keeping the (now empty) allowlist means a typo in
 #: a gated method name still fails here.
-PENDING_CONTRACT_METHODS: set[str] = set()
+PENDING_CONTRACT_METHODS: set[str] = {
+    # GM-001 froze this name for the Game Mode manifest; GM-003 registers it. The Home shelf reads
+    # it per visible course for the mode badge and never guesses a mode when it is unwired.
+    "world.read",
+}
 
 #: The three v5 surfaces this workspace depends on; asserted present so a rename cannot silently
 #: turn a real control back into a permanently gated one.
