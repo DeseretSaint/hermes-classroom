@@ -54,6 +54,15 @@ summarises those records and does not re-verify them.
   restart; and cancellation is checked at every provider and tool boundary. No contract or schema
   change. Evidence: `docs/H66-EVIDENCE.md`, `docs/ARCHITECTURE.md` §8, `probes/h66-liveness.py`,
   `tests/test_h66_liveness.py`.
+- H-192c (validator output bound): bounding the validation *demand* left the validator's own
+  reasoning uncapped — the host does not forward `LLMRequest.max_tokens` on the nous
+  chat-completions route, and a live five-criteria/six-claim pass emitted 19 739 completion tokens
+  in 927 s past its 600 s deadline. `register(ctx)` now declares one plugin-owned auxiliary task
+  (`cb_validate`, `reasoning_effort: low`, `extra_body.max_tokens: 4000`) and every validation call
+  passes its key, on the configured second-model route and the author-model fallback alike; a host
+  without the seam is reported as unbounded instead of silently uncapped. No contract or schema
+  change. Evidence: `docs/GENERATION.md` §2, `tests/test_h192c_validator_output_bound.py`,
+  `audit/adversarial/live-generation-2026-11-08-h192/STATUS-h192c.md`.
 
 ### Known limitations at 0.1.0
 

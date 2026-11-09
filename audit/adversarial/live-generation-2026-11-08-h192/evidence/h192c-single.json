@@ -1,0 +1,409 @@
+{
+  "course": {
+    "course_id": "crs_e8c44e7102a64d04a313a3983db3a92b",
+    "plan_id": "pln_dc2fa957ffff407d9edbc7234583f2b0",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_3d19f962a0894f6cb6ca44b6fec7ac7b",
+    "revision": 0
+  },
+  "finished_at": "2026-11-09T00:36:26Z",
+  "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"the plan has no passing validation record; it cannot be approved.\", \"retryable\": false, \"details\": {\"reason\": \"plan_not_validated\", \"plan_id\": \"pln_dc2fa957ffff407d9edbc7234583f2b0\", \"generation_state\": \"needs_review\", \"validation_verdict\": \"reject\"}}",
+      "generation_digest": "sha256:6e6033ffbd188dbb2baf3edeb430e63308976c91a5638a5c1e7e305cc854ce11",
+      "kernel_digest": "sha256:81b2fa6b90b9bc23e68c21f7d19036854cdcd1c48b20d8ccca72e8a594c4ee54",
+      "kernel_digest_source": "parent.blueprint.read",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-09T00:36:26Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-09T00:36:26Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-09T00:36:26Z"
+    },
+    "plan": {
+      "elapsed_s": 84.0,
+      "facts": {
+        "approved_at": null,
+        "generation": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v11",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "budget": null,
+          "check_plan": [
+            {
+              "evidence_target": "procedure",
+              "kind": "verification",
+              "notes": "Verification checklist: tools and heat-safe setup; stop condition stated; recipe recorded before brewing; cup 1 brewed without mid-brew changes; cup 2 brewed with same variables; side-by-side comparison and one next variable named. Catches the misconception that changing several variables between cu",
+              "objective_ref": 1
+            }
+          ],
+          "delivery": "self_study",
+          "document_plan_state": null,
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "technical_procedure",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "goal": null,
+          "learner_outcome": "After one guided session, the learner can set up a pour-over station, state the hot-water stop condition, record a brew recipe, brew two cups with the same variables, and compare them side by side. They can name one variable to hold or change next time and describe the result as provisional evidence, not a measured strength percentage.",
+          "objective_titles": [
+            "Brew two pour-over cups with one recorded procedure and compare them for consistency"
+          ],
+          "plan_hash": "sha256:6e6033ffbd188dbb2baf3edeb430e63308976c91a5638a5c1e7e305cc854ce11",
+          "plan_schema": "coursebook.plan.v2",
+          "rejection_reasons": [
+            "check_plan.notes is 300 characters, at its 300-character cap: the provider cut it and the ending is lost. Rewrite it in at most 225 characters."
+          ],
+          "section_count": 0,
+          "spaced_review": false,
+          "status": "needs_review",
+          "time_estimate": {
+            "basis": "none",
+            "confidence": "low",
+            "minutes_per_session": 45,
+            "rationale": "One-off single session: 45 scheduled minutes covers setup, a short worked demonstration, two guided brews and a comparison. Basis is none because no supplied benchmark supports an attainment time; the minutes are scheduled practice only, not a mastery claim.",
+            "sessions_per_week": 1,
+            "weeks": 1
+          },
+          "title": "Repeatable Pour-Over Coffee: One-Session Consistency Check",
+          "units_in_document": [
+            {
+              "ordinal": 1,
+              "prerequisites": [],
+              "title": "Repeatable pour-over brew and consistency check"
+            }
+          ],
+          "validation": {
+            "cost": {
+              "calls": 0,
+              "cost_usd": 0.0,
+              "unknown_cost": false
+            },
+            "cost_usd": 0.0,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "unidentified",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": false,
+              "model": null,
+              "provider": null
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_record": null,
+          "validation_verdict": "reject"
+        },
+        "objectives": [
+          {
+            "objective_id": "38299a04eedc4a20",
+            "ordinal": 1,
+            "title": "Brew two pour-over cups with one recorded procedure and compare them for consistency",
+            "unit_id": "4640aa36da9a0add"
+          }
+        ],
+        "plan_hash": "sha256:6e6033ffbd188dbb2baf3edeb430e63308976c91a5638a5c1e7e305cc854ce11",
+        "plan_id": "pln_dc2fa957ffff407d9edbc7234583f2b0",
+        "plan_state": "draft",
+        "research": {
+          "failure_count": 0,
+          "failures": [],
+          "queries": [
+            "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+            "Brew a pour-over coffee whose strength stays consistent from cup to cup official procedure steps safety limits"
+          ],
+          "query_count": 2,
+          "reason": null,
+          "source_count": 4,
+          "sources": [
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-09T00:35:02Z",
+              "source_id": "408c96f67bc1ab8e",
+              "support": null,
+              "title": "Pour-over coffee - NCA - About Coffee",
+              "url": "https://www.aboutcoffee.org/brewing/pour-over-coffee/"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-09T00:35:02Z",
+              "source_id": "ab5954cb4bec1608",
+              "support": null,
+              "title": "Pour-over technique \u00b7 Coffearium",
+              "url": "https://coffearium.org/entries/pour-over-technique/"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-09T00:35:02Z",
+              "source_id": "85820f57ac98594d",
+              "support": null,
+              "title": "Pour Over Coffee: What It Is & Why It Matters",
+              "url": "https://keithlyons.org/coffee-encyclopedia/pour-over"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-09T00:35:02Z",
+              "source_id": "44e256c939cf7e7a",
+              "support": null,
+              "title": "Pour Over Coffee: Chemex and V60 Recipes, Bloom Technique, and Complete Brewing Guide | Home Espresso Lab",
+              "url": "https://homeespressolab.com/guides/pour-over-guide/"
+            }
+          ],
+          "status": "ok"
+        },
+        "units": [
+          {
+            "created_at": "2026-11-09T00:36:25Z",
+            "goal": "Learner completes a safe, recorded pour-over procedure twice in one session and compares the cups, so consistency is judged from held variables and observed steps rather than from a single lucky cup.",
+            "id": "4640aa36da9a0add",
+            "ordinal": 1,
+            "plan_id": "pln_dc2fa957ffff407d9edbc7234583f2b0",
+            "prerequisite_refs": [],
+            "target_lessons": 1,
+            "title": "Repeatable pour-over brew and consistency check"
+          }
+        ]
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_6753df2903864ac2970543285b3f1623",
+        "brief": {
+          "course_id": "crs_e8c44e7102a64d04a313a3983db3a92b",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_3d19f962a0894f6cb6ca44b6fec7ac7b",
+          "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "technical_procedure"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v11",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "technical_procedure",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 1,
+          "plan_hash": "sha256:6e6033ffbd188dbb2baf3edeb430e63308976c91a5638a5c1e7e305cc854ce11",
+          "plan_id": "pln_dc2fa957ffff407d9edbc7234583f2b0",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 1,
+          "rejection_reasons": [
+            "check_plan.notes is 300 characters, at its 300-character cap: the provider cut it and the ending is lost. Rewrite it in at most 225 characters."
+          ],
+          "units": 1,
+          "validation": {
+            "cost": {
+              "calls": 0,
+              "cost_usd": 0.0,
+              "unknown_cost": false
+            },
+            "cost_usd": 0.0,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "unidentified",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": false,
+              "model": null,
+              "provider": null
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_verdict": "reject"
+        },
+        "created_at": "2026-11-09T00:35:02Z",
+        "error": null,
+        "job_id": "job_ffcf2634e5a64d8685cac418d49d4705",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h187-jobs-create-1794184502002765745",
+        "progress": {
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed",
+        "updated_at": "2026-11-09T00:36:25Z"
+      },
+      "job_id": "job_ffcf2634e5a64d8685cac418d49d4705",
+      "label": "plan",
+      "pump": {
+        "done_at_s": 83.7,
+        "finished": [
+          "job_ffcf2634e5a64d8685cac418d49d4705"
+        ]
+      },
+      "started_at": "2026-11-09T00:35:02Z",
+      "terminal_state": "completed",
+      "thread_alive": false,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 84.0,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_ffcf2634e5a64d8685cac418d49d4705",
+    "state": "queued"
+  },
+  "recipe": "one_off",
+  "schema_version": 11,
+  "scope": "single",
+  "started_at": "2026-11-09T00:35:01Z",
+  "subject_domain": "technical_procedure",
+  "tag": "h192c-single",
+  "title": "Brew a pour-over coffee consistently",
+  "total_elapsed_s": 84.6,
+  "usage": {
+    "events": [
+      {
+        "duration_ms": 23914,
+        "job_id": "job_ffcf2634e5a64d8685cac418d49d4705",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-09T00:36:25Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 5430,
+          "output_tokens": 5111,
+          "prompt_version": "plan-prompt.v11",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 45174,
+        "job_id": "job_ffcf2634e5a64d8685cac418d49d4705",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-09T00:36:25Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 5478,
+          "output_tokens": 4819,
+          "prompt_version": "plan-prompt.v11",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      }
+    ],
+    "totals": {
+      "by_model": {
+        "nous/deepseek/deepseek-v4.1-flash-1017": {
+          "calls": 2,
+          "total_tokens": 0
+        }
+      },
+      "calls": 2,
+      "input_tokens": 10908,
+      "output_tokens": 9930,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "output_bound": {
+      "aux_task": "cb_validate",
+      "completion_cap": 4000,
+      "reasoning_effort": "low",
+      "registered": true
+    },
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}

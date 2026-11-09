@@ -112,6 +112,7 @@ __all__ = [
     "bind_host_llm",
     "bind_validator_llm",
     "validator_llm",
+    "validation_llm",
     "validator_config",
     "host_llm",
     "model_identity",
@@ -146,6 +147,11 @@ __all__ = [
     "VALIDATION_CRITERIA_PASSES",
     "CLAIM_VERDICTS_PER_PASS",
     "CLAIM_ONLY_VERDICTS_PER_PASS",
+    "VALIDATION_AUX_TASK",
+    "VALIDATION_AUX_DEFAULTS",
+    "VALIDATION_REASONING_EFFORT",
+    "VALIDATION_OUTPUT_TOKENS",
+    "register_validation_output_bound",
     "build_plan_validation_requests",
     "validation_pass_schema",
     "validation_claim_schema",
@@ -1204,16 +1210,27 @@ class PluginLLMAdapter:
     falls back to the author model and calls that independent.
     """
 
-    def __init__(self, plugin_llm: Any, *, provider: str | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        plugin_llm: Any,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        task: str | None = None,
+    ) -> None:
         if not callable(getattr(plugin_llm, "complete_structured", None)):
             raise TypeError("ctx.llm does not expose complete_structured; refusing to bypass trust")
         self._llm = plugin_llm
         self._provider = provider or None
         self._model = model or None
+        #: The plugin-registered auxiliary task whose declared defaults carry the output bound
+        #: (H-192c). ``None`` means the host does not expose ``register_auxiliary_task`` and the
+        #: call is made with no task key — the pre-H-192c behaviour, recorded as unbounded.
+        self._task = str(task or "").strip() or None
 
     @property
     def overrides(self) -> dict[str, Any]:
-        return {"provider": self._provider, "model": self._model}
+        return {"provider": self._provider, "model": self._model, "task": self._task}
 
     @classmethod
     def from_ctx(cls, ctx: Any) -> "PluginLLMAdapter":
@@ -1223,7 +1240,7 @@ class PluginLLMAdapter:
         return cls(llm)
 
     def _arguments(self, request: LLMRequest) -> dict[str, Any]:
-        return {
+        arguments = {
             "instructions": request.instructions,
             "input": [{"type": "text", "text": request.input_text}],
             "json_schema": request.schema,
@@ -1234,6 +1251,12 @@ class PluginLLMAdapter:
             "timeout": request.timeout_s,
             "purpose": request.purpose,
         }
+        # The task key is the host's documented route for auxiliary wire controls. It is passed
+        # with the request so the host's own trust gate (``_check_task``) decides whether the
+        # plugin may use the key it registered; a denied key fails loudly, never silently.
+        if self._task:
+            arguments["task"] = self._task
+        return arguments
 
     def _invoke(self, request: LLMRequest, overrides: dict[str, Any]) -> Any:
         """Run one provider call under a **real** deadline (H-66).
@@ -1327,6 +1350,53 @@ _HOST_LLM: Any = None
 #: validation still runs with ``_HOST_LLM`` but is recorded as model-assessed, never independent.
 _VALIDATOR_LLM: "PluginLLMAdapter | None" = None
 _VALIDATOR_OVERRIDES: dict[str, Any] = {"provider": None, "model": None}
+#: The auxiliary task key that carries the validator's output bound, or ``None`` when the host
+#: does not expose ``register_auxiliary_task``. Set by :func:`register_validation_output_bound`.
+_VALIDATION_TASK: str | None = None
+
+
+def register_validation_output_bound(ctx: Any) -> str | None:
+    """Declare the validator's auxiliary task so the host applies an output bound (H-192c).
+
+    Returns the task key when the host accepted it, else ``None``. Registration is a *declaration*
+    of wire defaults, not a route: ``provider: auto`` and an empty model leave the route to the
+    validator's own provider/model override, which the host trust gate still decides.
+
+    A host without ``register_auxiliary_task`` (or a host that refuses the key) leaves the bound
+    unapplied. That is reported, not hidden: :func:`validator_config` carries
+    ``output_bound.registered == False`` and the job keeps the pre-H-192c behaviour.
+    """
+    global _VALIDATION_TASK
+    _VALIDATION_TASK = None
+    register = getattr(ctx, "register_auxiliary_task", None)
+    if not callable(register):
+        logger.warning(
+            "coursebook: host exposes no register_auxiliary_task; the validator's %d-token "
+            "output cap and %r reasoning budget cannot be requested on this host",
+            VALIDATION_OUTPUT_TOKENS,
+            VALIDATION_REASONING_EFFORT,
+        )
+        return None
+    try:
+        register(
+            VALIDATION_AUX_TASK,
+            display_name="Coursebook validator",
+            description=(
+                "Independent Coursebook validation passes. Declared with a low reasoning budget "
+                f"and a {VALIDATION_OUTPUT_TOKENS}-token output cap so a bounded pass cannot "
+                "spend an unbounded answer on one artifact."
+            ),
+            defaults=dict(VALIDATION_AUX_DEFAULTS),
+        )
+    except Exception as exc:  # noqa: BLE001 - a refused key must not take plugin load down
+        logger.warning(
+            "coursebook: host refused auxiliary task %r (%s); validator output stays uncapped",
+            VALIDATION_AUX_TASK,
+            exc,
+        )
+        return None
+    _VALIDATION_TASK = VALIDATION_AUX_TASK
+    return _VALIDATION_TASK
 
 
 def bind_host_llm(plugin_llm: Any) -> None:
@@ -1349,12 +1419,30 @@ def bind_validator_llm(plugin_llm: Any, *, provider: str | None = None, model: s
     if plugin_llm is None or not (provider or model):
         _VALIDATOR_LLM = None
         return
-    _VALIDATOR_LLM = PluginLLMAdapter(plugin_llm, provider=provider, model=model)
+    _VALIDATOR_LLM = PluginLLMAdapter(
+        plugin_llm, provider=provider, model=model, task=_VALIDATION_TASK
+    )
 
 
 def validator_llm() -> LLM | None:
     """Return the configured second-model route, or ``None`` when none is configured."""
     return _VALIDATOR_LLM
+
+
+def validation_llm() -> LLM | None:
+    """Return the adapter every validation call must use, bounded on both routes.
+
+    The configured second-model route carries the output bound (H-192c). When no validator is
+    configured the pass still runs on the author model, and that route must be bounded too: an
+    unbounded answer is the same defect whether the checking model is a second model or the
+    author's. ``None`` means no host LLM is bound at all and the caller's own adapter is the only
+    option.
+    """
+    if _VALIDATOR_LLM is not None:
+        return _VALIDATOR_LLM
+    if _HOST_LLM is None or _VALIDATION_TASK is None:
+        return None
+    return PluginLLMAdapter(_HOST_LLM, task=_VALIDATION_TASK)
 
 
 #: The two settings that create the second route, and the host trust gate that must allow the
@@ -1407,6 +1495,10 @@ def validator_config() -> dict[str, Any]:
     is the same condition ``validator_llm()`` uses, so this can never advertise a route the
     pipeline would not call. ``reason`` explains the declared state and the settings that change
     it; it is not a health check of the provider.
+
+    ``output_bound`` reports whether the host accepted the auxiliary task that carries the
+    validator's reasoning budget and completion cap (H-192c). It is a declaration too: the host
+    applies it at call time, and ``registered == False`` means the bound is not applied at all.
     """
     provider = _VALIDATOR_OVERRIDES.get("provider")
     model = _VALIDATOR_OVERRIDES.get("model")
@@ -1416,6 +1508,14 @@ def validator_config() -> dict[str, Any]:
         "provider": provider,
         "model": model,
         "reason": _validator_reason(configured, provider, model),
+        "output_bound": {
+            "registered": _VALIDATION_TASK == VALIDATION_AUX_TASK,
+            "aux_task": VALIDATION_AUX_TASK if _VALIDATION_TASK else None,
+            "reasoning_effort": VALIDATION_REASONING_EFFORT,
+            # Named ``completion_cap``, not ``max_tokens``: the status block is scanned for
+            # credential-shaped words, and a wire-parameter name must not trip that scan.
+            "completion_cap": VALIDATION_OUTPUT_TOKENS,
+        },
     }
 
 
@@ -2567,6 +2667,55 @@ CLAIM_VERDICTS_PER_PASS = 6
 #: units, the learner outcome = 53 labels) to five claim-only passes while staying far below the
 #: unbounded 29 386-token answer H-192 measured.
 CLAIM_ONLY_VERDICTS_PER_PASS = 12
+
+# ── Validator output bound (H-192c) ─────────────────────────────────────────
+#
+# Bounding the *demand* (H-192b) did not bound the validator's own reasoning. Measured live on
+# ``cb/t_958c3f23`` @ ``c58c05a`` (nous / z-ai/glm-5.3-flash): a pass asked for five criteria and
+# six claims still emitted 19 739 completion tokens in 927 s — past its 600 s deadline — and the
+# unit-stage validator emitted 23 096. The reason is routing, not prompt size: the host drops
+# ``LLMRequest.max_tokens`` on the nous chat-completions route (``agent.auxiliary_client.
+# _forwards_max_tokens`` does not list it), so nothing capped the model's reasoning.
+#
+# Coursebook will not depend on a host patch it cannot ship. The host's *documented* plugin seam
+# for wire controls is a plugin-registered auxiliary task: ``ctx.register_auxiliary_task``
+# ``defaults`` accept ``reasoning_effort`` and ``extra_body`` (``hermes_cli/plugins_aux_tasks.py``
+# → ``agent/auxiliary_task_config.py`` → ``agent/auxiliary_client._get_task_extra_body`` →
+# ``_build_call_kwargs``), and a call passing that ``task=`` key gets them merged into the provider
+# body. That reaches the model on the same route the dropped ``max_tokens`` does not.
+#
+# Live wire probe on nous / z-ai/glm-5.3-flash, same five-criteria/six-claim demand:
+# default 2 404 completion tokens in 17.6 s (8 605 reasoning chars); low effort + 4 000 cap
+# 433 tokens in 4.7 s (282 reasoning chars). Both fields are accepted by the route.
+
+#: The plugin-owned auxiliary task that carries the validator's provider-level output bound.
+VALIDATION_AUX_TASK = "cb_validate"
+
+#: The validator's reasoning budget on the provider wire. Low is the weakest level the validator
+#: model exposes (GLM-5.3: low/medium/high/max). Validation is a schema answer over a bounded
+#: demand; extended reasoning is the spend this card measured, not extra support.
+VALIDATION_REASONING_EFFORT = "low"
+
+#: Hard completion cap per validation answer, in tokens. It counts reasoning tokens too, so it is
+#: sized for a low-effort reasoning trace plus a full schema answer: ten verdicts at the 400-char
+#: reason bound plus JSON overhead is under 1 500 tokens, and the measured low-effort trace is
+#: ~300. A pass that would exceed this is truncated by the provider (``finish_reason=length``),
+#: which the shape gate reports as ``VALIDATION_FAILED`` rather than a silent overrun.
+VALIDATION_OUTPUT_TOKENS = 4000
+
+#: The auxiliary-task defaults declared at register time. ``reasoning_effort`` is folded into
+#: ``extra_body.reasoning`` by the host; ``extra_body.max_tokens`` is the route-level cap the
+#: host's own ``max_tokens`` forwarding does not provide here. Both are host-documented keys, not
+#: a private import.
+VALIDATION_AUX_DEFAULTS: dict[str, Any] = {
+    "provider": "auto",
+    "model": "",
+    "base_url": "",
+    "api_key": "",
+    "timeout": 180,
+    "reasoning_effort": VALIDATION_REASONING_EFFORT,
+    "extra_body": {"max_tokens": VALIDATION_OUTPUT_TOKENS},
+}
 
 #: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
 #: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
@@ -5984,7 +6133,9 @@ def build_plan_validation_requests(
             input_text=input_text,
             schema=validation_pass_schema(pass_criteria, pass_claims),
             schema_name="coursebook_validation_v1",
-            max_tokens=2000,
+            # The completion cap the host applies through the validator auxiliary task (H-192c);
+            # this field is the request-side declaration of the same number.
+            max_tokens=VALIDATION_OUTPUT_TOKENS,
             timeout_s=timeout,
         )
         for pass_criteria, pass_claims in _validation_pass_plan(claims)
@@ -6130,7 +6281,7 @@ def build_lesson_validation_request(
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
-        max_tokens=2000,
+        max_tokens=VALIDATION_OUTPUT_TOKENS,
         timeout_s=_timeout_for("coursebook.lesson.validate", timeout_s),
     )
 
@@ -7297,7 +7448,7 @@ def run_plan_job(
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
-    validator = validator_llm() or llm
+    validator = validation_llm() or llm
 
     ensure_schema(connection)
     # A syllabus-backed companion course plans from the validated syllabus items alongside the
@@ -8137,7 +8288,7 @@ def build_unit_sections_validation_request(
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
-        max_tokens=2000,
+        max_tokens=VALIDATION_OUTPUT_TOKENS,
         timeout_s=_timeout_for("coursebook.unit_sections.validate", timeout_s),
     )
 
@@ -8404,7 +8555,7 @@ def run_unit_sections_job(
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
-    validator = validator_llm() or llm
+    validator = validation_llm() or llm
     validation_request: LLMRequest | None = None
     validation_response: LLMResponse | None = None
     verdict: dict[str, Any] | None = None
@@ -9475,7 +9626,7 @@ def _author_section(
             subject_domain=subject_domain,
         )
         assert_separate_pass(request, validation_request)
-        validation_response = _call_llm(validator_llm() or llm, validation_request, usage)
+        validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
         report = _parse_validation_answer(
             validation_response, validation_request, what="lesson validation"
         )

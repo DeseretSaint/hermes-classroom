@@ -80,10 +80,40 @@ class SearchHost:
         raise RuntimeError(f"search host does not serve tool {name!r}")
 
 
+def _host_plugin_context():
+    """A real host ``PluginContext`` for this plugin, without the tool/hook half.
+
+    The live worker calls the same seams ``register(ctx)`` calls, but it must not start the tick
+    loop or register tools. It still needs a real context for the validator's auxiliary task:
+    ``register_auxiliary_task`` writes into the host's plugin registry, which is what
+    ``agent.auxiliary_task_config`` reads when it merges the task defaults into a call. A shim
+    would prove nothing about that merge.
+    """
+    from hermes_cli import plugins as host_plugins
+    from hermes_cli.plugins_manifest import PluginManifest
+
+    manager = host_plugins.get_plugin_manager()
+    manager.discover_and_load()
+    manifest = PluginManifest(
+        name="coursebook",
+        version=__import__("coursebook").__version__,
+        description="Coursebook live-generation measurement",
+        author="DeseretSaint",
+        source="user",
+        path=str(__import__("pathlib").Path(__file__).resolve().parents[3]),
+        key="coursebook",
+    )
+    return host_plugins.PluginContext(manifest, manager)
+
+
 def load_seams() -> dict:
     from agent.plugin_llm import PluginLlm
 
     llm = PluginLlm(plugin_id="coursebook")
+    # H-192c: production declares the validator's output bound in register(ctx). Declare it here
+    # too, through the host's own registry, or this worker would measure a route the product no
+    # longer uses.
+    generation.register_validation_output_bound(_host_plugin_context())
     generation.bind_host_llm(llm)
     generation.bind_validator_llm(
         llm,

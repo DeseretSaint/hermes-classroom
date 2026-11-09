@@ -95,6 +95,23 @@ nowhere else. A host without `ctx.llm` leaves both unbound; `host_llm()` then ra
 `GenerationRejected` instead of falling back to any provider, so failing closed is the intended
 behaviour.
 
+**The validator's output is bounded on the provider wire (H-192c).** `LLMRequest.max_tokens` is
+sent on every call, but the host does **not** forward it on the nous chat-completions route
+(`agent/auxiliary_client._forwards_max_tokens` excludes it), and a validation pass answered by
+the validator's own reasoning therefore had no cap: measured live on `cb/t_958c3f23` @ `c58c05a`,
+a five-criteria/six-claim pass emitted 19 739 completion tokens in 927 s and missed its 600 s
+deadline. Widening the deadline is not a repair. `register(ctx)` instead calls
+`register_validation_output_bound(ctx)`, which declares one plugin-owned auxiliary task
+(`cb_validate`) with host-documented `defaults`: `reasoning_effort: "low"` and
+`extra_body.max_tokens: 4000`. Both reach the provider body through the host's own task-config
+merge (`hermes_cli/plugins_aux_tasks.py` → `agent/auxiliary_task_config.py` →
+`agent/auxiliary_client._get_task_extra_body` → `_build_call_kwargs`), on the same route that
+drops the `max_tokens` argument. Every validation call — the configured second-model route and
+the author-model fallback — passes `task="cb_validate"`; authoring calls do not. A host without
+`register_auxiliary_task`, or one that refuses the key, leaves validation uncapped and
+`coursebook_status` reports `output_bound.registered: false` rather than implying a cap. This is
+a host-documented seam, not a private import; no host patch is required.
+
 **Provenance is what the provider reported (H-195).** `generation_provenance(response, request)`
 records `{provider, model, known, prompt_version, pipeline_version}` on the plan document
 (`generation`), on the plan job result, on `approval_provenance.generator`, on
