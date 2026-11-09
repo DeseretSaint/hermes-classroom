@@ -6,6 +6,15 @@ contract, or the publication gate.
 
 Date: 2026-11-07. Base: `origin/master` `14a6443`.
 
+## Owner amendment — game mode engagement (2026-11-09)
+
+The owner has explicitly overridden the earlier no-XP/no-progress-bar rule **for game mode only**.
+Game mode may show XP, cosmetic levels, a `Game progress` bar and collectible feedback because it
+must be engaging and fun. The play layer is never evidence, never mastery, never a parent/print/
+export value, and never a gate on a core lesson. Textbook, Guided and Parent Studio remain calm and
+free of game chrome. See `docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md` §10B for the complete rules; this
+amendment resolves the conflict in this file without changing the evidence contract.
+
 Why this file exists: the current product is still mostly formatted text, rules, cards and
 standard buttons. A learner has to read the interface to understand it, the course seal needs
 explanation, and the home is a dashboard rather than a place to learn. Those are product defects,

@@ -8,6 +8,11 @@ Owner amendment: the learner's **existing Hermes pet sprite** may appear as iden
 companion. It is not a new avatar system, a progression track, or a reason to build an avatar
 editor. If the host has no pet, Coursebook shows no invented avatar.
 
+Owner amendment 2026-11-09: Game mode has a deliberate play layer (XP, cosmetic level,
+`Game progress`, collectible feedback) per `GAME-MODE-AND-TUTOR-RAIL-PLAN.md` §10B. The no-XP
+rules in this spec apply to Textbook, Guided, Parent Studio, evidence, packs and exports; they do
+not apply to the Game-only play layer.
+
 ## 1. Why this pass exists
 
 The current product is correct enough to be interesting and too quiet to win. The first viewport
