@@ -11353,6 +11353,38 @@ function PracticeSurface({
 }
 
 /**
+ * H-206 · the used state of an assist control.
+ *
+ * A statement, never a button: once the backend has recorded that help was used for this attempt,
+ * the control stops being pressable and says so. The dot is a state marker, not a pass mark — the
+ * evidence chip next to it carries the verdict and the sentence.
+ */
+function AssistUsedFlag({ kind, children }) {
+  return jsxs('span', {
+    'data-cb-assist-used': kind,
+    role: 'status',
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.35rem',
+      padding: '0.2rem 0.5rem',
+      border: '1px solid var(--cb-rule)',
+      background: 'var(--cb-lamp-soft)',
+      color: 'var(--cb-ink)',
+      fontFamily: CB_SANS,
+      fontSize: CB_TYPE.caption,
+      fontWeight: 600,
+      lineHeight: 1.35,
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsx('span', { 'aria-hidden': 'true', style: { color: 'var(--cb-ochre)' }, children: '•' }),
+      jsx('span', { children })
+    ]
+  })
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
@@ -11385,7 +11417,10 @@ function AttemptControls({
   // served choice string, never a label the pane invented.
   const [selected, setSelected] = useState(-1)
   const [assistClass, setAssistClass] = useState(null)
-  const [assistBusy, setAssistBusy] = useState(false)
+  // H-206: the pressed control shows what it is recording, then leaves. `assistPending` is the one
+  // kind in flight; `assistBusy` stays the guard every other branch already reads.
+  const [assistPending, setAssistPending] = useState(null)
+  const assistBusy = assistPending !== null
   // H-178: `lesson.assist` bumps the enrollment revision (`docs/CONTRACTS.md` §lesson.assist), and
   // its response states the new revision. Adopting it locally means pressing "I used a hint" and
   // then "Check" inside the refresh window still carries the current fence instead of losing the
@@ -11401,6 +11436,9 @@ function AttemptControls({
   const nonceRef = useRef(null)
   const answerRef = useRef(null)
   const resultRef = useRef(null)
+  // H-206: the assist group that replaces a pressed control, and whether the learner just pressed it.
+  const assistGroupRef = useRef(null)
+  const assistRecordedNow = useRef(false)
   const detached = Boolean(bindingState && bindingState !== 'active')
 
   // What this card is asking for. A `verification` stimulus with declared items is a checklist and
@@ -11440,6 +11478,20 @@ function AttemptControls({
   })
   const attemptCount = check && Number(check.attempt_count) > 0 ? Number(check.attempt_count) : 0
   const nextEvidenceClass = assistClass || uncommittedClass || (attemptCount > 0 ? 'hinted' : 'cold')
+  // H-206: has this attempt already recorded help? Both values come from the backend (the assist
+  // response, or an unconsumed `evidence.inspect` event), never from the click alone.
+  const assistRecorded = assistClass || uncommittedClass
+  const hintUsed = assistRecorded === 'hinted' || assistRecorded === 'answer_shown'
+  const answerUsed = assistRecorded === 'answer_shown'
+  // H-206: pressing an assist control replaces it with a statement. Keep focus on the group that
+  // replaced it so a keyboard learner is not dropped back on <body>; only a real press sets the
+  // flag, so a page that mounts with a hint already recorded never steals focus.
+  useEffect(() => {
+    if (!assistRecordedNow.current) return
+    assistRecordedNow.current = false
+    const node = assistGroupRef.current
+    if (node && typeof node.focus === 'function') node.focus({ preventScroll: true })
+  }, [hintUsed, answerUsed])
   // The fence this card submits against. See `assistRevision`.
   const fenceRevision = Math.max(Number(revision) || 0, Number(assistRevision) || 0)
 
@@ -11631,7 +11683,11 @@ function AttemptControls({
   const recordAssist = useCallback(
     async (kind) => {
       if (!check || assistBusy) return
-      setAssistBusy(true)
+      // H-206: a hint is one recorded statement per attempt. The control is already in its used
+      // state after the first one, so a repeat may not add a second event that changes nothing.
+      if (kind === 'hint_request' && hintUsed) return
+      if (kind === 'answer_shown' && answerUsed) return
+      setAssistPending(kind)
       setError(null)
       const response = await rpc(
         'lesson.assist',
@@ -11641,12 +11697,13 @@ function AttemptControls({
           expectedRevision: fenceRevision
         }
       )
-      setAssistBusy(false)
+      setAssistPending(null)
       if (!response.ok) {
         setError(response.error)
         return
       }
       const recorded = response.result && response.result.evidence_class
+      assistRecordedNow.current = true
       setAssistClass(recorded || (kind === 'answer_shown' ? 'answer_shown' : 'hinted'))
       // The assist moved the enrollment revision; adopt it before the async page refresh lands so
       // a hint followed immediately by a submit cannot be refused as STALE_REVISION.
@@ -11654,7 +11711,7 @@ function AttemptControls({
       if (Number.isFinite(bumped) && bumped > 0) setAssistRevision(bumped)
       if (onCommitted) onCommitted(response.result)
     },
-    [check, assistBusy, enrollmentId, objectiveId, fenceRevision, onCommitted]
+    [check, assistBusy, hintUsed, answerUsed, enrollmentId, objectiveId, fenceRevision, onCommitted]
   )
 
   /** Radio-group keys: 1–8 pick by number, arrows move and select, Home/End jump. */
@@ -12045,25 +12102,37 @@ function AttemptControls({
               supports('lesson.assist') && !detached
                 ? jsxs('div', {
                     'data-cb-assist': 'available',
-                    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
+                    'data-cb-assist-state': answerUsed ? 'answer_shown' : hintUsed ? 'hinted' : 'available',
+                    ref: assistGroupRef,
+                    tabIndex: -1,
+                    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', outlineOffset: '2px' },
                     children: [
-                      jsx(sdk.Button, {
-                        variant: 'text',
-                        size: 'sm',
-                        disabled: locked || assistBusy,
-                        onClick: () => recordAssist('hint_request'),
-                        children: 'I used a hint'
-                      }),
-                      jsx(sdk.Button, {
-                        variant: 'text',
-                        size: 'sm',
-                        disabled: locked || assistBusy,
-                        onClick: () => recordAssist('answer_shown'),
-                        children: 'I saw the answer'
-                      }),
+                      hintUsed
+                        ? jsx(AssistUsedFlag, { kind: 'hint_request', children: 'Hint recorded' })
+                        : jsx(sdk.Button, {
+                            variant: 'text',
+                            size: 'sm',
+                            disabled: locked || assistBusy,
+                            'data-cb-assist-pending': assistPending === 'hint_request' ? '' : undefined,
+                            onClick: () => recordAssist('hint_request'),
+                            children: assistPending === 'hint_request' ? 'Recording…' : 'I used a hint'
+                          }),
+                      answerUsed
+                        ? jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' })
+                        : jsx(sdk.Button, {
+                            variant: 'text',
+                            size: 'sm',
+                            disabled: locked || assistBusy,
+                            'data-cb-assist-pending': assistPending === 'answer_shown' ? '' : undefined,
+                            onClick: () => recordAssist('answer_shown'),
+                            children: assistPending === 'answer_shown' ? 'Recording…' : 'I saw the answer'
+                          }),
                       jsx('span', {
+                        'data-cb-assist-note': '',
                         style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
-                        children: 'Said honestly, this changes what the next answer can count for.'
+                        children: hintUsed
+                          ? 'Recorded for this attempt. This answer cannot count as independent evidence.'
+                          : 'Said honestly, this changes what the next answer can count for.'
                       })
                     ]
                   })
@@ -16179,7 +16248,7 @@ function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, 
   const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
   const due = Math.max(0, Number(summary.review_due || 0))
   const facts = []
-  if (total > 0) facts.push(`${independent} of ${total} with evidence`)
+  if (total > 0) facts.push(`${independent} of ${total} with independent evidence`)
   if (total > 0) facts.push(due > 0 ? `${due} to review` : 'Nothing due for review')
   return jsxs('section', {
     'data-cb-player-close': '',

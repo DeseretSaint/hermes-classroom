@@ -116,3 +116,52 @@ A live **choice** check does not exist for an authored lesson in this backend: e
 check for the demonstration pack is `format: "text"`. The radiogroup is therefore proven by the
 shipped-component tests and will be shown in renderer frames, not claimed as live — per the card's
 "if the authored check has no choice/checklist, the written check remains the lesson".
+
+## 6. H-206 recheck — hint used-state and completion copy (after the fix)
+
+Captured 2026-11-08 17:31–17:33 MST on the same **after** rig (`~/.hermes/coursebook-test-h178-a`,
+CDP **9385**), relinked to worktree `t_f3a3830c` @ `wt/h206-field-followups`. Installed
+`desktop-plugins/coursebook/plugin.js` sha256
+`302a904097933355b14f5ea24d163a5e11b7198c25810c58c0a9b8961d94b911`, byte-identical to
+`desktop/plugin.js` in this worktree; the window was restarted once so the loaded bytes are the
+installed bytes. Driver: `scripts/h206-recheck.mjs` (`prep` → `finish`), frames and their
+viewport/root-font/theme/sha in `audit/visual/h206-recheck/sequence.json`.
+
+Surface is the same section 2 / step 2 of 2 written check the H-205 sequence used, now on its next
+version (cold, `attempt_count: 0`, pending chip `cold`). The recheck drove it through the real UI:
+one wrong answer (`Not quite`), `Try again`, `I used a hint`, `好きです`, `Check` (`Correct`),
+`Finish`, `Return to the trail`. The section now reports `9 attempts recorded · last just now`; the
+v4 check carries the cold attempt and the hinted pass.
+
+| frame | before (H-205, `h205-field-sequence/`) | after (H-206, `h206-recheck/`) | state on screen |
+| --- | --- | --- | --- |
+| `04-retry-surface` | `4b3d315ab9bc…` 242,999 B | `18e44610cd44…` 252,719 B | answer form back after `Try again`; chip pending `hinted`; `I used a hint` + `I saw the answer` both present |
+| `05-hint-recorded` | `4b3d315ab9bc…` 242,999 B (**identical to 04**) | `8d861039c4dd…` 249,624 B | `Hint recorded` used-state chip in place of the hint button; only `I saw the answer` remains; note "Recorded for this attempt. This answer cannot count as independent evidence." |
+| `07-completion` | `8f78357f3e97…` 265,539 B | `d6649383fcf0…` 270,082 B | "You finished Section 2"; count line `0 of 4 with independent evidence · 3 to review`; recorded chip `hinted` |
+
+All three after frames: viewport `1049 × 1338`, root font size `16px`, theme `dark`, DPR 0.896 — the
+same geometry as the H-205 sequence, so the pixel comparison is like-for-like.
+
+What the frames now show, read from the painted DOM:
+
+- **05** — `[data-cb-assist]` no longer contains a button whose label is `I used a hint`; the only
+  remaining button is `I saw the answer`, and `[data-cb-assist-used="hint_request"]` (role `status`)
+  reads "Hint recorded". The note under the controls changed from the generic sentence to
+  "Recorded for this attempt. This answer cannot count as independent evidence." A repeat hint
+  therefore has no control to land on, and the missing button means no second `lesson.assist` post.
+  The state comes from the backend response / unconsumed `evidence.inspect` event, not from the
+  click.
+- **07** — the completion count and the section header now use one phrase: the header (visible in
+  the same frame's chrome) reads `0 of 4 With independent evidence`, and the completion line reads
+  `0 of 4 with independent evidence · 3 to review`.
+
+The pre-fix frames `04-retry-surface.png`, `05-hint-recorded.png` and `07-completion.png` from the
+H-205 run (`bd63fdc`) are carried in `audit/visual/h205-field-sequence/` so both sides of the
+comparison live in this branch; `sequence.json` there is the original H-205 record.
+
+The two defects from §6 of the H-205 run are fixed in `desktop/plugin.js` only; no contract,
+evidence-semantics or state-machine change. The two test pins that named the old count phrase were
+updated with the copy, and the jsdom live harness now asserts the used state, the absent second
+control and the single `lesson.assist` call. `python3 -m unittest discover -s tests -p
+'test_desktop*.py'` = 775 OK; `node --check desktop/plugin.js` OK; `python3 scripts/m4v-audit.py`
+= 15/15 claims PASS, `plugin_sha256 302a9040…`.
