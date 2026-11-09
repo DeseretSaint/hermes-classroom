@@ -9,7 +9,7 @@
     "source_lesson_version": "2026-11-09.1",
     "title": "Mealtime greetings and household labels",
     "level": "L0",
-    "register_note": "Both greetings are taught in the form the cited dictionary entries label polite: いただきます is the ます form, and ごちそうさまでした is labelled Polite (teineigo). Informal family variants are not taught in this fixture.",
+    "register_note": "ごちそうさまでした is labelled Polite (teineigo) by the cited Jisho entry. いただきます carries no register label in either cited entry; the fixture records 'polite (ます form)' as the author's analysis of the ます ending, not as a dictionary label. Informal family variants are outside this fixture.",
     "targets": [
       {
         "target_id": "tgt_itadakimasu",
@@ -17,7 +17,7 @@
         "reading": "いただきます",
         "romaji": "itadakimasu",
         "meaning": "thank you (for the meal just served); I receive (this meal)",
-        "register": "polite (ます form)",
+        "register": "polite (ます form; author's analysis)",
         "use": "said before eating a meal",
         "source_ids": ["src_jisho_itadakimasu", "src_cambridge_itadakimasu"]
       },
@@ -27,7 +27,7 @@
         "reading": "ごちそうさまでした",
         "romaji": "gochisōsamadeshita",
         "meaning": "thank you for the meal; that was a delicious meal",
-        "register": "polite (teineigo)",
+        "register": "polite (teineigo; Jisho label)",
         "use": "said after finishing a meal",
         "source_ids": ["src_jisho_gochisousama"]
       }
@@ -214,7 +214,7 @@
       "title": "Household labels from this lesson",
       "label_ids": ["lbl_doa", "lbl_mado", "lbl_isu"],
       "alternates": ["lbl_teeburu", "lbl_koppu", "lbl_hon"],
-      "note": "The learner chooses any three of the six lesson labels; the three printed on the sheet are a suggestion."
+      "note": "The learner chooses any three of the six lesson labels. All six are printed in every document of the pack; the three in label_ids are the suggested three."
     }
   ],
   "checklist": {

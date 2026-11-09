@@ -26,7 +26,7 @@ beside it are the real proof, not a description of one.
 | `a4/technical-head-gasket.pdf` | A4 | technical_sheet | 2 | 594.96 x 841.92 pts (A4) | yes |
 
 - Fixture: `bundled/homework/japanese-l0-mealtime/fixture.json` (`jp-l0-mealtime`).
-- Source lesson hash: `sha256:fab219a459b72932c77ec28f9867c05c29bbfa5db356f5f0f22e44f6161640a5`.
+- Fixture lesson block hash: `sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a` — sha256 over the demo fixture's own `lesson` block, not over a live course lesson.
 - Renderer: headless Chromium `Chromium 155.0.8059.84 Arch Linux` printing HTML; text stays selectable and is extracted back with `pdftotext` to prove it.
 - Japanese face: Noto Sans CJK JP (system font), so kana and kanji print as text, not an image.
 - Colour PNGs: 22 pages at 144 dpi.
@@ -39,8 +39,17 @@ and the *last body sentence* of each role are read back out of the PDF. A clippe
 tail sentence and the script exits non-zero instead of writing this manifest. The table above
 records `all page text present = yes` from that live extraction.
 
+## What the manifest checks measure
+
+`checks` in `MANIFEST.json` is computed by `scripts/gm014_print_proof.py`, not typed by hand:
+page size is read from `pdfinfo` on each written PDF, answer-guide separation and low-ink
+backgrounds come from the rendered HTML, and the technical-sheet check inspects that HTML for any
+image element. If any check fails the script exits without writing a manifest.
+
 ## What is not claimed
 
 - These are demo fixtures, not a published course. No native-speaker review is recorded and none is claimed.
+- **PDF tagging is not claimed.** Japanese runs in the HTML carry `lang="ja"`, but the Chromium PDF export is untagged, so the SVG's accessible title and description do not survive into the PDF. Selectable text is claimed and proven; PDF accessibility tagging is not.
+- The parent guide's hash binds the pack to the demo fixture's own lesson block. `demo-japanese-l0-mealtime` and `obj_mealtime_greetings` name that fixture; no course with those ids exists in this repository.
 - No learner attempt, tutor turn, observation or child data is in any page.
 - No page was sent anywhere; generating and printing are local actions.

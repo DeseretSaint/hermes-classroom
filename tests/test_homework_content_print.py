@@ -162,6 +162,58 @@ class HomeWorkContentRuleTest(unittest.TestCase):
         self.assertIn("<figcaption", html_text)
         self.assertIn("Orientation only", html_text)
 
+    def test_label_pack_has_no_mealtime_copy(self) -> None:
+        data = fixture()
+        docs = hp.render_documents(data, "hw_labels")
+        mealtime = (
+            r"before-meal",
+            r"after-meal",
+            r"at the table",
+            r"\bplate\b",
+            r"polite ending",
+            r"\bbreakfast\b",
+            r"\blunch\b",
+            r"\bdinner\b",
+        )
+        for role in ("parent_guide", "answer_guide", "learner_page", "homework_sheet"):
+            text = hp.learner_visible_text(docs[role]).lower()
+            for pattern in mealtime:
+                with self.subTest(role=role, pattern=pattern):
+                    self.assertIsNone(
+                        re.search(pattern, text),
+                        f"{role} still prints mealtime copy that does not match a label task: {pattern}",
+                    )
+
+    def test_label_completion_record_is_two_days(self) -> None:
+        data = fixture()
+        docs = hp.render_documents(data, "hw_labels")
+        for role in ("learner_page", "homework_sheet"):
+            with self.subTest(role=role):
+                text = hp.learner_visible_text(docs[role])
+                self.assertIn("Day 1", text)
+                self.assertIn("Day 2", text)
+                self.assertNotIn("breakfast", text.lower())
+
+    def test_label_pack_prints_all_six_labels(self) -> None:
+        data = fixture()
+        labels = hp.label_index(data)
+        docs = hp.render_documents(data, "hw_labels")
+        for role in ("parent_guide", "learner_page", "answer_guide", "homework_sheet"):
+            text = hp.learner_visible_text(docs[role])
+            for label_id, label in labels.items():
+                with self.subTest(role=role, label=label_id):
+                    self.assertIn(label["display"], text)
+                    self.assertIn(label["romaji"], text)
+
+    def test_japanese_runs_declare_their_language(self) -> None:
+        data = fixture()
+        for task in data["tasks"]:
+            docs = hp.render_documents(data, task["task_id"])
+            for role, html_text in docs.items():
+                for tag in re.findall(r'<[^>]*class="[^"]*\bjp\b[^"]*"[^>]*>', html_text):
+                    with self.subTest(task=task["task_id"], role=role, tag=tag):
+                        self.assertIn('lang="ja"', tag)
+
     def test_answer_guide_is_separate_and_parent_only(self) -> None:
         data = fixture()
         docs = hp.render_documents(data, "hw_premeal")
@@ -228,6 +280,28 @@ class PrintProofTest(unittest.TestCase):
                 info = hp.pdf_info(pdf)
                 self.assertEqual(int(info["Pages"]), entry["pages"])
                 self.assertTrue(entry["required_text_present"], entry.get("missing_text"))
+
+    def test_manifest_checks_match_live_measurement(self) -> None:
+        if not shutil.which("pdfinfo"):
+            self.skipTest("pdfinfo not installed")
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "gm014_print_proof", ROOT / "scripts" / "gm014_print_proof.py"
+        )
+        self.assertIsNotNone(spec)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        manifest = json.loads((PROOF_DIR / "MANIFEST.json").read_text(encoding="utf-8"))
+        data = fixture()
+        technical_html = hp.render_technical_document(head_gasket_document())
+        self.assertEqual(
+            module.compute_checks(data, manifest["documents"], technical_html), manifest["checks"]
+        )
+        for name, value in manifest["checks"].items():
+            with self.subTest(check=name):
+                self.assertEqual(value, "pass")
 
     def test_pdfs_are_real_paper_with_selectable_japanese(self) -> None:
         if not shutil.which("pdfinfo") or not shutil.which("pdftotext"):

@@ -13,7 +13,7 @@ It is the developer note for the module GM-008 consumes. The real proof lives in
 | proof builder | `scripts/gm014_print_proof.py` |
 | proof set | `docs/visual-review/gm-014/` |
 | content rules and print rules | `tests/test_homework_content_print.py` |
-| source lesson hash and phrase provenance | `docs/visual-review/gm-014/SOURCE-PROVENANCE.md` |
+| fixture lesson block hash and phrase provenance | `docs/visual-review/gm-014/SOURCE-PROVENANCE.md` |
 | content checklist | `docs/visual-review/gm-014/CONTENT-CHECKLIST.md` |
 
 It does not own a homework table, an RPC method, an enrollment, a job or a send. Those belong to
@@ -31,9 +31,11 @@ GM-007/GM-008. This module is pure content plus HTML/PDF rendering.
 - `tasks[]` — `task_id`, `task_kind`, `audience`, `title`, `target_id`, one `context` sentence,
   1–3 `steps`, one `success_criterion`, `estimated_minutes` (3–10) and `completion`
   (`self_reported` or `parent_reported`).
-- `target_sets[]` — the one bounded label set; it chooses 1–3 labels and lists the alternates.
+- `target_sets[]` — the one bounded label set; it suggests three labels, lists three alternates, and
+  all six are printed in every label-pack document.
 
-The lesson hash is `sha256` over the canonical JSON of the `lesson` block:
+The fixture lesson block hash is `sha256` over the canonical JSON of the fixture's own `lesson`
+block:
 
 ```
 coursebook.homework_print.lesson_hash(fixture["lesson"])
@@ -42,7 +44,9 @@ coursebook.homework_print.binding(fixture)
 ```
 
 Change a printed form, reading, romaji or gloss and the hash changes. A pack that prints these
-pages can therefore record exactly which lesson text it printed.
+pages can therefore record exactly which fixture lesson text it printed. The four ids name fields
+inside the fixture; no live course with those ids exists in this repository, and the parent guide
+says so instead of implying a published lesson.
 
 ## API
 
@@ -95,11 +99,17 @@ under one manifest.
   is a separate document marked `PARENT ONLY · ANSWER GUIDE`.
 - Any figure carries `role="img"`, an accessible title and description, and a visible caption
   that says it is orientation only.
+- Japanese runs carry `lang="ja"` in the HTML. The exported PDF is untagged, so PDF accessibility
+  tagging is not claimed; selectable text is claimed and proven by `pdftotext`.
 
 ## Limitations
 
 - The fixture is demo content, not a published course. No native-speaker review is recorded and
   none is claimed.
+- The `demo-japanese-l0-mealtime` course and `obj_mealtime_greetings` objective are fixture-local
+  ids. They are not a live course lesson, and the printed binding table says so.
+- Register for いただきます is recorded as "polite (ます form; author's analysis)"; the
+  cited Jisho entry does not label it. ごちそうさまでした is recorded as "polite (teineigo; Jisho label)".
 - Only one Japanese lesson is covered: two mealtime greetings and six household labels. The
   labels are recorded against Jisho entries; the fixture does not claim a curriculum sequence.
 - The technical sheet prints the lesson's structured rows. The source manual remains the

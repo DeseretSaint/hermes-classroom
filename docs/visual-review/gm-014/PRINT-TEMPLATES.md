@@ -8,11 +8,17 @@ Four print roles, one technical sheet, two paper sizes. The templates are implem
 
 | role | pages | audience | carries | never carries |
 |---|---|---|---|---|
-| parent guide | 2 | parent / adult operator | objective, materials, preparation, four steps, what to notice, expected responses, sources, source-lesson binding | child data, attempts, tutor turns, a grade |
-| learner page | 1 | learner | one target with reading and romaji, one context, at most three steps, one success criterion, completion line | answer guide, expected responses, common errors, grade, XP |
+| parent guide | 2 | parent / adult operator | objective, materials, preparation, four steps, what to notice, expected responses, sources, fixture lesson block binding | child data, attempts, tutor turns, a grade |
+| learner page | 1 | learner | one target with reading and romaji, one context, at most three steps, one success criterion, task-appropriate completion line | answer guide, expected responses, common errors, grade, XP |
 | answer guide | 1 | parent only | target, expected responses, common errors, next step | learner identity, attempts, a score |
-| one-page homework | 1 | learner | condensed task card with a completion record | answer guide, expected responses, grade, XP |
+| one-page homework | 1 | learner | condensed task card with a task-appropriate completion record | answer guide, expected responses, grade, XP |
 | technical sheet | 2 | learner / operator | typed procedure, hazards, stop condition, structured torque rows, text equivalent, cited source | generated images, AI art as procedure |
+
+The cover copy is chosen by task kind, not copied across packs: a label task gets label-specific
+"What to notice", "Common errors" and "Next step" text and a `Day 1 / Day 2` completion record; a
+mealtime greeting task gets before-meal/after-meal text and `breakfast / lunch / dinner`. The
+label pack prints all six lesson labels in every one of its four documents, because its task lets
+the learner choose any three.
 
 ## Paper and margins
 
@@ -42,12 +48,18 @@ dialog's. The folio is part of the page, not a running header the engine may dro
 - The black-and-white proof under `bw/` is rasterised in grayscale at 150 dpi; text and rules
   remain legible because nothing depends on hue or fill.
 
-## Alt text and captions
+## Alt text, language and captions
 
 The only figure in the set is the label-task line drawing. It ships as inline SVG with
 `role="img"`, an accessible title and description, and a visible `<figcaption>` that says the
 drawing is orientation only and states no word or reading. The technical sheet deliberately has
 no figure: the structured torque rows are the diagram.
+
+Japanese runs in the HTML carry `lang="ja"` (the document itself is `lang="en"`), so an HTML
+consumer reads いただきます and ドア as Japanese. **PDF tagging is not claimed:** the Chromium
+export is untagged, so the SVG's accessible name and the `lang` attributes do not survive into
+the PDF. Selectable text is claimed and proven by extracting it back with `pdftotext`; PDF
+accessibility tagging is not.
 
 ## Page numbers
 
@@ -60,7 +72,7 @@ The proof checks the last folio of every document is present in the extracted PD
   size, SHA-256, required text and whether that text was found in the PDF.
 - `PRINT-PROOF.md` — human-readable proof summary generated from the manifest.
 - `CONTENT-CHECKLIST.md` — the one-target/one-context/one-criterion gates.
-- `SOURCE-PROVENANCE.md` — source lesson hash and phrase provenance.
+- `SOURCE-PROVENANCE.md` — fixture lesson block hash and phrase provenance.
 - `a4/`, `letter/` — the PDFs.
 - `bw/` — grayscale PNGs for the black-and-white legibility check.
 - `*.png` beside each PDF in `a4/` and `letter/` — colour page images for review.

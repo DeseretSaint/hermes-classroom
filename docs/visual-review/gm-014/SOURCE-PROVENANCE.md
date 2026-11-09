@@ -1,30 +1,37 @@
-# GM-014 source lesson and phrase provenance
+# GM-014 fixture source and phrase provenance
 
 This note records what the take-home fixture teaches, where each word came from, and the exact
 lesson block the print pages are bound to. It is the provenance companion to
 `bundled/homework/japanese-l0-mealtime/fixture.json` and `docs/visual-review/gm-014/`.
 
-## Source lesson binding
+## Fixture lesson block binding
 
 | field | value |
 |---|---|
 | source course id | `demo-japanese-l0-mealtime` |
 | source objective id | `obj_mealtime_greetings` |
 | source lesson version | `2026-11-09.1` |
-| source lesson hash | `sha256:fab219a459b72932c77ec28f9867c05c29bbfa5db356f5f0f22e44f6161640a5` |
+| fixture lesson block hash | `sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a` |
 
-The hash is `sha256` over the canonical JSON of the fixture's `lesson` block (sorted keys,
+The hash is `sha256` over the canonical JSON of the fixture's **own** `lesson` block (sorted keys,
 UTF-8, no insignificant whitespace). `coursebook.homework_print.lesson_hash()` computes it, and
 `tests/test_homework_content_print.py` recomputes it and fails if this note drifts. Changing a
-printed form, reading, romaji or gloss changes the hash, so a pack can say which lesson text it
-printed.
+printed form, reading, romaji or gloss changes the hash, so a pack can say which fixture lesson
+text it printed.
+
+`demo-japanese-l0-mealtime`, `obj_mealtime_greetings` and version `2026-11-09.1` name fields
+inside this fixture. They do not name a live course: no course, objective or lesson with those
+ids exists in this repository or in any branch, and the parent guide prints that plainly. The
+binding says "these are the fixture's words", not "this reproduces an existing lesson".
 
 ## Phrases
 
 ### いただきます — reading いただきます — romaji `itadakimasu`
 
 - Meaning recorded in the lesson: "thank you (for the meal just served); I receive (this meal)".
-- Register recorded: polite (ます form).
+- Register recorded: polite (ます form; author's analysis). This is the author's grammatical
+  analysis of the ます ending; **the cited Jisho entry does not label the phrase polite**. Only
+  `ごちそうさまでした` carries a dictionary register label in this fixture.
 - Use recorded: said before eating a meal.
 - Sources:
   - Jisho.org, いただきます / 頂きます — https://jisho.org/search/itadakimasu — accessed 2026-11-09.
@@ -37,7 +44,7 @@ printed.
 ### ごちそうさまでした — reading ごちそうさまでした — romaji `gochisōsamadeshita`
 
 - Meaning recorded in the lesson: "thank you for the meal; that was a delicious meal".
-- Register recorded: polite (teineigo).
+- Register recorded: polite (teineigo; Jisho label).
 - Use recorded: said after finishing a meal.
 - Source: Jisho.org, ごちそうさまでした / ご馳走様でした —
   https://jisho.org/search/%E3%81%94%E3%81%A1%E3%81%9D%E3%81%86%E3%81%95%E3%81%BE%E3%81%A7%E3%81%97%E3%81%9F

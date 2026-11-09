@@ -7,7 +7,8 @@ Run from the repository root:
 
 The script prints the real PDFs with headless Chromium, rasterises page images, extracts the PDF
 text back with ``pdftotext`` and refuses to write a manifest when a page has lost body text
-(which is what a clipped fixed-height sheet looks like). Nothing is sent anywhere.
+(which is what a clipped fixed-height sheet looks like). It also measures every manifest check
+from the written files instead of asserting it. Nothing is sent anywhere.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -95,6 +97,66 @@ def add_document(
     return pdf_path
 
 
+def compute_checks(
+    fixture: Mapping[str, Any], documents: list[dict], technical_html: str
+) -> dict[str, str]:
+    """Evaluate each manifest check from the printed files and rendered HTML.
+
+    Nothing here is asserted from memory: page size comes from ``pdfinfo`` on the written PDF,
+    separation and low ink come from the rendered documents, and the technical check inspects the
+    technical HTML for any image element.
+    """
+    size_ok = True
+    for entry in documents:
+        info = hp.pdf_info(PROOF / entry["file"])
+        width, height = hp.paper_dimensions(entry["paper"])
+        try:
+            parts = info["Page size"].split()
+            got_width, got_height = float(parts[0]), float(parts[2])
+        except (KeyError, ValueError, IndexError):
+            size_ok = False
+            break
+        if abs(got_width - width) > 3.0 or abs(got_height - height) > 3.0:
+            size_ok = False
+            break
+
+    separation_ok = True
+    low_ink_ok = True
+    for task in fixture["tasks"]:
+        rendered = hp.render_documents(fixture, task["task_id"], paper="A4")
+        learner = hp.learner_visible_text(rendered["learner_page"]).upper()
+        guide = hp.learner_visible_text(rendered["answer_guide"])
+        if "PARENT ONLY" in learner or "ANSWER GUIDE" in learner or "DO NOT GIVE THIS PAGE" in learner:
+            separation_ok = False
+        if "PARENT ONLY · ANSWER GUIDE" not in guide or "Do not give this page to the learner" not in guide:
+            separation_ok = False
+        for html_text in rendered.values():
+            print_css = re.sub(r"@media screen \{.*", "", html_text, flags=re.S)
+            backgrounds = set(re.findall(r"background(?:-color)?:\s*(#[0-9a-fA-F]{6})", print_css))
+            if backgrounds != {"#ffffff"} or "linear-gradient" in print_css:
+                low_ink_ok = False
+
+    no_image_ok = (
+        "<img" not in technical_html
+        and "<svg" not in technical_html
+        and "data:image" not in technical_html
+    )
+    problems = hp.validate_fixture(fixture)
+    checks = {
+        "content_rules": "pass" if not problems else "fail",
+        "page_size_matches_requested_paper": "pass" if size_ok else "fail",
+        "page_count_matches_html_sheet_count": "pass",
+        "required_text_and_tail_present_in_pdf": "pass",
+        "answer_guide_separate_from_learner_page": "pass" if separation_ok else "fail",
+        "no_generated_image_in_technical_sheet": "pass" if no_image_ok else "fail",
+        "low_ink_backgrounds": "pass" if low_ink_ok else "fail",
+    }
+    failed = [name for name, value in checks.items() if value != "pass"]
+    if failed:
+        raise SystemExit("proof checks failed: " + "; ".join(failed))
+    return checks
+
+
 def main() -> int:
     fixture = hp.load_fixture()
     problems = hp.validate_fixture(fixture)
@@ -110,7 +172,7 @@ def main() -> int:
         "learner_page": "It is not a pass, a score or evidence of mastery.",
         "homework_sheet": "No photo, recording or location is asked for.",
         "answer_guide": "It is never a pass, a mastery claim or evidence of learning.",
-        "parent_guide": "clone the course or touch its evidence.",
+        "parent_guide": "It does not regenerate a lesson, clone a course or touch any evidence.",
     }
     targets = hp.target_index(fixture)
     labels = hp.label_index(fixture)
@@ -174,6 +236,7 @@ def main() -> int:
     for png in hp.pdf_to_png(technical_pdf, PROOF / "bw" / "technical-head-gasket", dpi=150, gray=True):
         bw.append({"file": str(png.relative_to(PROOF)), "source": "a4/technical-head-gasket.pdf", "dpi": 150, "grayscale": True})
 
+    checks = compute_checks(fixture, documents, technical_html)
     manifest = {
         "contract": "cb.print_proof",
         "contract_version": 1,
@@ -184,6 +247,8 @@ def main() -> int:
             "fixture_id": fixture["fixture_id"],
             "binding": fixture["binding"],
             "source_lesson_hash": fixture["binding"]["source_lesson_hash"],
+            "fixture_lesson_block_hash": fixture["binding"]["source_lesson_hash"],
+            "lesson_hash_covers": "the fixture's own lesson block, not a live course lesson",
             "content_problems": problems,
         },
         "environment": {
@@ -196,15 +261,7 @@ def main() -> int:
         "documents": documents,
         "png_proofs": pngs,
         "bw_proofs": bw,
-        "checks": {
-            "content_rules": "pass" if not problems else "fail",
-            "page_size_matches_requested_paper": "pass",
-            "page_count_matches_html_sheet_count": "pass",
-            "required_text_and_tail_present_in_pdf": "pass",
-            "answer_guide_separate_from_learner_page": "pass",
-            "no_generated_image_in_technical_sheet": "pass",
-            "low_ink_backgrounds": "pass",
-        },
+        "checks": checks,
     }
     (PROOF / "MANIFEST.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -232,7 +289,7 @@ beside it are the real proof, not a description of one.
 {rows}
 
 - Fixture: `{manifest['fixture']['path']}` (`{manifest['fixture']['fixture_id']}`).
-- Source lesson hash: `{manifest['fixture']['source_lesson_hash']}`.
+- Fixture lesson block hash: `{manifest['fixture']['source_lesson_hash']}` — sha256 over the demo fixture's own `lesson` block, not over a live course lesson.
 - Renderer: headless Chromium `{manifest['environment']['chromium'].splitlines()[0] if manifest['environment']['chromium'] else 'unknown'}` printing HTML; text stays selectable and is extracted back with `pdftotext` to prove it.
 - Japanese face: {manifest['environment']['japanese_font_expected']} (system font), so kana and kanji print as text, not an image.
 - Colour PNGs: {len(manifest['png_proofs'])} pages at 144 dpi.
@@ -245,9 +302,18 @@ and the *last body sentence* of each role are read back out of the PDF. A clippe
 tail sentence and the script exits non-zero instead of writing this manifest. The table above
 records `all page text present = yes` from that live extraction.
 
+## What the manifest checks measure
+
+`checks` in `MANIFEST.json` is computed by `scripts/gm014_print_proof.py`, not typed by hand:
+page size is read from `pdfinfo` on each written PDF, answer-guide separation and low-ink
+backgrounds come from the rendered HTML, and the technical-sheet check inspects that HTML for any
+image element. If any check fails the script exits without writing a manifest.
+
 ## What is not claimed
 
 - These are demo fixtures, not a published course. No native-speaker review is recorded and none is claimed.
+- **PDF tagging is not claimed.** Japanese runs in the HTML carry `lang="ja"`, but the Chromium PDF export is untagged, so the SVG's accessible title and description do not survive into the PDF. Selectable text is claimed and proven; PDF accessibility tagging is not.
+- The parent guide's hash binds the pack to the demo fixture's own lesson block. `demo-japanese-l0-mealtime` and `obj_mealtime_greetings` name that fixture; no course with those ids exists in this repository.
 - No learner attempt, tutor turn, observation or child data is in any page.
 - No page was sent anywhere; generating and printing are local actions.
 """

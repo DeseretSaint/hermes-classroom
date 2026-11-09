@@ -320,8 +320,18 @@ li {{ margin-bottom: 1.2mm; }}
 table.facts {{ width: 100%; table-layout: fixed; border-collapse: collapse; border-top: 0.75pt solid #1a1713; border-bottom: 0.75pt solid #1a1713; margin: 2mm 0 4mm; font-size: 9.5pt; }}
 table.facts th, table.facts td {{ text-align: left; vertical-align: top; padding: 1.6mm 2mm; border-bottom: 0.5pt solid #d7cbb4; }}
 table.facts th {{ width: 34mm; white-space: normal; padding-right: 4mm; font-weight: 600; }}
+table.label-facts th, table.label-facts td {{ padding: 0.9mm 2mm; font-size: 8.8pt; }}
 figure {{ margin: 4mm 0; }}
 figure svg {{ display: block; width: 100%; max-height: 34mm; }}
+figure.label-figure {{ margin: 3mm 0; }}
+figure.label-figure svg {{ max-height: 27mm; }}
+.label-card h2 {{ margin: 3.8mm 0 1.3mm; }}
+.label-card p {{ margin-bottom: 1.8mm; }}
+.label-card li {{ margin-bottom: 1mm; }}
+.label-card .target-field {{ padding: 3.5mm 4mm 3mm; margin: 2.5mm 0 3mm; }}
+.label-card .target-display {{ font-size: 24pt; }}
+.label-card .criterion {{ margin: 3.5mm 0; }}
+.label-card .completion {{ margin-top: 4.5mm; padding-top: 2.2mm; }}
 figcaption {{ font-size: 8.5pt; color: #5c5347; margin-top: 1.5mm; }}
 .source-list {{ font-size: 8.5pt; color: #5c5347; }}
 .source-list li {{ margin-bottom: 1.4mm; }}
@@ -342,6 +352,10 @@ figcaption {{ font-size: 8.5pt; color: #5c5347; margin-top: 1.5mm; }}
 }}
 .tech-step {{ border-top: 0.75pt solid #d7cbb4; padding-top: 2mm; margin-top: 2mm; }}
 .tech-step .check {{ font-size: 9pt; color: #1a1713; }}
+.compact h2 {{ margin: 3.5mm 0 1.2mm; }}
+.compact p {{ margin-bottom: 1.8mm; }}
+.compact li {{ margin-bottom: 0.8mm; }}
+.compact table.facts th, .compact table.facts td {{ padding: 1.2mm 2mm; }}
 @media screen {{
   body {{ background: #ece7dc; }}
   .sheet {{ margin: 6mm auto; box-shadow: 0 1px 6px rgba(26, 23, 19, 0.18); }}
@@ -402,8 +416,8 @@ def _masthead(eyebrow: str, title: str, deck: str = "") -> str:
 def _target_field(target: Mapping[str, Any]) -> str:
     return (
         '<div class="target-field">'
-        f'<p class="target-display jp">{_esc(target["display"])}</p>'
-        f'<p class="target-reading jp">{_esc(target["reading"])}</p>'
+        f'<p class="target-display jp" lang="ja">{_esc(target["display"])}</p>'
+        f'<p class="target-reading jp" lang="ja">{_esc(target["reading"])}</p>'
         f'<p class="target-romaji">{_esc(target["romaji"])}</p>'
         f'<p class="target-meaning">{_esc(target["meaning"])}</p>'
         "</div>"
@@ -423,7 +437,7 @@ def _label_table(fixture: Mapping[str, Any], label_ids: Sequence[str]) -> str:
     labels = label_index(fixture)
     rows = "".join(
         "<tr>"
-        f'<td class="jp">{_esc(labels[label_id]["display"])}</td>'
+        f'<td class="jp" lang="ja">{_esc(labels[label_id]["display"])}</td>'
         f'<td>{_esc(labels[label_id]["romaji"])}</td>'
         f'<td>{_esc(labels[label_id]["meaning"])}</td>'
         "</tr>"
@@ -431,7 +445,7 @@ def _label_table(fixture: Mapping[str, Any], label_ids: Sequence[str]) -> str:
         if label_id in labels
     )
     return (
-        '<table class="facts"><thead><tr><th>Word (Japanese)</th><th>Romaji</th><th>Meaning</th></tr></thead>'
+        '<table class="facts label-facts"><thead><tr><th>Word (Japanese)</th><th>Romaji</th><th>Meaning</th></tr></thead>'
         f"<tbody>{rows}</tbody></table>"
     )
 
@@ -457,7 +471,7 @@ def _label_figure() -> str:
         "</svg>"
     )
     return (
-        "<figure>"
+        "<figure class=\"label-figure\">"
         f"{svg}"
         '<figcaption id="fig1-caption">Line drawing: a door, a window and a chair. Orientation only — '
         "the drawing states no word and no reading; the lesson words are the content.</figcaption>"
@@ -477,6 +491,80 @@ def _target_display(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> str:
     return target.get("display") or target.get("title") or ""
 
 
+def _label_set_ids(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> list[str]:
+    """Every label in the task's bounded set, suggested three first, then the alternates."""
+    target = _task_target(fixture, task)
+    return list(target.get("label_ids") or []) + list(target.get("alternates") or [])
+
+
+def _full_target_display(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> str:
+    """All labels of a label set, or the single phrase target's printed form."""
+    target = _task_target(fixture, task)
+    if target.get("kind") == "label_set":
+        labels = label_index(fixture)
+        return "・".join(labels[i]["display"] for i in _label_set_ids(fixture, task) if i in labels)
+    return _target_display(fixture, task)
+
+
+def _completion_boxes(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> str:
+    """The printed completion record, matched to the task kind rather than the meal clock."""
+    target = _task_target(fixture, task)
+    check = '<span class="checkbox">☐</span>'
+    if target.get("kind") == "label_set":
+        return f"{check} Day 1 &nbsp; {check} Day 2"
+    return f"{check} breakfast &nbsp; {check} lunch &nbsp; {check} dinner"
+
+
+def _notice_items(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> list[str]:
+    """What a parent should look for; task-kind aware, with no invented cultural claim."""
+    target = _task_target(fixture, task)
+    if target.get("kind") == "label_set":
+        return [
+            "Did the learner write one lesson word on each label, copying the printed Japanese?",
+            "Did each label go on the object it names?",
+            "Did they say the word aloud when passing the object on both days?",
+            "Romaji is a scaffold. If the learner still needs it, that is expected at L0.",
+            "If the learner is uncomfortable saying it aloud in front of others, let them say it quietly. "
+            "Do not turn the task into a performance.",
+        ]
+    return [
+        "Did the learner say the phrase out loud, at the table, without reading it off the card?",
+        "Did they choose the right moment — before eating for the before-meal phrase, after finishing "
+        "for the after-meal phrase?",
+        "Romaji is a scaffold. If the learner still needs it, that is expected at L0.",
+        "If the learner is uncomfortable saying it aloud in front of others, let them say it quietly. "
+        "Do not turn the task into a performance.",
+    ]
+
+
+def _common_errors_text(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> list[str]:
+    target = _task_target(fixture, task)
+    if target.get("kind") == "label_set":
+        return [
+            "A label attached to the wrong object: the word and the object must match.",
+            "Copying only the romaji: the label should carry the printed Japanese word.",
+            "Saying the word on one day only: the task asks for both days.",
+        ]
+    return [
+        "Using the before-meal phrase after the meal, or the reverse.",
+        "Dropping the polite ending: keeping the plain family form is a different lesson.",
+        "Saying it to the learner's own plate rather than at the table is fine; saying it only in their head is not.",
+    ]
+
+
+def _next_step_text(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> str:
+    target = _task_target(fixture, task)
+    if target.get("kind") == "label_set":
+        return (
+            "Keep the same three labels up for another week, or add a fourth object from the six in the "
+            "lesson. Do not add a second task to this sheet."
+        )
+    return (
+        "Repeat the same task at a different meal this week, or take the other mealtime greeting from "
+        "the same lesson. Do not add a second task to this sheet."
+    )
+
+
 def _task_body(fixture: Mapping[str, Any], task: Mapping[str, Any], *, with_completion: bool) -> str:
     target = _task_target(fixture, task)
     parts: list[str] = [
@@ -488,8 +576,13 @@ def _task_body(fixture: Mapping[str, Any], task: Mapping[str, Any], *, with_comp
     ]
     if target.get("kind") == "label_set":
         chosen = target.get("label_ids") or []
-        parts.append(f'<div class="target-field"><p class="target-display jp">{_esc("・".join(label_index(fixture)[i]["display"] for i in chosen))}</p><p class="target-meaning">Three of the six lesson labels; any three are acceptable.</p></div>')
-        parts.append(_label_table(fixture, chosen))
+        parts.append(
+            f'<div class="target-field"><p class="target-display jp" lang="ja">'
+            f'{_esc("・".join(label_index(fixture)[i]["display"] for i in chosen))}</p>'
+            '<p class="target-meaning">Suggested three of the six lesson labels below. '
+            "Choose any three.</p></div>"
+        )
+        parts.append(_label_table(fixture, _label_set_ids(fixture, task)))
         parts.append(_label_figure())
     else:
         parts.append(_target_field(target))
@@ -511,9 +604,8 @@ def _task_body(fixture: Mapping[str, Any], task: Mapping[str, Any], *, with_comp
     if with_completion:
         parts.append(
             '<div class="completion">'
-            "<p><strong>Done when:</strong> <span class=\"checkbox\">☐</span> breakfast &nbsp; "
-            "<span class=\"checkbox\">☐</span> lunch &nbsp; <span class=\"checkbox\">☐</span> dinner "
-            "&nbsp;&nbsp; <strong>Date</strong> <span class=\"line\">&nbsp;</span></p>"
+            f'<p><strong>Done when:</strong> {_completion_boxes(fixture, task)} '
+            '&nbsp;&nbsp; <strong>Date</strong> <span class="line">&nbsp;</span></p>'
             f'<p class="quiet">Completion is {_esc(task["completion"].replace("_", " "))} and stays in your notebook. '
             "It is not a pass, a score or evidence of mastery.</p>"
             "</div>"
@@ -523,6 +615,8 @@ def _task_body(fixture: Mapping[str, Any], task: Mapping[str, Any], *, with_comp
 
 def _learner_page(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: str) -> str:
     body = _task_body(fixture, task, with_completion=True)
+    if _task_target(fixture, task).get("kind") == "label_set":
+        body = '<div class="label-card">' + body + "</div>"
     total = 1
     return _page(body, role="learner-page", paper=paper, index=1, total=total, running="Coursebook · learner page")
 
@@ -536,10 +630,13 @@ def _homework_sheet(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: 
         chosen = target.get("label_ids") or []
         parts.append("<h2>Words for this task</h2>")
         parts.append(
-            f'<p class="target-display jp">{_esc(_target_display(fixture, task))}</p>'
+            f'<p class="target-display jp" lang="ja">{_esc(_target_display(fixture, task))}</p>'
         )
-        parts.append('<p class="target-meaning">Three of the six lesson labels; any three are acceptable.</p>')
-        parts.append(_label_table(fixture, chosen))
+        parts.append(
+            '<p class="target-meaning">Suggested three of the six lesson labels below. '
+            "Choose any three; every word is listed.</p>"
+        )
+        parts.append(_label_table(fixture, _label_set_ids(fixture, task)))
     else:
         parts.append(_target_field(target))
     parts.append("<h2>Where and when</h2>")
@@ -557,8 +654,7 @@ def _homework_sheet(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: 
     parts.append(
         '<div class="completion">'
         f'<p><strong>About {int(task["estimated_minutes"])} minutes.</strong> '
-        '<span class="checkbox">☐</span> breakfast &nbsp; <span class="checkbox">☐</span> lunch &nbsp; '
-        '<span class="checkbox">☐</span> dinner &nbsp;&nbsp; <strong>Date</strong> '
+        f'{_completion_boxes(fixture, task)} &nbsp;&nbsp; <strong>Date</strong> '
         '<span class="line">&nbsp;</span></p>'
         '<p class="quiet">Mark done or skipped when you finish. This records what you did. It is not a grade. '
         "No photo, recording or location is asked for.</p>"
@@ -582,7 +678,7 @@ def _parent_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         "<h2>The pack</h2>",
         '<table class="facts">'
         f"<tr><th>Task</th><td>{_esc(task['title'])}</td></tr>"
-        f"<tr><th>Target</th><td class=\"jp\">{_esc(_target_display(fixture, task))}</td></tr>"
+        f"<tr><th>Target</th><td class=\"jp\" lang=\"ja\">{_esc(_full_target_display(fixture, task))}</td></tr>"
         f"<tr><th>Context</th><td>{_esc(task['context'])}</td></tr>"
         f"<tr><th>Minutes</th><td>{int(task['estimated_minutes'])}</td></tr>"
         f"<tr><th>Completion</th><td>{_esc(task['completion'].replace('_', ' '))} only</td></tr>"
@@ -611,40 +707,41 @@ def _parent_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         for source in lesson["sources"]
         if source["source_id"] in _task_source_ids(fixture, task)
     )
+    notice_html = "".join(f"<li>{_esc(item)}</li>" for item in _notice_items(fixture, task))
+    errors_text = " ".join(_common_errors_text(fixture, task))
     page_two = [
         _masthead("Coursebook · parent guide · page two", "What to notice, and where the words come from"),
         "<h2>What to notice</h2>",
-        "<ul>"
-        "<li>Did the learner say the phrase out loud, at the table, without reading it off the card?</li>"
-        "<li>Did they choose the right moment — before eating for the before-meal phrase, after finishing "
-        "for the after-meal phrase?</li>"
-        "<li>Romaji is a scaffold. If the learner still needs it, that is expected at L0.</li>"
-        "<li>If the learner is uncomfortable saying it aloud in front of others, let them say it quietly. "
-        "Do not turn the task into a performance.</li>"
-        "</ul>",
+        f"<ul>{notice_html}</ul>",
         "<h2>Expected responses and next step</h2>",
         f"<p><strong>Expected:</strong> {_esc(_expected_response(fixture, task))}</p>",
-        "<p><strong>Common errors:</strong> saying the before-meal phrase after eating, or dropping the polite "
-        "ending. Correct once, calmly, and move on.</p>",
-        "<p><strong>Next step:</strong> repeat the same task at a different meal this week, or take the other "
-        "mealtime greeting from the same lesson. Do not add a second task to this sheet.</p>",
+        f"<p><strong>Common errors:</strong> {_esc(errors_text)} Correct once, calmly, and move on.</p>",
+        f"<p><strong>Next step:</strong> {_esc(_next_step_text(fixture, task))}</p>",
         "<h2>Sources for this task</h2>",
         f'<ul class="source-list">{sources}</ul>',
-        "<p class=\"quiet\">The fixture records each phrase, reading, romaji and gloss against the entries "
-        "above. No culture claim is made beyond the cited use note.</p>",
-        "<h2>Source lesson binding</h2>",
+        "<p class=\"quiet\">Each form, reading and gloss is recorded against the entries above. "
+        "No culture claim is made beyond the cited use note.</p>",
+        "<h2>Fixture lesson block binding</h2>",
         '<table class="facts">'
-        f"<tr><th>Course</th><td class=\"hash\">{_esc(binding(fixture)['source_course_id'])}</td></tr>"
-        f"<tr><th>Objective</th><td class=\"hash\">{_esc(binding(fixture)['source_objective_id'])}</td></tr>"
-        f"<tr><th>Lesson version</th><td class=\"hash\">{_esc(binding(fixture)['source_lesson_version'])}</td></tr>"
-        f"<tr><th>Lesson hash</th><td class=\"hash\">{_esc(hash_value)}</td></tr>"
+        f"<tr><th>Course id (fixture)</th><td class=\"hash\">{_esc(binding(fixture)['source_course_id'])}</td></tr>"
+        f"<tr><th>Objective id (fixture)</th><td class=\"hash\">{_esc(binding(fixture)['source_objective_id'])}</td></tr>"
+        f"<tr><th>Lesson version (fixture)</th><td class=\"hash\">{_esc(binding(fixture)['source_lesson_version'])}</td></tr>"
+        f"<tr><th>Fixture lesson block hash</th><td class=\"hash\">{_esc(hash_value)}</td></tr>"
         "</table>",
-        "<p class=\"quiet\">This pack prints the lesson's exact words. It does not regenerate the lesson, "
-        "clone the course or touch its evidence.</p>",
+        "<p class=\"quiet\">Fixture-local ids: no live course with these ids exists in this repository. "
+        "This pack prints the demo fixture's own words, not a live course lesson. It does not regenerate "
+        "a lesson, clone a course or touch any evidence.</p>",
     ]
     pages = [
         _page("".join(page_one), role="parent-guide", paper=paper, index=1, total=total, running="Coursebook · parent guide"),
-        _page("".join(page_two), role="parent-guide", paper=paper, index=2, total=total, running="Coursebook · parent guide"),
+        _page(
+            '<div class="compact">' + "".join(page_two) + "</div>",
+            role="parent-guide",
+            paper=paper,
+            index=2,
+            total=total,
+            running="Coursebook · parent guide",
+        ),
     ]
     return "".join(pages)
 
@@ -672,7 +769,7 @@ def _expected_response(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> s
         labels = label_index(fixture)
         return "; ".join(
             f"{labels[label_id]['display']} ({labels[label_id]['romaji']}) — {labels[label_id]['meaning']}"
-            for label_id in target.get("label_ids") or []
+            for label_id in _label_set_ids(fixture, task)
         )
     return (
         f"{target['display']} ({target['reading']} · {target['romaji']}) — {target['meaning']}. "
@@ -689,28 +786,29 @@ def _answer_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         "<h2>The target</h2>",
     ]
     if target.get("kind") == "label_set":
-        parts.append(_label_table(fixture, target.get("label_ids") or []))
+        parts.append(_label_table(fixture, _label_set_ids(fixture, task)))
     else:
         parts.append(_target_field(target))
         parts.append(_fact_table(target))
     parts.append("<h2>Expected responses</h2>")
     if target.get("kind") == "label_set":
-        parts.append("<p>The learner says each label aloud when passing the object, for two days. Any three of the six lesson labels are equally correct.</p>")
+        parts.append(
+            "<p>The learner says each chosen label aloud when passing the object, on both days. "
+            "The six lesson labels are listed above; any three are equally correct.</p>"
+        )
     else:
         parts.append(
-            f"<p>The learner says <span class=\"jp\">{_esc(target['display'])}</span> "
+            f"<p>The learner says <span class=\"jp\" lang=\"ja\">{_esc(target['display'])}</span> "
             f"({_esc(target['romaji'])}) out loud at the moment named on the sheet. A quiet, correct use counts. "
             "Reading it off the card does not meet the success criterion.</p>"
         )
     parts.append("<h2>Common errors</h2>")
     parts.append(
-        "<ul><li>Using the before-meal phrase after the meal, or the reverse.</li>"
-        "<li>Dropping the polite ending: keeping the plain family form is a different lesson.</li>"
-        "<li>Saying it to the learner's own plate rather than at the table is fine; saying it only in their head is not.</li></ul>"
+        "<ul>" + "".join(f"<li>{_esc(item)}</li>" for item in _common_errors_text(fixture, task)) + "</ul>"
     )
     parts.append("<h2>Next step</h2>")
     parts.append(
-        "<p>Repeat at one other meal this week. If the learner is ready, ask them to say it first and you answer. "
+        f"<p>{_esc(_next_step_text(fixture, task))} "
         "No grade, score or XP is recorded here.</p>"
     )
     parts.append(
