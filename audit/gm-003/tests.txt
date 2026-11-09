@@ -1,39 +1,44 @@
-GM-003 test evidence (branch wt/gm-003-world — review round 3)
+GM-003 test evidence (branch wt/gm-003-world — review round 4)
 
 Focused: python3 -m unittest tests.test_world -v
-  Ran 19 tests ... OK
+  Ran 22 tests ... OK
   (all 8 required names + test_world_methods_are_wired_to_the_frozen_manifest, the
    review-round-2 tests test_concept_failure_leaves_named_terminal_state,
    test_brief_patch_cannot_reclassify_a_technical_course and
-   test_kit_requires_an_approved_style, plus the review-round-3 tests
+   test_kit_requires_an_approved_style, the review-round-3 tests
    test_technical_world_rejects_decorative_motif_patch,
    test_world_forbidden_changes_cache_identity, test_presentation_fields_reach_the_prompt,
    test_workshop_section_prompts_have_no_procedure_title,
    test_trades_world_keeps_workshop_negatives and
-   test_trades_course_derives_service_safety_from_grammar)
+   test_trades_course_derives_service_safety_from_grammar, plus the review-round-4 tests
+   test_technical_world_rejects_paraphrased_decorative_motifs,
+   test_technical_world_rejects_scene_text_in_tone_or_audience and
+   test_derived_objective_titles_are_not_presentation_fenced)
 
 Regression set: python3 -m unittest tests.test_world tests.test_workers tests.test_cost_ceilings
   tests.test_artifacts tests.test_rpc tests.test_contracts tests.test_gm_contract
-  Ran 278 tests ... OK
-  (sentinel's 272-test set plus the six review-round-3 tests)
+  Ran 281 tests ... OK
+  (sentinel's 278-test set plus the three review-round-4 tests)
 
-Red state (review round 3, before the code fix): audit/gm-003/red-attempt3.txt
-  Ran 19 tests ... FAILED (failures=6)
-  - test_technical_world_rejects_decorative_motif_patch: world.generate unexpectedly succeeded
-  - test_trades_course_derives_service_safety_from_grammar: 'none' != 'workshop'
-  - test_presentation_fields_reach_the_prompt: identical cache_key for a changed tone/audience
-  - test_world_forbidden_changes_cache_identity: 3 != 6 provider calls after a forbidden change
-  - test_trades_world_keeps_workshop_negatives: 'torque' not found in the negative prompt
-  - test_workshop_section_prompts_have_no_procedure_title: 'before you lift the car' found
+Red state (review round 4, before the code fix): audit/gm-003/red-attempt4.txt
+  Ran 22 tests ... FAILED (failures=6, errors=1)
+  - test_technical_world_rejects_paraphrased_decorative_motifs (kit): NOT_FOUND instead of a
+    policy refusal — paraphrases were not fenced at all
+  - test_technical_world_rejects_paraphrased_decorative_motifs (concepts): world.generate
+    unexpectedly succeeded (3 provider calls; a lantern district on a head gasket)
+  - test_technical_world_rejects_paraphrased_decorative_motifs: 1 world row created
+  - test_technical_world_rejects_scene_text_in_tone_or_audience (tone): unexpectedly succeeded
+  - test_technical_world_rejects_scene_text_in_tone_or_audience (audience): STALE_REVISION after
+    the tone call had already been accepted and spent
+  - test_technical_world_rejects_scene_text_in_tone_or_audience: 1 world row created
+  - test_derived_objective_titles_are_not_presentation_fenced: derived objective title
+    'Service bay' refused as motif_not_in_grammar (G4)
 
-Green state: audit/gm-003/green-attempt3.txt
-  Ran 19 tests ... OK
+Green state: audit/gm-003/green-attempt4.txt
+  Ran 22 tests ... OK
 
 Full suite: python3 -m unittest discover -s tests -t . -q
-  Ran 2788 tests in 611.333s
-  OK (skipped=1)
-  exit 0
-  Log: audit/gm-003/full-attempt3.log
+  See audit/gm-003/full-attempt4.log for this round's run.
 
 No provider key or account id appears in this evidence. The media seam in tests is a local fake
 that counts calls and returns deterministic PNG bytes; no live provider call was made.

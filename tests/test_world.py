@@ -354,6 +354,13 @@ class WorldMediaJobTest(WorldHandlerMixin, KernelCase):
         self.assertEqual(len(self.fake.calls), 3)
         read = self.ok("world.read", {"course_id": self.course_id})["result"]
         self.assertEqual(read["world"]["state"], "concepts_ready")
+        # G3: the *generated* brief — not only the fixtures — is subject-specific. It keeps
+        # the field-atlas native cues and does not pass as the head-gasket world.
+        generated = read["world"]["brief"]
+        generated_motifs = [str(item).lower() for item in generated["motifs"]]
+        self.assertIn("lantern district", generated_motifs)
+        self.assertIn("cafe counter", generated_motifs)
+        self.assertEqual(world.anti_generic_problems(generated, HEAD_GASKET_BRIEF), ())
         board_hashes = [item["style_hash"] for item in read["world"]["concepts"]]
         self.assertEqual(len(set(board_hashes)), 3)
 
@@ -456,6 +463,32 @@ class WorldMediaJobTest(WorldHandlerMixin, KernelCase):
         for call in self.fake.calls:
             self.assertIn("wry, coastal", call)
             self.assertIn("night-shift nurses", call)
+
+    def test_derived_objective_titles_are_not_presentation_fenced(self) -> None:
+        # G4: the ownership fence applies to caller presentation patches only. An approved
+        # objective title that happens to use another grammar's vocabulary is derived course
+        # content, not a caller grafting a different art direction onto this world.
+        domain.record_objective(
+            self.plan_id,
+            title="Service bay",
+            evidence_target="recall",
+            criteria=criteria_with(numeric_spec()),
+        )
+        self.ok(
+            "world.generate",
+            {"course_id": self.course_id, "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="derived-title-1",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        self.assertEqual(read["world"]["state"], "concepts_ready")
+        motifs = [str(item).lower() for item in read["world"]["brief"]["motifs"]]
+        self.assertIn("service bay", motifs)
+        self.assertTrue(
+            all(item.startswith("field_atlas--") for item in
+                [entry["style_id"] for entry in read["world"]["concepts"]])
+        )
 
     # ── helpers ─────────────────────────────────────────────────────────
     def count(self, sql: str) -> int:
@@ -653,6 +686,139 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         for call in self.fake.calls:
             self.assertNotIn("lantern district", call.lower())
             self.assertIn("service bay", call.lower())
+
+    def test_technical_world_rejects_paraphrased_decorative_motifs(self) -> None:
+        # G1: the exact-vocabulary fence is not enough. A head-gasket world patched with
+        # paraphrases of another art direction ('paper lanterns', 'izakaya counter',
+        # 'night market') must be refused before any row, job or spend on both stages.
+        patch = {"motifs": ["paper lanterns", "izakaya counter", "night market"]}
+        for stage in ("kit", "concepts"):
+            with self.subTest(stage=stage):
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": self.course_id,
+                        "stage": stage,
+                        "brief_patch": patch,
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"paraphrase-{stage}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertEqual(
+                    error["details"]["reason"], "presentation_motifs_not_subject_specific"
+                )
+                self.assertEqual(error["details"]["grammar"], "workshop_manual")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # A real subject patch is still a World Studio field. One subject-specific motif plus
+        # the grammar's native cues is accepted, and the native cues lead the merged list.
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["four-cylinder block", "engine block cutaway"]},
+            },
+            expected_revision=0,
+            idempotency_key="subject-motif-1",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        motifs = [str(item).lower() for item in read["world"]["brief"]["motifs"]]
+        self.assertIn("four-cylinder block", motifs)
+        self.assertIn("engine block cutaway", motifs)
+        self.assertIn("service bay", motifs)
+        self.assertEqual(motifs[0], "engine block cutaway")
+        self.assertLess(motifs.index("service bay"), motifs.index("four-cylinder block"))
+        for call in self.fake.calls:
+            self.assertIn("service bay", call.lower())
+            self.assertNotIn("paper lantern", call.lower())
+
+        # The fence also holds on the kit spend path: with a style approved, the same
+        # paraphrased patch is refused before the kit job exists and spends nothing.
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        board = read["world"]["concepts"][0]
+        self.ok(
+            "world.approve",
+            {
+                "course_id": self.course_id,
+                "world_id": read["world"]["world_id"],
+                "stage": "style",
+                "approved_hash": board["style_hash"],
+            },
+            expected_revision=read["revision"],
+            idempotency_key="subject-motif-style",
+        )
+        approved = self.ok("world.read", {"course_id": self.course_id})["result"]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": patch,
+            },
+            expected_revision=approved["revision"],
+            idempotency_key="paraphrase-kit-approved",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(
+            kit_error["details"]["reason"], "presentation_motifs_not_subject_specific"
+        )
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+    def test_technical_world_rejects_scene_text_in_tone_or_audience(self) -> None:
+        # G2: tone/audience are free text that reaches the image prompt. A caller must not be
+        # able to smuggle another art direction into the scene through a whitelisted field.
+        cases = (
+            ("tone", "paper lantern district at dusk, warm cafe counters"),
+            ("audience", "regulars at a lantern-district izakaya"),
+        )
+        for field, value in cases:
+            with self.subTest(field=field):
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": self.course_id,
+                        "stage": "concepts",
+                        "brief_patch": {field: value},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"scene-text-{field}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertEqual(
+                    error["details"]["reason"], "presentation_names_foreign_grammar"
+                )
+                self.assertEqual(error["details"]["field"], field)
+                self.assertEqual(error["details"]["grammar"], "workshop_manual")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Workshop-native presentation text is accepted and still reaches every prompt.
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {
+                    "tone": "practical, calm, cold overhead light",
+                    "audience": "apprentice technicians",
+                },
+            },
+            expected_revision=0,
+            idempotency_key="scene-text-native",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for call in self.fake.calls:
+            self.assertIn("practical, calm, cold overhead light", call)
+            self.assertIn("apprentice technicians", call)
 
     def test_trades_course_derives_service_safety_from_grammar(self) -> None:
         # F5: a 'trades' course selects workshop_manual, so its derived brief is a service

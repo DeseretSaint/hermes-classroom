@@ -1013,13 +1013,105 @@ def foreign_grammar_motifs(
     subject's art direction onto this course: 'lantern district' on a service bay is exactly the
     generic-world failure F7 forbids.
     """
-    typed = _as_brief(brief)
+    return foreign_motifs_in(_as_brief(brief).motifs, grammar)
+
+
+def foreign_motifs_in(
+    motifs: Sequence[Any], grammar: str
+) -> list[tuple[str, tuple[str, ...]]]:
+    """The same ownership check over a raw motif list (a caller's presentation patch)."""
     problems: list[tuple[str, tuple[str, ...]]] = []
-    for motif in typed.motifs:
+    for motif in motifs:
         owners = _motif_owner_grammars(motif)
         if owners and grammar not in owners:
-            problems.append((motif, tuple(sorted(owners))))
+            problems.append((str(motif), tuple(sorted(owners))))
     return problems
+
+
+def _phrase_tokens(value: Any) -> tuple[str, ...]:
+    """Lower-case words, punctuation flattened, regular plurals singularised.
+
+    'Cafe counters' -> ('cafe', 'counter'), 'lantern-district' -> ('lantern', 'district').
+    This is deliberately shallow: it catches paraphrases of authored grammar vocabulary without
+    pretending to understand language.
+    """
+    import re
+
+    text = re.sub(r"[^a-z0-9]+", " ", str(value).lower())
+    tokens: list[str] = []
+    for token in text.split():
+        if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+            token = token[:-1]
+        tokens.append(token)
+    return tuple(tokens)
+
+
+def _grammar_phrase_tokens(grammar: str) -> frozenset[tuple[str, ...]]:
+    record = grammar_record(grammar)
+    return frozenset(
+        _phrase_tokens(item) for item in (*record.motifs, *record.subject_cues)
+    )
+
+
+def _is_native_motif(motif: Any, grammar: str) -> bool:
+    return _phrase_tokens(motif) in _grammar_phrase_tokens(grammar)
+
+
+#: Free-text presentation fields that are interpolated into the image prompt.
+PRESENTATION_TEXT_FIELDS: tuple[str, ...] = ("tone", "audience")
+
+
+def foreign_presentation_text(
+    fields: Mapping[str, Any], grammar: str
+) -> list[tuple[str, str, tuple[str, ...]]]:
+    """Presentation text that names another grammar's scene.
+
+    ``tone`` and ``audience`` reach the image prompt verbatim, so they are part of the same
+    fence as ``motifs``: a workshop world may describe a calm, practical mood but not a lantern
+    district. Matching is case- and plural-normalised and vocabulary-based, so a paraphrase of
+    another art direction is refused instead of only the exact authored phrase.
+    """
+    selected = grammar_record(grammar).name
+    vocabulary: dict[tuple[str, ...], set[str]] = {}
+    for name in GRAMMARS:
+        if name == selected:
+            continue
+        for phrase in _grammar_phrase_tokens(name):
+            if len(phrase) == 1 and len(phrase[0]) < 4:
+                continue
+            vocabulary.setdefault(phrase, set()).add(name)
+    problems: list[tuple[str, str, tuple[str, ...]]] = []
+    for field in PRESENTATION_TEXT_FIELDS:
+        if field not in fields:
+            continue
+        tokens = _phrase_tokens(fields[field])
+        for phrase, owners in vocabulary.items():
+            width = len(phrase)
+            windows = (
+                tokens[index : index + width] == phrase
+                for index in range(len(tokens) - width + 1)
+            )
+            if any(windows):
+                problems.append((field, " ".join(phrase), tuple(sorted(owners))))
+                break
+    return problems
+
+
+def presentation_motif_problems(
+    motifs: Sequence[Any], grammar: str
+) -> tuple[str, ...]:
+    """The runtime form of the anti-generic rule for a caller-supplied motif set.
+
+    Plan §4.4 rule 2: a world keeps at least two of its grammar's own cues, and another
+    subject's motifs may never outnumber them. Unknown but subject-specific motifs are allowed
+    (a 'four-cylinder block' in a service bay is real), paraphrased decorative clusters are not.
+    """
+    native_vocabulary = _grammar_phrase_tokens(grammar)
+    native = sum(1 for motif in motifs if _phrase_tokens(motif) in native_vocabulary)
+    non_native = len(motifs) - native
+    if native < 2 or (non_native and non_native > native):
+        return ("presentation_motifs_not_subject_specific",)
+    return ()
 
 
 def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> WorldBrief:
@@ -1057,6 +1149,13 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
                 present.add(cue.lower())
                 native_needed -= 1
         merged["motifs"] = current[:6]
+        if isinstance(patch, Mapping) and "motifs" in patch:
+            # Native cues lead the merged list: a caller's additions follow them, so a
+            # paraphrased decorative cluster cannot sit in front of the grammar's own scene.
+            merged["motifs"] = sorted(
+                merged["motifs"],
+                key=lambda item: 0 if _is_native_motif(item, record.name) else 1,
+            )
     return WorldBrief.from_mapping(merged)
 
 
@@ -1613,6 +1712,8 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             "brief_patch must be an object of presentation fields.",
             field="brief_patch",
         )
+    patched_motifs: list[str] = []
+    patched_text: dict[str, str] = {}
     if isinstance(raw_patch, Mapping):
         reclassifying = [field for field in CLASSIFICATION_BRIEF_FIELDS if field in raw_patch]
         unknown = reclassifying or sorted(set(raw_patch) - BRIEF_PATCH_FIELDS)
@@ -1624,6 +1725,26 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 field=unknown[0],
                 allowed=sorted(BRIEF_PATCH_FIELDS),
             )
+        if "motifs" in raw_patch:
+            raw_motifs = raw_patch.get("motifs") or []
+            if not isinstance(raw_motifs, (list, tuple)):
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "brief_patch.motifs must be a list of motif strings.",
+                    field="motifs",
+                )
+            patched_motifs = [str(item) for item in raw_motifs if str(item).strip()]
+        for field in PRESENTATION_TEXT_FIELDS:
+            if field not in raw_patch:
+                continue
+            value = raw_patch.get(field)
+            if not isinstance(value, str):
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"brief_patch.{field} must be a string.",
+                    field=field,
+                )
+            patched_text[field] = value
     with db.transaction() as connection:
         replay = _replay(connection, key, method, payload_hash)
         if replay is not None:
@@ -1636,7 +1757,9 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         brief = _merged_brief(connection, course_id, row, payload.get("brief_patch"))
         grammar = WorldPolicy.select(brief)
         WorldPolicy.assert_allowed(brief, grammar)
-        foreign = foreign_grammar_motifs(brief, grammar)
+        # The ownership fence covers caller presentation only (G4): a derived objective title
+        # is course content, not a caller patching a different art direction onto this world.
+        foreign = foreign_motifs_in(patched_motifs, grammar)
         if foreign:
             motif, owners = foreign[0]
             raise _policy_error(
@@ -1647,6 +1770,31 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 grammar=grammar,
                 owner_grammars=list(owners),
             )
+        foreign_text = foreign_presentation_text(patched_text, grammar)
+        if foreign_text:
+            field, phrase, owners = foreign_text[0]
+            raise _policy_error(
+                "presentation_names_foreign_grammar",
+                f"brief_patch.{field} names the {owners[0]!r} art direction, not {grammar!r}; "
+                "presentation text may describe this world's mood but never another "
+                "subject's scene.",
+                field=field,
+                phrase=phrase,
+                grammar=grammar,
+                owner_grammars=list(owners),
+            )
+        if patched_motifs and grammar != DEFAULT_GRAMMAR:
+            # Plan §4.4 rule 2 at runtime: a paraphrase of another art direction is not
+            # exempt just because it is not exact authored vocabulary.
+            problems = presentation_motif_problems(brief.motifs, grammar)
+            if problems:
+                raise _policy_error(
+                    problems[0],
+                    "a patched motif set must keep at least two of this grammar's own "
+                    "subject cues, and other subjects' motifs may not outnumber them.",
+                    grammar=grammar,
+                    motifs=list(brief.motifs),
+                )
         if row is None:
             if stage != "concepts":
                 raise RpcError.of(

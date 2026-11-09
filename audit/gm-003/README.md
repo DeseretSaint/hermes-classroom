@@ -95,6 +95,27 @@ the intended reasons); green: `audit/gm-003/green-attempt3.txt` (19 OK).
 | **F4** (should-fix) workshop section prompts embedded procedure titles | `build_prompt` renders a workshop section as "place and mood only, no procedure, sequence or tool action depicted"; field-atlas sections keep their human titles | `test_workshop_section_prompts_have_no_procedure_title` |
 | **F5** (should-fix) a `trades` course derived `safety_class='none'` and lost the workshop hard negatives | `_derive_brief` derives safety from the selected grammar, and `build_prompt` enables service negatives from the grammar as well as the brief | `test_trades_world_keeps_workshop_negatives`, `test_trades_course_derives_service_safety_from_grammar` |
 
-The F1 fence is symmetric: a language course patched with `service bay` / `torque wrench` is
-refused by the same ownership check, so plan §4.4 rule 2 now holds at runtime, not only in
-`anti_generic_problems()`.
+The F1 fence is symmetric for *exact* vocabulary: a language course patched with `service bay` /
+`torque wrench` is refused by the same ownership check. Exact vocabulary alone is not the whole
+of rule 2, which is why review round 4 added the runtime invariant described below.
+
+## Review round 4 — sentinel changes requested (G1–G4)
+
+Round 4 reproduced F2–F5 fixed, but showed that F1 only matched exact authored vocabulary: a
+head-gasket course patched with paraphrases (`paper lanterns`, `izakaya counter`, `night market`)
+was accepted and spent 3 provider calls, and free-text `tone`/`audience` carried the same scene
+into every prompt. Both are fixed with tests first. Red evidence:
+`audit/gm-003/red-attempt4.txt` (6 failures + 1 error, all for the intended reasons); green:
+`audit/gm-003/green-attempt4.txt` (22 OK).
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **G1** paraphrased decorative motifs still turned a head gasket into a lantern district | The runtime form of plan §4.4 rule 2 now runs on the merged brief before any row, job or spend: a patched motif set must keep at least two grammar-native subject cues, and other-subject motifs may never outnumber them (`POLICY_VIOLATION reason=presentation_motifs_not_subject_specific`). Native cues are also sorted ahead of caller additions, so a decorative cluster cannot lead the scene. Applies to both `concepts` and `kit` | `test_technical_world_rejects_paraphrased_decorative_motifs` |
+| **G2** free-text `tone`/`audience` bypassed the fence | Both fields are scanned with the case/plural-normalised foreign-vocabulary check and refused `POLICY_VIOLATION reason=presentation_names_foreign_grammar` with the offending field and phrase, before spend | `test_technical_world_rejects_scene_text_in_tone_or_audience` |
+| **G3** (should-fix) README overclaimed that rule 2 held at runtime; the anti-generic test only saw fixtures | Claim corrected in this section; `test_world_style_swap_rejects_generic_art`'s generated-brief counterpart now asserts through the handler path that the stored brief keeps the field-atlas cues and yields no `anti_generic_problems` against the head-gasket brief | `test_world_cache_prevents_duplicate_spend` (generated-brief assertions) |
+| **G4** (should-fix) derived objective titles were subject to the ownership fence | The ownership and anti-generic fences now inspect the caller's `brief_patch` only; derived course content (objective titles promoted into motifs) is not re-fenced as if it were a presentation patch | `test_derived_objective_titles_are_not_presentation_fenced` |
+
+The anti-generic runtime invariant is a majority/at-least-two rule over normalized grammar
+vocabulary, not a second copy of `anti_generic_problems()`: the swap test compares two chosen
+briefs, while generation only has one brief and must judge the patched motif mix. `four-cylinder
+block` / `engine block cutaway` remains a legitimate workshop patch.
