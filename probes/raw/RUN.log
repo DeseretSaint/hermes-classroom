@@ -81,14 +81,14 @@ RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy
     "invalid_accepted_without_package": true
   },
   "latency_s": {
-    "p50": 2.215,
-    "p95": 4.273,
+    "p50": 1.616,
+    "p95": 3.486,
     "samples": [
-      1.583,
-      1.658,
-      2.215,
-      3.148,
-      4.273
+      1.22,
+      1.387,
+      1.616,
+      2.827,
+      3.486
     ]
   },
   "scenarios": {
@@ -96,15 +96,15 @@ RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy
       "scenario": "invalid_json",
       "timeout": null,
       "ok": true,
-      "elapsed_s": 10.225,
+      "elapsed_s": 3.28,
       "content_type": "json",
       "parsed": {
         "answer": 42
       },
       "provider": "nous",
       "model": "deepseek/deepseek-v4.1-flash-1017",
-      "usage": 588,
-      "text_head": "{\"answer\":42}",
+      "usage": 226,
+      "text_head": "{ \"answer\": 42 }",
       "audit": {
         "plugin_id": "cb-probe",
         "purpose": "qa-probe-grade",
@@ -118,7 +118,7 @@ RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy
       "scenario": "timeout",
       "timeout": 0.001,
       "ok": false,
-      "elapsed_s": 3.408,
+      "elapsed_s": 3.47,
       "error_type": "APITimeoutError",
       "error": "Request timed out."
     },
@@ -126,19 +126,19 @@ RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy
       "scenario": "outage",
       "timeout": null,
       "ok": true,
-      "elapsed_s": 10.357,
+      "elapsed_s": 9.84,
       "content_type": "json",
       "parsed": {
         "verdict": "pass",
         "criteria": [
-          "meets all required course learning objectives",
-          "score of 42 exceeds the minimum passing threshold for the coursebook assessment"
+          "Submitted answer of 42 is correct",
+          "All required grading criteria are satisfied"
         ]
       },
       "provider": "nous",
       "model": "stepfun/step-3.7-flash:free",
-      "usage": 682,
-      "text_head": "{\n  \"verdict\": \"pass\",\n  \"criteria\": [\"meets all required course learning objectives\", \"score of 42 exceeds the minimum passing threshold for the coursebook assessment\"]\n}",
+      "usage": 1135,
+      "text_head": "{\"verdict\": \"pass\", \"criteria\": [\"Submitted answer of 42 is correct\", \"All required grading criteria are satisfied\"]}",
       "audit": {
         "plugin_id": "cb-probe",
         "purpose": "qa-probe-grade",
@@ -151,18 +151,18 @@ RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy
       "scenario": "schema_ok",
       "timeout": null,
       "ok": true,
-      "elapsed_s": 1.227,
+      "elapsed_s": 1.117,
       "content_type": "json",
       "parsed": {
         "verdict": "pass",
         "criteria": [
-          "Correct: 6*7=42 matches the answer."
+          "Answer matches 6*7=42."
         ]
       },
       "provider": "nous",
       "model": "deepseek/deepseek-v4.1-flash-1017",
-      "usage": 226,
-      "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Correct: 6*7=42 matches the answer.\"]}",
+      "usage": 215,
+      "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Answer matches 6*7=42.\"]}",
       "audit": {
         "plugin_id": "cb-probe",
         "purpose": "qa-probe-grade",

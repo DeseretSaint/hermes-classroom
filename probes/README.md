@@ -9,6 +9,7 @@ operator course and never sends an external message.
 |---|---|
 | `setup.sh` | Creates the dedicated `cbqa` profile, an isolated test root, AGENTS fixtures, and links both the Coursebook skeleton and the probe plugin into that profile. |
 | `p1_ids.sh` … `p7_authority.sh` | One script per probe from `PREBUILD_SPEC.md` §14. Each writes raw evidence under `raw/` and prints `RESULT probe=<name> PASS|FAIL|BLOCKED <detail>`. |
+| `p1b_compress_long.sh` | Probe 1's compression segment on a transcript long enough to compact (`protect_last_n=20` makes the 8-message p1 session refuse). Writes `raw/p1/compress_long/`; assertions in `scripts/assert_compress.py`. |
 | `h66-liveness.py` | Offline H-66 reproduction: a stalled host tool, a stalled provider, and a heartbeat that loses the profile context. Finite by construction; prints `RESULT host_seam_stall=… provider_stall=… heartbeat_not_renewed=…`. The regression assertions are `tests/test_h66_liveness.py`. |
 | `run_all.sh` | Runs all seven and writes `raw/RUN.log` + `raw/VERDICTS.txt`. |
 | `plugin/` | `cb-probe`: a Hermes plugin that logs hook payloads and registers test tools (ids, media artifact, structured grading, idempotent submit). Control file: `<profile>/test-root/control.json`. |

@@ -1,0 +1,5 @@
+↪ restored workspace dir: /home/deseretsaint/.hermes/profiles/cbqa/test-root/isolated_course
+↻ Resumed session local-1de7a2eadd0b2b6c56138192daac51f945e62afb3c87f0389004728e3ad5b293 "Reply with START only #3" (6 user messages, 12 total messages)
+POSTCOMPACT
+
+session_id: local-1de7a2eadd0b2b6c56138192daac51f945e62afb3c87f0389004728e3ad5b293

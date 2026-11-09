@@ -2,19 +2,19 @@
   "scenario": "outage",
   "timeout": null,
   "ok": true,
-  "elapsed_s": 10.357,
+  "elapsed_s": 9.84,
   "content_type": "json",
   "parsed": {
     "verdict": "pass",
     "criteria": [
-      "meets all required course learning objectives",
-      "score of 42 exceeds the minimum passing threshold for the coursebook assessment"
+      "Submitted answer of 42 is correct",
+      "All required grading criteria are satisfied"
     ]
   },
   "provider": "nous",
   "model": "stepfun/step-3.7-flash:free",
-  "usage": 682,
-  "text_head": "{\n  \"verdict\": \"pass\",\n  \"criteria\": [\"meets all required course learning objectives\", \"score of 42 exceeds the minimum passing threshold for the coursebook assessment\"]\n}",
+  "usage": 1135,
+  "text_head": "{\"verdict\": \"pass\", \"criteria\": [\"Submitted answer of 42 is correct\", \"All required grading criteria are satisfied\"]}",
   "audit": {
     "plugin_id": "cb-probe",
     "purpose": "qa-probe-grade",

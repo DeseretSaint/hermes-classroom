@@ -2,18 +2,18 @@
   "scenario": "schema_ok",
   "timeout": null,
   "ok": true,
-  "elapsed_s": 1.227,
+  "elapsed_s": 1.117,
   "content_type": "json",
   "parsed": {
     "verdict": "pass",
     "criteria": [
-      "Correct: 6*7=42 matches the answer."
+      "Answer matches 6*7=42."
     ]
   },
   "provider": "nous",
   "model": "deepseek/deepseek-v4.1-flash-1017",
-  "usage": 226,
-  "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Correct: 6*7=42 matches the answer.\"]}",
+  "usage": 215,
+  "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Answer matches 6*7=42.\"]}",
   "audit": {
     "plugin_id": "cb-probe",
     "purpose": "qa-probe-grade",

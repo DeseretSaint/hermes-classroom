@@ -1,7 +1,7 @@
 {
   "raise_turn_proceeded": true,
   "timeout_turn_proceeded": true,
-  "timeout_wall_s": 3,
+  "timeout_wall_s": 5,
   "pre_llm_after_timeout": false,
   "submit_after_bypass": "committed"
 }
