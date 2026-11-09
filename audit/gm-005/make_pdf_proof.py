@@ -183,15 +183,23 @@ def main() -> int:
         artifact_row = db_artifact(exported["artifact_id"])
 
         results = {}
-        proof_pages = {page["role"]: page for page in preview["pages"]
-                       if page["role"] in ("cover", "parent_guide", "learner_page", "answer_guide")}
-        proof_pack = {"title": pack["title"], "pages": proof_pages}
+        proof_pages = list(preview["pages"])
+        proof_pack = {"title": pack["title"], "audience": "parent", "pages": proof_pages}
+        part_roles = ["cover", "parent_guide", "learner_page", "plate", "answer_guide"]
+        part_needles = {
+            "cover": "Course: Braising at home",
+            "parent_guide": "Parent guide",
+            "learner_page": "Why the sear matters",
+            "plate": "Deterministic burner placement",
+            "answer_guide": "Reference answer",
+        }
         for paper, expected in (("letter", (612, 792)), ("a4", (595, 842))):
             data = takehome.render_pdf(proof_pack, paper=paper)
             path = OUT / f"gm-005-takehome-proof-{paper}.pdf"
             path.write_bytes(data)
             assert data.startswith(b"%PDF-")
             assert b"/JavaScript" not in data
+            assert b"/Helvetica-Bold" in data
             reader = PdfReader(io.BytesIO(data))
             boxes = []
             for page in reader.pages:
@@ -202,26 +210,18 @@ def main() -> int:
             joined = "\n".join(texts)
             assert "Watch the oil" in joined, paper
             assert ANSWER in joined.replace("\n", " ") or ANSWER in joined, paper
-            assert len(texts) >= 3, (paper, len(texts))
+            # Typographic headings: no literal Markdown marker reaches the page.
+            assert "# Take-home" not in joined and "# Parent guide" not in joined, paper
+            assert "## Lesson intent" not in joined, paper
             # Each part starts a page: find the page where its distinctive line first appears.
-            needles = {
-                "cover": "Course: Braising at home",
-                "parent_guide": "Parent guide",
-                "learner_page": "Why the sear matters",
-                "answer_guide": "Reference answer",
-            }
             starts = {}
-            for role, needle in needles.items():
+            for role, needle in part_needles.items():
                 starts[role] = next((i for i, text in enumerate(texts) if needle in text), None)
-            assert starts["cover"] == 0, (paper, starts)
-            assert starts["parent_guide"] == 1, (paper, starts)
-            assert starts["learner_page"] == 2, (paper, starts)
-            assert starts["answer_guide"] == 3, (paper, starts)
+            assert starts == {"cover": 0, "parent_guide": 1, "learner_page": 2,
+                              "plate": 3, "answer_guide": 4}, (paper, starts)
             # No clipped text: each page's composed text survives extraction (whitespace-insensitive).
-            for role, page in proof_pack["pages"].items():
-                if role not in ("cover", "parent_guide", "learner_page", "answer_guide"):
-                    continue
-                src = squashed(page["text"])
+            for role in part_roles:
+                src = printed_squash(next(page["text"] for page in proof_pages if page["role"] == role))
                 target = squashed(texts[starts[role]])
                 assert src in target, (paper, role, len(src), len(target))
             results[paper] = {
@@ -232,6 +232,33 @@ def main() -> int:
                 "learner_chars": len(pack["pages"]["learner_page"]["text"]),
                 "answer_guide_chars": len(pack["pages"]["answer_guide"]["text"]),
                 "extracted_chars": len(joined),
+            }
+
+        learner_preview = call(
+            "takehome.preview",
+            {"course_id": course_id, "objective_id": objective_id,
+             "source_lesson_version": version, "audience": "learner", "kind": "homework_sheet"},
+        )["result"]
+        learner_pack = {"title": "Learner sheet", "audience": "learner",
+                        "pages": list(learner_preview["pages"])}
+        learner_results = {}
+        for paper, expected in (("letter", (612, 792)), ("a4", (595, 842))):
+            data = takehome.render_pdf(learner_pack, paper=paper)
+            path = OUT / f"gm-005-learner-sheet-{paper}.pdf"
+            path.write_bytes(data)
+            texts = [page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages]
+            joined = "\n".join(texts)
+            assert "Watch the oil" in joined, paper
+            assert "Answer guide" not in joined, paper
+            assert "Parent guide" not in joined, paper
+            assert ANSWER not in joined, paper
+            learner_results[paper] = {
+                "file": str(path.relative_to(ROOT)),
+                "pages": len(texts),
+                "media_boxes": [(float(p.mediabox.width), float(p.mediabox.height))
+                                for p in PdfReader(io.BytesIO(data)).pages],
+                "answer_guide_printed": "Answer guide" in joined,
+                "reference_answer_printed": ANSWER in joined,
             }
 
         artifact_bytes = Path(artifact_row["path"]).read_bytes()
@@ -254,7 +281,9 @@ def main() -> int:
             "answer_guide_has_answer": ANSWER in pack["pages"]["answer_guide"]["text"],
             "diagram_kind": pack["diagrams"][0]["kind"],
             "plates": pack["plates"],
+            "typed_headings": True,
             "papers": results,
+            "learner_sheets": learner_results,
             "method": (
                 "Real course.create + plan.approve + staged validated gen_lessons; takehome.preview/"
                 "create/approve/export through api.dispatch; render_pdf over the stored pages; pypdf "
@@ -296,6 +325,13 @@ def squashed(text: str) -> str:
     return "".join(folded.split())
 
 
+def printed_squash(text: str) -> str:
+    """The composed page text as the typographic template prints it: heading markers removed."""
+    import re
+
+    return squashed(re.sub(r"(?m)^#{1,6}\s+", "", str(text)))
+
+
 def render_markdown(evidence: dict) -> str:
     lines = [
         "# GM-005 take-home pack PDF proof",
@@ -318,6 +354,14 @@ def render_markdown(evidence: dict) -> str:
         lines.append(
             f"| {paper} | `{row['file']}` | {row['pages']} | {boxes} | {starts} | "
             f"{row['extracted_chars']} |"
+        )
+    lines.extend(["", "## Learner-audience sheet (answer-free)", ""])
+    lines.append("| Paper | File | Pages | Answer guide printed | Reference answer printed |")
+    lines.append("|---|---|---|---|---|")
+    for paper, row in evidence["learner_sheets"].items():
+        lines.append(
+            f"| {paper} | `{row['file']}` | {row['pages']} | "
+            f"{row['answer_guide_printed']} | {row['reference_answer_printed']} |"
         )
     lines.extend(["", "## Method", "", evidence["method"], ""])
     return "\n".join(lines)

@@ -405,8 +405,40 @@ def _pdf_text(value: str) -> str:
     return ascii_text.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
 
 
+_MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
+
+
+def _styled_body(lines: Sequence[str], *, max_chars: int) -> list[tuple[str, str, int]]:
+    """Resolve Markdown heading markers to (text, font, size) print lines.
+
+    ``#``/``##`` markers never reach the page: a level-1 heading is set in Helvetica-Bold 16,
+    a deeper heading in Helvetica-Bold 12, and body copy in Helvetica 12. Wrapping accounts for
+    the narrower character width of a larger face.
+    """
+    body: list[tuple[str, str, int]] = []
+    for line in lines:
+        text = str(line)
+        if text == PAGE_BREAK:
+            body.append((PAGE_BREAK, "", 0))
+            continue
+        if not text:
+            body.append(("", "F1", 12))
+            continue
+        font, size = "F1", 12
+        match = _MARKDOWN_HEADING.match(text)
+        if match:
+            text = match.group(2)
+            font = "F2"
+            size = 16 if len(match.group(1)) == 1 else 12
+        width = max(8, int(max_chars * 12 / size))
+        for chunk in textwrap.wrap(text, width=width, break_long_words=True,
+                                   break_on_hyphens=False) or [""]:
+            body.append((chunk, font, size))
+    return body
+
+
 def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792,
-             max_chars: int = 88) -> bytes:
+             max_chars: int = 88, headings: bool = False) -> bytes:
     """Build a minimal, valid PDF from a fixed template. Text is selectable/extractable.
 
     ``max_chars`` bounds one drawn line so it fits inside the printable width for the chosen
@@ -415,29 +447,37 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     only what a lesson handout needs: a title and wrapped body lines, plus an explicit
     :data:`PAGE_BREAK` marker. No JavaScript, no attachments, no external references, no
     auto-open links.
+
+    With ``headings=True`` a leading Markdown ``#``/``##`` marker is converted into a real
+    typographic heading (Helvetica-Bold, stepped size) instead of printing the marker literally.
     """
     margin = 56
     leading = 16
-    body: list[str] = [title]
-    for line in lines:
-        text = str(line)
-        if text == PAGE_BREAK:
-            body.append(PAGE_BREAK)
-            continue
-        if not text:
-            body.append("")
-            continue
-        # Wrap on word boundaries so a printed handout never splits a word across lines. A word
-        # longer than the line is broken (there is no choice), but ordinary prose is not.
-        for chunk in textwrap.wrap(text, width=max_chars, break_long_words=True,
-                                   break_on_hyphens=False) or [""]:
-            body.append(chunk)
+    if headings:
+        body: list[tuple[str, str, int]] = [(" ".join(str(title).split()), "F2", 16)]
+        body.extend(_styled_body(lines, max_chars=max_chars))
+    else:
+        raw: list[str] = [title]
+        for line in lines:
+            text = str(line)
+            if text == PAGE_BREAK:
+                raw.append(PAGE_BREAK)
+                continue
+            if not text:
+                raw.append("")
+                continue
+            # Wrap on word boundaries so a printed handout never splits a word across lines. A
+            # word longer than the line is broken (there is no choice), but ordinary prose is not.
+            for chunk in textwrap.wrap(text, width=max_chars, break_long_words=True,
+                                       break_on_hyphens=False) or [""]:
+                raw.append(chunk)
+        body = [(line, "F1", 12) for line in raw]
 
-    pages: list[list[str]] = []
-    current: list[str] = []
+    pages: list[list[tuple[str, str, int]]] = []
+    current: list[tuple[str, str, int]] = []
     per_page = (page_height - 2 * margin) // leading
-    for line in body:
-        if line == PAGE_BREAK:
+    for item in body:
+        if item[0] == PAGE_BREAK:
             if current:
                 pages.append(current)
             current = []
@@ -445,16 +485,16 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
         if len(current) >= per_page:
             pages.append(current)
             current = []
-        current.append(line)
+        current.append(item)
     if current:
         pages.append(current)
     if not pages:
-        pages = [[""]]
+        pages = [[("", "F1", 12)]]
 
     objects: list[str] = []
-    # 1 catalog, 2 pages, 3 font, then each page + content pair.
+    # 1 catalog, 2 pages, 3 body font, optionally 4 bold font, then each page + content pair.
     page_ids = []
-    next_id = 4
+    next_id = 5 if headings else 4
     for _page in pages:
         page_ids.append(next_id)
         next_id += 2
@@ -462,17 +502,29 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     kids = " ".join(f"{pid} 0 R" for pid in page_ids)
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>")
     objects.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    if headings:
+        objects.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>")
+        resources = "/Font << /F1 3 0 R /F2 4 0 R >>"
+    else:
+        resources = "/Font << /F1 3 0 R >>"
     for index, page in enumerate(pages):
         page_id = page_ids[index]
         content_id = page_id + 1
         objects.append(
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page_width} {page_height}] "
-            f"/Resources << /Font << /F1 3 0 R >> >> /Contents {content_id} 0 R >>"
+            f"/Resources << {resources} >> /Contents {content_id} 0 R >>"
         )
-        commands = ["BT", f"/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"]
-        for line in page:
-            commands.append(f"({_pdf_text(line)}) Tj")
-            commands.append("T*")
+        if headings:
+            commands = ["BT", f"{leading} TL", f"{margin} {page_height - margin} Td"]
+            for text, font, size in page:
+                commands.append(f"/{font} {size} Tf")
+                commands.append(f"({_pdf_text(text)}) Tj")
+                commands.append("T*")
+        else:
+            commands = ["BT", f"/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"]
+            for text, _font, _size in page:
+                commands.append(f"({_pdf_text(text)}) Tj")
+                commands.append("T*")
         commands.append("ET")
         stream = "\n".join(commands)
         objects.append(f"<< /Length {len(stream.encode('latin-1'))} >>\nstream\n{stream}\nendstream")

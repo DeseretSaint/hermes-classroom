@@ -246,6 +246,34 @@ class TakeHomeCase(KernelCase):
             )
         return {"world_id": world_id, "artifact_id": artifact}
 
+    def add_full_world(self, seeded: dict, *, sections: int = 6, scenes: int = 2) -> int:
+        """A complete approved world kit: one cover, per-section plates and lesson scenes."""
+        artifact = self._artifact()
+        world_id = f"wld_full_{seeded['course_id']}"
+        with db.transaction() as connection:
+            connection.execute(
+                "INSERT INTO course_worlds (id, course_id, revision, state, brief_json,"
+                " concepts_json, selected_concept_id, style_hash, kit_hash, approved_hash,"
+                " approved_at, created_at, updated_at)"
+                " VALUES (?, ?, 1, 'approved', '{}', '[]', 'c1', ?, ?, ?, ?, ?, ?)",
+                (world_id, seeded["course_id"], "sha256:" + "c" * 64, "sha256:" + "d" * 64,
+                 "sha256:" + "e" * 64, NOW, NOW, NOW),
+            )
+            rows: list[tuple[str, str, str]] = [("cover", "cover", "")]
+            for index in range(sections):
+                rows.append(("section", f"sec{index}", f"section_key_{index}"))
+            for index in range(scenes):
+                rows.append(("lesson_scene", f"scene{index}", f"scene_key_{index}"))
+            for number, (role, section_id, section_key) in enumerate(rows):
+                connection.execute(
+                    "INSERT INTO world_assets (id, world_id, role, section_id, section_key,"
+                    " artifact_id, style_hash, prompt_hash, textless, created_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+                    (f"was_full_{number}", world_id, role, section_id, section_key, artifact,
+                     "sha256:" + "c" * 64, "sha256:" + "f" * 64, NOW),
+                )
+        return len(rows)
+
     def _artifact(self) -> str:
         from coursebook import artifacts
 
@@ -319,6 +347,41 @@ class TakeHomeCase(KernelCase):
         )["result"]
 
     # ── assertions helpers ─────────────────────────────────────────────────
+    def pdf_text(self, artifact_id: str) -> str:
+        row = self.rows("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))[0]
+        data = Path(str(row["path"])).read_bytes()
+        return "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages)
+
+    def export_learner_sheet(self, seeded: dict) -> tuple[dict, str]:
+        version, _lesson_id = self.lesson_identity(seeded)
+        payload = {
+            "course_id": seeded["course_id"],
+            "objective_id": seeded["objective_ids"][0],
+            "source_lesson_version": version,
+            "audience": "learner",
+            "kind": "homework_sheet",
+        }
+        preview = self.ok("takehome.preview", payload)["result"]
+        created = self.ok(
+            "takehome.create",
+            dict(payload, title="Learner sheet"),
+            expected_revision=0,
+            idempotency_key=f"key-learner-create-{seeded['course_id']}",
+        )["result"]
+        self.ok(
+            "takehome.approve",
+            {"pack_id": created["pack_id"], "preview_hash": preview["preview_hash"]},
+            expected_revision=created["revision"],
+            idempotency_key=f"key-learner-approve-{seeded['course_id']}",
+        )
+        exported = self.ok(
+            "takehome.export",
+            {"pack_id": created["pack_id"]},
+            expected_revision=created["revision"] + 1,
+            idempotency_key=f"key-learner-export-{seeded['course_id']}",
+        )["result"]
+        return created, exported["artifact_id"]
+
     def table_snapshot(self, course_id: str) -> dict:
         def _in(ids: list[str]) -> tuple[str, tuple]:
             if not ids:
@@ -519,6 +582,63 @@ class TakeHomeExportTest(TakeHomeCase):
         self.assertTrue(profile["low_ink"])
         self.assertGreater(profile["margin_pt"], 0)
 
+    def test_takehome_learner_audience_export_has_no_answer_guide(self) -> None:
+        """A learner-audience sheet is printed for the learner: no parent guide, no answer key."""
+        seeded = self.seed_course(sections=1)
+        created, artifact_id = self.export_learner_sheet(seeded)
+        text = self.pdf_text(artifact_id)
+        self.assertIn(LEARNER_MARKER, text)
+        self.assertNotIn("Answer guide", text)
+        self.assertNotIn("Parent guide", text)
+        self.assertNotIn(ANSWER_MARKER, text)
+        self.assertNotIn(RUBRIC_MARKER, text)
+        self.assertNotIn("REFERENCE-ONLY", text)
+        # The operator (the parent) still reads the separate answer guide from the stored pack.
+        read = self.ok("takehome.read", {"pack_id": created["pack_id"]})["result"]["pack"]
+        self.assertIn("answer_guide", read["pages"])
+
+    def test_takehome_export_replay_same_key_returns_stored_result(self) -> None:
+        """A transport retry of the same export replays the stored result, never STALE_REVISION."""
+        seeded = self.seed_course(sections=1)
+        created, _approved = self.approved_pack(seeded)
+        approved_rev = created["revision"] + 1
+        first = self.ok(
+            "takehome.export",
+            {"pack_id": created["pack_id"]},
+            expected_revision=approved_rev,
+            idempotency_key="key-export-replay",
+        )["result"]
+        second = self.ok(
+            "takehome.export",
+            {"pack_id": created["pack_id"]},
+            expected_revision=approved_rev,
+            idempotency_key="key-export-replay",
+        )["result"]
+        self.assertEqual(second["artifact_id"], first["artifact_id"])
+        self.assertEqual(second["state"], "exported")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 1)
+        row = self.rows("SELECT state, revision FROM takehome_packs WHERE id = ?", (created["pack_id"],))[0]
+        self.assertEqual(row["state"], "exported")
+        self.assertEqual(int(row["revision"]), approved_rev + 1)
+
+    def test_takehome_pdf_headings_are_typographic_not_markdown(self) -> None:
+        """The print template converts Markdown headings into real typographic headings."""
+        seeded = self.seed_course(sections=1)
+        exported = self.exported_pack(seeded)
+        row = self.rows("SELECT * FROM artifacts WHERE id = ?", (exported["artifact_id"],))[0]
+        data = Path(str(row["path"])).read_bytes()
+        text = self.pdf_text(exported["artifact_id"])
+        for line in text.splitlines():
+            self.assertFalse(
+                line.lstrip().startswith("#"),
+                f"literal Markdown heading marker printed: {line!r}",
+            )
+        self.assertIn("Parent guide - Section 1: the sear", text)
+        self.assertIn("Lesson intent", text)
+        self.assertIn("Answer guide - parent only", text)
+        # A real bold face, not a bigger copy of the body font.
+        self.assertIn(b"/Helvetica-Bold", data)
+
     def test_takehome_export_renders_bound_pages_not_the_live_lesson(self) -> None:
         seeded = self.seed_course()
         created, approved = self.approved_pack(seeded)
@@ -551,6 +671,29 @@ class TakeHomeWorldArtTest(TakeHomeCase):
         read = self.ok("takehome.read", {"pack_id": exported["pack_id"]})["result"]["pack"]
         self.assertEqual(read["plates"], [])
         self.assertTrue(read["export"]["artifact_id"])
+
+    def test_takehome_full_world_kit_preview_fits_page_budget(self) -> None:
+        """A full 9-plate world kit previews, capped to the contract's 12-page budget."""
+        seeded = self.seed_course(sections=1)
+        self.assertEqual(self.add_full_world(seeded), 9)
+        preview = self.preview(seeded)
+        self.assertLessEqual(len(preview["pages"]), 12)
+        plate_pages = [page for page in preview["pages"] if page["role"] == "plate"]
+        self.assertEqual(len(plate_pages), 8)
+        self.assertIn("Orientation plate", plate_pages[0]["text"])
+
+    def test_takehome_export_prints_world_plate_caption_and_provenance(self) -> None:
+        """Every advertised plate page is printed with its caption and provenance."""
+        seeded = self.seed_course(sections=1)
+        world = self.add_approved_world(seeded)
+        preview = self.preview(seeded)
+        self.assertEqual([p["role"] for p in preview["pages"]].count("plate"), 1)
+        exported = self.exported_pack(seeded)
+        text = self.pdf_text(exported["artifact_id"])
+        self.assertIn("Orientation plate (cover)", text)
+        self.assertIn("Provenance", text)
+        self.assertIn(world["world_id"], text)
+        self.assertIn(world["artifact_id"], text)
 
     def test_takehome_world_plates_are_captioned_orientation_only(self) -> None:
         seeded = self.seed_course()

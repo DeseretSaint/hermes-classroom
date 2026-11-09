@@ -2254,10 +2254,10 @@ the check row). The source course is never cloned, rewritten, re-approved or enr
 | Method | Kind | What it does |
 |---|---|---|
 | `takehome.sources` | read | The Parent Studio picker over one learner course: objective, section, validated lesson version, content hash and whether an approved world plate exists. A parent-only authoring course is refused with `POLICY_VIOLATION`, `details.reason = "parent_only_course"`. |
-| `takehome.preview` | read | Composes the exact pages and returns `content_hash`, `preview_hash`, `pages` and recorded `sources`; persists nothing. The learner page is a separate page object from the answer guide. |
+| `takehome.preview` | read | Composes the exact pages and returns `content_hash`, `preview_hash`, `pages` and recorded `sources`; persists nothing. The four base page objects are always present; captioned plate/diagram pages share the contract's 12-page ceiling with them, so a full world kit previews instead of overflowing. The learner page is a separate page object from the answer guide. |
 | `takehome.create` | mutate | Binds the draft row. A duplicate draft for the same source returns the existing row rather than minting a silent clone. |
 | `takehome.approve` | mutate | Fenced on `preview_hash`: an edit after preview invalidates this approval, not the source course. |
-| `takehome.export` | mutate | Renders the bound, approved pages to selectable-text PDF through `artifacts.make_pdf` and the artifact store. A failed render is `HOST_UNAVAILABLE`, never a blank pack. |
+| `takehome.export` | mutate | Renders the bound, approved pages to selectable-text PDF through `artifacts.make_pdf` and the artifact store, filtered to the pack's `audience`: a learner copy prints cover + learner page + captioned plates and never the parent guide or answer guide; a parent copy prints the full pack. A replay of the same idempotency key and payload returns the stored result rather than a false `STALE_REVISION`. A failed render is `HOST_UNAVAILABLE`, never a blank pack. |
 | `takehome.read` | read | Returns the stored pack with `parent_guide`, `learner_page` and `answer_guide` as separate page objects, plus plates, diagrams, print profile and export state. It returns no attempts, tutor turns, notes or private observations. |
 
 **The learner page never carries the answer guide.** The answer guide (reference answer, accepted
@@ -2275,5 +2275,6 @@ deterministic `schematic` or a `sourced_technical` figure with at least one reco
 illustration-only procedure art is refused (`details.reason = "ai_art_as_procedure"`). A Textbook
 course with no world art prints cleanly with `plates: []`.
 
-Regression guard: `tests/test_gm_takehome.py` (the seven GM-005-named tests plus picker, idempotency
-and hash-fence coverage) and `tests/test_contracts.py` (`V21AmendmentTest`).
+Regression guard: `tests/test_gm_takehome.py` (the seven GM-005-named tests plus picker, idempotency,
+hash-fence, learner-audience print filtering, export replay, full-world page budget and typed-heading
+coverage) and `tests/test_contracts.py` (`V21AmendmentTest`).

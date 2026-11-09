@@ -30,9 +30,12 @@ Rules this module keeps:
   parent-only authoring course, an unvalidated lesson, an unapproved export, a stale approval
   and AI art used as a procedure are ``POLICY_VIOLATION`` with a discriminating
   ``details.reason``.
-* **Print output is selectable text.** Export uses :func:`coursebook.artifacts.make_pdf` — the
-  same low-ink PDF template the authored export uses — with explicit page breaks between the
-  parent guide, the learner page and the answer guide. No image of text, no colour-only meaning.
+* **Print output is selectable text and audience-gated.** Export uses
+  :func:`coursebook.artifacts.make_pdf` — the same low-ink PDF template the authored export uses —
+  with explicit page breaks. Markdown heading markers are converted to typographic headings, never
+  printed literally. A learner-audience copy prints only the cover, learner page and captioned
+  plates; the parent guide and the parent-only answer guide are printed only for a parent pack.
+  No image of text, no colour-only meaning.
 """
 
 from __future__ import annotations
@@ -72,6 +75,14 @@ PLATE_ROLES = ("cover", "section", "lesson_scene")
 
 #: Media roles that can serve as an instructional diagram. Anything else is orientation art.
 DIAGRAM_ROLES = ("schematic", "sourced_technical")
+
+#: The frozen contract's page ceiling for ``takehome.preview``/``takehome.create``. Four pages
+#: are always the composed base (cover, parent guide, learner page, answer guide); the rest is a
+#: shared budget for captioned plates and diagrams, so a full world kit can never overflow the
+#: response schema and become an INTERNAL_ERROR.
+MAX_PACK_PAGES = 12
+BASE_PAGE_ROLES = ("cover", "parent_guide", "learner_page", "answer_guide")
+PLATE_BUDGET = MAX_PACK_PAGES - len(BASE_PAGE_ROLES)
 
 
 # ── small helpers ───────────────────────────────────────────────────────────
@@ -607,6 +618,10 @@ def compose(connection, bundle: Mapping[str, Any], *, audience: str) -> dict[str
     context_needs = _load(section["context_needs_json"], [])
     diagrams = diagrams_from_page(page, procedure=bool(page.get("procedure")))
     plates = world_plates(connection, str(course["id"]))
+    # Bound the whole page set to the contract ceiling. Instructional diagrams are kept ahead
+    # of orientation plates; the exported pack prints exactly the pages advertised here.
+    diagrams = diagrams[:PLATE_BUDGET]
+    plates = plates[: PLATE_BUDGET - len(diagrams)]
     title = section["title"]
     cover = _cover_text(
         course=course, objective=objective, title=str(title), audience=audience,
@@ -642,30 +657,46 @@ def compose(connection, bundle: Mapping[str, Any], *, audience: str) -> dict[str
          "text": parent_guide, "alt_text": None},
         {"role": "learner_page", "audience": "learner", "title": str(title),
          "text": learner_page, "alt_text": None},
-        {"role": "answer_guide", "audience": "parent", "title": f"{ANSWER_GUIDE_RULE} - {title}",
-         "text": answer_guide, "alt_text": None},
     ]
     for plate in plates:
+        provenance = plate["provenance"]
+        lines = [f"# {plate['caption']}", "", "Provenance:"]
+        lines.append(f"- World: {provenance['world_id']}")
+        lines.append(f"- Artifact: {plate['artifact_id']}")
+        if provenance.get("style_hash"):
+            lines.append(f"- Style: {provenance['style_hash']}")
+        if provenance.get("section_id"):
+            lines.append(f"- Section: {provenance['section_id']}")
+        lines.append("- Rights: generated world art; caption and provenance recorded at approval.")
         pages.append(
             {
                 "role": "plate",
                 "audience": "learner",
                 "title": plate["caption"],
-                "text": plate["caption"],
+                "text": "\n".join(lines) + "\n",
                 "alt_text": plate["caption"],
             }
         )
     for diagram in diagrams:
+        authority = (
+            f"Sourced technical figure; source: {', '.join(diagram['source_ids'])}."
+            if diagram["source_ids"]
+            else "Deterministic schematic from authored facts."
+        )
+        lines = [f"# {diagram['caption']}", "", diagram["text_alt"], "", authority]
         pages.append(
             {
                 "role": "plate",
                 "audience": "learner",
                 "title": diagram["caption"],
-                "text": diagram["text_alt"] if not diagram["source_ids"]
-                else f"{diagram['text_alt']} (source: {', '.join(diagram['source_ids'])})",
+                "text": "\n".join(lines) + "\n",
                 "alt_text": diagram["text_alt"],
             }
         )
+    pages.append(
+        {"role": "answer_guide", "audience": "parent", "title": f"{ANSWER_GUIDE_RULE} - {title}",
+         "text": answer_guide, "alt_text": None}
+    )
     return {
         "pages": pages,
         "sources": sources,
@@ -734,18 +765,35 @@ def approval_hash(preview: str, pages: Sequence[Mapping[str, Any]]) -> str:
 
 
 def pdf_pages(pack: Mapping[str, Any]) -> list[list[str]]:
-    """The printed document: cover, parent guide, learner page, then the separate answer guide.
+    """The printed document, filtered to the audience the pack was created for.
 
-    Each part starts on a fresh page. The learner page is one page; the answer guide is printed
-    after an explicit separator and is parent-only.
+    A parent copy prints the cover, the parent guide, the learner page, any captioned
+    plate/diagram pages and then the separate parent-only answer guide. A learner copy prints
+    the cover, the learner page and the captioned orientation/diagram pages — never the parent
+    guide and never the answer guide. Each part starts on a fresh page.
     """
     pages = pack["pages"]
+    audience = str(pack.get("audience") or "parent")
+    if isinstance(pages, Mapping):
+        ordered = list(pages.values())
+    else:
+        ordered = list(pages)
+    if audience == "learner":
+        allowed = {"cover", "learner_page", "plate"}
+    else:
+        allowed = {"cover", "parent_guide", "learner_page", "answer_guide", "plate"}
     sections: list[list[str]] = []
-    for role in ("cover", "parent_guide", "learner_page", "answer_guide"):
-        if role not in pages:
+    order = {"cover": 0, "parent_guide": 1, "learner_page": 2, "plate": 3, "answer_guide": 4}
+    selected = []
+    for page in ordered:
+        role = str(page.get("role") or "")
+        if role not in allowed:
             continue
-        text = str(pages[role]["text"])
-        sections.append(text.splitlines() or [""])
+        if role == "plate" and audience == "learner" and str(page.get("audience")) != "learner":
+            continue
+        selected.append((order[role], page))
+    for _rank, page in sorted(selected, key=lambda item: item[0]):
+        sections.append(str(page["text"]).splitlines() or [""])
     return sections
 
 
@@ -764,7 +812,7 @@ def render_pdf(pack: Mapping[str, Any], *, paper: str = "letter") -> bytes:
         lines.extend(section)
     title = f"{pack['title']} - take-home pack"
     return artifacts.make_pdf(title, lines, page_width=width, page_height=height,
-                              max_chars=max_chars)
+                              max_chars=max_chars, headings=True)
 
 
 # ── commands ────────────────────────────────────────────────────────────────
@@ -1007,6 +1055,11 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
     payload_hash = _payload_hash(method, payload)
     key = envelope.get("idempotency_key")
     with db.read() as connection:
+        # A replay of the same key + payload returns the stored result before the revision and
+        # state guards: a transport retry after a successful export is not a conflict.
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
         pack_row = _pack_row(connection, str(payload["pack_id"]))
         if int(pack_row["revision"]) != expected:
             raise _stale("the take-home pack changed; re-read before exporting.", int(pack_row["revision"]))
@@ -1030,10 +1083,12 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
                 "the stored pages changed after approval; approve the actual pages again.",
             )
         title = str(pack_row["title"])
-        pack = {"title": title, "pages": {
-            page["role"]: page for page in pages if page["role"] in
-            ("cover", "parent_guide", "learner_page", "answer_guide")
-        }}
+        pack = {
+            "title": title,
+            "audience": str(pack_row["audience"]),
+            "kind": str(pack_row["kind"]),
+            "pages": pages,
+        }
         try:
             data = render_pdf(pack)
         except Exception as exc:  # noqa: BLE001 - a failed render is a named refusal, not a blank pack
