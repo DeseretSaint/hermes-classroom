@@ -53,7 +53,7 @@ current-tree baselines that `scripts/check-docs-truth.py` compares against the c
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| `cb.rpc` | v20, 73 declared methods, 73 handlers (`rpc.v20.json` is additive over v19: `parent.blueprint.read` returns `sections[]`, no method added) | `contracts/rpc.v20.json`, registry test in the suite |
+| `cb.rpc` | v20, 73 declared methods, 73 handlers (`rpc.v20.json` is additive over v19: `parent.blueprint.read` returns `sections[]` and the optional `plan.validation` approval provenance, `course.outline`'s `outline_plan` returns that same `validation` object, no method added) | `contracts/rpc.v20.json`, registry test in the suite |
 | `cb.db` | v12, `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012` (migration `0012_fine_tune_revisions` adds `plan_revisions` and `lesson_revisions`) | `coursebook/db.py`, `contracts/db.v12.json` |
 | Suite | `Ran 2511 tests`, `OK` — measured on the H-194 tree; not yet folded into the packet above | `python3 -m unittest discover -s tests -t .` |
 

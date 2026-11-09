@@ -793,6 +793,115 @@ def _plan_outline_ready(connection, plan_id: str) -> bool:
     return row is not None and int(row["n"]) > 0
 
 
+def _plan_validation_facts(connection, plan, actual_hash: str) -> dict[str, Any]:
+    """The durable approval provenance of one plan version, read without raising.
+
+    This is the *one* gate: ``plan.approve`` refuses from these facts and the plan-review read
+    projects them, so a renderer never has to re-implement the rule and cannot fail open when a
+    job line is missing, still loading, or belongs to another plan version.
+
+    ``approvable`` is true only for a durable passing record bound to this exact content hash,
+    or for an explicit manual authoring decision. Missing validation on a *generated* draft is
+    never approvable.
+    """
+    facts: dict[str, Any] = {
+        "source": None,
+        "approvable": False,
+        "verdict": None,
+        "outcome": None,
+        "independence": None,
+        "independent": False,
+        "facts_unverified": False,
+        "reasons": [],
+        "reason": None,
+        "detail": None,
+        "generation_state": None,
+        "manual_authoring": False,
+        "validation_id": None,
+        "validated_plan_hash": None,
+        "current_plan_hash": actual_hash,
+    }
+    if not _table_exists(connection, "gen_plan_documents"):
+        facts.update(source=PLAN_VALIDATION_MANUAL, approvable=True)
+        return facts
+    row = connection.execute(
+        "SELECT * FROM gen_plan_documents WHERE plan_id = ?"
+        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (str(plan["id"]),),
+    ).fetchone()
+    if row is None:
+        facts.update(source=PLAN_VALIDATION_MANUAL, approvable=True)
+        return facts
+    result = _json_load(row["result_json"], {})
+    if not isinstance(result, dict):
+        result = {}
+    validation_raw = result.get("validation")
+    validation: dict[str, Any] = validation_raw if isinstance(validation_raw, dict) else {}
+    state = str(row["generation_state"])
+    verdict = str(result.get("validation_verdict") or "")
+    outcome = str(validation.get("outcome") or result.get("outcome") or "")
+    snapshot = result.get("plan_content_hash")
+    facts.update(
+        verdict=verdict or None,
+        outcome=outcome or None,
+        independence=validation.get("independence"),
+        independent=bool(validation.get("independent")),
+        facts_unverified=bool(validation.get("facts_unverified")),
+        reasons=[str(item) for item in (result.get("rejection_reasons") or [])][:20],
+        generation_state=state,
+        manual_authoring=result.get("manual_authoring") is True,
+        validation_id=row["validation_id"],
+        validated_plan_hash=snapshot if isinstance(snapshot, str) and snapshot else None,
+    )
+    if facts["manual_authoring"]:
+        # The parent's edit owns this version: the pre-edit refusal is history, not this
+        # version's verdict. Approval is a human review and the wire says so.
+        facts.update(
+            source=PLAN_VALIDATION_MANUAL,
+            approvable=True,
+            outcome="not_validated",
+            reasons=[],
+            reason=None,
+            detail=None,
+        )
+        return facts
+    if state not in ("draft", "needs_review") or verdict != "pass" or outcome == "rejected":
+        facts.update(reason="plan_not_validated")
+        return facts
+    if not facts["validated_plan_hash"]:
+        facts.update(reason="plan_not_validated", detail="validation passed without a bound content hash")
+        return facts
+    if facts["validated_plan_hash"] != actual_hash:
+        facts.update(reason="plan_validation_stale", detail="the plan changed after it was validated")
+        return facts
+    facts.update(
+        source=(
+            PLAN_VALIDATION_MODEL_ASSESSED
+            if (outcome == "model_assessed" or state == "needs_review")
+            else PLAN_VALIDATION_GENERATED
+        ),
+        approvable=True,
+    )
+    return facts
+
+
+def _plan_validation_projection(connection, plan, actual_hash: str) -> dict[str, Any]:
+    """The plan-review view of :func:`_plan_validation_facts`. Read-only, additive wire facts."""
+    facts = _plan_validation_facts(connection, plan, actual_hash)
+    return {
+        "approvable": facts["approvable"],
+        "source": facts["source"],
+        "verdict": facts["verdict"],
+        "outcome": facts["outcome"],
+        "independence": facts["independence"],
+        "facts_unverified": facts["facts_unverified"],
+        "reasons": facts["reasons"],
+        "reason": facts["reason"],
+        "detail": facts["detail"],
+        "manual_authoring": facts["manual_authoring"],
+    }
+
+
 def _plan_validation_source(connection, plan, actual_hash: str) -> str:
     """Resolve the approval provenance or refuse with a typed, fail-closed error.
 
@@ -812,53 +921,34 @@ def _plan_validation_source(connection, plan, actual_hash: str) -> str:
     leaves ``manual_authoring = true`` on the generation record, which is the durable manual
     decision; a carried/replanned record without it stays unvalidated.
     """
-    if not _table_exists(connection, "gen_plan_documents"):
-        return PLAN_VALIDATION_MANUAL
-    row = connection.execute(
-        "SELECT * FROM gen_plan_documents WHERE plan_id = ?"
-        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
-        (str(plan["id"]),),
-    ).fetchone()
-    if row is None:
-        return PLAN_VALIDATION_MANUAL
-    result = _json_load(row["result_json"], {})
-    if not isinstance(result, dict):
-        result = {}
-    if result.get("manual_authoring") is True:
-        return PLAN_VALIDATION_MANUAL
-    state = str(row["generation_state"])
-    verdict = str(result.get("validation_verdict") or "")
-    validation_raw = result.get("validation")
-    validation: dict[str, Any] = validation_raw if isinstance(validation_raw, dict) else {}
-    outcome = str(validation.get("outcome") or result.get("outcome") or "")
-    if state not in ("draft", "needs_review") or verdict != "pass" or outcome == "rejected":
-        raise RpcError.of(
-            "VALIDATION_FAILED",
-            "the plan has no passing validation record; it cannot be approved.",
-            reason="plan_not_validated",
-            plan_id=str(plan["id"]),
-            generation_state=state,
-            validation_verdict=verdict or None,
-        )
-    snapshot = result.get("plan_content_hash")
-    if not isinstance(snapshot, str) or not snapshot:
-        raise RpcError.of(
-            "VALIDATION_FAILED",
-            "the plan has no durable validation binding; revalidate before approving.",
-            reason="plan_not_validated",
-            plan_id=str(plan["id"]),
-            detail="validation passed without a bound content hash",
-        )
-    if snapshot != actual_hash:
+    facts = _plan_validation_facts(connection, plan, actual_hash)
+    if facts["approvable"]:
+        return str(facts["source"])
+    if facts["reason"] == "plan_validation_stale":
         raise RpcError.of(
             "VALIDATION_FAILED",
             "the plan changed after it was validated; the recorded pass is stale.",
             reason="plan_validation_stale",
             plan_id=str(plan["id"]),
-            validated_plan_hash=snapshot,
+            validated_plan_hash=facts["validated_plan_hash"],
             current_plan_hash=actual_hash,
         )
-    return PLAN_VALIDATION_MODEL_ASSESSED if (outcome == "model_assessed" or state == "needs_review") else PLAN_VALIDATION_GENERATED
+    if facts["detail"]:
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the plan has no durable validation binding; revalidate before approving.",
+            reason="plan_not_validated",
+            plan_id=str(plan["id"]),
+            detail=facts["detail"],
+        )
+    raise RpcError.of(
+        "VALIDATION_FAILED",
+        "the plan has no passing validation record; it cannot be approved.",
+        reason="plan_not_validated",
+        plan_id=str(plan["id"]),
+        generation_state=facts["generation_state"],
+        validation_verdict=facts["verdict"],
+    )
 
 
 @_handler("plan.approve")
@@ -2370,6 +2460,14 @@ def _job_view(connection, row, *, strict: bool = False) -> dict[str, Any]:
     lease = None
     if row["lease_owner"] and row["lease_expires_at"]:
         lease = {"owner": str(row["lease_owner"])[:120], "expires_at": row["lease_expires_at"]}
+    # H-182/D1: this brief is what a renderer sends back to `jobs.create` to repeat a stage, and
+    # `$defs/plan_brief.locale` is a locale *string* while `$defs/parent_brief.locale` is nullable.
+    # A parent brief that stated no locale was stored as an explicit `null` (and rows written
+    # before this fix still are), so the verbatim re-send failed payload validation and no stage
+    # could ever be retried. Absence and null mean the same thing to the planner: project absence.
+    brief = _json_load(row["brief_json"], {})
+    if isinstance(brief, dict) and brief.get("locale") is None:
+        brief.pop("locale", None)
     # H-139: the one read a waiting pane needs. ``jobs.get`` is strict — a durable column it
     # cannot parse raises so the caller gets a typed error, not ``queued``/0%. ``jobs.list`` is
     # not strict: one corrupt row must not blank the whole list, so it is reported unreadable.
@@ -2388,7 +2486,7 @@ def _job_view(connection, row, *, strict: bool = False) -> dict[str, Any]:
         "state": row["state"],
         "operation_id": row["operation_id"],
         "attempt_id": row["attempt_id"] or "unassigned",
-        "brief": _json_load(row["brief_json"], {}),
+        "brief": brief,
         "checkpoint": _json_load(row["checkpoint_json"], {}),
         "progress": progress,
         "activity": activity,
@@ -4064,6 +4162,11 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             objectives=objectives,
             course_title=course_row["title"] if course_row is not None else None,
         )
+        # H-182/D3: the approval gate is a durable backend fact, not something the client infers
+        # from whichever job line it happens to be polling. The same function `plan.approve`
+        # fences on answers here, so a renderer cannot fail open on a rejected or unvalidated
+        # draft, and an explicit manual authoring decision stays approvable as manual.
+        plan_validation = _plan_validation_projection(connection, plan, _plan_hash(connection, plan))
     return 0, {
         "enrollment_id": enrollment_id,
         "plan": {
@@ -4071,6 +4174,8 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             "version": int(plan["version"]),
             "state": plan["state"],
             "plan_hash": plan["plan_hash"],
+            # Additive in cb.rpc v20 (H-182 amendment). Read-only facts about approvability.
+            "validation": plan_validation,
             # Additive in cb.rpc v11 (§14.2 R9). A legacy plan projects exactly one implicit
             # unit titled with the plan title, so every client can rely on the array.
             "units": units,
@@ -4722,6 +4827,13 @@ def parent_brief_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tu
             "enrollment_id": enrollment_id,
             "stage": "plan",
         }
+        # H-182/D1: a parent brief may state no locale (the studio form has no locale field, and
+        # ``parent_brief.locale`` is nullable). The stored brief is what a ``jobs.create`` retry
+        # re-queues, and ``plan_brief.locale`` is a non-nullable locale *string*: an explicit
+        # ``null`` therefore failed payload validation, so "Run this stage again" on a parent course
+        # could never queue. Absence means the same thing as null to the planner, so store absence.
+        if stored_brief.get("locale") is None:
+            stored_brief.pop("locale", None)
         job = job_service.create(
             "plan",
             stored_brief,
@@ -5816,6 +5928,7 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
                     "version": int(plan["version"]),
                     "state": str(plan["state"]),
                     "plan_hash": _plan_hash(connection, plan),
+                    "validation": _plan_validation_projection(connection, plan, _plan_hash(connection, plan)),
                 }
             status = _export_status(plan, [], approval, current_hash,
                                     has_content=any(tabs.values()))
@@ -5842,6 +5955,7 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
                 "version": int(plan["version"]),
                 "state": str(plan["state"]),
                 "plan_hash": _plan_hash(connection, plan),
+                "validation": _plan_validation_projection(connection, plan, _plan_hash(connection, plan)),
             }
         tabs = authoring.blueprint_tabs(composed, limit=min(limit, authoring.MAX_BLUEPRINT_CHARS))
     return 0, {

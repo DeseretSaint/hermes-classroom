@@ -333,6 +333,9 @@ class PlanValidationModelTest(unittest.TestCase):
                 "same_model": "Checked by the same model",
                 "unidentified": "Checked by a model that could not be identified",
                 "unrecorded": "No validator record is stored for this version",
+                "rejected": "The validator refused this version",
+                "manual": "Edited by you; this version has no validator record",
+                "stale": "Its validation record covers earlier bytes",
             },
         )
 

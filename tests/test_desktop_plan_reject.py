@@ -42,6 +42,7 @@ const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 const model = planRejectView({
   job: payload.job,
   plan: payload.plan || null,
+  planValidation: payload.planValidation || null,
   objectiveCount: payload.objectiveCount || 0,
   surface: payload.surface || 'learner',
   goal: payload.goal || null,
@@ -293,7 +294,8 @@ class PlanRejectModelTest(unittest.TestCase):
         # The disclosure explains the record; it still does not print the raw enum token.
         self.assertNotIn("objective_alignment", html)
 
-    def test_the_panel_has_exactly_one_action(self) -> None:
+    def test_the_panel_has_one_primary_action_plus_one_named_secondary(self) -> None:
+        """H-182/D1: a repaired draft needs two distinct doors — writing and researching."""
         payload = {
             "kind": "render",
             "job": completed_reject(["objective ordinals must be contiguous starting at 1"]),
@@ -303,10 +305,133 @@ class PlanRejectModelTest(unittest.TestCase):
         }
         out = self.run_case(payload)
         html = out["html"]
-        self.assertEqual(html.count("<button"), 1, html)
+        self.assertEqual(html.count('data-cb-action="primary"'), 1, html)
+        self.assertEqual(html.count("<button"), 2, html)
         self.assertIn("Edit the plan", html)
+        self.assertIn('data-cb-plan-reject-secondary="try_again"', html)
+        self.assertIn("Run research again", html)
         self.assertIn('data-cb-plan-reject="structural"', html)
         self.assertIn('data-cb-plan-reject-draft="kept"', html)
+
+    def test_a_learner_reject_panel_has_no_edit_action(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "job": completed_reject(["objective 2: claims 'sourced' support without a ledger source"]),
+                "objectiveCount": 3,
+                "plan": {"plan_id": "plan_draft_1", "version": 1, "state": "draft"},
+                "surface": "learner",
+            }
+        )
+        html = out["html"]
+        self.assertEqual(html.count("<button"), 1, html)
+        self.assertIn("Try again", html)
+        self.assertNotIn("Edit the plan", html)
+
+    # ── H-182/D3: the durable gate keeps the panel up and Approve withheld ─
+
+    def test_a_new_retry_job_does_not_clear_the_refusal(self) -> None:
+        """The retry's own job has no checkpoint yet; the stored refusal is still the truth."""
+        rejected_plan = {
+            "plan_id": "plan_draft_1",
+            "version": 1,
+            "state": "draft",
+            "validation": {
+                "approvable": False,
+                "source": None,
+                "verdict": "reject",
+                "outcome": "rejected",
+                "independence": "same_model",
+                "facts_unverified": False,
+                "reasons": ["objective 2: claims sourced support without a ledger source"],
+                "reason": None,
+                "detail": None,
+                "manual_authoring": False
+            }
+        }
+        job = {
+            "job_id": "job_retry_new",
+            "kind": "plan",
+            "state": "running",
+            "brief": {"stage": "plan", "goal": "Explain how transformer attention works"},
+            "checkpoint": {},
+            "error": None
+        }
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": job,
+                "plan": rejected_plan,
+                "planValidation": rejected_plan["validation"],
+                "objectiveCount": 4,
+                "surface": "parent",
+            }
+        )
+        model = out["model"]
+        self.assertIsNotNone(model)
+        self.assertEqual(model["kind"], "unsourced")
+        self.assertEqual(model["action"]["id"], "edit_plan")
+        self.assertEqual(model["secondary"]["id"], "try_again")
+        self.assertTrue(model["draftKept"])
+
+    def test_a_job_from_another_plan_version_contributes_nothing(self) -> None:
+        job = completed_reject(["objective 2: claims 'sourced' support without a ledger source"])
+        job["checkpoint"]["plan_id"] = "plan_older_version"
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": job,
+                "plan": {"plan_id": "plan_draft_2", "version": 2, "state": "draft"},
+                "objectiveCount": 3,
+            }
+        )
+        self.assertIsNone(out["model"])
+
+    def test_an_edited_plan_steps_out_of_the_refusal_panel(self) -> None:
+        """After the parent edits the draft, the stored record is manual and the job is history."""
+        edited_plan = {
+            "plan_id": "plan_draft_1",
+            "version": 2,
+            "state": "draft",
+            "validation": {
+                "approvable": True,
+                "source": "manual",
+                "verdict": "not_validated",
+                "outcome": "rejected",
+                "independence": "independent",
+                "facts_unverified": False,
+                "reasons": [],
+                "reason": None,
+                "detail": None,
+                "manual_authoring": True
+            }
+        }
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": completed_reject(["objective 2: claims 'sourced' support without a ledger source"]),
+                "plan": edited_plan,
+                "planValidation": edited_plan["validation"],
+                "objectiveCount": 3,
+                "surface": "parent",
+            }
+        )
+        self.assertIsNone(out["model"])
+
+    def test_a_replayed_retry_is_named_as_a_replay(self) -> None:
+        job = completed_reject(["objective 2: claims 'sourced' support without a ledger source"])
+        job["checkpoint"]["reused"] = True
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": job,
+                "objectiveCount": 3,
+                "plan": {"plan_id": "plan_draft_1", "version": 1, "state": "draft"},
+            }
+        )
+        body = out["model"]["body"]
+        self.assertIn("returned the draft that was already refused", body)
+        self.assertNotIn("research pass again", body)
 
 
 class PlanRejectWiringTest(unittest.TestCase):
@@ -328,7 +453,27 @@ class PlanRejectWiringTest(unittest.TestCase):
     def test_retry_uses_a_key_derived_from_the_rejected_job(self) -> None:
         source = _source()
         self.assertIn("`cb-plan-retry-${source.job_id}`", source)
-        self.assertIn("retryPlanKey.current = { jobId: response.result.job_id, key: null }", source)
+        self.assertIn("retryPlanKey.current = { jobId: newJobId, key: null }", source)
+
+    def test_a_replayed_retry_is_never_reported_as_fresh(self) -> None:
+        """H-182/D2: the notice is only written when the answer is a different job id."""
+        source = _source()
+        self.assertIn("if (!newJobId || newJobId === source.job_id)", source)
+        self.assertIn("nothing new started", source)
+        self.assertIn("research runs again and the draft it writes is a new version", source)
+
+    def test_approve_is_rendered_only_when_the_backend_says_approvable(self) -> None:
+        """H-182/D3: no inference from the polled job line, and missing validation is closed."""
+        source = _source()
+        self.assertIn("const approvable = Boolean(planValidation && planValidation.approvable === true)", source)
+        self.assertIn("isDraft && !editing && approvable", source)
+        self.assertIn("data-cb-plan-approval-gate", source)
+        self.assertNotIn("isDraft && !editing\n                ? jsx(CbAction, {\n                    variant: 'primary',\n                    disabled: busy || !supported('plan.approve')", source)
+
+    def test_approval_rechecks_the_durable_gate_before_sending(self) -> None:
+        source = _source()
+        self.assertIn("freshPlan.validation.approvable !== true", source)
+        self.assertIn("so approval is withheld", source)
 
     def test_a_rejection_is_not_auto_navigated_away(self) -> None:
         source = _source()

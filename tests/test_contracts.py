@@ -162,13 +162,25 @@ def _without_v18_provenance(payload: dict, method: str) -> dict:
 
 
 def _without_v20_sections(payload: dict, method: str) -> dict:
-    """Undo v20's additive ``parent.blueprint.read.sections`` for a carried-over comparison."""
+    """Undo v20's additive response fields for a carried-over comparison."""
     carried = json.loads(json.dumps(payload))
     for field in V20_ADDED_RESPONSE_FIELDS.get(method, ()):
         carried["response"]["properties"].pop(field, None)
         required = carried["response"].get("required") or []
         if field in required:
             required.remove(field)
+    return _without_v20_plan_validation(carried, method)
+
+
+def _without_v20_plan_validation(payload: dict, method: str) -> dict:
+    """Undo the H-182/D3 ``plan.validation`` projection inside ``parent.blueprint.read``."""
+    carried = json.loads(json.dumps(payload))
+    if method != "parent.blueprint.read":
+        return carried
+    plan = carried["response"]["properties"]["plan"]
+    for option in plan.get("oneOf") or []:
+        if isinstance(option, dict) and isinstance(option.get("properties"), dict):
+            option["properties"].pop("validation", None)
     return carried
 
 
@@ -4007,14 +4019,14 @@ class V17AmendmentTest(unittest.TestCase):
 
 
 class V20AmendmentTest(unittest.TestCase):
-    """H-194b: v20 is v19 plus one required response array on ``parent.blueprint.read``.
+    """H-194b and H-182/D3: v20 is v19 plus two additive response amendments.
 
-    The read that the H-194 fine-tune UI must call could not serve the two keys those commands
-    require: ``lesson.revise`` fences on ``expected_page_hash`` and ``lesson.regenerate`` on
-    ``section_id``, and v19 returned neither for a section that had never been revised. v20
-    appends ``sections[]`` — one ``blueprint_section_identity`` per composed section, whose
-    ``page_hash`` is the digest ``lesson.revise`` compares against. Nothing else moves: no method,
-    request shape, error code, job kind or vocabulary value.
+    H-194b appends ``sections[]`` to ``parent.blueprint.read`` — one ``blueprint_section_identity``
+    per composed section, whose ``page_hash`` is the digest ``lesson.revise`` compares against.
+    H-182/D3 appends one *optional* ``validation`` object to ``parent.blueprint.read.plan`` and to
+    ``course.outline``'s ``outline_plan``, the durable approval provenance computed by the same gate
+    ``plan.approve`` fences on. Nothing else moves: no method, request shape, error code, job kind
+    or vocabulary value.
     """
 
     SECTION_FIELDS = (
@@ -4027,7 +4039,7 @@ class V20AmendmentTest(unittest.TestCase):
         "page_hash",
     )
 
-    def test_v20_is_v19_plus_one_required_response_array(self) -> None:
+    def test_v20_is_v19_plus_the_additive_response_amendments(self) -> None:
         v19 = _document("rpc.v19.json")
         current = _document("rpc.v20.json")
 
@@ -4066,18 +4078,65 @@ class V20AmendmentTest(unittest.TestCase):
         self.assertEqual(
             list(v20_response["required"]),
             list(v19_response["required"]) + ["sections"],
-            "the required list only grows, at the end",
+            "the required list only grows, at the end; `validation` stays optional",
         )
         self.assertEqual(
             set(v20_response["properties"]),
             set(v19_response["properties"]) | {"sections"},
         )
         for name, schema in v19_response["properties"].items():
+            if name == "plan":
+                continue
             self.assertEqual(v20_response["properties"][name], schema, name)
         sections = v20_response["properties"]["sections"]
         self.assertEqual(sections["type"], "array")
         self.assertEqual(sections["maxItems"], 100)
         self.assertEqual(sections["items"], {"$ref": "#/$defs/blueprint_section_identity"})
+
+        # The nested plan object: v19's keys verbatim, plus the optional `validation` projection.
+        v19_plan = v19_response["properties"]["plan"]["oneOf"][0]
+        v20_plan = v20_response["properties"]["plan"]["oneOf"][0]
+        self.assertEqual(
+            set(v20_plan["properties"]), set(v19_plan["properties"]) | {"validation"}
+        )
+        for name, schema in v19_plan["properties"].items():
+            self.assertEqual(v20_plan["properties"][name], schema, name)
+        self.assertEqual(list(v20_plan["required"]), list(v19_plan["required"]))
+        self.assertEqual(
+            v20_plan["properties"]["validation"], {"$ref": "#/$defs/plan_validation"}
+        )
+
+        # `course.outline` moves only through `$defs.outline_plan`, additively the same way.
+        v19_outline = v19["$defs"]["outline_plan"]
+        v20_outline = current["$defs"]["outline_plan"]
+        self.assertEqual(
+            set(v20_outline["properties"]), set(v19_outline["properties"]) | {"validation"}
+        )
+        self.assertEqual(list(v20_outline["required"]), list(v19_outline["required"]))
+        self.assertEqual(
+            v20_outline["properties"]["validation"], {"$ref": "#/$defs/plan_validation"}
+        )
+
+    def test_the_plan_validation_projection_is_closed_and_names_the_gate(self) -> None:
+        schema = contracts.contract("cb.rpc")["$defs"]["plan_validation"]
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            set(schema["properties"]),
+            {
+                "approvable",
+                "source",
+                "verdict",
+                "outcome",
+                "independence",
+                "facts_unverified",
+                "reasons",
+                "reason",
+                "detail",
+                "manual_authoring",
+            },
+        )
+        self.assertEqual(len(schema["required"]), len(schema["properties"]))
+        self.assertEqual(schema["properties"]["approvable"], {"type": "boolean"})
 
     def test_the_section_identity_is_closed_and_names_the_fence_digest(self) -> None:
         identity = contracts.contract("cb.rpc")["$defs"]["blueprint_section_identity"]
