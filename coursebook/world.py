@@ -438,6 +438,7 @@ __all__ = [
     "build_kit_prompts",
     "build_prompt",
     "build_style_boards",
+    "foreign_grammar_motifs",
     "grammar_record",
 ]
 
@@ -561,22 +562,34 @@ def build_prompt(
     motif_text = ", ".join(motifs[:6]) if motifs else ", ".join(record.motifs)
     subject = typed.title.strip() or record.label
     capability = typed.end_capability.strip()
+    # A service world is the grammar's business, not a keyword in the caller's text: 'trades'
+    # selects workshop_manual and must keep the workshop hard negatives even if safety_class is
+    # reported as none.
+    service = typed.needs_service_grammar or record.name == "workshop_manual"
     section_clause = ""
     if role == "section":
-        section_clause = (
-            f" Section scene {section_id or 'unnamed'}"
-            + (f" about {section_title}" if section_title else "")
-            + "."
-        )
         if not section_id:
             raise WorldPolicyViolation(
                 "section_prompt_needs_section_id", "a section card prompt needs a section id."
+            )
+        if record.name == "workshop_manual":
+            # Section titles in a service course name procedures ("Removing the head"). A plate
+            # is orientation, never the procedure, so the scene is place and mood only.
+            section_clause = (
+                f" Section scene {section_id}: place and mood only, no procedure, "
+                "sequence or tool action depicted."
+            )
+        else:
+            section_clause = (
+                f" Section scene {section_id}"
+                + (f" about {section_title}" if section_title else "")
+                + "."
             )
 
     negative: list[str] = list(_NEGATIVE)
     for item in WORLD_PROMPT_FORBIDDEN:
         negative.append(f"no {item}")
-    if typed.needs_service_grammar:
+    if service:
         negative.extend(
             (
                 "no depicted procedure, no torque value, no torque sequence",
@@ -592,6 +605,7 @@ def build_prompt(
         f"Course subject: {subject}"
         + (f" — the learner will {capability}." if capability else ".")
         + f"{section_clause} "
+        f"Audience: {typed.audience}. Tone: {typed.tone}. "
         f"Subject-specific motifs: {motif_text}. "
         f"Composition: {record.composition}. "
         f"Palette: {', '.join(chosen_palette)}. Medium: {chosen_medium}. "
@@ -609,6 +623,8 @@ def build_prompt(
         "grammar": record.name,
         "subject": subject,
         "capability": capability,
+        "audience": typed.audience,
+        "tone": typed.tone,
         "motifs": motifs,
         "palette": list(chosen_palette),
         "medium": chosen_medium,
@@ -661,13 +677,18 @@ def build_style_boards(brief: WorldBrief | Mapping[str, Any]) -> list[WorldPromp
             aspect_ratio=board.aspect_ratio,
             prompt_hash=_prompt_hash(
                 {
+                    "kind": "world_style_board",
                     "prompt_version": PROMPT_VERSION,
                     "role": board.role,
                     "style_id": style_id,
                     "grammar": grammar,
                     "direction": direction["id"],
-                    "subject": typed.title,
-                    "motifs": list(typed.motifs),
+                    # The full prompt identity: a changed negative prompt (forbidden motifs) or a
+                    # changed tone is a different plate, so it must not inherit this hash or the
+                    # cache entry keyed from it.
+                    "base_prompt_hash": board.prompt_hash,
+                    "prompt": f"{board.prompt} Direction: {direction['label']}, {direction['light']}.",
+                    "negative": board.negative_prompt,
                 }
             ),
             prompt_version=PROMPT_VERSION,
@@ -736,7 +757,10 @@ def cache_key(
         "title": typed.title,
         "subject_domain": typed.subject_domain,
         "end_capability": typed.end_capability,
+        "audience": typed.audience,
+        "tone": typed.tone,
         "motifs": list(typed.motifs),
+        "forbidden": list(typed.forbidden),
         "level": typed.level,
         "locale": typed.locale,
         "safety_class": typed.safety_class,
@@ -937,7 +961,7 @@ def _derive_brief(connection: Any, course_id: str) -> WorldBrief:
     for cue in cues:
         if cue not in motifs:
             motifs.append(cue)
-    safety = "workshop" if subject == "technical_procedure" else "none"
+    safety = "workshop" if grammar == "workshop_manual" else "none"
     return WorldBrief(
         course_id=str(course["id"]),
         title=str(course["title"] or "Course"),
@@ -969,6 +993,35 @@ BRIEF_PATCH_FIELDS: frozenset[str] = frozenset(
 )
 
 
+def _motif_owner_grammars(motif: str) -> frozenset[str]:
+    """Which grammar(s) author this motif. Unknown subject-specific motifs own none."""
+    normalized = str(motif).strip().lower()
+    owners: set[str] = set()
+    for name, record in GRAMMARS.items():
+        vocabulary = {item.lower() for item in (*record.motifs, *record.subject_cues)}
+        if normalized in vocabulary:
+            owners.add(name)
+    return frozenset(owners)
+
+
+def foreign_grammar_motifs(
+    brief: WorldBrief | Mapping[str, Any], grammar: str
+) -> list[tuple[str, tuple[str, ...]]]:
+    """Motifs recognisably authored by a different grammar than the selected one.
+
+    A patch may add course-specific motifs (unknown vocabulary), but it must not graft another
+    subject's art direction onto this course: 'lantern district' on a service bay is exactly the
+    generic-world failure F7 forbids.
+    """
+    typed = _as_brief(brief)
+    problems: list[tuple[str, tuple[str, ...]]] = []
+    for motif in typed.motifs:
+        owners = _motif_owner_grammars(motif)
+        if owners and grammar not in owners:
+            problems.append((motif, tuple(sorted(owners))))
+    return problems
+
+
 def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> WorldBrief:
     """Merge presentation overrides over the course-derived brief.
 
@@ -989,6 +1042,21 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
                 presentation[field] = patch[field]
     merged = authoritative.as_dict()
     merged.update(presentation)
+    if "motifs" in presentation:
+        # Plan §4.4 rule 2: at least two motifs come from the grammar's own vocabulary. A
+        # patched set may add subject-specific cues, but it never replaces every native cue.
+        record = grammar_record(WorldPolicy.select(authoritative))
+        current = [str(item) for item in (merged.get("motifs") or []) if str(item).strip()]
+        present = {item.lower() for item in current}
+        native_needed = 2 - sum(1 for item in record.motifs if item.lower() in present)
+        for cue in record.motifs:
+            if native_needed <= 0 or len(current) >= 6:
+                break
+            if cue.lower() not in present:
+                current.append(cue)
+                present.add(cue.lower())
+                native_needed -= 1
+        merged["motifs"] = current[:6]
     return WorldBrief.from_mapping(merged)
 
 
@@ -1568,6 +1636,17 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         brief = _merged_brief(connection, course_id, row, payload.get("brief_patch"))
         grammar = WorldPolicy.select(brief)
         WorldPolicy.assert_allowed(brief, grammar)
+        foreign = foreign_grammar_motifs(brief, grammar)
+        if foreign:
+            motif, owners = foreign[0]
+            raise _policy_error(
+                "motif_not_in_grammar",
+                f"{motif!r} belongs to the {owners[0]!r} art direction, not {grammar!r}; "
+                "a world may add its own subject motifs but never another subject's grammar.",
+                motif=motif,
+                grammar=grammar,
+                owner_grammars=list(owners),
+            )
         if row is None:
             if stage != "concepts":
                 raise RpcError.of(

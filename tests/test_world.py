@@ -154,6 +154,49 @@ class WorldPromptTest(unittest.TestCase):
         self.assertIn("service bay", gasket_prompt.prompt.lower())
 
 
+    def test_workshop_section_prompts_have_no_procedure_title(self) -> None:
+        # F4: section titles for a service world name procedures ("Removing the head"). A plate
+        # is orientation, so the section scene is place and mood only — never the procedure.
+        brief = world.WorldBrief.from_mapping(HEAD_GASKET_BRIEF)
+        boards = world.build_style_boards(brief)
+        kit = world.build_kit_prompts(
+            brief, "workshop_manual", style_id=boards[0].style_id, style=boards[0]
+        )
+        sections = [item for item in kit if item.role == "section"]
+        self.assertEqual(len(sections), len(HEAD_GASKET_BRIEF["sections"]))
+        for item in sections:
+            lowered = item.prompt.lower()
+            self.assertNotIn("removing the head", lowered)
+            self.assertNotIn("before you lift the car", lowered)
+            self.assertIn("place and mood", lowered)
+        # A field atlas keeps its human section titles: they are place, not procedure.
+        japanese = world.WorldBrief.from_mapping(JAPANESE_L0_BRIEF)
+        j_boards = world.build_style_boards(japanese)
+        j_kit = world.build_kit_prompts(
+            japanese, "field_atlas", style_id=j_boards[0].style_id, style=j_boards[0]
+        )
+        self.assertTrue(
+            any("ordering a drink" in item.prompt.lower() for item in j_kit if item.role == "section")
+        )
+
+    def test_trades_world_keeps_workshop_negatives(self) -> None:
+        # F5: 'trades' selects workshop_manual, so the brief must carry the service safety class
+        # and the prompt must keep the workshop hard negatives even if the caller says none.
+        trades = {
+            "course_id": "course_trades",
+            "title": "Wire a socket",
+            "subject_domain": "trades",
+            "end_capability": "Wire a socket safely",
+            "safety_class": "none",
+            "motifs": [],
+        }
+        prompt = world.build_prompt(trades, "workshop_manual", role="hero")
+        negative = prompt.negative_prompt.lower()
+        self.assertIn("torque", negative)
+        self.assertIn("procedure", negative)
+        self.assertIn("clearance", negative)
+
+
 class WorldHandlerMixin:
     """Call the world handlers the way ``dispatch`` will once the wire manifest carries them.
 
@@ -331,6 +374,89 @@ class WorldMediaJobTest(WorldHandlerMixin, KernelCase):
         )
         self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 2)
 
+    def test_world_forbidden_changes_cache_identity(self) -> None:
+        # F2: 'motifs to avoid' is a real World Studio field. A different forbidden set must
+        # change the cache key and the style hash, spend once, and reach the provider negatives;
+        # an identical request must still spend zero.
+        self.ok(
+            "world.generate",
+            {"course_id": self.course_id, "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="forbidden-base",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        first = self.ok("world.read", {"course_id": self.course_id})["result"]
+        base_hashes = [item["style_hash"] for item in first["world"]["concepts"]]
+        base_artifacts = [item["artifact_id"] for item in first["world"]["concepts"]]
+
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"forbidden": ["lantern district", "invented geography"]},
+            },
+            expected_revision=first["revision"],
+            idempotency_key="forbidden-changed",
+        )
+        executor.pump_once(limit=1)
+        # One new provider call per board: the negative prompt is part of the plate identity.
+        self.assertEqual(len(self.fake.calls), 6)
+        for call in self.fake.calls[3:]:
+            self.assertIn("no lantern district", call.lower())
+            self.assertIn("no invented geography", call.lower())
+        second = self.ok("world.read", {"course_id": self.course_id})["result"]
+        changed_hashes = [item["style_hash"] for item in second["world"]["concepts"]]
+        changed_artifacts = [item["artifact_id"] for item in second["world"]["concepts"]]
+        self.assertEqual(len(set(base_hashes) & set(changed_hashes)), 0)
+        self.assertEqual(len(set(base_artifacts) & set(changed_artifacts)), 0)
+
+        # Identical forbidden set again: cache hit, no extra spend, same hashes.
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"forbidden": ["lantern district", "invented geography"]},
+            },
+            expected_revision=second["revision"],
+            idempotency_key="forbidden-same",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 6)
+        third = self.ok("world.read", {"course_id": self.course_id})["result"]
+        self.assertEqual(
+            [item["style_hash"] for item in third["world"]["concepts"]], changed_hashes
+        )
+
+    def test_presentation_fields_reach_the_prompt(self) -> None:
+        # F3: tone and audience are accepted patch fields; a caller that edits them must not
+        # get a byte-identical request.
+        brief_a = world.WorldBrief.from_mapping(self._brief())
+        brief_b = world.WorldBrief.from_mapping(
+            {**self._brief(), "tone": "wry, coastal", "audience": "night-shift nurses"}
+        )
+        self.assertNotEqual(
+            world.cache_key(brief_a, "field_atlas", "hero", "field_atlas--authored", None),
+            world.cache_key(brief_b, "field_atlas", "hero", "field_atlas--authored", None),
+        )
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"tone": "wry, coastal", "audience": "night-shift nurses"},
+            },
+            expected_revision=0,
+            idempotency_key="presentation-1",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for call in self.fake.calls:
+            self.assertIn("wry, coastal", call)
+            self.assertIn("night-shift nurses", call)
+
     # ── helpers ─────────────────────────────────────────────────────────
     def count(self, sql: str) -> int:
         from coursebook import db
@@ -481,6 +607,88 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         self.assertNotIn("removing the head", motifs)
         self.assertNotIn("before you lift the car", motifs)
         self.assertIn("service bay", motifs)
+
+    def test_technical_world_rejects_decorative_motif_patch(self) -> None:
+        # F1/F7: a real head-gasket course cannot be turned into the lantern district through
+        # the whitelisted presentation field 'motifs'. Rejected before any spend or world row.
+        error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {
+                    "motifs": ["lantern district", "cafe counter", "pocket map"],
+                },
+            },
+            expected_revision=0,
+            idempotency_key="decorative-motif-1",
+        )
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "motif_not_in_grammar")
+        self.assertEqual(error["details"]["motif"], "lantern district")
+        self.assertEqual(error["details"]["grammar"], "workshop_manual")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # A subject-specific technical patch is still a real World Studio field: it is kept and
+        # the grammar's own cues keep the plate a workshop, never a lantern district.
+        self.ok(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["engine block cutaway", "pegboard"]},
+            },
+            expected_revision=0,
+            idempotency_key="technical-motif-1",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": self.course_id})["result"]
+        motifs = [str(item).lower() for item in read["world"]["brief"]["motifs"]]
+        self.assertIn("engine block cutaway", motifs)
+        self.assertIn("pegboard", motifs)
+        self.assertIn("service bay", motifs)
+        self.assertNotIn("lantern district", motifs)
+        for call in self.fake.calls:
+            self.assertNotIn("lantern district", call.lower())
+            self.assertIn("service bay", call.lower())
+
+    def test_trades_course_derives_service_safety_from_grammar(self) -> None:
+        # F5: a 'trades' course selects workshop_manual, so its derived brief is a service
+        # brief even though subject_domain != 'technical_procedure'.
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Wire a socket",
+                "recipe": "committed",
+                "goal": "Wire a socket safely",
+                "subject_domain": "trades",
+                "level": "novice",
+            },
+        )["result"]
+        course_id = created["course_id"]
+        for title in ("Isolate the circuit",):
+            domain.record_objective(
+                created["plan_id"],
+                title=title,
+                evidence_target="procedure",
+                criteria=criteria_with(numeric_spec()),
+            )
+        self.ok(
+            "world.generate",
+            {"course_id": course_id, "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="trades-concepts",
+        )
+        executor.pump_once(limit=1)
+        read = self.ok("world.read", {"course_id": course_id})["result"]
+        self.assertEqual(read["world"]["brief"]["safety_class"], "workshop")
+        style_ids = [item["style_id"] for item in read["world"]["concepts"]]
+        self.assertTrue(all(item.startswith("workshop_manual--") for item in style_ids), style_ids)
+        for call in self.fake.calls:
+            self.assertIn("torque", call.lower())
+            self.assertIn("no depicted procedure", call.lower())
 
     def test_kit_requires_an_approved_style(self) -> None:
         # D3: a kit is not spendable until a concept board has been approved.

@@ -1,33 +1,39 @@
-GM-003 test evidence (branch wt/gm-003-world — review round 2)
+GM-003 test evidence (branch wt/gm-003-world — review round 3)
 
 Focused: python3 -m unittest tests.test_world -v
-  Ran 13 tests ... OK
-  (all 8 required names + test_world_methods_are_wired_to_the_frozen_manifest, plus the
+  Ran 19 tests ... OK
+  (all 8 required names + test_world_methods_are_wired_to_the_frozen_manifest, the
    review-round-2 tests test_concept_failure_leaves_named_terminal_state,
    test_brief_patch_cannot_reclassify_a_technical_course and
-   test_kit_requires_an_approved_style)
+   test_kit_requires_an_approved_style, plus the review-round-3 tests
+   test_technical_world_rejects_decorative_motif_patch,
+   test_world_forbidden_changes_cache_identity, test_presentation_fields_reach_the_prompt,
+   test_workshop_section_prompts_have_no_procedure_title,
+   test_trades_world_keeps_workshop_negatives and
+   test_trades_course_derives_service_safety_from_grammar)
 
 Regression set: python3 -m unittest tests.test_world tests.test_workers tests.test_cost_ceilings
   tests.test_artifacts tests.test_rpc tests.test_contracts tests.test_gm_contract
-  Ran 272 tests ... OK
-  (sentinel's 269-test set plus the three added tests)
+  Ran 278 tests ... OK
+  (sentinel's 272-test set plus the six review-round-3 tests)
 
-Red state (review round 2, before the code fix): audit/gm-003/red-attempt2.txt
-  FAILED (failures=4)
-  - test_concept_failure_leaves_named_terminal_state: 'concepts_generating' != 'failed'
-  - test_brief_patch_cannot_reclassify_a_technical_course: world.generate unexpectedly succeeded
-  - test_kit_requires_an_approved_style: world.generate unexpectedly succeeded
-  - test_head_gasket_never_field_atlas: WorldPolicyViolation not raised (trades -> field_atlas)
-  A later red run for the orientation rule failed with:
-  AssertionError: 'removing the head' unexpectedly found in [...brief motifs...]
+Red state (review round 3, before the code fix): audit/gm-003/red-attempt3.txt
+  Ran 19 tests ... FAILED (failures=6)
+  - test_technical_world_rejects_decorative_motif_patch: world.generate unexpectedly succeeded
+  - test_trades_course_derives_service_safety_from_grammar: 'none' != 'workshop'
+  - test_presentation_fields_reach_the_prompt: identical cache_key for a changed tone/audience
+  - test_world_forbidden_changes_cache_identity: 3 != 6 provider calls after a forbidden change
+  - test_trades_world_keeps_workshop_negatives: 'torque' not found in the negative prompt
+  - test_workshop_section_prompts_have_no_procedure_title: 'before you lift the car' found
 
-Green state: audit/gm-003/green-attempt2.txt
-  Ran 13 tests ... OK
+Green state: audit/gm-003/green-attempt3.txt
+  Ran 19 tests ... OK
 
-Full suite: python3 -m unittest discover -s tests -t .
-  Ran 2782 tests in 600.080s
+Full suite: python3 -m unittest discover -s tests -t . -q
+  Ran 2788 tests in 611.333s
   OK (skipped=1)
   exit 0
+  Log: audit/gm-003/full-attempt3.log
 
 No provider key or account id appears in this evidence. The media seam in tests is a local fake
 that counts calls and returns deterministic PNG bytes; no live provider call was made.

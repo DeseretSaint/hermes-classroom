@@ -39,9 +39,10 @@ The four wire methods are frozen in `docs/GM-CONTRACT.md` §8 / `coursebook/gm_c
 `cb.rpc` v20 does not contain them. GM-001 §1 says the first implementation card may bump
 `cb.rpc`, while this card's own instructions say **do not edit the migration or the shared
 contract manifest**. This build therefore keeps the intended fence: handlers exist and are keyed
-by the frozen manifest, `world.ensure_registered()` binds nothing under v20, and dispatch would
-answer `NOT_IMPLEMENTED` rather than invent a method. The wire bump and the response validation
-it enables belong to the integration card, together with the v21 file.
+by the frozen manifest, `world.ensure_registered()` binds nothing under v20, and dispatch answers
+`VALIDATION_FAILED: 'world.read' is not one of [...]` rather than inventing a method. The wire
+bump and the response validation it enables belong to the integration card, together with the v21
+file.
 
 This is deliberate, not an omission: it avoids rewriting the ten historical contract-immutability
 tests and avoids racing GM-002/GM-005/GM-009, which are parallel backend cards that would each
@@ -79,3 +80,21 @@ Round 2 followed the same cycle: the four new assertions were run against `f1add
 at `concepts_ready`; trades forced into `field_atlas` with no violation) before any production
 edit. Only then were `_concept_stage`, `_merged_brief`, the patch whitelist and the kit gate
 changed.
+
+## Review round 3 — sentinel changes requested (F1–F5)
+
+Round 3 verified D1–D4 fixed and found two blockers plus three should-fix defects. All five are
+fixed in this branch, tests first. Red evidence: `audit/gm-003/red-attempt3.txt` (6 failures for
+the intended reasons); green: `audit/gm-003/green-attempt3.txt` (19 OK).
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **F1** a head-gasket course could be turned into the lantern district through `brief_patch.motifs` | `foreign_grammar_motifs()` maps each motif to the grammar(s) that author it; a motif owned by another art direction is refused `POLICY_VIOLATION reason=motif_not_in_grammar` before any row, job or spend. `_merged_brief` also tops a patched motif set back up to at least two grammar-native cues (plan §4.4 rule 2) while keeping subject-specific additions | `test_technical_world_rejects_decorative_motif_patch` |
+| **F2** `forbidden` changed the prompt but not the cache key or style hash | `cache_key()` intent now includes `forbidden`, `tone` and `audience`; a style board's `prompt_hash` is computed over its full identity (base prompt hash incl. negative, direction id, rendered prompt, negative prompt) | `test_world_forbidden_changes_cache_identity` |
+| **F3** (should-fix) `tone`/`audience` were accepted but never reached the prompt | both are rendered into the prompt body and the prompt payload, so they change the plate and the cache identity | `test_presentation_fields_reach_the_prompt` |
+| **F4** (should-fix) workshop section prompts embedded procedure titles | `build_prompt` renders a workshop section as "place and mood only, no procedure, sequence or tool action depicted"; field-atlas sections keep their human titles | `test_workshop_section_prompts_have_no_procedure_title` |
+| **F5** (should-fix) a `trades` course derived `safety_class='none'` and lost the workshop hard negatives | `_derive_brief` derives safety from the selected grammar, and `build_prompt` enables service negatives from the grammar as well as the brief | `test_trades_world_keeps_workshop_negatives`, `test_trades_course_derives_service_safety_from_grammar` |
+
+The F1 fence is symmetric: a language course patched with `service bay` / `torque wrench` is
+refused by the same ownership check, so plan §4.4 rule 2 now holds at runtime, not only in
+`anti_generic_problems()`.
