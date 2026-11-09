@@ -10,6 +10,11 @@ request, or submitted.** Publication stays closed under `docs/SUBMISSION.md` §0
   committed directly above that commit; the commit itself is not changed by it.
 - **Gate verdicts were not touched.** Every status below is quoted from `docs/SUBMISSION.md` §1 at
   that commit. This packet reports; it does not grade.
+- **Revised on the merge:** after `wt/gate-packet` reached `origin/master`, the supervisor
+  re-measured the catalog entry at the merge commit and corrected two things that had gone stale in
+  the branch's base — the `sha` paragraph described the pre-H-212 pin `1ba8ec6` (304 commits behind)
+  and the capability defect note described `provides_tools` as still unfixed. The pin is `61cdb03`
+  and gate 11 is `[x]`; the entry now declares both tools. No gate verdict changed.
 
 ## Gate state read at `5673047` (from `docs/SUBMISSION.md` §1, unmodified)
 
@@ -33,7 +38,7 @@ it.** The three items below are drafts that are all **NOT SENDABLE today**.
 
 | Item | Gate it discharges | Contingent on (open today) | Exact operator action that unblocks it |
 | --- | --- | --- | --- |
-| 1. Catalog PR body | 12 | §0 sign-off; gates 5, 7, 9, 10; gate 11 re-pin | DeseretSaint gives explicit sign-off in chat; a `LICENSE` file is added at the repository root (gate 9); the repository is made public (gate 10); Sentinel's demo scenarios pass on the release commit (gates 5, 7); `catalog/coursebook.yaml` `sha`, `version`, `description` and `capabilities` are re-pinned to that commit (gate 11); then `plugin-catalog/coursebook.yaml` is added to a fork of `hermes-agent`, the catalog validator is run on the directory, and the PR is opened |
+| 1. Catalog PR body | 12 | §0 sign-off; gates 5, 7, 9, 10 | DeseretSaint gives explicit sign-off in chat; a `LICENSE` file is added at the repository root (gate 9); the repository is made public (gate 10); Sentinel's demo scenarios pass on the release commit (gates 5, 7); then `plugin-catalog/coursebook.yaml` is copied from `catalog/coursebook.yaml`, the catalog validator is run on the directory, and the PR is opened. Gate 11 is already `[x]`: the entry pins `61cdb03` on `origin/master` and all seven raw URLs were fetched and hash-matched on 2026-11-09 |
 | 2. X post | 14 | §0 sign-off; gate 10 (the linked URL must resolve for readers); claim limits while gates 7 and 13 are open | DeseretSaint makes the repository public, then posts the text in §2 from the account that tags `@NousResearch` and records the post URL |
 | 3. Contest form answers | 15 | §0 sign-off; gate 9 (license), gate 10 (public repo URL), gates 7 and 13 (demo URL) | DeseretSaint records a license, makes the repository public, and either records and approves a demo under 90 seconds (gate 13) or confirms that the form's demo field accepts the gate-14 post URL once gate 14 is closed; then submits before 2026-11-11 17:00 EST |
 
@@ -41,8 +46,9 @@ it.** The three items below are drafts that are all **NOT SENDABLE today**.
 
 ## 1. Catalog PR body — gate 12
 
-**Status: NOT SENDABLE.** Contingent on §0 sign-off and gates 5, 7, 9 and 10, plus the gate 11
-re-pin described in the contingency table. **The license line is a placeholder: `LICENSE` does not
+**Status: NOT SENDABLE.** Contingent on §0 sign-off and gates 5, 7, 9 and 10. Gate 11 is closed:
+the entry pins `61cdb03` on `origin/master` and its seven raw URLs were fetched and hash-matched on
+2026-11-09. **The license line is a placeholder: `LICENSE` does not
 exist at this commit** (`ls LICENSE*` → no such file, 2026-11-09).
 
 ### Title
@@ -59,12 +65,15 @@ opened from (`docs/SUBMISSION.md` §4 step 3). The entry as committed today carr
 - `name: coursebook`, `maintainer: DeseretSaint`, `tier: community`, `category: desktop`,
   `requires_hermes: ">=0.23.0"`, `version: "0.1.0"`, `readme: true`, `platforms: []`
   (`catalog/coursebook.yaml:21-59`);
-- `sha: 1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299` — a real commit in this repository, whose
-  `README.md` exists and whose six `docs/assets` screenshot URLs return 200 (`docs/STORY-GAPS.md`
-  G6, G7). Measured on 2026-11-09: `git rev-list --count 1ba8ec6..HEAD` → **304**, so the pin is
-  304 commits behind this branch head (G6 records 126 behind `origin/master` on 2026-11-08). **A PR
-  must not be opened on this pin as it stands** — gate 11 requires the pin and the label to
-  describe the same code (`docs/SUBMISSION.md` §4 step 1).
+- `sha: 61cdb03ee3e58294098829adbd453207957de604` — the H-212 docs commit one above the frozen
+  code tree `b9f4a19`, and it **is on `origin/master`** (merged and pushed 2026-11-09). Re-measured
+  at the commit this packet sits on: `git rev-list --count 61cdb03..HEAD` → **8** commits, every
+  one of them `docs/` after H-212, so the pin still describes the code it names. Gate 11 is `[x]`
+  in `docs/SUBMISSION.md` §1 for that reason: all seven raw URLs (`docs_url`, `image` and the six
+  `screenshots`) were fetched on 2026-11-09, each returned HTTP 200, and each PNG body hashes to
+  `docs/assets/<name>.png` at `61cdb03`. The earlier `1ba8ec6` pin, then 304 commits behind, was
+  replaced by that re-pin; nothing needs re-pinning before the PR unless a later commit changes
+  code rather than docs.
 
 ### Description paragraph (one paragraph, pasted from `catalog/coursebook.yaml:24-42`, verbatim)
 
@@ -215,12 +224,13 @@ not be opened with a license claim it cannot support.
   are blocked on the clean seed and the gateway binding (docs/STORY-GAPS.md G2, G3, G5).
 ```
 
-One more entry defect to fix in the same PR, disclosed rather than left for a reviewer to find:
-`capabilities.provides_tools` lists only `coursebook_status`, which is correct for the pinned
-commit `1ba8ec6` (`coursebook/tools.py` there has exactly one tool) but is wrong for any later
-pin — `coursebook_due` was added by H-180 at `564821a` and is registered on the current tree
-(`hermes plugins doctor` reports 2 tools). Bumping `sha` without adding `coursebook_due` would make
-the entry disagree with the code it pins.
+One entry defect found while drafting this packet was fixed in the same commit rather than left for
+a reviewer to find: `capabilities.provides_tools` listed only `coursebook_status`, which was correct
+for the old `1ba8ec6` pin (`coursebook/tools.py` there has exactly one tool) but wrong for
+`61cdb03` — `coursebook_due` was added by H-180 at `564821a` and is registered on the pinned tree
+(`git show 61cdb03:coursebook/tools.py` declares both `STATUS_TOOL_NAME` and `DUE_TOOL_NAME`;
+`hermes plugins doctor` reports 2 tools, 3 hooks). The catalog entry now lists both, so the entry
+and the code it pins agree. If the pin moves forward, re-check `provides_tools` the same way.
 
 ---
 
