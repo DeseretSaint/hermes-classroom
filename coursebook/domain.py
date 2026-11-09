@@ -57,6 +57,9 @@ from . import pronunciation  # noqa: E402,F401  (registration side effect)
 # The student-syllabus commands are registered by their own module for the same reason: a build
 # whose contract lacks the v11 methods stays NOT_IMPLEMENTED instead of inventing a method.
 from . import syllabus  # noqa: E402,F401  (registration side effect)
+# The game engagement commands register themselves too: `cb.rpc` v21 carries them, and a build
+# without those names (or outside a game course) stays a typed refusal, never an invented award.
+from . import engagement  # noqa: E402,F401  (registration side effect)
 
 #: ``method -> handler(payload, envelope) -> (revision, result)``
 HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[str, Any]]]] = {}

@@ -27,10 +27,12 @@ vocabulary value moves.
 | Jobs | `world.generate` is `kind=media` with `brief.stage` `world_concepts` / `world_kit` | `cb.jobs` v5: no new kind, no new job field |
 | Evidence | Nothing | The evidence store is not extended. There is no second evidence store. |
 
-**Why `cb.rpc` is not bumped here.** The manifest is the freeze, not the wire. The first
-implementation card that registers one of these names bumps `cb.rpc` to v21 with exactly this
-manifest; until then a handler for these names cannot be registered (`api.register_handler`
-rejects a name that is not in `cb.rpc`), which is the intended fence.
+**Why `cb.rpc` is not bumped in GM-001.** The manifest is the freeze, not the wire. The first
+implementation card that registers one of these names bumps `cb.rpc` past v20 (GM-009 did so at
+v21, adding `engagement.read` and `engagement.award` and documenting the delta in
+`docs/CONTRACTS.md`); until then a handler for these names cannot be registered
+(`api.register_handler` rejects a name that is not in `cb.rpc`), which is the intended fence. The
+remaining Game Mode names land with their own handlers.
 
 ## 2. Course modes
 
