@@ -73,6 +73,19 @@ summarises those records and does not re-verify them.
   content set the export refuses. No wire change; `cb.rpc` stays v20 and `cb.db` stays v12. Evidence:
   `docs/CONTRACTS.md` "H-194e correction", `tests/test_h194_fine_tune.py::ExportedPageRevisionTest`.
 
+- H-182 follow-up (lesson request bound): a legal 3-page parent plan's plan-wide lessons job failed
+  in 31 s with `INTERNAL_ERROR request payload is 25081 bytes compact, over the 24000-byte request
+  bound`, while a one-section regeneration succeeded. The lesson-validation request carried the
+  authored lesson **and** its learner-facing page (a projection of the same lesson) and the whole
+  research ledger, instead of the section's own sources. Neither is serialised now: the lesson is
+  sent once, and both lesson passes receive `_lesson_ledger` (the section's cited sources, else the
+  first four. `REQUEST_BYTES_BOUNDS` is unchanged. Measured on the live rows: 24 240 bytes compact
+  before, 13 265 after. The recorded-transcript harness-e2e packet was regenerated (per-lesson
+  `usage.input_tokens` estimates and manifest hashes only; every verdict and scenario unchanged). No
+  wire or schema change. Evidence:
+  `audit/visual/h182-repair-live-followup/EVIDENCE.md`, `tests/test_generation.py::LessonRequestBoundTest`,
+  `tests/test_generation.py::PlanWideLessonBoundTest`.
+
 ### Known limitations at 0.1.0
 
 Verbatim from `docs/REVIEW_CB017-FINAL.md` §9:

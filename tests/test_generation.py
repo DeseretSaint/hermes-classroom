@@ -1991,5 +1991,208 @@ class BoundedRequestInputTest(unittest.TestCase):
             gen._bounded_input(payload, limit=gen._request_bound("single"))
 
 
+class LessonRequestBoundTest(unittest.TestCase):
+    """H-182 follow-up: a legal 3-page plan-wide lessons job stayed over the bound.
+
+    The live re-walk measured 25 081 bytes compact for one lesson-validation request on a
+    3-page brief, so the plan-wide lessons job failed before a single section was authored
+    while a one-section regeneration succeeded. The duplication and the whole-course ledger
+    are what pushed it over; these tests pin the payload to the section under review.
+    """
+
+    @staticmethod
+    def _ledger(count: int = 7) -> list[gen.SourceRecord]:
+        # The live ledger's excerpt field measured 662 bytes per source; reproduce that scale.
+        excerpt = "Leaf colour comes from pigments. " * 22
+        return [
+            gen.SourceRecord(
+                source_id=f"src{index:04d}",
+                url=f"https://example.org/leaves-{index}",
+                title=f"Leaf colour source {index}",
+                publisher="example.org",
+                source_type="academic",
+                fetched_at="2026-11-09T04:21:11Z",
+                published_at=None,
+                content_hash=f"sha256:{index:064d}",
+                excerpt=excerpt[:560],
+            )
+            for index in range(count)
+        ]
+
+    @staticmethod
+    def _page_sized_lesson() -> dict:
+        paragraph = (
+            "The parent and the child look at the picture together, name what they see and say "
+            "what they notice out loud. The child points at the object before naming it, and the "
+            "parent writes down the exact words the child used. Nothing in this step is graded, "
+            "and the child may take as long as they need. "
+        )
+        return {
+            "section_title": "Warm things at home",
+            "segments": [
+                {"kind": "model", "heading": "Warm things the child can see",
+                 "body": paragraph * 6, "short": paragraph},
+                {"kind": "explain", "heading": "How the kettle stays a grown-up job",
+                 "body": paragraph * 6, "short": paragraph},
+                {"kind": "guided", "heading": "Sorting the cards with the child",
+                 "body": paragraph * 6, "short": paragraph},
+                {"kind": "explain", "heading": "Saying one example in your own words",
+                 "body": paragraph * 6, "short": paragraph},
+            ],
+            "worked_example": {
+                "prompt": "Which cards are warm, and which are cold?",
+                "steps": ["Pick up the kettle card.", "Pick up the fridge card."],
+                "answer": "kettle in the warm pile; fridge in the cold pile",
+                "short": "kettle in the warm pile; fridge in the cold pile",
+            },
+            "learner_explanation": "Warm things get heat from an appliance. Cold things come from "
+                                   "the fridge. A grown-up works the kettle.",
+            "learner_explanation_short": "Warm things get heat; cold things come from the fridge.",
+            "check": {
+                "kind": "observation",
+                "stimulus": {"prompt": "Ask the child to name one warm and one cold thing.",
+                             "format": "text", "choices": [], "items": []},
+                "learner_instructions": "Parent writes down what the child said and did.",
+                "evidence_target": "recall",
+                "accepted_answers": ["kettle is warm", "fridge is cold"],
+                "accepted_alternatives": [],
+                "rubric": [{"criterion": "names one of each", "weight": 1.0,
+                            "description": "Child names one warm thing and one cold thing."}],
+                "reference_answer": "kettle is warm; fridge is cold",
+                "assistance_policy": {"hint": "available", "answer_marks_evidence_class": "none"},
+                "scaffolds": [],
+            },
+            "parent_notes": paragraph,
+            "supervision_notes": ["Adult stays within arm's reach."],
+            "media": [],
+            "sources": [],
+        }
+
+    def test_the_validation_request_carries_the_lesson_once_and_the_section_ledger(self) -> None:
+        ledger = self._ledger()
+        lesson = self._page_sized_lesson()
+        section = {
+            "section_id": "sec1", "ordinal": 1, "title": lesson["section_title"],
+            "lesson_intent": "Parent names warm objects the child can see, one at a time.",
+            "source_ids": [ledger[0].source_id, ledger[1].source_id],
+        }
+        objective = {"id": "obj1", "ordinal": 1, "title": "Name a warm thing",
+                     "evidence_target": "recall", "evidence_criteria": []}
+        page = gen._build_learner_page(lesson, section, ledger)
+        request = gen.build_lesson_validation_request(
+            lesson=lesson, page=page, section=section, objective=objective,
+            recipe="parent", dials={}, locale=None, sources=ledger,
+        )
+        payload = json.loads(request.input_text)
+        self.assertNotIn("learner_facing_page", payload)
+        self.assertEqual(sorted(item["source_id"] for item in payload["sources"]),
+                         sorted(section["source_ids"]))
+        self.assertLessEqual(len(request.input_text), gen.REQUEST_BYTES_BOUNDS["single"])
+
+    def test_an_uncited_section_falls_back_to_four_ledger_rows(self) -> None:
+        ledger = self._ledger()
+        rows = gen._lesson_ledger({"source_ids": []}, ledger)
+        self.assertEqual(len(rows), 4)
+        self.assertEqual([row["source_id"] for row in rows],
+                         [source.source_id for source in ledger[:4]])
+
+
+class PlanWideLessonBoundTest(GenerationTestBase):
+    """The plan-wide lessons job on a 3-page brief stays inside the lesson-stage bound.
+
+    The lesson builders do not scale with a declared scope: ``build_lesson_request`` and its
+    validation pass always use ``DEFAULT_REQUEST_BYTES`` (24 000), which is also the single-scope
+    bound. This job is therefore the single-scope case in the only place the bound is read.
+    """
+
+    @staticmethod
+    def _three_page_plan(request: gen.LLMRequest) -> gen.LLMResponse:
+        document = plan_fixture("plan_parent")
+        document["objectives"] = document["objectives"][:3]
+        document["sections"] = document["sections"][:3]
+        document["check_plan"] = document["check_plan"][:3]
+        return response(document)
+
+    @staticmethod
+    def _page_sized_lesson(request: gen.LLMRequest) -> gen.LLMResponse:
+        payload = json.loads(request.input_text)
+        section = payload.get("section") or {}
+        objective = payload.get("objective") or {}
+        lesson = LessonRequestBoundTest._page_sized_lesson()
+        lesson["section_title"] = section.get("title") or lesson["section_title"]
+        if objective.get("evidence_target"):
+            lesson["check"]["evidence_target"] = objective["evidence_target"]
+        lesson["check"]["learner_instructions"] = (
+            "Parent writes down what the child said and did; no grade is given."
+        )
+        return response(lesson, model="fake-author")
+
+    def test_a_three_page_plan_wide_job_builds_every_request_inside_the_bound(self) -> None:
+        pages = {
+            f"https://example.org/leaves-{index}": {
+                "title": f"Leaf colour source {index}",
+                "publisher": "example.org",
+                "published_at": None,
+                "content": "Leaf colour comes from pigments. " * 40,
+            }
+            for index in range(7)
+        }
+        plan_llm = FakeLLM(
+            {
+                "coursebook.plan.generate": self._three_page_plan,
+                "coursebook.plan.validate": validation_from_fixture(),
+            }
+        )
+        job = plan_job(recipe="parent", locale=None)
+        # A real 3-page parent brief, in the shape the Desktop sends.
+        job["brief"].update(
+            {
+                "desired_pages": 3,
+                "age_band": "6-8",
+                "reading_level": "Year 2",
+                "starting_point": "knows warm and cold by feel",
+                "setting": "kitchen table",
+                "materials": ["four picture cards"],
+                "exclusions": ["no heat or flame"],
+                "supervision": "adult within arm's reach",
+            }
+        )
+        plan_result = gen.run_plan_job(
+            self.connection,
+            job,
+            plan_llm,
+            FakeSearch(pages),
+            now=NOW,
+        )
+        self.connection.execute(
+            "UPDATE plans SET state = 'approved', approved_at = ? WHERE id = ?",
+            ("2026-11-06T12:05:00Z", plan_result["plan_id"]),
+        )
+        self.assertEqual(self.count("gen_plan_sections"), 3)
+        self.assertEqual(self.count("sources"), 5)
+        lesson_llm = FakeLLM(
+            {
+                "coursebook.lesson.generate": self._page_sized_lesson,
+                "coursebook.lesson.validate": validation_from_fixture(),
+            }
+        )
+        result = gen.run_lesson_job(
+            self.connection,
+            {"job_id": "job-three-page", "kind": "plan",
+             "brief": {"plan_id": plan_result["plan_id"]}},
+            lesson_llm,
+            now=NOW,
+            budget=gen.CostBudget(max_calls=32),
+        )
+        self.assertEqual(result["sections_total"], 3)
+        self.assertEqual(len(result["lessons"]), 3)
+        self.assertEqual(gen.DEFAULT_REQUEST_BYTES, gen.REQUEST_BYTES_BOUNDS["single"])
+        for request in lesson_llm.requests:
+            self.assertLessEqual(
+                len(request.input_text), gen.DEFAULT_REQUEST_BYTES,
+                f"{request.purpose} exceeded the lesson-stage request bound",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

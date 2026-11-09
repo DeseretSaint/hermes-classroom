@@ -6064,6 +6064,21 @@ def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
     ]
 
 
+def _lesson_ledger(section: dict[str, Any], sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
+    """The ledger rows one lesson pass receives: the section's cited sources, else four.
+
+    Both the authoring pass and its independent validation get the *same* slice. H-182
+    follow-up: validation used to receive the whole course research snapshot, so the request
+    grew with total research rather than with the section under review — a legal 3-page parent
+    plan measured 25 081 bytes compact against the 24 000-byte lesson-stage bound and failed
+    before the first lesson call. A validator can only support a claim from what the author was
+    given anyway, so filtering here is also the honest ledger.
+    """
+    briefs = _source_brief(sources)
+    cited = set(section.get("source_ids") or [])
+    return [brief for brief in briefs if brief["source_id"] in cited] or briefs[:4]
+
+
 # ── Provider request builders ───────────────────────────────────────────────
 
 
@@ -6437,8 +6452,7 @@ def build_lesson_request(
         "level": declared_level,
         "subject_domain": declared_domain,
         "capability_policy": capability.to_dict(),
-        "sources": [brief for brief in _source_brief(sources) if brief["source_id"] in set(section.get("source_ids") or [])]
-        or _source_brief(sources)[:4],
+        "sources": _lesson_ledger(section, sources),
         "rules": {
             "segments": [2, 6],
             "checks": 1,
@@ -6490,6 +6504,17 @@ def build_lesson_validation_request(
     level: str | None = None,
     subject_domain: str | None = None,
 ) -> LLMRequest:
+    """The independent pass over one authored lesson.
+
+    ``page`` is the learner-facing projection of ``lesson``. It is accepted so the call site
+    states which projection it validated, but it is **not** serialized into the request: every
+    field it publishes is already carried by ``lesson`` (which also holds the answer key the
+    answer-uniqueness and leakage criteria need), and sending both duplicated the entire teaching
+    body. H-182 follow-up: that duplication plus the whole research ledger measured 25 081 bytes
+    compact on a legal 3-page parent plan, over the 24 000-byte lesson-stage bound, and the
+    plan-wide lessons job failed before a single section was authored. The ledger is now the
+    section's own slice, exactly the one the authoring pass was given.
+    """
     payload = {
         "artifact_kind": "lesson",
         "section": section,
@@ -6499,9 +6524,8 @@ def build_lesson_validation_request(
         "locale": locale,
         "level": level or _dial_text(dials, "level"),
         "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
-        "sources": _source_brief(sources),
+        "sources": _lesson_ledger(section, sources),
         "lesson": lesson,
-        "learner_facing_page": page,
         "learner_facing": True,
     }
     return LLMRequest(
