@@ -1,0 +1,34 @@
+{
+  "japanese-affection-context-l0": {
+    "bytes": 40363,
+    "checks": 4,
+    "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+    "files": 8,
+    "media": {
+      "content/cover-16x9.png": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "content/narration-polite-confession.mp3": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "content/relationship-map.png": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+    },
+    "media_count": 3,
+    "objectives": 4,
+    "pack_version": "2.1.0",
+    "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/inputs/japanese-affection-context-l0-2.1.0.zip",
+    "sections": 4,
+    "zip_sha256": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0"
+  },
+  "technical-demo-pack": {
+    "bytes": 6516,
+    "checks": 2,
+    "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+    "files": 5,
+    "media": {
+      "content/cover-16x9.png": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+    },
+    "media_count": 1,
+    "objectives": 2,
+    "pack_version": "2.0.0",
+    "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/inputs/technical-demo-pack-2.0.0.zip",
+    "sections": 2,
+    "zip_sha256": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e"
+  }
+}

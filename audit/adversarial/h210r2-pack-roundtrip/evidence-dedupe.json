@@ -1,0 +1,542 @@
+{
+  "after_injection": {
+    "row_count": 6,
+    "rows": [
+      {
+        "bytes": 22272,
+        "content_hash": "dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "id": "art_e414216072634f9a8708bec7e9a5b8a3",
+        "kind": "audio",
+        "ref_count": 2
+      },
+      {
+        "bytes": 40363,
+        "content_hash": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "id": "art_7c6342ddeef5425ea19cff786dcedfff",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 6516,
+        "content_hash": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "id": "art_56453b5d198446009db2c75d6743da80",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 3784,
+        "content_hash": "8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "id": "art_5a5e40d3f63e45458096447b020ce47f",
+        "kind": "visual",
+        "ref_count": 1
+      },
+      {
+        "bytes": 6948,
+        "content_hash": "8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+        "kind": "visual",
+        "ref_count": 2
+      },
+      {
+        "bytes": 3804,
+        "content_hash": "fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "id": "art_9ac6aa21d1384819b5bd101735bef16a",
+        "kind": "visual",
+        "ref_count": 2
+      }
+    ],
+    "spellings": [
+      "bare",
+      "labelled"
+    ]
+  },
+  "after_reimport": {
+    "row_count": 6,
+    "rows": [
+      {
+        "bytes": 22272,
+        "content_hash": "dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "id": "art_e414216072634f9a8708bec7e9a5b8a3",
+        "kind": "audio",
+        "ref_count": 4
+      },
+      {
+        "bytes": 40363,
+        "content_hash": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "id": "art_7c6342ddeef5425ea19cff786dcedfff",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 6516,
+        "content_hash": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "id": "art_56453b5d198446009db2c75d6743da80",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 3784,
+        "content_hash": "8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "id": "art_5a5e40d3f63e45458096447b020ce47f",
+        "kind": "visual",
+        "ref_count": 1
+      },
+      {
+        "bytes": 6948,
+        "content_hash": "8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+        "kind": "visual",
+        "ref_count": 4
+      },
+      {
+        "bytes": 3804,
+        "content_hash": "fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "id": "art_9ac6aa21d1384819b5bd101735bef16a",
+        "kind": "visual",
+        "ref_count": 4
+      }
+    ],
+    "spellings": [
+      "bare",
+      "labelled"
+    ]
+  },
+  "backup": {
+    "path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/h210r2/storeA-data-before-legacy-injection.db",
+    "sha256": "sha256:3e8bb211507de9855ca54bf1594a24b4eb4aa85b9b7f45ae2c4332306589372d"
+  },
+  "before": {
+    "row_count": 6,
+    "rows": [
+      {
+        "bytes": 22272,
+        "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "id": "art_e414216072634f9a8708bec7e9a5b8a3",
+        "kind": "audio",
+        "ref_count": 2
+      },
+      {
+        "bytes": 40363,
+        "content_hash": "sha256:4aefd70828dac75dc0082c1b4a055208e674335634412cb07f54914bf48171c0",
+        "id": "art_7c6342ddeef5425ea19cff786dcedfff",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 6516,
+        "content_hash": "sha256:747c61fdf39ec5e316608b9b144478a9a7b11fbbea484226544e98baf6f4276e",
+        "id": "art_56453b5d198446009db2c75d6743da80",
+        "kind": "export",
+        "ref_count": 2
+      },
+      {
+        "bytes": 3784,
+        "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "id": "art_5a5e40d3f63e45458096447b020ce47f",
+        "kind": "visual",
+        "ref_count": 1
+      },
+      {
+        "bytes": 6948,
+        "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+        "kind": "visual",
+        "ref_count": 2
+      },
+      {
+        "bytes": 3804,
+        "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "id": "art_9ac6aa21d1384819b5bd101735bef16a",
+        "kind": "visual",
+        "ref_count": 2
+      }
+    ],
+    "spellings": [
+      "labelled"
+    ]
+  },
+  "injected": [
+    {
+      "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+      "kind": "audio",
+      "now": "dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+      "was": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+    },
+    {
+      "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+      "kind": "visual",
+      "now": "8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+      "was": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a"
+    },
+    {
+      "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+      "kind": "visual",
+      "now": "8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+      "was": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+    },
+    {
+      "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+      "kind": "visual",
+      "now": "fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+      "was": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8"
+    }
+  ],
+  "legacy_read": {
+    "art_5a5e40d3f63e45458096447b020ce47f": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203719939076922",
+        "result": {
+          "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+          "bytes": 3784,
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "course_id": "crs_380690eaa39b4fd4bf82745d5f0211f7",
+          "download": {
+            "expires_at": "2026-11-09T06:00:19.942780+00:00",
+            "handle": "art_5a5e40d3f63e45458096447b020ce47f_1794204019",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_5a5e40d3f63e45458096447b020ce47f_1794204019"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+      "declared_sha256": null,
+      "handle": {
+        "bytes": 3784,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "url": "/api/plugins/coursebook/artifacts/art_5a5e40d3f63e45458096447b020ce47f_1794204019"
+      }
+    },
+    "art_5d9864fc24bf48129f0e3d3b39c11b63": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203719945374055",
+        "result": {
+          "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+          "bytes": 6948,
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:19.947920+00:00",
+            "handle": "art_5d9864fc24bf48129f0e3d3b39c11b63_1794204019",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_5d9864fc24bf48129f0e3d3b39c11b63_1794204019"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+      "declared_sha256": null,
+      "handle": {
+        "bytes": 6948,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "url": "/api/plugins/coursebook/artifacts/art_5d9864fc24bf48129f0e3d3b39c11b63_1794204019"
+      }
+    },
+    "art_9ac6aa21d1384819b5bd101735bef16a": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203719950638254",
+        "result": {
+          "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+          "bytes": 3804,
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:19.953328+00:00",
+            "handle": "art_9ac6aa21d1384819b5bd101735bef16a_1794204019",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_9ac6aa21d1384819b5bd101735bef16a_1794204019"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+      "declared_sha256": null,
+      "handle": {
+        "bytes": 3804,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "url": "/api/plugins/coursebook/artifacts/art_9ac6aa21d1384819b5bd101735bef16a_1794204019"
+      }
+    },
+    "art_e414216072634f9a8708bec7e9a5b8a3": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203719932632540",
+        "result": {
+          "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+          "bytes": 22272,
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:19.936116+00:00",
+            "handle": "art_e414216072634f9a8708bec7e9a5b8a3_1794204019",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_e414216072634f9a8708bec7e9a5b8a3_1794204019"
+          },
+          "kind": "audio",
+          "mime": "audio/mpeg",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+      "declared_sha256": null,
+      "handle": {
+        "bytes": 22272,
+        "content_type": "audio/mpeg",
+        "http": 200,
+        "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "url": "/api/plugins/coursebook/artifacts/art_e414216072634f9a8708bec7e9a5b8a3_1794204019"
+      }
+    }
+  },
+  "legacy_read_after_reimport": {
+    "art_5a5e40d3f63e45458096447b020ce47f": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203720060253412",
+        "result": {
+          "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+          "bytes": 3784,
+          "content_hash": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+          "course_id": "crs_380690eaa39b4fd4bf82745d5f0211f7",
+          "download": {
+            "expires_at": "2026-11-09T06:00:20.063445+00:00",
+            "handle": "art_5a5e40d3f63e45458096447b020ce47f_1794204020",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_5a5e40d3f63e45458096447b020ce47f_1794204020"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_5a5e40d3f63e45458096447b020ce47f",
+      "handle": {
+        "bytes": 3784,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8e5af33049d3d4a7c01cc14e7611c38c568f773e0fb6de27afa8892fa88cd72a",
+        "url": "/api/plugins/coursebook/artifacts/art_5a5e40d3f63e45458096447b020ce47f_1794204020"
+      }
+    },
+    "art_5d9864fc24bf48129f0e3d3b39c11b63": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203720066138277",
+        "result": {
+          "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+          "bytes": 6948,
+          "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:20.069239+00:00",
+            "handle": "art_5d9864fc24bf48129f0e3d3b39c11b63_1794204020",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_5d9864fc24bf48129f0e3d3b39c11b63_1794204020"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_5d9864fc24bf48129f0e3d3b39c11b63",
+      "handle": {
+        "bytes": 6948,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+        "url": "/api/plugins/coursebook/artifacts/art_5d9864fc24bf48129f0e3d3b39c11b63_1794204020"
+      }
+    },
+    "art_9ac6aa21d1384819b5bd101735bef16a": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203720072230201",
+        "result": {
+          "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+          "bytes": 3804,
+          "content_hash": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:20.075521+00:00",
+            "handle": "art_9ac6aa21d1384819b5bd101735bef16a_1794204020",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_9ac6aa21d1384819b5bd101735bef16a_1794204020"
+          },
+          "kind": "visual",
+          "mime": "image/png",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_9ac6aa21d1384819b5bd101735bef16a",
+      "handle": {
+        "bytes": 3804,
+        "content_type": "image/png",
+        "http": 200,
+        "sha256": "sha256:fc5760868a5b0bd3044b796cfec81353b25285bf618d0f9391289197f978f3a8",
+        "url": "/api/plugins/coursebook/artifacts/art_9ac6aa21d1384819b5bd101735bef16a_1794204020"
+      }
+    },
+    "art_e414216072634f9a8708bec7e9a5b8a3": {
+      "artifact_get": {
+        "contract_version": 20,
+        "http": 200,
+        "ok": true,
+        "operation_id": "h210r2-artifact-get-1794203720054151209",
+        "result": {
+          "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+          "bytes": 22272,
+          "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+          "course_id": "crs_252007eb91c94e5d8428825a635e1b38",
+          "download": {
+            "expires_at": "2026-11-09T06:00:20.057368+00:00",
+            "handle": "art_e414216072634f9a8708bec7e9a5b8a3_1794204020",
+            "method": "GET",
+            "requires_session": true,
+            "single_use": false,
+            "url": "/api/plugins/coursebook/artifacts/art_e414216072634f9a8708bec7e9a5b8a3_1794204020"
+          },
+          "kind": "audio",
+          "mime": "audio/mpeg",
+          "provenance": {
+            "generator": "coursebook.pack_import",
+            "model": null,
+            "notes": "pack-authored media played from pack content; no provider call",
+            "prompt_hash": null,
+            "source_ids": []
+          }
+        },
+        "revision": 0
+      },
+      "artifact_id": "art_e414216072634f9a8708bec7e9a5b8a3",
+      "handle": {
+        "bytes": 22272,
+        "content_type": "audio/mpeg",
+        "http": 200,
+        "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+        "url": "/api/plugins/coursebook/artifacts/art_e414216072634f9a8708bec7e9a5b8a3_1794204020"
+      }
+    }
+  },
+  "reimports": [
+    {
+      "contract_version": 20,
+      "http": 200,
+      "ok": true,
+      "operation_id": "h210r2-pack-import-1794203719957208625",
+      "result": {
+        "course_id": "crs_ba04ced2c3564f78b97f88fbdb9ab4be",
+        "enrollment_id": "enr_16dd3bc59fc7497daec7c72295b6f121",
+        "pack_id": "japanese-affection-context-l0",
+        "revision": 0
+      },
+      "revision": 0
+    },
+    {
+      "contract_version": 20,
+      "http": 200,
+      "ok": true,
+      "operation_id": "h210r2-pack-import-1794203720005157480",
+      "result": {
+        "course_id": "crs_eed0b0432d9f4f59a83a3316141554bd",
+        "enrollment_id": "enr_b1982e4c2cdc42b38977eb5b2e5e963f",
+        "pack_id": "japanese-affection-context-l0",
+        "revision": 0
+      },
+      "revision": 0
+    }
+  ],
+  "store": "storeA",
+  "wire_version": 20
+}
