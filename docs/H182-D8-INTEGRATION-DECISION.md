@@ -129,3 +129,44 @@ git merge-base --is-ancestor 0b01f33 HEAD; git merge-base --is-ancestor 82200c2 
 git merge-base --is-ancestor 9596045 HEAD; git merge-base --is-ancestor aaaff15 HEAD
 python3 -m unittest tests.test_desktop_h148_path_truth   # 2 failures at c69bcb8
 ```
+
+## D8 resolution on `scratch/int-d8-land` (`t_e0db4a27`)
+
+`t_e0db4a27` closed both open items. The failing-count went from **2 to 0** in
+`tests/test_desktop_h148_path_truth.py` (15/15 OK) and the M4 claim set from **1 FAIL to 0**
+(15/15 PASS).
+
+### The path: the assertions describe the shipped trail, not a dropped shape
+
+H-189 branched at `82200c2`, which does **not** contain H-177 (`0f8fbb4`,
+`test_desktop_h177_trail`). On master the shipped `CheckpointPath` is `PathPlace` + `PathStop`:
+two route SVG halves per stop, `Start` and `Course end` place labels, one halo on the current
+stop, one gate diamond per real `check_state`, and one detail line inside the current and next
+rows. The union kept H-189's inline node list, which predates that surface, and with it the
+repeated `<details>` disclosure H-177 had removed.
+
+Resolution: **restore the shipped trail and fold H-189's additions into it** rather than
+rewriting the assertions. `PathStop` now also carries H-189's current-stop pulse
+(`data-cb-path-pulse`, the finite four-leg cycle), and `CheckpointPath` keeps H-189's
+`useCbSelectionSettle` arrival on the route beat and its single caption line. The inline node
+list and the `CheckpointDetailRow` helper it served are gone; nothing else read them.
+
+### The M4 pin, and one real defect the re-render found
+
+`python3 scripts/m4v-audit.py` re-rendered the pin from the branch bytes, never hand-edited:
+`plugin_sha256` moved from `ec03f7bc...` to `c7a6e938...`. The first fresh render failed
+**C-03** (`No clipped text ...`, 10 clipped nodes): a 56 px classroom cover drew its title on
+one `white-space: nowrap` + ellipsis line, so `scrollWidth` exceeded `clientWidth`. The same 10
+clipped nodes measure on `c69bcb8` before the path reconciliation, so the defect came from
+H-189's cover, not from the path: H-189's own audit pin was stale and never measured it. Fix:
+the cover title and subject wrap (`overflowWrap: anywhere`) and the frame grows from a
+`minHeight`, so no cover text is truncated. The re-rendered audit is 15/15 PASS and
+`scripts/m4v-repro-check.py` reports two independent runs producing identical `audit.json`
+(62 frames) and 62 identical screenshots.
+
+### Gate status at the tip
+
+`./scripts/validate.sh` passes from the top of the branch (full unit discovery, ESM parse,
+catalog admission, plugin validate + doctor on the export, 31/31 mounted backend expectations).
+Nothing was pushed and master was not advanced.
+

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-09T00:34:43.310Z",
+  "generated_at": "2026-11-09T01:50:16.093Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -20187,7 +20187,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -20324,110 +20324,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -20782,6 +20678,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 6.7,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(26, 23, 19)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 16,
+          "weight": 600,
+          "large": false,
+          "ratio": 15.87,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(26, 23, 19)",
           "bg": "rgb(247, 241, 228)",
@@ -20807,53 +20729,14 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 7.35,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(239, 239, 239)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 7.35,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
+          "ratio": 6.56,
           "required": 4.5,
           "pass": true,
           "host_primitive": true
@@ -20894,37 +20777,42 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
-      "ax_controls": 11,
+      "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -21010,7 +20898,7 @@
           "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "All field notes",
+          "text": "Field notes \u00b7 nothing saved yet",
           "name": "",
           "ring": true,
           "in_viewport": true,
@@ -21020,16 +20908,6 @@
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Go to the current lesson",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "kind": "authored",
-          "tab": 10,
-          "tag": "button",
           "text": "Show sources",
           "name": "",
           "ring": true,
@@ -21037,13 +20915,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-light-1280-32",
@@ -21068,7 +20946,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -21205,110 +21083,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -21663,6 +21437,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 24,
+          "weight": 600,
+          "large": true,
+          "ratio": 6.7,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(26, 23, 19)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 32,
+          "weight": 600,
+          "large": true,
+          "ratio": 15.87,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(26, 23, 19)",
           "bg": "rgb(247, 241, 228)",
@@ -21688,53 +21488,14 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 24,
-          "weight": 600,
-          "large": true,
-          "ratio": 7.35,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(239, 239, 239)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 7.35,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
+          "ratio": 6.56,
           "required": 4.5,
           "pass": true,
           "host_primitive": true
@@ -21771,41 +21532,46 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 1907,
+      "content_height": 1672,
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
-      "ax_controls": 11,
+      "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -21875,7 +21641,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -21885,46 +21651,36 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 0
         },
         {
           "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "All field notes",
+          "text": "Field notes \u00b7 nothing saved yet",
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 272
         },
         {
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Go to the current lesson",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 507
-        },
-        {
-          "kind": "authored",
-          "tab": 10,
-          "tag": "button",
           "text": "Show sources",
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 272
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-light-460-16",
@@ -21949,7 +21705,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -22088,110 +21844,6 @@
           "host_primitive": true
         },
         {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "div",
           "text": "The route",
           "fg": "rgb(92, 83, 71)",
@@ -22544,6 +22196,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 6.7,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(26, 23, 19)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 14,
+          "weight": 600,
+          "large": false,
+          "ratio": 15.87,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(26, 23, 19)",
           "bg": "rgb(247, 241, 228)",
@@ -22569,53 +22247,14 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 7.35,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(239, 239, 239)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 7.35,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
+          "ratio": 6.56,
           "required": 4.5,
           "pass": true,
           "host_primitive": true
@@ -22656,32 +22295,37 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -22719,11 +22363,11 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
-      "contrast_host_primitive_failures": 12,
+      "contrast_host_primitive_failures": 13,
       "contrast_fail_sample": [],
       "contrast_host_fail_sample": [
         {
@@ -22909,110 +22553,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -23367,6 +22907,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 8.54,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(245, 239, 225)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 16,
+          "weight": 600,
+          "large": false,
+          "ratio": 16.33,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(245, 239, 225)",
           "bg": "rgb(19, 18, 16)",
@@ -23392,55 +22958,16 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 7.85,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(255, 255, 255)",
           "bg": "rgb(107, 107, 107)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 5.33,
+          "ratio": 2.43,
           "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 7.85,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
+          "pass": false,
           "host_primitive": true
         },
         {
@@ -23479,37 +23006,42 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
-      "ax_controls": 11,
+      "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -23595,7 +23127,7 @@
           "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "All field notes",
+          "text": "Field notes \u00b7 nothing saved yet",
           "name": "",
           "ring": true,
           "in_viewport": true,
@@ -23605,16 +23137,6 @@
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Go to the current lesson",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "kind": "authored",
-          "tab": 10,
-          "tag": "button",
           "text": "Show sources",
           "name": "",
           "ring": true,
@@ -23622,13 +23144,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-dark-1280-32",
@@ -23653,11 +23175,11 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
-      "contrast_host_primitive_failures": 12,
+      "contrast_host_primitive_failures": 13,
       "contrast_fail_sample": [],
       "contrast_host_fail_sample": [
         {
@@ -23843,110 +23365,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -24301,6 +23719,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 24,
+          "weight": 600,
+          "large": true,
+          "ratio": 8.54,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(245, 239, 225)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 32,
+          "weight": 600,
+          "large": true,
+          "ratio": 16.33,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(245, 239, 225)",
           "bg": "rgb(19, 18, 16)",
@@ -24326,55 +23770,16 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 24,
-          "weight": 600,
-          "large": true,
-          "ratio": 7.85,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(255, 255, 255)",
           "bg": "rgb(107, 107, 107)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 5.33,
+          "ratio": 2.43,
           "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 7.85,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
+          "pass": false,
           "host_primitive": true
         },
         {
@@ -24409,41 +23814,46 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 1907,
+      "content_height": 1672,
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
-      "ax_controls": 11,
+      "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -24513,7 +23923,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -24523,46 +23933,36 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 0
         },
         {
           "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "All field notes",
+          "text": "Field notes \u00b7 nothing saved yet",
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 272
         },
         {
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Go to the current lesson",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 507
-        },
-        {
-          "kind": "authored",
-          "tab": 10,
-          "tag": "button",
           "text": "Show sources",
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 507
+          "scroll_y": 272
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-dark-460-16",
@@ -24587,11 +23987,11 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
-      "contrast_host_primitive_failures": 12,
+      "contrast_host_primitive_failures": 13,
       "contrast_fail_sample": [],
       "contrast_host_fail_sample": [
         {
@@ -24779,110 +24179,6 @@
           "host_primitive": true
         },
         {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "div",
           "text": "The route",
           "fg": "rgb(185, 174, 154)",
@@ -25235,6 +24531,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 8.54,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(245, 239, 225)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 14,
+          "weight": 600,
+          "large": false,
+          "ratio": 16.33,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(245, 239, 225)",
           "bg": "rgb(19, 18, 16)",
@@ -25260,55 +24582,16 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 7.85,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(255, 255, 255)",
           "bg": "rgb(107, 107, 107)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 5.33,
+          "ratio": 2.43,
           "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 7.85,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
+          "pass": false,
           "host_primitive": true
         },
         {
@@ -25347,32 +24630,37 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -29630,7 +28918,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -29767,110 +29055,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -30225,6 +29409,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 24,
+          "weight": 600,
+          "large": true,
+          "ratio": 6.7,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(26, 23, 19)",
+          "bg": "rgb(247, 241, 228)",
+          "size": 28,
+          "weight": 600,
+          "large": true,
+          "ratio": 15.87,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(26, 23, 19)",
           "bg": "rgb(247, 241, 228)",
@@ -30250,53 +29460,14 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 24,
-          "weight": 600,
-          "large": true,
-          "ratio": 7.35,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(239, 239, 239)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(255, 252, 243)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 7.35,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
+          "ratio": 6.56,
           "required": 4.5,
           "pass": true,
           "host_primitive": true
@@ -30333,36 +29504,41 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2937,
+      "content_height": 2528,
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -30400,11 +29576,11 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
-      "contrast_host_primitive_failures": 12,
+      "contrast_host_primitive_failures": 13,
       "contrast_fail_sample": [],
       "contrast_host_fail_sample": [
         {
@@ -30590,110 +29766,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 600,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 28,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -31048,6 +30120,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 24,
+          "weight": 600,
+          "large": true,
+          "ratio": 8.54,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(245, 239, 225)",
+          "bg": "rgb(19, 18, 16)",
+          "size": 28,
+          "weight": 600,
+          "large": true,
+          "ratio": 16.33,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(245, 239, 225)",
           "bg": "rgb(19, 18, 16)",
@@ -31073,55 +30171,16 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 24,
-          "weight": 600,
-          "large": true,
-          "ratio": 7.85,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(255, 255, 255)",
           "bg": "rgb(107, 107, 107)",
           "size": 13.3,
           "weight": 400,
           "large": false,
-          "ratio": 5.33,
+          "ratio": 2.43,
           "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(29, 27, 22)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 7.85,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
+          "pass": false,
           "host_primitive": true
         },
         {
@@ -31156,36 +30215,41 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2937,
+      "content_height": 2528,
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -33995,7 +33059,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 21,
       "contrast_min_authored": 21,
       "contrast_failures": 0,
@@ -34132,110 +33196,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -34590,6 +33550,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(0, 0, 0)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(0, 0, 0)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 16,
+          "weight": 600,
+          "large": false,
+          "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
@@ -34615,47 +33601,8 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 13.3,
@@ -34702,32 +33649,37 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -34765,7 +33717,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 53,
+      "text_nodes": 44,
       "contrast_min": 21,
       "contrast_min_authored": 21,
       "contrast_failures": 0,
@@ -34902,110 +33854,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "span",
-          "text": "Review due",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "This section",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1 of 4",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "With evidence",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "\u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "1",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Due now",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 14,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         },
         {
           "tag": "div",
@@ -35360,6 +34208,32 @@
         },
         {
           "tag": "span",
+          "text": "SM",
+          "fg": "rgb(0, 0, 0)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 600,
+          "large": false,
+          "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
+          "text": "Small-engine maintenance",
+          "fg": "rgb(0, 0, 0)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 16,
+          "weight": 600,
+          "large": false,
+          "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "span",
           "text": "Small-engine maintenance",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
@@ -35385,47 +34259,8 @@
           "host_primitive": false
         },
         {
-          "tag": "h2",
-          "text": "Field Notes",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 600,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "All field notes",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "p",
-          "text": "Save an explanation, visual or quiz moment and i",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "button",
-          "text": "Go to the current lesson",
+          "tag": "span",
+          "text": "Field notes \u00b7 nothing saved yet",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 13.3,
@@ -35472,32 +34307,37 @@
       "media_frames": [],
       "images": [],
       "audios": [],
-      "animated_nodes": 4,
+      "animated_nodes": 7,
       "animated_sample": [
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "div",
+          "transition": "0.28s, 0.28s",
+          "animation": "0s"
+        },
+        {
+          "tag": "section",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
           "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "transition": "0.28s, 0.28s",
           "animation": "0s"
         },
         {
-          "tag": "li",
-          "transition": "0.18s, 0.18s",
+          "tag": "span",
+          "transition": "0.28s",
           "animation": "0s"
         }
       ],
-      "interactive_count": 11,
+      "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 1077,
+      "body_text_len": 955,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -37857,9 +36697,9 @@
       "evidence": {
         "authored_failures": 0,
         "authored_min_ratio": 5.93,
-        "measured_text_nodes": 2192,
+        "measured_text_nodes": 2120,
         "frames": 56,
-        "excluded_host_primitive_failures": 48,
+        "excluded_host_primitive_failures": 52,
         "note": "host-primitive rows are the SDK stub's UA surface, not product paint; they are reported separately and excluded."
       }
     },
@@ -37879,10 +36719,10 @@
       "claim": "Every interactive control has an accessible name and is keyboard reachable.",
       "verdict": "PASS",
       "evidence": {
-        "ax_controls": 302,
+        "ax_controls": 298,
         "ax_unnamed": 0,
         "keyboard_unnamed": 0,
-        "keyboard_stops": 272,
+        "keyboard_stops": 268,
         "keyboard_unreachable": 0,
         "keyboard_ring_missing": 0,
         "keyboard_host_widget_stops": 36,
@@ -37927,7 +36767,7 @@
       "verdict": "PASS",
       "evidence": {
         "animated_nodes_reduced": 0,
-        "animated_nodes_full": 40,
+        "animated_nodes_full": 70,
         "reduced_frames": [
           "textbook-light-1280-16-reduced",
           "textbook-dark-1280-16-reduced",
@@ -38172,8 +37012,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "ec03f7bc1f6f56f219d5195c9979f5b66c50bc3f3570af28d08b4a265d0d4b8c",
-    "branch": "HEAD",
+    "plugin_sha256": "c7a6e9384e81109114e951f08c4cbb4d81aef4cb62e8e873e9b7e4a56ca66a11",
+    "branch": "scratch/int-d8-land",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }

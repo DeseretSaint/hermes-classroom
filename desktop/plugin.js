@@ -3294,13 +3294,12 @@ function ClassroomCover({ slot, compact }) {
     flexDirection: 'column',
     justifyContent: 'center',
     gap: '0.1rem',
-    height: `${height}px`,
+    minHeight: `${height}px`,
     minWidth: 0,
     padding: '0.3rem 0.45rem',
     boxSizing: 'border-box',
     background: 'var(--cb-paper)',
-    borderTop: '2px solid var(--cb-rule)',
-    overflow: 'hidden'
+    borderTop: '2px solid var(--cb-rule)'
   }
   if (media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url) {
     return jsxs('figure', {
@@ -3357,9 +3356,8 @@ function ClassroomCover({ slot, compact }) {
               fontWeight: 600,
               lineHeight: 1.25,
               color: 'var(--cb-ink)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere'
             },
             children: slot.name || (row && row.title) || 'Classroom'
           }, 'title')
@@ -3373,9 +3371,8 @@ function ClassroomCover({ slot, compact }) {
               fontSize: CB_TYPE.caption,
               lineHeight: 1.3,
               color: 'var(--cb-ink-soft)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere'
             },
             children: subject
           }, 'subject')
@@ -4438,6 +4435,7 @@ function PathStop({
   pet,
   motion,
   routeSettle,
+  pulse,
   onOpenSection
 }) {
   const [focused, setFocused] = useState(false)
@@ -4498,7 +4496,29 @@ function PathStop({
           'data-cb-path-marker-check': checkState,
           'aria-hidden': 'true',
           style: { ...cbPathMarkerStyle(tone, kind, size), left: `${x - size / 2}px` },
-          children: String(objective.ordinal).padStart(2, '0')
+          children: [
+            isCurrent
+              ? jsx('span', {
+                  // H-189: the current stop's one gentle cycle, two legs up and down, then the
+                  // ring rests. No loop, no timer left behind.
+                  'data-cb-path-pulse': pulse.running ? 'cycle' : 'rest',
+                  style: {
+                    position: 'absolute',
+                    inset: '-5px',
+                    borderRadius: '50%',
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    borderColor: 'var(--cb-accent)',
+                    opacity: pulse.scale,
+                    pointerEvents: 'none',
+                    ...(motion.transition('opacity', 'route')
+                      ? { transition: motion.transition('opacity', 'route') }
+                      : {})
+                  }
+                }, 'pulse')
+              : null,
+            jsx('span', { children: String(objective.ordinal).padStart(2, '0') }, 'ordinal')
+          ]
         }, 'marker'),
         showCompanion && isCurrent && pet
           ? jsx('span', {
@@ -4595,15 +4615,6 @@ function PathStop({
   )
 }
 
-function CheckpointDetailRow({ label, value }) {
-  return jsxs('div', {
-    style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
-  , children: [
-    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
-    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
-  ] })
-}
-
 function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRetryOutline, companionEnabled }) {
   const width = useCbViewportWidth()
   const motion = useCbMotion()
@@ -4697,198 +4708,33 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
             children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
           }),
       objectives.length
-        ? jsx('ol', {
-            'aria-label': 'Course route',
-            style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
-            children: objectives.map((objective, nodeIndex) => {
-              const tone = cbPathTone(objective.state)
-              const kind = cbPathNodeKind(objective, currentId, nextId)
-              const size = cbPathNodeSize(kind, compact)
-              const isCurrent = kind === 'current'
-              const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
-              const checkWord = cbCheckStateWord(objective.check_state)
-              const attempts = Math.max(0, Number(objective.attempt_count) || 0)
-              const detailOpen = kind === 'current' || kind === 'next'
-              // The route settle is one beat for the whole list: at most eight nodes, 40 ms apart.
-              const inBeat = routeSettle.active && nodeIndex < CB_PATH_SETTLE_NODES
-              const settleStyle = inBeat
-                ? cbSettleFrame(motion, routeSettle.settled, {
-                    beat: 'route',
-                    props: 'opacity, transform',
-                    delay: nodeIndex * CB_PATH_SETTLE_STAGGER_MS
-                  }) || {}
-                : {}
-              return jsx(
-                'li',
-                {
-                  'data-cb-path-node': objective.objective_id,
-                  'data-cb-path-node-motion': inBeat ? 'settle' : 'static',
-                  style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    ...settleStyle
-                  },
-                  children: [
-                  jsx('span', {
-                    'aria-hidden': 'true',
-                    style: {
-                      position: 'absolute',
-                      left: `${Math.round(gutter / 2)}px`,
-                      top: 0,
-                      bottom: 0,
-                      width: '1px',
-                      background: 'var(--cb-rule)'
-                    }
-                  }, 'spine'),
-                  jsx(CbAction, {
-                    variant: 'row',
-                    className: 'w-full justify-start',
-                    'aria-current': isCurrent ? 'step' : undefined,
-                    'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
-                    state: isCurrent ? 'selected' : 'rest',
-                    style: { padding: 0, display: 'block', minHeight: '44px' },
-                    onClick: () => onOpenSection(objective.objective_id),
-                    children: jsxs('span', {
-                      'data-cb-path-open': objective.objective_id,
-                      'data-cb-path-item': objective.objective_id,
-                      'data-cb-path-state': objective.state,
-                      'data-cb-path-check': objective.check_state || 'none',
-                      'data-cb-path-kind': kind,
-                      'data-cb-path-current': isCurrent ? 'true' : 'false',
-                      'data-cb-path-node-size': String(size),
-                      style: {
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.25rem',
-                        width: '100%',
-                        padding: `0.55rem 0.1rem 0.55rem ${gutter}px`,
-                        position: 'relative',
-                        boxSizing: 'border-box',
-                        textAlign: 'left',
-                        color: 'var(--cb-ink)',
-                        fontSize: CB_TYPE.meta,
-                        borderTop: '1px solid var(--cb-rule)',
-                        background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
-                      },
-                      children: [
-                        jsx('span', {
-                          'data-cb-path-marker': objective.objective_id,
-                          'data-cb-path-marker-check': objective.check_state || 'none',
-                          'aria-hidden': 'true',
-                          style: {
-                            ...cbPathMarkerStyle(tone, kind, size),
-                            left: `${Math.round((gutter - size) / 2)}px`,
-                            top: '0.55rem'
-                          },
-                          children: [
-                            isCurrent
-                              ? jsx('span', {
-                                  // H-189: the current stop's one gentle cycle, two legs up and
-                                  // down, then the ring rests. No loop, no timer left behind.
-                                  'data-cb-path-pulse': pulse.running ? 'cycle' : 'rest',
-                                  style: {
-                                    position: 'absolute',
-                                    inset: '-5px',
-                                    borderRadius: '50%',
-                                    borderWidth: '2px',
-                                    borderStyle: 'solid',
-                                    borderColor: 'var(--cb-accent)',
-                                    opacity: pulse.scale,
-                                    pointerEvents: 'none',
-                                    ...(motion.transition('opacity', 'route')
-                                      ? { transition: motion.transition('opacity', 'route') }
-                                      : {})
-                                  }
-                                }, 'pulse')
-                              : null,
-                            jsx('span', { children: String(objective.ordinal).padStart(2, '0') }, 'ordinal')
-                          ]
-                        }),
-                        jsxs('span', {
-                          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.55rem', minWidth: 0 },
-                          children: [
-                            jsx('span', {
-                              style: {
-                                flex: '1 1 8rem',
-                                minWidth: 0,
-                                overflowWrap: 'anywhere',
-                                whiteSpace: 'normal',
-                                fontFamily: CB_SERIF,
-                                fontSize: isCurrent ? CB_TYPE.body : CB_TYPE.meta,
-                                fontWeight: 600,
-                                lineHeight: 1.35
-                              },
-                              children: objective.title
-                            }),
-                            jsx('span', {
-                              'data-cb-path-word': '',
-                              style: {
-                                flex: '0 0 auto',
-                                fontFamily: CB_SANS,
-                                fontSize: CB_TYPE.caption,
-                                fontWeight: 600,
-                                color: cbPathToneColor(tone),
-                                border: `1px solid ${cbPathToneColor(tone)}`,
-                                borderRadius: '999px',
-                                padding: '0.05rem 0.45rem',
-                                whiteSpace: 'nowrap'
-                              },
-                              children: stateWord
-                            }),
-                            jsx('span', {
-                              'data-cb-path-check-word': '',
-                              style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-                              children: checkWord
-                            })
-                          ]
-                        })
-                      ]
-                    })
-                  }),
-                  jsxs('details', {
-                    'data-cb-path-detail': objective.objective_id,
-                    open: detailOpen,
-                    style: { marginLeft: `${gutter}px`, padding: '0 0.1rem 0.55rem 0' },
-                    children: [
-                      jsx('summary', {
-                        'data-cb-path-detail-toggle': '',
-                        style: {
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          minHeight: compact ? '2.75rem' : '2rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-ink-soft)'
-                        },
-                        children: `Details for checkpoint ${objective.ordinal}`
-                      }),
-                      jsxs('div', {
-                        'data-cb-path-detail-body': '',
-                        style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', paddingTop: '0.25rem' },
-                        children: [
-                          jsx(CheckpointDetailRow, {
-                            label: 'Evidence target',
-                            value: objective.evidence_target ? learnerEvidenceTarget(objective.evidence_target) : 'Not recorded'
-                          }),
-                          jsx(CheckpointDetailRow, {
-                            label: 'Committed attempts',
-                            value: attempts === 0 ? 'No committed attempts yet' : `${attempts} committed attempt${attempts === 1 ? '' : 's'}`
-                          }),
-                          jsx(CheckpointDetailRow, {
-                            label: 'Last opened',
-                            value: objective.last_opened_at ? whenLabel(objective.last_opened_at) : 'Not opened yet'
-                          }),
-                          jsx(CheckpointDetailRow, { label: 'Check', value: checkWord })
-                        ]
-                      })
-                    ]
-                  })
-                  ]
-                }
-              )
-            })
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', maxWidth: '100%' },
+            children: [
+              jsx(PathPlace, { kind: 'start', label: 'Start', x: center }, 'start'),
+              jsx('ol', {
+                'aria-label': 'Course route',
+                style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
+                children: objectives.map((objective, nodeIndex) =>
+                  jsx(PathStop, {
+                    objective,
+                    nodeIndex,
+                    compact,
+                    gutter,
+                    center,
+                    currentId,
+                    nextId,
+                    showCompanion,
+                    pet,
+                    motion,
+                    routeSettle,
+                    pulse,
+                    onOpenSection
+                  }, objective.objective_id)
+                )
+              }),
+              jsx(PathPlace, { kind: 'end', label: 'Course end', x: cbPathStopX(objectives.length - 1, compact) }, 'end')
+            ]
           })
         : null
     ]
