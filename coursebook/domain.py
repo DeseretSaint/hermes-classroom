@@ -2460,6 +2460,14 @@ def _job_view(connection, row, *, strict: bool = False) -> dict[str, Any]:
     lease = None
     if row["lease_owner"] and row["lease_expires_at"]:
         lease = {"owner": str(row["lease_owner"])[:120], "expires_at": row["lease_expires_at"]}
+    # H-182/D1: this brief is what a renderer sends back to `jobs.create` to repeat a stage, and
+    # `$defs/plan_brief.locale` is a locale *string* while `$defs/parent_brief.locale` is nullable.
+    # A parent brief that stated no locale was stored as an explicit `null` (and rows written
+    # before this fix still are), so the verbatim re-send failed payload validation and no stage
+    # could ever be retried. Absence and null mean the same thing to the planner: project absence.
+    brief = _json_load(row["brief_json"], {})
+    if isinstance(brief, dict) and brief.get("locale") is None:
+        brief.pop("locale", None)
     # H-139: the one read a waiting pane needs. ``jobs.get`` is strict — a durable column it
     # cannot parse raises so the caller gets a typed error, not ``queued``/0%. ``jobs.list`` is
     # not strict: one corrupt row must not blank the whole list, so it is reported unreadable.
@@ -2478,7 +2486,7 @@ def _job_view(connection, row, *, strict: bool = False) -> dict[str, Any]:
         "state": row["state"],
         "operation_id": row["operation_id"],
         "attempt_id": row["attempt_id"] or "unassigned",
-        "brief": _json_load(row["brief_json"], {}),
+        "brief": brief,
         "checkpoint": _json_load(row["checkpoint_json"], {}),
         "progress": progress,
         "activity": activity,
@@ -4819,6 +4827,13 @@ def parent_brief_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tu
             "enrollment_id": enrollment_id,
             "stage": "plan",
         }
+        # H-182/D1: a parent brief may state no locale (the studio form has no locale field, and
+        # ``parent_brief.locale`` is nullable). The stored brief is what a ``jobs.create`` retry
+        # re-queues, and ``plan_brief.locale`` is a non-nullable locale *string*: an explicit
+        # ``null`` therefore failed payload validation, so "Run this stage again" on a parent course
+        # could never queue. Absence means the same thing as null to the planner, so store absence.
+        if stored_brief.get("locale") is None:
+            stored_brief.pop("locale", None)
         job = job_service.create(
             "plan",
             stored_brief,

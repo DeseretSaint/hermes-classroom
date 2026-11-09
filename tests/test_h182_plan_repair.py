@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from coursebook import db, domain, generation
+from coursebook import contracts, db, domain, generation
 
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
@@ -228,6 +228,93 @@ class PlanValidationProjectionTest(KernelCase):
         validation = self.outline_validation(enrollment_id)
         self.assertFalse(validation["approvable"])
         self.assertEqual(validation["reason"], "plan_not_validated")
+
+
+class ParentStageRetryTest(KernelCase):
+    """A parent brief whose locale was never stated is re-queueable through the real payload gate.
+
+    The studio form has no locale field (``parent_brief.locale`` is nullable), while
+    ``plan_brief.locale`` is a non-nullable locale string. Storing an explicit ``null`` made the
+    brief its own job returns fail ``jobs.create`` payload validation, so "Run this stage again"
+    and "Run research again" could never queue a parent plan. The stored brief must omit an
+    unstated locale, and the exact payload the renderer sends must validate.
+    """
+
+    def brief(self, *, locale=None) -> dict:
+        return {
+            "title": "Why volcanoes erupt",
+            "goal": "Explain how pressure from melted rock builds until a volcano erupts.",
+            "starting_point": None,
+            "age_band": "8-10",
+            "reading_level": "Year 4, short paragraphs",
+            "duration_minutes": 25,
+            "setting": "home",
+            "materials": ["paper", "pencil"],
+            "exclusions": ["no heating or burning"],
+            "supervision": "An adult reads the safety notes aloud.",
+            "desired_pages": 3,
+            "desired_visuals": "diagrams",
+            "narration": "script",
+            "locale": locale,
+            "egress_acknowledged": True,
+            "redaction_requested": False,
+        }
+
+    def test_an_unstated_locale_survives_the_retry_payload_gate(self) -> None:
+        created = self.ok(
+            "parent.brief.create",
+            {"brief": self.brief(locale=None)},
+            idempotency_key="parent-brief-no-locale",
+        )["result"]
+        job_id = created["job_id"]
+
+        job = self.ok("jobs.get", {"job_id": job_id})["result"]["job"]
+        stored = job["brief"]
+        self.assertNotIn("locale", stored, "an unstated locale must be stored as absence")
+
+        # The renderer sends `job.brief` back verbatim; that exact payload must pass the contract.
+        contracts.validate_request_payload("jobs.create", {"kind": "plan", "brief": stored})
+
+        retried = self.ok(
+            "jobs.create",
+            {"kind": "plan", "brief": stored},
+            idempotency_key=f"cb-stage-again-{job_id}",
+        )["result"]
+        self.assertNotEqual(retried["job_id"], job_id)
+        self.assertEqual(retried["state"], "queued")
+
+    def test_a_brief_stored_before_the_fix_is_still_requeueable(self) -> None:
+        """A row at rest may still carry ``locale: null``; the read projects absence, not null."""
+        created = self.ok(
+            "parent.brief.create",
+            {"brief": self.brief(locale=None)},
+            idempotency_key="parent-brief-legacy-locale",
+        )["result"]
+        with db.transaction() as connection:
+            row = connection.execute(
+                "SELECT brief_json FROM jobs WHERE id = ?", (created["job_id"],)
+            ).fetchone()
+            legacy = json.loads(row["brief_json"])
+            legacy["locale"] = None
+            connection.execute(
+                "UPDATE jobs SET brief_json = ? WHERE id = ?",
+                (json.dumps(legacy), created["job_id"]),
+            )
+
+        stored = self.ok("jobs.get", {"job_id": created["job_id"]})["result"]["job"]["brief"]
+        self.assertNotIn("locale", stored)
+        contracts.validate_request_payload("jobs.create", {"kind": "plan", "brief": stored})
+
+    def test_a_stated_locale_is_carried_into_the_retry_brief(self) -> None:
+        created = self.ok(
+            "parent.brief.create",
+            {"brief": self.brief(locale="en-US")},
+            idempotency_key="parent-brief-with-locale",
+        )["result"]
+
+        stored = self.ok("jobs.get", {"job_id": created["job_id"]})["result"]["job"]["brief"]
+        self.assertEqual(stored["locale"], "en-US")
+        contracts.validate_request_payload("jobs.create", {"kind": "plan", "brief": stored})
 
 
 if __name__ == "__main__":
