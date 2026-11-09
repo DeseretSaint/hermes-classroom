@@ -80,3 +80,25 @@ The round-5 STATUS.md note said the H-45 evidence diff was "8 sites". The measur
 2 in `soldering_full.json`) plus **3** `manifest.json` hashes. `audit/adversarial/harness-e2e/STATUS.md`
 now states the measured count; the packet itself is untouched by this round and still verifies
 FRESH.
+
+## Round 7 — rebased onto `origin/master` 5721389; the wire is now `cb.rpc` v22
+
+The round-6 tree was branched from the operator's local master, before GM-001 and GM-009 reached
+`origin/master`. On the rebased tree:
+
+* `contracts/rpc.v21.json` is the published GM-009 document, byte-identical to `origin/master`
+  (sha256 `eb17550859d4bbc42541837d32ee17e4594901d4065a17a1f75b6488c2d17282`, 75 methods including
+  `engagement.read` / `engagement.award`). It is not edited by GM-005.
+* `contracts/rpc.v22.json` is v21 plus exactly the six `takehome.*` methods (**81** declared
+  methods), `x-supersedes` names `.../rpc/v21`, and the four wire-version echoes move 21 -> 22.
+  `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 22` and `CONTRACT_FILES["cb.rpc"]` names
+  `rpc.v22.json`.
+* The H-45 packet was re-derived with `PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py`
+  (3/3 PASS) and `--verify` reports **FRESH**. The evidence diff is `contract_version: 21 -> 22`
+  at the same **5** sites (1 `bicycle_single.json`, 2 `music_short.json`, 2 `soldering_full.json`)
+  plus **3** `manifest.json` hashes.
+* `contracts/db.v14.json` is unchanged in substance: v14 still stacks on the published v13. The
+  0014 `impact` line that said "No v13 table is dropped" now says the table is rebuilt in place by
+  DROP TABLE + RENAME and no table leaves the schema, which is what the SQL does.
+* `docs/release-evidence.json`, `README.md`, `docs/SUBMISSION.md`, `docs/INSTALL.md` and
+  `docs/CONTRACTS.md` are updated in the same commit; `python3 scripts/check-docs-truth.py` passes.

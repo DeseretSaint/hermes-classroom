@@ -1,12 +1,12 @@
 {
   "card": "GM-005",
-  "course_id": "crs_2b46d16e55e34e6696e6cc1914027918",
-  "pack_id": "thp_af5e3e3d153d41d89a923466e0b29a9a",
+  "course_id": "crs_90caf209a30e4c6a8e8b911a8ed95d64",
+  "pack_id": "thp_c571487bcb9a45d5ac61293b9bd450ef",
   "pack_state": "exported",
-  "content_hash": "sha256:848648c86027c6ab2ec8d192cffa792d99442cad4a3e676b05d45696f7d3b8d3",
-  "source_lesson_version": "lsn_pln_29e595f19be146b08cdf30df663d3ec9:v1",
+  "content_hash": "sha256:8d58e298f5e0a40fd28313770bdcd62c949ddc5737d0540368e3b1248439fa8d",
+  "source_lesson_version": "lsn_pln_25b61d54a2dd4f9f907a5bdf6dd3d478:v1",
   "exported_artifact": {
-    "artifact_id": "art_b75bde602d37411b8967e8004de78980",
+    "artifact_id": "art_4a33510110f74c7cb1d6d36ecb7bce3b",
     "mime": "application/pdf",
     "bytes": 5622
   },

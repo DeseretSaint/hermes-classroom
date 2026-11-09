@@ -3200,7 +3200,7 @@
       "summary": "Rebuild takehome_packs without UNIQUE (source_course_id, source_objective_id, source_lesson_version, audience, kind, revision): a pack's revision is scoped to the pack, not to the source slot.",
       "impact": [
         "No column, type, nullability, default, CHECK, foreign key or index changes; the same rows are copied with the same values and no row is rewritten or backfilled.",
-        "No v13 table is dropped: takehome_packs is rebuilt in place and its two indexes are recreated.",
+        "No table leaves the schema: takehome_packs is rebuilt in place by DROP TABLE + RENAME, so its rows, columns, constraints and two indexes are all present afterwards.",
         "A second pack for a re-opened lesson starts at revision 0 and can be approved and exported after the first pack, instead of failing with IntegrityError when it reached the predecessor's revision number.",
         "Duplicate drafts for one source slot are still prevented by takehome.create, which returns the existing draft row; the dropped key was never that guard.",
         "Source courses, lessons, evidence, attempts, artifacts and world assets are not read or written by this migration."

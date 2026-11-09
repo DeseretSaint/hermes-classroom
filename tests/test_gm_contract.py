@@ -502,7 +502,14 @@ class GmTakeHomeRevisionScopeTest(unittest.TestCase):
         entry = v14["migration_plan"][-1]
         self.assertEqual((entry["version"], entry["from"]), (14, 13))
         self.assertEqual(entry["migration"], "0014_takehome_pack_revision_scope.sql")
-        self.assertTrue(any("No v13 table is dropped" in line for line in entry["impact"]))
+        self.assertTrue(
+            any("No table leaves the schema" in line for line in entry["impact"]),
+            entry["impact"],
+        )
+        self.assertTrue(
+            any("DROP TABLE + RENAME" in line for line in entry["impact"]),
+            "the impact note must state the rebuild mechanism, not claim no table is dropped",
+        )
 
     def test_gm_contract_migration_0014_preserves_pack_rows_and_frees_the_revision(self) -> None:
         home = tempfile.mkdtemp(prefix="coursebook-gm14-")

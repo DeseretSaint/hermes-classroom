@@ -7,25 +7,25 @@
   "measured_by": "H-212 (t_48394407)",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2747,
+    "ran": 2842,
     "skipped": 1,
-    "seconds": 410.301,
+    "seconds": 583.764,
     "verdict": "OK (skipped=1)",
-    "note": "measured on b9f4a19 in the H-212 freeze pass; this run reported one skip, so the verdict line is 'OK (skipped=1)'. An earlier pass on ab6dc7e reported 'OK' with no skip; the skip is environment-dependent and does not change the Ran count."
+    "note": "re-measured on the GM-005 branch (origin/master 5721389 plus the GM-005 take-home work, cb.rpc v22 / cb.db v14): Ran 2842 tests, OK (skipped=1). The measured_commit, plugin pin and M4 block below remain the b9f4a19 measurement they describe; the suite count tracks the tree the release gate reads."
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 20,
-    "declared_methods": 73,
-    "handlers": 73,
-    "note": "re-asserted on b9f4a19 in the H-212 pass: contracts/rpc.v20.json declares 73 methods; coursebook/contracts.py WIRE_CONTRACT_VERSION = 20; coursebook/api.py METHOD_HANDLERS holds 73 after importing every registering module (domain, pack_flow, pronunciation, syllabus), with no declared method lacking a handler and no handler outside the contract"
+    "version": 22,
+    "declared_methods": 81,
+    "handlers": 81,
+    "note": "re-asserted on the GM-005 tree (stacked on origin/master 5721389): contracts/rpc.v22.json declares 81 methods (75 v21 methods including GM-009's engagement.read/engagement.award, plus the six takehome.* methods); coursebook/contracts.py WIRE_CONTRACT_VERSION = 22; coursebook/api.py METHOD_HANDLERS holds 81 after importing every registering module (domain, pack_flow, pronunciation, syllabus, takehome), with no declared method lacking a handler and no handler outside the contract. contracts/rpc.v21.json is byte-identical to origin/master (sha256 eb17550859d4bbc42541837d32ee17e4594901d4065a17a1f75b6488c2d17282) and x-supersedes names it."
   },
   "db": {
     "contract": "cb.db",
-    "version": 13,
-    "schema_version": 13,
-    "migrations": "0001-0013",
-    "note": "re-asserted on 4e3d6c6 for GM-001: coursebook/db.py DB_SCHEMA_VERSION = 13; contracts/db.v13.json schema_version 13; migrations 0001_initial.sql through 0013_game_mode_contracts.sql. v13 is additive over v12: nullable courses.presentation_mode plus eight Game Mode tables, no rewrite and no backfill. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
+    "version": 14,
+    "schema_version": 14,
+    "migrations": "0001-0014",
+    "note": "re-asserted on the GM-005 tree (stacked on origin/master 5721389): coursebook/db.py DB_SCHEMA_VERSION = 14; contracts/db.v14.json schema_version 14; migrations 0001_initial.sql through 0014_takehome_pack_revision_scope.sql. v13 carries GM-001's nullable courses.presentation_mode plus eight Game Mode tables; v14 is additive over v13 in inventory and removes exactly one unique key from takehome_packs by drop-and-rename rebuild, with rows and indexes preserved and no backfill. contracts/db.v13.json stays byte-identical and pinned. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
   },
   "plugin": {
     "path": "desktop/plugin.js",

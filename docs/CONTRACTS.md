@@ -1,6 +1,6 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v21** (GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
+Status: **frozen at v22** (GM-005: `cb.rpc` v22 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
 v19 = H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
 commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
 and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
@@ -29,20 +29,20 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v21.json` | 21 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v22.json` | 22 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + `engagement.*`), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v20** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+The v1 **to v21** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
-`rpc.v18.json`, `rpc.v19.json` and `rpc.v20.json`), the
+`rpc.v18.json`, `rpc.v19.json`, `rpc.v20.json` and `rpc.v21.json`), the
 v1 **to v13** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
 `db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json`, `db.v12.json` and `db.v13.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v20.json`, `db.v13.json`,
+as immutable history: the superseded current files are `rpc.v21.json`, `db.v13.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -1647,6 +1647,7 @@ Consequences for clients (H-117 and the retry surface):
 | v18 | 2026-11-08 | H-185 additive amendment: a model-assessed lesson page is served with its provenance. The `lesson.page` response gains one optional property, `provenance` — an object `{outcome, independent, facts_unverified, check_enabled, warning}` or null. `outcome` is `independently_validated` or `model_assessed`; `independent` is false for a page the author model assessed itself; `check_enabled` is true for a usable check even when the pass was not independent; `warning` states the reason (same model / unidentified identity / facts unverified) and is never a validation claim. The property is optional and null for a page not authored by the generation pipeline, so every v17 payload still validates. 68 methods unchanged; no `required` list, error code, job kind, vocabulary value or `additionalProperties` move. `rpc.v17.json` is pinned by sha256. | 
 | v20 | 2026-11-08 | H-194b additive amendment (contract and the one `parent.blueprint.read` handler). The `parent.blueprint.read` response gains one required array, `sections[]`, one entry per composed section: `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`. `page_hash` is computed by the same function `lesson.revise` fences on (`domain._lesson_page_hash`), so the desktop can call `lesson.revise`/`lesson.regenerate` for a section that has never been revised — previously the first fine-tune of any section was unreachable, because `parent.review.read` only carries a section's identity after a revision and `tabs.*.sha256` is the rendered-text digest. `[]` for a pack-backed course. No method, request shape, error code, job kind, vocabulary value or existing required key moves, and `additionalProperties: false` stays. Found while building the H-194 UI half; numbered v20 because v19 was already frozen. `rpc.v19.json` is byte-identical and `x-supersedes` names it. |
 | v21 | 2026-11-09 | GM-009 additive amendment: the game-only engagement layer reaches the wire. Two methods appended — `engagement.read` (Game header read model: `xp_total`, cosmetic `level`, `Game progress`, bounded `recent_events`; refused outside a `game` course) and `engagement.award` (one XP event for a named real action, idempotent per `(enrollment_id, action_kind, action_id)`). No existing method, request shape, response key, error code, job kind, vocabulary value or `additionalProperties` moves; `cb.db` stays v13. `rpc.v20.json` is byte-identical and `x-supersedes` names it. The remaining Game Mode method names stay frozen in `coursebook/gm_contract.py`. |
+| v22 | 2026-11-09 | GM-005 additive amendment: the Parent Studio take-home pack backend reaches the wire. Six methods appended — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`, exactly the names and field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. A take-home pack is a rendered print artifact bound to `source_course_id` / `source_objective_id` / `source_lesson_version` / `content_hash`; it is not a course, not a `cb.pack` and not a `course.export`, and it carries no attempts, tutor turns, notes or private observations. The learner page and the parent-only answer guide are separate artifacts and approval is fenced on the exact previewed pages. No v1-v21 method, request shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; `cb.db` moves to v14 only in storage (one unique key removed from `takehome_packs`, see the cb.db v14 delta). `rpc.v21.json` is byte-identical (sha256 `eb17550859d4bbc42541837d32ee17e4594901d4065a17a1f75b6488c2d17282`) and `x-supersedes` names it. |
 | no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
@@ -2281,7 +2282,8 @@ dropped or retyped, and no lesson, attempt, transition or evidence row is read o
 
 `cb.rpc` **stayed v20 in GM-001** — the 18 Game Mode method names and one durable mode-setter are
 frozen in `coursebook/gm_contract.py` (`GM_RPC_METHODS`) and `docs/GM-CONTRACT.md`. GM-005
-registered the take-home family and bumped the wire to **v21** (see the v21 delta below).
+registered the take-home family in **v22** (see the v22 delta below); GM-009 had already taken
+**v21** for `engagement.read`/`engagement.award`.
 `cb.errors`, `cb.jobs`, `cb.vocabulary` and `cb.pack` are unchanged.
 
 Regression guard: `tests/test_gm_contract.py` pins the enum values, the manifest, the additive
@@ -2304,8 +2306,8 @@ foreign key, and no row is rewritten or backfilled.
 * 0014 rebuilds the table without that key (same rows, same values) and recreates its two indexes.
   Duplicate **drafts** for one source slot are still refused in `takehome.create`, which returns
   the existing draft row instead of inserting a second one; `id` remains the pack identity.
-* The wire contract does not move: `cb.rpc` stays v21 and the `takehome.*` request/response shapes,
-  error codes and vocabulary are unchanged.
+* The storage fix does not move the wire: `cb.rpc` v22 carries the unchanged `takehome.*`
+  request/response shapes, error codes and vocabulary.
 
 Regression guard: `tests/test_gm_contract.py::GmTakeHomeRevisionScopeTest` pins the additive
 `db.v13 -> db.v14` diff (every other table's columns, indexes and uniques byte-equal), the
@@ -2313,18 +2315,19 @@ append-only migration plan, and a real v13-to-v14 round trip on a disposable dat
 three existing pack rows survive byte-identical and a second draft at revision 0 can be inserted
 for the same source slot.
 
-## v21 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
+## v22 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
 
-`cb.rpc` v21 is v20 with **one family appended**: `takehome.sources`, `takehome.preview`,
+`cb.rpc` v22 is v21 with **one family appended**: `takehome.sources`, `takehome.preview`,
 `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`, exactly the names and
-field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. No v1-v20 method, request
+field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. No v1-v21 method, request
 shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
 value moves; `cb.errors`, `cb.jobs`, `cb.pack` and `cb.projection` are untouched, and `cb.db` moves
 to v14 only in storage (one constraint removed from `takehome_packs`, see the cb.db v14 delta
 above).
-`rpc.v20.json` stays byte-identical on disk (sha256
-`81cf882fb6f9dddc5caf7706b9dfe23d1ace2d4dea16c11e4e0281cbdf150f07`) and `x-supersedes` names
-`.../rpc/v20`.
+`rpc.v21.json` stays byte-identical on disk (sha256
+`eb17550859d4bbc42541837d32ee17e4594901d4065a17a1f75b6488c2d17282`) and `x-supersedes` names
+`.../rpc/v21`. v21 remains the GM-009 engagement delta, unchanged, including `engagement.read` and
+`engagement.award`.
 
 **The artifact.** A take-home pack is a rendered print artifact, **not** a course, **not**
 `cb.pack` and **not** `course.export`. `takehome.create` writes one `takehome_packs` row bound to
@@ -2359,4 +2362,4 @@ course with no world art prints cleanly with `plates: []`.
 Regression guard: `tests/test_gm_takehome.py` (the seven GM-005-named tests plus picker, idempotency,
 create lifecycle after approve/export, hash-fence, learner-audience print filtering, strict-font
 refusal, export replay, full-world page budget and typed-heading coverage) and
-`tests/test_contracts.py` (`V21AmendmentTest`).
+`tests/test_contracts.py` (`V22AmendmentTest`).

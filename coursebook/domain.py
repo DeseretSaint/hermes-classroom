@@ -69,7 +69,8 @@ HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[s
 # `ensure_registered` inspect.
 HANDLERS.update(pronunciation.HANDLERS)
 # GM-005: the take-home commands are registered by their own module for the same reason — the
-# module reads the live contract, so a build without cb.rpc v21 stays NOT_IMPLEMENTED.
+# module reads the live contract, so a build without the six takehome.* methods stays
+# NOT_IMPLEMENTED instead of inventing a method.
 HANDLERS.update(takehome_pack.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
