@@ -109,6 +109,9 @@ export const Button = (props) => {
     onClick: props.onClick
   }
   if (props.className) attrs.className = props.className
+  if (props.style) attrs.style = props.style
+  if (props.onFocus) attrs.onFocus = props.onFocus
+  if (props.onBlur) attrs.onBlur = props.onBlur
   if (props.title) attrs.title = props.title
   for (const [name, value] of Object.entries(props)) {
     if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {

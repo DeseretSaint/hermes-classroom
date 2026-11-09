@@ -188,6 +188,18 @@ facts.fresh = {
     .filter((b) => /start a new course/i.test(text(b))).length
 }
 
+const primary = document.querySelector('[data-cb-action="primary"]')
+if (primary) {
+  await act(async () => { primary.dispatchEvent(new window.FocusEvent('focusin', { bubbles: true })) })
+  await flush(40)
+  const style = window.getComputedStyle(primary)
+  facts.focus = {
+    label: text(primary),
+    ring: primary.getAttribute('data-cb-focus-ring'),
+    outline: style.outlineStyle + ' ' + style.outlineWidth + ' ' + style.outlineColor
+  }
+}
+
 const firstCard = document.querySelector('[data-cb-home-card] button')
 const clickedTitle = firstCard ? text(firstCard.closest('[data-cb-home-card]').querySelector('h3')) : ''
 if (firstCard) {
@@ -332,6 +344,14 @@ class CoursebookHomeTest(Base):
         self.assertIn("Course number 7", html)
         self.assertNotIn("Course number 1", html, "the oldest course belongs behind See all")
 
+    def test_card_does_not_repeat_the_next_step_as_a_goal(self) -> None:
+        # A shelf row with no stored goal or subtitle must print the next-step sentence once, not
+        # once in the meta row and again in the goal paragraph (the fallback duplicated it).
+        html = self.home(rows=[row(1, title="Engine diagnostics", subtitle=None,
+                                   next_step={"kind": "review_plan", "label": "Review the plan"})])
+        self.assertEqual(html.count("Review the plan"), 1,
+                         "the shelf card printed its next step twice")
+
     def test_card_shows_real_next_step_and_mode_badge(self) -> None:
         html = self.home(
             rows=[row(1, title="Small-engine maintenance", next_step={"kind": "resume_lesson", "label": "Resume this lesson"})],
@@ -448,3 +468,26 @@ class HomeSplitRouteTest(Base):
         self.assertTrue(back["home"], "Back to Home did not restore the library launcher")
         self.assertFalse(back["courseHome"], "Back to Home left the course home mounted")
         self.assertFalse(back["continuePlate"], "Back to Home kept the Continue plate")
+
+    def test_primary_action_paints_the_authored_focus_ring(self) -> None:
+        # README §1 rule 6: the keyboard focus capture must show the 2px accent ring on the
+        # primary control. That ring is authored in CbAction, not left to the UA default.
+        first = row(1, title="Small-engine maintenance")
+        rows = {"items": [first], "next_cursor": None, "total": 1, "empty_reason": None, "applied_filter": "all"}
+        facts = json.loads(
+            self.run_node(
+                "route.mjs",
+                {
+                    "width": 1049,
+                    "responses": {
+                        "library.list": rows,
+                        "world.read": {"course_id": first["course_id"], "presentation_mode": "textbook",
+                                       "world": None, "fallback": None, "revision": 1},
+                    },
+                },
+            )
+        )
+        focus = facts.get("focus")
+        self.assertTrue(focus, "global Home had no primary action to focus")
+        self.assertEqual(focus["ring"], "visible", focus)
+        self.assertTrue(focus["outline"].startswith("solid 2px"), focus["outline"])

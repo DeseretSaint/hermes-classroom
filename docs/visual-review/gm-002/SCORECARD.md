@@ -20,10 +20,11 @@ Screen: `home.global` (concept F1 `home-generic-first-open.png`) and `home.cours
 
 Known gaps carried into review:
 
-- Keyboard ring: static frames cannot enter React focus state; the authored 2px accent ring is
-  asserted in tests, not visible in the PNG (see MANIFEST caveat).
+- Keyboard ring: the live focus capture shows the authored 2 px `--cb-accent` ring on the primary
+  (`data-cb-focus-ring="visible"`, outline recorded in `live-evidence.json`); the computed width is
+  reported at ≈1.12 px because this Electron build renders the page at ≈0.896 zoom.
 - Cards use paper covers because no course world exists yet (GM-004 owns the hero/cover art).
-- Live isolated-window capture was not driven for this packet; frames are renderer captures of the
-  shipped module plus the route walkthrough test.
+- `home.course` world states (running/partial/stale) and `course-end` are GM-004 scope; this packet
+  captures default, no-world, plan-in-review, loading, error and the responsive/focus cells.
 
 Verdict: **REQUEST REVIEW** — reviewer decides.

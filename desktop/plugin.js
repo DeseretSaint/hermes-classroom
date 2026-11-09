@@ -2610,7 +2610,9 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
   const [keyboardFocus, setKeyboardFocus] = useState(false)
   const title = row.title || (slot && slot.name) || 'Untitled course'
   const next = learnerNextLabel(row.next_step && row.next_step.label)
-  const goal = cbCourseGoalLine(row)
+  // The goal paragraph carries a stored goal or the course's own subtitle. It must not fall back
+  // to the same next-step sentence the meta row already prints, or every card repeats itself.
+  const goal = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
   const open = () => {
     if (onOpen) onOpen(slot)
   }
@@ -2691,21 +2693,23 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
             },
             children: title
           }, 'title'),
-          jsx('p', {
-            'data-cb-home-card-goal': '',
-            style: {
-              margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.meta,
-              lineHeight: 1.5,
-              color: 'var(--cb-ink-soft)',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
-            },
-            children: goal
-          }, 'goal')
+          goal
+            ? jsx('p', {
+                'data-cb-home-card-goal': '',
+                style: {
+                  margin: 0,
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink-soft)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                },
+                children: goal
+              }, 'goal')
+            : null
         ]
       }, 'body')
     ]
@@ -14419,6 +14423,12 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
   delete rest.size
   const motion = useCbMotion()
   const [pressed, setPressed] = useState(false)
+  // README §1 rule 6: a keyboard focus target paints the 2px accent ring. The SDK's own ring is
+  // reset by the host, so the plugin authors it; a pointer click does not raise it.
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  // A pointer press focuses the control without meaning "keyboard focus". Set here so the ring is
+  // authored from intent, not from a `:focus-visible` selector the test DOM cannot resolve.
+  const pointerFocus = useRef(false)
   const kind = Object.prototype.hasOwnProperty.call(CB_ACTION_STYLES, variant) ? variant : 'secondary'
   const spec = CB_ACTION_STYLES[kind]
   const isDisabled = Boolean(disabled)
@@ -14442,10 +14452,12 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
     ...rest,
     'data-cb-action': kind,
     'data-cb-state': cbState,
+    'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
     disabled: isDisabled,
     variant: spec.variant,
     className: [spec.className, className].filter(Boolean).join(' ') || undefined,
     onPointerDown: (event) => {
+      pointerFocus.current = true
       if (!isDisabled) setPressed(true)
       call('onPointerDown', event)
     },
@@ -14461,7 +14473,13 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
       release()
       call('onPointerCancel', event)
     },
+    onFocus: (event) => {
+      setKeyboardFocus(!pointerFocus.current || shelfRingVisible(event && event.currentTarget))
+      call('onFocus', event)
+    },
     onBlur: (event) => {
+      pointerFocus.current = false
+      setKeyboardFocus(false)
       release()
       call('onBlur', event)
     },
@@ -14471,7 +14489,16 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
       ...(palette || {}),
       ...(pressStyle || {}),
       minHeight: spec.minHeight,
-      fontSize: spec.fontSize
+      fontSize: spec.fontSize,
+      // Longhands rather than the `outline` shorthand: a computed-style reader (and the host's
+      // own reset) sees the authored ring either way, and jsdom only exposes the longhands. At
+      // rest the style is omitted, so a host UA ring is never suppressed by an inline `none`.
+      ...(keyboardFocus ? {
+        outlineStyle: 'solid',
+        outlineWidth: '2px',
+        outlineColor: 'var(--cb-accent)',
+        outlineOffset: '2px'
+      } : {})
     },
     children
   })
