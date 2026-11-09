@@ -287,7 +287,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
     def test_the_prompt_label_advanced_with_the_instruction_text(self) -> None:
         # A label is part of stored validation bindings and the idempotency fingerprint; a
         # different instruction text under a reused label is never silently accepted.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v4")
+        # v5 (`t_0affea08`) added the declared-reject rule to the pass instructions; the label
+        # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v5")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

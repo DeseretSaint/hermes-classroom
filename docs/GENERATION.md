@@ -19,9 +19,9 @@ Three different calls, three different prompts, three different schemas:
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v4` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
@@ -72,6 +72,22 @@ research to `independently_validated`. Ten criteria are mandatory:
 `objective_alignment`, `source_support`, `factual_correctness`, `answer_uniqueness`,
 `alternative_coverage`, `rubric_consistency`, `internal_contradiction`, `answer_leakage`,
 `hazard_age_appropriateness`, `evidence_target_fit`.
+
+**A declared `reject` must name something the pass judged** (`t_0affea08`). H-192b splits the ten
+criteria into two passes of five, and each pass answers only for its own batch. A `reject` is a
+verdict, not a resample request: it must rest on at least one criterion of that pass answered
+`fail` or `unknown`, or on at least one rejection naming an item, a criterion and a reason. A
+declared `reject` with every own criterion `pass` and an empty rejection list states no rule that
+was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-retryable) and is
+**not** treated as a refusal — no second authoring call, no validation record, no plan document.
+Making that carrier a refusal is what spent a whole extra authoring and research cycle on
+`_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
+whenever the second attempt passed. The rule is stated in the pass instructions under
+`validation-prompt.v5`, so it is a stated contract rather than an unstated schema trap (the H-191
+lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
+`docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
+its H-182/D1 repair loop, and its stored reasons come from the rejections, then the failed
+criteria, then the criteria the pass could not verify — never an empty string.
 
 ## 2. LLM seam: `ctx.llm`, from the job runner — not from the dashboard backend
 

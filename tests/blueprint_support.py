@@ -218,6 +218,20 @@ def narrowed_validation_answer(request: gen.LLMRequest, document: dict[str, Any]
                 for entry in rejections
                 if not isinstance(entry, dict) or entry.get("criterion") in criteria_enum
             ]
+        # ``t_0affea08``: a pass owns only its own five criteria, so its declared verdict has to
+        # be re-derived after narrowing. A fixture that rejects a pass-2 criterion leaves pass 1
+        # with every own criterion ``pass`` and no rejection; carrying its ``reject`` over would
+        # answer pass 1 incoherently — a verdict naming nothing it judged, which
+        # ``_parse_validation_answer`` now types as VALIDATION_FAILED. The live validator answers
+        # each pass on its own batch, so this is the same derivation it is told to make; the
+        # refusing pass keeps its ``reject`` and the merge still makes the review a refusal.
+        if str(aligned.get("verdict")) != "pass":
+            grounded = any(
+                isinstance(entry, dict) and str(entry.get("verdict")) != "pass"
+                for entry in aligned["criteria"]
+            ) or bool(aligned["rejections"])
+            if not grounded:
+                aligned["verdict"] = "pass"
 
     claim_enum = (
         (((properties.get("claim_verdicts") or {}).get("items") or {})

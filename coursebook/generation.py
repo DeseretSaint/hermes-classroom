@@ -208,7 +208,14 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: and ``_call_llm`` re-asks once on a shape violation. Both are changes to the instruction text,
 #: and a label is recorded in stored validation bindings and the idempotency fingerprint, so the
 #: label advances rather than wearing v3 for a third, different prompt.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v4"
+#:
+#: v5 (`t_0affea08`): the pass instructions now state the rule that makes a declared ``reject``
+#: a verdict — it must be grounded in the criteria the pass was given — because
+#: :func:`_parse_validation_answer` types an ungrounded ``reject`` as a contract violation. The
+#: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
+#: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
+#: read before answering, which is the H-191 lesson applied again.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v5"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -390,7 +397,7 @@ class ProviderFailure(GenerationError):
 
 
 class ModelOutputInvalid(GenerationError):
-    """The model answered, and its answer did not match the frozen response schema.
+    """The model answered, and its answer did not match the frozen response contract.
 
     This is deliberately **not** ``ProviderFailure``: the host and the provider were healthy, so
     the job must not report an infrastructure outage (H-191: one 81-character ``item`` label threw
@@ -398,9 +405,13 @@ class ModelOutputInvalid(GenerationError):
     rejection: a malformed answer is not a verdict about the artifact, so no validation record,
     criterion row or rejection is written.
 
-    One bounded re-ask (:func:`_call_llm`) runs before this is raised; ``repair_attempted`` says
-    whether that happened, and ``violation`` carries the host's own message so the operator reads
-    the real rule that failed instead of a generic failure.
+    Two shapes reach it. A JSON-Schema violation is caught by the host's own gate, where one
+    bounded re-ask (:func:`_call_llm`) runs first; ``repair_attempted`` says whether that happened.
+    A *verdict* violation — a declared ``reject`` that names nothing it judged
+    (:func:`_declared_reject_problem`, ``t_0affea08``) — is caught after the answer is parsed and
+    costs no second call: the rule is stated in the pass instructions, and a blind re-ask is the
+    resample H-182/D1 used to pay a whole authoring cycle for. ``violation`` carries the rule that
+    failed so the operator reads it instead of a generic failure.
 
     The job service maps this to the contract's ``VALIDATION_FAILED`` (category ``validation``,
     retryable ``false``): the *payload* violated the frozen contract. A dedicated
@@ -2897,6 +2908,21 @@ def validation_pass_schema(
     return schema
 
 
+#: The rule that makes a declared ``reject`` a verdict (`t_0affea08`). Stated by *both* prompt
+#: builders — the narrowed plan passes (:func:`validation_pass_instructions`) and the wide
+#: lesson/unit passes (:func:`_validation_instructions`) — because :func:`_declared_reject_problem`
+#: enforces it on every criteria pass. H-191's measured defect was a schema bound the prompt never
+#: stated; a rule the harness enforces is stated where the answer is asked for, or it is a trap.
+_DECLARED_VERDICT_RULE = (
+    " Set the top-level 'verdict' to 'pass' only when every criterion you were given is "
+    "'pass'. Set it to 'reject' only when at least one criterion you were given is 'fail' or "
+    "'unknown', or you name at least one rejection. A 'reject' that fails none of your own "
+    "criteria and names no rejection states no rule that was broken: it is not a verdict, and "
+    "the harness reports the answer as a contract failure (VALIDATION_FAILED) instead of "
+    "treating it as a refusal."
+)
+
+
 def validation_pass_instructions(
     *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> str:
@@ -2923,7 +2949,7 @@ def validation_pass_instructions(
         "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
         "author's rationale, or explain your method. Reject any item that must not reach a learner, "
         "with the item reference and a concrete reason."
-    )
+    ) + _DECLARED_VERDICT_RULE
     if claim_labels:
         text += (
             " Also return a support verdict for these plan claims: "
@@ -2981,6 +3007,12 @@ def merge_validation_reports(
     (``outcome``, ``independence`` and the recorded validator identity are computed there, not
     here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
     validation declare ``reject``.
+
+    A declared ``reject`` that reaches this function has already been checked against the criteria
+    its pass was given (:func:`_declared_reject_problem`, called from
+    :func:`_parse_validation_answer`): an ungrounded one is a typed contract failure and never
+    arrives here. This function combines reports; it is not the validator-contract gate, so a
+    caller that hands in raw reports (tests, replays) is responsible for the same rule.
 
     A pass that owns no criterion is a claim-only pass (H-192): it contributes its claim verdicts
     and nothing else. It carries no artifact verdict and no rejections, so it can neither reject
@@ -4036,7 +4068,7 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "response is rejected before it is read if any string is over its schema bound or any "
         "field outside the schema is returned, so put each verdict in exactly the fields the "
         "schema names."
-    )
+    ) + _DECLARED_VERDICT_RULE
     if subject == "plan":
         text += (
             " Also judge curriculum sequence under objective_alignment: every unit after the "
@@ -5729,10 +5761,47 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
     return copy.deepcopy(parsed)
 
 
+def _declared_reject_problem(
+    document: Mapping[str, Any], owned: Sequence[str]
+) -> str | None:
+    """Why one pass's declared ``reject`` states no rule it judged, or ``None`` when it does.
+
+    H-192b splits the review into passes of five criteria, each with its own narrowed schema. A
+    pass answers only for itself, so a ``reject`` it declares has to rest on something *it* judged:
+    one of its own criteria is not ``pass`` (``fail`` — a rule was broken; or ``unknown`` — the
+    answer genuinely cannot tell), or it names at least one rejection with an item, a criterion and
+    a reason.
+
+    A ``reject`` with all of its own criteria ``pass`` and an empty rejection list is not a
+    verdict about the artifact: it names nothing an author could repair and nothing a reviewer
+    could check. Trusting it made H-182/D1 re-author a whole plan on a generic hint
+    (:func:`_feedback`'s "without itemised reasons" branch) and, when the second attempt passed,
+    discard the declared refusal anyway — so the same field meant "a verdict" when grounded and
+    "a resample request" when not. The single meaning this pipeline keeps is: a declared ``reject``
+    is a verdict, and a verdict with nothing behind it is a contract violation (``t_0affea08``).
+
+    ``unknown`` counts as a ground because it is a stated answer with a reason; a conservative
+    validator that cannot verify a criterion is rejecting on record, not on silence.
+    """
+    if str(document.get("verdict")) == "pass":
+        return None
+    criteria = [entry for entry in document.get("criteria") or [] if isinstance(entry, Mapping)]
+    if any(str(entry.get("verdict")) != "pass" for entry in criteria):
+        return None
+    if document.get("rejections"):
+        return None
+    judged = ", ".join(owned) if owned else "the criteria this task judges"
+    return (
+        "declared reject while failing, leaving unknown and naming a rejection for none of the "
+        f"criteria it was given ({judged}); a declared reject must name at least one criterion it "
+        "did not pass, or at least one rejection"
+    )
+
+
 def _parse_validation_answer(
     response: LLMResponse, request: LLMRequest, *, what: str
 ) -> dict[str, Any]:
-    """Parse one validator answer, typing a shape violation as a contract failure.
+    """Parse one validator answer, typing a shape or verdict violation as a contract failure.
 
     H-192: a validator answer that violates its own narrowed schema at the plan stage used to
     surface as ``INTERNAL_ERROR`` / retryable (see ``jobs.error_json`` for the full-scope sample).
@@ -5745,10 +5814,18 @@ def _parse_validation_answer(
     ten-criterion ``VALIDATION_SCHEMA`` would reject every honest answer (``criteria`` too short).
     The request's schema *is* the contract the validator was handed; the merge, not this parse,
     is what guarantees the union is the full reviewed set.
+
+    ``t_0affea08`` adds the one verdict rule the schema cannot express usefully: a declared
+    ``reject`` must be grounded in the criteria this pass was given (see
+    :func:`_declared_reject_problem`). It is checked here, not in the schema, so a seam that does
+    not enforce the schema cannot wave it through, and the operator reads one precise rule instead
+    of a JSON-Schema ``if/then`` message. No extra call is made: the pass instructions
+    (``validation-prompt.v5``) state the rule before the answer, and the alternative — a blind
+    validator re-ask — is the same resample H-182/D1 was paying an authoring cycle for.
     """
     schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
     try:
-        return _parse_structured(
+        document = _parse_structured(
             response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
         )
     except GenerationRejected as exc:
@@ -5758,6 +5835,18 @@ def _parse_validation_answer(
             schema_name=request.schema_name,
             violation=str(exc),
         ) from exc
+    if "verdict" in (schema.get("properties") or {}):
+        problem = _declared_reject_problem(
+            document, validation_pass_criteria(request)
+        )
+        if problem is not None:
+            raise ModelOutputInvalid(
+                f"{what} is not a verdict: {problem}",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=problem,
+            )
+    return document
 
 
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
@@ -5797,6 +5886,12 @@ def validation_verdict(
     ``independence`` is the *observed* model identity comparison (see
     :func:`validation_independence`). A pass from the author's own model is stored as
     ``model_assessed`` and is never reported as independent validation.
+
+    The declared verdict is honoured, never recomputed into a pass: an artifact is not approvable
+    because its criteria happened to read well when the validator said ``reject``. The one
+    precondition is upstream — a declared ``reject`` must be grounded in the criteria that pass was
+    given (:func:`_declared_reject_problem`), so a ``reject`` arriving here always names something a
+    reviewer can read (``t_0affea08``).
     """
     allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
@@ -5854,18 +5949,60 @@ def validation_verdict(
     }
 
 
-def _feedback(rejections: Sequence[dict[str, Any]]) -> str:
-    if not rejections:
-        return "The independent validator rejected the previous attempt without itemised reasons; " \
-               "fix the objective/source alignment and try again."
-    lines = ["The independent validator rejected the previous attempt for these reasons:"]
-    for entry in rejections[:8]:
+def _refusal_reasons(verdict: Mapping[str, Any]) -> list[str]:
+    """The refusal's own words, in the order a reader can act on them.
+
+    A refusal is stored and shown as text, so an empty reason is a visible defect: the old
+    ``f"criteria failed: {', '.join(verdict['failed'])}"`` renders as ``"criteria failed: "``
+    when the declared ``reject`` rests on an ``unknown`` criterion rather than a failed one
+    (``t_0affea08``). Rejections come first — they name an item and usually a fix — then failed
+    criteria, then the criteria the pass genuinely could not verify. The last line is only
+    reachable from a refusal the pipeline synthesised itself (a generator that broke deterministic
+    rules twice); :func:`_declared_reject_problem` keeps it out of a validator answer.
+    """
+    reasons = [
+        f"{entry.get('item')}: {entry.get('reason')}"
+        for entry in verdict.get("rejections") or []
+    ]
+    if reasons:
+        return reasons
+    failed = [str(name) for name in verdict.get("failed") or []]
+    if failed:
+        return [f"criteria failed: {', '.join(failed)}"]
+    unknown = [str(name) for name in verdict.get("unknown") or []]
+    if unknown:
+        return [f"criteria could not be verified: {', '.join(unknown)}"]
+    return ["the validator did not clear this artifact"]
+
+
+def _feedback(verdict: Mapping[str, Any]) -> str:
+    """The repair instruction for one refusal: every reason the validator actually gave.
+
+    A rejection carries an item, a criterion and often a fix hint; a failed criterion carries its
+    own ``reason``. Both are the author's repair list, so a refusal that failed a criterion without
+    itemising a rejection is still repairable instead of falling back to the generic
+    "fix the objective/source alignment" sentence (which names no rule and repairs nothing).
+    """
+    lines: list[str] = []
+    for entry in verdict.get("rejections") or []:
         lines.append(
             f"- item {entry.get('item')} ({entry.get('criterion')}): {entry.get('reason')}"
         )
         if entry.get("fix_hint"):
             lines.append(f"  fix: {entry['fix_hint']}")
-    return "\n".join(lines)
+    if not lines:
+        for entry in verdict.get("criteria") or []:
+            if str(entry.get("verdict")) == "pass":
+                continue
+            lines.append(
+                f"- criterion {entry.get('id')} ({entry.get('verdict')}): {entry.get('reason')}"
+            )
+    if not lines:
+        return (
+            "The independent validator rejected the previous attempt without itemised reasons; "
+            "fix the objective/source alignment and try again."
+        )
+    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines[:8]])
 
 
 #: Local request-size guard per declared scope. This is not a provider limit: it exists so a
@@ -7814,13 +7951,11 @@ def run_plan_job(
             if verdict["verdict"] == "pass":
                 plan = candidate
                 break
-            rejection_reasons = [
-                f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-            ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+            rejection_reasons = _refusal_reasons(verdict)
             if attempt == 2:
                 plan = candidate
                 break
-            feedback = _feedback(verdict["rejections"])
+            feedback = _feedback(verdict)
 
         assert plan is not None and plan_request is not None
         if verdict is None:
@@ -8829,14 +8964,12 @@ def run_unit_sections_job(
             if verdict["verdict"] == "pass":
                 authored = batch
                 break
-            rejection_reasons = [
-                f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-            ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+            rejection_reasons = _refusal_reasons(verdict)
             if attempt == 2:
                 # A rejected batch is not a partial unit to finish later: the validator refused
                 # it, so it is discarded and the job fails with its reasons (transactional unit).
                 break
-            feedback = _feedback(verdict["rejections"])
+            feedback = _feedback(verdict)
 
         if verdict is None or verdict["verdict"] != "pass":
             # Deterministic rule violations, malformed batches and validator rejections all take
@@ -9873,13 +10006,11 @@ def _author_section(
         if verdict["verdict"] == "pass":
             lesson = candidate
             break
-        rejection_reasons = [
-            f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
-        ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+        rejection_reasons = _refusal_reasons(verdict)
         if attempt == 2:
             lesson = candidate
             break
-        feedback = _feedback(verdict["rejections"])
+        feedback = _feedback(verdict)
 
     assert lesson is not None and request is not None
     if verdict is None:
