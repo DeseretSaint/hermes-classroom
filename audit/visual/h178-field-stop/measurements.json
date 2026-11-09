@@ -1,0 +1,348 @@
+{
+  "port": "9385",
+  "theme": "dark",
+  "plugin_sha256": "350011775b97a055e887d624bc2df11025a3129a2a41207b20acc2dc53f89ad4",
+  "appearance": {
+    "before": "light",
+    "after": "dark"
+  },
+  "frames": [
+    {
+      "name": "field-stop-stop2-light-1049.png",
+      "theme": "light",
+      "width": 1049,
+      "text": "100%",
+      "override": 941,
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "light",
+      "darkClass": true,
+      "sha256": "6e33b36851539db624abfb9913740ab72b0083434414938512de7b90d3bd609a",
+      "bytes": 315453,
+      "pixels": {
+        "width": 941,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "light",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-light-900.png",
+      "theme": "light",
+      "width": 900,
+      "text": "100%",
+      "override": 807,
+      "viewport": {
+        "innerWidth": 900,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "light",
+      "darkClass": true,
+      "sha256": "5b3001f8733dc888c577608da1c1cf58bfbeee0b98416be8dce01ac27503e4f9",
+      "bytes": 271512,
+      "pixels": {
+        "width": 807,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 900,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "light",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-light-460.png",
+      "theme": "light",
+      "width": 460,
+      "text": "100%",
+      "override": 413,
+      "viewport": {
+        "innerWidth": 460,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "light",
+      "darkClass": true,
+      "sha256": "aa07f199e8394c9b9c7aaba6d4233e30447fc562ae06c2553771f1b8500e9b70",
+      "bytes": 89891,
+      "pixels": {
+        "width": 413,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 460,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "light",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-light-1049-text200.png",
+      "theme": "light",
+      "width": 1049,
+      "text": "200%",
+      "override": 941,
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "32px",
+      "scope": "light",
+      "darkClass": true,
+      "sha256": "43823cc8d822c50781a35e7309cdc4ff267472f2fecf2cf7aeb39573c35fdd56",
+      "bytes": 199117,
+      "pixels": {
+        "width": 941,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "32px",
+        "scope": "light",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-dark-1049.png",
+      "theme": "dark",
+      "width": 1049,
+      "text": "100%",
+      "override": 941,
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "dark",
+      "darkClass": true,
+      "sha256": "3be5723113f2a140a23ec464ee8c7386995a81f8232838acfd2ac29aa06ac47c",
+      "bytes": 326093,
+      "pixels": {
+        "width": 941,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "dark",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-dark-900.png",
+      "theme": "dark",
+      "width": 900,
+      "text": "100%",
+      "override": 807,
+      "viewport": {
+        "innerWidth": 900,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "dark",
+      "darkClass": true,
+      "sha256": "ad4f766e5bdf89fa721b43a1ab34b9b1455026686b595af48eea145bafd8cccf",
+      "bytes": 282018,
+      "pixels": {
+        "width": 807,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 900,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "dark",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-dark-460.png",
+      "theme": "dark",
+      "width": 460,
+      "text": "100%",
+      "override": 413,
+      "viewport": {
+        "innerWidth": 460,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "16px",
+      "scope": "dark",
+      "darkClass": true,
+      "sha256": "bceb31b24b21b8a2c6232faaf08cc0eabe8258cee403cae6451f0f8c04d785ba",
+      "bytes": 98643,
+      "pixels": {
+        "width": 413,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 460,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "scope": "dark",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    },
+    {
+      "name": "field-stop-stop2-dark-1049-text200.png",
+      "theme": "dark",
+      "width": 1049,
+      "text": "200%",
+      "override": 941,
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1561
+      },
+      "rootFontSize": "32px",
+      "scope": "dark",
+      "darkClass": true,
+      "sha256": "234839dbe4734485559d9985a258eaac13e5d5d1226f2a27bcb1e2d181bc1061",
+      "bytes": 224078,
+      "pixels": {
+        "width": 941,
+        "height": 1400
+      },
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1561,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "32px",
+        "scope": "dark",
+        "darkClass": true,
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "detached": false,
+        "horizontalOverflow": 0,
+        "stopHeaderPresent": true
+      }
+    }
+  ],
+  "sequence": []
+}
