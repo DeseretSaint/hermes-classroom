@@ -29,10 +29,12 @@ started capturing.
 - a switch is shell state only (`onSelect(course_id)`); it re-keys Continue, `course.outline` and
   `lesson.page`, and never touches `?profile=` or the backend. `Showing <name>` states the active
   classroom in words beneath the control;
-- no invented avatars, monogram-only covers, seals or card grid. Each classroom carries a
-  deterministic `aria-hidden` contour derived from its id/title, and the learner's own Hermes pet
-  may stand beside the trailhead through `host.request('pet.info')`; when the host has no pet
-  nothing is drawn (2026-11-08 amendment, H-176).
+- no invented avatars, monogram-only covers, seals or card grid. Each classroom carries a quiet
+  **typographic paper cover** (its name, the subject the backend recorded, its monogram) or, only
+  when a `library.list` row actually declares one, an authored artifact cover with a caption and
+  its text equivalent. The learner's own Hermes pet may stand beside the trailhead through
+  `host.request('pet.info')`; when the host has no pet nothing is drawn (2026-11-08 amendment,
+  H-176, H-189).
 
 ## Capture method
 
@@ -95,7 +97,7 @@ more) and `single` (one classroom) branches are not live in this rig and are **f
 | horizontal overflow (px) | 0 | 0 | 0 | 0 | 0 |
 | `h1` count on the route | 1 | 1 | 1 | 1 | 1 |
 | parent rows leaked into the desk | no | no | no | no | no |
-| covers / avatars / all-courses cards | 0 / 0 / 0 | same | same | same | same |
+| covers / avatars / all-courses cards | 2 typographic / 0 / 0 | same | same | same | same |
 | tab target height (current / other) | 53 / 44 px | 74 / 44 px | 53 / 44 px | 74 / 44 px | 356 / 146 px |
 
 At 200 % text the rail wraps to several lines (a tab 356 px tall at 460) and the route still reports

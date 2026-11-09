@@ -49,7 +49,16 @@ const scope = (children) =>
   }, children)
 
 let body
-if (payload.kind === 'backend-off') {
+if (payload.kind === 'notebook') {
+  body = React.createElement(mod.NotebookView, {
+    row: { enrollment_id: 'enr_a', title: payload.courseTitle || 'Japanese affection (L0)', evidence_summary: {} },
+    notebooks: { entries: payload.entries || [] },
+    implemented: new Set(['notebook.list', 'notebook.update']),
+    onOpenSection: () => {},
+    onChanged: () => {},
+    sections: payload.sections || []
+  })
+} else if (payload.kind === 'backend-off') {
   body = React.createElement(mod.BackendUnavailable, {
     error: { code: 'HOST_UNAVAILABLE', message: 'The Coursebook backend did not answer.' },
     reload: () => {}
@@ -64,6 +73,8 @@ if (payload.kind === 'backend-off') {
   if (payload.firstUse) abilities.push('course.create', 'syllabus.intake.create')
   body = React.createElement(mod.FieldDeskHome, {
     desk,
+    notes: payload.notes || null,
+    onShowNotebook: () => {},
     libraryStatus: payload.libraryStatus || 'ready',
     libraryError: payload.libraryError || null,
     stale: Boolean(payload.stale),
