@@ -30,7 +30,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
 | `cb.rpc` | `contracts/rpc.v20.json` | 20 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v12.json` | 12 | Cinder | migrations, every command, evidence views |
+| `cb.db` | `contracts/db.v13.json` | 13 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
@@ -39,10 +39,10 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 The v1 **to v19** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
 `rpc.v18.json` and `rpc.v19.json`), the
-v1 **to v11** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
-`db.v8.json`, `db.v9.json`, `db.v10.json` and `db.v11.json`), and the v1
+v1 **to v12** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
+`db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json` and `db.v12.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v19.json`, `db.v11.json`,
+as immutable history: the superseded current files are `rpc.v19.json`, `db.v12.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -2198,3 +2198,38 @@ Regression guard: `tests/test_h194_fine_tune.py::ExportedPageRevisionTest` — a
 its `check_id`, pre-approval both surfaces answer `no_final_approval`, the export succeeds after
 approval, a checkless page answers `no_generated_content` from both surfaces (before and after an
 approval), and a page payload that rewrites `check` is refused with nothing written.
+
+## cb.db v13 delta (GM-001) — Game Mode storage, additive and unbackfilled
+
+`cb.db` v13 is v12 plus the storage for the Game Mode program, created by
+`0013_game_mode_contracts.sql`. Additive only: no v12 table, column, index or unique key is
+dropped or retyped, and no lesson, attempt, transition or evidence row is read or rewritten.
+
+* `courses.presentation_mode` — nullable `TEXT` constrained to `game` / `textbook`. Every
+  existing course keeps `NULL`, and `NULL` **reads as `textbook`**. There is no backfill: an old
+  course has no approved world, so writing `game` would be a fabricated fact. The read fallback
+  is `coursebook.gm_contract.read_presentation_mode`; it never writes the fallback back.
+* `course_worlds` / `world_assets` — the course-level visual kit, one row per world revision and
+  one artifact per `hero` / `cover` / `section` / `lesson_scene` role. `section_key` is non-null
+  so the unique key enforces the role budget (one hero, one cover, ≤ 6 sections, ≤ 2 scenes).
+  World art carries no evidence class and no export path.
+* `takehome_packs` — print artifacts bound to `source_course_id`, `source_objective_id`,
+  `source_lesson_version` and `content_hash`. They never clone or mutate the source course;
+  export requires a previewed and approved row, fenced on `preview_hash`.
+* `homework_tasks` / `homework_events` — one task, one target, one observable success criterion,
+  with `estimated_minutes` CHECK-bound to 3..10. Completion is `self_reported_done` or
+  `parent_reported_done` and the event trail records the actor; neither is a pass or mastery.
+* `game_engagement` — the play layer, keyed by a real `(action_kind, action_id)` and unique per
+  enrollment, so a replay cannot double-award. It is not joined by an evidence, parent, pack or
+  export read.
+* `tutor_threads` / `tutor_turns` — one thread per lesson run and an append-only turn trail.
+  Tutor prose is never graded, never an attempt or transition, and never exported.
+
+`cb.rpc` stays **v20** in this card: the 18 Game Mode method names and one durable mode-setter
+are frozen in `coursebook/gm_contract.py` (`GM_RPC_METHODS`) and `docs/GM-CONTRACT.md`; the wire
+contract bump lands with the first handler that registers one of them. `cb.errors`, `cb.jobs`,
+`cb.vocabulary` and `cb.pack` are unchanged.
+
+Regression guard: `tests/test_gm_contract.py` pins the enum values, the manifest, the additive
+`db.v12 -> db.v13` diff, and a real v12-to-v13 round trip on a disposable database proving the
+legacy course reads Textbook and the attempt/evidence/check rows are byte-identical afterwards.

@@ -1,0 +1,33 @@
+cb.db current: db.v13.json schema_version: 13
+cb.rpc current: rpc.v20.json wire version: 20
+
+method                   kind    revision  provider  errors
+world.read               read    False     False     VALIDATION_FAILED,NOT_FOUND
+world.style.preview      read    False     False     VALIDATION_FAILED,NOT_FOUND,POLICY_VIOLATION
+world.generate           mutate  True      True      VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION,HOST_UNAVAILABLE
+world.approve            mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+takehome.sources         read    False     False     VALIDATION_FAILED,NOT_FOUND
+takehome.preview         read    False     False     VALIDATION_FAILED,NOT_FOUND,POLICY_VIOLATION
+takehome.create          mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+takehome.approve         mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+takehome.export          mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION,HOST_UNAVAILABLE
+takehome.read            read    False     False     VALIDATION_FAILED,NOT_FOUND
+homework.create          mutate  True      True      VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION,HOST_UNAVAILABLE
+homework.read            read    False     False     VALIDATION_FAILED,NOT_FOUND
+homework.complete        mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+homework.skip            mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+engagement.read          read    False     False     VALIDATION_FAILED,NOT_FOUND
+engagement.award         mutate  False     False     VALIDATION_FAILED,NOT_FOUND,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION
+tutor.ask                mutate  True      True      VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT,POLICY_VIOLATION,HOST_UNAVAILABLE
+tutor.history            read    False     False     VALIDATION_FAILED,NOT_FOUND
+course.mode.set          mutate  True      False     VALIDATION_FAILED,NOT_FOUND,STALE_REVISION,IDEMPOTENCY_CONFLICT
+
+manifest methods: 19 | card-named: 18
+  GM-002 home/mode     needs 1 method(s): course.mode.set
+  GM-003 world         needs 4 method(s): world.read, world.style.preview, world.generate, world.approve
+  GM-005 take-home     needs 6 method(s): takehome.sources, takehome.preview, takehome.create, takehome.approve, takehome.export, takehome.read
+  GM-007 homework      needs 4 method(s): homework.create, homework.read, homework.complete, homework.skip
+  GM-009 engagement    needs 2 method(s): engagement.read, engagement.award
+  GM-011 tutor         needs 2 method(s): tutor.ask, tutor.history
+missing card dependencies: none
+frozen names with no card owner: none
