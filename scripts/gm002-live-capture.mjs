@@ -168,6 +168,7 @@ const state = () => json(`(() => {
     shelfScrolls: shelf ? shelf.scrollWidth > shelf.clientWidth + 1 : null,
     pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight,
     rootFont: getComputedStyle(document.documentElement).fontSize,
     textHead: (route ? route.innerText : document.body.innerText || '').replace(/\\s+/g, ' ').slice(0, 320)
   }
@@ -322,7 +323,28 @@ if (PHASE === 'base') {
   await capture('home.global--1049--light--100--focus', { focus_target: focusTarget })
 
   await setMotion(true); await capture('home.global--1049--light--100--reduced-motion'); await setMotion(false)
-  await capture('home.global--1049--light--100--overflow', { note: 'shelf scrolls horizontally; the page itself must not overflow' })
+  // The overflow cell must show the shelf tray actually scrolled (matrix.json: "shelf scrolled
+  // with the right-edge mask"), not just that it *is* scrollable. Scroll it to the end, prove the
+  // scroll took, and refuse to record a frame that is byte-identical to another cell.
+  const shelfScroll = await evaluate(`(() => {
+    const row = document.querySelector('[data-cb-home-shelf-row]')
+    if (!row) return null
+    row.scrollLeft = row.scrollWidth
+    return { scrollLeft: row.scrollLeft, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth }
+  })()`)
+  if (!shelfScroll || !(shelfScroll.scrollLeft > 0)) throw new Error(`shelf did not scroll for the overflow cell: ${JSON.stringify(shelfScroll)}`)
+  await wait(350)
+  await capture('home.global--1049--light--100--overflow', {
+    note: 'shelf tray scrolled to its end; trailing card cut at the right edge; the page itself must not overflow',
+    shelf_scroll: shelfScroll
+  })
+  const overflowFrame = evidence.find((frame) => frame.id === 'home.global--1049--light--100--overflow')
+  const duplicateOf = ['home.global--1049--light--100--reduced-motion', 'home.global--1049--light--100--default']
+    .map((id) => evidence.find((frame) => frame.id === id))
+    .find((frame) => frame && frame.md5 === overflowFrame.md5)
+  if (duplicateOf) throw new Error(`overflow cell is byte-identical to ${duplicateOf.id}`)
+  await evaluate(`(() => { const row = document.querySelector('[data-cb-home-shelf-row]'); if (row) row.scrollLeft = 0 })()`)
+  await wait(250)
 
   await ensureCourseHome(0)
   await capture('home.course--1049--light--100--default')
@@ -440,6 +462,42 @@ if (PHASE === 'empty') {
   backend('')
 }
 
+const paneMetrics = () => evaluate(`(() => {
+  const main = document.getElementById('cb-main-content')
+  return main
+    ? { scrollHeight: main.scrollHeight, clientHeight: main.clientHeight, container: 'cb-main-content' }
+    : { scrollHeight: document.documentElement.scrollHeight, clientHeight: window.innerHeight, container: 'document' }
+})()`)
+
+const captureFull = async (id) => {
+  // The desktop shell scrolls an inner pane (`main#cb-main-content`); documentElement never
+  // scrolls, so measuring it produced a viewport-height "full" shot that cut the shelf off.
+  // Grow the emulated viewport until that pane's whole content fits, then shoot it in one frame.
+  let metrics = await paneMetrics()
+  let override = 1004
+  for (let attempt = 0; attempt < 16 && metrics.clientHeight < metrics.scrollHeight; attempt += 1) {
+    override += Math.max(40, metrics.scrollHeight - metrics.clientHeight + 32)
+    await send('Emulation.setDeviceMetricsOverride', { width: lastOverride, height: override, deviceScaleFactor: 1, mobile: false })
+    await wait(280)
+    metrics = await paneMetrics()
+  }
+  if (metrics.clientHeight < metrics.scrollHeight) throw new Error(`full capture ${id} could not fit the pane: ${JSON.stringify(metrics)}`)
+  await wait(250)
+  const facts = await state()
+  const file = await shot(id)
+  evidence = evidence.filter((frame) => frame.id !== id)
+  evidence.push({
+    id, ...file, ...facts, full_page: true,
+    captured_height: facts.innerHeight,
+    content_height: metrics.scrollHeight,
+    scroll_container: metrics.container
+  })
+  persist()
+  await setHeight(900)
+  console.log(`full ${id}: width=${facts.innerWidth} font=${facts.rootFont} course=${facts.courseHome} innerHeight=${facts.innerHeight} content=${metrics.scrollHeight} (${metrics.container})`)
+  return metrics.scrollHeight
+}
+
 if (PHASE === 'full') {
   pointWindow(PORT)
   await restartWindow()
@@ -448,19 +506,20 @@ if (PHASE === 'full') {
   await waitFor(`!!document.querySelector('[data-cb-route]')`, { timeout: 30000, label: 'route after restart' })
   await wait(700)
   await setAppearance('light')
+  // README §1 rule 2: a screen that scrolls needs a full-page capture next to the first viewport.
+  // Global Home scrolls at 200 % text (both widths); record the full page only where it does.
+  await ensureHome()
+  for (const [width, scale] of [[1049, 200], [460, 200]]) {
+    await setTextScale(scale)
+    await setWidth(width)
+    await captureFull(`home.global--${width}--light--${scale}--full`)
+  }
+  await setTextScale(100)
   await ensureCourseHome(0)
   for (const [width, scale] of [[460, 100], [460, 200], [900, 100]]) {
     await setTextScale(scale)
     await setWidth(width)
-    const fullHeight = await evaluate('document.documentElement.scrollHeight')
-    await setHeight(fullHeight)
-    const facts = await state()
-    const file = await shot(`home.course--${width}--light--${scale}--full`)
-    evidence = evidence.filter((frame) => frame.id !== `home.course--${width}--light--${scale}--full`)
-    evidence.push({ id: `home.course--${width}--light--${scale}--full`, ...file, ...facts, full_page: true, captured_height: fullHeight })
-    persist()
-    await setHeight(900)
-    console.log(`full ${width}/${scale}: width=${facts.innerWidth} font=${facts.rootFont} course=${facts.courseHome} height=${fullHeight}`)
+    await captureFull(`home.course--${width}--light--${scale}--full`)
   }
   await setTextScale(100)
 }

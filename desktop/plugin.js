@@ -2669,7 +2669,7 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
           jsx('div', {
             'data-cb-home-cover': '',
             style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
-            children: jsx(ClassroomCover, { slot, compact: compactCover }, 'cover')
+            children: jsx(ClassroomCover, { slot, compact: compactCover, hideTitle: true }, 'cover')
           }, 'cover'),
           jsxs('div', {
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minWidth: 0 },
@@ -3726,7 +3726,7 @@ function cbCoverSubject(row) {
   return null
 }
 
-function ClassroomCover({ slot, compact }) {
+function ClassroomCover({ slot, compact, hideTitle }) {
   const row = slot.row || {}
   const media = cbCoverMedia(row)
   // One hook, called every render: an absent artifact is a synchronous text state, not a request.
@@ -3791,20 +3791,24 @@ function ClassroomCover({ slot, compact }) {
             },
             children: courseStampText(slot.name || (row && row.title) || 'Coursebook')
           }, 'monogram'),
-          jsx('span', {
-            'data-cb-slot-cover-title': '',
-            style: {
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
-              fontWeight: 600,
-              lineHeight: 1.25,
-              color: 'var(--cb-ink)',
-              whiteSpace: 'normal',
-              overflowWrap: 'anywhere'
-            },
-            children: slot.name || (row && row.title) || 'Classroom'
-          }, 'title')
+          // When the card owns the heading (`hideTitle`), the cover carries the monogram and the
+          // subject only. Painting the title here too made every shelf card read title → title.
+          hideTitle
+            ? null
+            : jsx('span', {
+                'data-cb-slot-cover-title': '',
+                style: {
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
+                  fontWeight: 600,
+                  lineHeight: 1.25,
+                  color: 'var(--cb-ink)',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere'
+                },
+                children: slot.name || (row && row.title) || 'Classroom'
+              }, 'title')
         ]
       }),
       subject

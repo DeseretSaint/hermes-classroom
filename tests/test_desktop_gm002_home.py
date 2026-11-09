@@ -362,6 +362,16 @@ class CoursebookHomeTest(Base):
         self.assertIn("data-cb-home-card-goal", distinct, "a real subtitle was dropped")
         self.assertIn("Find the misfire fast", distinct)
 
+    def test_card_prints_its_title_once(self) -> None:
+        # The card paints its title as an <h3>. The typographic paper cover used to print the same
+        # string again above it, so every shelf card read as title → title. Count painted text
+        # only (strip tags, so the `Open <title>` aria-label is not counted).
+        title = "Small-engine maintenance"
+        html = self.home(rows=[row(1, title=title)])
+        painted = re.sub(r"<[^>]*>", " ", html)
+        self.assertEqual(painted.count(title), 1,
+                         f"the shelf card printed its title {painted.count(title)} times in painted text")
+
     def test_card_shows_real_next_step_and_mode_badge(self) -> None:
         html = self.home(
             rows=[row(1, title="Small-engine maintenance", next_step={"kind": "resume_lesson", "label": "Resume this lesson"})],
