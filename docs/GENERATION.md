@@ -765,10 +765,37 @@ A deadline is policy, so it is declared once per request purpose in
 
 | purpose | default |
 |---|---|
-| `coursebook.plan.generate` | 240 s |
+| `coursebook.plan.generate` | 900 s |
 | `coursebook.plan.validate` | 180 s |
 | `coursebook.lesson.generate` | 300 s |
 | `coursebook.lesson.validate` | 240 s |
+
+### Why the plan-stage bound is 900 s (H-182/D10)
+
+The bound is measured, not asserted. On the route that authored every recorded plan (Nous
+`deepseek/deepseek-v4.1-flash-1017`), the 12 successful `coursebook.plan.generate` calls captured
+in `audit/` took 23.9, 32.4, 40.5, 45.2, 53.2, 83.0, 106.6, 131.2, 222.0, 325.0, 339.8 and
+348.2 s — **p50 94.8 s, p95 348.2 s** (nearest rank, n=12). Three further calls were cut at their
+declared bound and never answered: >240 s (H-182/D1 first attempt), >480 s (the operator's raised
+retry) and >600 s (H-192 full-scope retry). The previous 240 s default was below the p95 and below
+two of those three censored calls, so a *normal* plan near the observed tail failed as
+`HOST_UNAVAILABLE` — a transport error, not a verdict on the plan.
+
+Raising the single declared default is the chosen policy. Per-provider configuration was rejected:
+the plugin never chooses the route, so a provider table would encode a route the host may change
+between calls. A progress-aware timeout ("still streaming" vs "no bytes") was rejected too: the
+host seam (`ctx.llm.complete_structured` / `acomplete_structured`) is one structured call with no
+token stream or byte-progress callback, and the existing 5 s wait heartbeat is *caller-side
+liveness*, not evidence that the provider is producing. Treating it as progress would make a
+genuinely hung call unbounded. 900 s is an outer bound (2.6x the measured p95, above the largest
+censored observation), not a target; the heartbeat keeps the job visibly `waiting` throughout.
+
+When the bound fires, the job records one actionable error: the purpose, `deadline_s`,
+`duration_ms` (the elapsed wait) and a message that says nothing was persisted and names the next
+action — run the stage again as a new job (a real attempt, per H-182/D1) or raise the bound with
+`COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS`. The regression test is
+`tests/test_plan_generate_deadline.py`, which replays the measured durations against the resolved
+default.
 
 CB-011-D1 live evidence: a hard-coded 60 s deadline declared a **successful** 115.8 s lesson write
 late and failed the job, and the call's real tokens/cost were dropped on that path. A call that
