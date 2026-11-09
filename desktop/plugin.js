@@ -4595,6 +4595,16 @@ function PathStop({
   )
 }
 
+/** One honest detail line: label, value. Never a score, a percentage or a gate. */
+function CheckpointDetailRow({ label, value }) {
+  return jsxs('div', {
+    style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
+  , children: [
+    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
+    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
+  ] })
+}
+
 function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRetryOutline, companionEnabled }) {
   const width = useCbViewportWidth()
   const motion = useCbMotion()
