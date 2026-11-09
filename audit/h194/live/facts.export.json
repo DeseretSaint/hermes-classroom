@@ -1,0 +1,22 @@
+{
+  "phase": "export-after-approval",
+  "started_at": "2026-11-09T00:23:26.142023+00:00",
+  "finished_at": "2026-11-09T00:23:26.154997+00:00",
+  "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+  "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+  "export_ok": false,
+  "error": {
+    "code": "POLICY_VIOLATION",
+    "category": "content",
+    "message": "section 'Name one warm and one cold thing in the kitchen (revised again) page (revised)' has no check; lessons must validate before export.",
+    "retryable": false,
+    "details": {
+      "reason": "no_generated_content",
+      "problems": []
+    }
+  },
+  "pack_id": null,
+  "content_hash": null,
+  "export_id": null,
+  "artifacts": []
+}

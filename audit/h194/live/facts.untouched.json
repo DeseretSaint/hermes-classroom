@@ -1,17 +1,89 @@
 {
+  "phase": "continue-untouched",
+  "started_at": "2026-11-09T00:23:15.170842+00:00",
+  "finished_at": "2026-11-09T00:23:15.233687+00:00",
   "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
-  "edited_objective_id": "obj_2b36ae673495412aaa53db93aee66688",
-  "untouched_objective_id": "obj_49f2ba0b0a14457491c63d64dc0145b9",
-  "untouched_title": "Sort picture cards into warm and cold",
+  "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+  "edited_objective_id": "obj_49f2ba0b0a14457491c63d64dc0145b9",
+  "edited_objective_source": "facts.edit.json:audit/h194/live/facts.edit.json",
+  "untouched_objective_id": "obj_2b36ae673495412aaa53db93aee66688",
+  "untouched_title": "Name one warm and one cold thing in the kitchen (revised again) page (revised)",
+  "approval_at_read": {
+    "state": "superseded",
+    "plan_hash": "sha256:0d139ff17b2468f8ec6be70517683f177f8b06b289164a314f250b89cdf6fc56",
+    "content_hash": "sha256:1e879122726d5a29eec3da2bad815c6d94f6f88a9b430d99aeec46231203f164",
+    "approved_at": "2026-11-09T00:17:09.641234+00:00",
+    "invalidated_reason": "plan_edited"
+  },
+  "export_status_at_read": {
+    "ready": false,
+    "blocked_reason": "no_final_approval"
+  },
+  "plan_revisions_at_read": [
+    {
+      "revision_id": "prv_4adffceac2274f8093b4c9ef1be12fcb",
+      "kind": "reorder",
+      "state": "needs_review"
+    },
+    {
+      "revision_id": "prv_c451201323a44465ad89094e51071101",
+      "kind": "objective_edit",
+      "state": "needs_review"
+    },
+    {
+      "revision_id": "prv_2f43b5b14e4a4f69bac58edcfbf83766",
+      "kind": "reorder",
+      "state": "approved"
+    },
+    {
+      "revision_id": "prv_c9f0f9cc930945ce9efc5e09b25dad5a",
+      "kind": "objective_edit",
+      "state": "approved"
+    }
+  ],
+  "lesson_revisions_at_read": [
+    {
+      "revision_id": "lrv_cce047da023942248d57c84a196718b7",
+      "section_id": "919fef575fd95fbe",
+      "objective_id": "obj_49f2ba0b0a14457491c63d64dc0145b9",
+      "from_lesson_id": "e832acea4bcd5f92",
+      "lesson_id": "lsn_7cddbaed5ba44a4ba0d204bba7e65c2e",
+      "state": "needs_review",
+      "created_at": "2026-11-09T00:23:09.006644+00:00",
+      "page_hash_before": "sha256:2497d7e5b21e414711b1de64d5972a96ba990b11210089220f2db47b38f837d6",
+      "page_hash_after": "sha256:457579e81b75162ca5835ca39213d1d822f6b68a99096a778be034b4869f4403",
+      "changed_fields": [
+        "title"
+      ],
+      "evidence_attempts": 0,
+      "confirmed_evidence_consequence": false
+    },
+    {
+      "revision_id": "lrv_e968e5b255904fa796aaf2ae575b1d96",
+      "section_id": "7603b95c3a856941",
+      "objective_id": "obj_2b36ae673495412aaa53db93aee66688",
+      "from_lesson_id": "641bd25acb4c3d01",
+      "lesson_id": "lsn_043c372265e74749b07e3bd53d173e21",
+      "state": "approved",
+      "created_at": "2026-11-09T00:16:15.436017+00:00",
+      "page_hash_before": "sha256:38a72260f4fe49fe9deb5173853689110f378c1c85c88b2ce96316809d056346",
+      "page_hash_after": "sha256:9a1e8e0c290375a785857ad72b3dde2fe03612b10c9ef91ca158d56c5c3b3622",
+      "changed_fields": [
+        "title"
+      ],
+      "evidence_attempts": 0,
+      "confirmed_evidence_consequence": false
+    }
+  ],
   "untouched_page": {
     "state": "not_started",
-    "document_state": "empty",
-    "section_title": "Sort picture cards into warm and cold",
-    "block_count": 0,
-    "document_id": "doc_65456785c9cdd6edc043"
+    "document_state": "textbook_only",
+    "section_title": "Name one warm and one cold thing in the kitchen (revised again) page (revised)",
+    "block_count": 6,
+    "document_id": "doc_c91a63d03acc00c4c8e8"
   },
   "untouched_begin": {
-    "lesson_run_id": "run_a5c71388b85f4e38a8fad79a87f30cf7",
+    "lesson_run_id": "run_5d244bb8e06a4149a76ee285f01537ba",
     "run_state": "needs_fresh_run",
     "resume": {
       "available": false,
@@ -22,11 +94,12 @@
   "export_before_approval": {
     "ok": false,
     "code": "POLICY_VIOLATION",
-    "message": "section 'Name one warm and one cold thing in the kitchen (revised again) page (revised)' has no check; lessons must validate before export.",
-    "reason": "no_generated_content",
+    "message": "the generated lessons have not been approved; approve them before exporting.",
+    "reason": "no_final_approval",
+    "reason_source": "error.details.reason",
     "details": {
-      "reason": "no_generated_content",
-      "problems": []
+      "reason": "no_final_approval",
+      "course_id": "crs_3ea89399cb7b4385a6baba8e02883150"
     }
   },
   "expected_reason": "changes_need_review",

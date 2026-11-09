@@ -1,0 +1,31 @@
+{
+  "phase": "export-enrollment",
+  "started_at": "2026-11-09T00:23:43.883850+00:00",
+  "finished_at": "2026-11-09T00:23:43.928330+00:00",
+  "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+  "export_ok": true,
+  "error": null,
+  "pack_id": null,
+  "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+  "export_id": "exp_263269f7cef3428eb78805b9d9a0481b",
+  "artifacts": [
+    {
+      "kind": "pack",
+      "filename": null,
+      "sha256": null,
+      "byte_size": null
+    },
+    {
+      "kind": "pdf",
+      "filename": null,
+      "sha256": null,
+      "byte_size": null
+    },
+    {
+      "kind": "export",
+      "filename": null,
+      "sha256": null,
+      "byte_size": null
+    }
+  ]
+}

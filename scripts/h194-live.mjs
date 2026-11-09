@@ -320,6 +320,21 @@ if (PHASE === 'edit') {
 facts.finished_at = new Date().toISOString()
 const factsName = PHASE === 'edit' ? 'facts.edit.json' : 'facts.approve.json'
 writeFileSync(`${OUT}/${factsName}`, JSON.stringify(facts, null, 2))
+if (PHASE === 'approve') {
+  // Deliverable 4 names `facts.review` explicitly: the review diff + gate evidence, on its own.
+  writeFileSync(`${OUT}/facts.review.json`, JSON.stringify({
+    phase: PHASE,
+    viewport: VIEWPORT,
+    started_at: facts.started_at,
+    finished_at: facts.finished_at,
+    theme: facts.theme,
+    rowMatch: facts.rowMatch,
+    courseId: facts.courseId,
+    reviewBeforeApprove: facts.reviewBeforeApprove,
+    review: facts.review,
+    afterApprove: facts.afterApprove
+  }, null, 2))
+}
 console.log(JSON.stringify(facts, null, 2))
 socket.close()
 process.exit(0)
