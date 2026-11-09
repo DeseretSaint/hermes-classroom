@@ -1,17 +1,20 @@
 # GM-002 evidence manifest — global Home and course-home split
 
-Branch: `wt/gm-002-home`   Commit: `aaba9ca`   Captured: 2026-11-09   Captured by: `vellum`
+Branch: `wt/gm-002-home`   Captured: 2026-11-09   Captured by: `vellum`
 App build: the isolated Desktop window from `scripts/cb013-live-window.sh` with
-`desktop/plugin.js` copied from this commit (`plugin_sha256` in `live-evidence.json`).
+`desktop/plugin.js` copied from this branch (`plugin_sha256` in `live-evidence.json`).
 Viewports: 1049 / 900 / 460 CSS px · Modes: light, dark · Text scale: 100, 200
 
 Every frame below was captured at `plugin_sha256`
-`a6476fb19c71ded960c9a70027b8330b162a8550a79aa4e8fcd7cca918c45c3b`, the module at `aaba9ca`.
-This packet is the round-3 recapture: the shelf card now owns its title (the paper cover prints
-only the monogram and subject, so no card repeats its heading), the `overflow` cell is taken with
-the shelf tray actually scrolled to its end, and global Home carries `--full` cells at 200 % text
-where the pane scrolls. The frames are committed separately from the implementation; the plugin
-sha pins the exact module that was driven.
+`bca1bcbe53d7eb28b81d2c95a6ae6842cf1e03da3a33f64b6ecb0040ac753e4a` — the hash is the binding, so
+the packet is tied to the exact module even though the PNGs are committed separately from the
+implementation. This packet is the round-4 recapture: the `overflow` cell now paints
+GM-VISUAL-SPEC §2.5's 24 px `paper`→transparent edge mask (the row is parked mid-scroll so both
+edges have cards behind them; `data-cb-shelf-mask="both"` and the computed `maskImage` are recorded
+in `live-evidence.json`), and global Home carries a `--full` cell at 460/100 as well as at 200 %
+text. The round-3 fixes are retained: each shelf card owns its title (the paper cover prints only
+the monogram and subject), and the `--full` cells fit the shell's scrolling pane
+(`main#cb-main-content`) in one frame.
 
 The operator's installed Desktop plugin was **not** modified: the rig is a separate
 `COURSEBOOK_TEST_STATE` home with its own userdata and its own backend
@@ -56,13 +59,14 @@ Concept frame: `home-generic-first-open.png` (invitation band + shelf). Tokens/t
 | home.global--1049--dark--100--default.png | 1049 | dark | 100 | default | same composition on the dark token table |
 | home.global--900--light--100--default.png | 900 | light | 100 | default | first collapse; no page overflow |
 | home.global--460--light--100--default.png | 460 | light | 100 | default | cards stack; no page overflow |
+| home.global--460--light--100--full.png | 460 | light | 100 | full | full pane capture: content 1490 px inside a 1703 px viewport; the whole stacked shelf and `See all` in one frame |
 | home.global--1049--light--200--default.png | 1049 | light | 200 | default | root 32 px; invitation and actions wrap |
 | home.global--1049--light--200--full.png | 1049 | light | 200 | full | full pane capture: content 1106 px inside a 1498 px viewport (`captured_height`/`content_height` in evidence) |
 | home.global--460--light--200--default.png | 460 | light | 200 | default | narrow + 200 % |
 | home.global--460--light--200--full.png | 460 | light | 200 | full | full pane capture: content 3400 px inside a 3972 px viewport; shelf and `See all` both in frame |
 | home.global--1049--light--100--focus.png | 1049 | light | 100 | focus | Tab reaches the primary "Start a new course"; authored 2 px `--cb-accent` ring (`data-cb-focus-ring="visible"`) |
 | home.global--1049--light--100--reduced-motion.png | 1049 | light | 100 | reduced-motion | reduced-motion setting + emulated media; static frame |
-| home.global--1049--light--100--overflow.png | 1049 | light | 100 | overflow | shelf tray scrolled to its end (`scrollLeft` 557.8 of 1496 px, 938 px client); trailing card cut at the right edge; the document itself does not overflow |
+| home.global--1049--light--100--overflow.png | 1049 | light | 100 | overflow | shelf tray parked mid-scroll (`scrollLeft` 251 of 558 px range, 938 px client); both edges carry the 24 px `paper`→transparent mask (`data-cb-shelf-mask="both"`, `maskImage` recorded); the document itself does not overflow |
 | home.global--1049--light--100--loading.png | 1049 | light | 100 | loading | proxy switch; loader + "Nothing already saved is lost while this read is in flight." |
 | home.global--1049--light--100--error.png | 1049 | light | 100 | error | "Your courses could not be read" + Try again; explicitly not an empty library |
 | home.global--1049--light--100--offline.png | 1049 | light | 100 | offline | "Offline. Lessons, notes and review keep working…" over the last-read shelf |
@@ -99,8 +103,10 @@ course-bound direction GM-004 brings.
 - `home.course` `course-end`: not producible honestly here. Every enrollment in the rig still has
   objectives without independent evidence; a capture would require fabricating progress, which this
   card refuses. It is deferred with that reason, not mislabelled as GM-004 art scope.
-- The five world cells and the `course-end` arithmetic are in `../MATRIX.md`; this card supplies
-  every cell its own scope can produce and names the deferral.
+- The four deferred cells — `home.course` `world-running`, `world-partial`, `world-stale` (GM-004
+  scope: no course in this rig carries a world yet, so there is no live state to paint) and
+  `course-end` (not producible without fabricating progress) — are named in `../MATRIX.md`; this
+  card supplies every cell its own scope can produce and names the deferral.
 
 ## Machine-readable companion
 

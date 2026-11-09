@@ -14,8 +14,8 @@ Screen: `home.global` (concept F1 `home-generic-first-open.png`) and `home.cours
 | Palette and texture | 5 | 5 | parchment/ink/ochre/coral tokens only; no raw hex in the render; dark frame from the same table |
 | Illustration | 4 | 4 | text-derived paper covers with the subject monogram and subject only; the card heading is the single title (and a real artifact when a row carries one); course world hero is GM-004 |
 | Card/game system | 4 | 4 | tactile cards with real next step and a real `world.read` mode badge; no stars, ratings or XP |
-| State coverage | 5 | 5 | empty, loading, error, offline, overflow for Home; loading, error, no-outline for course home |
-| Responsiveness | 5 | 5 | 1049/900/460, 200 % text (root 32 px), no horizontal document overflow in any frame; global Home carries `--full` cells at 1049/200 and 460/200 showing the whole shelf and `See all` |
+| State coverage | 5 | 5 | empty, loading, error, offline, overflow for Home; loading, error, no-outline for course home; overflow paints the spec's 24 px edge mask, proven by an on/off pixel diff at the same scroll (1018 changed px in the right band) |
+| Responsiveness | 5 | 5 | 1049/900/460, 200 % text (root 32 px), no horizontal document overflow in any frame; global Home carries `--full` cells at 460/100, 1049/200 and 460/200 showing the whole shelf and `See all` |
 | Truth | 5 | 5 | every label DOM text; mode badge only from a real read; no invented progress |
 
 Known gaps carried into review:
@@ -27,11 +27,13 @@ Known gaps carried into review:
 - `home.course` world states (running/partial/stale) and `course-end` are GM-004 scope; this packet
   captures default, no-world, plan-in-review, loading, error and the responsive/focus cells.
 
-Round-3 resubmission (commit `aaba9ca`, plugin `a6476fb1…`): the three defects from review round 2
-are fixed and recaptured live — the `overflow` cell is now taken with the shelf tray scrolled to
-its end and its bytes are asserted distinct from `default`/`reduced-motion`; every shelf card paints
-its title once (the paper cover prints monogram + subject only, and `test_card_prints_its_title_once`
-counts painted text); global Home has `--full` cells at 1049/200 and 460/200 showing the shelf and
-`See all` below the invitation band.
+Round-4 resubmission (plugin `bca1bcbe…`): the two defects from review round 3 are fixed and
+recaptured live — the `overflow` cell now shows GM-VISUAL-SPEC §2.5's 24 px `paper`→transparent
+mask as a real `mask-image` on `[data-cb-home-shelf-row]` (measured `data-cb-shelf-mask="both"`
+while parked mid-scroll, computed `maskImage` recorded in `live-evidence.json`, and an on/off pixel
+diff at identical scroll changes 1018 px in the right 24 px band and 559 px at the left); global
+Home now carries `home.global--460--light--100--full.png`, the 460/100 screen that scrolls. Round-3
+items are retained: each card paints its title once, and the 200 % `--full` cells include the shelf
+and `See all`.
 
 Verdict: **REQUEST REVIEW** — reviewer decides.
