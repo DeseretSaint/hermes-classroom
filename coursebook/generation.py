@@ -387,6 +387,27 @@ class ProviderTimeout(GenerationError):
         return self
 
 
+def _call_deadline_error(
+    purpose: str, deadline_s: float, exc: Exception
+) -> ProviderTimeout:
+    """Translate a missed bounded wait into a timeout that names how long it actually waited.
+
+    H-182/D10: the parent-facing error used to carry only the declared bound, so a reader could
+    not tell a 240 s cut from a 900 s one, and no elapsed time reached ``details``. The bounded
+    wait already measures the elapsed seconds; carry them as ``duration_ms`` (the same field a
+    late success uses) and state them in the message.
+    """
+    elapsed = getattr(exc, "elapsed_s", None)
+    duration_ms: int | None = None
+    message = f"{purpose} exceeded its {deadline_s:g}s deadline"
+    if elapsed is not None:
+        duration_ms = max(0, int(round(float(elapsed) * 1000)))
+        message += f" (waited {float(elapsed):.1f}s)"
+    return ProviderTimeout(
+        message, purpose=purpose, deadline_s=deadline_s, duration_ms=duration_ms
+    )
+
+
 class ProviderFailure(GenerationError):
     """The provider call raised. Retry is the job service's decision, not this module's."""
 
@@ -712,8 +733,27 @@ class CostBudget:
 # not target latencies.
 
 #: Declared deadline per request purpose, in seconds. One value per purpose, never per call site.
+#:
+#: H-182/D10 measured the plan-stage bound instead of asserting it. On the route that authored
+#: every recorded plan (nous / ``deepseek/deepseek-v4.1-flash-1017``), the 12 successful
+#: ``coursebook.plan.generate`` calls in the audit packets took
+#:
+#:     23.9, 32.4, 40.5, 45.2, 53.2, 83.0, 106.6, 131.2, 222.0, 325.0, 339.8, 348.2 seconds
+#:
+#: (p50 94.8 s, p95 348.2 s, nearest rank, n=12). Three further calls were cut at their declared
+#: bound and never answered: >240 s (H-182/D1 first attempt), >480 s (H-182/D1 operator-raised
+#: retry) and >600 s (H-192 full-scope retry). The old 240 s bound was therefore below the p95
+#: *and* below two of the three censored calls, so a normal plan near the observed tail failed as
+#: a transport error (``HOST_UNAVAILABLE``) rather than as a quality signal. 900 s is 2.6x the
+#: measured p95 and above the largest censored observation. It is an outer bound, not a target:
+#: the wait heartbeat (``gen_call_waits``) keeps the job visibly alive while it runs.
+#:
+#: Sources: ``audit/adversarial/live-generation-2026-11-08{,-h192}/evidence/*.json``,
+#: ``audit/visual/h182-repair/EVIDENCE.md``, ``audit/h194/live/MANIFEST.md``. The regression test
+#: ``tests.test_plan_generate_deadline`` replays these numbers against the resolved default, so a
+#: future reduction below observed behaviour fails the suite rather than a live plan.
 PROVIDER_TIMEOUT_SECONDS: dict[str, float] = {
-    "coursebook.plan.generate": 240.0,
+    "coursebook.plan.generate": 900.0,
     "coursebook.plan.validate": 180.0,
     # One unit's sections: the same outer bounds as the blueprint stage, sized to one unit.
     "coursebook.unit_sections.generate": 240.0,
@@ -1334,11 +1374,7 @@ class PluginLLMAdapter:
                     on_wait=on_wait,
                 )
             except deadline_mod.DeadlineExceeded as exc:
-                raise ProviderTimeout(
-                    f"{request.purpose} exceeded its {timeout_s:g}s deadline",
-                    purpose=request.purpose,
-                    deadline_s=timeout_s,
-                ) from exc
+                raise _call_deadline_error(request.purpose, timeout_s, exc) from exc
             except Exception as exc:  # noqa: BLE001 - trust refusal vs a real provider bug
                 mapped = self._classify(request, overrides, exc)
                 if mapped is exc:
@@ -1354,11 +1390,7 @@ class PluginLLMAdapter:
                 on_wait=on_wait,
             )
         except deadline_mod.DeadlineExceeded as exc:
-            raise ProviderTimeout(
-                f"{request.purpose} exceeded its {timeout_s:g}s deadline",
-                purpose=request.purpose,
-                deadline_s=timeout_s,
-            ) from exc
+            raise _call_deadline_error(request.purpose, timeout_s, exc) from exc
         except deadline_mod.CallCapacityExhausted as exc:
             raise ProviderFailure(
                 f"{request.purpose} unavailable: {exc}", purpose=request.purpose
@@ -1705,6 +1737,9 @@ def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage, *, repair_shape: boo
                     f"{request.purpose} timed out: {exc}",
                     purpose=request.purpose,
                     deadline_s=deadline_s,
+                    # The host raised the timeout itself; still report how long this call waited,
+                    # so the parent-facing error always names elapsed time (H-182/D10).
+                    duration_ms=max(0, int((time.monotonic() - started) * 1000)),
                 ) from exc
             except GenerationError as exc:
                 wait.state = "timeout" if isinstance(exc, (ProviderTimeout, TimeoutError)) else "failed"
@@ -8281,8 +8316,30 @@ def run_plan_job(
 
         _record_usage(connection, job_id, usage, now)
         return result
-    except BaseException:
+    except BaseException as exc:
         _record_usage(connection, job_id, usage, now)
+        if isinstance(exc, ProviderTimeout):
+            # H-182/D10: a declared deadline is one honest, actionable state for the parent, not a
+            # silent retry loop. Nothing from this stage is durable (the plan bundle is written in
+            # one transaction after validation), so say exactly that and name the real next step.
+            # H-182/D1 fixed the other half: a new job for the same brief is a *real* attempt, so
+            # "run this stage again" re-runs research and authoring instead of replaying a draft.
+            if exc.purpose == "coursebook.plan.validate":
+                exc.with_recovery(
+                    "the plan was authored but not persisted because its independent validation "
+                    "did not return; the calls' real tokens are recorded as spend. Next: run this "
+                    "stage again as a new job for the same brief (research and authoring run "
+                    f"again), or raise COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS above "
+                    f"{PROVIDER_TIMEOUT_SECONDS['coursebook.plan.validate']:g} on a slower route"
+                )
+            elif exc.purpose == "coursebook.plan.generate":
+                exc.with_recovery(
+                    "no plan was written; the call's real tokens are recorded as spend. Next: run "
+                    "this stage again as a new job for the same brief (the retry is a real "
+                    "attempt — research and authoring run again), or raise "
+                    f"COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS above "
+                    f"{PROVIDER_TIMEOUT_SECONDS['coursebook.plan.generate']:g} on a slower route"
+                )
         raise
 
 
