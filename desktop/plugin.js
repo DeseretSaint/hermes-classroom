@@ -22250,9 +22250,1209 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
 }
 
 /**
+ * H-194 — fine-tuning an approved course in place.
+ *
+ * The backend kernel owns every mutation: `plan.edit` (reorder and objective metadata on an
+ * **approved** plan), `plan.undo`, `lesson.revise`, `lesson.regenerate`, and `parent.review.read`
+ * for the pending diff. This surface is a client of those commands and never a second plan
+ * authority, so:
+ *
+ *   - every move is sent as the full ordered id list, and the list on screen is replaced with the
+ *     ids the command **returned** — the UI never keeps an order the backend refused;
+ *   - `prerequisite_order_conflict` keeps the stored order and says why, instead of silently
+ *     re-sorting the screen;
+ *   - the page digest and section id come from the wire (`parent.review.read` lesson revisions),
+ *     never from a hash this file computes. When the wire serves neither, the authored-page and
+ *     regenerate actions are withheld and the reason is on screen, not in the console.
+ */
+const FINE_TUNE_CHIP = Object.freeze({
+  edited: { id: 'edited', label: 'Edited', variant: 'outline' },
+  needs_review: { id: 'needs_review', label: 'Needs review', variant: 'warn' },
+  approved: { id: 'approved', label: 'Approved', variant: 'muted' }
+})
+
+const FINE_TUNE_CHIP_COPY = {
+  edited: 'This objective or section was changed by the course author; one revision row records it.',
+  needs_review:
+    'This change is stored and readable, but nobody has approved it. Export and any new check wait for approval.',
+  approved:
+    'This change was approved with the lesson set it belongs to. It is still not an independent validation.'
+}
+
+const FINE_TUNE_SECTION_ACTIONS_GAP =
+  'This course serves no authored section identity, so one section cannot be revised or ' +
+  'regenerated from here. `lesson.revise` and `lesson.regenerate` are keyed on the `section_id` ' +
+  'and `page_hash` that `parent.blueprint.read` reports in `sections[]`; a pack-backed course is ' +
+  'composed from its pack and reports none. Nothing here invents a section id or a digest.'
+
+const FINE_TUNE_EVIDENCE_CONSEQUENCE =
+  'Editing this page keeps every stored attempt and the previous page version; the new page is ' +
+  'stored as a revision that nobody has approved, so its check stays closed and export waits.'
+
+/** One criterion, said in plain words: the row may be a string or the rubric object. */
+function fineTuneCriteriaText(item) {
+  if (item && typeof item === 'object') {
+    return String(item.description || item.criterion || '').trim()
+  }
+  return String(item == null ? '' : item).trim()
+}
+
+/**
+ * The chip for one objective: a pending revision wins over an approved one, and an approved
+ * authored page is still "Edited", never "validated". `provenanceOutcome` is the served
+ * `lesson.page` outcome (`needs_review` / `parent_approved`) — it can only ever add a state the
+ * revision rows already recorded, it never upgrades one.
+ */
+function fineTuneChip({ planRevisions, lessonRevisions, objectiveId, provenanceOutcome }) {
+  const id = String(objectiveId || '')
+  const plans = (planRevisions || []).filter(
+    (row) =>
+      (row.after || []).some((item) => item.objective_id === id) ||
+      (row.before || []).some((item) => item.objective_id === id)
+  )
+  const lessons = (lessonRevisions || []).filter((row) => row.objective_id === id)
+  const states = [...plans, ...lessons].map((row) => String(row.state || ''))
+  if (provenanceOutcome === 'needs_review' || states.includes('needs_review')) {
+    return FINE_TUNE_CHIP.needs_review
+  }
+  if (provenanceOutcome === 'parent_approved' || states.includes('approved')) {
+    return FINE_TUNE_CHIP.approved
+  }
+  if (states.some((state) => state === 'superseded' || state === 'reverted')) {
+    return FINE_TUNE_CHIP.edited
+  }
+  return null
+}
+
+function FineTuneChip({ chip, title }) {
+  if (!chip) return null
+  return jsx('span', {
+    'data-cb-finetune-chip': chip.id,
+    title: title || FINE_TUNE_CHIP_COPY[chip.id] || null,
+    children: jsx(sdk.Badge, { size: 'xs', variant: chip.variant, children: chip.label })
+  })
+}
+
+/** `1 section: <title>` — the scope sentence shown before a one-section job is queued. */
+function fineTuneScopeLine(title) {
+  return `1 section: ${String(title || 'untitled')}`
+}
+
+/**
+ * The pending review diff (`parent.review.read`): what an approval would bind, in storage order.
+ * It is a diff of stored rows, not a second approval path, and the export gate it prints is the
+ * backend's own `blocked_reason` — shown verbatim so a mapped sentence can never soften it.
+ */
+function StudioReviewDiff({ review, objectives }) {
+  const label = jsx(CbLabel, { children: 'Review changes' })
+  if (!review) return null
+  const data = review.data || null
+  if (!data) {
+    return jsxs('div', {
+      className: 'flex flex-col gap-1',
+      'data-cb-review-diff': 'reading',
+      children: [
+        label,
+        jsx('div', {
+          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+          children:
+            review.status === 'error'
+              ? 'The pending changes could not be read, so nothing here claims the course has none.'
+              : 'Reading the pending changes.'
+        })
+      ]
+    })
+  }
+  const planRevisions = data.plan_revisions || []
+  const lessonRevisions = data.lesson_revisions || []
+  const exportStatus = data.export || {}
+  const ready = Boolean(exportStatus.ready)
+  const blockedReason = exportStatus.blocked_reason || null
+  const titleOf = (objectiveId) => {
+    const row = (objectives || []).find((item) => item.objective_id === objectiveId)
+    return row ? row.title : String(objectiveId || 'section')
+  }
+  const orderLine = (rows) => (rows || []).map((item) => `${item.ordinal}. ${item.title}`).join(' · ')
+
+  return jsxs('div', {
+    className: 'flex max-w-prose flex-col gap-2',
+    'data-cb-review-diff': planRevisions.length + lessonRevisions.length > 0 ? 'pending' : 'clean',
+    'data-cb-review-export': ready ? 'ready' : 'blocked',
+    'data-cb-review-blocked-reason': blockedReason || '',
+    children: [
+      jsx(CbLabel, { children: 'Review changes' }, 'label'),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children: ready
+          ? 'The approved lesson set matches the pages shown, so export is available.'
+          : blockedReason
+            ? `Export is blocked. The backend’s reason: ${blockedReason}.`
+            : 'Export is blocked and the backend returned no reason string.'
+      }, 'gate'),
+      planRevisions.length === 0 && lessonRevisions.length === 0
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            'data-cb-review-empty': 'true',
+            children: 'No fine-tune change is waiting for review.'
+          }, 'empty')
+        : null,
+      ...planRevisions.map((row) =>
+        jsxs(
+          'div',
+          {
+            className: 'flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+            'data-cb-review-plan-revision': row.revision_id,
+            'data-cb-review-state': row.state,
+            children: [
+              jsxs('div', {
+                className: 'flex flex-wrap items-center gap-2 text-xs',
+                children: [
+                  jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `plan ${row.kind}` }, 'kind'),
+                  jsx(FineTuneChip, {
+                    chip:
+                      row.state === 'needs_review'
+                        ? FINE_TUNE_CHIP.needs_review
+                        : row.state === 'approved'
+                          ? FINE_TUNE_CHIP.approved
+                          : FINE_TUNE_CHIP.edited
+                  }, 'chip'),
+                  jsx('span', {
+                    className: 'text-(--ui-text-secondary)',
+                    children: whenLabel(row.created_at)
+                  }, 'when')
+                ]
+              }, 'head'),
+              jsx('div', {
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                'data-cb-review-changed': (row.changed_fields || []).join(','),
+                children: `Changed: ${(row.changed_fields || []).join(' · ') || 'no named field'}`
+              }, 'changed'),
+              jsx('div', {
+                className: 'text-xs break-words text-(--ui-text-secondary)',
+                'data-cb-review-after': orderLine(row.after),
+                children: `Now: ${orderLine(row.after)}`
+              }, 'after'),
+              jsx('div', {
+                className: 'text-xs break-words text-(--ui-text-secondary)',
+                children: `Before: ${orderLine(row.before)}`
+              }, 'before')
+            ]
+          },
+          row.revision_id
+        )
+      ),
+      ...lessonRevisions.map((row) =>
+        jsxs(
+          'div',
+          {
+            className: 'flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+            'data-cb-review-lesson-revision': row.revision_id,
+            'data-cb-review-state': row.state,
+            children: [
+              jsxs('div', {
+                className: 'flex flex-wrap items-center gap-2 text-xs',
+                children: [
+                  jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'lesson page' }, 'kind'),
+                  jsx(FineTuneChip, {
+                    chip:
+                      row.state === 'needs_review'
+                        ? FINE_TUNE_CHIP.needs_review
+                        : row.state === 'approved'
+                          ? FINE_TUNE_CHIP.approved
+                          : FINE_TUNE_CHIP.edited
+                  }, 'chip'),
+                  jsx('span', {
+                    className: 'text-(--ui-text-secondary)',
+                    children: whenLabel(row.created_at)
+                  }, 'when')
+                ]
+              }, 'head'),
+              jsx('div', {
+                className: 'text-xs break-words text-(--ui-text-secondary)',
+                children: `${titleOf(row.objective_id)} — changed: ${(row.changed_fields || []).join(' · ') || 'no named field'}`
+              }, 'changed'),
+              row.evidence_attempts > 0
+                ? jsx('div', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    'data-cb-review-evidence-attempts': String(row.evidence_attempts),
+                    children: `${row.evidence_attempts} stored attempt(s) reference this section; the edit was confirmed against that consequence.`
+                  }, 'attempts')
+                : null,
+              jsx('div', {
+                className: 'text-xs break-all text-(--ui-text-secondary)',
+                children: `page ${String(row.page_hash_after || '').slice(0, 23)}…`
+              }, 'hash')
+            ]
+          },
+          row.revision_id
+        )
+      )
+    ]
+  })
+}
+
+/**
+ * The Plan-tab fine-tune controls for an **approved** plan.
+ *
+ * Reorder (buttons + Alt+ArrowUp/Down), undo, inline objective metadata, review/export links and
+ * the one-section regenerate path. Every successful mutation refreshes the review read and the
+ * outline, so the screen always shows what storage returned rather than what the last click
+ * assumed.
+ */
+function StudioFineTunePanel({
+  course,
+  revision,
+  onRevision,
+  plan,
+  objectives,
+  sections,
+  planHash,
+  supported,
+  onChanged,
+  onOpenReview,
+  review,
+  onDirtyChange
+}) {
+  const [order, setOrder] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [draft, setDraft] = useState(null)
+  const [discardPrompt, setDiscardPrompt] = useState(null)
+  const [evidencePrompt, setEvidencePrompt] = useState(null)
+  const [regenFor, setRegenFor] = useState(null)
+  const [regenBusy, setRegenBusy] = useState(false)
+  const [regenError, setRegenError] = useState(null)
+  const [regenResult, setRegenResult] = useState(null)
+  const [revertBusy, setRevertBusy] = useState(false)
+
+  const jobs = useRpcQuery(
+    'jobs.list',
+    { enrollment_id: course.enrollment_id, kind: ['plan'], limit: 20 },
+    `finetune-jobs-${course.enrollment_id}`,
+    supported('jobs.list')
+  )
+  const reviewData = (review && review.data) || null
+  const planRevisions = (reviewData && reviewData.plan_revisions) || []
+  const lessonRevisions = (reviewData && reviewData.lesson_revisions) || []
+  const latestRevision = planRevisions.find((row) => row.state !== 'reverted') || null
+  const dirty = Boolean(draft) && Boolean(draft.dirty)
+
+  useEffect(() => {
+    if (typeof onDirtyChange === 'function') onDirtyChange(dirty)
+    return undefined
+  }, [dirty, onDirtyChange])
+  useEffect(
+    () => () => {
+      if (typeof onDirtyChange === 'function') onDirtyChange(false)
+    },
+    [onDirtyChange]
+  )
+  // Guard a close or a reload while a draft differs from storage. The in-app guard below covers
+  // navigation inside the studio; this covers the window itself.
+  useEffect(() => {
+    if (!dirty || typeof window === 'undefined') return undefined
+    const guard = (event) => {
+      event.preventDefault()
+      event.returnValue = ''
+      return ''
+    }
+    window.addEventListener('beforeunload', guard)
+    return () => window.removeEventListener('beforeunload', guard)
+  }, [dirty])
+  useEffect(() => setOrder(null), [objectives])
+
+  const display = order
+    ? order.map((id) => objectives.find((objective) => objective.objective_id === id)).filter(Boolean)
+    : objectives
+
+  // `section_id` and the page digest only ever come from the wire. `parent.blueprint.read` serves
+  // one identity per composed section (cb.rpc v20), including a section that has never been
+  // revised; that `page_hash` is the exact fence `lesson.revise` compares, so the value read here
+  // is sent back unchanged and never recomputed in this file. A lesson revision row is only a
+  // fallback for a section the blueprint no longer lists.
+  const sectionRefs = {}
+  for (const row of sections || []) {
+    if (!row || !row.objective_id || !row.section_id) continue
+    sectionRefs[row.objective_id] = {
+      section_id: String(row.section_id),
+      page_hash: row.page_hash || null,
+      title: row.title || null,
+      lesson_state: row.lesson_state || null,
+      lesson_version: row.lesson_version == null ? null : Number(row.lesson_version),
+      source: 'blueprint'
+    }
+  }
+  for (const row of lessonRevisions) {
+    if (sectionRefs[row.objective_id]) continue
+    sectionRefs[row.objective_id] = {
+      section_id: row.section_id,
+      page_hash: row.page_hash_after || null,
+      title: null,
+      lesson_state: null,
+      lesson_version: null,
+      source: 'revision'
+    }
+  }
+
+  // A one-section cost band derived from the last lessons job's recorded preflight — arithmetic on
+  // stored numbers, labelled as an estimate, not a promise about this click.
+  const planJobs = (jobs.data && jobs.data.jobs) || []
+  const lastLessonsJob =
+    planJobs.find((job) => job && job.brief && job.brief.stage === 'lessons') || null
+  const recorded = (lastLessonsJob && lastLessonsJob.checkpoint && lastLessonsJob.checkpoint.preflight) || null
+  let estimate = null
+  if (recorded && Number(recorded.section_count) > 0) {
+    const perCall = Number(recorded.cost_per_call_usd) || 0
+    const minCalls = Math.max(1, Math.ceil(Number(recorded.minimum_calls || 0) / Number(recorded.section_count)))
+    const maxCalls = Math.max(minCalls, Math.ceil(Number(recorded.maximum_calls || 0) / Number(recorded.section_count)))
+    estimate = {
+      low: minCalls * perCall,
+      high: maxCalls * perCall,
+      perCall,
+      calls: maxCalls,
+      budget: recorded.budget_source || null
+    }
+  }
+  const money = (value) => `$${Number(value || 0).toFixed(2)}`
+
+  const refreshAfterMutation = useCallback(
+    (result) => {
+      if (result && typeof result.revision === 'number') onRevision(result.revision)
+      if (review && review.reload) review.reload()
+      if (jobs && jobs.reload) jobs.reload()
+      if (onChanged) onChanged()
+    },
+    [onRevision, review, jobs, onChanged]
+  )
+
+  const refusalText = useCallback(
+    (response) => {
+      const details = (response.error && response.error.details) || {}
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null) onRevision(nextRevision)
+      const code = response.error && response.error.code ? `${response.error.code}: ` : ''
+      let reason = ''
+      if (details.reason === 'prerequisite_order_conflict') {
+        reason =
+          ' That move would put one unit’s objectives behind a later unit, so the stored order was kept.'
+      } else if (details.reason === 'revision_conflict') {
+        reason =
+          ' A later change landed after that revision, so the undo would overwrite it; nothing was written.'
+      } else if (details.reason === 'revision_already_reverted') {
+        reason = ' That structural change was already undone.'
+      } else if (details.reason === 'nothing_to_undo') {
+        reason = ' This plan has no structural change to undo.'
+      } else if (details.reason === 'plan_not_approved') {
+        reason = ' The plan is not approved, so only a draft edit applies.'
+      }
+      return (
+        `${code}${describeError(response.error)}${reason}` +
+        (nextRevision !== null ? ' The course revision was refreshed; try again.' : '')
+      )
+    },
+    [onRevision]
+  )
+
+  // A move is a real command: the full ordered id list, the digest read from storage, and the
+  // returned order as the new screen state. Nothing is reordered only on screen.
+  const move = useCallback(
+    async (index, direction) => {
+      if (busy) return
+      const ids = display.map((objective) => objective.objective_id)
+      const target = index + direction
+      if (target < 0 || target >= ids.length) return
+      const next = ids.slice()
+      const [moved] = next.splice(index, 1)
+      next.splice(target, 0, moved)
+      setBusy(true)
+      setError(null)
+      setNotice(null)
+      const response = await rpc(
+        'plan.edit',
+        {
+          enrollment_id: course.enrollment_id,
+          plan_id: plan.plan_id,
+          expected_plan_hash: planHash,
+          reorder: next
+        },
+        { expectedRevision: revision, idempotencyKey: newOperationId('plan-reorder') }
+      )
+      setBusy(false)
+      if (!response.ok) {
+        setOrder(null)
+        setError(refusalText(response))
+        if (review && review.reload) review.reload()
+        return
+      }
+      const result = response.result || {}
+      const saved = result.objective_ids || next
+      setOrder(saved)
+      setNotice(
+        `Order saved. ${saved
+          .map((id, position) => {
+            const row = objectives.find((objective) => objective.objective_id === id)
+            return `${position + 1}. ${row ? row.title : id}`
+          })
+          .join(' · ')}`
+      )
+      refreshAfterMutation(result)
+    },
+    [
+      busy,
+      display,
+      course.enrollment_id,
+      plan,
+      planHash,
+      revision,
+      objectives,
+      review,
+      refusalText,
+      refreshAfterMutation
+    ]
+  )
+
+  const rowKeyDown = (index) => (event) => {
+    if (!event.altKey) return
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      move(index, -1)
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      move(index, 1)
+    }
+  }
+
+  const undo = useCallback(async () => {
+    if (revertBusy) return
+    setRevertBusy(true)
+    setError(null)
+    setNotice(null)
+    const payload = {
+      enrollment_id: course.enrollment_id,
+      plan_id: plan.plan_id,
+      expected_plan_hash: planHash
+    }
+    if (latestRevision) payload.revision_id = latestRevision.revision_id
+    const response = await rpc('plan.undo', payload, {
+      expectedRevision: revision,
+      idempotencyKey: newOperationId('plan-undo')
+    })
+    setRevertBusy(false)
+    if (!response.ok) {
+      setError(refusalText(response))
+      if (review && review.reload) review.reload()
+      return
+    }
+    const result = response.result || {}
+    setOrder(null)
+    const restored = (result.objective_ids || [])
+      .map((id, position) => {
+        const row = objectives.find((objective) => objective.objective_id === id)
+        return `${position + 1}. ${row ? row.title : id}`
+      })
+      .join(' · ')
+    setNotice(`Undid the last structural change. Stored order: ${restored}`)
+    refreshAfterMutation(result)
+  }, [
+    revertBusy,
+    course.enrollment_id,
+    plan,
+    planHash,
+    latestRevision,
+    revision,
+    objectives,
+    review,
+    refusalText,
+    refreshAfterMutation
+  ])
+
+  /** The newest snapshot a revision row holds for this objective — the only scored criteria read. */
+  const knownSnapshot = useCallback(
+    (objectiveId) => {
+      for (const row of planRevisions) {
+        const after = (row.after || []).find((item) => item.objective_id === objectiveId)
+        if (after) return after
+        const before = (row.before || []).find((item) => item.objective_id === objectiveId)
+        if (before) return before
+      }
+      return null
+    },
+    [planRevisions]
+  )
+
+  const openEditor = useCallback(
+    (objective) => {
+      const known = knownSnapshot(objective.objective_id)
+      const criteriaText =
+        known && Array.isArray(known.criteria)
+          ? known.criteria.map(fineTuneCriteriaText).filter(Boolean).join('\n')
+          : ''
+      const ref = sectionRefs[objective.objective_id] || null
+      const pageTitle = ref && ref.title ? String(ref.title) : String(objective.title || '')
+      setEditingId(objective.objective_id)
+      setDiscardPrompt(null)
+      setEvidencePrompt(null)
+      setError(null)
+      setDraft({
+        objectiveId: objective.objective_id,
+        title: objective.title,
+        evidence_target: objective.evidence_target,
+        criteriaText,
+        originalCriteriaText: criteriaText,
+        criteriaKnown: Boolean(known && Array.isArray(known.criteria)),
+        sectionTitle: pageTitle,
+        originalSectionTitle: pageTitle,
+        dirty: false
+      })
+    },
+    [knownSnapshot, sectionRefs]
+  )
+
+  const closeEditor = useCallback(() => {
+    setEditingId(null)
+    setDraft(null)
+    setDiscardPrompt(null)
+    setEvidencePrompt(null)
+    if (typeof onDirtyChange === 'function') onDirtyChange(false)
+  }, [onDirtyChange])
+
+  const beginEdit = useCallback(
+    (objective) => {
+      if (dirty) {
+        setDiscardPrompt({ kind: 'switch', objectiveId: objective.objective_id })
+        return
+      }
+      if (editingId === objective.objective_id) {
+        closeEditor()
+        return
+      }
+      openEditor(objective)
+    },
+    [dirty, editingId, closeEditor, openEditor]
+  )
+
+  const requestCancel = useCallback(() => {
+    if (dirty) {
+      setDiscardPrompt({ kind: 'cancel' })
+      return
+    }
+    closeEditor()
+  }, [dirty, closeEditor])
+
+  const patchDraft = useCallback((patch) => {
+    setDraft((previous) => (previous ? { ...previous, ...patch, dirty: true } : previous))
+  }, [])
+
+  const saveSection = useCallback(
+    async (options) => {
+      if (!draft) return
+      const confirmEvidence = Boolean(options && options.confirmEvidence)
+      const objective = objectives.find((item) => item.objective_id === draft.objectiveId)
+      if (!objective) return
+      const ref = sectionRefs[draft.objectiveId] || null
+      const edits = { objective_id: draft.objectiveId }
+      const title = String(draft.title || '').trim()
+      if (title && title !== objective.title) edits.title = title.slice(0, 300)
+      if (draft.evidence_target && draft.evidence_target !== objective.evidence_target) {
+        edits.evidence_target = draft.evidence_target
+      }
+      if (
+        String(draft.criteriaText || '').trim() !== String(draft.originalCriteriaText || '').trim() &&
+        (String(draft.criteriaText || '').trim() || draft.criteriaKnown)
+      ) {
+        edits.criteria = linesToList(draft.criteriaText, 12, 500)
+      }
+      const planChanged = Boolean(edits.title || edits.evidence_target || edits.criteria !== undefined)
+      const pageTitle = String(draft.sectionTitle || '').trim()
+      const pageTitleChanged = Boolean(pageTitle) && pageTitle !== String(draft.originalSectionTitle || '').trim()
+      if (!planChanged && !pageTitleChanged) {
+        setError('Nothing changed yet.')
+        return
+      }
+      if (pageTitleChanged && (!ref || !ref.section_id)) {
+        setError(FINE_TUNE_SECTION_ACTIONS_GAP)
+        return
+      }
+      if (pageTitleChanged && !ref.page_hash) {
+        setError(
+          'This section has no authored page yet, so there is no page digest to revise. ' +
+            'Use “Regenerate this section” to author it first.'
+        )
+        return
+      }
+      setBusy(true)
+      setError(null)
+      setNotice(null)
+      let nextRevision = revision
+      if (planChanged) {
+        const response = await rpc(
+          'plan.edit',
+          {
+            enrollment_id: course.enrollment_id,
+            plan_id: plan.plan_id,
+            expected_plan_hash: planHash,
+            objective_edits: [edits]
+          },
+          { expectedRevision: revision, idempotencyKey: newOperationId('plan-objective-edit') }
+        )
+        if (!response.ok) {
+          setBusy(false)
+          setError(refusalText(response))
+          if (review && review.reload) review.reload()
+          return
+        }
+        const result = response.result || {}
+        if (typeof result.revision === 'number') {
+          nextRevision = result.revision
+          onRevision(result.revision)
+        }
+      }
+      if (pageTitleChanged) {
+        const payload = {
+          enrollment_id: course.enrollment_id,
+          plan_id: plan.plan_id,
+          section_id: ref.section_id,
+          expected_page_hash: ref.page_hash,
+          title: pageTitle.slice(0, 300),
+          page: { section_title: pageTitle.slice(0, 300) }
+        }
+        if (confirmEvidence) payload.confirm_evidence_consequence = true
+        const response = await rpc('lesson.revise', payload, {
+          expectedRevision: nextRevision,
+          idempotencyKey: newOperationId('lesson-revise')
+        })
+        if (!response.ok) {
+          setBusy(false)
+          const details = (response.error && response.error.details) || {}
+          if (details.reason === 'evidence_consequence_confirmation_required') {
+            const attempts = Number(details.evidence_attempts || 0)
+            setEvidencePrompt({ objectiveId: draft.objectiveId, attempts })
+            setError(
+              `${attempts} learner attempt(s) already reference this section. ` +
+                `${FINE_TUNE_EVIDENCE_CONSEQUENCE} Confirm to store the edit.`
+            )
+            return
+          }
+          setError(refusalText(response))
+          if (review && review.reload) review.reload()
+          return
+        }
+        const result = response.result || {}
+        if (typeof result.revision === 'number') {
+          nextRevision = result.revision
+          onRevision(result.revision)
+        }
+        setEvidencePrompt(null)
+        setNotice(
+          'Section page saved as a new revision that needs review before export. ' +
+            'Every stored attempt and the previous page version are untouched.'
+        )
+      } else {
+        setNotice(
+          'Section metadata saved. The edited objective is recorded as a revision that needs review before export.'
+        )
+      }
+      setBusy(false)
+      closeEditor()
+      refreshAfterMutation({ revision: nextRevision })
+    },
+    [
+      draft,
+      objectives,
+      sectionRefs,
+      course.enrollment_id,
+      plan,
+      planHash,
+      revision,
+      review,
+      refusalText,
+      closeEditor,
+      refreshAfterMutation,
+      onRevision
+    ]
+  )
+
+  const confirmEvidenceAndSave = useCallback(() => {
+    return saveSection({ confirmEvidence: true })
+  }, [saveSection])
+
+  const queueRegenerate = useCallback(
+    async (objective) => {
+      const ref = sectionRefs[objective.objective_id]
+      if (!ref || !ref.section_id) return
+      setRegenBusy(true)
+      setRegenError(null)
+      const response = await rpc(
+        'lesson.regenerate',
+        {
+          enrollment_id: course.enrollment_id,
+          plan_id: plan.plan_id,
+          section_id: ref.section_id
+        },
+        { idempotencyKey: newOperationId('lesson-regenerate') }
+      )
+      setRegenBusy(false)
+      if (!response.ok) {
+        setRegenError(refusalText(response))
+        if (review && review.reload) review.reload()
+        return
+      }
+      const result = response.result || {}
+      setRegenResult({
+        objectiveId: objective.objective_id,
+        title: objective.title,
+        jobId: result.job_id,
+        scope: result.scope || null,
+        preflight: result.preflight || null
+      })
+      setRegenFor(null)
+      setNotice(
+        `Queued regenerating 1 section: ${objective.title}. Other sections, their media and every attempt are untouched.`
+      )
+      refreshAfterMutation(result)
+    },
+    [sectionRefs, course.enrollment_id, plan, review, refusalText, refreshAfterMutation]
+  )
+
+  if (!plan || plan.state !== 'approved') return null
+
+  return jsxs('div', {
+    className: 'flex max-w-3xl flex-col gap-3 rounded border border-(--ui-stroke-tertiary) p-3',
+    'data-cb-finetune': 'approved',
+    'data-cb-finetune-plan': String(plan.plan_id || ''),
+    children: [
+      jsxs(
+        'div',
+        {
+          className: 'flex flex-wrap items-center justify-between gap-2',
+          children: [
+            jsx(CbLabel, { children: 'Fine-tune this approved course' }),
+            jsx('div', {
+              className: 'flex flex-wrap items-center gap-2',
+              children: [
+                onOpenReview
+                  ? jsx(sdk.Button, {
+                      size: 'sm',
+                      variant: 'secondary',
+                      'data-cb-finetune-review': '',
+                      onClick: onOpenReview,
+                      children: 'Review changes'
+                    }, 'review')
+                  : null,
+                jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'secondary',
+                  disabled: busy || revertBusy || !latestRevision,
+                  'data-cb-finetune-undo': latestRevision ? latestRevision.revision_id : 'none',
+                  onClick: undo,
+                  children: revertBusy ? 'Undoing' : 'Undo last structural change'
+                }, 'undo')
+              ]
+            }, 'actions')
+          ]
+        },
+        'header'
+      ),
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Reorder or retitle an objective and the change is written to storage as a revision that needs review; ' +
+          'lesson pages, checks and attempts are not rewritten. Every move is sent with the full order, so the ' +
+          'order you see is the order the backend returned.'
+      }, 'intro'),
+      notice
+        ? jsx('div', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            'data-cb-finetune-notice': 'saved',
+            children: notice
+          }, 'notice')
+        : null,
+      error
+        ? jsx('div', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            role: 'status',
+            'data-cb-finetune-error': '',
+            children: error
+          }, 'error')
+        : null,
+      jsx('div', {
+        role: 'list',
+        'aria-label': 'Objectives in stored order',
+        'data-cb-finetune-order': display.map((objective) => objective.objective_id).join(','),
+        className: 'flex flex-col gap-2',
+        children: display.map((objective, index) => {
+          const ref = sectionRefs[objective.objective_id]
+          const chip = fineTuneChip({
+            planRevisions,
+            lessonRevisions,
+            objectiveId: objective.objective_id,
+            provenanceOutcome: ref ? ref.lesson_state : null
+          })
+          const isEditing = editingId === objective.objective_id && draft
+          return jsxs(
+            'div',
+            {
+              role: 'listitem',
+              tabIndex: 0,
+              'aria-label': `${objective.ordinal}. ${objective.title}. Press Alt+ArrowUp or Alt+ArrowDown to move it.`,
+              'aria-keyshortcuts': 'Alt+ArrowUp Alt+ArrowDown',
+              'data-cb-finetune-row': objective.objective_id,
+              'data-cb-finetune-editing': isEditing ? 'true' : 'false',
+              className: 'flex flex-col gap-1 rounded border border-(--ui-stroke-tertiary) p-2',
+              onKeyDown: rowKeyDown(index),
+              children: [
+                jsxs(
+                  'div',
+                  {
+                    className: 'flex flex-wrap items-center justify-between gap-2',
+                    children: [
+                      jsxs('div', {
+                        className: 'flex min-w-0 items-baseline gap-2',
+                        children: [
+                          jsx('span', {
+                            className: 'shrink-0 text-xs tabular-nums text-(--ui-text-secondary)',
+                            children: String(index + 1).padStart(2, '0')
+                          }, 'ordinal'),
+                          jsx('span', {
+                            className: 'min-w-0 break-words text-sm',
+                            'data-cb-finetune-title': objective.objective_id,
+                            children: objective.title
+                          }, 'title'),
+                          jsx(FineTuneChip, { chip }, 'chip'),
+                          ref
+                            ? jsx('span', {
+                                className: 'text-xs text-(--ui-text-secondary)',
+                                'data-cb-finetune-section': 'known',
+                                children:
+                                  ref.lesson_version == null
+                                    ? 'no page yet'
+                                    : `page v${ref.lesson_version}`
+                              }, 'section-known')
+                            : jsx('span', {
+                                className: 'text-xs text-(--ui-text-secondary)',
+                                'data-cb-finetune-section': 'unknown',
+                                title: FINE_TUNE_SECTION_ACTIONS_GAP,
+                                children: 'no authored section'
+                              }, 'section-unknown')
+                        ]
+                      }, 'label'),
+                      jsxs('div', {
+                        className: 'flex flex-wrap items-center gap-1',
+                        children: [
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            disabled: busy || index === 0,
+                            'data-cb-finetune-move': 'up',
+                            onClick: () => move(index, -1),
+                            children: 'Move up'
+                          }, 'up'),
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            disabled: busy || index === display.length - 1,
+                            'data-cb-finetune-move': 'down',
+                            onClick: () => move(index, 1),
+                            children: 'Move down'
+                          }, 'down'),
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            'data-cb-finetune-edit': objective.objective_id,
+                            onClick: () => beginEdit(objective),
+                            children: isEditing ? 'Close editor' : 'Edit section'
+                          }, 'edit'),
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            disabled: !ref || !ref.section_id,
+                            'data-cb-finetune-regenerate': ref && ref.section_id ? ref.section_id : 'unavailable',
+                            title: ref && ref.section_id ? null : FINE_TUNE_SECTION_ACTIONS_GAP,
+                            onClick: () => {
+                              setRegenError(null)
+                              setRegenFor(objective.objective_id)
+                            },
+                            children: 'Regenerate this section'
+                          }, 'regenerate')
+                        ]
+                      }, 'actions')
+                    ]
+                  },
+                  'title'
+                ),
+                isEditing
+                  ? jsxs('div', {
+                      className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
+                      'data-cb-finetune-editor': objective.objective_id,
+                      children: [
+                        jsx(StudioField, {
+                          id: `cb-finetune-title-${objective.objective_id}`,
+                          label: 'Objective title',
+                          hint:
+                            'Stored on the objective. The section page keeps its authored prose; a retitle is a plan revision that needs review.',
+                          children: jsx(sdk.Input, {
+                            id: `cb-finetune-title-${objective.objective_id}`,
+                            value: draft.title,
+                            onChange: (event) => patchDraft({ title: event.target.value }),
+                            className: 'w-full'
+                          })
+                        }),
+                        jsx(StudioField, {
+                          id: `cb-finetune-page-title-${objective.objective_id}`,
+                          label: 'Section page title',
+                          hint: ref
+                            ? ref.page_hash
+                              ? `Stored on the authored page through lesson.revise, fenced on the page digest this read served (${String(ref.page_hash).slice(0, 16)}…). The result is a new page revision that needs review.`
+                              : 'This section has no authored page yet, so there is no digest to revise. Regenerate this section to author one.'
+                            : FINE_TUNE_SECTION_ACTIONS_GAP,
+                          children: jsx(sdk.Input, {
+                            id: `cb-finetune-page-title-${objective.objective_id}`,
+                            value: draft.sectionTitle,
+                            disabled: !ref || !ref.section_id || !ref.page_hash,
+                            onChange: (event) => patchDraft({ sectionTitle: event.target.value }),
+                            className: 'w-full'
+                          })
+                        }),
+                        jsx(StudioField, {
+                          id: `cb-finetune-target-${objective.objective_id}`,
+                          label: 'Evidence target',
+                          children: jsxs(sdk.Select, {
+                            value: draft.evidence_target,
+                            onValueChange: (value) => patchDraft({ evidence_target: value }),
+                            children: [
+                              jsx(
+                                sdk.SelectTrigger,
+                                {
+                                  id: `cb-finetune-target-${objective.objective_id}`,
+                                  className: 'w-full',
+                                  children: jsx(sdk.SelectValue, {})
+                                },
+                                'trigger'
+                              ),
+                              jsx(
+                                sdk.SelectContent,
+                                {
+                                  children: EVIDENCE_TARGET_OPTIONS.map((option) =>
+                                    jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)
+                                  )
+                                },
+                                'content'
+                              )
+                            ]
+                          })
+                        }),
+                        jsx(StudioField, {
+                          id: `cb-finetune-criteria-${objective.objective_id}`,
+                          label: 'Assessment criteria',
+                          hint: draft.criteriaKnown
+                            ? 'One criterion per line. Saving replaces the objective’s criteria.'
+                            : 'This build was not served the objective’s current criteria, so this field starts empty. ' +
+                              'Enter the criteria you want stored; leaving it untouched keeps whatever storage holds.',
+                          children: jsx(sdk.Textarea, {
+                            id: `cb-finetune-criteria-${objective.objective_id}`,
+                            rows: 3,
+                            value: draft.criteriaText,
+                            onChange: (event) => patchDraft({ criteriaText: event.target.value })
+                          })
+                        }),
+                        jsxs('div', {
+                          className: 'flex flex-wrap items-center gap-2',
+                          children: [
+                            jsx(CbAction, {
+                              size: 'sm',
+                              variant: 'primary',
+                              disabled: busy,
+                              'data-cb-finetune-save': objective.objective_id,
+                              onClick: saveSection,
+                              children: busy ? 'Saving' : 'Save section'
+                            }, 'save'),
+                            jsx(sdk.Button, {
+                              size: 'sm',
+                              variant: 'text',
+                              'data-cb-finetune-cancel': '',
+                              onClick: requestCancel,
+                              children: 'Cancel'
+                            }, 'cancel'),
+                            dirty
+                              ? jsx('span', {
+                                  className: 'text-xs text-(--ui-text-secondary)',
+                                  'data-cb-finetune-dirty': 'true',
+                                  children: 'Unsaved changes'
+                                }, 'dirty')
+                              : null
+                          ]
+                        }),
+                        jsx('div', {
+                          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                          'data-cb-finetune-section-gap': ref ? 'known' : 'unavailable',
+                          children: ref
+                            ? 'The section’s segment bodies are authored by the lessons job; this editor changes the page title and the objective metadata, and lesson.revise stores a new page revision that needs review before export.'
+                            : FINE_TUNE_SECTION_ACTIONS_GAP
+                        }),
+                        evidencePrompt && evidencePrompt.objectiveId === objective.objective_id
+                          ? jsxs('div', {
+                              role: 'alertdialog',
+                              'aria-label': 'Confirm the evidence consequence',
+                              'data-cb-finetune-evidence': String(evidencePrompt.attempts),
+                              className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
+                              children: [
+                                jsx('span', {
+                                  className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+                                  children: `${evidencePrompt.attempts} stored attempt(s) reference this section. ${FINE_TUNE_EVIDENCE_CONSEQUENCE}`
+                                }, 'copy'),
+                                jsx(CbAction, {
+                                  size: 'sm',
+                                  variant: 'primary',
+                                  disabled: busy,
+                                  'data-cb-finetune-evidence-confirm': objective.objective_id,
+                                  onClick: confirmEvidenceAndSave,
+                                  children: busy ? 'Saving' : 'Confirm and save'
+                                }, 'confirm-evidence'),
+                                jsx(sdk.Button, {
+                                  size: 'sm',
+                                  variant: 'text',
+                                  'data-cb-finetune-evidence-cancel': '',
+                                  onClick: () => setEvidencePrompt(null),
+                                  children: 'Keep editing'
+                                }, 'dismiss-evidence')
+                              ]
+                            }, 'evidence-prompt')
+                          : null
+                      ]
+                    }, 'editor')
+                  : null,
+                discardPrompt && discardPrompt.kind !== 'leave'
+                  ? jsxs('div', {
+                      role: 'alertdialog',
+                      'aria-label': 'Unsaved section changes',
+                      'data-cb-finetune-discard': discardPrompt.kind,
+                      className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
+                      children: [
+                        jsx('span', {
+                          className: 'text-xs text-(--ui-text-secondary)',
+                          children: 'Discard the unsaved changes to this section?'
+                        }, 'prompt'),
+                        jsx(sdk.Button, {
+                          size: 'sm',
+                          variant: 'text',
+                          'data-cb-finetune-discard-confirm': '',
+                          onClick: () => {
+                            const pending = discardPrompt
+                            setDiscardPrompt(null)
+                            if (pending.kind === 'switch') {
+                              const objectiveRow = objectives.find(
+                                (item) => item.objective_id === pending.objectiveId
+                              )
+                              if (objectiveRow) openEditor(objectiveRow)
+                            } else {
+                              closeEditor()
+                            }
+                          },
+                          children: 'Discard changes'
+                        }, 'discard'),
+                        jsx(sdk.Button, {
+                          size: 'sm',
+                          variant: 'text',
+                          'data-cb-finetune-discard-keep': '',
+                          onClick: () => setDiscardPrompt(null),
+                          children: 'Keep editing'
+                        }, 'keep')
+                      ]
+                    }, 'discard-prompt')
+                  : null,
+                regenFor === objective.objective_id
+                  ? jsxs('div', {
+                      className: 'flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+                      'data-cb-finetune-regenerate-confirm': objective.objective_id,
+                      children: [
+                        jsx('div', {
+                          className: 'text-xs font-medium',
+                          'data-cb-regenerate-scope': '',
+                          children: fineTuneScopeLine(objective.title)
+                        }),
+                        jsx('div', {
+                          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                          'data-cb-regenerate-cost': estimate ? 'estimated' : 'unknown',
+                          children: estimate
+                            ? `Estimated ${money(estimate.low)}–${money(estimate.high)} for one section ` +
+                              `(${estimate.calls} call(s) at ${money(estimate.perCall)} per call, derived from this ` +
+                              `course’s last recorded lessons preflight${estimate.budget ? ` · budget: ${estimate.budget}` : ''}). ` +
+                              'The exact preflight is returned with the queued job.'
+                            : 'The backend sizes this one-section run when you confirm; no recorded preflight is readable for this course yet.'
+                        }),
+                        jsxs('div', {
+                          className: 'flex flex-wrap items-center gap-2',
+                          children: [
+                            jsx(CbAction, {
+                              size: 'sm',
+                              variant: 'primary',
+                              disabled: regenBusy,
+                              'data-cb-regenerate-queue': objective.objective_id,
+                              onClick: () => queueRegenerate(objective),
+                              children: regenBusy ? 'Queueing' : 'Queue regenerating 1 section'
+                            }),
+                            jsx(sdk.Button, {
+                              size: 'sm',
+                              variant: 'text',
+                              onClick: () => setRegenFor(null),
+                              children: 'Cancel'
+                            })
+                          ]
+                        }),
+                        regenError
+                          ? jsx('div', {
+                              className: 'text-xs text-(--ui-text-secondary)',
+                              'data-cb-regenerate-error': '',
+                              children: regenError
+                            }, 'regen-error')
+                          : null
+                      ]
+                    }, 'regen-confirm')
+                  : null,
+                regenResult && regenResult.objectiveId === objective.objective_id
+                  ? jsxs('div', {
+                      className: 'flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+                      'data-cb-regenerate-result': regenResult.jobId || '',
+                      children: [
+                        jsx('div', {
+                          className: 'text-xs',
+                          children: `Queued ${fineTuneScopeLine(regenResult.title)} · job ${regenResult.jobId}`
+                        }),
+                        regenResult.preflight
+                          ? jsx('div', {
+                              className: 'text-xs text-(--ui-text-secondary)',
+                              'data-cb-regenerate-preflight': String(regenResult.preflight.minimum_cost_usd),
+                              children:
+                                `Preflight: ${money(regenResult.preflight.minimum_cost_usd)}–` +
+                                `${money(regenResult.preflight.maximum_cost_usd)} · ` +
+                                `${regenResult.preflight.minimum_calls}–${regenResult.preflight.maximum_calls} call(s)`
+                            })
+                          : null,
+                        regenResult.jobId
+                          ? jsx(StudioJobLine, {
+                              jobId: regenResult.jobId,
+                              onSettled: () => refreshAfterMutation({})
+                            }, 'regen-job')
+                          : null
+                      ]
+                    }, 'regen-result')
+                  : null
+              ]
+            },
+            objective.objective_id
+          )
+        })
+      })
+    ]
+  })
+}
+
+/**
  * The plan working view: outline and activities on the left, sources and review notes on the
- * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is only
- * changed by starting a new plan version, so approval always binds exact bytes.
+ * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is
+ * changed in place through the H-194 fine-tune commands, which record a reviewable revision.
  */
 function StudioPlanView({
   course,
@@ -22269,7 +23469,10 @@ function StudioPlanView({
   supported,
   surface,
   outlineHidden,
-  syllabusGate
+  syllabusGate,
+  review,
+  onOpenReview,
+  onDirtyChange
 }) {
   // `surface: 'learner'` is the same outline/plan review for a learner course: identical reads,
   // identical approve and lessons actions, minus the parent-only authoring controls (edit plan,
@@ -22774,6 +23977,25 @@ function StudioPlanView({
           })
         : null,
       lessonJobId ? jsx(StudioJobLine, { jobId: lessonJobId, onSettled: settled }) : null,
+
+      // H-194: an approved plan is fine-tuned here, through `plan.edit` / `plan.undo`, never by
+      // re-sorting this screen. The panel is parent-only: a learner surface has no authoring.
+      !isDraft && !learner
+        ? jsx(StudioFineTunePanel, {
+            course,
+            revision,
+            onRevision,
+            plan,
+            objectives,
+            sections: (book && book.data && book.data.sections) || [],
+            planHash,
+            supported,
+            onChanged,
+            onOpenReview,
+            review,
+            onDirtyChange
+          })
+        : null,
 
       !isDraft && contentReady
         ? jsx('div', {
@@ -23289,7 +24511,7 @@ function StudioBlueprintView({ book }) {
 }
 
 /** Export: gated on the backend's own `export.blocked_reason`, files and downloads from the response. */
-function StudioExportPanel({ course, book, revision, onRevision, supported, onChanged }) {
+function StudioExportPanel({ course, book, revision, onRevision, supported, onChanged, review, objectives }) {
   const [formats, setFormats] = useState({ pack: true, pdf: true })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -23372,6 +24594,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
     className: 'flex max-w-2xl flex-col gap-4',
     children: [
       jsx(CbLabel, { children: 'Export gate' }),
+      jsx(StudioReviewDiff, { review, objectives }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
@@ -23429,9 +24652,21 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
           }),
       status.ready
         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Export is available: the approved lesson set matches the pages shown.' })
-        : jsx('div', {
-            className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-            children: EXPORT_BLOCKED_COPY[status.blocked_reason] || `Export is blocked (${status.blocked_reason}).`
+        : jsxs('div', {
+            className: 'flex flex-col gap-0.5 text-xs leading-relaxed text-(--ui-text-secondary)',
+            'data-cb-export-blocked': status.blocked_reason || 'unknown',
+            children: [
+              jsx('div', {
+                children:
+                  EXPORT_BLOCKED_COPY[status.blocked_reason] ||
+                  `Export is blocked (${status.blocked_reason}).`
+              }),
+              // The backend's own word, verbatim: a mapped sentence may explain it, never soften it.
+              jsx('div', {
+                'data-cb-export-blocked-reason': status.blocked_reason || '',
+                children: `Backend reason: ${status.blocked_reason || 'none reported'}.`
+              })
+            ]
           }),
 
       jsx(CbLabel, { children: 'Formats' }),
@@ -23695,6 +24930,10 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
   const supports = useCallback((method) => Boolean(implemented && implemented.has(method)), [implemented])
   const [view, setView] = useState('brief')
   const [notice, setNotice] = useState(null)
+  // H-194: an inline section edit is a real unsaved draft. Leaving the view or the course while it
+  // differs from storage asks first; the window close/reload is guarded by the panel itself.
+  const [dirty, setDirty] = useState(false)
+  const [pendingLeave, setPendingLeave] = useState(null)
 
   const brief = useRpcQuery('parent.brief.get', { course_id: course.course_id }, `studio-brief-${course.course_id}`, supports('parent.brief.get'))
   const outline = useRpcQuery(
@@ -23704,6 +24943,14 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
     supports('course.outline') && Boolean(course.enrollment_id)
   )
   const book = useRpcQuery('parent.blueprint.read', { course_id: course.course_id }, `studio-book-${course.course_id}`, supports('parent.blueprint.read'))
+  // One review read for both surfaces: the Plan tab's chips and the Export tab's diff are the same
+  // `parent.review.read` payload, so they can never disagree about what is pending.
+  const review = useRpcQuery(
+    'parent.review.read',
+    { course_id: course.course_id },
+    `studio-review-${course.course_id}`,
+    supports('parent.review.read')
+  )
   const reflections = useRpcQuery(
     'parent.reflection.list',
     { course_id: course.course_id },
@@ -23715,9 +24962,29 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
     brief.reload()
     outline.reload()
     book.reload()
+    review.reload()
     reflections.reload()
     if (onChanged) onChanged()
-  }, [brief.reload, outline.reload, book.reload, reflections.reload, onChanged])
+  }, [brief.reload, outline.reload, book.reload, review.reload, reflections.reload, onChanged])
+
+  const requestView = useCallback(
+    (next) => {
+      if (next === view) return
+      if (dirty) {
+        setPendingLeave({ kind: 'view', next })
+        return
+      }
+      setView(next)
+    },
+    [dirty, view]
+  )
+  const requestBack = useCallback(() => {
+    if (dirty) {
+      setPendingLeave({ kind: 'back' })
+      return
+    }
+    onBack()
+  }, [dirty, onBack])
 
   const planJobId = (brief.data && brief.data.plan_job && brief.data.plan_job.job_id) || null
   const onPlanJobSettled = useCallback(() => reloadAll(), [reloadAll])
@@ -23747,7 +25014,10 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
       planJobId,
       onJobSettled: onPlanJobSettled,
       onChanged: reloadAll,
-      supported: supports
+      supported: supports,
+      review,
+      onOpenReview: () => requestView('export'),
+      onDirtyChange: setDirty
     })
   } else if (view === 'blueprint') {
     body = jsx(StudioBlueprintView, { book })
@@ -23758,7 +25028,9 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
       revision,
       onRevision,
       supported: supports,
-      onChanged: reloadAll
+      onChanged: reloadAll,
+      review,
+      objectives: (outline.data && outline.data.objectives) || []
     })
   } else {
     body = jsx(StudioReflectionView, {
@@ -23773,7 +25045,7 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
   return jsxs('div', {
     className: 'flex flex-col gap-3',
     children: [
-      jsx(sdk.Button, { className: 'self-start', variant: 'text', size: 'sm', onClick: onBack, children: 'All parent courses' }),
+      jsx(sdk.Button, { className: 'self-start', variant: 'text', size: 'sm', onClick: requestBack, children: 'All parent courses' }),
       jsxs('div', {
         className: 'flex flex-wrap items-start justify-between gap-3',
         children: [
@@ -23810,7 +25082,41 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
       }),
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       jsx(StudioReviewBanner, { approval, exportStatus }),
-      jsx(StudioViewPicker, { id: 'cb-studio-view', label: 'Studio view', value: view, options: STUDIO_VIEWS, onChange: setView }),
+      jsx(StudioViewPicker, { id: 'cb-studio-view', label: 'Studio view', value: view, options: STUDIO_VIEWS, onChange: requestView }),
+      pendingLeave
+        ? jsxs('div', {
+            role: 'alertdialog',
+            'aria-label': 'Unsaved section changes',
+            'data-cb-studio-leave-guard': pendingLeave.kind,
+            className: 'flex flex-wrap items-center gap-2 border-l-2 border-(--cb-accent) pl-2',
+            children: [
+              jsx('span', {
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                children:
+                  'The section editor has unsaved changes. Leaving discards them and leaves storage exactly as it is now.'
+              }),
+              jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'text',
+                'data-cb-studio-leave-discard': '',
+                onClick: () => {
+                  const pending = pendingLeave
+                  setPendingLeave(null)
+                  setDirty(false)
+                  if (pending && pending.kind === 'back') onBack()
+                  else if (pending) setView(pending.next)
+                },
+                children: 'Discard and leave'
+              }),
+              jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'text',
+                onClick: () => setPendingLeave(null),
+                children: 'Keep editing'
+              })
+            ]
+          })
+        : null,
       body
     ]
   })
@@ -26568,6 +27874,12 @@ function CoursebookSettings() {
 export {
   AttemptControls,
   AttemptVerdict,
+  StudioExportPanel,
+  StudioFineTunePanel,
+  StudioReviewDiff,
+  fineTuneChip,
+  fineTuneCriteriaText,
+  fineTuneScopeLine,
   PracticeSurface,
   practiceFeedback,
   useOpenCheck,
