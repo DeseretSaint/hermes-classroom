@@ -1,6 +1,6 @@
 # GM-002 evidence manifest — global Home and course-home split
 
-Branch: `wt/gm-002-home`   Commit: `d3223bc`   Captured: 2026-11-09   Captured by: `vellum`
+Branch: `wt/gm-002-home`   Commit: `602b1d6`   Captured: 2026-11-09   Captured by: `vellum`
 App build: renderer frames of the shipped `desktop/plugin.js` from this commit
 Viewports: 1049 / 900 / 460 · Modes: light, dark · Text scale: 100, 200
 
