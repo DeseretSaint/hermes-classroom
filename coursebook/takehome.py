@@ -812,7 +812,7 @@ def render_pdf(pack: Mapping[str, Any], *, paper: str = "letter") -> bytes:
         lines.extend(section)
     title = f"{pack['title']} - take-home pack"
     return artifacts.make_pdf(title, lines, page_width=width, page_height=height,
-                              max_chars=max_chars, headings=True)
+                              max_chars=max_chars, headings=True, strict_font=True)
 
 
 # ── commands ────────────────────────────────────────────────────────────────
@@ -1091,6 +1091,13 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
         }
         try:
             data = render_pdf(pack)
+        except artifacts.UnprintableText as exc:
+            raise _policy(
+                "print_font_cannot_render_text",
+                "the built-in print font cannot render every character in this lesson; "
+                "no PDF was written rather than printing corrupted text.",
+                characters=exc.characters,
+            ) from exc
         except Exception as exc:  # noqa: BLE001 - a failed render is a named refusal, not a blank pack
             raise RpcError.of(
                 "HOST_UNAVAILABLE",

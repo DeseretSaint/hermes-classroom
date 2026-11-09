@@ -21,7 +21,9 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -352,6 +354,20 @@ class TakeHomeCase(KernelCase):
         data = Path(str(row["path"])).read_bytes()
         return "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages)
 
+    def set_lesson_body(self, seeded: dict, body: str, index: int = 0) -> None:
+        """Rewrite one validated lesson segment's body so print-path text can be exercised."""
+        _version, lesson_id = self.lesson_identity(seeded, index)
+        page = page_document(f"Section {index + 1}: the sear")
+        page["segments"][1]["body"] = body
+        self.execute(
+            "UPDATE gen_lessons SET page_json = ? WHERE id = ?",
+            (json.dumps(page), lesson_id),
+        )
+
+    def pdf_bytes(self, artifact_id: str) -> bytes:
+        row = self.rows("SELECT * FROM artifacts WHERE id = ?", (artifact_id,))[0]
+        return Path(str(row["path"])).read_bytes()
+
     def export_learner_sheet(self, seeded: dict) -> tuple[dict, str]:
         version, _lesson_id = self.lesson_identity(seeded)
         payload = {
@@ -658,6 +674,89 @@ class TakeHomeExportTest(TakeHomeCase):
         )
         self.assertIn("Section 1: the sear", text)
         self.assertNotIn("Rewritten after approval", text)
+
+    @unittest.skipUnless(shutil.which("pdftotext"), "pdftotext (poppler) is required for the bbox check")
+    def test_takehome_long_title_never_clips(self) -> None:
+        """A contract-maximum title is wrapped and every printed word stays inside the margin."""
+        seeded = self.seed_course(sections=1)
+        title = (
+            "Searing and braising the short ribs for a family Sunday dinner with a heavy pan "
+            * 3
+        )[:200]
+        self.assertEqual(len(title), 200)
+        preview = self.preview(seeded)
+        created = self.create(seeded, preview=preview, title=title)
+        self.ok(
+            "takehome.approve",
+            {"pack_id": created["pack_id"], "preview_hash": preview["preview_hash"]},
+            expected_revision=created["revision"],
+            idempotency_key="key-long-title-approve",
+        )
+        exported = self.ok(
+            "takehome.export",
+            {"pack_id": created["pack_id"]},
+            expected_revision=created["revision"] + 1,
+            idempotency_key="key-long-title-export",
+        )["result"]
+        path = self.work / "long-title.pdf"
+        path.write_bytes(self.pdf_bytes(exported["artifact_id"]))
+        run = subprocess.run(
+            ["pdftotext", "-bbox", "-f", "1", "-l", "1", str(path), "-"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(run.returncode, 0, run.stderr)
+        xs = [float(value) for value in re.findall(r'xMax="([0-9.]+)"', run.stdout)]
+        self.assertTrue(xs, "no words were extracted from the title page")
+        # Letter width 612 pt, 56 pt margin: the printable right edge is 556 pt.
+        self.assertLessEqual(max(xs), 556.5, f"title text clipped past the margin: xMax={max(xs)}")
+        text = self.pdf_text(exported["artifact_id"])
+        # The whole title survived, split across wrapped lines rather than truncated.
+        self.assertIn("Searing and braising", text)
+        self.assertIn(title[-24:].strip(), text)
+
+    def test_takehome_non_ascii_lesson_is_a_named_refusal_not_mojibake(self) -> None:
+        """Text the built-in print font cannot encode is refused by name, never replaced by '?'."""
+        seeded = self.seed_course(sections=1)
+        body = "こんにちは café 日本語 — naïve"
+        self.set_lesson_body(seeded, body)
+        preview = self.preview(seeded)
+        learner_text = next(page["text"] for page in preview["pages"] if page["role"] == "learner_page")
+        self.assertIn("こんにちは", learner_text)  # preview keeps the exact lesson text
+        created = self.create(seeded, preview=preview)
+        self.ok(
+            "takehome.approve",
+            {"pack_id": created["pack_id"], "preview_hash": preview["preview_hash"]},
+            expected_revision=created["revision"],
+            idempotency_key="key-nonascii-approve",
+        )
+        error = self.err(
+            "takehome.export",
+            {"pack_id": created["pack_id"]},
+            expected_revision=created["revision"] + 1,
+            idempotency_key="key-nonascii-export",
+        )
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "print_font_cannot_render_text")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 0)
+        row = self.rows(
+            "SELECT state, artifact_id, revision FROM takehome_packs WHERE id = ?",
+            (created["pack_id"],),
+        )[0]
+        self.assertEqual(row["state"], "approved")
+        self.assertIsNone(row["artifact_id"])
+        self.assertEqual(int(row["revision"]), created["revision"] + 1)
+
+    def test_takehome_accented_latin_prints_exactly(self) -> None:
+        """WinAnsi text (accented Latin, dashes) prints the lesson's exact characters."""
+        seeded = self.seed_course(sections=1)
+        self.set_lesson_body(seeded, "Un café très naïf — voilà, ça marche.")
+        exported = self.exported_pack(seeded)
+        text = self.pdf_text(exported["artifact_id"])
+        self.assertIn("café", text)
+        self.assertIn("naïf", text)
+        self.assertIn("—", text)
 
 
 class TakeHomeWorldArtTest(TakeHomeCase):

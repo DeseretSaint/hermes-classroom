@@ -15,6 +15,10 @@ sizes. It asserts:
 * the parent guide, learner page and answer guide each begin on their own page;
 * the rendered MediaBox is 612x792 (Letter) and 595x842 (A4);
 * every composed page's text survives extraction after whitespace removal — no clipped text;
+* a contract-maximum (200-character) title is wrapped and no printed word passes the right margin
+  (measured with ``pdftotext -bbox``);
+* accented Latin prints exactly and text the built-in WinAnsi font cannot render (Japanese) is
+  refused by name instead of being replaced by ``?``;
 * no region of the learner page carries the answer guide.
 
 Evidence is written to ``audit/gm-005/`` and the script exits non-zero on any failed assertion.
@@ -26,7 +30,9 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -89,6 +95,23 @@ def call(method: str, payload: dict, *, revision: int | None = None, key: str | 
     response = api.dispatch(request)
     assert response["ok"], (method, response.get("error"))
     return response
+
+
+def call_err(method: str, payload: dict, *, revision: int | None = None, key: str | None = None) -> dict:
+    request = {
+        "contract": api.RPC_CONTRACT,
+        "contract_version": api.RPC_CONTRACT_VERSION,
+        "method": method,
+        "operation_id": "proof-" + method.replace(".", "-"),
+        "payload": payload,
+    }
+    if revision is not None:
+        request["expected_revision"] = revision
+    if key is not None:
+        request["idempotency_key"] = key
+    response = api.dispatch(request)
+    assert not response["ok"], (method, "unexpectedly succeeded", response.get("result"))
+    return response["error"]
 
 
 def main() -> int:
@@ -268,6 +291,103 @@ def main() -> int:
         assert "Answer guide" in exported_text
         assert ANSWER in exported_text
 
+        # ── long title: the H1 wraps instead of running off the printable edge ─────────────
+        long_title = (
+            "Searing and braising the short ribs for a family Sunday dinner with a heavy pan " * 3
+        )[:200]
+        long_title_results = {}
+        for paper, width in (("letter", 612), ("a4", 595)):
+            data = takehome.render_pdf(
+                {"title": long_title, "audience": "parent", "pages": proof_pages}, paper=paper
+            )
+            path = OUT / f"gm-005-long-title-{paper}.pdf"
+            path.write_bytes(data)
+            bbox = subprocess.run(
+                ["pdftotext", "-bbox", "-f", "1", "-l", "1", str(path), "-"],
+                capture_output=True, text=True, check=True,
+            ).stdout
+            xs = [float(value) for value in re.findall(r'xMax="([0-9.]+)"', bbox)]
+            assert xs, paper
+            assert max(xs) <= width - 56 + 0.5, (paper, max(xs), width)
+            long_title_results[paper] = {
+                "file": str(path.relative_to(ROOT)),
+                "page_width_pt": width,
+                "printable_right_pt": width - 56,
+                "max_word_xmax_pt": round(max(xs), 3),
+            }
+
+        # ── non-ASCII: exact WinAnsi text prints; other scripts are refused by name ────────
+        accented_pages = [
+            {"role": "cover", "audience": "parent", "text": "Accented proof"},
+            {"role": "learner_page", "audience": "learner",
+             "text": "## Café\nUn café très naïf — voilà, ça marche."},
+        ]
+        accented_results = {}
+        for paper in ("letter", "a4"):
+            data = takehome.render_pdf(
+                {"title": "Accented proof", "audience": "learner", "pages": accented_pages},
+                paper=paper,
+            )
+            path = OUT / f"gm-005-accented-proof-{paper}.pdf"
+            path.write_bytes(data)
+            text = "\n".join(
+                page.extract_text() or "" for page in PdfReader(io.BytesIO(data)).pages
+            )
+            assert "café" in text and "naïf" in text and "—" in text, (paper, text)
+            accented_results[paper] = {
+                "file": str(path.relative_to(ROOT)),
+                "cafe_exact": "café" in text,
+                "naif_exact": "naïf" in text,
+                "em_dash_exact": "—" in text,
+            }
+
+        with db.transaction() as connection:
+            japanese = page_document("Section 1: the sear")
+            japanese["segments"][1]["body"] = "こんにちは café 日本語 — naïve"
+            connection.execute(
+                "UPDATE gen_lessons SET page_json = ? WHERE id = ?",
+                (json.dumps(japanese), lesson_id),
+            )
+        artifacts_before = count_artifacts()
+        japanese_preview = call(
+            "takehome.preview",
+            {"course_id": course_id, "objective_id": objective_id,
+             "source_lesson_version": version, "audience": "learner", "kind": "homework_sheet"},
+        )["result"]
+        japanese_created = call(
+            "takehome.create",
+            {"course_id": course_id, "objective_id": objective_id,
+             "source_lesson_version": version, "audience": "learner", "kind": "homework_sheet",
+             "title": "Japanese lesson"},
+            revision=0, key="proof-ja-create",
+        )["result"]
+        call("takehome.approve",
+             {"pack_id": japanese_created["pack_id"],
+              "preview_hash": japanese_preview["preview_hash"]},
+             revision=0, key="proof-ja-approve")
+        refusal = call_err(
+            "takehome.export", {"pack_id": japanese_created["pack_id"]},
+            revision=1, key="proof-ja-export",
+        )
+        assert refusal["code"] == "POLICY_VIOLATION", refusal
+        assert refusal["details"]["reason"] == "print_font_cannot_render_text", refusal
+        assert count_artifacts() == artifacts_before, "a refused export left an artifact behind"
+        japanese_row = db_pack(japanese_created["pack_id"])
+        assert japanese_row["state"] == "approved" and japanese_row["artifact_id"] is None
+        learner_japanese = next(
+            page["text"] for page in japanese_preview["pages"] if page["role"] == "learner_page"
+        )
+        assert "こんにちは" in learner_japanese
+        non_ascii = {
+            "preview_keeps_japanese": "こんにちは" in learner_japanese,
+            "refusal_code": refusal["code"],
+            "refusal_reason": refusal["details"]["reason"],
+            "characters": refusal["details"].get("characters"),
+            "artifact_written": count_artifacts() != artifacts_before,
+            "pack_state": japanese_row["state"],
+            "pack_artifact_id": japanese_row["artifact_id"],
+        }
+
         evidence = {
             "card": "GM-005",
             "course_id": course_id,
@@ -282,13 +402,19 @@ def main() -> int:
             "diagram_kind": pack["diagrams"][0]["kind"],
             "plates": pack["plates"],
             "typed_headings": True,
+            "long_title": long_title_results,
+            "accented_text": accented_results,
+            "non_ascii": non_ascii,
             "papers": results,
             "learner_sheets": learner_results,
             "method": (
                 "Real course.create + plan.approve + staged validated gen_lessons; takehome.preview/"
                 "create/approve/export through api.dispatch; render_pdf over the stored pages; pypdf "
                 "text extraction; MediaBox measured per page; each composed page's text compared "
-                "whitespace-insensitively against its extracted page."
+                "whitespace-insensitively (NFC) against its extracted page; a 200-character title "
+                "measured with pdftotext -bbox against the printable right edge; accented WinAnsi "
+                "text extracted exactly; a Japanese lesson previewed exactly and refused at export "
+                "as POLICY_VIOLATION/print_font_cannot_render_text with no artifact written."
             ),
         }
         (OUT / "evidence.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
@@ -307,6 +433,17 @@ def db_artifact(artifact_id: str) -> dict:
     return dict(row)
 
 
+def count_artifacts() -> int:
+    with db.read() as connection:
+        return int(connection.execute("SELECT COUNT(*) FROM artifacts").fetchone()[0])
+
+
+def db_pack(pack_id: str) -> dict:
+    with db.read() as connection:
+        row = connection.execute("SELECT * FROM takehome_packs WHERE id = ?", (pack_id,)).fetchone()
+    return dict(row)
+
+
 def first_line(text: str) -> str:
     """A stable ASCII needle for the first authored line, matching the PDF's WinAnsi text."""
     import unicodedata
@@ -318,11 +455,10 @@ def first_line(text: str) -> str:
 
 
 def squashed(text: str) -> str:
-    """Whitespace-free, WinAnsi-folded text — the same transform the PDF template applies."""
+    """Whitespace-free NFC text — the same characters the WinAnsi PDF template prints."""
     import unicodedata
 
-    folded = unicodedata.normalize("NFKD", str(text)).encode("ascii", "replace").decode("ascii")
-    return "".join(folded.split())
+    return "".join(unicodedata.normalize("NFC", str(text)).split())
 
 
 def printed_squash(text: str) -> str:
@@ -363,6 +499,27 @@ def render_markdown(evidence: dict) -> str:
             f"| {paper} | `{row['file']}` | {row['pages']} | "
             f"{row['answer_guide_printed']} | {row['reference_answer_printed']} |"
         )
+    lines.extend(["", "## Long title (200 characters) — no clipping", ""])
+    lines.append("| Paper | File | Page width | Printable right | Widest word xMax |")
+    lines.append("|---|---|---|---|---|")
+    for paper, row in evidence["long_title"].items():
+        lines.append(
+            f"| {paper} | `{row['file']}` | {row['page_width_pt']} pt | "
+            f"{row['printable_right_pt']} pt | {row['max_word_xmax_pt']} pt |"
+        )
+    lines.extend(["", "## Non-ASCII text", ""])
+    for paper, row in evidence["accented_text"].items():
+        lines.append(
+            f"- `{row['file']}` ({paper}): café {row['cafe_exact']}, naïf {row['naif_exact']}, "
+            f"em dash {row['em_dash_exact']}"
+        )
+    non_ascii = evidence["non_ascii"]
+    lines.append(
+        f"- Japanese preview exact: {non_ascii['preview_keeps_japanese']}; export refusal "
+        f"`{non_ascii['refusal_code']}` / `{non_ascii['refusal_reason']}` "
+        f"(characters {non_ascii['characters']!r}); artifact written: "
+        f"{non_ascii['artifact_written']}; pack left `{non_ascii['pack_state']}` with no artifact."
+    )
     lines.extend(["", "## Method", "", evidence["method"], ""])
     return "\n".join(lines)
 

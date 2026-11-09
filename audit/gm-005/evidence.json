@@ -1,20 +1,57 @@
 {
   "card": "GM-005",
-  "course_id": "crs_4f705300b05949f2bd3cba0a8d3014b0",
-  "pack_id": "thp_9ee29ce55d1c45f299e88c388b356b6b",
+  "course_id": "crs_5cb8097ee2724b4db312b6636d9848e2",
+  "pack_id": "thp_169315c3f0f34196bf12f42ab47891ad",
   "pack_state": "exported",
-  "content_hash": "sha256:e66d27180bbe70674cf697cb61a76519a53d380acee793197f43794b6143058a",
-  "source_lesson_version": "lsn_pln_7c93f9cd59474eb49acea71d369cb97d:v1",
+  "content_hash": "sha256:78fcc5c00325c1abf116e5835030fb05e2a4a8cc6c6c55f84c4880a5a8062074",
+  "source_lesson_version": "lsn_pln_e48c7554a4fa45af9ee6c0d9da01b85b:v1",
   "exported_artifact": {
-    "artifact_id": "art_502d5e3820d94c3e8b6a26c1d961cb0a",
+    "artifact_id": "art_f1e4b0aee40a41e2890ce24decc7e1cc",
     "mime": "application/pdf",
-    "bytes": 5568
+    "bytes": 5622
   },
   "learner_page_has_answer": false,
   "answer_guide_has_answer": true,
   "diagram_kind": "deterministic",
   "plates": [],
   "typed_headings": true,
+  "long_title": {
+    "letter": {
+      "file": "audit/gm-005/gm-005-long-title-letter.pdf",
+      "page_width_pt": 612,
+      "printable_right_pt": 556,
+      "max_word_xmax_pt": 463.232
+    },
+    "a4": {
+      "file": "audit/gm-005/gm-005-long-title-a4.pdf",
+      "page_width_pt": 595,
+      "printable_right_pt": 539,
+      "max_word_xmax_pt": 463.232
+    }
+  },
+  "accented_text": {
+    "letter": {
+      "file": "audit/gm-005/gm-005-accented-proof-letter.pdf",
+      "cafe_exact": true,
+      "naif_exact": true,
+      "em_dash_exact": true
+    },
+    "a4": {
+      "file": "audit/gm-005/gm-005-accented-proof-a4.pdf",
+      "cafe_exact": true,
+      "naif_exact": true,
+      "em_dash_exact": true
+    }
+  },
+  "non_ascii": {
+    "preview_keeps_japanese": true,
+    "refusal_code": "POLICY_VIOLATION",
+    "refusal_reason": "print_font_cannot_render_text",
+    "characters": "\u3053\u3061\u306b\u306f\u3093\u65e5\u672c\u8a9e",
+    "artifact_written": false,
+    "pack_state": "approved",
+    "pack_artifact_id": null
+  },
   "papers": {
     "letter": {
       "file": "audit/gm-005/gm-005-takehome-proof-letter.pdf",
@@ -131,5 +168,5 @@
       "reference_answer_printed": false
     }
   },
-  "method": "Real course.create + plan.approve + staged validated gen_lessons; takehome.preview/create/approve/export through api.dispatch; render_pdf over the stored pages; pypdf text extraction; MediaBox measured per page; each composed page's text compared whitespace-insensitively against its extracted page."
+  "method": "Real course.create + plan.approve + staged validated gen_lessons; takehome.preview/create/approve/export through api.dispatch; render_pdf over the stored pages; pypdf text extraction; MediaBox measured per page; each composed page's text compared whitespace-insensitively (NFC) against its extracted page; a 200-character title measured with pdftotext -bbox against the printable right edge; accented WinAnsi text extracted exactly; a Japanese lesson previewed exactly and refused at export as POLICY_VIOLATION/print_font_cannot_render_text with no artifact written."
 }
