@@ -17,6 +17,7 @@ import os
 import sys
 import time
 import urllib.request
+from datetime import datetime, timezone
 
 BASE = os.environ.get("CB013_BASE", "http://127.0.0.1:44249")
 TOKEN = os.environ.get("CB013_TOKEN", "cb013-test-token")
@@ -278,6 +279,273 @@ def resume(job_id: str) -> dict:
     return state
 
 
+def _state_with_edits() -> dict:
+    """Load the seed state and derive which section the UI edited and which one it did not.
+
+    The seed records the objective ids in plan order. The live UI phase edits the FIRST row and
+    only that row; everything else is untouched, so the untouched section is the next id in the
+    recorded order. This is read from state, never guessed by title.
+    """
+    state = load()
+    ids = [row["objective_id"] for row in state.get("objectives") or []]
+    if len(ids) < 2:
+        raise SystemExit(f"state {STATE} carries {len(ids)} objectives; the pass needs at least two")
+    state["edited_objective_id"] = ids[0]
+    state["untouched_objective_id"] = ids[1]
+    return state
+
+
+def _edited_objective_id(state: dict) -> tuple[str, str]:
+    """Return (edited_id, how) from the edit phase's own facts, never from a guess.
+
+    ``scripts/h194-live.mjs`` records ``editor.objectiveId`` — the section it actually opened and
+    saved. The untouched section is then any *other* objective on the live outline. Falls back to
+    the seeded first/second ids only when the facts file is absent.
+    """
+    facts_path = os.environ.get("H194_EDIT_FACTS", "audit/h194/live/facts.edit.json")
+    try:
+        with open(facts_path, encoding="utf-8") as handle:
+            facts = json.load(handle)
+        edited = (facts.get("editor") or {}).get("objectiveId")
+        if edited:
+            return str(edited), f"facts.edit.json:{facts_path}"
+    except FileNotFoundError:
+        pass
+    return state["edited_objective_id"], "state.objectives[0] (facts.edit.json missing)"
+
+
+def continue_untouched() -> dict:
+    """After the UI edit + reorder and BEFORE approval: read the untouched section, then export.
+
+    Calls the two commands a read of an unedited section goes through (``lesson.page`` then
+    ``lesson.begin``) and then ``parent.export``. The whole sequence is timestamped and carries the
+    enrollment id plus the live approval/export views at call time, so the order is auditable.
+    H-194's stated gate reason is ``changes_need_review``; when the measured reason differs this is
+    recorded as ``reason_matches_h194_gate: false`` with the exact backend error — it is a measured
+    deviation, not a softened pass.
+    """
+    started_at = datetime.now(timezone.utc).isoformat()
+    state = _state_with_edits()
+    edited, edited_source = _edited_objective_id(state)
+    outline = ok("course.outline", {"enrollment_id": state["enrollment_id"]})
+    titles = {row["objective_id"]: row["title"] for row in outline.get("objectives") or []}
+    candidates = [row["objective_id"] for row in outline.get("objectives") or [] if row["objective_id"] != edited]
+    if not candidates:
+        raise SystemExit(f"no untouched objective on the live outline; edited={edited} titles={sorted(titles)}")
+    untouched = candidates[0]
+
+    # The live gate views the UI reads, captured at the same moment as the untouched read.
+    review_before = ok("parent.review.read", {"course_id": state["course_id"]})
+
+    page = ok("lesson.page", {"enrollment_id": state["enrollment_id"], "objective_id": untouched})
+    document = page.get("document") or {}
+    begin = ok(
+        "lesson.begin",
+        {"enrollment_id": state["enrollment_id"], "objective_id": untouched, "mode": "resume"},
+        key=f"h194-untouched-begin-{time.time_ns()}",
+    )
+
+    export_response = call(
+        "parent.export",
+        {"enrollment_id": state["enrollment_id"]},
+        key=f"h194-export-blocked-{time.time_ns()}",
+    )
+    finished_at = datetime.now(timezone.utc).isoformat()
+    refusal = export_response.get("error") or {}
+    reason = (refusal.get("details") or {}).get("reason")
+    blob = json.dumps(refusal)
+    fact = {
+        "phase": "continue-untouched",
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "course_id": state["course_id"],
+        "enrollment_id": state["enrollment_id"],
+        "edited_objective_id": edited,
+        "edited_objective_source": edited_source,
+        "untouched_objective_id": untouched,
+        "untouched_title": titles[untouched],
+        "approval_at_read": review_before.get("approval"),
+        "export_status_at_read": review_before.get("export"),
+        "plan_revisions_at_read": [
+            {"revision_id": row["revision_id"], "kind": row["kind"], "state": row["state"]}
+            for row in review_before.get("plan_revisions") or []
+        ],
+        "lesson_revisions_at_read": review_before.get("lesson_revisions"),
+        "untouched_page": {
+            "state": page.get("state"),
+            "document_state": document.get("state"),
+            "section_title": document.get("section_title"),
+            "block_count": len(document.get("blocks") or []),
+            "document_id": document.get("document_id"),
+        },
+        "untouched_begin": {
+            "lesson_run_id": begin.get("lesson_run_id"),
+            "run_state": begin.get("run_state"),
+            "resume": begin.get("resume"),
+            "revision": begin.get("revision"),
+        },
+        "export_before_approval": {
+            "ok": bool(export_response.get("ok")),
+            "code": refusal.get("code"),
+            "message": refusal.get("message"),
+            "reason": reason,
+            "reason_source": "error.details.reason",
+            "details": refusal.get("details"),
+        },
+        "expected_reason": "changes_need_review",
+        "reason_matches_h194_gate": reason == "changes_need_review",
+    }
+    out = os.environ.get("H194_FACTS")
+    if out:
+        with open(out, "w", encoding="utf-8") as handle:
+            json.dump(fact, handle, indent=2)
+    print(json.dumps(fact, indent=2))
+    if export_response.get("ok"):
+        raise SystemExit("parent.export SUCCEEDED before approval; the H-194 review gate did not hold")
+    if reason != "changes_need_review" and "changes_need_review" not in blob:
+        print(
+            f"WARNING: parent.export refused with {reason!r}, not the card's expected "
+            f"'changes_need_review'. Recorded as a measured deviation. Full error: {blob}",
+            flush=True,
+        )
+    return fact
+
+
+def _artifact_facts(result: dict) -> list[dict]:
+    """Normalise ``parent.export``'s artifact refs.
+
+    ``pack_flow._artifact_ref`` returns ``{artifact_id, kind, mime, bytes, content_hash}`` — there is
+    no ``filename`` and no ``sha256`` key. Round 2's facts file read ``sha256``/``byte_size`` and so
+    recorded nulls for every artifact while the bytes were real. Map the keys that exist.
+    """
+    return [
+        {
+            "artifact_id": item.get("artifact_id"),
+            "kind": item.get("kind"),
+            "mime": item.get("mime"),
+            "sha256": item.get("content_hash"),
+            "byte_size": item.get("bytes"),
+        }
+        for item in result.get("artifacts") or []
+    ]
+
+
+def _file_facts(result: dict) -> list[dict]:
+    """Per-file manifest entries (``role``/``name``/``sha256``/``bytes``) from the export response."""
+    return [
+        {
+            "role": item.get("role"),
+            "name": item.get("name"),
+            "mime": item.get("mime"),
+            "sha256": item.get("sha256"),
+            "byte_size": item.get("bytes"),
+        }
+        for item in result.get("files") or []
+    ]
+
+
+def export_now() -> dict:
+    """After the UI approval: ``parent.export`` must now succeed and write a stored pack."""
+    started_at = datetime.now(timezone.utc).isoformat()
+    state = _state_with_edits()
+    response = call(
+        "parent.export",
+        {"enrollment_id": state["enrollment_id"]},
+        key=f"h194-export-allowed-{time.time_ns()}",
+    )
+    finished_at = datetime.now(timezone.utc).isoformat()
+    refusal = response.get("error") or {}
+    result = response.get("result") or {}
+    artifacts = _artifact_facts(result)
+    fact = {
+        "phase": "export-after-approval",
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "course_id": state["course_id"],
+        "enrollment_id": state["enrollment_id"],
+        "export_ok": bool(response.get("ok")),
+        "error": refusal or None,
+        "pack_id": (result.get("pack") or {}).get("pack_id"),
+        "content_hash": result.get("content_hash"),
+        "export_id": result.get("export_id"),
+        "artifacts": artifacts,
+        "files": _file_facts(result),
+    }
+    out = os.environ.get("H194_FACTS")
+    if out:
+        with open(out, "w", encoding="utf-8") as handle:
+            json.dump(fact, handle, indent=2)
+    print(json.dumps(fact, indent=2))
+    if not response.get("ok"):
+        raise SystemExit(f"parent.export refused after approval: {json.dumps(refusal)}")
+    return fact
+
+
+def preapprove() -> dict:
+    """Give an already-approved real plan its active lesson-set approval (rig preparation only).
+
+    Some real courses reached an approved plan with generated pages but no active
+    ``final_approvals`` row (their earlier approval was invalidated by an edit). H-194 needs the
+    export gate to start READY so the fine-tune pass can prove it turns ready → changes_need_review
+    → ready. This calls the same backend command the UI's approve button calls.
+    """
+    state = load()
+    book = ok("parent.blueprint.read", {"course_id": state["course_id"]})
+    result = ok(
+        "parent.final.approve",
+        {
+            "enrollment_id": state["enrollment_id"],
+            "plan_id": state["plan_id"] if state.get("plan_id") else (book.get("plan") or {}).get("plan_id"),
+            "plan_hash": (book.get("plan") or {}).get("plan_hash"),
+            "content_hash": book.get("content_hash"),
+        },
+        expected_revision=state.get("revision", 0),
+        key=f"h194-preapprove-{time.time_ns()}",
+    )
+    state["revision"] = result.get("revision")
+    state["final_approval"] = result.get("state")
+    state["content_hash"] = result.get("content_hash")
+    save(state)
+    export = call("parent.export", {"enrollment_id": state["enrollment_id"]},
+                  key=f"h194-preapprove-export-{time.time_ns()}")
+    fact = {"approval": state["final_approval"], "content_hash": state["content_hash"],
+            "export_ok": bool(export.get("ok")), "export_error": export.get("error")}
+    print(json.dumps(fact, indent=2))
+    return fact
+
+
+def export_enrollment(enrollment_id: str) -> dict:
+    """Measure ``parent.export`` for any real enrollment (used to prove the success path elsewhere)."""
+    started_at = datetime.now(timezone.utc).isoformat()
+    response = call(
+        "parent.export",
+        {"enrollment_id": enrollment_id},
+        key=f"h194-export-{enrollment_id}-{time.time_ns()}",
+    )
+    finished_at = datetime.now(timezone.utc).isoformat()
+    refusal = response.get("error") or {}
+    result = response.get("result") or {}
+    fact = {
+        "phase": "export-enrollment",
+        "started_at": started_at,
+        "finished_at": finished_at,
+        "enrollment_id": enrollment_id,
+        "export_ok": bool(response.get("ok")),
+        "error": refusal or None,
+        "pack_id": (result.get("pack") or {}).get("pack_id"),
+        "content_hash": result.get("content_hash"),
+        "export_id": result.get("export_id"),
+        "artifacts": _artifact_facts(result),
+        "files": _file_facts(result),
+    }
+    out = os.environ.get("H194_FACTS")
+    if out:
+        with open(out, "w", encoding="utf-8") as handle:
+            json.dump(fact, handle, indent=2)
+    print(json.dumps(fact, indent=2))
+    return fact
+
+
 def main() -> int:
     command = sys.argv[1] if len(sys.argv) > 1 else "status"
     if command == "seed":
@@ -292,6 +560,14 @@ def main() -> int:
         status()
     elif command == "verify":
         verify()
+    elif command == "continue-untouched":
+        continue_untouched()
+    elif command == "export":
+        export_now()
+    elif command == "export-enrollment":
+        export_enrollment(sys.argv[2])
+    elif command == "preapprove":
+        preapprove()
     else:
         raise SystemExit(f"unknown command {command}")
     return 0
