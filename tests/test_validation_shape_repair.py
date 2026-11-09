@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import threading
 import time
 import unittest
 
@@ -124,25 +123,38 @@ def clean_document(request: gen.LLMRequest | None = None) -> dict:
     return _narrow_to_pass(document, request)
 
 
+def _owns_measured_rejection(request: gen.LLMRequest | None) -> bool:
+    """Does this pass own the criterion the measured rejection names?
+
+    The recorded answer rejects ``evidence_target_fit``, which H-192b puts in the second pass
+    only. ``_narrow_to_pass`` therefore strips that rejection from the first pass, leaving a
+    document that still *declares* ``reject`` while failing no criterion of its own. H-182 reads a
+    declared refusal as a plan that can be re-authored, so serving the recorded answer to the
+    pass that does not own the rejection turned the shape repair under test into a second
+    ``plan.generate`` — decided by thread order, not by the behaviour. The answer is served to
+    the owning pass, where the over-long ``item`` is the violation the test is about.
+    """
+    measured = (fixture("validation_measured_item_81").get("rejections") or [{}])[0]
+    criterion = str(measured.get("criterion") or "")
+    return bool(criterion) and criterion in _owned_criteria(request)
+
+
 class FirstValidationAnswerMalformed:
     """Recorded-answer script: exactly one plan-validate call gets the measured 81-char answer.
 
     H-192b splits plan validation into two passes that run together, so a per-call list would
-    depend on thread order. This script answers whichever pass is served first with the recorded
-    malformed document, answers its repair and every other pass cleanly, and never repeats.
+    depend on thread order; the recorded answer is served to the pass that owns the criterion it
+    rejects (H-182: a refusal on any pass re-authors the plan, so a refusal must land where its
+    rejection is schema-valid). Its repair and every other pass answer cleanly, and it never
+    repeats.
     """
-
-    def __init__(self) -> None:
-        self._served = 0
-        self._lock = threading.Lock()
 
     def __call__(self, request: gen.LLMRequest) -> dict:
         if request.prompt_version.endswith(gen.REPAIR_PROMPT_SUFFIX):
             return clean_document(request)
-        with self._lock:
-            self._served += 1
-            first = self._served == 1
-        return measured_document(request) if first else clean_document(request)
+        if _owns_measured_rejection(request):
+            return measured_document(request)
+        return clean_document(request)
 
 
 class HostStructuredSeam:
