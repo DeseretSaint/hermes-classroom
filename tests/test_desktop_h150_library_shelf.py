@@ -340,7 +340,7 @@ class LibraryShelfRenderTest(unittest.TestCase):
         self.assertIn("data-cb-pack-technical", html)
         self.assertIn("Technical details", html)
         self.assertIn("Pack ID", html)
-        self.assertIn("Record revision", html)
+        self.assertIn("Record version", html)
         self.assertNotIn("revision 7", html)
         technical = html[html.index("data-cb-pack-technical") :]
         self.assertIn("pack_0123456789ab", technical)
@@ -525,7 +525,7 @@ class LibraryShelfSourceTest(unittest.TestCase):
         self.assertIn("'data-cb-pack-technical': ''", self.facts)
         self.assertIn("children: 'Technical details'", self.facts)
         self.assertIn("label: 'Pack ID'", self.facts)
-        self.assertIn("label: 'Record revision'", self.facts)
+        self.assertIn("label: 'Record version'", self.facts)
         self.assertNotIn("detail: `revision ${row.revision}`", self.facts)
         self.assertNotIn("children: row.provenance.pack_id", self.facts)
 

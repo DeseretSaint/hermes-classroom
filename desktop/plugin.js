@@ -1194,10 +1194,24 @@ function EvidenceLine({ summary }) {
 
 function ErrorLine({ error }) {
   if (!error) return null
-  const code = error.code ? `${error.code}: ` : ''
-  return jsx('div', {
+  const code = error.code ? String(error.code) : ''
+  // H-183: the learner reads the sentence. The typed code is inspection evidence, so it sits behind
+  // the same `Technical detail` disclosure the rest of the surface uses.
+  return jsxs('div', {
     className: 'mt-2 text-xs text-(--ui-text-secondary)',
-    children: `${code}${describeError(error)}`
+    children: [
+      jsx('div', { children: describeError(error) }),
+      code
+        ? jsxs('details', {
+            'data-cb-error-technical': '',
+            style: { color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: code })
+            ]
+          })
+        : null
+    ]
   })
 }
 
@@ -2691,7 +2705,7 @@ function buildDeskModel({ library, outline, estimate, selectedCourseId = null, o
     settled,
     dueCount,
     sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
-    nextLabel: next.label || 'The backend did not record a next step for this course.',
+    nextLabel: next.label || 'No next step was recorded for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
     estimateLabel: deskEstimateLabel(estimate),
@@ -5146,25 +5160,22 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
             },
             'companion'
           ),
+          // H-183: a desktop has no haptic engine, so this is an availability note, never a switch.
+          // A disabled toggle would still promise a setting the host cannot honour.
           jsx(
             CbSettingsSection,
             {
               id: 'haptics',
               title: 'Haptics',
-              description:
-                'Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing.',
+              description: 'Not available on desktop.',
               resetLabel: 'Haptics are always off on desktop',
               atDefault: true,
               onReset: () => {},
-              children: jsx('div', {
-                'data-cb-settings-toggle': 'haptics',
-                children: jsx(sdk.ToggleRow, {
-                  checked: false,
-                  disabled: true,
-                  label: 'Haptics',
-                  description: 'A desktop has no haptic engine to drive.',
-                  onChange: () => {}
-                })
+              children: jsx('p', {
+                'data-cb-settings-unavailable': 'haptics',
+                style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children:
+                  'A desktop has no haptic engine, so Coursebook never offers a vibration response. There is nothing here to switch on or off.'
               })
             },
             'haptics'
@@ -6109,7 +6120,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibr
                 jsx(StatusRow, { label: 'Attempts', value: String((deleteScope.counts || {}).attempts || 0) }),
                 jsx(StatusRow, { label: 'Notebook entries', value: String((deleteScope.counts || {}).notebook_entries || 0) }),
                 jsx(StatusRow, { label: 'Lesson runs', value: String((deleteScope.counts || {}).lesson_runs || 0) }),
-                jsx(StatusRow, { label: 'Jobs', value: String((deleteScope.counts || {}).jobs || 0) }),
+                jsx(StatusRow, { label: 'Background tasks', value: String((deleteScope.counts || {}).jobs || 0) }),
                 jsx(StatusRow, { label: 'Course and plan kept', value: (deleteScope.preserved || {}).course ? 'yes' : 'no' }),
                 jsx(StatusRow, { label: 'Hermes transcripts kept', value: (deleteScope.preserved || {}).hermes_transcripts ? 'yes' : 'no' })
               ]
@@ -6205,7 +6216,7 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
   const technical = [
     provenance.pack_id ? { label: 'Pack ID', value: provenance.pack_id } : null,
     provenance.pack_version ? { label: 'Pack version', value: `v${provenance.pack_version}` } : null,
-    { label: 'Record revision', value: String(row.revision == null ? 0 : row.revision) }
+    { label: 'Record version', value: String(row.revision == null ? 0 : row.revision) }
   ].filter(Boolean)
   return jsxs('div', {
     className: 'flex min-w-0 flex-1 flex-col gap-3',
@@ -6928,7 +6939,7 @@ function GoalGallery({ examples, onChoose }) {
 const CREATE_RESULT_COPY = {
   lead: 'Your plan is being researched; this may take several minutes and you can leave this page.',
   body: 'When it arrives it opens here. Approve the plan to start the first lesson; no lesson is written before that.',
-  details: 'Details and job state'
+  details: 'Technical detail'
 }
 
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
@@ -7198,7 +7209,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
         message:
           describeError(outcome.error) +
           (outcome.stage === 'jobs.create'
-            ? ' The course and its draft plan are saved. Retrying starts the same job, not a second one.'
+            ? ' The course and its draft plan are saved. Trying again continues the same plan; it does not create a second course.'
             : '')
       })
       return
@@ -7800,15 +7811,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
               }),
-              // A failed plan job keeps the ids it already wrote. One calm line, not a receipt wall:
-              // the same key retries the same job.
+              // A failed plan keeps what it already wrote. One calm line, not a receipt wall: the
+              // same attempt is continued, never a second course.
               recoverable
                 ? jsx('div', {
                     'data-cb-create-recoverable': '',
                     className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                    children: `Course ${recoverable.courseId}${
-                      recoverable.enrollmentId ? ` and enrolment ${recoverable.enrollmentId}` : ''
-                    } are saved. Retrying starts the same plan job, not a second one.`
+                    children:
+                      'This course and its enrolment are saved. Trying again continues the same plan; it does not create a second course.'
                   })
                 : null,
               error ? jsx(ErrorLine, { error }) : null
@@ -7839,7 +7849,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 disabled: submitting,
                 onClick: submit,
                 variant: 'primary',
-                children: submitting ? 'Creating course' : recoverable ? 'Retry the plan job' : 'Create course'
+                children: submitting ? 'Creating course' : recoverable ? 'Try again' : 'Create course'
               }),
           // One row of actions: the primary is the only filled control; Back is secondary; Cancel
           // is tertiary and sits at the far edge on every step.
@@ -7933,9 +7943,9 @@ const SYLLABUS_COPY = Object.freeze({
     'Some items could not be tied to a quote in your file. Check the ones marked below, or upload a cleaner copy.',
   storage: 'Your file stays on this profile. The parse and the alignment are sent to the model provider you have configured, and only after you acknowledge that.',
   alignmentGate: 'Review the mapping before a course is built. Conflict or stale items block approval.',
-  researchMinutes: 'Research and authoring may take several minutes. The plan appears when the backend finishes it.',
-  staleLead: 'Your syllabus changed. The earlier mapping was made against the old revision, so it is marked stale.',
-  staleAction: 'Check the new revision, then review the mapping again. Your approved plan and lessons are kept as they were.',
+  researchMinutes: 'Research and authoring may take several minutes. The plan appears here when it is ready.',
+  staleLead: 'Your syllabus changed. The earlier mapping was made against the previous version, so it is marked stale.',
+  staleAction: 'Check the new version, then review the mapping again. Your approved plan and lessons are kept as they were.',
   startsCompanion: 'Create companion course',
   coversLine: (covered, total) => `This course covers ${covered} of ${total} syllabus weeks.`
 })
@@ -7964,7 +7974,7 @@ const SYLLABUS_REASON_COPY = Object.freeze({
   deadline_passed: 'The plan schedules work after the date in your syllabus.',
   scope_exceeded: 'The plan claims more than this item asks for.',
   ignored_assessment: 'The plan claims coverage while ignoring this assessment.',
-  revision_changed: 'The syllabus revision changed after this mapping was made.',
+  revision_changed: 'The syllabus version changed after this mapping was made.',
   plan_superseded: 'The plan was replaced after this mapping was made.'
 })
 
@@ -8506,10 +8516,10 @@ function syllabusStaleNotice({ revision, counts, planRevision }) {
   const lines = [SYLLABUS_COPY.staleLead]
   if (pending > 0) lines.push(`${pending} mapping${pending === 1 ? '' : 's'} need another look.`)
   if (planRevision !== undefined && planRevision !== null) {
-    lines.push(`Your approved plan is still the one aligned to syllabus revision ${planRevision}; it stays readable.`)
+    lines.push(`Your approved plan is still the one aligned to version ${planRevision} of your syllabus; it stays readable.`)
   }
   lines.push(SYLLABUS_COPY.staleAction)
-  return { revision: Number(revision) || 0, pending, lines, action: 'Check the new revision' }
+  return { revision: Number(revision) || 0, pending, lines, action: 'Check the new version' }
 }
 
 /**
@@ -8836,7 +8846,7 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
             children: [
               jsx('div', { className: 'text-sm font-medium', children: 'This mapping is out of date' }),
               jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.staleAction }),
-              onRealign ? jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onRealign, disabled: Boolean(busy), children: 'Check the new revision' }) : null
+              onRealign ? jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onRealign, disabled: Boolean(busy), children: 'Check the new version' }) : null
             ]
           })
         : null,
@@ -8906,7 +8916,7 @@ function syllabusPlanGate({ binding, planState, rowsReady }) {
     Number(binding.reviewed_revision) === Number(binding.revision)
   const ready = Boolean(reviewed) && !stale
   const reason = stale
-    ? 'Your syllabus changed. This course stays as it was until the new revision is mapped and reviewed; approval is blocked.'
+    ? 'Your syllabus changed. This course stays as it was until the new version is mapped and reviewed; approval is blocked.'
     : !rowsReady
       ? 'Map the draft plan to your syllabus before approving it.'
       : !reviewed
@@ -9011,7 +9021,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
     })
     setBusy(false)
     if (!outcome.ok) {
-      setError(outcome.error || { code: 'INTERNAL_ERROR', message: 'The mapping job could not be started.' })
+      setError(outcome.error || { code: 'INTERNAL_ERROR', message: 'The mapping could not be started.' })
       return
     }
     setAligning(true)
@@ -9084,7 +9094,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
             className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
             'data-cb-align-stale': 'true',
             children: [
-              jsx('div', { className: 'text-sm font-medium', children: 'Your syllabus has a new revision' }),
+              jsx('div', { className: 'text-sm font-medium', children: 'You added a new version of your syllabus' }),
               jsx('div', {
                 className: 'max-w-prose text-xs text-(--ui-text-secondary)',
                 children:
@@ -9381,7 +9391,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         ? jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
           jsx('div', {
             className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+            children: 'Cancelled. Nothing further was sent — nothing had been started here yet, so there was nothing to stop.'
           }),
           jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Close' })
         ] })
@@ -9526,7 +9536,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
         jsx('div', {
           className: 'max-w-prose text-sm',
-          children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+            children: 'Cancelled. Nothing further was sent — nothing had been started here yet, so there was nothing to stop.'
         }),
         close
       ] })
@@ -9621,7 +9631,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
     parsed: target,
     blocks: (target && target.blocks) || [],
     busy: Boolean(busy),
-    continueLabel: revisionOnly ? 'Check the new revision' : null,
+    continueLabel: revisionOnly ? 'Check the new version' : null,
     onBack: onCancel,
     onContinue: () => {
       if (revisionOnly) {
@@ -12248,7 +12258,7 @@ function AttemptControls({
         : jsx(QuietNote, {
             children: supports('lesson.assist')
               ? 'Hints and shown answers are recorded against the next attempt.'
-              : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+              : 'No hint and no shown answer are offered on this check. Work it out from the section text.'
           }),
 
       jsx('p', {
@@ -12440,7 +12450,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
           onChange: (event) => setTags(event.target.value),
           placeholder: 'register, politeness'
         }),
-        supports('notebook.save') ? null : jsx(QuietNote, { children: 'notebook.save is not registered on this backend.' }),
+        supports('notebook.save') ? null : jsx(QuietNote, { children: 'Saving to the notebook is not available in this build.' }),
         error ? jsx(ErrorLine, { error }) : null
       ]
     })
@@ -16541,13 +16551,14 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     if (target && typeof target.focus === 'function') target.focus()
   }, [focusBlockId, focusIndex, view, step])
   if (blocks.length === 0) {
-    // H-174: an approved lesson page with no blocks is incomplete, not a chat prompt. The lessons
-    // job authors this page; a teaching turn adds runtime segments, it does not write the page.
+    // H-174/H-183: an approved lesson page with no blocks is incomplete, not a chat prompt. The
+    // page is written by Coursebook from the approved plan; a teaching turn adds runtime segments,
+    // it does not write the page.
     return jsx(EmptyState, {
       title: 'This lesson page has no blocks yet',
       description:
         (document && document.view_note) ||
-        'The lessons job writes this page. It exists, but it carries no teaching blocks yet; re-run the job from Plan to replace it.'
+        'The page exists, but it carries no teaching blocks yet. Writing it again from Plan replaces this placeholder.'
     })
   }
   const checkId = document.check_id
@@ -16693,7 +16704,7 @@ function lessonsJobFrom(jobs) {
 function lessonJobError(job) {
   if (!job || !job.error) return null
   const code = job.error.code ? `${job.error.code}: ` : ''
-  return `${code}${job.error.message || 'The job stopped without a message.'}`
+  return `${code}${job.error.message || 'No reason was recorded.'}`
 }
 
 function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
@@ -16724,6 +16735,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     blockCount: blocks.length,
     segmentCount: segments.length,
     error,
+    // H-183: the typed reason is evidence, not learner copy. The readiness panel puts this behind
+    // its own `Technical detail` disclosure; no default sentence carries the code.
+    technical: error,
     // A job that settles as completed but wrote no lessons for this plan version is not running
     // and did not fail: it is the `not_started`/`incomplete` fact the plan surface already reports.
     lessonsReported: Number((job && job.checkpoint && job.checkpoint.lessons) || 0)
@@ -16766,11 +16780,11 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     return {
       ...base,
       state: 'failed',
-      headline: 'The lessons job stopped',
+      headline: 'This lesson page could not be written',
       detail:
-        (error ? `${error} ` : '') +
-        'The approved plan is unchanged. Re-running the lessons job writes the missing pages; nothing is rewritten from a template.',
-      action: { kind: 'retry', label: 'Retry the lessons job' },
+        'The approved plan is unchanged and every page already written is kept. ' +
+        'Write this page again; nothing is rebuilt from a template. The reason is under Technical detail.',
+      action: { kind: 'retry', label: 'Write this page again' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
   }
@@ -16778,12 +16792,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
     return {
       ...base,
       state: 'running',
-      headline:
-        jobState === 'queued'
-          ? 'The lessons job is queued'
-          : 'The lessons job is writing lesson pages',
+      headline: 'This lesson page is being written',
       detail:
-        'Lesson pages come from the lessons job, one page per approved section. This section appears when the job writes it.',
+        'Coursebook writes one page for each approved section. This page appears here as soon as it is ready; nothing on screen is invented while you wait.',
       action: { kind: 'check', label: 'Check again' },
       secondary: { kind: 'plan', label: 'View the plan' }
     }
@@ -16791,13 +16802,13 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
   if (document && (planApproved || !planProvided)) {
     // A saved page with no blocks is incomplete whatever the plan says; naming the plan here would
     // hide the fact that a page exists. A draft plan's document is handled by `unapproved` below,
-    // because the job cannot write that page until the plan is approved.
+    // because the page cannot be written until the plan is approved.
     return {
       ...base,
       state: 'incomplete',
       headline: 'This lesson page is incomplete',
       detail:
-        'The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.',
+        'The page exists but has no teaching blocks yet. Writing it again from Plan replaces this placeholder.',
       action: { kind: 'plan', label: 'Open the plan' },
       secondary: null
     }
@@ -16810,20 +16821,20 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
       state: 'no_page',
       headline: 'This section has no lesson page yet',
       detail:
-        'Lesson pages are written by the lessons job from an approved plan. Open Plan to see that job’s state; nothing is invented here.',
+        'Lesson pages are written from an approved plan. Open Plan to see where this one stands; nothing is invented to fill the gap.',
       action: { kind: 'plan', label: 'View the plan' },
       secondary: null
     }
   }
   if (!planApproved) {
-    // An unapproved plan outranks an empty document: the lessons job cannot write a page for a plan
-    // that is not approved, so "re-run the job" would be the wrong instruction here.
+    // An unapproved plan outranks an empty document: no page can be written for a plan that is not
+    // approved, so "write it again" would be the wrong instruction here.
     return {
       ...base,
       state: 'unapproved',
       headline: plan ? 'The plan is not approved yet' : 'The plan has not been written yet',
       detail: plan
-        ? 'Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.'
+        ? 'Lesson pages are written after the plan is approved. Approve the plan in Plan, then Coursebook writes one page per section.'
         : 'Lesson pages are written from an approved plan. Open Plan to write one; nothing is invented to fill the gap.',
       action: { kind: 'plan', label: 'Open the plan' },
       secondary: null
@@ -16832,9 +16843,9 @@ function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
   return {
     ...base,
     state: 'not_started',
-    headline: 'The lessons job has not run yet',
+    headline: 'This lesson page is not written yet',
     detail:
-      'The plan is approved. The lessons job writes one page per section; it has not started for this course yet.',
+      'The plan is approved. Coursebook writes one page for each section, and this one has not been written yet.',
     action: { kind: 'plan', label: 'View the plan' },
     secondary: null
   }
@@ -16926,6 +16937,17 @@ function LessonReadinessPanel({
               color: compact ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
             },
             children: body
+          })
+        : null,
+      // H-183: a typed failure reason is inspection evidence, never the sentence a learner reads.
+      readiness.technical
+        ? jsxs('details', {
+            'data-cb-readiness-technical': '',
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: readiness.technical })
+            ]
           })
         : null,
       primaryAction || secondaryAction
@@ -17875,8 +17897,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
               }),
               jsx(StatusRow, {
                 label: 'Enrolment',
-                value: enrollmentStatusLabel(row.enrollment_status),
-                detail: `revision ${row.revision}`
+                value: enrollmentStatusLabel(row.enrollment_status)
               }),
               jsx(StatusRow, {
                 label: 'Evidence',
@@ -20190,14 +20211,14 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     [objectiveId, pageObjectiveId, row, page.data, profile, refresh, openSection]
   )
 
-  // H-174: re-run the failed lessons job from the brief it stored, keyed by that job so a double
-  // click replays one run. The page never invents content and never fakes a page: the job writes it.
+  // H-174/H-183: write the failed page again from the brief it stored, keyed by that run so a
+  // double click replays one attempt. The page never invents content and never fakes a page.
   const [readinessBusy, setReadinessBusy] = useState(false)
   const retryLessonsKey = useRef(null)
   const retryLessonsJob = useCallback(async () => {
     const job = lessonsJobFrom(jobs.data)
     if (!job || !job.brief || !job.job_id) {
-      setNotice('The lessons job could not be read yet, so it cannot be re-run from here. Open Plan to start it.')
+      setNotice('The saved plan could not be read yet, so this page cannot be written from here. Open Plan to start it.')
       selectView('plan')
       return
     }
@@ -20214,12 +20235,12 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     setReadinessBusy(false)
     if (!response.ok) {
       setNotice(
-        `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)} The plan and the pages already written are unchanged.`
+        'This page could not be written again. The plan and every page already written are unchanged.'
       )
       return
     }
     retryLessonsKey.current = { jobId: response.result.job_id, key: null }
-    setNotice('The lessons job was queued again from its saved brief. Pages already written at this plan version are kept.')
+    setNotice('Writing this page again. Pages already written for this plan are kept.')
     refresh()
   }, [jobs.data, refresh])
 
@@ -20857,7 +20878,7 @@ function LessonPaneBody({ binding, storedId }) {
               ? review.data.total_overdue > 0
                 ? `${review.data.total_overdue} due for review`
                 : 'Nothing due'
-              : 'Review queue unavailable'
+              : 'Review is unavailable right now'
           }),
           jsx('span', { children: '·' }),
           jsx('span', { children: `${Number((row.evidence_summary || {}).independent || 0)} independent` }),
@@ -21120,18 +21141,18 @@ function JobStateText({ job }) {
   const progress = job.progress || {}
   const message = progress.message ? ` — ${progress.message}` : ''
   if (job.state === 'queued') {
-    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
+    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Waiting to start. Nothing is spent until it begins.' })
   }
   if (job.state === 'cancel_requested' || job.state === 'cancelling') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: 'Cancelling. The current provider call is not aborted; the job stops before its next step.'
+      children: 'Stopping. The step already under way finishes, then this stops before the next one.'
     })
   }
   if (job.state === 'running') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: `Working${progress.stage ? ` (${progress.stage})` : ''}${message}`
+      children: `Working on it${message}`
     })
   }
   if (job.state === 'completed' || job.state === 'completed_late') {
@@ -21140,7 +21161,7 @@ function JobStateText({ job }) {
   if (job.state === 'interrupted_requires_retry') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
-      children: 'Interrupted: the worker stopped mid-job. Its checkpoint was kept; run the stage again to finish it.'
+      children: 'It stopped early. The work already saved is kept; start the stage again to finish it.'
     })
   }
   if (job.state === 'cancelled') {
@@ -21153,8 +21174,18 @@ function JobStateText({ job }) {
   return jsxs('div', {
     className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
     children: [
-      jsx('div', { children: `Failed${error.code ? ` (${error.code})` : ''}.` }),
-      error.message ? jsx('div', { className: 'text-(--ui-text-secondary)', children: error.message }) : null
+      jsx('div', { children: 'It stopped before finishing.' }),
+      error.message ? jsx('div', { className: 'text-(--ui-text-secondary)', children: error.message }) : null,
+      error.code
+        ? jsxs('details', {
+            'data-cb-job-technical': '',
+            style: { color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
+              jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: error.code })
+            ]
+          })
+        : null
     ]
   })
 }
@@ -21651,7 +21682,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
             className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
             children: [
               jsx('div', { children: `${error.code ? error.code + ': ' : ''}${error.message}` }),
-              jsx('div', { className: 'text-(--ui-text-secondary)', children: 'The brief was not saved and no job was queued.' })
+              jsx('div', { className: 'text-(--ui-text-secondary)', children: 'The brief was not saved, and nothing was started.' })
             ]
           })
         : null,
@@ -21663,7 +21694,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
             variant: 'primary',
             disabled: busy || problems.length > 0 || !supported,
             onClick: submit,
-            children: busy ? 'Saving the brief' : 'Create the course and queue the plan'
+            children: busy ? 'Saving the brief' : 'Create the course and start the plan'
           }),
           jsx(sdk.Button, { variant: 'secondary', onClick: onCancel, children: 'Cancel' })
         ]
@@ -21747,7 +21778,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
     return jsx(sdk.ErrorState, {
       title: 'This course has no parent brief',
       description:
-        'It was not created by parent.brief.create, or the job row that stores it is gone. Nothing is reconstructed from a form.',
+        'It was not created by parent.brief.create, or the saved record that stores it is gone. Nothing is reconstructed from a form.',
       children: jsx(sdk.Button, { variant: 'secondary', onClick: briefQuery.reload, children: 'Try again' })
     })
   }
@@ -21784,7 +21815,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
         className: 'flex flex-col',
         children: rows.map((row) => jsx(PackReviewLine, { label: row.label, value: row.value }, row.label))
       }),
-      jsx(CbLabel, { children: 'Plan job' }),
+      jsx(CbLabel, { children: 'Plan' }),
       jsxs('div', {
         className: 'flex flex-col gap-1',
         children: [
@@ -21982,7 +22013,7 @@ function planValidationView({ job, jobHint, plan, reading, learner }) {
       detail: [
         'No validation record is bound to this exact plan version, so nothing here claims a second model.',
         mismatched
-          ? 'The plan job read here checked an earlier plan version; a carried version is a copy, not a re-check.'
+          ? 'This plan was checked against an earlier version; a carried version is a copy, not a re-check.'
           : null
       ].filter(Boolean)
     }
@@ -22123,15 +22154,15 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
       body: cancelled
         ? draftKept
           ? `You stopped this run for ${spoken}. A draft plan had already been written, so it stays here, unapproved; nothing was deleted.`
-          : `No plan was written for ${spoken}. Your goal and every choice you made are saved on this job, so running it again repeats the same brief rather than starting over.`
+          : `No plan was written for ${spoken}. Your goal and every choice you made are saved with this plan, so running it again repeats the same brief rather than starting over.`
         : draftKept
           ? `The run stopped before it finished, but a draft plan for ${spoken} had already been written. It stays here, unapproved; running the brief again does not create a second course.`
-          : `No plan was written for ${spoken}. The brief is saved on the job; running it again sends the same brief and does not create a second course.`,
-      where: cancelled ? 'The run, before the plan was approved' : 'The plan job, before the plan was approved',
+          : `No plan was written for ${spoken}. The brief is saved; running it again sends the same brief and does not create a second course.`,
+      where: cancelled ? 'The run, before the plan was approved' : 'The plan, before it was approved',
       detail: [
-        errorCode ? `Run error: ${plainPlanReason(errorCode)}` : 'No plan record was written for this run.',
+        errorCode ? `What happened: ${plainPlanReason(errorCode)}` : 'No plan record was written for this run.',
         job.state === 'interrupted_requires_retry'
-          ? 'The worker lease expired; the job is safe to start again.'
+          ? 'The previous attempt stopped early; it is safe to start again.'
           : draftKept
             ? 'A draft plan exists and is readable; it is not approved.'
             : 'Nothing was approved, and no lesson pages exist.'
@@ -22182,7 +22213,7 @@ function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
   if (validation.outcome) detail.push(VALIDATION_OUTCOME_COPY[validation.outcome] || 'The validator did not pass this draft.')
   if (validation.independence) detail.push(VALIDATION_INDEPENDENCE_COPY[validation.independence] || VALIDATION_INDEPENDENCE_COPY.unidentified)
   if (validation.research_status) detail.push(RESEARCH_STATUS_COPY[validation.research_status] || `Research status: ${plainPlanReason(validation.research_status)}`)
-  if (detail.length === 0) detail.push('The plan job recorded no detailed reason for this refusal.')
+  if (detail.length === 0) detail.push('No detailed reason was recorded for this refusal.')
 
   return {
     kind,
@@ -22427,7 +22458,7 @@ function StudioPlanView({
       if (nextRevision !== null) onRevision(nextRevision)
       setError(
         `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)}` +
-          (nextRevision !== null ? ' The course revision was refreshed; press Save changes again.' : '') +
+          (nextRevision !== null ? ' The course was updated elsewhere; press Save changes again.' : '') +
           (details.reason === 'plan_not_draft'
             ? ' This plan is approved; start a new plan version to change it.'
             : details.reason === 'objective_in_use'
@@ -22476,7 +22507,7 @@ function StudioPlanView({
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
           (hashMismatch ? ' The plan was re-read; press Approve plan again.' : '') +
-          (nextRevision !== null ? ' The course revision was refreshed; press Approve plan again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Approve plan again.' : '')
       )
       return
     }
@@ -22522,7 +22553,7 @@ function StudioPlanView({
       if (nextRevision !== null) onRevision(nextRevision)
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
-          (nextRevision !== null ? ' The course revision was refreshed; press Start a new plan version again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Start a new plan version again.' : '')
       )
       return
     }
@@ -22565,7 +22596,7 @@ function StudioPlanView({
     }
     const source = planRun
     if (!source || !source.brief || !source.job_id) {
-      setRejectError('The saved brief could not be read yet, so this run cannot be repeated. Try again once the job line finishes reading.')
+      setRejectError('The saved brief could not be read yet, so this run cannot be repeated. Try again once the plan finishes reading.')
       return
     }
     setRejectBusy(true)
@@ -22659,8 +22690,8 @@ function StudioPlanView({
       description: planJobId
         ? 'Research and drafting run in the background; this screen fills itself when the plan is written. Nothing is shown from a template, and there is no progress percentage to show.'
         : learner
-          ? 'This course has no plan job attached. Start a new course to generate one; nothing is invented to fill the gap.'
-          : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
+          ? 'This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap.'
+          : 'No plan is attached to this course, so there is nothing to review. Start a new brief.',
       children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null
     })
   }
@@ -22988,7 +23019,7 @@ function StudioPlanView({
               jsx(CbLabel, { children: 'Sources and review notes' }),
               jsx(QuietNote, {
                 children:
-                  'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
+                  'Sources come from the research that produced this plan. If research was unavailable the plan says so; no citation is invented here.'
               }),
               jsx(SourceProvenancePanel, {
                 sources,
@@ -22998,7 +23029,7 @@ function StudioPlanView({
                 dense: true,
                 emptyTitle: 'No source is recorded for this plan',
                 emptyDescription:
-                  'The plan job recorded no source. Nothing on this plan is presented as cited, and no excerpt is invented to fill the gap.',
+                  'No source was recorded for this plan. Nothing on this plan is presented as cited, and no excerpt is invented to fill the gap.',
                 extra: jsx(ProvenanceInventoryRow, {
                   vocabulary: planRun && planRun.checkpoint ? planRun.checkpoint.vocabulary : null
                 })
@@ -23146,7 +23177,7 @@ function LearnerPlanView({
       approved && !lessonsReady && !lessonsFailed
         ? jsx(QuietNote, {
             children:
-              'The outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, not generated content.'
+              'The outline is approved. Coursebook writes the lesson pages below; the section list is the approved outline.'
           })
         : null,
       approved && objectives.length > 0 && onOpenSection
@@ -23215,7 +23246,7 @@ function StudioBlueprintView({ book }) {
     learner_pages: 'These are the learner pages. No answer key is included here — answers live in their own tab and are a different file role.',
     answers: 'The answer guide. It is served by course id only, so it is never reachable from a learner’s lesson surface, and export keeps it out of the learner pages.',
     narration: 'The narration script you read aloud. It is text, not an audio file, and it is also inside the parent guide.',
-    sources: 'Every source the plan job recorded, with the support verdict it earned.'
+    sources: 'Every source this plan recorded, with the support verdict it earned.'
   }[tab]
 
   return jsxs('div', {
@@ -23238,7 +23269,7 @@ function StudioBlueprintView({ book }) {
             onRetry: book.reload,
             emptyTitle: 'No source is recorded for this course',
             emptyDescription:
-              'The plan job recorded no source for this course. Nothing here is presented as cited, and no excerpt is invented to fill the gap.',
+              'No source was recorded for this course. Nothing here is presented as cited, and no excerpt is invented to fill the gap.',
             intro: notice
           })
         : files.length === 0
@@ -23329,7 +23360,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
       if (nextRevision !== null && typeof onRevision === 'function') onRevision(nextRevision)
       setApproveError(
         describeError(response.error) +
-          (nextRevision !== null ? ' The course revision was refreshed; press Approve this lesson set again.' : '')
+          (nextRevision !== null ? ' The course was updated elsewhere; press Approve this lesson set again.' : '')
       )
       return
     }
@@ -23599,7 +23630,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
     children: [
       jsx(QuietNote, {
         children:
-          'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only job is to seed your next brief.'
+          'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only purpose is to seed your next brief.'
       }),
       jsx(CbLabel, { children: 'How did it go?' }),
       jsx(StudioViewPicker, {

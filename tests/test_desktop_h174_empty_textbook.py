@@ -49,6 +49,7 @@ for (const one of payload.cases) {
     state: readiness.state,
     headline: readiness.headline,
     detail: readiness.detail,
+    technical: readiness.technical,
     action: readiness.action,
     secondary: readiness.secondary,
     jobState: readiness.jobState,
@@ -272,29 +273,40 @@ class H174ReadinessModelTest(unittest.TestCase):
         self.assertEqual(states["incomplete"], "incomplete")
         self.assertEqual(states["reading"], "reading")
 
-    def test_every_missing_page_names_the_lessons_job_or_the_plan(self) -> None:
+    def test_every_missing_page_names_the_plan_that_owns_it(self) -> None:
         for name in ("absent", "running", "failed", "incomplete", "unapproved", "not_started", "no_plan"):
             with self.subTest(case=name):
                 detail = self.model["states"][name]["detail"] or ""
                 self.assertRegex(
                     detail,
-                    r"(lessons job|approved plan|Plan)",
-                    f"{name} must name the plan or the lessons job, not the chat",
+                    r"(approved plan|Plan|Coursebook)",
+                    f"{name} must name the plan that owns the page, not the chat",
                 )
-                for banned in ("lesson chat", "lesson turn", "Send the first message", "does not write"):
-                    self.assertNotIn(banned, detail, f"{name} still blames the chat: {banned}")
+                for banned in (
+                    "lesson chat",
+                    "lesson turn",
+                    "Send the first message",
+                    "does not write",
+                    # H-183: backend machinery is not learner copy.
+                    "lessons job",
+                    "job",
+                    "queued",
+                    "revision",
+                ):
+                    self.assertNotIn(banned, detail.lower(), f"{name} still says {banned!r}: {detail}")
 
-    def test_a_failed_job_carries_its_typed_error(self) -> None:
+    def test_a_failed_page_keeps_its_typed_error_behind_technical_detail(self) -> None:
         failed = self.model["states"]["failed"]
-        self.assertIn("JOB_FAILED: the model stopped", failed["detail"])
-        self.assertEqual(failed["action"]["label"], "Retry the lessons job")
+        self.assertNotIn("JOB_FAILED", failed["detail"])
+        self.assertEqual(failed["technical"], "JOB_FAILED: the model stopped")
+        self.assertEqual(failed["action"]["label"], "Write this page again")
 
-    def test_a_running_job_offers_check_again_and_the_plan_not_a_start(self) -> None:
+    def test_a_running_page_offers_check_again_and_the_plan_not_a_start(self) -> None:
         running = self.model["states"]["running"]
         self.assertEqual(running["action"], {"kind": "check", "label": "Check again"})
         self.assertEqual(running["secondary"], {"kind": "plan", "label": "View the plan"})
         self.assertEqual(running["jobState"], "running")
-        self.assertIn("writing lesson pages", running["headline"])
+        self.assertIn("being written", running["headline"])
 
     def test_an_unapproved_plan_points_at_the_plan(self) -> None:
         unapproved = self.model["states"]["unapproved"]
@@ -341,33 +353,38 @@ class H174ReadinessModelTest(unittest.TestCase):
     def html(self, name: str) -> str:
         return self.model["html"][name]
 
-    def test_the_absent_page_renders_the_lessons_job_as_the_owner(self) -> None:
+    def test_the_absent_page_renders_the_plan_as_the_owner(self) -> None:
         html = self.html("absent")
         self.assertIn('data-cb-lesson-readiness="not_started"', html)
-        self.assertIn("The lessons job has not run yet", html)
+        self.assertIn("This lesson page is not written yet", html)
         self.assertIn("View the plan", html)
         self.assertNotIn("Start a fresh run", html)
         self.assertNotIn("Open the textbook", html)
         self.assertNotIn("Continue in the lesson chat", html)
+        self.assertNotIn("lessons job", html)
 
-    def test_a_running_job_renders_a_status_line_not_a_primary(self) -> None:
+    def test_a_running_page_renders_a_status_line_not_a_primary(self) -> None:
         html = self.html("running")
         self.assertIn('data-cb-lesson-readiness="running"', html)
-        self.assertIn("The lessons job is writing lesson pages", html)
+        self.assertIn("This lesson page is being written", html)
         self.assertIn("Check again", html)
         self.assertIn("View the plan", html)
         self.assertNotIn('data-cb-action="primary"', html)
         self.assertNotIn("Start a fresh run", html)
 
-    def test_a_failed_job_renders_the_typed_error_and_a_retry(self) -> None:
+    def test_a_failed_page_renders_a_plain_sentence_and_the_error_behind_detail(self) -> None:
         html = self.html("failed")
         self.assertIn('data-cb-lesson-readiness="failed"', html)
-        self.assertIn("The lessons job stopped", html)
+        self.assertIn("This lesson page could not be written", html)
+        self.assertIn("Technical detail", html)
         self.assertIn("JOB_FAILED: the model stopped", html)
-        self.assertIn("Retry the lessons job", html)
+        self.assertIn("Write this page again", html)
         self.assertNotIn('data-cb-action="primary"', html)
         for chat in ("Send the first message", "lesson turn", "does not write"):
             self.assertNotIn(chat, html)
+        # The typed code is inside the disclosure, never in the sentence the learner reads first.
+        head = html.split("Technical detail")[0]
+        self.assertNotIn("JOB_FAILED", head)
 
     def test_a_readable_page_renders_the_player_and_its_one_primary(self) -> None:
         html = self.html("present")
@@ -407,15 +424,19 @@ class H174SourceTest(unittest.TestCase):
         self.assertNotIn("Coursebook does not write it for you", self.shipped)
         self.assertNotIn("This section has no teaching content yet", self.shipped)
 
-    def test_the_empty_state_names_the_lessons_job(self) -> None:
+    def test_the_empty_state_speaks_in_the_learner_outcome(self) -> None:
         for sentence in (
-            "The lessons job has not run yet",
-            "The lessons job is writing lesson pages",
-            "The lessons job stopped",
+            "This lesson page is not written yet",
+            "This lesson page is being written",
+            "This lesson page could not be written",
             "This lesson page is incomplete",
             "The plan is not approved yet",
         ):
             self.assertIn(sentence, self.shipped, sentence)
+        # H-183: the module may name the harness internally, but no shipped learner sentence does.
+        self.assertNotIn("The lessons job has not run yet", self.shipped)
+        self.assertNotIn("The lessons job is writing lesson pages", self.shipped)
+        self.assertNotIn("The lessons job stopped", self.shipped)
 
     def test_the_section_start_action_is_gated_on_a_readable_page(self) -> None:
         # The chat run is the section's primary only after the approved page exists (H-174).
