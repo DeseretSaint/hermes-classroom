@@ -14,6 +14,11 @@ The rule is not "never say the word". The rule is:
 
 The check card itself is mounted through the route in other suites; here the check's limitation copy is
 pinned in source because the card is not an exported component.
+
+D8 (`t_30f6d252`) extends the inventory to the two cold-walk strings that sit outside the default
+sentences: the Parent Studio plan editor's objective row (an authoring surface, but still a
+sentence a parent reads) and the Sources card's bibliographic absence line. Both are rendered through
+the shipped components here, so the rule is enforced where the text is actually produced.
 """
 
 from __future__ import annotations
@@ -34,7 +39,7 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 HARNESS = """
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { FirstRun, SectionPage, lessonReadiness } from './plugin.js'
+import { FirstRun, SectionPage, SourceProvenanceCard, StudioPlanView, lessonReadiness } from './plugin.js'
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -55,6 +60,62 @@ out.firstRunNoTools = renderToStaticMarkup(
     onCreate: () => {},
     onBrowseLibrary: () => {},
     onRetry: () => {}
+  })
+)
+
+// D8: the Parent Studio plan editor is an authoring surface, but the state beside each objective
+// is still a sentence a parent reads. The backend enums stay in `data-*` attributes.
+out.planEditor = renderToStaticMarkup(
+  React.createElement(StudioPlanView, {
+    course: { course_id: 'crs_0123456789abcdef', enrollment_id: 'enr_0123456789abcdef', title: 'Order at a counter' },
+    revision: 1,
+    onRevision: () => {},
+    outline: {
+      status: 'ready',
+      error: null,
+      reload: () => {},
+      data: {
+        plan: { plan_id: 'pln_0123456789abcdef', state: 'draft', version: 1, units: [] },
+        objectives: [
+          {
+            objective_id: 'obj_0123456789abcdef',
+            title: 'Order at a counter',
+            state: 'not_started',
+            check_state: 'none',
+            ordinal: 1,
+            evidence_target: 'discrimination'
+          }
+        ]
+      }
+    },
+    book: null,
+    brief: null,
+    planJobId: null,
+    planJobHint: null,
+    onChangeGoal: () => {},
+    onJobSettled: () => {},
+    onChanged: () => {},
+    supported: () => true,
+    surface: 'parent',
+    outlineHidden: false,
+    syllabusGate: null,
+    review: null,
+    onOpenReview: () => {},
+    onDirtyChange: () => {}
+  })
+)
+
+// D8: the source card is the bibliographic surface UX_SPEC §7 names; a field the backend never
+// recorded is stated as an absence there, in the same words a learner reads.
+out.sourceCard = renderToStaticMarkup(
+  React.createElement(SourceProvenanceCard, {
+    source: {
+      source_id: 'src_0123456789abcdef',
+      title: 'Kitchen chemistry notes',
+      url: 'https://example.test/notes',
+      support_status: 'unassessed',
+      excerpt_state: 'missing'
+    }
   })
 )
 
@@ -276,6 +337,36 @@ class CopyInventory(unittest.TestCase):
     def test_first_run_plates_are_clean(self) -> None:
         self.assert_clean(visible_text(self.out["firstRun"]), "first run")
         self.assert_clean(visible_text(self.out["firstRunNoTools"]), "first run without tools")
+
+    # -- source provenance: the bibliographic absence sentence --------------------------------
+    def test_a_source_without_a_recorded_type_states_the_absence_plainly(self) -> None:
+        """D8: `Source type not recorded` is UX_SPEC §7's own field, in the house absence words.
+
+        It sits on the Sources card beside `Publisher not recorded`, names no job, id or typed
+        code, and the raw `source_id` / support class stay behind `Technical detail`.
+        """
+        text = visible_text(self.out["sourceCard"])
+        self.assertIn("Source type not recorded", text)
+        self.assertIn("Publisher not recorded", text)
+        self.assert_clean(text, "source provenance card")
+
+    # -- parent authoring: the plan editor's objective row ------------------------------------
+    def test_the_plan_editor_names_the_plan_state_in_words_not_enums(self) -> None:
+        """D8: an authoring surface is not a licence for `not_started` / `check_state` in copy.
+
+        The row still carries the backend's own state — as `data-cb-objective-state` — so
+        evidence inspection loses nothing; the sentence a parent reads is the trail vocabulary.
+        """
+        html = self.out["planEditor"]
+        text = visible_text(html)
+        self.assertIn("Not started · No check yet", text)
+        self.assertNotIn("not_started", text)
+        self.assertNotIn("check_state", text)
+        self.assertNotIn("State:", text)
+        self.assert_clean(text, "Parent Studio plan editor")
+        # The enum is still readable for evidence: it moved into the attribute, it did not vanish.
+        self.assertIn('data-cb-objective-state="not_started"', html)
+        self.assertIn('data-cb-objective-check="none"', html)
 
     # -- lesson / section / error states -----------------------------------------------------
     def test_every_readiness_state_is_clean_when_read(self) -> None:

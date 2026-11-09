@@ -113,14 +113,17 @@ branch: the M4 `plugin_sha256` pin, which must be re-rendered (`python3 scripts/
 
 ## Learner-surface copy still open
 
-H-183's inventory rule covers the default Home / lesson / section / check / first-run / error
-sentences. The cold walk's remaining strings sit on authoring surfaces and are not repaired by
-H-183; they are routed to a triage card rather than silently declared fixed:
+Triaged by `t_30f6d252` against `UX_SPEC.md` and H-183's rule (no job, queue, tick, revision, raw
+id or typed error code in the sentence a person reads; typed codes stay behind `Technical
+detail`). Each of the three cold-walk strings is now either replaced and pinned through the
+rendered component, or kept with the clause that makes the engineering wording correct there. No
+existing assertion was weakened to get green.
 
-- `desktop/plugin.js:24691` — `State: ${objective.state} · check: ${objective.check_state}` in the
-  plan/blueprint editor
-- `desktop/plugin.js:19888` — `Source type not recorded`
-- `desktop/plugin.js:2641` — `Session length could not be read` (red/Retry on first classroom arrival)
+| Site | Decision | Spec clause that governs it / pin |
+|---|---|---|
+| `desktop/plugin.js:24691` plan-editor objective row | **Replaced.** `State: <enum> · check: <enum>` → the trail vocabulary (`Not started · No check yet`, from `OBJECTIVE_STATE_COPY` + `cbCheckStateWord`). The raw enums moved into `data-cb-objective-state` / `data-cb-objective-check`, so evidence inspection loses nothing | UX_SPEC §6 / §7: states are read as words (`2 independent · 1 due`; filters `In progress`, `Review due`), never backend enums. Pinned by `tests/test_desktop_h183_copy_inventory.py::test_the_plan_editor_names_the_plan_state_in_words_not_enums`, rendered through `StudioPlanView` |
+| `desktop/plugin.js:19887` `Source type not recorded` | **Kept.** This is the Sources card's (not the create surface's) bibliographic field, stated as an absence in the same words as its sibling `Publisher not recorded` on the same line. No job, id, revision or typed code is in the sentence; `source_id` and the support class stay behind `Technical detail` | UX_SPEC §7 Sources: "Rows show title, publisher, source type, fetch/publication dates, support status, staleness, and claim count"; house absence rule at `desktop/plugin.js:2459` ("a value the backend never recorded is rendered as `not recorded` rather than guessed"). Pinned by `test_a_source_without_a_recorded_type_states_the_absence_plainly` |
+| `desktop/plugin.js:2641` `Session length could not be read` | **Kept as a failure sentence; the red state is not a first-arrival false alarm.** Measured on the real kernel (`scripts/probe_d8_estimate_first_arrival.py`): a fresh in-app enrollment has 0 outline objectives, so the estimate read never fires; if it did, `parent.brief.get` answers `NOT_FOUND`, which the desk renders as `Session length not recorded`. A fresh Parent Studio enrollment returns the brief → `≈ N min` (or `not recorded` when no duration was typed). `error` is reachable only when the read itself refuses or the host does not answer — a real failure, and Retry re-runs that same read | UX_SPEC §13 (`reconnecting`: stale read-only view and retry; never collapse a failed read into a recorded value) and §11 (`failed`: actual error, preserved work, retry); the three-state distinction is the desk's own rule at `desktop/plugin.js:2625`. Also `docs/ENGAGEMENT-AUDIT.md` Home · session estimate = pass |
 
 Reproduce the D8 measurement:
 
@@ -128,6 +131,8 @@ Reproduce the D8 measurement:
 git merge-base --is-ancestor 0b01f33 HEAD; git merge-base --is-ancestor 82200c2 HEAD
 git merge-base --is-ancestor 9596045 HEAD; git merge-base --is-ancestor aaaff15 HEAD
 python3 -m unittest tests.test_desktop_h148_path_truth   # 2 failures at c69bcb8
+python3 -m unittest tests.test_desktop_h183_copy_inventory
+python3 scripts/probe_d8_estimate_first_arrival.py       # estimate reachability on a fresh store
 ```
 
 ## D8 resolution on `scratch/int-d8-land` (`t_e0db4a27`)
