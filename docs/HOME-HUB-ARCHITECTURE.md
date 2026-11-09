@@ -27,7 +27,7 @@ adds classroom selection and checkpoint detail without changing the honesty mode
 
 | Surface | Reads today | Already gives | Missing |
 |---|---|---|---|
-| Field Desk (`plugin.js:2130-3260`) | `library.list` (50, recent), `course.outline`, `lesson.page` when sources open, `notebook.list` | Continue, section position, state-word path, three real counts, shelf, Field Notes | classroom choice, checkpoint detail, slot name |
+| Field Desk (`plugin.js:2130-3260`) | `library.list` (50, recent), `course.outline`, `lesson.page` when sources open, `notebook.list` | Continue, section position, state-word path, one Field-notes line, shelf | classroom choice, checkpoint detail, slot name |
 | Courses list | `library.list` filters/search/sort, `enrollment.update`, `enrollment.delete` | archive, pause, previewed delete, `empty_reason` | home-level grouping |
 | Course Detail | overview, textbook, notebook, quizzes, plan, evidence, export; `review.queue`, `evidence.inspect`, `jobs.list` | every per-section surface | — |
 | Parent Studio | `library.list?recipe=parent`, `parent.brief.get`, `parent.blueprint.read`, `parent.export`, `parent.reflection.list` | a parent-led authoring list | a learner classroom |
@@ -99,7 +99,9 @@ blueprint courses it is the current unit label, which hides `learner_label` (`do
    navigation, not a card grid: up to four text tabs at ≥44px with `aria-current` and a
    weight/underline cue; above four, one labelled “Classroom” select. This is the single “Switch”
    in `docs/DUOLINGO-RESEARCH.md`: the active classroom is named, alternatives are visible, and no
-   dashboard appears. No avatars, per-slot cover art or equal-weight cards.
+   dashboard appears. No avatars and no per-slot illustration: a classroom cover is type over paper
+   (or an authored artifact when the row carries one), and the trailhead is the only object above
+   the shelf.
 
 **Continue** stays exactly one control and reads the selected row's `next_step.kind` and `label`
 (`start_lesson`, `resume_lesson`, `resolve_review_due`, `rebind_session`, `review_plan`,
