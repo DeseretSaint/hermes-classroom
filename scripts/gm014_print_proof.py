@@ -312,7 +312,7 @@ image element. If any check fails the script exits without writing a manifest.
 ## What is not claimed
 
 - These are demo fixtures, not a published course. No native-speaker review is recorded and none is claimed.
-- **PDF tagging is not claimed.** Japanese runs in the HTML carry `lang="ja"`, but the Chromium PDF export is untagged, so the SVG's accessible title and description do not survive into the PDF. Selectable text is claimed and proven; PDF accessibility tagging is not.
+- **PDF tagging is not claimed.** Every Japanese run in the HTML — standalone and inline — carries `lang="ja"` on its own element, but the Chromium PDF export is untagged, so the SVG's accessible title and description do not survive into the PDF. Selectable text is claimed and proven; PDF accessibility tagging is not.
 - The parent guide's hash binds the pack to the demo fixture's own lesson block. `demo-japanese-l0-mealtime` and `obj_mealtime_greetings` name that fixture; no course with those ids exists in this repository.
 - No learner attempt, tutor turn, observation or child data is in any page.
 - No page was sent anywhere; generating and printing are local actions.

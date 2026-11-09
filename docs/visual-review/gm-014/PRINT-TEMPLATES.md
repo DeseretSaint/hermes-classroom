@@ -55,11 +55,15 @@ The only figure in the set is the label-task line drawing. It ships as inline SV
 drawing is orientation only and states no word or reading. The technical sheet deliberately has
 no figure: the structured torque rows are the diagram.
 
-Japanese runs in the HTML carry `lang="ja"` (the document itself is `lang="en"`), so an HTML
-consumer reads いただきます and ドア as Japanese. **PDF tagging is not claimed:** the Chromium
-export is untagged, so the SVG's accessible name and the `lang` attributes do not survive into
-the PDF. Selectable text is claimed and proven by extracting it back with `pdftotext`; PDF
-accessibility tagging is not.
+Japanese runs in the HTML carry `lang="ja"` (the document itself is `lang="en"`), including
+inline Japanese quoted inside English running copy, table cells and list items: each run is
+wrapped in its own `class="jp" lang="ja"` element, so an HTML consumer reads いただきます and
+ドア as Japanese even inside a sentence like "say いただきます (itadakimasu) out loud".
+`test_japanese_runs_declare_their_language` parses every rendered document and fails on any kana
+or ideograph text node that is not inside a `lang="ja"` element. **PDF tagging is not claimed:**
+the Chromium export is untagged, so the SVG's accessible name and the `lang` attributes do not
+survive into the PDF. Selectable text is claimed and proven by extracting it back with
+`pdftotext`; PDF accessibility tagging is not.
 
 ## Page numbers
 

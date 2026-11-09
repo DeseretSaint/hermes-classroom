@@ -99,8 +99,10 @@ under one manifest.
   is a separate document marked `PARENT ONLY · ANSWER GUIDE`.
 - Any figure carries `role="img"`, an accessible title and description, and a visible caption
   that says it is orientation only.
-- Japanese runs carry `lang="ja"` in the HTML. The exported PDF is untagged, so PDF accessibility
-  tagging is not claimed; selectable text is claimed and proven by `pdftotext`.
+- Japanese runs carry `lang="ja"` in the HTML, including inline runs quoted inside English
+  sentences; a test parses every rendered document and fails on any kana/ideograph text node
+  outside a `lang="ja"` element. The exported PDF is untagged, so PDF accessibility tagging is
+  not claimed; selectable text is claimed and proven by `pdftotext`.
 
 ## Limitations
 

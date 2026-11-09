@@ -20,6 +20,7 @@ import re
 import shutil
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 
 from coursebook import homework_print as hp
@@ -37,6 +38,48 @@ def fixture() -> dict:
 
 def sentences(text: str) -> list[str]:
     return [part for part in re.split(r"(?<=[.!?])\s+", text.strip()) if part]
+
+
+#: Kana (prolonged sound mark and interpunct included), CJK ideographs and compatibility block.
+JAPANESE = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
+
+#: Elements whose text is not running copy and cannot carry an inline span.
+_NO_LANG_SCOPE = {"title", "style", "script"}
+
+_VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
+
+class _LangScanner(HTMLParser):
+    """Collect Japanese text nodes that sit outside any ``lang="ja"`` element."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._stack: list[tuple[str, str]] = []
+        self.unmarked: list[tuple[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:  # type: ignore[no-untyped-def]
+        if tag in _VOID:
+            return
+        attributes = dict(attrs)
+        inherited = attributes.get("lang") or (self._stack[-1][1] if self._stack else "")
+        self._stack.append((tag, inherited))
+
+    def handle_startendtag(self, tag: str, attrs) -> None:  # type: ignore[no-untyped-def]
+        return
+
+    def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self._stack) - 1, -1, -1):
+            if self._stack[index][0] == tag:
+                del self._stack[index:]
+                return
+
+    def handle_data(self, data: str) -> None:
+        if not JAPANESE.search(data):
+            return
+        tag, lang = self._stack[-1] if self._stack else ("root", "")
+        if tag in _NO_LANG_SCOPE or lang.lower().startswith("ja"):
+            return
+        self.unmarked.append((tag, data.strip()[:120]))
 
 
 class HomeWorkContentRuleTest(unittest.TestCase):
@@ -206,13 +249,30 @@ class HomeWorkContentRuleTest(unittest.TestCase):
                     self.assertIn(label["romaji"], text)
 
     def test_japanese_runs_declare_their_language(self) -> None:
+        """Every Japanese text node, inline or block, sits inside ``lang="ja"``.
+
+        The older version of this test only looked at tags already carrying ``class="jp"``, so it
+        could not see Japanese pasted into English running copy, table cells or list items. This
+        scanner walks the parsed document, tracks the inherited language down the element stack,
+        and fails on any text node containing kana or ideographs that is not inside a
+        ``lang="ja"`` element. ``<title>`` and ``<style>`` are skipped: they are head metadata,
+        not running copy, and the PDF exporter does not carry ``lang`` into the tagged PDF either
+        way (documented in ``PRINT-PROOF.md``).
+        """
         data = fixture()
         for task in data["tasks"]:
             docs = hp.render_documents(data, task["task_id"])
             for role, html_text in docs.items():
-                for tag in re.findall(r'<[^>]*class="[^"]*\bjp\b[^"]*"[^>]*>', html_text):
-                    with self.subTest(task=task["task_id"], role=role, tag=tag):
-                        self.assertIn('lang="ja"', tag)
+                with self.subTest(task=task["task_id"], role=role):
+                    scanner = _LangScanner()
+                    scanner.feed(html_text)
+                    scanner.close()
+                    self.assertEqual(
+                        scanner.unmarked,
+                        [],
+                        f"{task['task_id']}/{role} prints Japanese with no lang=ja: "
+                        f"{scanner.unmarked[:5]}",
+                    )
 
     def test_answer_guide_is_separate_and_parent_only(self) -> None:
         data = fixture()

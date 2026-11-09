@@ -285,6 +285,7 @@ li {{ margin-bottom: 1.2mm; }}
 .jp {{
   font-family: "Noto Sans CJK JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "MS Gothic", sans-serif;
   font-feature-settings: "palt" 1;
+  word-break: keep-all;
 }}
 .target-field {{
   border: 1.5pt solid #1a1713;
@@ -380,6 +381,31 @@ def _esc(value: Any) -> str:
     return html.escape(str(value), quote=True)
 
 
+#: Kana (including the prolonged-sound mark and interpunct), CJK ideographs and the
+#: compatibility block. Anything in this range is Japanese script, so it must declare a
+#: language of its own inside an otherwise English document.
+_JP_RUN = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
+
+
+def _text_with_jp(value: Any) -> str:
+    """Escape running copy and mark every Japanese run with ``lang="ja"``.
+
+    A phrase like ``say いただきます (itadakimasu)`` is one English sentence with a Japanese
+    quotation inside it. Wrapping only the Japanese characters keeps the sentence readable to a
+    screen reader and keeps the phrase selectable in the PDF, while declaring the language of
+    the borrowed run.
+    """
+    text = str(value)
+    out: list[str] = []
+    position = 0
+    for match in _JP_RUN.finditer(text):
+        out.append(_esc(text[position:match.start()]))
+        out.append(f'<span class="jp" lang="ja">{_esc(match.group(0))}</span>')
+        position = match.end()
+    out.append(_esc(text[position:]))
+    return "".join(out)
+
+
 def _page(body: str, *, role: str, paper: str, index: int, total: int, running: str) -> str:
     return (
         f'<section class="sheet" data-role="{_esc(role)}" data-page="{index}" data-paper="{_esc(paper)}">'
@@ -403,11 +429,11 @@ def document_html(pages: Sequence[str], *, title: str, paper: str) -> str:
 
 
 def _masthead(eyebrow: str, title: str, deck: str = "") -> str:
-    deck_html = f"<p>{_esc(deck)}</p>" if deck else ""
+    deck_html = f"<p>{_text_with_jp(deck)}</p>" if deck else ""
     return (
         '<header class="masthead">'
         f'<div class="eyebrow">{_esc(eyebrow)}</div>'
-        f"<h1>{_esc(title)}</h1>"
+        f"<h1>{_text_with_jp(title)}</h1>"
         f"{deck_html}"
         "</header>"
     )
@@ -427,8 +453,8 @@ def _target_field(target: Mapping[str, Any]) -> str:
 def _fact_table(target: Mapping[str, Any]) -> str:
     return (
         '<table class="fact-table"><tr>'
-        f"<th>Register</th><td>{_esc(target['register'])}</td>"
-        f"<th>When</th><td>{_esc(target['use'])}</td>"
+        f"<th>Register</th><td>{_text_with_jp(target['register'])}</td>"
+        f"<th>When</th><td>{_text_with_jp(target['use'])}</td>"
         "</tr></table>"
     )
 
@@ -589,13 +615,13 @@ def _task_body(fixture: Mapping[str, Any], task: Mapping[str, Any], *, with_comp
         parts.append(_fact_table(target))
 
     parts.append("<h2>Where and when</h2>")
-    parts.append(f"<p>{_esc(task['context'])}</p>")
+    parts.append(f"<p>{_text_with_jp(task['context'])}</p>")
     parts.append("<h2>Do this</h2>")
-    steps = "".join(f"<li>{_esc(step)}</li>" for step in task["steps"])
+    steps = "".join(f"<li>{_text_with_jp(step)}</li>" for step in task["steps"])
     parts.append(f'<ol class="step-list">{steps}</ol>')
     parts.append(
         '<div class="criterion"><span class="eyebrow">You are done when</span>'
-        f"<p>{_esc(task['success_criterion'])}</p></div>"
+        f"<p>{_text_with_jp(task['success_criterion'])}</p></div>"
     )
     parts.append(
         f'<p class="quiet">About {int(task["estimated_minutes"])} minutes. '
@@ -640,16 +666,16 @@ def _homework_sheet(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: 
     else:
         parts.append(_target_field(target))
     parts.append("<h2>Where and when</h2>")
-    parts.append(f"<p>{_esc(task['context'])}</p>")
+    parts.append(f"<p>{_text_with_jp(task['context'])}</p>")
     parts.append("<h2>Do this</h2>")
     parts.append(
         '<ol class="step-list">'
-        + "".join(f"<li>{_esc(step)}</li>" for step in task["steps"])
+        + "".join(f"<li>{_text_with_jp(step)}</li>" for step in task["steps"])
         + "</ol>"
     )
     parts.append(
         '<div class="criterion"><span class="eyebrow">You are done when</span>'
-        f"<p>{_esc(task['success_criterion'])}</p></div>"
+        f"<p>{_text_with_jp(task['success_criterion'])}</p></div>"
     )
     parts.append(
         '<div class="completion">'
@@ -702,21 +728,21 @@ def _parent_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
     ]
 
     sources = "".join(
-        f"<li>{_esc(source['title'])} — <span class=\"hash\">{_esc(source['url'])}</span> "
-        f"(accessed {_esc(source['accessed'])}): {_esc(source['quote'])}</li>"
+        f"<li>{_text_with_jp(source['title'])} — <span class=\"hash\">{_esc(source['url'])}</span> "
+        f"(accessed {_esc(source['accessed'])}): {_text_with_jp(source['quote'])}</li>"
         for source in lesson["sources"]
         if source["source_id"] in _task_source_ids(fixture, task)
     )
-    notice_html = "".join(f"<li>{_esc(item)}</li>" for item in _notice_items(fixture, task))
+    notice_html = "".join(f"<li>{_text_with_jp(item)}</li>" for item in _notice_items(fixture, task))
     errors_text = " ".join(_common_errors_text(fixture, task))
     page_two = [
         _masthead("Coursebook · parent guide · page two", "What to notice, and where the words come from"),
         "<h2>What to notice</h2>",
         f"<ul>{notice_html}</ul>",
         "<h2>Expected responses and next step</h2>",
-        f"<p><strong>Expected:</strong> {_esc(_expected_response(fixture, task))}</p>",
-        f"<p><strong>Common errors:</strong> {_esc(errors_text)} Correct once, calmly, and move on.</p>",
-        f"<p><strong>Next step:</strong> {_esc(_next_step_text(fixture, task))}</p>",
+        f"<p><strong>Expected:</strong> {_text_with_jp(_expected_response(fixture, task))}</p>",
+        f"<p><strong>Common errors:</strong> {_text_with_jp(errors_text)} Correct once, calmly, and move on.</p>",
+        f"<p><strong>Next step:</strong> {_text_with_jp(_next_step_text(fixture, task))}</p>",
         "<h2>Sources for this task</h2>",
         f'<ul class="source-list">{sources}</ul>',
         "<p class=\"quiet\">Each form, reading and gloss is recorded against the entries above. "
@@ -804,11 +830,13 @@ def _answer_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         )
     parts.append("<h2>Common errors</h2>")
     parts.append(
-        "<ul>" + "".join(f"<li>{_esc(item)}</li>" for item in _common_errors_text(fixture, task)) + "</ul>"
+        "<ul>"
+        + "".join(f"<li>{_text_with_jp(item)}</li>" for item in _common_errors_text(fixture, task))
+        + "</ul>"
     )
     parts.append("<h2>Next step</h2>")
     parts.append(
-        f"<p>{_esc(_next_step_text(fixture, task))} "
+        f"<p>{_text_with_jp(_next_step_text(fixture, task))} "
         "No grade, score or XP is recorded here.</p>"
     )
     parts.append(
