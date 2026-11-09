@@ -166,6 +166,8 @@ const state = () => json(`(() => {
     continuePlate: document.querySelectorAll('[data-cb-continue]').length,
     trailhead: document.querySelector('[data-cb-trailhead-state]')?.getAttribute('data-cb-trailhead-state') || null,
     shelfScrolls: shelf ? shelf.scrollWidth > shelf.clientWidth + 1 : null,
+    shelfMask: shelf ? shelf.getAttribute('data-cb-shelf-mask') : null,
+    shelfMaskImage: shelf ? getComputedStyle(shelf).maskImage || getComputedStyle(shelf).webkitMaskImage : null,
     pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     innerWidth: window.innerWidth,
     innerHeight: window.innerHeight,
@@ -323,20 +325,37 @@ if (PHASE === 'base') {
   await capture('home.global--1049--light--100--focus', { focus_target: focusTarget })
 
   await setMotion(true); await capture('home.global--1049--light--100--reduced-motion'); await setMotion(false)
-  // The overflow cell must show the shelf tray actually scrolled (matrix.json: "shelf scrolled
-  // with the right-edge mask"), not just that it *is* scrollable. Scroll it to the end, prove the
-  // scroll took, and refuse to record a frame that is byte-identical to another cell.
+  // The overflow cell must show the shelf tray scrolled with the right-edge mask
+  // (matrix.json: "shelf scrolled with the right-edge mask"), not just that it *is* scrollable.
+  // Park the row mid-way so both edges still have cards behind them, prove the scroll took, prove
+  // GM-VISUAL-SPEC §2.5's 24px paper→transparent mask is painted, and refuse to record a frame
+  // that is byte-identical to another cell.
   const shelfScroll = await evaluate(`(() => {
     const row = document.querySelector('[data-cb-home-shelf-row]')
     if (!row) return null
-    row.scrollLeft = row.scrollWidth
-    return { scrollLeft: row.scrollLeft, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth }
+    const max = row.scrollWidth - row.clientWidth
+    row.scrollLeft = Math.round(max * 0.45)
+    return { scrollLeft: row.scrollLeft, scrollWidth: row.scrollWidth, clientWidth: row.clientWidth, max }
   })()`)
   if (!shelfScroll || !(shelfScroll.scrollLeft > 0)) throw new Error(`shelf did not scroll for the overflow cell: ${JSON.stringify(shelfScroll)}`)
-  await wait(350)
+  await wait(400)
+  const shelfMask = await evaluate(`(() => {
+    const row = document.querySelector('[data-cb-home-shelf-row]')
+    if (!row) return null
+    const style = getComputedStyle(row)
+    return {
+      state: row.getAttribute('data-cb-shelf-mask'),
+      maskImage: style.maskImage || style.webkitMaskImage || null
+    }
+  })()`)
+  const maskDrawn = Boolean(shelfMask)
+    && (shelfMask.state === 'both' || shelfMask.state === 'right')
+    && Boolean(shelfMask.maskImage) && shelfMask.maskImage !== 'none'
+  if (!maskDrawn) throw new Error(`shelf edge mask missing for the overflow cell: ${JSON.stringify(shelfMask)}`)
   await capture('home.global--1049--light--100--overflow', {
-    note: 'shelf tray scrolled to its end; trailing card cut at the right edge; the page itself must not overflow',
-    shelf_scroll: shelfScroll
+    note: 'shelf tray parked mid-scroll; both edges carry the 24px paper→transparent mask (GM-VISUAL-SPEC §2.5); the page itself must not overflow',
+    shelf_scroll: shelfScroll,
+    shelf_mask: shelfMask
   })
   const overflowFrame = evidence.find((frame) => frame.id === 'home.global--1049--light--100--overflow')
   const duplicateOf = ['home.global--1049--light--100--reduced-motion', 'home.global--1049--light--100--default']
@@ -507,9 +526,10 @@ if (PHASE === 'full') {
   await wait(700)
   await setAppearance('light')
   // README §1 rule 2: a screen that scrolls needs a full-page capture next to the first viewport.
-  // Global Home scrolls at 200 % text (both widths); record the full page only where it does.
+  // Global Home scrolls at 200 % text (both widths) and at 460/100 (the stacked shelf runs past
+  // the fold); record the full page only where it does.
   await ensureHome()
-  for (const [width, scale] of [[1049, 200], [460, 200]]) {
+  for (const [width, scale] of [[460, 100], [1049, 200], [460, 200]]) {
     await setTextScale(scale)
     await setWidth(width)
     await captureFull(`home.global--${width}--light--${scale}--full`)

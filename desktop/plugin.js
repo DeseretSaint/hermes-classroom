@@ -2720,6 +2720,40 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
 }
 
 /**
+ * GM-VISUAL-SPEC §2.5 — the shelf's edge affordance. A shelf that overflows fades the last 24px
+ * at each edge that still has cards behind it, drawn as a `paper`→transparent mask on the scroll
+ * container (a mask, not a gradient fill painted on a surface). Without it a clipped card is a
+ * hard cut and nothing tells the learner the shelf scrolls.
+ *
+ * `state` is the measured edge (`data-cb-shelf-mask`) the live capture asserts on; `style` is the
+ * mask itself.
+ */
+function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
+  const left = Number(scrollLeft) || 0
+  const client = Number(clientWidth) || 0
+  const total = Number(scrollWidth) || 0
+  if (total - client <= 1) return { state: 'none', style: {} }
+  const fadeStart = left > 1
+  const fadeEnd = left < total - client - 1
+  if (!fadeStart && !fadeEnd) return { state: 'none', style: {} }
+  const stops = fadeStart ? ['transparent 0', 'black 24px'] : ['black 0']
+  if (fadeEnd) stops.push('black calc(100% - 24px)', 'transparent 100%')
+  else stops.push('black 100%')
+  const maskImage = `linear-gradient(to right, ${stops.join(', ')})`
+  return {
+    state: fadeStart && fadeEnd ? 'both' : fadeEnd ? 'right' : 'left',
+    style: {
+      maskImage,
+      WebkitMaskImage: maskImage,
+      maskRepeat: 'no-repeat',
+      WebkitMaskRepeat: 'no-repeat',
+      maskSize: '100% 100%',
+      WebkitMaskSize: '100% 100%'
+    }
+  }
+}
+
+/**
  * GM-002 — the global Home, a field library and a threshold.
  *
  * It answers "what do I want to learn now?" with one question, one filled create action, one
@@ -2753,6 +2787,23 @@ function CoursebookHome({
   const total = Math.max(Number(data && data.total) || 0, hub.total)
   const modeMap = modes && typeof modes === 'object' ? modes : {}
   const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
+  // The shelf fades the edge that still has cards behind it (GM-VISUAL-SPEC §2.5). Measured from
+  // the live row: jsdom/SSR report zeroes and honestly stay `none`.
+  const shelfRowRef = useRef(null)
+  const [shelfMask, setShelfMask] = useState({ state: 'none', style: {} })
+  const shelfSlotCount = slots.length
+  useEffect(() => {
+    const row = shelfRowRef.current
+    if (!row) return undefined
+    const measure = () => setShelfMask(cbShelfEdgeMask(row.scrollLeft, row.clientWidth, row.scrollWidth))
+    measure()
+    row.addEventListener('scroll', measure, { passive: true })
+    window.addEventListener('resize', measure)
+    return () => {
+      row.removeEventListener('scroll', measure)
+      window.removeEventListener('resize', measure)
+    }
+  }, [status, narrow, shelfSlotCount])
 
   const invitation = jsxs('div', {
     'data-cb-home-invitation': '',
@@ -2874,6 +2925,8 @@ function CoursebookHome({
         }, 'head'),
         jsx('div', {
           'data-cb-home-shelf-row': '',
+          'data-cb-shelf-mask': shelfMask.state,
+          ref: shelfRowRef,
           role: 'list',
           'aria-label': CB_HOME_COPY.shelf,
           style: {
@@ -2884,7 +2937,8 @@ function CoursebookHome({
             overflowX: narrow ? 'visible' : 'auto',
             paddingBottom: '0.7rem',
             borderBottom: '2px solid var(--cb-rule)',
-            minWidth: 0
+            minWidth: 0,
+            ...shelfMask.style
           },
           children: slots.map((slot, index) =>
             jsx(HomeCourseCard, {
@@ -29154,6 +29208,7 @@ export {
   FieldRail,
   FieldDeskHome,
   CoursebookHome,
+  cbShelfEdgeMask,
   HomeLibraryPanel,
   HomeCourseCard,
   readCoursePresentationMode,

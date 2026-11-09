@@ -32,7 +32,7 @@ STATIC_HARNESS = r"""
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import fs from 'node:fs'
-import { CoursebookHome, FieldDeskHome, buildDeskModel } from './plugin.js'
+import { CoursebookHome, FieldDeskHome, buildDeskModel, cbShelfEdgeMask } from './plugin.js'
 
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 
@@ -45,7 +45,10 @@ const lib = (rows, overrides = {}) => ({
   ...overrides
 })
 
-if (payload.kind === 'course-home') {
+if (payload.kind === 'shelf-mask') {
+  const mask = cbShelfEdgeMask(payload.scrollLeft, payload.clientWidth, payload.scrollWidth)
+  process.stdout.write(JSON.stringify({ mask }))
+} else if (payload.kind === 'course-home') {
   const desk = buildDeskModel({
     library: lib(payload.rows),
     outline: payload.outline || null,
@@ -343,6 +346,50 @@ class CoursebookHomeTest(Base):
         self.assertIn("See all", html)
         self.assertIn("Course number 7", html)
         self.assertNotIn("Course number 1", html, "the oldest course belongs behind See all")
+
+    def mask(self, scroll_left: float, client_width: float, scroll_width: float) -> dict:
+        payload = json.loads(
+            self.run_node(
+                "static.mjs",
+                {
+                    "kind": "shelf-mask",
+                    "scrollLeft": scroll_left,
+                    "clientWidth": client_width,
+                    "scrollWidth": scroll_width,
+                },
+            )
+        )
+        return payload["mask"]
+
+    def test_shelf_edge_mask_marks_overflow_on_the_right(self) -> None:
+        # GM-VISUAL-SPEC §2.5: a shelf that overflows draws a 24px paper→transparent mask at the
+        # edge with content behind it, so a clipped card reads "the shelf continues" rather than
+        # a hard cut. matrix.json's overflow cell asserts this affordance.
+        mask = self.mask(0, 938, 1496)
+        self.assertEqual(mask["state"], "right")
+        self.assertIn("calc(100% - 24px)", mask["style"]["maskImage"])
+        self.assertIn("transparent 100%", mask["style"]["maskImage"])
+        self.assertEqual(mask["style"]["WebkitMaskImage"], mask["style"]["maskImage"])
+        self.assertEqual(mask["style"]["maskRepeat"], "no-repeat")
+
+    def test_shelf_edge_mask_tracks_both_edges_and_the_end(self) -> None:
+        middle = self.mask(300, 938, 1496)
+        self.assertEqual(middle["state"], "both", "a mid-scroll shelf has content behind both edges")
+        self.assertIn("transparent 0", middle["style"]["maskImage"])
+        end = self.mask(558, 938, 1496)
+        self.assertEqual(end["state"], "left", "at the end only the left edge has more content")
+        self.assertNotIn("transparent 100%", end["style"]["maskImage"])
+
+    def test_shelf_edge_mask_is_absent_when_the_shelf_fits(self) -> None:
+        mask = self.mask(0, 938, 900)
+        self.assertEqual(mask["state"], "none")
+        self.assertEqual(mask["style"], {})
+
+    def test_shelf_row_declares_its_mask_state(self) -> None:
+        # Static render cannot measure layout, so the row starts honest at `none`; the live
+        # capture asserts the measured `right`/`both` state and the painted fade.
+        html = self.home(rows=[row(index) for index in range(1, 4)])
+        self.assertRegex(html, r'data-cb-home-shelf-row=""[^>]*data-cb-shelf-mask="none"')
 
     def test_card_does_not_repeat_the_next_step_as_a_goal(self) -> None:
         # A shelf row with no stored goal or subtitle must print the next-step sentence once, not
