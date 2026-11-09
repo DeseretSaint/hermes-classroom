@@ -280,6 +280,19 @@ cannot stop it):
   checkpoint preserved;
 * `cancel_requested`/`cancelling` + expired/absent lease → `cancelled`.
 
+The reaper thread also has **no request scope of its own** (H-182/D6). Copying the context is not
+enough: the copied context may carry no profile override at all, so the thread resolved
+`get_hermes_home()` from whatever the plugin loader left behind. In the isolated
+`hermes serve --isolated` topology that home had no `jobs` table — and `db.connect()` *created* the
+empty file — so the reaper raised `no such table: jobs` every five seconds and H-66 reconciliation
+never ran. `executor.start_tick` now snapshots the store root with `db.store_scope()` **in the
+registering context** (the same resolution a request gets, including
+`HERMES_COURSEBOOK_SINGLE_HOME`) and pins every background thread it starts with
+`db.use_store_scope()`; `db.connect()` opens that exact file. A store with **no schema yet** — the
+normal state before the first Coursebook action — is now a skip that is logged once, not an
+exception every pass, and the reaper never provisions a store no command has created. The pump
+thread takes the same pin, because it reads the same database.
+
 ### 8.5 What is still true, and stated plainly
 
 * A synchronous host call that ignores its deadline is not killed; it holds one pool slot until it
