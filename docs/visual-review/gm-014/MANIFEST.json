@@ -1,0 +1,512 @@
+{
+  "contract": "cb.print_proof",
+  "contract_version": 1,
+  "generated": "2026-11-09",
+  "generated_by": "scripts/gm014_print_proof.py",
+  "fixture": {
+    "path": "bundled/homework/japanese-l0-mealtime/fixture.json",
+    "fixture_id": "jp-l0-mealtime",
+    "binding": {
+      "source_course_id": "demo-japanese-l0-mealtime",
+      "source_objective_id": "obj_mealtime_greetings",
+      "source_lesson_version": "2026-11-09.1",
+      "source_lesson_hash": "sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a"
+    },
+    "source_lesson_hash": "sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a",
+    "fixture_lesson_block_hash": "sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a",
+    "lesson_hash_covers": "the fixture's own lesson block, not a live course lesson",
+    "content_problems": []
+  },
+  "environment": {
+    "chromium": "Chromium 155.0.8059.84 Arch Linux",
+    "pdfinfo": "pdfinfo",
+    "pdftotext": "pdftotext",
+    "pdftoppm": "pdftoppm",
+    "japanese_font_expected": "Noto Sans CJK JP"
+  },
+  "documents": [
+    {
+      "file": "a4/hw_premeal-parent-guide.pdf",
+      "paper": "A4",
+      "role": "parent_guide",
+      "task_id": "hw_premeal",
+      "pages": 2,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:4be19dbce67975cb90b81c63be0189dd7a592d49ca6892c3c345a7c57927f78c",
+      "bytes": 94298,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "The four steps",
+        "It does not regenerate a lesson, clone a course or touch any evidence.",
+        "Page 2 of 2"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_premeal-learner-page.pdf",
+      "paper": "A4",
+      "role": "learner_page",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:2c04e8111d1b502e607698b06c3f2df3bd5ebe403fef2021ce410234d21ef01e",
+      "bytes": 63453,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "It is not a pass, a score or evidence of mastery.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_premeal-answer-guide.pdf",
+      "paper": "A4",
+      "role": "answer_guide",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:4dc607fa9614174fa279f98fb00791f5c2cc5d4f3a4fa26c60ee9575db27d44d",
+      "bytes": 60495,
+      "required_text": [
+        "PARENT ONLY",
+        "ANSWER GUIDE",
+        "Common errors",
+        "It is never a pass, a mastery claim or evidence of learning.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_premeal-homework-sheet.pdf",
+      "paper": "A4",
+      "role": "homework_sheet",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:b828dd02ada81493ead702ff1874b6f6d8efd6df37902fd944c4d2eaedb16654",
+      "bytes": 61464,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "No photo, recording or location is asked for.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_postmeal-parent-guide.pdf",
+      "paper": "A4",
+      "role": "parent_guide",
+      "task_id": "hw_postmeal",
+      "pages": 2,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:38895f5790a042ec356442750b46bb002287c97b8602c42ffc6340882c8a02c0",
+      "bytes": 98399,
+      "required_text": [
+        "Say the after-meal greeting when you finish",
+        "ごちそうさまでした",
+        "The four steps",
+        "It does not regenerate a lesson, clone a course or touch any evidence.",
+        "Page 2 of 2"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_postmeal-learner-page.pdf",
+      "paper": "A4",
+      "role": "learner_page",
+      "task_id": "hw_postmeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:09b564ca32e2b08e417a661bad5e789d86b1bf514f698e9ee85b93f26b35ec75",
+      "bytes": 64840,
+      "required_text": [
+        "Say the after-meal greeting when you finish",
+        "ごちそうさまでした",
+        "It is not a pass, a score or evidence of mastery.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_postmeal-answer-guide.pdf",
+      "paper": "A4",
+      "role": "answer_guide",
+      "task_id": "hw_postmeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:07e7f80eea4df142c5918e17c18d28ea5fc0309211a9ccd1f84e41181f218be7",
+      "bytes": 62037,
+      "required_text": [
+        "PARENT ONLY",
+        "ANSWER GUIDE",
+        "Common errors",
+        "It is never a pass, a mastery claim or evidence of learning.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_postmeal-homework-sheet.pdf",
+      "paper": "A4",
+      "role": "homework_sheet",
+      "task_id": "hw_postmeal",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:e5ff2094ea1a92f6c7fefb706f5d28bb16c26f29b5e26dce21c8c4521020346e",
+      "bytes": 63015,
+      "required_text": [
+        "Say the after-meal greeting when you finish",
+        "ごちそうさまでした",
+        "No photo, recording or location is asked for.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_labels-parent-guide.pdf",
+      "paper": "A4",
+      "role": "parent_guide",
+      "task_id": "hw_labels",
+      "pages": 2,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:cedeaf5c50cbef085d93c10aa6d5b997abcc8cdcdb59ba10e414f879a34d7079",
+      "bytes": 106209,
+      "required_text": [
+        "Label three household objects",
+        "ドア・まど・いす",
+        "The four steps",
+        "It does not regenerate a lesson, clone a course or touch any evidence.",
+        "Page 2 of 2"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_labels-learner-page.pdf",
+      "paper": "A4",
+      "role": "learner_page",
+      "task_id": "hw_labels",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:bddddcd3bc11be760abee5b8bc3d81aa777411199fb093b2feda6d275e74b5fd",
+      "bytes": 69631,
+      "required_text": [
+        "Label three household objects",
+        "ドア・まど・いす",
+        "It is not a pass, a score or evidence of mastery.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_labels-answer-guide.pdf",
+      "paper": "A4",
+      "role": "answer_guide",
+      "task_id": "hw_labels",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:e9cc486bd5e607c06e26e3f1329e4a4eec47b05e647132c5b21ab13fb0eb6010",
+      "bytes": 62450,
+      "required_text": [
+        "PARENT ONLY",
+        "ANSWER GUIDE",
+        "Common errors",
+        "It is never a pass, a mastery claim or evidence of learning.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/hw_labels-homework-sheet.pdf",
+      "paper": "A4",
+      "role": "homework_sheet",
+      "task_id": "hw_labels",
+      "pages": 1,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:381e317ff71d6d1e8064df11bc36a88adeb585f2b2a4cd8ac7e0384261897f14",
+      "bytes": 68696,
+      "required_text": [
+        "Label three household objects",
+        "ドア・まど・いす",
+        "No photo, recording or location is asked for.",
+        "Page 1 of"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "letter/hw_premeal-parent-guide.pdf",
+      "paper": "Letter",
+      "role": "parent_guide",
+      "task_id": "hw_premeal",
+      "pages": 2,
+      "page_size": "612 x 792 pts (letter)",
+      "sha256": "sha256:32c355af9c76f06fb05aa3f2ee1b52bc36ab02079d7731af1dc016464d80136b",
+      "bytes": 94303,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "The four steps",
+        "It does not regenerate a lesson, clone a course or touch any evidence.",
+        "Page 2 of 2"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "letter/hw_premeal-learner-page.pdf",
+      "paper": "Letter",
+      "role": "learner_page",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "612 x 792 pts (letter)",
+      "sha256": "sha256:e395bbc51e2ba2e121b5592180cb770943c2d15c5542e6b6915fa3679444934b",
+      "bytes": 63431,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "It is not a pass, a score or evidence of mastery.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "letter/hw_premeal-answer-guide.pdf",
+      "paper": "Letter",
+      "role": "answer_guide",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "612 x 792 pts (letter)",
+      "sha256": "sha256:b5b2693541c9fdd71266120b147dca692d08ed30b2b691684ba84d86d4ef3dd2",
+      "bytes": 60475,
+      "required_text": [
+        "PARENT ONLY",
+        "ANSWER GUIDE",
+        "Common errors",
+        "It is never a pass, a mastery claim or evidence of learning.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "letter/hw_premeal-homework-sheet.pdf",
+      "paper": "Letter",
+      "role": "homework_sheet",
+      "task_id": "hw_premeal",
+      "pages": 1,
+      "page_size": "612 x 792 pts (letter)",
+      "sha256": "sha256:9e9433c6bd4896c78caf098fbd7708dae7f5ce54ee595d3db7c9ad4d35a0cfca",
+      "bytes": 61431,
+      "required_text": [
+        "Say the before-meal greeting at one meal",
+        "いただきます",
+        "No photo, recording or location is asked for.",
+        "Page 1 of 1"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    },
+    {
+      "file": "a4/technical-head-gasket.pdf",
+      "paper": "A4",
+      "role": "technical_sheet",
+      "task_id": null,
+      "pages": 2,
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "sha256": "sha256:19bfa91797433fa98e504db5f509d3c12f5e48853ac1d5702619fe4174400d3c",
+      "bytes": 74559,
+      "required_text": [
+        "Replace the head gasket",
+        "STOP CONDITION",
+        "20 Nm",
+        "40 Nm",
+        "Deterministic schematic",
+        "permission: licensed",
+        "If any step was skipped, stop and do not start the engine.",
+        "Page 2 of 2"
+      ],
+      "required_text_present": true,
+      "missing_text": []
+    }
+  ],
+  "png_proofs": [
+    {
+      "file": "a4/hw_premeal-parent-guide-1.png",
+      "source": "a4/hw_premeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_premeal-parent-guide-2.png",
+      "source": "a4/hw_premeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_premeal-learner-page-1.png",
+      "source": "a4/hw_premeal-learner-page.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_premeal-answer-guide-1.png",
+      "source": "a4/hw_premeal-answer-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_premeal-homework-sheet-1.png",
+      "source": "a4/hw_premeal-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-parent-guide-1.png",
+      "source": "a4/hw_postmeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-parent-guide-2.png",
+      "source": "a4/hw_postmeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-learner-page-1.png",
+      "source": "a4/hw_postmeal-learner-page.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-answer-guide-1.png",
+      "source": "a4/hw_postmeal-answer-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_postmeal-homework-sheet-1.png",
+      "source": "a4/hw_postmeal-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_labels-parent-guide-1.png",
+      "source": "a4/hw_labels-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_labels-parent-guide-2.png",
+      "source": "a4/hw_labels-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_labels-learner-page-1.png",
+      "source": "a4/hw_labels-learner-page.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_labels-answer-guide-1.png",
+      "source": "a4/hw_labels-answer-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/hw_labels-homework-sheet-1.png",
+      "source": "a4/hw_labels-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-parent-guide-1.png",
+      "source": "letter/hw_premeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-parent-guide-2.png",
+      "source": "letter/hw_premeal-parent-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-learner-page-1.png",
+      "source": "letter/hw_premeal-learner-page.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-answer-guide-1.png",
+      "source": "letter/hw_premeal-answer-guide.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "letter/hw_premeal-homework-sheet-1.png",
+      "source": "letter/hw_premeal-homework-sheet.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/technical-head-gasket-1.png",
+      "source": "a4/technical-head-gasket.pdf",
+      "dpi": 144
+    },
+    {
+      "file": "a4/technical-head-gasket-2.png",
+      "source": "a4/technical-head-gasket.pdf",
+      "dpi": 144
+    }
+  ],
+  "bw_proofs": [
+    {
+      "file": "bw/hw_premeal-parent-guide-1.png",
+      "source": "a4/hw_premeal-parent-guide.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/hw_premeal-parent-guide-2.png",
+      "source": "a4/hw_premeal-parent-guide.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/hw_premeal-learner-page-1.png",
+      "source": "a4/hw_premeal-learner-page.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/hw_premeal-answer-guide-1.png",
+      "source": "a4/hw_premeal-answer-guide.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/hw_premeal-homework-sheet-1.png",
+      "source": "a4/hw_premeal-homework-sheet.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/technical-head-gasket-1.png",
+      "source": "a4/technical-head-gasket.pdf",
+      "dpi": 150,
+      "grayscale": true
+    },
+    {
+      "file": "bw/technical-head-gasket-2.png",
+      "source": "a4/technical-head-gasket.pdf",
+      "dpi": 150,
+      "grayscale": true
+    }
+  ],
+  "checks": {
+    "content_rules": "pass",
+    "page_size_matches_requested_paper": "pass",
+    "page_count_matches_html_sheet_count": "pass",
+    "required_text_and_tail_present_in_pdf": "pass",
+    "answer_guide_separate_from_learner_page": "pass",
+    "no_generated_image_in_technical_sheet": "pass",
+    "low_ink_backgrounds": "pass"
+  }
+}
