@@ -20,16 +20,16 @@ authoritative product plan is `docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md`; the pre-b
 
 | Card | Work | Owner | Reviewer | Parents | Branch |
 |---|---|---|---|---|---|
-| GM-001 | Contract freeze: modes, worlds, take-home, homework, engagement, tutor | cinder | sentinel | — | `wt/gm-001-contract` |
-| GM-013 | Visual direction, concept-parity rubric, print/art spec | quill | atlas | GM-001 | `wt/gm-013-visual-spec` |
+| GM-001 | Contract freeze: modes, worlds, take-home, homework, engagement, tutor | cinder | cbqa | — | `wt/gm-001-contract` |
+| GM-013 | Visual direction, concept-parity rubric, print/art spec | quill | atlas | — | `wt/gm-013-visual-spec` |
 | GM-002 | Global Home launcher and course-home split | vellum | quill | GM-001, GM-013 | `wt/gm-002-home` |
-| GM-003 | WorldPolicy, textless prompts, world media job/cache | sable | sentinel | GM-001 | `wt/gm-003-world` |
-| GM-005 | Parent Studio source picker and take-home pack backend | lattice | sentinel | GM-001 | `wt/gm-005-takehome` |
+| GM-003 | WorldPolicy, textless prompts, world media job/cache | sable | sentinel | — | `wt/gm-003-world` |
+| GM-005 | Parent Studio source picker and take-home pack backend | lattice | sentinel | — | `wt/gm-005-takehome` |
 | GM-007 | Homework generator, policy and Japanese fixtures | lattice | cbqa | GM-005 | `wt/gm-007-homework` |
-| GM-009 | Game engagement store and XP rules | cinder | sentinel | GM-001 | `wt/gm-009-engagement` |
+| GM-009 | Game engagement store and XP rules | cinder | sentinel | — | `wt/gm-009-engagement` |
 | GM-004 | World Studio and course world surface | vellum | quill | GM-002, GM-003 | `wt/gm-004-world-ui` |
 | GM-006 | Parent Studio take-home surfaces | vellum | quill | GM-004, GM-005 | `wt/gm-006-parent-ui` |
-| GM-014 | Homework/print content fixtures and print proof | harbor | cbqa | GM-007 | `wt/gm-014-content-print` |
+| GM-014 | Homework/print content fixtures and print proof | harbor | cbqa | — | `wt/gm-014-content-print` |
 | GM-008 | Homework and adult take-home UI | vellum | quill | GM-006, GM-007, GM-014 | `wt/gm-008-homework-ui` |
 | GM-011 | Tutor.ask backend and practice integration | cinder | sentinel | GM-009 | `wt/gm-011-tutor` |
 | GM-010 | Game engagement UI | vellum | quill | GM-008, GM-009 | `wt/gm-010-engagement-ui` |
@@ -37,6 +37,32 @@ authoritative product plan is `docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md`; the pre-b
 | GM-015 | Independent behavioral QA and adversarial review | sentinel | cbqa | all implementation cards | `wt/gm-015-qa` |
 | GM-016 | Final visual parity acceptance | cbqa | quill | GM-015 | `wt/gm-016-visual` |
 | GM-017 | Integration, merge, docs and handoff | atlas | sentinel | GM-015, GM-016 | `wt/gm-017-integration` |
+
+The contract branch `wt/gm-001-contract` was merged into `master` after the contract tests passed;
+GM-005 and GM-009 were released to run against that merged contract while the independent review
+of GM-001 continued. If the review rejects the contract, the affected cards return to the contract
+card; no worker is allowed to patch around a rejected contract.
+
+## Parallelism and file ownership
+
+The board can run six workers. Independent cards start together; only real file or state overlap
+is serialized.
+
+- **Concurrent now:** GM-001 contract review (cbqa), GM-013 visual spec (quill), GM-003 world
+  backend (sable), GM-005 take-home backend (lattice), GM-009 engagement backend (cinder), and
+  GM-014 print/content proof (harbor).
+- **Backend parallel wave:** GM-003, GM-005, GM-009, GM-014 and GM-007 (after GM-005) own
+  different modules. They may run together; they must not edit each other's files.
+- **Single writer:** every card that changes `desktop/plugin.js` is Vellum-only and runs in the
+  serial chain Home -> World Studio -> Parent Studio -> Homework -> Engagement -> Tutor rail.
+  Two UI cards never run concurrently, even if their product areas are independent.
+- **Migration and contract:** only GM-001 owns migration 0013 and the frozen contract manifest.
+  A later card that needs a schema change must return to a contract card; it must not edit the
+  migration concurrently.
+- **QA/final:** GM-015 and GM-016 wait for all implementation parents; they are review gates, not
+  parallel writers. GM-017 integrates only after both pass.
+- If two cards unexpectedly need the same file, the second one stops and asks the manager to
+  split or serialize; it does not merge into a moving branch.
 
 ## Why this order
 
