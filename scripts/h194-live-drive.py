@@ -411,6 +411,39 @@ def continue_untouched() -> dict:
     return fact
 
 
+def _artifact_facts(result: dict) -> list[dict]:
+    """Normalise ``parent.export``'s artifact refs.
+
+    ``pack_flow._artifact_ref`` returns ``{artifact_id, kind, mime, bytes, content_hash}`` — there is
+    no ``filename`` and no ``sha256`` key. Round 2's facts file read ``sha256``/``byte_size`` and so
+    recorded nulls for every artifact while the bytes were real. Map the keys that exist.
+    """
+    return [
+        {
+            "artifact_id": item.get("artifact_id"),
+            "kind": item.get("kind"),
+            "mime": item.get("mime"),
+            "sha256": item.get("content_hash"),
+            "byte_size": item.get("bytes"),
+        }
+        for item in result.get("artifacts") or []
+    ]
+
+
+def _file_facts(result: dict) -> list[dict]:
+    """Per-file manifest entries (``role``/``name``/``sha256``/``bytes``) from the export response."""
+    return [
+        {
+            "role": item.get("role"),
+            "name": item.get("name"),
+            "mime": item.get("mime"),
+            "sha256": item.get("sha256"),
+            "byte_size": item.get("bytes"),
+        }
+        for item in result.get("files") or []
+    ]
+
+
 def export_now() -> dict:
     """After the UI approval: ``parent.export`` must now succeed and write a stored pack."""
     started_at = datetime.now(timezone.utc).isoformat()
@@ -423,11 +456,7 @@ def export_now() -> dict:
     finished_at = datetime.now(timezone.utc).isoformat()
     refusal = response.get("error") or {}
     result = response.get("result") or {}
-    artifacts = [
-        {"kind": item.get("kind"), "filename": item.get("filename"), "sha256": item.get("sha256"),
-         "byte_size": item.get("byte_size")}
-        for item in result.get("artifacts") or []
-    ]
+    artifacts = _artifact_facts(result)
     fact = {
         "phase": "export-after-approval",
         "started_at": started_at,
@@ -436,10 +465,11 @@ def export_now() -> dict:
         "enrollment_id": state["enrollment_id"],
         "export_ok": bool(response.get("ok")),
         "error": refusal or None,
-        "pack_id": result.get("pack_id"),
+        "pack_id": (result.get("pack") or {}).get("pack_id"),
         "content_hash": result.get("content_hash"),
         "export_id": result.get("export_id"),
         "artifacts": artifacts,
+        "files": _file_facts(result),
     }
     out = os.environ.get("H194_FACTS")
     if out:
@@ -502,14 +532,11 @@ def export_enrollment(enrollment_id: str) -> dict:
         "enrollment_id": enrollment_id,
         "export_ok": bool(response.get("ok")),
         "error": refusal or None,
-        "pack_id": result.get("pack_id"),
+        "pack_id": (result.get("pack") or {}).get("pack_id"),
         "content_hash": result.get("content_hash"),
         "export_id": result.get("export_id"),
-        "artifacts": [
-            {"kind": item.get("kind"), "filename": item.get("filename"), "sha256": item.get("sha256"),
-             "byte_size": item.get("byte_size")}
-            for item in result.get("artifacts") or []
-        ],
+        "artifacts": _artifact_facts(result),
+        "files": _file_facts(result),
     }
     out = os.environ.get("H194_FACTS")
     if out:

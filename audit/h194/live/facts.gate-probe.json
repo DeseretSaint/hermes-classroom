@@ -1,7 +1,9 @@
 {
   "phase": "changes-need-review-reachability-probe",
-  "started_at": "2026-11-09T00:23:53.892190+00:00",
-  "finished_at": "2026-11-09T00:23:53.994900+00:00",
+  "started_at": "2026-11-09T00:28:24.905503+00:00",
+  "finished_at": "2026-11-09T00:28:25.077168+00:00",
+  "db": "/home/deseretsaint/.hermes/coursebook-test-h194-1108/home/plugin-data/coursebook/data.db",
+  "backend": "http://127.0.0.1:44249",
   "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
   "enrollment_id": "enr_176897ff32584282955b085634837b2b",
   "method": "direct UPDATE of the stored page text with no command that supersedes the approval (the same mutation tests/test_parent_studio.py:770 uses), then parent.export",
@@ -30,7 +32,31 @@
   },
   "export_after_restore": {
     "ok": true,
-    "export_id": "exp_502757112f164649bb06ca1ff97ca885",
+    "export_id": "exp_f8faf25155f54081b87aa1bcff8f7a47",
+    "content_hash": "sha256:7c04a8221f95f57d076e712d98dfbf6261e52fe7e42bda90e223c7cfe2ee1007",
+    "artifacts": [
+      {
+        "artifact_id": "art_d486af33e24447038ab2b2ad35be9b6e",
+        "kind": "pack",
+        "mime": "application/zip",
+        "sha256": "sha256:f475b8b1889cdffc22977090cd0c5a61c00a4bd976a6d2a988c307912c0c5c15",
+        "byte_size": 8871
+      },
+      {
+        "artifact_id": "art_4c121d47414849e19cb3944f39f3d03a",
+        "kind": "pdf",
+        "mime": "application/pdf",
+        "sha256": "sha256:0126425061006924f59a82adc7c731bc64cf079adbd5731ff156f064d701147c",
+        "byte_size": 7352
+      },
+      {
+        "artifact_id": "art_37fffe7efc6c4ade947bba0792148407",
+        "kind": "export",
+        "mime": "application/zip",
+        "sha256": "sha256:f475b8b1889cdffc22977090cd0c5a61c00a4bd976a6d2a988c307912c0c5c15",
+        "byte_size": 8871
+      }
+    ],
     "error": null
   }
 }

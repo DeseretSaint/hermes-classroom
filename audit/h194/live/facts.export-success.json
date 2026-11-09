@@ -1,31 +1,120 @@
 {
   "phase": "export-enrollment",
-  "started_at": "2026-11-09T00:23:43.883850+00:00",
-  "finished_at": "2026-11-09T00:23:43.928330+00:00",
+  "started_at": "2026-11-09T00:28:21.767876+00:00",
+  "finished_at": "2026-11-09T00:28:21.827375+00:00",
   "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
   "export_ok": true,
   "error": null,
-  "pack_id": null,
+  "pack_id": "parent-crs-60369f196bb44cf2abfadc54d8a2a477",
   "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
-  "export_id": "exp_263269f7cef3428eb78805b9d9a0481b",
+  "export_id": "exp_07f672db36914142ba4aa4f9e97e85e9",
   "artifacts": [
     {
+      "artifact_id": "art_dcdbb56172134f0999027918923b7f4e",
       "kind": "pack",
-      "filename": null,
-      "sha256": null,
-      "byte_size": null
+      "mime": "application/zip",
+      "sha256": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4",
+      "byte_size": 8871
     },
     {
+      "artifact_id": "art_6fd375af49384553ae023f448c8390a0",
       "kind": "pdf",
-      "filename": null,
-      "sha256": null,
-      "byte_size": null
+      "mime": "application/pdf",
+      "sha256": "sha256:d04996a33fa939172547ace5e2dc2ae685cce232aada81255e04c1e09efc4adb",
+      "byte_size": 7352
     },
     {
+      "artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd",
       "kind": "export",
-      "filename": null,
-      "sha256": null,
-      "byte_size": null
+      "mime": "application/zip",
+      "sha256": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4",
+      "byte_size": 8871
+    }
+  ],
+  "files": [
+    {
+      "role": "answer_guide",
+      "name": "answer-guide/01-warm-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+      "byte_size": 376
+    },
+    {
+      "role": "answer_guide",
+      "name": "answer-guide/02-cold-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+      "byte_size": 366
+    },
+    {
+      "role": "answer_guide",
+      "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+      "byte_size": 378
+    },
+    {
+      "role": "answer_guide",
+      "name": "answer-guide/04-explain-one-example.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+      "byte_size": 367
+    },
+    {
+      "role": "learner_page",
+      "name": "lessons/01-warm-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+      "byte_size": 549
+    },
+    {
+      "role": "learner_page",
+      "name": "lessons/02-cold-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+      "byte_size": 549
+    },
+    {
+      "role": "learner_page",
+      "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+      "byte_size": 562
+    },
+    {
+      "role": "learner_page",
+      "name": "lessons/04-explain-one-example.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+      "byte_size": 549
+    },
+    {
+      "role": "parent_guide",
+      "name": "parent-guide/01-warm-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+      "byte_size": 852
+    },
+    {
+      "role": "parent_guide",
+      "name": "parent-guide/02-cold-things-at-home.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+      "byte_size": 841
+    },
+    {
+      "role": "parent_guide",
+      "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+      "byte_size": 843
+    },
+    {
+      "role": "parent_guide",
+      "name": "parent-guide/04-explain-one-example.md",
+      "mime": "text/markdown",
+      "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+      "byte_size": 814
     }
   ]
 }
