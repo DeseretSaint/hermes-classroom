@@ -87,10 +87,13 @@ course-bound direction GM-004 brings.
 
 ## Not in this packet (named, not hidden)
 
-- `home.course` `world-running`, `world-partial`, `world-stale`, `course-end`: GM-004 scope (course
-  worlds do not exist in this rig), as recorded in the reviewer's round-1 note.
-- The five world cells and `plan-in-review`/`course-end` arithmetic are in `MATRIX.md`; this card
-  supplies every cell its own scope can produce and names the deferral.
+- `home.course` `world-running`, `world-partial`, `world-stale`: GM-004 scope (no course in this
+  rig carries a world yet, so there is no live state to paint).
+- `home.course` `course-end`: not producible honestly here. Every enrollment in the rig still has
+  objectives without independent evidence; a capture would require fabricating progress, which this
+  card refuses. It is deferred with that reason, not mislabelled as GM-004 art scope.
+- The five world cells and the `course-end` arithmetic are in `../MATRIX.md`; this card supplies
+  every cell its own scope can produce and names the deferral.
 
 ## Machine-readable companion
 

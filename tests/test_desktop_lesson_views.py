@@ -102,22 +102,15 @@ export const useTheme = () => ({
 })
 
 export const Button = (props) => {
-  const attrs = {
-    type: 'button',
-    disabled: Boolean(props.disabled),
-    'data-variant': props.variant || null,
-    onClick: props.onClick
-  }
-  if (props.className) attrs.className = props.className
-  if (props.style) attrs.style = props.style
-  if (props.onFocus) attrs.onFocus = props.onFocus
-  if (props.onBlur) attrs.onBlur = props.onBlur
-  if (props.title) attrs.title = props.title
+  // Forward every prop the caller passes (style, focus handlers, aria-/data- hooks), like the real
+  // SDK Button; a stub that dropped them hid the authored focus ring from jsdom. This shape is
+  // pinned by tests.test_desktop_h201_course_member_open.
+  const attrs = { type: 'button' }
   for (const [name, value] of Object.entries(props)) {
-    if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {
-      attrs[name] = value
-    }
+    if (name === 'children' || value === undefined) continue
+    attrs[name] = value
   }
+  if (props.disabled) attrs.disabled = true
   return el('button', attrs, textOf(props))
 }
 export const RowButton = (props) => {
