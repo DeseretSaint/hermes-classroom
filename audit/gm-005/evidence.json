@@ -1,0 +1,82 @@
+{
+  "card": "GM-005",
+  "course_id": "crs_98afa588cb48428a929f10a465ad3d4c",
+  "pack_id": "thp_ae1ec24285d84058802c50e5bbca1086",
+  "pack_state": "exported",
+  "content_hash": "sha256:5e5bd1647d35b69e62c8f9cead1aa221af4f8787cc6f7c924e83bc0f9696a549",
+  "source_lesson_version": "lsn_pln_fcb2e9dd22894f51b344548a84135fb1:v1",
+  "exported_artifact": {
+    "artifact_id": "art_cfbab1b829524264ac803c6b05118c5a",
+    "mime": "application/pdf",
+    "bytes": 4111
+  },
+  "learner_page_has_answer": false,
+  "answer_guide_has_answer": true,
+  "diagram_kind": "deterministic",
+  "plates": [],
+  "papers": {
+    "letter": {
+      "file": "audit/gm-005/gm-005-takehome-proof-letter.pdf",
+      "pages": 4,
+      "media_boxes": [
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ]
+      ],
+      "part_start_pages": {
+        "cover": 0,
+        "parent_guide": 1,
+        "learner_page": 2,
+        "answer_guide": 3
+      },
+      "learner_chars": 490,
+      "answer_guide_chars": 289,
+      "extracted_chars": 1982
+    },
+    "a4": {
+      "file": "audit/gm-005/gm-005-takehome-proof-a4.pdf",
+      "pages": 4,
+      "media_boxes": [
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ]
+      ],
+      "part_start_pages": {
+        "cover": 0,
+        "parent_guide": 1,
+        "learner_page": 2,
+        "answer_guide": 3
+      },
+      "learner_chars": 490,
+      "answer_guide_chars": 289,
+      "extracted_chars": 1982
+    }
+  },
+  "method": "Real course.create + plan.approve + staged validated gen_lessons; takehome.preview/create/approve/export through api.dispatch; render_pdf over the stored pages; pypdf text extraction; MediaBox measured per page; each composed page's text compared whitespace-insensitively against its extracted page."
+}

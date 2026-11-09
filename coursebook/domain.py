@@ -47,6 +47,7 @@ from . import (
     practice,
     review,
     sources as source_ledger,
+    takehome as takehome_pack,
     validators,
 )
 from .api import RpcError
@@ -64,6 +65,9 @@ HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[s
 # the kernel) but are still kernel commands: expose them on the kernel registry the tests and
 # `ensure_registered` inspect.
 HANDLERS.update(pronunciation.HANDLERS)
+# GM-005: the take-home commands are registered by their own module for the same reason — the
+# module reads the live contract, so a build without cb.rpc v21 stays NOT_IMPLEMENTED.
+HANDLERS.update(takehome_pack.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
 KERNEL_METHODS: tuple[str, ...] = (
@@ -106,6 +110,12 @@ KERNEL_METHODS: tuple[str, ...] = (
     "source.revalidate",
     "pronunciation.attempt",
     "pronunciation.dispute",
+    "takehome.sources",
+    "takehome.preview",
+    "takehome.create",
+    "takehome.approve",
+    "takehome.export",
+    "takehome.read",
 )
 
 MAX_PAGE = 500

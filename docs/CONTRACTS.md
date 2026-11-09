@@ -29,20 +29,20 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v20.json` | 20 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v21.json` | 21 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v13.json` | 13 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v19** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+The v1 **to v20** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
-`rpc.v18.json` and `rpc.v19.json`), the
+`rpc.v18.json`, `rpc.v19.json` and `rpc.v20.json`), the
 v1 **to v12** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
 `db.v8.json`, `db.v9.json`, `db.v10.json`, `db.v11.json` and `db.v12.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v19.json`, `db.v12.json`,
+as immutable history: the superseded current files are `rpc.v20.json`, `db.v12.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -2225,11 +2225,55 @@ dropped or retyped, and no lesson, attempt, transition or evidence row is read o
 * `tutor_threads` / `tutor_turns` — one thread per lesson run and an append-only turn trail.
   Tutor prose is never graded, never an attempt or transition, and never exported.
 
-`cb.rpc` stays **v20** in this card: the 18 Game Mode method names and one durable mode-setter
-are frozen in `coursebook/gm_contract.py` (`GM_RPC_METHODS`) and `docs/GM-CONTRACT.md`; the wire
-contract bump lands with the first handler that registers one of them. `cb.errors`, `cb.jobs`,
-`cb.vocabulary` and `cb.pack` are unchanged.
+`cb.rpc` **stayed v20 in GM-001** — the 18 Game Mode method names and one durable mode-setter are
+frozen in `coursebook/gm_contract.py` (`GM_RPC_METHODS`) and `docs/GM-CONTRACT.md`. GM-005
+registered the take-home family and bumped the wire to **v21** (see the v21 delta below).
+`cb.errors`, `cb.jobs`, `cb.vocabulary` and `cb.pack` are unchanged.
 
 Regression guard: `tests/test_gm_contract.py` pins the enum values, the manifest, the additive
 `db.v12 -> db.v13` diff, and a real v12-to-v13 round trip on a disposable database proving the
 legacy course reads Textbook and the attempt/evidence/check rows are byte-identical afterwards.
+
+## v21 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
+
+`cb.rpc` v21 is v20 with **one family appended**: `takehome.sources`, `takehome.preview`,
+`takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`, exactly the names and
+field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. No v1-v20 method, request
+shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
+value moves; `cb.db`, `cb.errors`, `cb.jobs`, `cb.pack` and `cb.projection` are untouched.
+`rpc.v20.json` stays byte-identical on disk (sha256
+`81cf882fb6f9dddc5caf7706b9dfe23d1ace2d4dea16c11e4e0281cbdf150f07`) and `x-supersedes` names
+`.../rpc/v20`.
+
+**The artifact.** A take-home pack is a rendered print artifact, **not** a course, **not**
+`cb.pack` and **not** `course.export`. `takehome.create` writes one `takehome_packs` row bound to
+`source_course_id`, `source_objective_id`, `source_lesson_version` (the immutable
+`gen_lessons.id:vN`) and `content_hash` (sha256 over the source page, section intent, objective and
+the check row). The source course is never cloned, rewritten, re-approved or enrolled.
+
+| Method | Kind | What it does |
+|---|---|---|
+| `takehome.sources` | read | The Parent Studio picker over one learner course: objective, section, validated lesson version, content hash and whether an approved world plate exists. A parent-only authoring course is refused with `POLICY_VIOLATION`, `details.reason = "parent_only_course"`. |
+| `takehome.preview` | read | Composes the exact pages and returns `content_hash`, `preview_hash`, `pages` and recorded `sources`; persists nothing. The learner page is a separate page object from the answer guide. |
+| `takehome.create` | mutate | Binds the draft row. A duplicate draft for the same source returns the existing row rather than minting a silent clone. |
+| `takehome.approve` | mutate | Fenced on `preview_hash`: an edit after preview invalidates this approval, not the source course. |
+| `takehome.export` | mutate | Renders the bound, approved pages to selectable-text PDF through `artifacts.make_pdf` and the artifact store. A failed render is `HOST_UNAVAILABLE`, never a blank pack. |
+| `takehome.read` | read | Returns the stored pack with `parent_guide`, `learner_page` and `answer_guide` as separate page objects, plus plates, diagrams, print profile and export state. It returns no attempts, tutor turns, notes or private observations. |
+
+**The learner page never carries the answer guide.** The answer guide (reference answer, accepted
+answers, rubric) is a separate, parent-only page; a defence-in-depth scan refuses a learner page
+whose narrative announces a reference answer (`POLICY_VIOLATION`,
+`details.reason = "answer_leak_in_learner_page"`).
+
+**Print profile.** Letter, 612 x 792 pt, 56 pt margins, selectable text, low ink, explicit page
+breaks between the parent guide and the learner page and the answer guide, no colour-only answers,
+no learner answer key. A4 is the same fixed template at 595 x 842 for proofing.
+
+**Visuals.** World art is optional, textless, captioned orientation with provenance and is never
+instructional or safety authority. A procedure page's instructional diagram must be a
+deterministic `schematic` or a `sourced_technical` figure with at least one recorded source id;
+illustration-only procedure art is refused (`details.reason = "ai_art_as_procedure"`). A Textbook
+course with no world art prints cleanly with `plates: []`.
+
+Regression guard: `tests/test_gm_takehome.py` (the seven GM-005-named tests plus picker, idempotency
+and hash-fence coverage) and `tests/test_contracts.py` (`V21AmendmentTest`).

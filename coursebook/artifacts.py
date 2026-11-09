@@ -22,6 +22,7 @@ import io
 import json
 import os
 import re
+import textwrap
 import unicodedata
 import xml.etree.ElementTree as ET
 import uuid
@@ -43,6 +44,10 @@ REFERENCE_LABEL = "Sourced reference — see the cited source and its permission
 
 #: Kinds the ``artifacts`` table accepts (``cb.db`` v2).
 ARTIFACT_KINDS = ("visual", "audio", "pdf", "pack", "export", "other")
+
+#: A caller-authored hard page break in :func:`make_pdf`. A line list carries it between
+#: sections so a printed pack starts the learner page and the answer guide on their own pages.
+PAGE_BREAK = "\x0c"
 
 #: ``artifacts.content_hash`` holds a sha256 of the object bytes. Rows written by
 #: :meth:`ArtifactStore.record` before H-210-R1 stored the bare 64-hex digest while
@@ -400,29 +405,43 @@ def _pdf_text(value: str) -> str:
     return ascii_text.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
 
 
-def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792) -> bytes:
+def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792,
+             max_chars: int = 88) -> bytes:
     """Build a minimal, valid PDF from a fixed template. Text is selectable/extractable.
 
-    This intentionally supports only what a lesson handout needs: a title and wrapped body
-    lines. No JavaScript, no attachments, no external references, no auto-open links.
+    ``max_chars`` bounds one drawn line so it fits inside the printable width for the chosen
+    page size; the default keeps the historical Letter handout behaviour, and a caller printing
+    a narrower page or a denser document passes a smaller value. This intentionally supports
+    only what a lesson handout needs: a title and wrapped body lines, plus an explicit
+    :data:`PAGE_BREAK` marker. No JavaScript, no attachments, no external references, no
+    auto-open links.
     """
     margin = 56
     leading = 16
-    max_chars = 88
     body: list[str] = [title]
     for line in lines:
         text = str(line)
+        if text == PAGE_BREAK:
+            body.append(PAGE_BREAK)
+            continue
         if not text:
             body.append("")
             continue
-        while text:
-            body.append(text[:max_chars])
-            text = text[max_chars:]
+        # Wrap on word boundaries so a printed handout never splits a word across lines. A word
+        # longer than the line is broken (there is no choice), but ordinary prose is not.
+        for chunk in textwrap.wrap(text, width=max_chars, break_long_words=True,
+                                   break_on_hyphens=False) or [""]:
+            body.append(chunk)
 
     pages: list[list[str]] = []
     current: list[str] = []
     per_page = (page_height - 2 * margin) // leading
     for line in body:
+        if line == PAGE_BREAK:
+            if current:
+                pages.append(current)
+            current = []
+            continue
         if len(current) >= per_page:
             pages.append(current)
             current = []
