@@ -1,7 +1,7 @@
 # GM-003 evidence
 
-Branch: `wt/gm-003-world` (based on `master` at 5673047 plus merged parent `wt/gm-001-contract`
-at 4e3d6c6; no master merge, no push, no gateway restart).
+Branch: `wt/gm-003-world` (rebased on `origin/master` `ffe2156`, which carries GM-001 `4e3d6c6`
+and migration 0013; no master merge, no push, no gateway restart).
 
 ## Named tests
 

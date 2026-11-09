@@ -1,4 +1,4 @@
-GM-003 test evidence (branch wt/gm-003-world — review round 4)
+GM-003 test evidence (branch wt/gm-003-world @ 215bbe2, rebased on origin/master ffe2156 — review round 4)
 
 Focused: python3 -m unittest tests.test_world -v
   Ran 22 tests ... OK
@@ -38,7 +38,12 @@ Green state: audit/gm-003/green-attempt4.txt
   Ran 22 tests ... OK
 
 Full suite: python3 -m unittest discover -s tests -t . -q
-  See audit/gm-003/full-attempt4.log for this round's run.
+  Ran 2816 tests in 573.920s
+  OK (skipped=1)
+  exit 0
+  Log: audit/gm-003/full-attempt4.log
+  (2816 after the rebase onto origin/master ffe2156, which carries GM-001 and 25 more tests;
+   the pre-rebase run on the same code was 2791 OK, skipped=1.)
 
 No provider key or account id appears in this evidence. The media seam in tests is a local fake
 that counts calls and returns deterministic PNG bytes; no live provider call was made.
