@@ -1,8 +1,8 @@
 # H-178 · Field Stop — evidence
 
 Status: implemented; review-round-1 code defects fixed and unit-proven on
-`wt/h178-field-stop` (base `5cc8cca`). **Live Desktop frames are not captured yet** — the rigs are
-built, running and bound; §5 lists exactly what remains. Not pushed.
+`wt/h178-field-stop` (base `5cc8cca`). **The eight-frame static matrix is captured and measured on
+the current master module — see §5.** The driven sequence is still outstanding (H-205). Not pushed.
 
 ## 0. Review round 1 — what changed in this run
 
@@ -98,21 +98,43 @@ proved on the next check version's first attempt — which is the state prepared
   2 of 2, written check, pending chip `cold`, `I used a hint` / `I saw the answer` present, `Check`
   enabled (binding active).
 
-## 5. Remaining work (blocking the card's evidence list)
+## 5. Field Stop frame matrix (H-204) — captured
 
-The run hit its iteration budget immediately after the binding was established, so these are **not**
-done:
+Rig: `~/.hermes/coursebook-test-h178-a` (after plugin), CDP **9385**, window restarted so the
+loaded bytes are the installed bytes. Installed `desktop-plugins/coursebook/plugin.js` sha256
+`350011775b97a055e887d624bc2df11025a3129a2a41207b20acc2dc53f89ad4` — byte-identical to `desktop/plugin.js` at base `2d7282a` (H-196 + H-197).
+State: the existing open check on section 2 (STOP 2 OF 4, step 2 of 2, written check `Check v4`,
+binding active), pending integrity chip **cold** — no answer was submitted for these frames.
+No course was re-authored and no backend state was advanced.
 
-1. Drive the after rig (9385): wrong answer → `I used a hint` → pending `hinted` → retry `好きです`
-   → pass → completion → `Return to the trail`, capturing each state.
-2. Capture the frame matrix for step / written check / wrong feedback / hinted attempt / completion /
-   returned trail at 1049 / 900 / 460 × light / dark, plus 200% text.
-3. Capture the before rig (9384) for the same surfaces on an open check (v4 after step 1 closes v3),
-   since the H-177 player has the textarea + grey evidence line and no chip.
-4. `python3 scripts/m4v-audit.py` to re-pin the module hash, then the full desktop discovery.
-5. Write the measurements JSON and the frame README, and replace §4 of this document with results.
+Theme was set through the plugin's own Appearance control (Settings sheet, real click), never by
+forcing a class. Every row is read from the painted DOM of the live window; the PNG is the same
+window's `Page.captureScreenshot`.
 
-A live **choice** check does not exist for an authored lesson in this backend: every generated
-check for the demonstration pack is `format: "text"`. The radiogroup is therefore proven by the
-shipped-component tests and will be shown in renderer frames, not claimed as live — per the card's
-"if the authored check has no choice/checklist, the written check remains the lesson".
+| frame | viewport (CSS px) | root font | theme | state | horizontal overflow | PNG px | sha256 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `field-stop-stop2-dark-460.png` | 460×1561 | 16px | dark | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 413×1400 | `bceb31b24b21b8a2c6232faaf08cc0eabe8258cee403cae6451f0f8c04d785ba` |
+| `field-stop-stop2-dark-900.png` | 900×1561 | 16px | dark | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 807×1400 | `ad4f766e5bdf89fa721b43a1ab34b9b1455026686b595af48eea145bafd8cccf` |
+| `field-stop-stop2-dark-1049.png` | 1049×1561 | 16px | dark | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 941×1400 | `3be5723113f2a140a23ec464ee8c7386995a81f8232838acfd2ac29aa06ac47c` |
+| `field-stop-stop2-dark-1049-text200.png` | 1049×1561 | 32px | dark | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 941×1400 | `234839dbe4734485559d9985a258eaac13e5d5d1226f2a27bcb1e2d181bc1061` |
+| `field-stop-stop2-light-460.png` | 460×1561 | 16px | light | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 413×1400 | `aa07f199e8394c9b9c7aaba6d4233e30447fc562ae06c2553771f1b8500e9b70` |
+| `field-stop-stop2-light-900.png` | 900×1561 | 16px | light | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 807×1400 | `5b3001f8733dc888c577608da1c1cf58bfbeee0b98416be8dce01ac27503e4f9` |
+| `field-stop-stop2-light-1049.png` | 1049×1561 | 16px | light | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 941×1400 | `6e33b36851539db624abfb9913740ab72b0083434414938512de7b90d3bd609a` |
+| `field-stop-stop2-light-1049-text200.png` | 1049×1561 | 32px | light | header `STOP 2 OF 4`; chip `cold` (pending) | 0 | 941×1400 | `43823cc8d822c50781a35e7309cdc4ff267472f2fecf2cf7aeb39573c35fdd56` |
+
+The PNG is narrower than the CSS viewport because this desktop window carries the display scale
+(`devicePixelRatio` 0.896): 1049 CSS px paints onto 941 device px. The layout width is the
+measured `innerWidth`; the file's pixel width is recorded separately so neither number is implied.
+The 200% rows are a 32px root font on a 1049 CSS px viewport, not a browser zoom.
+
+Not painted, and stated rather than synthesized:
+
+- **Before rig** (`~/.hermes/coursebook-test-h178-b`, CDP 9384): not running — `curl` to 9384
+  returns connection refused, and its installed plugin is the H-177 sha `6aeca221`. No before
+  frames are part of this card, so no rig was started for it.
+- **Driven sequence** (wrong answer → hint → hinted retry → pass → completion → trail) belongs to
+  H-205. These frames show one state only: the untouched cold check.
+- **M4 re-pin** deliberately not run (card forbids it); `tests.test_m4_visual_audit` stays red
+  until that separate step.
+
+Measurements: `audit/visual/h178-field-stop/measurements.json`; capture: `scripts/h202-capture.mjs`.

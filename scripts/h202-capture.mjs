@@ -125,11 +125,15 @@ async function goToPlayer() {
   return title
 }
 
+// The window carries the display's own scale factor (devicePixelRatio ~0.896 here), and
+// `Emulation.setDeviceMetricsOverride` takes device pixels, not CSS pixels. Calibrate against the
+// CSS `innerWidth` that the layout actually used, so a frame labelled 1049 is a layout at 1049 CSS
+// px. The PNG's pixel width is recorded separately (`devicePixels`), because it is not the same number.
 const setWidth = async (target) => {
-  let override = target
+  let override = Math.round(target * (await evaluate('window.devicePixelRatio')))
   for (let i = 0; i < 8; i += 1) {
     await send('Emulation.setDeviceMetricsOverride', { width: override, height: 1400, deviceScaleFactor: 1, mobile: false })
-    await sleep(160)
+    await sleep(180)
     const inner = await evaluate('window.innerWidth')
     if (inner === target) return override
     override = Math.round((override * target) / inner)
@@ -169,7 +173,13 @@ const shoot = async (name) => {
   const buf = Buffer.from(shot.data, 'base64')
   const path = resolve(OUT, `${name}.png`)
   writeFileSync(path, buf)
-  return { path, sha256: createHash('sha256').update(buf).digest('hex'), bytes: buf.length }
+  return {
+    path,
+    sha256: createHash('sha256').update(buf).digest('hex'),
+    bytes: buf.length,
+    width: buf.readUInt32BE(16),
+    height: buf.readUInt32BE(20)
+  }
 }
 
 const appearance = await setAppearance()
@@ -178,7 +188,7 @@ const courseTitle = await goToPlayer()
 console.log('course:', courseTitle)
 
 const resultsPath = resolve(OUT, 'measurements.json')
-let results = { port, theme, plugin_sha256: null, appearance, frames: [], sequence: [] }
+let results = { port, theme, plugin_sha256: process.env.H202_PLUGIN_SHA || null, appearance, frames: [], sequence: [] }
 if (existsSync(resultsPath)) {
   try {
     const prev = JSON.parse(readFileSync(resultsPath, 'utf8'))
@@ -198,7 +208,7 @@ for (const width of [1049, 900, 460]) {
     name: basename(file.path), theme, width, text: '100%', override,
     viewport: { innerWidth: snapshot.innerWidth, innerHeight: snapshot.innerHeight },
     rootFontSize: snapshot.rootFontSize, scope: snapshot.scope, darkClass: snapshot.darkClass,
-    sha256: file.sha256, bytes: file.bytes, state: snapshot
+    sha256: file.sha256, bytes: file.bytes, pixels: { width: file.width, height: file.height }, state: snapshot
   })
   console.log(`frame ${theme}-${width}:`, snapshot.innerWidth, snapshot.scope, file.sha256.slice(0, 12))
 }
@@ -215,7 +225,7 @@ results.frames.push({
   name: basename(file.path), theme, width: 1049, text: '200%', override,
   viewport: { innerWidth: snapshot.innerWidth, innerHeight: snapshot.innerHeight },
   rootFontSize: snapshot.rootFontSize, scope: snapshot.scope, darkClass: snapshot.darkClass,
-  sha256: file.sha256, bytes: file.bytes, state: snapshot
+  sha256: file.sha256, bytes: file.bytes, pixels: { width: file.width, height: file.height }, state: snapshot
 })
 console.log(`frame ${theme}-1049-200%:`, snapshot.innerWidth, snapshot.rootFontSize, file.sha256.slice(0, 12))
 await evaluate(`document.documentElement.style.removeProperty('font-size')`)
