@@ -1,8 +1,8 @@
 # GM-005 take-home pack PDF proof
 
-- pack: `thp_169315c3f0f34196bf12f42ab47891ad` state `exported`
-- source lesson: `lsn_pln_e48c7554a4fa45af9ee6c0d9da01b85b:v1` hash `sha256:78fcc5c00325c1abf116e5835030fb05e2a4a8cc6c6c55f84c4880a5a8062074`
-- exported artifact: `art_f1e4b0aee40a41e2890ce24decc7e1cc` (5622 bytes, application/pdf)
+- pack: `thp_9e1f23b21b32466abb1e3785b9d0a258` state `exported`
+- source lesson: `lsn_pln_0c92454587064ba8baefb4cd53971700:v1` hash `sha256:b6e0a32579313f761b5886b079015300bd132001b19d3af29c9b5cb4b818020f`
+- exported artifact: `art_04978eacf7a54e5e94ffc0e6e0bf7a97` (5622 bytes, application/pdf)
 - learner page contains the answer: False
 - answer guide contains the answer: True
 - diagram authority: deterministic
@@ -10,8 +10,8 @@
 
 | Paper | File | Pages | MediaBox | Part start pages | Extracted chars |
 |---|---|---|---|---|---|
-| letter | `audit/gm-005/gm-005-takehome-proof-letter.pdf` | 5 | 612x792, 612x792, 612x792, 612x792, 612x792 | cover@0, parent_guide@1, learner_page@2, plate@3, answer_guide@4 | 2053 |
-| a4 | `audit/gm-005/gm-005-takehome-proof-a4.pdf` | 5 | 595x842, 595x842, 595x842, 595x842, 595x842 | cover@0, parent_guide@1, learner_page@2, plate@3, answer_guide@4 | 2053 |
+| letter | `audit/gm-005/gm-005-takehome-proof-letter.pdf` | 5 | 612x792, 612x792, 612x792, 612x792, 612x792 | cover@0, parent_guide@1, learner_page@2, diagram@3, answer_guide@4 | 2053 |
+| a4 | `audit/gm-005/gm-005-takehome-proof-a4.pdf` | 5 | 595x842, 595x842, 595x842, 595x842, 595x842 | cover@0, parent_guide@1, learner_page@2, diagram@3, answer_guide@4 | 2053 |
 
 ## Learner-audience sheet (answer-free)
 

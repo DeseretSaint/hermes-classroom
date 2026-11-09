@@ -208,12 +208,17 @@ def main() -> int:
         results = {}
         proof_pages = list(preview["pages"])
         proof_pack = {"title": pack["title"], "audience": "parent", "pages": proof_pages}
-        part_roles = ["cover", "parent_guide", "learner_page", "plate", "answer_guide"]
+        # The page schema calls every captioned media page "plate"; the proof labels the page by
+        # what actually produced it, so a deterministic diagram is never described as world art.
+        media_role = "diagram" if pack["diagrams"] else "plate"
+        media_caption = (pack["diagrams"] or pack["plates"])[0]["caption"]
+        part_roles = ["cover", "parent_guide", "learner_page", media_role, "answer_guide"]
+        role_of = {label: ("plate" if label == media_role else label) for label in part_roles}
         part_needles = {
             "cover": "Course: Braising at home",
             "parent_guide": "Parent guide",
             "learner_page": "Why the sear matters",
-            "plate": "Deterministic burner placement",
+            media_role: media_caption,
             "answer_guide": "Reference answer",
         }
         for paper, expected in (("letter", (612, 792)), ("a4", (595, 842))):
@@ -240,11 +245,14 @@ def main() -> int:
             starts = {}
             for role, needle in part_needles.items():
                 starts[role] = next((i for i, text in enumerate(texts) if needle in text), None)
-            assert starts == {"cover": 0, "parent_guide": 1, "learner_page": 2,
-                              "plate": 3, "answer_guide": 4}, (paper, starts)
+            expected_starts = {"cover": 0, "parent_guide": 1, "learner_page": 2,
+                               media_role: 3, "answer_guide": 4}
+            assert starts == expected_starts, (paper, starts)
             # No clipped text: each page's composed text survives extraction (whitespace-insensitive).
             for role in part_roles:
-                src = printed_squash(next(page["text"] for page in proof_pages if page["role"] == role))
+                src = printed_squash(
+                    next(page["text"] for page in proof_pages if page["role"] == role_of[role])
+                )
                 target = squashed(texts[starts[role]])
                 assert src in target, (paper, role, len(src), len(target))
             results[paper] = {

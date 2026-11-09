@@ -1,12 +1,12 @@
 {
   "card": "GM-005",
-  "course_id": "crs_5cb8097ee2724b4db312b6636d9848e2",
-  "pack_id": "thp_169315c3f0f34196bf12f42ab47891ad",
+  "course_id": "crs_3be2c4c7ef59484692e701f6e8649c90",
+  "pack_id": "thp_9e1f23b21b32466abb1e3785b9d0a258",
   "pack_state": "exported",
-  "content_hash": "sha256:78fcc5c00325c1abf116e5835030fb05e2a4a8cc6c6c55f84c4880a5a8062074",
-  "source_lesson_version": "lsn_pln_e48c7554a4fa45af9ee6c0d9da01b85b:v1",
+  "content_hash": "sha256:b6e0a32579313f761b5886b079015300bd132001b19d3af29c9b5cb4b818020f",
+  "source_lesson_version": "lsn_pln_0c92454587064ba8baefb4cd53971700:v1",
   "exported_artifact": {
-    "artifact_id": "art_f1e4b0aee40a41e2890ce24decc7e1cc",
+    "artifact_id": "art_04978eacf7a54e5e94ffc0e6e0bf7a97",
     "mime": "application/pdf",
     "bytes": 5622
   },
@@ -82,7 +82,7 @@
         "cover": 0,
         "parent_guide": 1,
         "learner_page": 2,
-        "plate": 3,
+        "diagram": 3,
         "answer_guide": 4
       },
       "learner_chars": 490,
@@ -118,7 +118,7 @@
         "cover": 0,
         "parent_guide": 1,
         "learner_page": 2,
-        "plate": 3,
+        "diagram": 3,
         "answer_guide": 4
       },
       "learner_chars": 490,

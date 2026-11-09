@@ -518,6 +518,71 @@ class TakeHomeBindingTest(TakeHomeCase):
             self.scalar("SELECT COUNT(*) FROM takehome_packs"), 1
         )
 
+    def _create_payload(self, seeded: dict, title: str) -> dict:
+        version, _lesson_id = self.lesson_identity(seeded)
+        return {
+            "course_id": seeded["course_id"],
+            "objective_id": seeded["objective_ids"][0],
+            "source_lesson_version": version,
+            "audience": "parent",
+            "kind": "print_pack",
+            "title": title,
+        }
+
+    def test_takehome_create_after_approve_mints_a_fresh_draft(self) -> None:
+        """An approved pack does not poison create: the next create is a new contract-shaped draft."""
+        seeded = self.seed_course()
+        approved = self.approved_pack(seeded)[0]
+        self.assertEqual(
+            self.scalar("SELECT state FROM takehome_packs WHERE id = ?", (approved["pack_id"],)),
+            "approved",
+        )
+        second = self.ok(
+            "takehome.create",
+            self._create_payload(seeded, "Take-home: searing again"),
+            expected_revision=0,
+            idempotency_key="key-create-after-approve",
+        )["result"]
+        self.assertEqual(second["state"], "draft")
+        self.assertEqual(second["revision"], 0)
+        self.assertNotEqual(second["pack_id"], approved["pack_id"])
+        self.assertEqual(second["content_hash"], approved["content_hash"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM takehome_packs"), 2)
+
+    def test_takehome_create_after_export_mints_a_fresh_draft(self) -> None:
+        """An exported pack is not re-opened as a draft: create mints a distinct draft row."""
+        seeded = self.seed_course()
+        self.exported_pack(seeded)
+        version, _lesson_id = self.lesson_identity(seeded)
+        first = self.rows(
+            "SELECT id FROM takehome_packs WHERE state = 'exported' ORDER BY created_at LIMIT 1"
+        )[0]
+        second = self.ok(
+            "takehome.create",
+            self._create_payload(seeded, "Take-home: searing reprint"),
+            expected_revision=0,
+            idempotency_key="key-create-after-export",
+        )["result"]
+        self.assertEqual(second["state"], "draft")
+        self.assertEqual(second["revision"], 0)
+        self.assertNotEqual(second["pack_id"], str(first["id"]))
+        self.assertEqual(second["content_hash"], self.preview(seeded)["content_hash"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM takehome_packs WHERE state = 'draft'"), 1)
+
+    def test_takehome_create_reuses_an_existing_draft(self) -> None:
+        """Two creates for the same source with different keys are one draft, not two."""
+        seeded = self.seed_course()
+        first = self.create(seeded, key="key-draft-one")
+        second = self.ok(
+            "takehome.create",
+            self._create_payload(seeded, "Take-home: searing"),
+            expected_revision=0,
+            idempotency_key="key-draft-two",
+        )["result"]
+        self.assertEqual(second["pack_id"], first["pack_id"])
+        self.assertEqual(second["state"], "draft")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM takehome_packs"), 1)
+
 
 class TakeHomePagesTest(TakeHomeCase):
     def test_takehome_learner_page_has_no_answer_key(self) -> None:

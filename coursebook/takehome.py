@@ -952,18 +952,19 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
         existing = _row(
             connection,
             "SELECT * FROM takehome_packs WHERE source_course_id = ? AND source_objective_id = ?"
-            " AND source_lesson_version = ? AND audience = ? AND kind = ? AND state != 'superseded'"
-            " ORDER BY revision DESC LIMIT 1",
+            " AND source_lesson_version = ? AND audience = ? AND kind = ? AND state = 'draft'"
+            " ORDER BY revision DESC, created_at DESC LIMIT 1",
             (str(payload["course_id"]), str(payload["objective_id"]),
              str(payload["source_lesson_version"]), str(payload["audience"]), str(payload["kind"])),
         )
         if existing is not None:
-            # A second draft for the same source is the same artifact: return it, never duplicate
-            # silently. A new revision is minted only after the previous pack was exported or a
-            # parent edit changed its pages.
+            # A second *draft* for the same source is the same artifact: return it, never
+            # duplicate silently. An approved or exported pack is history, not a draft, so a
+            # further create mints a new draft row instead of returning a row whose state the
+            # create contract cannot describe.
             result = {
                 "pack_id": str(existing["id"]),
-                "state": str(existing["state"]),
+                "state": "draft",
                 "revision": int(existing["revision"]),
                 "content_hash": str(existing["content_hash"]),
             }
