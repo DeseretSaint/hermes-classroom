@@ -1,8 +1,9 @@
 # H-178 · Field Stop — evidence
 
 Status: implemented; review-round-1 code defects fixed and unit-proven on
-`wt/h178-field-stop` (base `5cc8cca`). **Live Desktop frames are not captured yet** — the rigs are
-built, running and bound; §5 lists exactly what remains. Not pushed.
+`wt/h178-field-stop` (base `5cc8cca`). The driven live Desktop sequence (wrong → hint → hinted retry
+→ completion → return) is captured on base `2d7282a` at plugin sha `3500117…`; §5 has the frames,
+the backend rows and the defects it found. The static frame matrix remains H-204's. Not pushed.
 
 ## 0. Review round 1 — what changed in this run
 
@@ -98,21 +99,71 @@ proved on the next check version's first attempt — which is the state prepared
   2 of 2, written check, pending chip `cold`, `I used a hint` / `I saw the answer` present, `Check`
   enabled (binding active).
 
-## 5. Remaining work (blocking the card's evidence list)
+## 5. Driven sequence — wrong → hint → hinted retry → completion → return (H-205)
 
-The run hit its iteration budget immediately after the binding was established, so these are **not**
-done:
+Captured 2026-11-08 17:07–17:08 MST on the **after** rig, CDP **9385**, after re-pointing the rig at
+the card's base: worktree `t_9659a217` @ `2d7282a` (H-196 + H-197 merge), installed desktop plugin
+sha256 `350011775b97a055e887d624bc2df11025a3129a2a41207b20acc2dc53f89ad4`
+(`~/.hermes/coursebook-test-h178-a/home/desktop-plugins/coursebook/plugin.js`; the marker's source is
+the worktree's `desktop/` via `home/plugins/coursebook`). The window was restarted once to publish
+that copy; the H-196 Workshop destination (`data-cb-nav-item="workshop"`) is present in the loaded
+build, which the previous copy (sha `7a56a7d`, `a8b36be`) did not have.
 
-1. Drive the after rig (9385): wrong answer → `I used a hint` → pending `hinted` → retry `好きです`
-   → pass → completion → `Return to the trail`, capturing each state.
-2. Capture the frame matrix for step / written check / wrong feedback / hinted attempt / completion /
-   returned trail at 1049 / 900 / 460 × light / dark, plus 200% text.
-3. Capture the before rig (9384) for the same surfaces on an open check (v4 after step 1 closes v3),
-   since the H-177 player has the textarea + grey evidence line and no chip.
-4. `python3 scripts/m4v-audit.py` to re-pin the module hash, then the full desktop discovery.
-5. Write the measurements JSON and the frame README, and replace §4 of this document with results.
+Surface: `enr_544f0aba033e4fc0a2f50fb61aceda25`, section 2 /
+`obj_2d909e4f37014c14bb216f1b35cc3753`, check `chk_be7f41759dad406d91b89a482c4d1aa1` **v3**,
+`attempt_count: 0`, state `open`, binding `bind_ec912fd15f164df983d11e36875756ac` `active`.
+Driven through the real UI only: typed into `#cb-attempt-answer`, clicked the footer `Check`,
+clicked `[data-cb-assist] button` "I used a hint", `Try again`, then the completion actions.
+Driver: `scripts/h205-drive.mjs` (`nav` / `sequence` / `finish`); every frame carries viewport,
+root font size, theme, sha256 and the step label in `audit/visual/h205-field-sequence/sequence.json`.
 
-A live **choice** check does not exist for an authored lesson in this backend: every generated
-check for the demonstration pack is `format: "text"`. The radiogroup is therefore proven by the
-shipped-component tests and will be shown in renderer frames, not claimed as live — per the card's
-"if the authored check has no choice/checklist, the written check remains the lesson".
+| # | frame | state on screen | chip | sha256 (12) |
+| --- | --- | --- | --- | --- |
+| 01 | `01-answer-cold.png` | STOP 2 OF 4, step 2 of 2, answer field empty | pending `cold` — "First try, no hints if you submit now" | `0d0c0c91ef2d` |
+| 02 | `02-answer-typed.png` | wrong text typed, `Check` enabled | pending `cold` | `94cf987d876e` |
+| 03 | `03-wrong-verdict.png` | "Not quite", recorded answer, `Try again` | recorded `cold`, pending false | `bf37c2d53fd6` |
+| 04 | `04-retry-surface.png` | answer field back after `Try again` | pending `hinted` — "Hinted if you submit now" | `4b3d315ab9bc` |
+| 05 | `05-hint-recorded.png` | same screen after "I used a hint" | pending `hinted` (**pixel-identical to 04**) | `4b3d315ab9bc` |
+| 06 | `06-hinted-pass.png` | graded `pass`, `Finish` | recorded `hinted` | `5bed2f88d675` |
+| 07 | `07-completion.png` | "You finished Section 2", counts, `Return to the trail` | recorded `hinted` | `8f78357f3e97` |
+| 08 | `08-returned-trail.png` | section page + trail, "Resume the lesson" | none (player gone) | `6b1e229e7554` |
+
+All frames: viewport `1049 × 1338`, root font size `16px`, theme `dark` (H-204 owns the frame matrix
+across widths/themes; this card only drives the sequence).
+
+**Backend record (`evidence.inspect`, layer 1, ordered).** Exactly one evidence-class transition on
+the check, and it is the one the chip names:
+
+```
+2026-11-09T00:07:33.430Z  attempt       cold    att_9c770b858e884da2816d70178ab65e7c  verdict not_yet
+2026-11-09T00:08:01.941Z  hint_request  hinted  (is_action true, attached to the next attempt)
+2026-11-09T00:08:04.699Z  attempt       hinted  att_2ab4009add4a4217adfe5e7d58cf9a1b  verdict pass
+```
+
+Two committed attempts on v3, `cold` then `hinted`; the `hint_request` row sits between them. The
+completion surface's own count line agrees ("7 attempts recorded on this section · last just now"),
+and `check.get` now returns `attempt_count: 2` for v3.
+
+### Defects found by this run
+
+1. **No visible acknowledgement of a recorded hint.** Frame 04 and frame 05 are byte-identical
+   (`4b3d315ab9bc…`, 242,999 B). `lesson.assist` *did* record the event (row above), but the pane
+   changes nothing on screen: the pending chip was already `hinted` (driven by `attempt_count > 0`,
+   not by the hint), the assist buttons stay enabled, and no line says "hint recorded". A learner
+   cannot tell a click from a miss, and nothing stops repeat clicks. Owning specialist should add a
+   recorded-state confirmation (and consider disabling the control once recorded).
+2. **Completion copy disagrees with the trail.** Frame 07 says "0 of 4 with evidence · 3 to review"
+   while the section header/trail say "0 of 4 **With independent evidence**" — two different
+   denominators/labels for the same section on adjacent surfaces. Copy only; no state is wrong.
+3. Not this card's scope, seen while reviewing the completion frame: low-contrast secondary
+   controls ("Review due", "Open Coursebook") and a clipped saved-note body at the 1049 viewport.
+   H-204's frame matrix should judge these.
+
+### What this run did not do
+
+- No light-theme sequence, no narrow (900/460) sequence, no 200% text sequence — the card assigned
+  the frame matrix to H-204 and asked this card for the driven sequence only.
+- No before-rig (9384) capture; the comparison frames remain H-204's.
+- No changes to `desktop/plugin.js`, no M4 re-pin, no merge, no push. The only writes are the eight
+  frames, `sequence.json`, the driver `scripts/h205-drive.mjs`, and this section.
+

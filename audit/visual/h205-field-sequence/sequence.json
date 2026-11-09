@@ -1,0 +1,282 @@
+{
+  "port": "9385",
+  "plugin": "350011775b97a055e887d624bc2df11025a3129a2a41207b20acc2dc53f89ad4",
+  "frames": [
+    {
+      "step": "01-answer-cold",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "0d0c0c91ef2d468178e8d3c4355139709178b79c299d85a9ce618625343c6802",
+      "bytes": 243326,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "primary": "Check",
+        "primaryDisabled": true,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "02-answer-typed",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "94cf987d876eeaff1d468b3a458d0da908c85f0cd9f8c20e0eb989de8a8e90cb",
+      "bytes": 242574,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "true",
+        "chipText": "First try, no hints if you submit now No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "primary": "Check",
+        "primaryDisabled": false,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "03-wrong-verdict",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "bf37c2d53fd69d1ff9e16a07af6edc5bb3fc3b3baed9701a39f9d59591f90a2b",
+      "bytes": 255250,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "cold",
+        "chipPending": "false",
+        "chipText": "First try, no hints No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.",
+        "answerField": false,
+        "assist": [],
+        "primary": "Try again",
+        "primaryDisabled": false,
+        "feedback": "First try, no hints No hint and no shown answer went into this answer, so it can count as independent evidence for the objective. Not quite You answered: I do not know which line fits. The backend recorded the next action. The part that did not hold: does not match an accepted answer Try again with a different answer. The retry is free and nothing is counted against you.",
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "04-retry-surface",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "4b3d315ab9bcf1050afe991cbc9964efb840aca29d9e4749f3f5ef72b99a525a",
+      "bytes": 242999,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "hinted",
+        "chipPending": "true",
+        "chipText": "Hinted if you submit now A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "primary": "Check",
+        "primaryDisabled": true,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "05-hint-recorded",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "4b3d315ab9bcf1050afe991cbc9964efb840aca29d9e4749f3f5ef72b99a525a",
+      "bytes": 242999,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "hinted",
+        "chipPending": "true",
+        "chipText": "Hinted if you submit now A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence.",
+        "answerField": true,
+        "assist": [
+          "I used a hint",
+          "I saw the answer"
+        ],
+        "primary": "Check",
+        "primaryDisabled": true,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "06-hinted-pass",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "5bed2f88d6754cc0acbbb6b09fb0bf133104adc4705c58ddf6927b047f7a9181",
+      "bytes": 271171,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": "player",
+        "player": true,
+        "bar": "STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you can show: explain it.",
+        "step": "Step 2 of 2",
+        "chip": "hinted",
+        "chipPending": "false",
+        "chipText": "Hinted A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence.",
+        "answerField": false,
+        "assist": [],
+        "primary": "Finish",
+        "primaryDisabled": false,
+        "feedback": "Hinted A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence. Correct You answered: 好きです What you showed: matches an accepted answer.",
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat STOP 2 OF 4 Game Step 2 of 2 Exit Choose the polite expression for a first confession By the end of this stop you ca"
+      }
+    },
+    {
+      "step": "07-completion",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "8f78357f3e97246e89776edf8a0d3080e1bce88c502c1deda3f003df83471f74",
+      "bytes": 265539,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": null,
+        "player": false,
+        "bar": null,
+        "step": null,
+        "chip": "hinted",
+        "chipPending": "false",
+        "chipText": "Hinted A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence.",
+        "answerField": false,
+        "assist": [],
+        "primary": null,
+        "primaryDisabled": null,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Back to sections Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom Lesson view Game Guided Textbook Field Quest This lesson has no guided version. This lesson has no Field Quest version. This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat You finished Section 2 Hinted A hint was recorded before this answer. The attempt is still recorded, but it cannot c"
+      }
+    },
+    {
+      "step": "08-returned-trail",
+      "viewport": {
+        "innerWidth": 1049,
+        "innerHeight": 1338
+      },
+      "devicePixelRatio": 0.8963781595230103,
+      "rootFontSize": "16px",
+      "theme": "dark",
+      "sha256": "6b1e229e7554f7a26193243882e6d66a96444bc1c36a28ce62f1ba15b1862ba8",
+      "bytes": 193484,
+      "state": {
+        "innerWidth": 1049,
+        "innerHeight": 1338,
+        "devicePixelRatio": 0.8963781595230103,
+        "rootFontSize": "16px",
+        "darkClass": true,
+        "hash": "#/coursebook",
+        "view": null,
+        "player": false,
+        "bar": null,
+        "step": null,
+        "chip": null,
+        "chipPending": null,
+        "chipText": null,
+        "answerField": false,
+        "assist": [],
+        "primary": null,
+        "primaryDisabled": null,
+        "feedback": null,
+        "body": "Skip to course content COURSEBOOK Course Home Courses Workshop Parent Studio All courses Japanese affection and register — an L0 demonstration classroom Needs review A little at a time Source stale Section 2 of 4 Choose the polite expression for a first confession · 0 of 4 With independent evidence · 2 Due for review Resume the lesson Open the textbook Why this is next Overview Learn Notebook Evidence More Review due 2 sections are due for review. See what is due Japanese affection and register — an L0 demonstration classroom 0 of 4 objectives have independent evidence Next · Tell everyday affection from a direct romantic declaration Next 4 sections 3 sections are due for review. 0 of 4 objectives have independent evidence 66 characters per line. Evidence is named, never estimated. 01 Tell everyday affection from a direct romantic declaration Tell the difference Needs review 02 Choose th"
+      }
+    }
+  ]
+}
