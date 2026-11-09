@@ -102,15 +102,22 @@ export const useTheme = () => ({
 })
 
 export const Button = (props) => {
-  // Forward every prop the caller passes (style, focus handlers, aria-/data- hooks), like the real
-  // SDK Button; a stub that dropped them hid the authored focus ring from jsdom. This shape is
-  // pinned by tests.test_desktop_h201_course_member_open.
-  const attrs = { type: 'button' }
+  // Keep the SDK's variant hook, then forward every other prop the caller passes (style, focus
+  // handlers, aria-/data- hooks) like the real SDK Button. Both shapes are pinned elsewhere:
+  // tests.test_desktop_h201_course_member_open wants the `children` guard, and the H-94/H-149
+  // suites count `data-variant`.
+  const attrs = {
+    type: 'button',
+    disabled: Boolean(props.disabled),
+    'data-variant': props.variant || null,
+    onClick: props.onClick
+  }
+  if (props.className) attrs.className = props.className
+  if (props.title) attrs.title = props.title
   for (const [name, value] of Object.entries(props)) {
-    if (name === 'children' || value === undefined) continue
+    if (name === 'children' || value === undefined || name in attrs) continue
     attrs[name] = value
   }
-  if (props.disabled) attrs.disabled = true
   return el('button', attrs, textOf(props))
 }
 export const RowButton = (props) => {
