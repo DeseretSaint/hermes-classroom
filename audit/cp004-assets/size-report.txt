@@ -1,0 +1,14 @@
+Coursebook brand assets -- size report
+
+fonts       2 assets   131640 B  largest assets/fonts/CBDisplay-VF.woff2 (110076 B)
+material    6 assets     3818 B  largest assets/material/wood-plank.webp (1228 B)
+fox        14 assets    32286 B  largest assets/fox/fox-read-128.webp (3392 B)
+objects     7 assets    38197 B  largest assets/objects/stamp-rim.webp (11170 B)
+
+shipped files          205941 B
+generated segment      462255 B  budget  2500000 B
+desktop/plugin.js     1415919 B  budget  4500000 B
+plugin + segment      1878174 B  budget  4500000 B
+data-url entries           29
+
+VERDICT: within budget

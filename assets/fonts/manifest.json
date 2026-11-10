@@ -1,0 +1,38 @@
+[
+  {
+    "bytes": 110076,
+    "family": "CB Display",
+    "height": 0,
+    "kind": "font",
+    "licence": "OFL-1.1",
+    "licence_file": "assets/fonts/licenses/OFL-Fraunces.txt",
+    "master": "assets/masters/fonts/Fraunces-VF.ttf",
+    "master_sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
+    "path": "assets/fonts/CBDisplay-VF.woff2",
+    "provenance_id": "cb.asset.font.display",
+    "rfn_declared": false,
+    "role": "typeface.display",
+    "sha256": "e7da6eda041ee22e0b385bb139a17c4bd9a3051cfb8f3a5925cbffc4d174a3c4",
+    "source": "google/fonts@5bb28733cec313b63fbd415b574b5ae35c8aa8b8 ofl/fraunces/Fraunces[SOFT,WONK,opsz,wght].ttf",
+    "unicode_range": "U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+00B7, U+00D7, U+00B0",
+    "width": 0
+  },
+  {
+    "bytes": 21564,
+    "family": "CB UI",
+    "height": 0,
+    "kind": "font",
+    "licence": "OFL-1.1",
+    "licence_file": "assets/fonts/licenses/OFL-SourceSans3.txt",
+    "master": "assets/masters/fonts/SourceSans3-VF.ttf",
+    "master_sha256": "042fe2cc0b933e328410d7acbd0aa6a1873dca5aef81875f4bc214b08825c7b9",
+    "path": "assets/fonts/CBUI-VF.woff2",
+    "provenance_id": "cb.asset.font.ui",
+    "rfn_declared": true,
+    "role": "typeface.ui",
+    "sha256": "7fbe261fcd8b233e15236a301625655f55b37f427e2222defaa840aec6cf24d4",
+    "source": "google/fonts@5bb28733cec313b63fbd415b574b5ae35c8aa8b8 ofl/sourcesans3/SourceSans3[wght].ttf",
+    "unicode_range": "U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+00B7, U+00D7, U+00B0",
+    "width": 0
+  }
+]

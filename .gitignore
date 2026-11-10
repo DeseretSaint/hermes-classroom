@@ -13,3 +13,6 @@ plugin-data/
 
 # Chromium profiles written by the frame scripts
 audit/visual/**/.chromium/
+
+# CP-004 font subsetting venv (private, never committed)
+.venv-cb-assets/
