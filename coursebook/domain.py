@@ -48,6 +48,7 @@ from . import (
     review,
     sources as source_ledger,
     takehome as takehome_pack,
+    homework as homework_domain,
     validators,
     world as world_mod,
 )
@@ -79,6 +80,9 @@ HANDLERS.update(takehome_pack.HANDLERS)
 # The world commands register here for the same reason: a build whose contract lacks the world
 # methods stays NOT_IMPLEMENTED instead of inventing a method.
 HANDLERS.update(world_mod.HANDLERS)
+# GM-007: the away-from-screen commands register the same way. A build whose wire contract does
+# not carry homework.* stays NOT_IMPLEMENTED rather than inventing a homework surface.
+HANDLERS.update(homework_domain.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
 KERNEL_METHODS: tuple[str, ...] = (
@@ -127,6 +131,10 @@ KERNEL_METHODS: tuple[str, ...] = (
     "takehome.approve",
     "takehome.export",
     "takehome.read",
+    "homework.create",
+    "homework.read",
+    "homework.complete",
+    "homework.skip",
 )
 
 MAX_PAGE = 500
