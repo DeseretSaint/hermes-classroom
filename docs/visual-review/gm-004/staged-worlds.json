@@ -1,0 +1,402 @@
+{
+  "generated_at": "2026-11-10T05:58:18Z",
+  "kind": "world.read through the real cb.rpc dispatcher",
+  "seam": "deterministic provider-shaped media seam; returns flat tonal swatch PNGs, no scene, no text, no numbers. Live model capture not produced.",
+  "courses": {
+    "japanese_demo (course-world frames)": {
+      "course_id": "crs_650052975ca7406aaddda22122c89bad",
+      "ok": true,
+      "result": {
+        "course_id": "crs_650052975ca7406aaddda22122c89bad",
+        "presentation_mode": "game",
+        "world": {
+          "world_id": "wld_769ee051231d4d0e81ec7fce597bcbdf",
+          "state": "approved",
+          "revision": 6,
+          "brief": {
+            "audience": "adult learner",
+            "course_id": "crs_650052975ca7406aaddda22122c89bad",
+            "end_capability": "Work through the published pack japanese-affection-context-l0 1.0.0: Tell everyday affection from a direct romantic declaration (and 3 more objective(s)).",
+            "forbidden": [],
+            "level": "novice",
+            "locale": "ja-JP",
+            "motifs": [
+              "tell everyday affection from a direct romantic declaration",
+              "choose the polite expression for a first confession",
+              "recall the intimate declaration in a new context",
+              "explain why register changes with the relationship",
+              "lantern district",
+              "cafe counter"
+            ],
+            "safety_class": "none",
+            "sections": [
+              {
+                "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+                "title": "Tell everyday affection from a direct romantic declaration"
+              },
+              {
+                "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+                "title": "Choose the polite expression for a first confession"
+              },
+              {
+                "id": "obj_9b59620700274412b8bd27e86e30e231",
+                "title": "Recall the intimate declaration in a new context"
+              },
+              {
+                "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+                "title": "Explain why register changes with the relationship"
+              }
+            ],
+            "subject_domain": "unknown_subject",
+            "title": "Japanese affection and register \u2014 an L0 demonstration classroom",
+            "tone": "practical, calm, competent"
+          },
+          "concepts": [
+            {
+              "artifact_id": "art_gm004concept0",
+              "label": "authored",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; authored",
+              "palette": [
+                "parchment",
+                "ink",
+                "lamp ochre",
+                "muted indigo"
+              ],
+              "prompt_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+              "role": "orientation",
+              "style_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+              "style_id": "field_atlas--authored",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_gm004concept1",
+              "label": "warm-paper",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; warm-paper",
+              "palette": [
+                "parchment",
+                "ink",
+                "lamp ochre",
+                "muted indigo"
+              ],
+              "prompt_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+              "role": "orientation",
+              "style_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+              "style_id": "field_atlas--warm-paper",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_gm004concept2",
+              "label": "night-ink",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; night-ink",
+              "palette": [
+                "parchment",
+                "ink",
+                "lamp ochre",
+                "muted indigo"
+              ],
+              "prompt_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+              "role": "orientation",
+              "style_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+              "style_id": "field_atlas--night-ink",
+              "textless": true
+            }
+          ],
+          "selected_concept_id": "field_atlas--authored",
+          "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+          "kit_hash": "sha256:ee07dd9120e41518d09fe45362ffca2860822914c83e323442e5c989d665d15e",
+          "approved_hash": "sha256:ee07dd9120e41518d09fe45362ffca2860822914c83e323442e5c989d665d15e",
+          "approved_at": "2026-11-10T05:52:01.004781+00:00",
+          "error": {},
+          "updated_at": "2026-11-10T05:52:01.004790+00:00",
+          "assets": [
+            {
+              "role": "cover",
+              "section_id": null,
+              "section_key": "",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:4a56e16eaa218c3cebe9b4ed32c4404355e590d26a613125ec11547eb630cd47",
+              "textless": true
+            },
+            {
+              "role": "hero",
+              "section_id": null,
+              "section_key": "",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:cdb21c18f24b73cfc72cf1081b66eb557061be8b148aeed41ac494fc2a500379",
+              "textless": true
+            },
+            {
+              "role": "section",
+              "section_id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+              "section_key": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:86c93cb0a19c27385d44c70c6d22da5c317b7a876db888e9cc99383092457ff6",
+              "textless": true
+            },
+            {
+              "role": "section",
+              "section_id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+              "section_key": "obj_2d909e4f37014c14bb216f1b35cc3753",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:6a11a0a7c820acb1ddea0e8aa2eeded0d891e61f09eadd4bbe4097980afa8d2f",
+              "textless": true
+            },
+            {
+              "role": "section",
+              "section_id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+              "section_key": "obj_2ec4b8ec075e459ab158f3f356717b68",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:aa000e16d659c0057716ca339004b568a0572c7aa49fc3ffc979c40bdf30f397",
+              "textless": true
+            },
+            {
+              "role": "section",
+              "section_id": "obj_9b59620700274412b8bd27e86e30e231",
+              "section_key": "obj_9b59620700274412b8bd27e86e30e231",
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "style_hash": "sha256:b222a7d68ab0f27df3456cac5ee539b8171d6ceaef690e120849e8c8384000a7",
+              "prompt_hash": "sha256:15aad940215c1d9b47a42e1eccc962d901249561d756e4d3aa4e3839ae4815d2",
+              "textless": true
+            }
+          ]
+        },
+        "fallback": null,
+        "revision": 6
+      },
+      "error": null
+    },
+    "head_gasket (approved, no enrollment)": {
+      "course_id": "crs_01bf0627f87a4265911883b85f46a5fb",
+      "ok": true,
+      "result": {
+        "course_id": "crs_01bf0627f87a4265911883b85f46a5fb",
+        "presentation_mode": "game",
+        "world": {
+          "world_id": "wld_caaae5dfde3c49568bfe39fdd4c43e13",
+          "state": "approved",
+          "revision": 6,
+          "brief": {
+            "audience": "adult learner",
+            "course_id": "crs_01bf0627f87a4265911883b85f46a5fb",
+            "end_capability": "Replace a head gasket on a four-cylinder engine",
+            "forbidden": [],
+            "level": "novice",
+            "locale": "en-US",
+            "motifs": [
+              "service bay",
+              "car on a lift",
+              "tool wall",
+              "component trays",
+              "bench light",
+              "torque wrench silhouette"
+            ],
+            "safety_class": "workshop",
+            "sections": [],
+            "subject_domain": "technical_procedure",
+            "title": "Replace a head gasket",
+            "tone": "practical, calm, competent"
+          },
+          "concepts": [
+            {
+              "artifact_id": "art_dc5aac45d07f4925a49ffd03e45aaa8f",
+              "label": "authored",
+              "medium": "technical ink wash with precise line work, cold overhead light; as authored",
+              "palette": [
+                "steel grey",
+                "oil-dark ink",
+                "safety ochre",
+                "parchment"
+              ],
+              "prompt_hash": "sha256:a8d93c69dbe6dc4c52c3997cf247092377dad661ecfa1c1b1673c43f29548608",
+              "role": "orientation",
+              "style_hash": "sha256:fc4fcf54d4066a9406cf7d841372f4d0b1808469ef337dbdddb090fd7a3e24c0",
+              "style_id": "workshop_manual--authored",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_5d695c6440be4658ab2708a525767f7b",
+              "label": "warm-paper",
+              "medium": "technical ink wash with precise line work, cold overhead light; looser gouache with a visible paper grain",
+              "palette": [
+                "warm parchment",
+                "oil-dark ink",
+                "safety ochre",
+                "parchment",
+                "honey ochre"
+              ],
+              "prompt_hash": "sha256:ddb75c4294274212cbd268a67972e2cce81e823262a54418e0fe09c777255cf7",
+              "role": "orientation",
+              "style_hash": "sha256:6233d678dcb6c2306cbd36af70a56f21d7fb419c65a4b903dcbff859cccdde3a",
+              "style_id": "workshop_manual--warm-paper",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_6960f8a3ac8c4e47a671ed5f043f3dca",
+              "label": "night-ink",
+              "medium": "technical ink wash with precise line work, cold overhead light; fine drypoint etching with restrained wash",
+              "palette": [
+                "midnight ink",
+                "slate",
+                "safety ochre",
+                "parchment"
+              ],
+              "prompt_hash": "sha256:731719d1fdbc84bfff8de264a3b16f562adab34b09690646d637ddba46a04dca",
+              "role": "orientation",
+              "style_hash": "sha256:0d8959db2c554b40397c568f09d4f501eea33330f360b1a4783b1787829717dd",
+              "style_id": "workshop_manual--night-ink",
+              "textless": true
+            }
+          ],
+          "selected_concept_id": "workshop_manual--authored",
+          "style_hash": "sha256:fc4fcf54d4066a9406cf7d841372f4d0b1808469ef337dbdddb090fd7a3e24c0",
+          "kit_hash": "sha256:92753c4d6ad10ad303d57c36ce88df3a1faf7398e42da25049d4f376abfd5559",
+          "approved_hash": "sha256:92753c4d6ad10ad303d57c36ce88df3a1faf7398e42da25049d4f376abfd5559",
+          "approved_at": "2026-11-10T05:52:01.855920+00:00",
+          "error": {},
+          "updated_at": "2026-11-10T05:52:01.855928+00:00",
+          "assets": [
+            {
+              "role": "cover",
+              "section_id": null,
+              "section_key": "",
+              "artifact_id": "art_dc5aac45d07f4925a49ffd03e45aaa8f",
+              "style_hash": "sha256:fc4fcf54d4066a9406cf7d841372f4d0b1808469ef337dbdddb090fd7a3e24c0",
+              "prompt_hash": "sha256:5dab9a7071b87a8246873d4fa606d1afecd13ec4eeb4628c85ae673f06356e79",
+              "textless": true
+            },
+            {
+              "role": "hero",
+              "section_id": null,
+              "section_key": "",
+              "artifact_id": "art_dc5aac45d07f4925a49ffd03e45aaa8f",
+              "style_hash": "sha256:fc4fcf54d4066a9406cf7d841372f4d0b1808469ef337dbdddb090fd7a3e24c0",
+              "prompt_hash": "sha256:70de03fabb4c6fa7bc2add2bccd0269544ceeaff2be9d6bfb3cdf58275cc74c4",
+              "textless": true
+            }
+          ]
+        },
+        "fallback": null,
+        "revision": 6
+      },
+      "error": null
+    },
+    "sample_classroom (studio-concepts frames)": {
+      "course_id": "crs_55d43766da5b4f25818d1a36812e1ca1",
+      "ok": true,
+      "result": {
+        "course_id": "crs_55d43766da5b4f25818d1a36812e1ca1",
+        "presentation_mode": "textbook",
+        "world": {
+          "world_id": "wld_b3862268ce9449f2be32aeccf7cb8f4a",
+          "state": "concepts_ready",
+          "revision": 1,
+          "brief": {
+            "audience": "adult learner",
+            "course_id": "crs_55d43766da5b4f25818d1a36812e1ca1",
+            "end_capability": "Work through the published pack japanese-affection-context-l0 2.0.0: Tell everyday affection from a direct romantic declaration (and 3 more objective(s)).",
+            "forbidden": [],
+            "level": "novice",
+            "locale": "ja-JP",
+            "motifs": [
+              "tell everyday affection from a direct romantic declaration",
+              "choose the polite expression for a first confession",
+              "recall the intimate declaration in a new context",
+              "choose the register for a close friend in public",
+              "lantern district",
+              "cafe counter"
+            ],
+            "safety_class": "none",
+            "sections": [
+              {
+                "id": "obj_1e6ed5af9ecb467d892f2b87805a7759",
+                "title": "Tell everyday affection from a direct romantic declaration"
+              },
+              {
+                "id": "obj_7bf00e4cebb74941bb74e462dcb299fd",
+                "title": "Choose the polite expression for a first confession"
+              },
+              {
+                "id": "obj_1496c5819c4c4e0bb83cb8ce4d347f78",
+                "title": "Recall the intimate declaration in a new context"
+              },
+              {
+                "id": "obj_d8e0e07a7696468893730a7b3c5e7f66",
+                "title": "Choose the register for a close friend in public"
+              }
+            ],
+            "subject_domain": "unknown_subject",
+            "title": "Japanese affection and register \u2014 a Sample L0 classroom",
+            "tone": "practical, calm, competent"
+          },
+          "concepts": [
+            {
+              "artifact_id": "art_750c32dc62ac41e2b1dfc5bad48543fc",
+              "label": "authored",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; as authored",
+              "palette": [
+                "parchment",
+                "ink",
+                "lamp ochre",
+                "muted indigo"
+              ],
+              "prompt_hash": "sha256:95f25c25eca0e99bdcae23a5fe134c7fbf55708ce6df4be036b0b16d2bc2f689",
+              "role": "orientation",
+              "style_hash": "sha256:5e46dfa9b23ccc87c92183020cc8abedc775c63d0a2ab0b442445af853e466d2",
+              "style_id": "field_atlas--authored",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_0acb038d9f2a426bb5bdb5bd0dec7cdc",
+              "label": "warm-paper",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; looser gouache with a visible paper grain",
+              "palette": [
+                "warm parchment",
+                "ink",
+                "lamp ochre",
+                "muted indigo",
+                "honey ochre"
+              ],
+              "prompt_hash": "sha256:9659905028c9647d8307b2debef411e6687f805de53e832fce4bedbef4e450f9",
+              "role": "orientation",
+              "style_hash": "sha256:99999a2a76fd14f9ef4c5c0f43fe5e445e8209a6a5aef50a4e2cd51cc5e5401a",
+              "style_id": "field_atlas--warm-paper",
+              "textless": true
+            },
+            {
+              "artifact_id": "art_26347a03f5844dfe83c4a2c831bce86b",
+              "label": "night-ink",
+              "medium": "ink and gouache on warm paper, fine line weight, single soft light source; fine drypoint etching with restrained wash",
+              "palette": [
+                "midnight ink",
+                "slate",
+                "lamp ochre",
+                "muted indigo"
+              ],
+              "prompt_hash": "sha256:57bd47cd04fb0fef3c10db00a32f8fc25c741eee867fd79d261c2344e5d30c50",
+              "role": "orientation",
+              "style_hash": "sha256:e6e7a0ce25d399754e1840763e6eaa6b63ef4f16460d5782212693999cee3720",
+              "style_id": "field_atlas--night-ink",
+              "textless": true
+            }
+          ],
+          "selected_concept_id": null,
+          "style_hash": null,
+          "kit_hash": null,
+          "approved_hash": null,
+          "approved_at": null,
+          "error": {},
+          "updated_at": "2026-11-10T05:55:26.714655+00:00",
+          "assets": []
+        },
+        "fallback": "textbook",
+        "revision": 1
+      },
+      "error": null
+    }
+  }
+}
