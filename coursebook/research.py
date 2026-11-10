@@ -142,9 +142,10 @@ _MAX_PUBLISHER = 120
 #: A pipeline excerpt is the text a plan/lesson validator judges a claim against, so it must carry
 #: real prose, not the first few hundred characters of site chrome. 600 characters was measured to
 #: end inside a navigation menu (``Search ## Suggested Searches - [Artemis]…``) and left every
-#: objective unsupportable. The worker still bounds the request by ``REQUEST_BYTES_BOUNDS``; this
-#: value is the per-source window, chosen so eight sources fit a 24 kB ``short`` request.
-_MAX_EXCERPT = 1600
+#: objective unsupportable. The request bound is still ``REQUEST_BYTES_BOUNDS`` (24 kB at
+#: ``short``); eight sources at 1200 characters fit it with the plan payload, and a measured
+#: 1600-character window overflowed it at 24 352 bytes.
+_MAX_EXCERPT = 1200
 #: Search-result descriptions are not judged evidence; keep them small and stable.
 _MAX_DESCRIPTION = 600
 _MAX_SOURCE_TYPE = 40
