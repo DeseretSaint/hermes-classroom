@@ -317,6 +317,17 @@ MIN_SHAPE_REPAIR_SECONDS = 15.0
 #: and the recorded shape-violation count carry the re-ask.
 REPAIR_PROMPT_SUFFIX = ".repair"
 
+#: Suffix a *truncation* re-ask carries on its ``prompt_version``. A cut or empty answer is an
+#: incomplete answer, not a verdict, so it is re-asked once under its own marked label rather than
+#: being folded into the schema-repair path (different rejection, different rule stated).
+TRUNCATION_REPAIR_PROMPT_SUFFIX = ".cut"
+
+#: How close an answer's recorded completion tokens must be to its cap to be read as *cut off*.
+#: Token accounting is the provider's, and a trailing newline or one-final-token difference is not
+#: proof that the answer was allowed to finish; the slop keeps the check from missing a truncation
+#: over a single token while never labelling a short answer as truncated.
+TRUNCATION_CAP_SLOP_TOKENS = 64
+
 #: How much of a host schema-violation message the re-ask quotes back. Bounded because the
 #: message quotes model output, and the quote is wrapped in the untrusted-data envelope.
 SHAPE_VIOLATION_QUOTE_CHARS = 400
@@ -2837,11 +2848,21 @@ VALIDATION_AUX_TASK = "cb_validate"
 VALIDATION_REASONING_EFFORT = "low"
 
 #: Hard completion cap per validation answer, in tokens. It counts reasoning tokens too, so it is
-#: sized for a low-effort reasoning trace plus a full schema answer: ten verdicts at the 400-char
-#: reason bound plus JSON overhead is under 1 500 tokens, and the measured low-effort trace is
-#: ~300. A pass that would exceed this is truncated by the provider (``finish_reason=length``),
-#: which the shape gate reports as ``VALIDATION_FAILED`` rather than a silent overrun.
-VALIDATION_OUTPUT_TOKENS = 4000
+#: sized for a low-effort reasoning trace plus a full schema answer.
+#:
+#: CP-015 measured this on the demo authoring model (``nous`` / ``deepseek-v4.1-flash``, the host's
+#: configured route) while creating four real courses: of nine ``coursebook.plan.validate`` calls,
+#: four consumed the cap exactly (``output_tokens: 4000``), and three of those came back as
+#: truncated or empty content — ``plan validation is not valid JSON: Unterminated string``,
+#: ``... not valid JSON: Expecting value``, ``plan validation was empty``. The three answers that
+#: did parse used 2 998–3 814 tokens, so 4 000 sat at the median answer, not above it. The cap is
+#: therefore 8 000: still far below the 19 739-token unbounded answer H-192c measured, but with
+#: room for the route's reasoning trace *and* the schema answer. A pass that would still exceed it
+#: is truncated by the provider, which the shape gate reports as ``VALIDATION_FAILED``; a
+#: truncation whose cap was fully consumed is first re-asked once (see
+#: :func:`_validation_answer_with_repair`), because a cut answer is an incomplete answer, not a
+#: verdict.
+VALIDATION_OUTPUT_TOKENS = 8000
 
 #: The auxiliary-task defaults declared at register time. ``reasoning_effort`` is folded into
 #: ``extra_body.reasoning`` by the host; ``extra_body.max_tokens`` is the route-level cap the
@@ -5911,6 +5932,83 @@ def _parse_validation_answer(
     return document
 
 
+def _answer_was_cut(response: LLMResponse, request: LLMRequest) -> bool:
+    """Whether the provider's own token count says this answer ran into the cap.
+
+    A cut answer is not a verdict. The provider reports no ``finish_reason`` through this seam, so
+    the recorded completion tokens are the only truncation signal: an answer that consumed its
+    whole cap and still arrived empty or mid-JSON was stopped, not finished. An answer that ends
+    malformed well below its cap is a genuinely bad answer and is *not* repairable this way —
+    re-asking it spends the same call to get the same shape.
+    """
+    used = getattr(response, "output_tokens", None)
+    if used is None:
+        return False
+    try:
+        return int(used) >= int(request.max_tokens) - TRUNCATION_CAP_SLOP_TOKENS
+    except (TypeError, ValueError):
+        return False
+
+
+def _truncation_repair_request(request: LLMRequest) -> LLMRequest:
+    """The one re-ask for a cut-off answer: same demand, the answer-length rule stated.
+
+    The pass, its schema, its criteria and its claim set are byte-identical to the original call,
+    so the re-ask is still this pass answering its own request — it is not a second validator and
+    it cannot widen the reviewed set. Only ``instructions`` gains the correction and only
+    ``prompt_version`` is marked (``docs/GENERATION.md`` §1).
+    """
+    note = (
+        "\n\nYour previous answer to this same request was cut off before it finished: it "
+        "consumed the whole answer-length budget and no usable JSON object arrived, so no verdict "
+        "from it survives. Answer the request again and keep the answer short — one sentence per "
+        "reason (under 200 characters), no restating the artifact, no method explanation, and no "
+        "discussion inside the answer fields. Return exactly one JSON object matching the schema, "
+        "with every required field present."
+    )
+    return replace(
+        request,
+        instructions=request.instructions + note,
+        prompt_version=request.prompt_version + TRUNCATION_REPAIR_PROMPT_SUFFIX,
+    )
+
+
+def _validation_answer_with_repair(
+    llm: "LLM",
+    request: LLMRequest,
+    response: LLMResponse,
+    usage: "_Usage",
+    *,
+    what: str,
+) -> tuple[dict[str, Any], LLMResponse]:
+    """Parse one validator answer, re-asking once when the answer was *cut off* by the cap.
+
+    A truncated or empty answer is an incomplete answer: the validator never stated a verdict, so
+    reporting it as a non-retryable ``VALIDATION_FAILED`` tells the operator a permanent rejection
+    happened when the only thing that happened is that the route spent its budget on reasoning.
+    CP-015 measured that on the demo route: four of nine plan-validation calls consumed the cap
+    exactly and three of them arrived unusable. The re-ask is bounded — exactly one, on the same
+    demand — and its answer is parsed by the same gate, so a second cut answer is still a typed
+    contract failure. A malformed answer that did *not* run into the cap is not retried here.
+
+    The returned response carries ``shape_repair_attempts=1`` when a re-ask produced it, so
+    provenance and the validation record never present a repaired answer as first-time clean.
+    """
+    try:
+        return _parse_validation_answer(response, request, what=what), response
+    except ModelOutputInvalid:
+        if not _answer_was_cut(response, request):
+            raise
+    usage.reserve(1)
+    retry = _truncation_repair_request(request)
+    repaired = _call_llm(llm, retry, usage)
+    document = _parse_validation_answer(repaired, retry, what=what)
+    return document, replace(
+        repaired,
+        shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+    )
+
+
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
     """Structural guarantee that validation is a second, different call.
 
@@ -8005,17 +8103,21 @@ def run_plan_job(
             for validation_request in validation_requests:
                 assert_separate_pass(plan_request, validation_request)
             validation_responses = _run_validation_passes(validator, validation_requests, usage)
-            reports = [
-                (
-                    validation_pass_criteria(validation_request),
-                    _parse_validation_answer(
-                        validation_response, validation_request, what="plan validation"
-                    ),
+            reports = []
+            for index, (validation_request, validation_response) in enumerate(
+                zip(validation_requests, validation_responses)
+            ):
+                report, answered = _validation_answer_with_repair(
+                    validator,
+                    validation_request,
+                    validation_response,
+                    usage,
+                    what="plan validation",
                 )
-                for validation_request, validation_response in zip(
-                    validation_requests, validation_responses
-                )
-            ]
+                # A truncation re-ask answers the same pass under a marked label; keep the
+                # answering response so provenance reports the re-ask, never a first-time clean.
+                validation_responses[index] = answered
+                reports.append((validation_pass_criteria(validation_request), report))
             report = merge_validation_reports(reports)
             validation_request = validation_requests[0]
             # H-192b: the review is several passes. Provenance is recorded from an answering
@@ -9058,8 +9160,12 @@ def run_unit_sections_job(
             assert request is not None
             assert_separate_pass(request, validation_request)
             validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_validation_answer(
-                validation_response, validation_request, what="unit sections validation"
+            report, validation_response = _validation_answer_with_repair(
+                validator,
+                validation_request,
+                validation_response,
+                usage,
+                what="unit sections validation",
             )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
@@ -10100,8 +10206,12 @@ def _author_section(
         )
         assert_separate_pass(request, validation_request)
         validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
-        report = _parse_validation_answer(
-            validation_response, validation_request, what="lesson validation"
+        report, validation_response = _validation_answer_with_repair(
+            validation_llm() or llm,
+            validation_request,
+            validation_response,
+            usage,
+            what="lesson validation",
         )
         independence = validation_independence(
             model_identity(response), model_identity(validation_response)
