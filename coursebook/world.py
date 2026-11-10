@@ -18,6 +18,7 @@ This module is split at the same boundary the plan draws:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
@@ -1434,6 +1435,16 @@ def _names_numbers_or_answer_content(value: Any) -> bool:
     return bool(tokens & (_UNIT_TOKENS | _INSTRUCTION_TOKENS))
 
 
+#: Quantity words that, hyphenated, are still a value or a sequence step: "quarter-turn" is an
+#: instruction, "half-inch" a measurement, "dozen-count" a quantity. They never earn the
+#: descriptive-compound exemption (K1).
+_QUANTITY_COMPOUND_TOKENS: frozenset[str] = frozenset({"quarter", "half", "dozen", "third"})
+
+#: The boundary of the ``four-cylinder`` carve-out: only a spelled number followed by a plain
+#: noun is a descriptive compound ("four-cylinder block", "two-stroke engine"). A number
+#: followed by another number ("seventy-five") is a written value and stays refused.
+_HYPHEN_COMPOUND_UNIT = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
 #: Function words that carry no scene ownership. A section title ("Ordering a drink") must not
 #: be mistaken for the workshop's "car on a lift" merely because both contain "a".
 _SCENE_TEXT_STOPWORDS: frozenset[str] = frozenset(
@@ -1467,6 +1478,23 @@ _SCENE_TEXT_STOPWORDS: frozenset[str] = frozenset(
 )
 
 
+def _descriptive_number_compound(unit: str) -> bool:
+    """True for a hyphenated spelled number that describes a thing, not a value.
+
+    ``four-cylinder`` and ``two-stroke`` are compound adjectives and legal scene words. A
+    number followed by another number (``seventy-five``) is a written value; a quantity word
+    (``quarter-turn``, ``half-inch``) is a sequence step or a measurement. Both stay refused
+    (K1). Multi-part compounds are not granted the exemption.
+    """
+    parts = unit.split("-")
+    if len(parts) != 2:
+        return False
+    head, tail = parts
+    if head not in _SPELLED_NUMBER_TOKENS or head in _QUANTITY_COMPOUND_TOKENS:
+        return False
+    return tail not in _SPELLED_NUMBER_TOKENS
+
+
 def _names_procedure_or_spelled_value(value: Any) -> bool:
     """A plate is orientation, never a procedure or a value written out in words.
 
@@ -1474,25 +1502,27 @@ def _names_procedure_or_spelled_value(value: Any) -> bool:
     :func:`_names_numbers_or_answer_content`; this adds the two holes a reviewer could drive a
     procedure through (J1, plan §4.4 rules 1 and 5):
 
-    * a spelled-out value ("tighten to seventy five", "another quarter turn"), and
+    * a spelled-out value ("tighten to seventy five", "seventy-five"), and
     * imperative procedure phrasing ("remove the intake manifold", "drain the coolant").
 
     Only *verb-initial* phrasing is refused: "car on a lift" is the workshop's native place cue,
-    not the instruction "lift the car". A hyphenated compound is a descriptive, not a value:
-    "four-cylinder block" stays legal while "seventy five" does not.
+    not the instruction "lift the car". The ``four-cylinder`` carve-out is deliberately narrow:
+    only a spelled number followed by a plain noun is descriptive. Hyphenation must not shelter
+    a value or a sequence step (K1) — "seventy-five" and "quarter-turn" are still refused.
     """
     if _names_numbers_or_answer_content(value):
         return True
     tokens = _phrase_tokens(value)
     if not tokens:
         return False
-    lowered = str(value).lower()
-    for token in tokens:
-        if token not in _SPELLED_NUMBER_TOKENS:
+    exposed = set()
+    for unit in _HYPHEN_COMPOUND_UNIT.findall(str(value).lower()):
+        if _descriptive_number_compound(unit):
             continue
-        if f"{token}-" in lowered or f"-{token}" in lowered:
-            continue  # "four-cylinder", "two-stroke": a compound adjective, not a value
-        return True
+        exposed.update(_phrase_tokens(unit))
+    for token in tokens:
+        if token in _SPELLED_NUMBER_TOKENS and token in exposed:
+            return True
     return tokens[0] in _PROCEDURE_VERB_TOKENS
 
 
@@ -1601,7 +1631,7 @@ def presentation_text_problems(
             problems.append((field, reason, detail))
             continue
         tokens = set(_phrase_tokens(value))
-        unknown = sorted(tokens - _PRESENTATION_LEXICON[field])
+        unknown = sorted(tokens - _PRESENTATION_LEXICON[field] - _SCENE_TEXT_STOPWORDS)
         if unknown:
             problems.append(
                 (field, "presentation_text_not_mood_vocabulary", ", ".join(unknown))

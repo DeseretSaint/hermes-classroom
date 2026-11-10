@@ -95,3 +95,13 @@ the prompt string, and a caller patch that fails the same predicate is refused b
 row, job or provider call. The cost of a successful request is unchanged (3 boards + kit), and
 the stored brief/cache key are untouched, so no new spend identity is created.
 
+
+## Round-9 hyphen fence cost
+
+Round 9 narrows the `four-cylinder` carve-out so hyphenation cannot shelter a value or a sequence
+step (`spec is seventy-five`, `hand tight plus a quarter-turn`, a course titled `Seventy-five`).
+The check is the same local predicate, re-run over hyphen-aware units; it adds **0** model calls
+on the accept path and refuses a hostile caller patch before any world row, job or provider call
+(**0** image calls). Function words in `tone`/`audience` (`calm and precise`) are now neutral, so a
+legal mood patch still costs exactly the 3 boards + kit from the table above. No cache-key or
+`prompt_hash` change: the fence remains prompt-local.

@@ -227,9 +227,10 @@ carried a foreign scene into the prompt's hard negatives. Round 8 replaces the p
 
 - `_plate_text_problems(value, grammar)` is the single predicate: digits/units/answer/instruction
   vocabulary (`answer`, `key`, `solution`, `ignore`, `instead`, `textless`, …), spelled-out
-  quantities (`one`…`ninety`, `half`, `quarter`, `dozen`, with hyphenated compounds such as
-  `four-cylinder` exempt), verb-initial procedure phrasing, and another grammar's distinctive
-  vocabulary. It returns stable reason ids, not prose.
+  quantities (`one`…`ninety`, `half`, `quarter`, `dozen`), verb-initial procedure phrasing, and
+  another grammar's distinctive vocabulary. It returns stable reason ids, not prose.
+  **Correction (round 9):** round 8 exempted *every* hyphenated spelled token, not just
+  `four-cylinder`; that is fixed below, and only a number+noun descriptive compound is exempt.
 - `_plate_safe(value, grammar, fallback=…)` is the only way `build_prompt()` interpolates text.
   It is called for **subject** (fallback `record.label`), **capability** (omitted),
   **each motif** (unsafe motif dropped, grammar cues carry the scene), **tone**/**audience**
@@ -259,6 +260,46 @@ are not a semantic classifier, so a procedure phrased as a bare noun phrase with
 spelled quantity or verb-initial imperative is not detected; the workshop grammar's hard negatives
 still forbid depicted procedures, torque values, sequences and measurements. A genuinely new
 surface (new field, role or grammar) is a follow-up card.
+
+## Review round 9 — sentinel K1: hyphenation must not shelter a value
+
+Round 8's class-closing fence was correct in shape but the `four-cylinder` carve-out was matched
+on the *raw string* (`token-` / `-token`), so any hyphenated spelled token was exempt. K1 showed
+the J1 sequence step and a spelled value passing with one character changed
+(`spec is seventy-five`, `hand tight plus a quarter-turn`), and the same root let a course titled
+`Seventy-five` reach every plate.
+
+**Fix (tests first)**
+
+- `_descriptive_number_compound()` is the narrow carve-out: exactly two parts, a spelled number
+  followed by a plain noun (`four-cylinder`, `two-stroke`). A number followed by another number
+  (`seventy-five`) or a quantity word (`quarter-turn`, `half-inch`, `dozen-count`) is not
+  exempt. `_QUANTITY_COMPOUND_TOKENS` names the quantity heads.
+- `_names_procedure_or_spelled_value()` re-scans hyphen-aware units (`_HYPHEN_COMPOUND_UNIT`), so a
+  spelled token is refused when any occurrence is exposed outside a legal descriptive compound.
+  The predicate is unchanged in place, so `_plate_text_problems()`, the prompt gate and every
+  patch refusal inherit the fix.
+- The mood/role lexicon now treats function words (`and`, `at`, `with`, …) as neutral: round 8
+  refused `calm and precise` with `presentation_text_not_mood_vocabulary` because `and` was
+  unknown. Adjectives still have to be in the lexicon and another grammar's scene words are
+  still refused.
+
+**Tests** — `test_presentation_motifs_cannot_hyphenate_a_value_or_sequence` covers concepts and the
+approved-style kit path (0 spend), keeps `four-cylinder block` legal, and asserts a course titled
+`Seventy-five` with goal `Learn the value seventy-five` falls back to the grammar label at the
+prompt while the stored brief stays verbatim. The class-closing table gains a `hyphen` category
+(`hand tight plus a quarter-turn`) and `test_presentation_text_allows_function_words` covers S9.
+
+Red evidence: `audit/gm-003/red-attempt9.txt` (12 failures + 1 error against pre-round-9
+`coursebook/world.py`, every case hostile text present or the tone conjunction refused). Green:
+`audit/gm-003/green-attempt9.txt` (3 OK), `audit/gm-003/test_world-attempt9.txt` (37 OK),
+regression set 296 OK (`regression-attempt9.txt`), full suite in `full-attempt9.log`.
+
+Residual paths are unchanged from round 8: token-level heuristics are not a semantic classifier,
+and a procedure phrased as a bare noun phrase with no digit, unit, spelled quantity, hyphenated
+value or verb-initial imperative is not detected. The workshop hard negatives remain the second
+line of defence. The token-heuristic boundary is the supervisor's freeze; a semantic classifier
+would be a follow-up card.
 
 
 
