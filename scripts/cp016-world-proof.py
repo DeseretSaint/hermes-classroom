@@ -40,6 +40,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 HERMES = Path(os.environ.get("HERMES_AGENT_PATH", "/home/deseretsaint/.hermes/hermes-agent"))
 sys.path.insert(0, str(HERMES))
+# The Hermes runtime puts its own venv (Pillow, httpx, ``tools.*``) on sys.path on import.
+# Guarded: a bare interpreter still runs the prompt-building and ``--dry-run`` paths.
+try:  # pragma: no cover - environment bootstrap
+    import hermes_bootstrap  # noqa: F401
+except Exception:  # noqa: BLE001 - recorded by the provider call, never hidden here
+    pass
 
 from coursebook import world  # noqa: E402
 
@@ -183,13 +189,21 @@ def _last_json_object(text: str) -> dict | None:
 #: single glyphs pass it by construction. A "clean" here is a measured result, not a claim.
 NOTATION_QUESTION = (
     "Audit this illustration for printed marks. Answer with JSON only: "
-    '{"notation": true|false, "kind": "what you saw", "evidence": "where"}. '
+    '{"notation": true|false, "kind": "what you saw", "evidence": "where you looked and what '
+    'you found there"}. '
+    'The "evidence" field is required and must name the objects you inspected (paper surfaces, '
+    "booklets, cards, labels, hands, frame) and what covers them; an empty evidence or the word "
+    "none is not a reading and is recorded as unchecked. "
     "notation=true if the image contains any musical notation, staves, noteheads, clefs, chord "
     "boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, "
     "letters, numerals, brand names or any symbol that resembles writing, or if it shows hands "
     "performing a technique or an instruction step. Ignore brush marks, paper grain, paint "
     "texture and the silhouette of ordinary objects."
 )
+
+#: A verdict is a claim about a reading. Without a described observation there is no reading,
+#: so the gate is fail-closed here rather than counting a bare "false" as clean.
+_EMPTY_EVIDENCE = {"", "none", "n/a", "nothing", "not applicable", "no evidence"}
 
 
 def notation_check(path: Path) -> dict:
@@ -217,11 +231,21 @@ def notation_check(path: Path) -> dict:
     if parsed is None:
         return {"verdict": "unparsed", "notation": None, "read": analysis[-1500:]}
     flag = bool(parsed.get("notation"))
+    evidence = str(parsed.get("evidence") or "").strip()
+    if evidence.lower() in _EMPTY_EVIDENCE:
+        return {
+            "verdict": "unchecked",
+            "notation": None,
+            "kind": str(parsed.get("kind") or "")[:200],
+            "evidence": "",
+            "reason": "empty_evidence",
+            "read": analysis[-1500:],
+        }
     return {
         "verdict": "suspect" if flag else "clean",
         "notation": flag,
         "kind": str(parsed.get("kind") or "")[:200],
-        "evidence": str(parsed.get("evidence") or "")[:400],
+        "evidence": evidence[:400],
         "read": analysis[-1500:],
     }
 
@@ -240,6 +264,11 @@ def summary_entry(slug: str, grammar: str, plates: list[dict], sheet: Path) -> d
         ),
         "notation_gate_suspect": sum(
             1 for row in plates if (row.get("notation") or {}).get("verdict") == "suspect"
+        ),
+        "notation_gate_unchecked": sum(
+            1
+            for row in plates
+            if (row.get("notation") or {}).get("verdict") not in ("clean", "suspect")
         ),
     }
 
@@ -327,12 +356,20 @@ def main() -> int:
     if notation_only:
         # Re-read the final plates only. No generation, no re-crop: this is the gate's second
         # lens over art that already exists, recorded beside the OCR result in provenance.
+        # ``--only`` narrows it to the frames whose recorded read carried no evidence.
+        only_tokens: list[str] = [
+            sys.argv[index + 1]
+            for index, token in enumerate(sys.argv)
+            if token == "--only" and index + 1 < len(sys.argv)
+        ]
         for slug in TOPICS:
             if slug_filter and slug != slug_filter:
                 continue
             folder = OUT / slug
             provenance = json.loads((folder / "provenance.json").read_text(encoding="utf-8"))
             for row in provenance["plates"]:
+                if only_tokens and not any(token in row["file"] for token in only_tokens):
+                    continue
                 check = notation_check(Path(row["file"]))
                 row["notation"] = check
                 print(
@@ -404,12 +441,20 @@ def main() -> int:
         repair_round = 2
         if "--round" in sys.argv:
             repair_round = int(sys.argv[sys.argv.index("--round") + 1])
+        # A re-render for identity (a board that recorded the wrong prompt) must be the plate
+        # the direction prompt asks for, not the repair variant of it.
+        no_harden = "--no-harden" in sys.argv
         manifest = []
         for slug in TOPICS:
+            # ``--only`` names a plate, not a topic: both topics ship a ``01-style_board-authored``.
+            if slug_filter and slug != slug_filter:
+                continue
             brief, grammar, prompts = plan_for(slug)
             folder = OUT / slug
             provenance = json.loads((folder / "provenance.json").read_text(encoding="utf-8"))
-            lookup = {(item.role, item.section_id): item for item in prompts}
+            lookup = {
+                (item.style_id, item.role, item.section_id): item for item in prompts
+            }
             for row in provenance["plates"]:
                 forced = bool(only) and any(token in row["file"] for token in only)
                 # With an explicit --only list, nothing else is re-rendered — the spend guard:
@@ -418,17 +463,17 @@ def main() -> int:
                     continue
                 if not only and not row["ocr"]["words"]:
                     continue
-                prompt = lookup[(row["role"], row["section_id"])]
+                # Keyed by the direction as well as the role: all three style boards share
+                # role="style_board" and section_id=None, so a (role, section_id) key keeps only
+                # the last direction and hands its prompt to any board this pass re-renders.
+                prompt = lookup[(row["style_id"], row["role"], row["section_id"])]
                 path = Path(row["file"])
+                body = prompt.prompt if no_harden else prompt.prompt + hard
                 edit = "--edit" in sys.argv
                 if edit:
-                    url = provider_edit(
-                        prompt.prompt + hard, prompt.aspect_ratio, path, PROOF_MODEL
-                    )
+                    url = provider_edit(body, prompt.aspect_ratio, path, PROOF_MODEL)
                 else:
-                    url = provider_generate(
-                        prompt.prompt + hard, prompt.aspect_ratio, PROOF_MODEL
-                    )
+                    url = provider_generate(body, prompt.aspect_ratio, PROOF_MODEL)
                 data = download(url, path)
                 if url.startswith("data:"):
                     source = {
@@ -439,6 +484,7 @@ def main() -> int:
                     source = {"kind": "url", "url": url}
                 row.update(
                     {
+                        "style_id": prompt.style_id,
                         "prompt_hash": prompt.prompt_hash,
                         "prompt_version": prompt.prompt_version,
                         "prompt": prompt.prompt,
