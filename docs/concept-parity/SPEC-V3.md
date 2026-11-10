@@ -615,6 +615,10 @@ blank, and nothing on the sheet is a fake credential.
 | S9 | type | six rows in contract order — `caption`, `meta`, `body`, `lead`, `heading`, `display` — each with name, size and a sample line | same | same | `lab.type.display`, `lab.type.title`, `lab.type.section`, `lab.type.body`, `lab.type.label`, `lab.type.micro` |
 | S10 | materials | grain, wood face, three elevations, radius 0/6/12/999 | same | same | `lab.material.grain`, `lab.material.wood`, `lab.material.elevation`, `lab.material.radius` |
 
+S2's sheet-head box was drawn for a 40 px display with a 48 px line-height, which is not the
+contract's display step at any route width; the 1049 rendering is 55.47/56.58, so its height and
+baseline are re-measured by CP-020b. No other §5 geometry changed in this reconciliation.
+
 **States**
 
 | State | Shows | One next action | Copy ids |
