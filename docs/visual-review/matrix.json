@@ -140,6 +140,51 @@
       "concept_region": "print page anatomy (docs/GM-PRINT-SPEC.md)",
       "states": ["parent-guide", "learner-page", "answer-guide", "sources", "caption-sheet", "low-ink", "a4", "letter"],
       "notes": "proof is a PDF page render, not a browser screenshot"
+    },
+    {
+      "id": "home.v3",
+      "card": "CP-022",
+      "concept_frame": "docs/concept-parity/refs/home.png",
+      "concept_region": "threshold band + wooden shelf + lower ledge with fox and clock",
+      "states": ["default", "first-use", "overflow", "empty", "loading", "error", "offline"],
+      "cells": ["default@1049/light/100", "default@1049/dark/100", "default@900/light/100", "default@460/light/100", "default@1049/light/200", "default@460/light/200", "focus@1049/light/100", "reduced-motion@1049/light/100", "forced-colors@1049/light/100", "first-use@1049/light/100", "overflow@1049/light/100", "empty@1049/light/100", "loading@1049/light/100", "error@1049/light/100", "offline@1049/light/100"],
+      "notes": "one filled primary; shelf scrolls, columns never shrink; fox only in the safe box"
+    },
+    {
+      "id": "discover.v3",
+      "card": "CP-021",
+      "concept_frame": "docs/concept-parity/refs/discover.png",
+      "concept_region": "feature banner + pack grid sharing one column track",
+      "states": ["default", "empty", "loading", "error", "offline", "rejected"],
+      "cells": ["default@1049/light/100", "default@1049/dark/100", "default@900/light/100", "default@460/light/100", "default@1049/light/200", "default@460/light/200", "focus@1049/light/100", "reduced-motion@1049/light/100", "forced-colors@1049/light/100", "empty@1049/light/100", "loading@1049/light/100", "error@1049/light/100", "rejected@1049/light/100", "offline@1049/light/100"],
+      "notes": "banner and grid must share left and right edges; every card uses one metadata pattern"
+    },
+    {
+      "id": "classroom.v3",
+      "card": "CP-023",
+      "concept_frame": "docs/concept-parity/refs/classroom.png",
+      "concept_region": "stamp stepper + framed scene + dialogue + check card + aside",
+      "states": ["default", "correct", "wrong", "no-chat", "complete", "loading", "error", "offline"],
+      "cells": ["default@1049/light/100", "default@1049/dark/100", "default@900/light/100", "default@460/light/100", "default@1049/light/200", "default@460/light/200", "focus@1049/light/100", "reduced-motion@1049/light/100", "forced-colors@1049/light/100", "correct@1049/light/100", "wrong@1049/light/100", "no-chat@1049/light/100", "complete@1049/light/100", "loading@1049/light/100", "error@1049/light/100", "offline@1049/light/100"],
+      "notes": "one filled primary (Check answer); the aside carries evidence and the next section only"
+    },
+    {
+      "id": "course-home.v3",
+      "card": "CP-024",
+      "concept_frame": "docs/concept-parity/refs/map.png",
+      "concept_region": "painted route field with DOM nodes + Continue aside + other courses",
+      "states": ["default", "plan-in-review", "no-world", "world-running", "world-rejected", "course-end", "loading", "error"],
+      "cells": ["default@1049/light/100", "default@1049/dark/100", "default@900/light/100", "default@460/light/100", "default@1049/light/200", "default@460/light/200", "focus@1049/light/100", "reduced-motion@1049/light/100", "forced-colors@1049/light/100", "plan-in-review@1049/light/100", "no-world@1049/light/100", "world-running@1049/light/100", "world-rejected@1049/light/100", "course-end@1049/light/100", "loading@1049/light/100", "error@1049/light/100"],
+      "notes": "the primary is the backend's own next-step label rendered as the filled plate; nodes are buttons with words"
+    },
+    {
+      "id": "lab.v3",
+      "card": "CP-020b",
+      "concept_frame": "docs/concept-parity/refs/system.png",
+      "concept_region": "fox specimens + card anatomy + medallions + palette + type + materials",
+      "states": ["default", "reduced-motion", "forced-colors", "text-200", "loading", "error"],
+      "cells": ["default@1049/light/100", "default@1049/dark/100", "default@900/light/100", "default@460/light/100", "default@1049/light/200", "default@460/light/200", "focus@1049/light/100", "reduced-motion@1049/light/100", "forced-colors@1049/light/100", "text-200@1049/light/100", "loading@1049/light/100", "error@1049/light/100"],
+      "notes": "read-only sheet: no filled control, Back is the only navigation; ratios are computed from the contract"
     }
   ]
 }

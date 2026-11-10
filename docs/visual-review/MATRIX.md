@@ -31,6 +31,24 @@ named state at 1049/light/100. File naming and capture rules are in `README.md`.
 `print.pack` is captured as a PDF page render (`pdftoppm -r 110`), not a browser screenshot: the
 print stylesheet is what is under review, and `docs/GM-PRINT-SPEC.md` §6 is its proof path.
 
+## v3 screens (CP-001)
+
+The v3 entries are additive. Every v3 screen also carries a **forced-colors** cell, which the v2
+baseline does not require: `forced-colors@1049/light/100`. `concept_frame` for a v3 screen is a
+repo-relative path into `docs/concept-parity/refs/`, pinned by sha256 in `refs/REFS.md`.
+
+| Screen | Card | Concept frame | Named states |
+|---|---|---|---|
+| `home.v3` | CP-022 | `refs/home.png` | default · first-use · overflow · empty · loading · error · offline |
+| `discover.v3` | CP-021 | `refs/discover.png` | default · empty · loading · error · offline · rejected |
+| `classroom.v3` | CP-023 | `refs/classroom.png` | default · correct · wrong · no-chat · complete · loading · error · offline |
+| `course-home.v3` | CP-024 | `refs/map.png` | default · plan-in-review · no-world · world-running · world-rejected · course-end · loading · error |
+| `lab.v3` | CP-020b | `refs/system.png` | default · reduced-motion · forced-colors · text-200 · loading · error |
+
+`docs/concept-parity/SPEC-V3.md` §5 is the region map, the one primary action and the state's one
+next action for each of these. A v3 capture is taken with `scripts/cp-capture.mjs` and is invalid
+without its stamp JSON.
+
 ## Per-card minimum
 
 | Card | Screens | Minimum captures |

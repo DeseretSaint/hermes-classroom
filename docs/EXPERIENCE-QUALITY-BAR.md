@@ -21,6 +21,47 @@ explanation, and the home is a dashboard rather than a place to learn. Those are
 not styling preferences. "Make it prettier" is not an acceptance criterion. This file defines what
 we mean by high quality, what evidence a worker must produce, and what does not count.
 
+## Owner amendment — concept v3 ratification (2026-11-10)
+
+The owner ratified the v3 concept frames and accepted decisions D1–D10 in
+`docs/concept-parity/PLAN.md`. That ratification lifts the material bans that were written when the
+product had no art or texture lane, and it keeps every honesty rule. This section records the
+change; where it is silent, the v2 rules above still bind.
+
+**Lifted for v3 surfaces only** (v2 surfaces keep the v2 rules until they are rebuilt):
+
+- **Physical elevation.** A card, shelf or mounted plate may carry a contact shadow (`elev-1`) and
+  a raised surface (`elev-2`). The ban on a hard offset shadow and on a shadow used as decoration
+  stays; elevation must describe one object sitting on another, not glow.
+- **Paper and wood material.** Grain, a vignette and a wood ledge are allowed as contract material
+  tiles with declared opacity per theme. A painted paper world with physical objects and contact
+  shadows is the target, not a flat sheet.
+- **Custom faces.** `CB Display` (Fraunces, OFL subset) and `CB UI` (Source Sans 3, OFL subset)
+  replace the OS stacks, with Noto Serif JP for Japanese. Licence notices live in
+  `docs/THIRD-PARTY.md`. The six-step size budget and the 16 px body floor do not change.
+- **Pills.** A `999px` radius is allowed on a primary and a secondary action. It does not create a
+  second primary.
+- **Larger radii.** `0`, `6`, `12` and `999` from the v3 contract replace the v2 pair of `0` and
+  `2`. A radius is still one object's edge, never a second card inside a card.
+
+**Kept, unchanged, on every surface:**
+
+- No glass, no blur, no rainbow or multi-stop gradient, no inner glow. Grain and a vignette are
+  material tiles, not gradients.
+- No fake data: no invented score, crowd opinion, headcount, competence percentage, streak,
+  progress bar or credential. Every number maps to a recorded field or is not shown.
+- One primary action per screen; secondary actions stay quiet; a read-only sheet may have none and
+  must say so.
+- `sdk.Codicon` only, 16 px inline and 20 px on a medallion, `currentColor`; no second icon family
+  or redrawn concept glyph set.
+- Body text at 16 px or larger, prose measure 50–75ch, 24 px minimum targets and 44 px for a
+  primary learning action, 200% text without clipping, WCAG 2.2 AA contrast, a visible focus ring,
+  reduced motion honoured, and the Q1–Q12 gates and the state matrix unchanged.
+- The fox stays one first-party mascot: never an avatar, never a progress metric, never editable.
+
+A v3 screen is scored by `docs/GM-CONCEPT-PARITY-RUBRIC.md` §7. That section adds the Craft
+dimension and redefines anchor A3; it does not lower any threshold.
+
 ## 1. Definition
 
 High quality means all four of these are true at the same time:

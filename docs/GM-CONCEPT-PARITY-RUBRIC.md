@@ -137,3 +137,84 @@ product review: GM-013 ships no screen, so its scorecard scores the reference ma
 - Raising a score after a verbal explanation: the score is of the artifact, not the explanation.
 - Waiving a dimension because "the backend limits it". A backend limit is a spec defect to fix, not
   a review outcome.
+
+---
+
+## 7. v3 dimensions and anchors (concept parity)
+
+Applies to every v3 screen: `home.v3`, `discover.v3`, `classroom.v3`, `course-home.v3`, `lab.v3`,
+and to GM-016's final parity pass. The v2 rows in §1 still govern v2 surfaces; nothing here lowers a
+v2 threshold. Where a v3 anchor and a v2 anchor differ, the v3 screen is scored on the v3 anchor and
+the difference is named in the scorecard's "remaining differences" line.
+
+### 7.1 The ten dimensions
+
+Scores 1–5 as in §1. 2 and 4 are interpolations. One sentence of evidence for any score below 5.
+
+| # | Dimension | 1 — fail | 3 — below bar | 5 — pass |
+|---|---|---|---|---|
+| 1 | **Focal hierarchy** | several equal-weight blocks; the eye lands on chrome or a stat strip | one primary exists but a second filled control or a bright plate competes | exactly one obvious primary; the eye lands on the course, the pack or the check; every other control is quieter by fill, weight or size |
+| 2 | **Composition** | header + equal boxes in a grid; centred dashboard | an authored layout with one generic region (usually the shelf, the aside or the grid edge) | authored asymmetry with one shared track: threshold band, anchored shelf on a ledge, framed scene, route spine; regions differ in weight on purpose; no region is a repeated box |
+| 3 | **Type** | mixed families, tiny unexplained labels, >6 authored sizes | one system, but a heading or caption is off-step, or a card title is uppercase | one serif/sans system on the six shipped steps; display ≤18ch, section ≤34ch, body ≤66ch; one uppercase element per region at most |
+| 4 | **Palette, material and texture** | raw hex, a decorative gradient, coloured card fills | tokens used but a mode or state hue is decorative, a material tile is visible as a tile, or two identity hues compete | contract roles only; at most two hues plus `alert`; every state hue beside its word; paper and wood read as one material at the declared opacity; elevation describes contact, never glow |
+| 5 | **Illustration** | stock-like or generic fantasy; text in the art; wrong subject | right subject but one motif, or inconsistent light and line weight across plates | ≥2 subject motifs from the course's own plan; one kit across hero, cover and section; textless; a quiet field exists for the type; it fails the swap check |
+| 6 | **Card / game system** | invented ratings, XP on Home, progress bars, a fake credential | cards tactile but a chip means nothing, one card breaks the metadata pattern, or XP sits outside Game | every card is the same paper object on the same ledge with one metadata pattern; every chip names a recorded fact; XP appears only in Game mode; the shelf scrolls instead of shrinking |
+| 7 | **State coverage** | only the happy path | empty and error exist but loading shimmers or an empty state replaces a failed read | every state in `matrix.json` for that screen exists, keeps the geometry, names the read and offers exactly one next action; forced-colors and reduced-motion cells exist |
+| 8 | **Responsiveness** | clipped primary at 460 or 200%; no focus ring | 900 and 460 work but a measure exceeds 75ch, or the rail survives below its breakpoint, or the mascot is clipped | 1049, 900 and 460 preserve the composition; the rail becomes the tab strip below 920; no card grid at 460; 200% text without clipping; the 2px `focus` ring is visible; keyboard reaches every control in reading order |
+| 9 | **Truth** | any invented label, score, XP, percentage or generated screenshot | real data but one decorative mark implies progress or a credential | every visible label is DOM text from real state or `COPY.md`; no art carries words; no invented progress; provenance visible on any plate; a missing fact is an honest empty state |
+| 10 | **Craft** | visible seams: mismatched edges, mixed illustration styles, blurry or resampled art, a control that jumps between states | material and illustration are consistent but one alignment breaks at a breakpoint, or an edge degrades at 200% zoom | material consistency (one paper, one wood, one shadow model), illustration consistency (one kit, one light, one line weight), every region edge on one of three tracks, and clean edges at 200% zoom and in forced-colors |
+
+Craft is not a taste score. Its evidence is checkable: the banner and the grid share an edge; card
+tops in a shelf share a baseline; the fox's ground contact sits on the ledge; no plate is scaled
+above its master; every radius comes from the contract's four values.
+
+### 7.2 Composition anchors
+
+A1, A2, A4 and A5 are unchanged from §4.
+
+**A3 Material surface (v3).** A3 is redefined as: *is this a lit paper world with physical objects
+and contact shadows?* The page must read as paper and wood under one light, with objects resting on
+surfaces, not as flat fields with floating cards and not as a photograph of a texture. Flat v2
+surfaces no longer satisfy A3, and a shadow with no contact partner fails it.
+
+Auto-fail regardless of score, unchanged: a card grid as the primary composition on Home; a
+decorative gradient or glass; a second mascot; a second filled primary; XP, level or a streak on a
+non-Game screen; text inside a plate; a fabricated score, percentage, crowd opinion or credential.
+
+### 7.3 Pass rule
+
+**Every dimension ≥ 4 and all five anchors present.** A single 3 is a `request-changes`, not a
+rounding decision. Three loops maximum; the fourth escalates to `atlas`, who splits the screen
+rather than lowering the threshold.
+
+### 7.4 v3 scorecard
+
+```
+Card: CP-___            Branch/commit: ____________________  Plugin sha256: ______________
+Reviewer: _____________ Date: __________  Loop: 1 / 2 / 3
+Screens submitted (matrix ids): _______________________________
+Concept frames compared (refs paths): _________________________
+Capture stamps verified (sha matches commit): YES / NO
+
+Dimension                         Score (1-5)   Evidence (one sentence)
+1 Focal hierarchy                 ____          ______________________
+2 Composition                     ____          ______________________
+3 Type                            ____          ______________________
+4 Palette, material and texture   ____          ______________________
+5 Illustration                    ____          ______________________
+6 Card and object system          ____          ______________________
+7 State coverage                  ____          ______________________
+8 Responsiveness                  ____          ______________________
+9 Truth                           ____          ______________________
+10 Craft                          ____          ______________________
+
+Composition anchors (screen: A1..A5)   _____________________________
+All dimensions >= 4?                   YES / NO
+All anchors present?                   YES / NO
+Verdict: PASS / REQUEST CHANGES
+Smallest fix if not passing: ___________________________________
+Remaining differences even on pass: ___________________________
+```
+
+The reviewer reproduces at least three evidence cells live from the same commit, and refuses a frame
+whose stamp sha differs from the commit under review.
