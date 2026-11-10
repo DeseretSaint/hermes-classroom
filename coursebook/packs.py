@@ -131,7 +131,11 @@ def export_allowlist(version: int | None = None) -> tuple[str, ...]:
     how personal notes, attempts and notebook text stay out by construction. *version* selects the
     schema whose allowlist applies: a v1 pack re-exports as v1 and never gains ``media``.
     """
-    document = contract(CONTRACT_ID) if version is None else contract_as(CONTRACT_ID, version)
+    document = (
+        contract_as(CONTRACT_ID, max(version_files(CONTRACT_ID)))
+        if version is None
+        else contract_as(CONTRACT_ID, version)
+    )
     return tuple(document["properties"].keys())
 
 

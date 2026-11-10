@@ -478,6 +478,28 @@ class CoverFlowTests(KernelCase):
         self.assertTrue(str(item["cover"]["artifact_id"]).startswith("art_"))
         self.assertIsNotNone(item["installed"])
 
+    def test_the_cover_is_adopted_but_never_a_lesson_block(self) -> None:
+        """A cover is a storefront artifact; it states no teaching fact and is not a page child."""
+        workshop.install("japanese-affection-context-l0")
+        cover_rows = [
+            row for row in self.rows("SELECT id, provenance_json FROM artifacts WHERE kind = 'visual'")
+            if json.loads(row["provenance_json"]).get("pack_file") == "content/cover-3x2.png"
+        ]
+        self.assertEqual(len(cover_rows), 1, "the cover must be adopted as an artifact")
+        cover_id = str(cover_rows[0]["id"])
+        self.assertEqual(
+            int(self.scalar("SELECT COUNT(*) FROM lesson_segments WHERE artifact_id = ?", (cover_id,))),
+            0,
+            "a cover must not be written as a lesson media segment",
+        )
+        self.assertEqual(
+            int(self.scalar(
+                "SELECT COUNT(*) FROM lesson_segments s JOIN artifacts a ON a.id = s.artifact_id"
+                " WHERE json_extract(a.provenance_json, '$.pack_file') = 'content/cover-3x2.png'"
+            )),
+            0,
+        )
+
     def test_a_catalogue_cover_that_is_not_the_media_linked_cover_is_refused(self) -> None:
         document = load_catalog()
         entry = next(e for e in document["packs"] if e["pack_id"] == "japanese-affection-context-l0")
