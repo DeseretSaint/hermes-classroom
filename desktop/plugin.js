@@ -17925,7 +17925,8 @@ function LessonPlayer({
   onReload,
   onReadSection,
   onSaveBlock,
-  pronunciation
+  pronunciation,
+  takeHome
 }) {
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const steps = playerSteps(document)
@@ -18164,7 +18165,12 @@ function LessonPlayer({
           jsx('span', {
             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
             children: action.disabled && state.phase === 'awaiting_input' ? 'Answer above, then press Enter.' : 'Enter does the same.'
-          })
+          }),
+          // H-149: the take-with-you action lives in the player's own footer row, so every lesson
+          // mode offers it while the player keeps exactly one footer.
+          takeHome
+            ? jsx(TakeThisWithYou, { ...takeHome })
+            : null
         ]
       })
     ]
@@ -18251,6 +18257,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
         onExit: player.onExit,
         onReload: player.onReload,
         onReadSection: player.onReadSection,
+        takeHome: player.takeHome,
         onSaveBlock,
         pronunciation
       },
@@ -18871,6 +18878,13 @@ function SectionPage({
   // The player owns the screen's one primary (`Check`), so the chat action beside it is secondary
   // while the player is on screen. It keeps its handler: nothing becomes a dead control.
   const playerSurface = Boolean(document) && lessonView === 'player'
+  // The footer accounting follows the surface that actually mounts, not the selected name. A
+  // parent-led course (`parentLed`, no player document) and a blockless page keep the section
+  // footer, so the take-with-you action is never lost to a view name that renders no footer of
+  // its own. `playerSteps` maps blocks one-to-one, so `blocks.length` is exactly "a player will
+  // render".
+  const playerOnScreen =
+    playerSurface && !parentLed && Boolean(document && document.blocks && document.blocks.length > 0)
   // The Field Stop header lives inside the player (STOP n OF m, title, objective, step, exit). The
   // shell's own title block and metadata strip step aside there so the surface has one header; the
   // view switcher stays in `shellActions` because the learner must be able to leave for Textbook.
@@ -19020,6 +19034,14 @@ function SectionPage({
                       state: playerCheckState,
                       controller: playerController,
                       section,
+                      takeHome: {
+                        enrollmentId: row.enrollment_id,
+                        courseId: row.course_id,
+                        objectiveId,
+                        sectionTitle: section ? section.title : null,
+                        implemented,
+                        onChanged
+                      },
                       onExit: onBack,
                       onReload: onRetryPage,
                       // `Read the section` opens the same document in Textbook without leaving the
@@ -19299,7 +19321,10 @@ function SectionPage({
       : null,
     children: [
       body,
-      page && pageReadable
+      // H-149: the section footer belongs to the section index. While the player is on screen
+      // it owns the screen's single footer, and the take-with-you action travels into that row
+      // instead — no surface may render data-cb-section-footer beside data-cb-player-footer.
+      page && pageReadable && !playerOnScreen
         ? jsx('div', {
             'data-cb-section-footer': '',
             style: {
@@ -19312,7 +19337,6 @@ function SectionPage({
             },
             children: [
               jsx('div', {
-                key: 'homework',
                 style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
                 children: jsx(TakeThisWithYou, {
                   enrollmentId: row.enrollment_id,
@@ -19322,16 +19346,13 @@ function SectionPage({
                   implemented,
                   onChanged
                 })
-              }),
-              playerSurface
-                ? null
-                : jsx(sdk.Button, {
-                    key: 'back',
-                    variant: 'text',
-                    size: 'sm',
-                    onClick: onBack,
-                    children: 'Back to the section index'
-                  })
+              }, 'homework'),
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                onClick: onBack,
+                children: 'Back to the section index'
+              }, 'back')
             ]
           })
         : null,
@@ -24623,9 +24644,8 @@ function HomeworkSheetCard({ task, compact = false }) {
       borderRadius: '2px'
     },
     children: [
-      jsx('p', { key: 'eyebrow', style: eyebrow, children: 'Coursebook field card' }),
+      jsx('p', { style: eyebrow, children: 'Coursebook field card' }, 'eyebrow'),
       jsx('h3', {
-        key: 'title',
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
@@ -24635,10 +24655,9 @@ function HomeworkSheetCard({ task, compact = false }) {
           color: 'var(--cb-ink)'
         },
         children: task.title || 'One task'
-      }),
+      }, 'title'),
       target.display
         ? jsx('p', {
-            key: 'target',
             'data-cb-homework-target': '',
             style: {
               margin: 0,
@@ -24650,11 +24669,10 @@ function HomeworkSheetCard({ task, compact = false }) {
             },
             lang: cbHasJapanese(target.display) ? 'ja' : undefined,
             children: target.display
-          })
+          }, 'target')
         : null,
       reading
         ? jsx('p', {
-            key: 'reading',
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
@@ -24664,26 +24682,23 @@ function HomeworkSheetCard({ task, compact = false }) {
             },
             lang: cbHasJapanese(reading) ? 'ja' : undefined,
             children: reading
-          })
+          }, 'reading')
         : null,
       target.romaji
         ? jsx('p', {
-            key: 'romaji',
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: target.romaji
-          })
+          }, 'romaji')
         : null,
       target.meaning
         ? jsx('p', {
-            key: 'meaning',
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
             children: target.meaning
-          })
+          }, 'meaning')
         : null,
-      jsx('hr', { key: 'rule-a', style: rule }),
-      jsx('p', { key: 'where-label', style: label, children: 'Where and when' }),
+      jsx('hr', { style: rule }, 'rule-a'),
+      jsx('p', { style: label, children: 'Where and when' }, 'where-label'),
       jsx('p', {
-        key: 'context',
         'data-cb-homework-context': '',
         style: {
           margin: 0,
@@ -24694,10 +24709,9 @@ function HomeworkSheetCard({ task, compact = false }) {
           overflowWrap: 'anywhere'
         },
         children: task.context || ''
-      }),
-      jsx('p', { key: 'steps-label', style: label, children: 'Do this' }),
+      }, 'context'),
+      jsx('p', { style: label, children: 'Do this' }, 'steps-label'),
       jsx('ol', {
-        key: 'steps',
         style: {
           margin: 0,
           paddingLeft: '1.2rem',
@@ -24710,20 +24724,18 @@ function HomeworkSheetCard({ task, compact = false }) {
           color: 'var(--cb-ink)'
         },
         children: steps.map((step, index) =>
-          jsx('li', { key: `${task.task_id}-step-${index}`, style: { overflowWrap: 'anywhere' }, children: step })
+          jsx('li', { style: { overflowWrap: 'anywhere' }, children: step }, `${task.task_id}-step-${index}`)
         )
-      }),
+      }, 'steps'),
       record.length > 0
         ? jsx('p', {
-            key: 'record',
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: `Ticks for this card: ${record.join(' · ')}`
-          })
+          }, 'record')
         : null,
-      jsx('hr', { key: 'rule-b', style: rule }),
-      jsx('p', { key: 'done-label', style: label, children: 'Done when' }),
+      jsx('hr', { style: rule }, 'rule-b'),
+      jsx('p', { style: label, children: 'Done when' }, 'done-label'),
       jsx('p', {
-        key: 'criterion',
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
@@ -24733,14 +24745,12 @@ function HomeworkSheetCard({ task, compact = false }) {
           overflowWrap: 'anywhere'
         },
         children: task.success_criterion || ''
-      }),
+      }, 'criterion'),
       jsx('p', {
-        key: 'minutes',
         style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
         children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
-      }),
+      }, 'minutes'),
       jsx('p', {
-        key: 'completion',
         'data-cb-homework-completion': done ? 'reported' : state,
         style: {
           margin: 0,
@@ -24752,10 +24762,9 @@ function HomeworkSheetCard({ task, compact = false }) {
           color: 'var(--cb-ink)'
         },
         children: completion
-      }),
+      }, 'completion'),
       Array.isArray(task.sources) && task.sources.length > 0
         ? jsxs('p', {
-            key: 'sources',
             style: {
               margin: 0,
               fontFamily: CB_SANS,
@@ -24765,28 +24774,26 @@ function HomeworkSheetCard({ task, compact = false }) {
               overflowWrap: 'anywhere'
             },
             children: [
-              jsx('span', { key: 'word', children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }),
+              jsx('span', { children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }, 'word'),
               ...task.sources.map((source, index) =>
                 jsxs(
                   'span',
                   {
-                    key: `src-${index}`,
                     children: [
-                      index > 0 ? jsx('span', { key: 'sep', children: '; ' }) : null,
+                      index > 0 ? jsx('span', { children: '; ' }, 'sep') : null,
                       jsx('a', {
-                        key: 'link',
                         href: source.url,
                         style: { color: 'inherit', textDecoration: 'underline' },
                         children: source.title || source.source_id
-                      }),
-                      source.accessed ? jsx('span', { key: 'date', children: ` (accessed ${source.accessed})` }) : null
+                      }, 'link'),
+                      source.accessed ? jsx('span', { children: ` (accessed ${source.accessed})` }, 'date') : null
                     ]
                   },
                   source.source_id || `src-${index}`
                 )
               )
             ]
-          })
+          }, 'sources')
         : null
     ]
   })
@@ -25165,9 +25172,8 @@ function TakeThisWithYou({
                         'data-cb-homework-report': 'open',
                         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
                         children: [
-                          jsx(sdk.Button, {
-                            size: 'sm',
-                            variant: 'default',
+                          jsx(CbAction, {
+                            variant: 'secondary',
                             disabled: Boolean(busy),
                             onClick: () => report('learner'),
                             children: busy === 'learner' ? 'Recording' : 'I did it'
@@ -25479,7 +25485,7 @@ function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChang
     style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
     children: [
       title
-        ? jsx('div', { key: 'title', style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) })
+        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) }, 'title')
         : null,
       ...rows.map((row) =>
         jsx(

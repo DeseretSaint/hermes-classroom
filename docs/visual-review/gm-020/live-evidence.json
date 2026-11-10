@@ -1,0 +1,79 @@
+{
+ "frames": {
+  "dark": {
+   "openedRow": "Choose the polite expression for a first confession\nNeeds re",
+   "requestedWidth": 1049,
+   "mounted": true,
+   "view": "player",
+   "step": "Step 1 of 2",
+   "sectionFooterCount": 0,
+   "playerFooterCount": 1,
+   "homeworkText": "Take this with you",
+   "homeworkVariant": "text",
+   "homeworkInsidePlayerFooter": true,
+   "playerFooterText": "Continue | Enter does the same. | Take this with you",
+   "primaryLabel": "Continue",
+   "primaryCount": 1,
+   "overflowPage": 0,
+   "overflowRoute": 0,
+   "innerWidth": 1049,
+   "routeWidth": 1022,
+   "mode": null,
+   "paintedBackground": "rgb(19, 18, 16)",
+   "afterScroll": {
+    "innerWidth": 1049,
+    "sectionFooterCount": 0,
+    "playerFooterCount": 1,
+    "homeworkInsidePlayerFooter": true,
+    "playerFooterText": "Continue | Enter does the same. | Take this with you",
+    "footerInViewport": {
+     "top": 594,
+     "bottom": 649,
+     "viewport": 1115
+    }
+   }
+  },
+  "light": {
+   "openedRow": "Choose the polite expression for a first confession\nNeeds re",
+   "requestedWidth": 1049,
+   "mounted": true,
+   "view": "player",
+   "step": "Step 1 of 2",
+   "sectionFooterCount": 0,
+   "playerFooterCount": 1,
+   "homeworkText": "Take this with you",
+   "homeworkVariant": "text",
+   "homeworkInsidePlayerFooter": true,
+   "playerFooterText": "Continue | Enter does the same. | Take this with you",
+   "primaryLabel": "Continue",
+   "primaryCount": 1,
+   "overflowPage": 0,
+   "overflowRoute": 0,
+   "innerWidth": 1049,
+   "routeWidth": 1022,
+   "mode": null,
+   "paintedBackground": "rgb(247, 241, 228)",
+   "afterScroll": {
+    "innerWidth": 1049,
+    "sectionFooterCount": 0,
+    "playerFooterCount": 1,
+    "homeworkInsidePlayerFooter": true,
+    "playerFooterText": "Continue | Enter does the same. | Take this with you",
+    "footerInViewport": {
+     "top": 594,
+     "bottom": 649,
+     "viewport": 1115
+    }
+   }
+  }
+ },
+ "appearance_Dark": null,
+ "appearance_Light": null,
+ "plugin_sha256": "cd45d64781fdb0b54d96f5eefe6fea407c445d58461ea3425881edffa1174563",
+ "captured_at": "2026-11-10T08:55:57.677Z",
+ "backend": "http://127.0.0.1:44219 (isolated cb.rpc backend, HERMES_HOME=~/.hermes/coursebook-test/home)",
+ "md5": {
+  "player-footer--1049--dark.png": "271dcee24c89deada584fd231e2f817f",
+  "player-footer--1049--light.png": "a4838d2bc8fc0e1212b2029b27218c3c"
+ }
+}
