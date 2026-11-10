@@ -7,6 +7,7 @@ grounded. These tests pin the content-first excerpt and the plan-authoring rules
 
 from __future__ import annotations
 
+import json
 import unittest
 
 from coursebook import generation, research
@@ -92,6 +93,57 @@ class PlanSourcingRulesTest(unittest.TestCase):
     def test_plan_prompt_versions_are_current(self) -> None:
         self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v13")
         self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v14")
+
+
+class SourceBriefFitsTheRequestTest(unittest.TestCase):
+    """A deep research pass must fit the plan request without cutting the JSON or the ledger.
+
+    Live: ten sources at the 1200-character window made a short-scope plan request 25 636 bytes
+    against the 24 000-byte bound, and the job failed before the author model was called.
+    """
+
+    def _sources(self, count: int = 10, chars: int = 1200) -> list[research.SourceRecord]:
+        body = ("The Moon's phases follow from its position relative to the Sun and Earth. " * 40)[:chars]
+        return [
+            research.SourceRecord(
+                source_id=f"src_{index:02d}",
+                url=f"https://example.invalid/{index}",
+                title=f"Source {index}",
+                publisher="Example Press",
+                source_type="web_page",
+                fetched_at="2026-11-10T12:00:00Z",
+                published_at=None,
+                content_hash="sha256:0",
+                excerpt=body,
+            )
+            for index in range(count)
+        ]
+
+    def _size(self, payload: dict) -> int:
+        return len(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+
+    def _payload(self) -> dict:
+        # The rest of a real plan request (curriculum brief, capability policy, rules) is about
+        # ten kilobytes; the ledger is what tips a deep pass over the bound.
+        return {"goal": "Read the night sky", "plan_context": "rule " * 2000, "sources": []}
+
+    def test_the_unfitted_ledger_would_overflow_the_bound(self) -> None:
+        payload = self._payload()
+        payload["sources"] = generation._source_brief(self._sources())
+        self.assertGreater(self._size(payload), generation.REQUEST_BYTES_BOUNDS["short"])
+
+    def test_a_deep_ledger_is_shrunk_not_dropped(self) -> None:
+        limit = generation.REQUEST_BYTES_BOUNDS["short"]
+        sources = self._sources()
+        payload = self._payload()
+        brief = generation._fit_source_brief(payload, sources, limit=limit)
+        payload["sources"] = brief
+        self.assertEqual([row["source_id"] for row in brief], [source.source_id for source in sources])
+        self.assertLessEqual(self._size(payload), limit)
+        # The window shrank; the text is still the fetched prose, not a stub.
+        inner = brief[0]["untrusted_excerpt"].split("\n")[1]
+        self.assertGreater(len(inner), 300)
+        self.assertLess(len(inner), research._MAX_EXCERPT)
 
 
 if __name__ == "__main__":

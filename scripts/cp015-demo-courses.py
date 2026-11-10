@@ -167,6 +167,7 @@ _N = {"n": 0}
 
 
 _key_scope: dict[str, str] = {"scope": ""}
+_run_nonce = os.environ.get("CP015_RUN_ID") or uuid.uuid4().hex[:6]
 
 
 def keyed(slug: str, step: str) -> str:
@@ -192,6 +193,16 @@ def spec_key(slug: str, spec: dict) -> str:
         json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()[:12]
     return f"cp015-{slug}-create-{digest}"
+
+
+def job_key(slug: str, step: str) -> str:
+    """Job-shaped key: one fresh attempt per driver run.
+
+    ``jobs.create`` replays a cached result for an identical payload, so a stable key would hand
+    a re-run the rejected plan it was retrying. The run nonce makes a re-run a new attempt; the
+    enrollment, approval and export keys stay stable so no second row is minted.
+    """
+    return keyed(slug, f"{step}-{_run_nonce}")
 
 
 def wait_for_job(job_id: str, *, timeout: float = 1800.0, label: str = "") -> dict:
@@ -277,7 +288,7 @@ def run_plan(slug: str, flow: dict) -> dict:
     # A rejected plan is a real verdict, not an error to paper over: regenerating is what a learner
     # does, and every attempt's verdict is recorded so the record never claims a first-time pass.
     for attempt in range(1, PLAN_ATTEMPTS + 1):
-        key = keyed(slug, "plan") if attempt == 1 else keyed(slug, f"plan-retry{attempt - 1}")
+        key = job_key(slug, "plan") if attempt == 1 else job_key(slug, f"plan-retry{attempt - 1}")
         job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=key)
         job_id = job["job_id"]
         _log(f"{slug}: plan job {job_id} queued (attempt {attempt})")
@@ -366,7 +377,7 @@ def build_world(slug: str, flow: dict) -> dict:
             "world.generate",
             {"course_id": flow["course_id"], "stage": "concepts"},
             revision=revision,
-            key=keyed(slug, "world-concepts"),
+            key=job_key(slug, "world-concepts"),
         )
         _log(f"{slug}: concepts job {queued.get('job_id')}")
         if queued.get("job_id"):
@@ -406,7 +417,7 @@ def build_world(slug: str, flow: dict) -> dict:
             "world.generate",
             {"course_id": flow["course_id"], "stage": "kit"},
             revision=revision,
-            key=keyed(slug, "world-kit"),
+            key=job_key(slug, "world-kit"),
         )
         _log(f"{slug}: kit job {queued.get('job_id')}")
         if queued.get("job_id"):
@@ -446,7 +457,7 @@ def build_world(slug: str, flow: dict) -> dict:
 def run_lessons(slug: str, flow: dict) -> dict:
     brief = {"stage": "lessons", "plan_id": flow["plan_id"],
              "enrollment_id": flow["enrollment_id"]}
-    job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=keyed(slug, "lessons"))
+    job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=job_key(slug, "lessons"))
     job_id = job["job_id"]
     _log(f"{slug}: lessons job {job_id}")
     final = wait_for_job(job_id, label=f"{slug} lessons", timeout=3000)
@@ -468,7 +479,7 @@ def render_lesson(slug: str, flow: dict, *, after_world: bool = False) -> dict:
     begun = ok(
         "lesson.begin",
         {"enrollment_id": flow["enrollment_id"], "objective_id": first["id"], "mode": "fresh"},
-        key=keyed(slug, "begin-after-world" if after_world else "begin"),
+        key=job_key(slug, "begin-after-world" if after_world else "begin"),
     )
     page = ok(
         "lesson.page",

@@ -3466,17 +3466,21 @@ def _escape_untrusted_markers(text: str) -> str:
     return escaped
 
 
-def _untrusted_excerpt(text: Any) -> str:
+def _untrusted_excerpt(text: Any, *, excerpt_chars: int | None = None) -> str:
     """Wrap one bounded fetched excerpt in the shared data envelope.
 
     The content is bounded by ``ResearchBudget.max_excerpt_chars`` before it reaches here; this
     function only collapses whitespace, strips control characters, escapes the markers and adds
     the delimiters. Nothing is deleted: the model sees the page as data, including hostile text.
+
+    ``excerpt_chars`` lets the plan request shrink the window so a deep research pass (ten
+    sources) still fits its byte bound instead of failing the job; the default is the research
+    window, so every other caller is unchanged.
     """
     collapsed = " ".join(str(text or "").split())
     collapsed = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", collapsed)
     collapsed = _escape_untrusted_markers(collapsed)
-    limit = ResearchBudget().max_excerpt_chars
+    limit = excerpt_chars if excerpt_chars is not None else ResearchBudget().max_excerpt_chars
     if len(collapsed) > limit:
         collapsed = collapsed[:limit]
     return f"{UNTRUSTED_SOURCE_BEGIN}\n{collapsed}\n{UNTRUSTED_SOURCE_END}"
@@ -6267,7 +6271,46 @@ def _bounded_input(payload: dict[str, Any], limit: int = DEFAULT_REQUEST_BYTES) 
     )
 
 
-def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
+def _fit_source_brief(
+    payload: dict[str, Any],
+    sources: Sequence[SourceRecord],
+    *,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Ledger rows for one request, shrunk only as far as the byte bound requires.
+
+    A deep research pass carries ten sources; at the full 1200-character window the plan request
+    measured 25 636 bytes against the 24 000-byte short bound and the job failed before the author
+    was called. The fix is not a longer bound and not a truncated request: the excerpt window
+    shrinks (still prose, still from the same fetched text), and only at the 400-character floor
+    does the least-preferred trailing source leave. ``_bounded_input`` still owns the final
+    refusal if even the floor cannot fit.
+    """
+    floor = 400
+    window = ResearchBudget().max_excerpt_chars
+    working = list(sources)
+    brief = _source_brief(working, excerpt_chars=window)
+    while True:
+        payload["sources"] = brief
+        size = len(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+        if size <= limit:
+            return brief
+        if window > floor:
+            window = max(floor, window - 200)
+            brief = _source_brief(working, excerpt_chars=window)
+            continue
+        if len(working) > 2:
+            working = working[:-1]
+            brief = _source_brief(working, excerpt_chars=window)
+            continue
+        return brief
+
+
+def _source_brief(
+    sources: Iterable[SourceRecord],
+    *,
+    excerpt_chars: int | None = None,
+) -> list[dict[str, Any]]:
     """The ledger rows handed to a model. Every free-text field is untrusted page data.
 
     ``source_id`` is the only locally minted identifier. ``untrusted_excerpt`` is the bounded
@@ -6285,7 +6328,7 @@ def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
             "fetched_at": source.fetched_at,
             "source_type": source.source_type,
             "support_status": source.support_status,
-            "untrusted_excerpt": _untrusted_excerpt(source.excerpt),
+            "untrusted_excerpt": _untrusted_excerpt(source.excerpt, excerpt_chars=excerpt_chars),
         }
         for source in sources
     ]
@@ -6440,7 +6483,7 @@ def build_plan_request(
             "reason": research_run.reason,
             "queries": [entry.get("query") for entry in research_run.queries],
         },
-        "sources": _source_brief(research_run.sources),
+        "sources": [],
         "rules": (
             {
                 "units": "one ordered group of objectives per unit; units are the authoring, "
@@ -6515,12 +6558,16 @@ def build_plan_request(
     vocabulary_lines = _frequency_prompt_lines(frequency_block)
     if vocabulary_lines:
         instructions = instructions + "\n" + "\n".join(vocabulary_lines)
+    # The ledger is fitted last, against the final payload, so a deep pass cannot overflow the
+    # bound after every other field is already in place.
+    request_limit = _request_bound(scope)
+    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
     return LLMRequest(
         purpose="coursebook.plan.generate",
         prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=instructions,
-        input_text=_bounded_input(payload, limit=_request_bound(scope)),
+        input_text=_bounded_input(payload, limit=request_limit),
         schema=schema,
         schema_name=(
             "coursebook_plan_v2" if blueprint else "coursebook_plan_v1"
