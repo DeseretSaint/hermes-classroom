@@ -71,6 +71,7 @@ EXPORT_SHIM = """
 // --- CP-024 test export shim (staged copy only; the repo module is not edited) ---
 export {
   CourseHomeV3,
+  CourseDetail,
   CourseRouteList,
   CourseRouteMapNode,
   CB3_COURSE_COPY,
@@ -710,6 +711,342 @@ class CourseHomeV3RenderTest(unittest.TestCase):
             "data-cb-course-route",
         ):
             self.assertIn(marker, block)
+
+
+#: The assembled-screen harness: it mounts **`CourseDetail` on `view: 'overview'`** in jsdom against
+#: a stubbed `ctx.rest`, which is the only way to see what the shipped route really composes. The
+#: pure-render harness above mounts `CourseHomeV3` alone and therefore cannot see a second body
+#: mounted beside it — exactly the defect review round 1 found by driving the live rig.
+COMPOSITION_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+import fs from 'node:fs'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.window.navigator })
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+globalThis.__CB_TEST_WIDTH__ = String(payload.width)
+window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+
+const mod = await import('./plugin.js')
+
+const calls = []
+const responses = payload.responses || {}
+const implemented = payload.implemented || []
+const runtime = { wire_version: 25, implemented_methods: implemented, single_home_host: false }
+const generic = { items: [], entries: [], objectives: [], total: 0 }
+
+const fakeRest = async (path, options) => {
+  const method = options && options.body && options.body.method
+  calls.push(method || String(path))
+  const base = String(path).split('?')[0]
+  if (base === '/rpc') {
+    const result = Object.prototype.hasOwnProperty.call(responses, method) ? responses[method] : generic
+    return { ok: true, contract_version: 25, operation_id: 'test', result }
+  }
+  if (base === '/runtime') return runtime
+  if (base === '/health') {
+    return { ok: true, contract_version: 25, result: { db: { ready: true }, plugin_version: 'test', contract_version: 25 } }
+  }
+  return { ok: true, result: {} }
+}
+
+mod.default.register({
+  rest: fakeRest,
+  register: () => {},
+  onDispose: () => {},
+  setTimeout: (fn, ms) => {
+    const handle = window.setTimeout(fn, ms)
+    return () => window.clearTimeout(handle)
+  },
+  clearTimeout: (handle) => window.clearTimeout(handle)
+})
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const flush = async (ms = 80) => {
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)) })
+}
+const text = (node) => ((node && node.textContent) || '').replace(/\s+/g, ' ').trim()
+
+await act(async () => {
+  root.render(React.createElement(mod.CourseDetail, {
+    row: payload.row,
+    implemented: new Set(implemented),
+    profile: 'default',
+    prefs: { ...mod.CB_HOME_PREF_DEFAULTS },
+    onBack: () => {},
+    onChanged: () => {},
+    focusObjectiveId: null,
+    focusBlockId: null,
+    focusView: 'overview',
+    defaultLessonView: 'textbook',
+    reloadSignal: 0,
+    onChangeGoal: () => {},
+    onNewSyllabus: () => {},
+    onOpenLibrary: () => {}
+  }))
+})
+await flush(300)
+
+const home = document.querySelector('[data-cb-course-home-v3]')
+const nodes = [...document.querySelectorAll('[data-cb-course-node]')]
+const plate = document.querySelector('[data-cb-course-plate]')
+const slot = plate ? plate.firstElementChild : null
+const title = payload.row.title
+
+const out = {
+  width: payload.width,
+  // Both filled-control dialects the shipped module uses: the v3 `PillAction` and the legacy
+  // `CbAction`. A screen with one of each is two primaries, whatever their names.
+  primaries: [
+    ...document.querySelectorAll('[data-cb3-pill="primary"],[data-cb-action="primary"]')
+  ].map((el) => ({
+    kind: el.getAttribute('data-cb3-pill') ? 'pill' : 'action',
+    text: text(el),
+    top: Math.round(el.getBoundingClientRect().top)
+  })),
+  homeCount: document.querySelectorAll('[data-cb-course-home-v3]').length,
+  homeMode: home ? home.getAttribute('data-cb-course-home-v3') : null,
+  bodyMode: (document.querySelector('[data-cb-course-body]') || { getAttribute: () => null }).getAttribute('data-cb-course-body'),
+  listRoutes: document.querySelectorAll('[data-cb-course-route="list"]').length,
+  overviewRoutes: document.querySelectorAll('[data-cb-overview-route]').length,
+  overviewNext: document.querySelectorAll('[data-cb-overview-next]').length,
+  asideCount: document.querySelectorAll('[data-cb-course-aside]').length,
+  nodeCount: nodes.length,
+  nodeDotWidths: nodes.map((node) => {
+    const dot = node.querySelector('span[aria-hidden="true"]')
+    return dot ? dot.style.width : null
+  }),
+  courseTitles: [...document.querySelectorAll('[data-cb-course-title]')].map(text),
+  titleHeadings: [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter((node) => text(node) === title).length,
+  plateAspect: slot ? slot.style.aspectRatio : null,
+  continueText: text(document.querySelector('[data-cb-continue-action]') || null),
+  elements: document.querySelectorAll('[data-cb-course-detail] *').length
+}
+
+process.stdout.write(JSON.stringify(out))
+"""
+
+
+def _composition_responses(row: dict, others: list[dict]) -> dict:
+    objectives = [
+        {
+            "objective_id": "obj-1",
+            "title": "Order at the counter",
+            "ordinal": 1,
+            "state": "completed",
+            "evidence_target": "discrimination",
+            "last_opened_at": None,
+        },
+        {
+            "objective_id": "obj-2",
+            "title": "Ask the price",
+            "ordinal": 2,
+            "state": "completed",
+            "evidence_target": "discrimination",
+            "last_opened_at": None,
+        },
+        {
+            "objective_id": "obj-3",
+            "title": "Say what you want",
+            "ordinal": 3,
+            "state": "introduced",
+            "evidence_target": "production",
+            "last_opened_at": None,
+        },
+        {
+            "objective_id": "obj-4",
+            "title": "Thank the shopkeeper",
+            "ordinal": 4,
+            "state": "not_started",
+            "evidence_target": "production",
+            "last_opened_at": None,
+        },
+        {
+            "objective_id": "obj-5",
+            "title": "Ask for the bill",
+            "ordinal": 5,
+            "state": "not_started",
+            "evidence_target": "production",
+            "last_opened_at": None,
+        },
+    ]
+    return {
+        "library.list": {"items": [row] + others, "total": 1 + len(others), "applied_filter": "all"},
+        "course.outline": {"revision": 7, "objectives": objectives, "plan": {"units": []}},
+        "review.queue": {"items": [], "total_overdue": 0},
+        "notebook.list": {"entries": []},
+        "quiz.history": {"items": []},
+        "evidence.inspect": {"items": []},
+        "jobs.list": {"items": []},
+        "lesson.page": {
+            "revision": 4,
+            "section": {
+                "objective_id": "obj-3",
+                "title": "Say what you want",
+                "ordinal": 3,
+                "state": "introduced",
+                "evidence_target": "production",
+                "last_opened_at": None,
+            },
+            "runtime": {
+                "lesson_run_id": "run_1",
+                "binding_id": None,
+                "binding_status": "detached",
+                "session_state": "stored_only",
+            },
+            "segments": [],
+            "attempts": [],
+            "notebook_entries": [],
+            "sources": [],
+        },
+        # The carrier the map needs: the course world's brief declares the plate's anchors. No
+        # asset row is present, so the plate is the typographic field and the nodes are what makes
+        # the route a route.
+        "world.read": {
+            "world": {"state": "approved", "presentation_mode": "textbook"},
+            "assets": [],
+            "brief": {"route_anchors": _anchors()},
+        },
+    }
+
+
+COMPOSITION_METHODS = [
+    "library.list",
+    "course.outline",
+    "review.queue",
+    "notebook.list",
+    "quiz.history",
+    "evidence.inspect",
+    "jobs.list",
+    "lesson.page",
+    "world.read",
+    "engagement.read",
+]
+
+
+class CourseDetailOverviewCompositionTest(unittest.TestCase):
+    """The assembled course home, not the fragment: what `CourseDetail` on overview ships.
+
+    Review round 1 drove the live rig and found the legacy `OverviewView` still mounted under the
+    v3 home — two filled primaries, two route containers, the title twice. The pure-render test
+    above never mounts `CourseDetail`, so it could not fail on that. This one does.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to render a runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-cp024-composed-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(
+            PLUGIN_JS.read_text(encoding="utf-8") + EXPORT_SHIM, encoding="utf-8"
+        )
+        (root / "harness.mjs").write_text(COMPOSITION_HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}),
+            encoding="utf-8",
+        )
+        (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
+        row = _row()
+        others = [item for item in _others() if item["course_id"] != row["course_id"]]
+        cls.responses = _composition_responses(row, others)
+        cls.reports = {}
+        for width in (1049, 900):
+            case = root / f"composed-{width}.json"
+            case.write_text(
+                json.dumps(
+                    {
+                        "width": width,
+                        "row": row,
+                        "responses": cls.responses,
+                        "implemented": COMPOSITION_METHODS,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                ["node", str(root / "harness.mjs"), str(case)],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=240,
+            )
+            if result.returncode != 0:
+                raise AssertionError(result.stderr[-6000:])
+            cls.reports[width] = json.loads(result.stdout)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def test_course_home_v3_overview_composes_one_primary(self) -> None:
+        # The harness must actually have mounted the assembled home, not an empty shell.
+        for width, report in self.reports.items():
+            with self.subTest(width=width):
+                self.assertEqual(report["homeCount"], 1, report)
+                self.assertGreater(report["elements"], 40, "the composed screen is an empty shell")
+
+        for width, report in self.reports.items():
+            with self.subTest(width=width):
+                # Exactly one filled control across the whole route, in both control dialects.
+                self.assertEqual(
+                    len(report["primaries"]),
+                    1,
+                    f"the assembled {width} overview carries {report['primaries']}",
+                )
+                self.assertEqual(report["primaries"][0]["kind"], "pill", report["primaries"])
+                self.assertEqual(report["continueText"], "Continue Say what you want")
+
+                # One route container, one course title: no second head, route or CTA.
+                self.assertEqual(report["overviewRoutes"], 0, "the legacy route is still mounted")
+                self.assertEqual(report["overviewNext"], 0, "the legacy next-move block is still mounted")
+                self.assertEqual(report["listRoutes"] + (1 if report["homeMode"] == "map" else 0), 1)
+                self.assertEqual(len(report["courseTitles"]), 1, report["courseTitles"])
+                self.assertEqual(
+                    report["titleHeadings"], 1, "the course title is a heading more than once"
+                )
+                self.assertEqual(report["asideCount"], 1)
+
+        # The route really is the map at both cells, and its nodes carry the spec's dot sizes:
+        # 56 at the wide route and 48 at 900 (SPEC-V3 §5.4 M5).
+        wide = self.reports[1049]
+        self.assertEqual(wide["homeMode"], "map")
+        self.assertEqual(wide["nodeCount"], 5)
+        self.assertEqual(set(wide["nodeDotWidths"]), {"56px"}, wide["nodeDotWidths"])
+        at900 = self.reports[900]
+        self.assertEqual(at900["homeMode"], "map")
+        self.assertEqual(set(at900["nodeDotWidths"]), {"48px"}, at900["nodeDotWidths"])
+
+        # The aside is a right column only at ≥ 1000 route px; at 900 it stacks under the route
+        # while the plate stays 3:1 (SPEC-V3 §5.4).
+        self.assertEqual(wide["bodyMode"], "split")
+        self.assertEqual(wide["plateAspect"], "3 / 1")
+        self.assertEqual(at900["bodyMode"], "stacked")
+        self.assertEqual(at900["plateAspect"], "3 / 1")
 
 
 if __name__ == "__main__":

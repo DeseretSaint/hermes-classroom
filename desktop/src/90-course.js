@@ -3144,7 +3144,12 @@ function CourseHomeV3({
 }) {
   const measured = useCbViewportWidth()
   const routeWidth = Number(width) > 0 ? Number(width) : Number(measured) || 0
-  const big = routeWidth >= 900
+  // Two breakpoints, kept apart on purpose (SPEC-V3 §5.4): the map route holds from 900 px, where
+  // M5's nodes shrink to 48 and the plate stays 3:1; the aside only becomes a right column at
+  // 1000 px, where the nodes are 56 and the fox is 96. Tying the column to the map breakpoint put
+  // a 268 px aside beside an 852 px plate on a 900 route, which §5.4 puts below the route.
+  const mapWide = routeWidth >= 900
+  const wide = routeWidth >= 1000
   const nodes = cb3CourseNodes({ objectives, row, page })
   // Anchor precedence: an explicit set from the caller, then the plate's own declaration, then the
   // plate row's inline field. The plan normalises whichever arrives, and falls back to the vertical
@@ -3313,12 +3318,13 @@ function CourseHomeV3({
         ]
       }, 'head'),
       // M4/M5 and M6–M9: the hero plate with the route, and the aside. Two columns only at a wide
-      // route; below it the aside follows the plate and keeps its own order.
+      // route (≥ 1000 px, SPEC-V3 §5.4); below it the aside follows the plate and keeps its order.
       jsxs('div', {
+        'data-cb-course-body': wide ? 'split' : 'stacked',
         style: {
           display: 'grid',
-          gridTemplateColumns: big ? 'minmax(0, 1fr) 268px' : 'minmax(0, 1fr)',
-          gap: big ? '1rem' : '0.85rem',
+          gridTemplateColumns: wide ? 'minmax(0, 1fr) 268px' : 'minmax(0, 1fr)',
+          gap: wide ? '1rem' : '0.85rem',
           alignItems: 'start',
           minWidth: 0
         },
@@ -3329,7 +3335,7 @@ function CourseHomeV3({
               jsx(CourseHeroPlate, {
                 plate: plate || { artifactId: null, src: null, anchors: [] },
                 title: (row && row.title) || '',
-                big,
+                big: mapWide,
                 worldState,
                 onOpenStudio,
                 children:
@@ -3342,7 +3348,7 @@ function CourseHomeV3({
                         children: plan.points.map((point) =>
                           jsx(
                             CourseRouteMapNode,
-                            { node: point.node, x: point.x, y: point.y, big, onOpen: onOpenSection },
+                            { node: point.node, x: point.x, y: point.y, big: wide, onOpen: onOpenSection },
                             point.node.id
                           )
                         )
@@ -3357,7 +3363,7 @@ function CourseHomeV3({
             evidenceLine,
             others,
             step,
-            big,
+            big: wide,
             busy,
             onContinue,
             onOpenPlan,
@@ -3606,20 +3612,12 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
 
   let body
   if (view === 'overview') {
-    body = jsx(OverviewView, {
-      row,
-      page: page.data,
-      review: review.data,
-      quizzes: quizzes.data,
-      outline: outline.data,
-      implemented,
-      onOpenSection: openSection,
-      onResume: (objectiveId) =>
-        startLesson(
-          row.next_step && row.next_step.kind === 'resume_lesson' ? 'resume' : 'fresh',
-          objectiveId || null
-        )
-    })
+    // CP-024: the course's own overview IS the v3 R-MAP composition below (`courseHome`). The
+    // legacy OverviewView was still mounted under it, so the shipped screen carried two filled
+    // primaries (its "Start a fresh run" plus the v3 Continue plate), two route containers and the
+    // title twice — falsifying SPEC-V3 §5.4 and the quality bar's one-primary rule. It is retired
+    // from this route; its Evidence tab remains the record, and M7 carries the recorded count.
+    body = null
   } else if (view === 'textbook') {
     body = jsx(TextbookView, {
       row,
