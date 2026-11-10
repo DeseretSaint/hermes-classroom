@@ -14498,9 +14498,10 @@ function plural(count, one, many) {
   return `${count} ${Number(count) === 1 ? one : many}`
 }
 
-/** The host cannot ship a font file, so the voices are OS-resident stacks only. */
-const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
-const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
+/** The v3 scope ships its faces as data URLs and sets `--cb3-font-*`; prefer them, then fall
+ *  back to the OS stacks so a host that fails to decode a face still renders in a real serif. */
+const CB_SERIF = 'var(--cb3-font-display, ui-serif), Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
+const CB_SANS = 'var(--cb3-font-ui, ui-sans-serif), system-ui, -apple-system, "Segoe UI", sans-serif'
 
 /** Codicon only, two sizes: 16px beside UI text, 20px on a plate mark. Never a per-row icon. */
 const CB_ICON_UI = '1rem'
