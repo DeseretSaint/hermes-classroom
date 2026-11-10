@@ -158,6 +158,11 @@ const CB_HOME_PREF_DEFAULTS = Object.freeze({
   // H-176 — the learner's own Hermes pet may stand at the trailhead. It is identity, not an
   // avatar system: when the host has no pet sprite the plate simply carries no companion.
   companion: true,
+  // GM-010 — the one play-layer switch a learner owns on this device. It hides the XP chip, the
+  // cosmetic level and the `Game progress` bar; it never deletes a ledger row and never touches the
+  // course. The backend's own `game_feedback` setting hides the same layer profile-wide, and
+  // `engagement.read` reports that as `progress.feedback_visible = false`.
+  gameFeedback: true,
   classrooms: Object.freeze({})
 })
 const CB_APPEARANCE_OPTIONS = Object.freeze([
@@ -243,6 +248,8 @@ function sanitizeCbHomePrefs(raw) {
     // Only an explicit `false` hides the companion; an absent or hand-edited value keeps the
     // default of showing the pet the learner already installed.
     companion: source.companion !== false,
+    // GM-010: only an explicit `false` hides the play layer, so an older stored document shows it.
+    gameFeedback: source.gameFeedback !== false,
     classrooms
   }
 }
@@ -6008,6 +6015,31 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               })
             },
             'reduced-motion'
+          ),
+          // GM-010: the play layer's own switch. It sits beside Sound and Reduced motion because
+          // it changes feedback, not the course; turning it off keeps every ledger row.
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'game-feedback',
+              title: 'Game feedback',
+              description:
+                'XP, the cosmetic level and the Game progress bar in Game mode. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
+              resetLabel: 'Reset Game feedback to shown',
+              atDefault: prefs.gameFeedback === CB_HOME_PREF_DEFAULTS.gameFeedback,
+              onReset: () => onReset('gameFeedback'),
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'game-feedback',
+                children: jsx(sdk.ToggleRow, {
+                  checked: prefs.gameFeedback !== false,
+                  label: 'Show Game feedback',
+                  description:
+                    'The XP chip, level and progress bar in Game mode. Textbook, Guided and Parent Studio never show them either way.',
+                  onChange: (on) => onUpdate({ gameFeedback: on === true })
+                })
+              })
+            },
+            'game-feedback'
           )
         ]
       },
@@ -6103,6 +6135,350 @@ function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
   })
 }
 
+/**
+ * GM-010 — the Game-only play layer: XP chip, cosmetic level and `Game progress`.
+ *
+ * `engagement.read` is the only source of every number painted here. The renderer never adds a
+ * point, never derives a level, never turns a count into a percentage of skill and never stores
+ * anything: the ledger belongs to the backend (GM-009), and this block reads it.
+ *
+ * The layer is mounted only where the *course's own durable mode* is `game`, so Textbook, Guided,
+ * Parent Studio, packs and exports cannot show it by accident — those surfaces never mount this
+ * block at all. A parent-led course (`recipe === 'parent'`) is excluded as well: §10B.4 says a
+ * child using a parent-led lesson does not get a child-facing XP surface.
+ */
+const CB_GAME_ACTION_WORD = Object.freeze({
+  lesson_step: 'Lesson step',
+  check_submitted: 'Check',
+  review: 'Review',
+  homework_completed: 'Homework done',
+  returned: 'Came back'
+})
+
+/**
+ * The one honesty line every game surface carries. The plan allows the play layer and forbids
+ * calling it learning: so the bar is labelled `Game progress` (the backend's own const) and this
+ * note sits beside it. No screen may say mastery, proficiency or verified skill here.
+ */
+const CB_GAME_PROGRESS_NOTE = 'Play progress, not evidence.'
+
+/** Whether the play layer may paint. The device switch and the backend setting both hide it. */
+function cbGameFeedbackVisible(prefs, engagement) {
+  if (prefs && prefs.gameFeedback === false) return false
+  const progress = engagement && engagement.progress ? engagement.progress : null
+  return !(progress && progress.feedback_visible === false)
+}
+
+/**
+ * A Game course is the durable mode read from `world.read`, never the device preference and never
+ * the recipe alone. A `library.list` row carries no mode, so a caller that has not read the mode
+ * passes `null` and gets no play layer — the honest answer for "unknown".
+ */
+function cbGameCourse(row, mode) {
+  if (!row || !row.course_id || row.recipe === 'parent') return false
+  return readCoursePresentationMode(mode) === 'game'
+}
+
+/**
+ * The Game header: one slim band of small chips over one honest bar.
+ *
+ * It is deliberately short. The primary action, the current objective and the check live in their
+ * own surfaces below and keep their hierarchy; this band names play progress and nothing else. A
+ * zero-step course paints no bar rather than an empty frame.
+ */
+function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
+  const motion = useCbMotion()
+  if (!cbGameFeedbackVisible(prefs, engagement)) return null
+
+  const wrapStyle = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: compact ? '0.35rem 0.5rem' : '0.4rem 0.75rem',
+    minWidth: 0,
+    padding: '0.45rem 0',
+    borderTop: '1px solid var(--cb-rule)',
+    borderBottom: '1px solid var(--cb-rule)'
+  }
+
+  if (status === 'error') {
+    return jsxs('div', {
+      'data-cb-game': 'error',
+      role: 'status',
+      style: { ...wrapStyle, borderBottomColor: 'var(--cb-rule)' },
+      children: [
+        jsx('span', {
+          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+          children: `The field journal could not be read: ${describeError(error)} Your course is unaffected.`
+        }),
+        onRetry
+          ? jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
+          : null
+      ]
+    })
+  }
+
+  if (!engagement) {
+    // A read in flight is a state, not a zero: no chip and no bar until the backend answers.
+    return jsx('div', {
+      'data-cb-game': 'loading',
+      role: 'status',
+      style: wrapStyle,
+      children: jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Reading the field journal…'
+      })
+    })
+  }
+
+  const level = engagement.level || {}
+  const progress = engagement.progress || {}
+  const xp = Math.max(0, Number(engagement.xp_total) || 0)
+  const assigned = Math.max(0, Number(progress.assigned_steps) || 0)
+  const completed = Math.max(0, Number(progress.completed_steps) || 0)
+  // `completed_steps` can exceed the plan's assigned count after a re-plan; the bar shows reached
+  // of assigned and never a ratio that implies a skill score.
+  const done = assigned ? Math.min(completed, assigned) : 0
+  const ratio = assigned ? done / assigned : 0
+  const levelNumber = Math.max(1, Number(level.level) || 1)
+
+  return jsxs('section', {
+    'data-cb-game': 'ready',
+    'aria-label': 'Game',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        style: wrapStyle,
+        children: [
+          jsx('span', {
+            'data-cb-game-xp': String(xp),
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 700,
+              lineHeight: 1.3,
+              letterSpacing: '0.02em',
+              color: 'var(--cb-on-lamp)',
+              background: 'var(--cb-lamp)',
+              border: '1px solid var(--cb-ochre)',
+              borderRadius: '999px',
+              padding: '0.15rem 0.55rem',
+              whiteSpace: 'nowrap'
+            },
+            children: `${xp} XP`
+          }),
+          jsxs('span', {
+            'data-cb-game-level': String(levelNumber),
+            style: {
+              display: 'inline-flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              gap: '0.35rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.4,
+              color: 'var(--cb-ink)',
+              border: '1px solid var(--cb-rule)',
+              borderRadius: '999px',
+              padding: '0.15rem 0.55rem',
+              whiteSpace: 'nowrap'
+            },
+            children: [
+              jsx('strong', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }),
+              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: level.title || 'Explorer' }),
+              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: '· cosmetic' })
+            ]
+          }),
+          jsxs('div', {
+            'data-cb-game-progress': String(done),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: '1 1 12rem', minWidth: 0 },
+            children: [
+              jsxs('div', {
+                style: {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: '0.15rem 0.5rem',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  lineHeight: 1.4,
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: [
+                  jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: progress.label || 'Game progress' }),
+                  jsx('span', {
+                    children: assigned
+                      ? `${done} of ${assigned} ${assigned === 1 ? 'step' : 'steps'}`
+                      : 'No steps assigned yet'
+                  })
+                ]
+              }),
+              assigned
+                ? jsx('div', {
+                    role: 'progressbar',
+                    'aria-label': progress.label || 'Game progress',
+                    'aria-valuemin': 0,
+                    'aria-valuemax': assigned,
+                    'aria-valuenow': done,
+                    style: {
+                      position: 'relative',
+                      height: '0.35rem',
+                      width: '100%',
+                      background: 'var(--cb-rule)',
+                      borderRadius: '999px',
+                      overflow: 'hidden'
+                    },
+                    children: jsx('div', {
+                      style: {
+                        position: 'absolute',
+                        inset: '0',
+                        width: `${Math.round(ratio * 100)}%`,
+                        background: 'var(--cb-lamp)',
+                        // Restrained motion: the fill arrives once; a reduced-motion reader gets
+                        // the same state with no travel at all.
+                        transition: motion.reduced
+                          ? 'none'
+                          : `width var(--cb-dur-complete) var(--cb-ease)`
+                      }
+                    })
+                  })
+                : null
+            ]
+          }),
+          jsx('span', {
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.4,
+              color: 'var(--cb-ink-soft)',
+              flex: '0 1 auto'
+            },
+            children: CB_GAME_PROGRESS_NOTE
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * Collectible section cards, earned only by real evidence.
+ *
+ * A card is stamped when the outline says that section carries independent evidence
+ * (`objective.independent`), which is the same fact the evidence surfaces print. No star, no
+ * rating, no invented count: a card that has not been earned says what it actually is.
+ */
+function cbGameSectionCards(objectives) {
+  const rows = Array.isArray(objectives) ? objectives.filter(Boolean) : []
+  return rows.slice(0, 12).map((entry) => ({
+    id: entry.objective_id,
+    title: entry.title || 'Untitled section',
+    ordinal: entry.ordinal ? Number(entry.ordinal) : null,
+    state: entry.state || 'not_started',
+    earned: entry.independent === true
+  }))
+}
+
+function GameJournal({ objectives, compact }) {
+  const cards = cbGameSectionCards(objectives)
+  if (cards.length === 0) return null
+  const earned = cards.filter((card) => card.earned).length
+  return jsxs('section', {
+    'data-cb-game-journal': String(earned),
+    'aria-label': 'Field journal',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.meta,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: 'Field journal'
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+            children: earned
+              ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
+              : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
+          })
+        ]
+      }),
+      jsx('ul', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          minWidth: 0
+        },
+        children: cards.map((card) =>
+          jsxs(
+            'li',
+            {
+              'data-cb-game-card': card.earned ? 'earned' : card.state,
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.2rem',
+                minWidth: compact ? 0 : '8.5rem',
+                flex: compact ? '1 1 8rem' : '0 1 11rem',
+                padding: '0.5rem 0.6rem',
+                borderRadius: '0.5rem',
+                // Tactile, not glossy: a paper card with one honest hairline, and the warm Game
+                // accent only where the card was actually earned.
+                background: card.earned ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
+                border: `1px solid ${card.earned ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`
+              },
+              children: [
+                jsx('span', {
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', letterSpacing: '0.04em' },
+                  children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                }),
+                jsx('span', {
+                  style: {
+                    fontFamily: CB_SERIF,
+                    fontSize: CB_TYPE.meta,
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    color: 'var(--cb-ink)',
+                    overflowWrap: 'anywhere'
+                  },
+                  children: card.title
+                }),
+                jsx('span', {
+                  style: {
+                    fontFamily: CB_SANS,
+                    fontSize: CB_TYPE.caption,
+                    fontWeight: card.earned ? 700 : 500,
+                    lineHeight: 1.4,
+                    color: card.earned ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
+                  },
+                  children: card.earned ? 'Stamped' : (DESK_STATE_WORD[card.state] || 'Not started')
+                })
+              ]
+            },
+            card.id
+          )
+        )
+      })
+    ]
+  })
+}
+
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -6124,6 +6500,8 @@ function FieldDeskHome({
   onSelectCourse,
   onOpenStudio,
   world,
+  engagement,
+  prefs,
   onSetMode,
   onWorldChanged,
   onOpen,
@@ -6403,6 +6781,27 @@ function FieldDeskHome({
     style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0, width: '100%' },
     children: [continueCard, pathCard]
   }, 'trail')
+  // GM-010: the play layer is pinned to a Game course and rides in its own slot under the trail,
+  // so the trailhead, Continue and the check keep the first read of the page. Textbook, Guided and
+  // parent-led courses mount nothing here.
+  const gameCourse = cbGameCourse(desk.row, courseMode)
+  const gameHeader = gameCourse
+    ? jsx(
+        GameHeader,
+        {
+          engagement: engagement ? engagement.data : null,
+          status: engagement ? engagement.status : 'idle',
+          error: engagement ? engagement.error : null,
+          prefs,
+          compact: !wide,
+          onRetry: engagement ? engagement.reload : null
+        },
+        'game-header'
+      )
+    : null
+  const gameJournal = gameCourse
+    ? jsx(GameJournal, { objectives: desk.objectives, compact: !wide }, 'game-journal')
+    : null
   // The shelf and the field notes are below the first viewport; sources stay a drawer. One
   // content column, not a rail beside a table: the trail is one object.
   const belowColumn = jsxs('div', {
@@ -6445,7 +6844,7 @@ function FieldDeskHome({
       modeRow,
       jsxs('div', {
         style: { display: 'flex', flexDirection: 'column', gap: '1.1rem', minWidth: 0, width: '100%' },
-        children: [worldSurface, trailColumn, belowColumn]
+        children: [gameHeader, worldSurface, trailColumn, gameJournal, belowColumn]
       }, 'layout'),
       studio,
       modeDialog
@@ -6643,6 +7042,16 @@ function FieldDesk({
   // GM-004: the durable course mode and its latest world. A failed or unsupported read is a state
   // the surface names; neither the badge nor the world hero is guessed from the device preference.
   const world = useWorldRead(row ? row.course_id : null, Boolean(row))
+  // GM-010: the play layer is read from `engagement.read` and nowhere else. It is enabled only for
+  // a Game course, and the mode comes from `world.read` — a `library.list` row carries no mode, so
+  // no device preference and no stale row can turn the layer on.
+  const deskMode = world.data ? readCoursePresentationMode(world.data.presentation_mode) : null
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: row ? row.course_id : null, enrollment_id: row ? row.enrollment_id : null },
+    `desk-game-${row ? row.enrollment_id : 'none'}`,
+    Boolean(row) && cbGameCourse(row, deskMode) && supports('engagement.read')
+  )
   const onSetMode = useCallback(
     async (mode) => {
       if (!desk.row) return null
@@ -6718,6 +7127,8 @@ function FieldDesk({
     onSelectCourse,
     onOpenStudio,
     world,
+    engagement,
+    prefs,
     onSetMode,
     onWorldChanged,
     notes,
@@ -21343,7 +21754,7 @@ function lessonHeroPlan(readiness, { overview = false, sectionOpen = false } = {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus, onOpenLibrary }) {
+function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus, onOpenLibrary }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -21411,6 +21822,20 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     { enrollment_id: row.enrollment_id, objective_id: pageObjectiveId },
     `page-${row.enrollment_id}-${pageObjectiveId}`,
     supports('lesson.page') && Boolean(pageObjectiveId)
+  )
+
+  // GM-010: the play layer belongs to the course's Game overview and nowhere else. The durable mode
+  // comes from `world.read` (a library row carries none); the read is enabled only on that surface,
+  // so opening the reading path (Textbook, Guided or Field Quest) issues no engagement call and
+  // cannot paint a chip, and no other surface mounts this block.
+  const world = useWorldRead(row.course_id, true)
+  const courseMode = world.data ? readCoursePresentationMode(world.data.presentation_mode) : null
+  const courseGame = cbGameCourse(row, courseMode)
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: row.course_id, enrollment_id: row.enrollment_id },
+    `game-${row.enrollment_id}`,
+    courseGame && supports('engagement.read') && view === 'overview'
   )
 
   const refresh = useCallback(() => {
@@ -21689,6 +22114,28 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     if (moreActive) setMoreOpen(true)
   }, [moreActive])
 
+  // GM-010: a Game course paints its play band above the surfaces and its field journal under the
+  // overview body. Both are absent from every reading view, so Textbook and Guided stay calm.
+  const gameHeader =
+    courseGame && view === 'overview'
+      ? jsx(
+          GameHeader,
+          {
+            engagement: engagement.data,
+            status: engagement.status,
+            error: engagement.error,
+            prefs,
+            compact: phone,
+            onRetry: engagement.reload
+          },
+          'game-header'
+        )
+      : null
+  const gameJournal =
+    courseGame && view === 'overview'
+      ? jsx(GameJournal, { objectives, compact: phone }, 'game-journal')
+      : null
+
   return jsxs('div', {
     'data-cb-course-detail': view,
     className: 'flex flex-col gap-4',
@@ -21798,6 +22245,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
         })
       }),
 
+      // GM-010: a live Game band, one hairline strip, under the hero and above the surfaces.
+      gameHeader,
+
       // H-174: when there is no approved page, the hero says who owns it and what the one next
       // action is. It sits between the hero and the surfaces so the reading column never opens on a
       // contradictory pair of buttons.
@@ -21895,7 +22345,11 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             })
           })
         : null,
-      body
+      body,
+      // GM-010: the collectible section cards close the Game overview. They are earned from the
+      // outline's own evidence, so they sit after the sections they describe, never before the
+      // course's first action.
+      gameJournal
     ]
   })
 }
@@ -32397,6 +32851,8 @@ function CoursebookPage() {
   } else if (openCourse) {
     body = jsx(CourseDetail, {
       row: openCourse.row,
+      // GM-010: the play layer obeys the learner's own Game feedback switch on this device.
+      prefs: homePrefs,
       focusObjectiveId: openCourse.objectiveId,
       focusBlockId: openCourse.blockId || null,
       focusView: openCourse.view || null,
@@ -33028,6 +33484,13 @@ export {
   CB_HOMEWORK_STATE_WORD,
   CB_HOMEWORK_KIND_WORD,
   CB_HOMEWORK_FORBIDDEN,
+  GameHeader,
+  GameJournal,
+  CB_GAME_ACTION_WORD,
+  CB_GAME_PROGRESS_NOTE,
+  cbGameCourse,
+  cbGameFeedbackVisible,
+  cbGameSectionCards,
   cbHasJapanese,
   cbHomeworkIndexRows,
   cbHomeworkRefTaskId,

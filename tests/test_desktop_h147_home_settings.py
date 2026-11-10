@@ -490,7 +490,7 @@ class HomeSettingsSheetTest(Harness):
         self.assertEqual(opened["scopeLabel"], "On this device")
         self.assertEqual(
             opened["sections"],
-            ["appearance", "default-view", "classroom", "child-safe", "sound", "companion", "haptics", "reduced-motion"],
+            ["appearance", "default-view", "classroom", "child-safe", "sound", "companion", "haptics", "reduced-motion", "game-feedback"],
         )
         for label in opened["sectionLabels"]:
             self.assertEqual(label["id"], label["headingId"])
@@ -872,6 +872,8 @@ class SettingsModelTest(Harness):
                 "reducedMotion": "system",
                 "sessionMinutes": 15,
                 "companion": True,
+                # GM-010: the Game feedback switch is device state like the rest of this sheet.
+                "gameFeedback": True,
                 "classrooms": {},
             },
         )
