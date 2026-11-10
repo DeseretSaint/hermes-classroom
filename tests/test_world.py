@@ -703,7 +703,7 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         self.assertEqual(read["world"]["error"]["reason"], "provider_unavailable")
         self.assertEqual(
             read["world"]["error"]["missing_roles"],
-            ["style_board:authored", "style_board:warm-paper", "style_board:night-ink"],
+            [f"style_board:{direction['id']}" for direction in world.STYLE_DIRECTIONS],
         )
         self.assertEqual(read["fallback"], "textbook")
         self.assertEqual(read["world"]["concepts"], [])
