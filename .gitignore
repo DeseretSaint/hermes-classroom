@@ -16,3 +16,7 @@ audit/visual/**/.chromium/
 
 # CP-004 font subsetting venv (private, never committed)
 .venv-cb-assets/
+
+# Audit-harness dependencies are installed locally, never committed. The old tracked
+# symlinks pointed into the author's home and escaped the repo boundary.
+audit/visual/*/site/node_modules/
