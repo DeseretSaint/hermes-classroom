@@ -1312,14 +1312,24 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
         pack_row = _pack_row(connection, str(payload["pack_id"]))
         if int(pack_row["revision"]) != expected:
             raise _stale("the take-home pack changed; re-read before exporting.", int(pack_row["revision"]))
+        # `artifact.get` returns provenance.source_ids under the vocabulary identifier
+        # pattern, which forbids the `:v<n>` version suffix a lesson version carries. Bind the
+        # artifact to the lesson id (an identifier) and keep the exact version — the thing the
+        # pack is fenced on — in notes, where it is still readable but cannot break the shape.
+        source_lesson = str(pack_row["source_lesson_version"])
+        source_lesson_id, _, source_version = source_lesson.partition(":")
         artifact = store.record(
             connection,
             course_id=None,
             staged=staged,
             provenance={
                 "generator": "coursebook.takehome",
-                "notes": "take-home pack PDF rendered from approved, bound pages",
-                "source_ids": [str(pack_row["source_lesson_version"])],
+                "notes": (
+                    "take-home pack PDF rendered from approved, bound pages; "
+                    f"source lesson {source_lesson}"
+                    + (f" (version {source_version})" if source_version else "")
+                ),
+                "source_ids": [source_lesson_id or source_lesson],
             },
         )
         revision = int(pack_row["revision"]) + 1

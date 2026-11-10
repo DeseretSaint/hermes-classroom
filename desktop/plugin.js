@@ -22646,6 +22646,1121 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
 }
 
 /**
+ * GM-006 — Parent Studio take-home entrance.
+ *
+ * A take-home pack is a rendered print artifact over a lesson the parent already teaches, never a
+ * second course and never a child surface. This block adds the second entrance beside `My lesson
+ * plans`: a source shelf over the learner library, a read-only lesson preview, the composed pack
+ * pages, a print proof of the actual pages and the approval/export gate.
+ *
+ * Every read and write goes through `takehome.sources/preview/create/approve/export/read`; the
+ * source course is never cloned, edited, re-approved or enrolled. The learner page and the answer
+ * guide are separate page objects, and the proof marks the answer guide `Parent only` so a parent
+ * cannot hand the wrong sheet over.
+ */
+
+const CB_STUDIO_ENTRANCES = [
+  { id: 'plans', label: 'My lesson plans' },
+  { id: 'takehome', label: 'Take-home from a lesson' }
+]
+
+/** The three things a parent can make from one source lesson. */
+const CB_TAKEHOME_KINDS = [
+  {
+    id: 'print_pack',
+    label: 'Print a take-home pack',
+    hint: 'A parent guide, the learner page and a separate answer guide, bound to this lesson.'
+  },
+  {
+    id: 'activity_plan',
+    label: 'Prepare an activity plan',
+    hint: 'The same lesson, composed for a short parent-led activity away from the screen.'
+  },
+  {
+    id: 'homework_sheet',
+    label: 'Send with homework',
+    hint: 'One real-world practice task on a single sheet the learner can carry with them.'
+  }
+]
+
+const CB_TAKEHOME_AUDIENCES = [
+  { id: 'parent', label: 'For me to teach from' },
+  { id: 'learner', label: 'For the learner to hold' }
+]
+
+const CB_TAKEHOME_PAGE_WORD = {
+  cover: 'Cover',
+  parent_guide: 'Parent guide',
+  learner_page: 'Learner page',
+  plate: 'Plate',
+  answer_guide: 'Answer guide'
+}
+
+/**
+ * The one sentence that keeps each page in its lane. It is printed on the proof itself, not left
+ * to the reader to infer from position: the learner page carries no answers, and the answer guide
+ * is a parent-only sheet.
+ */
+const CB_TAKEHOME_PAGE_NOTE = {
+  cover: 'The first page of the printed pack.',
+  parent_guide: 'For the adult preparing the lesson. It is not the learner’s page.',
+  learner_page: 'For the learner. This page carries no answers.',
+  plate: 'Captioned orientation art. It is not the lesson text.',
+  answer_guide: 'Parent only. Keep this page back.'
+}
+
+const CB_TAKEHOME_STATE_WORD = {
+  draft: 'Draft',
+  approved: 'Approved',
+  exported: 'Exported',
+  superseded: 'Superseded'
+}
+
+const CB_TAKEHOME_MODE_WORD = {
+  game: 'Game course',
+  textbook: 'Textbook course'
+}
+
+const CB_TAKEHOME_KIND_WORD = {
+  print_pack: 'Take-home pack',
+  activity_plan: 'Activity plan',
+  homework_sheet: 'Homework sheet'
+}
+
+/** A blocked objective names why in plain words; the backend's reason stays the fallback. */
+const CB_TAKEHOME_BLOCKED_WORD = {
+  'no generated lesson': 'The lesson for this objective has not been written yet.',
+  parent_only_course: 'A parent-authored plan is not a learner source.',
+  ai_art_as_procedure: 'This procedure has only illustration art, so it cannot print as authority.'
+}
+
+/** Named export refusals, in the parent's words, with the backend reason kept verbatim. */
+const CB_TAKEHOME_EXPORT_WORD = {
+  pack_not_approved: 'Approve the exact pages above before exporting.',
+  approval_stale: 'The pages changed after approval. Approve the pages you can see again.',
+  preview_hash_mismatch: 'The preview moved on. Preview the pages again, then approve them.',
+  already_exported: 'This pack is already exported. The file below is that export.',
+  print_font_cannot_render_text:
+    'The print font cannot draw every character in this lesson, so no PDF was written. Nothing was corrupted.',
+  pdf_render_failed: 'The PDF renderer failed. The pack is kept; the export did not run.',
+  parent_only_course: 'A parent-authored plan is not a learner source.',
+  pack_superseded: 'This draft was superseded. Start a fresh draft from the lesson.'
+}
+
+/** The Parent Studio's two entrances, side by side: authored plans and take-home packs. */
+function StudioEntranceTabs({ value, onChange }) {
+  return jsx('div', {
+    'data-cb-parent-studio-tabs': '',
+    style: { padding: '0.9rem 1rem 0.1rem', boxSizing: 'border-box' },
+    children: jsx(sdk.SegmentedControl, {
+      options: CB_STUDIO_ENTRANCES,
+      value,
+      sizing: 'content',
+      onChange
+    })
+  })
+}
+
+/** The shelf excludes parent-authored plans: those belong to `My lesson plans`. */
+function cbTakeHomeSourceRows(rows) {
+  return (Array.isArray(rows) ? rows : []).filter((row) => row && row.recipe !== 'parent')
+}
+
+function cbTakeHomeModeWord(mode) {
+  return CB_TAKEHOME_MODE_WORD[mode] || 'Course'
+}
+
+function cbTakeHomeKindWord(kind) {
+  return CB_TAKEHOME_KIND_WORD[kind] || 'Take-home'
+}
+
+/**
+ * The proof's page order, from either `takehome.preview` (an array) or `takehome.read` (an object
+ * of the three required pages). One order for every renderer: cover, parent guide, learner page,
+ * plates, answer guide last.
+ */
+function cbTakeHomePageOrder(pages) {
+  const list = Array.isArray(pages) ? pages : pages && typeof pages === 'object' ? Object.values(pages) : []
+  const rank = { cover: 0, parent_guide: 1, learner_page: 2, plate: 3, answer_guide: 4 }
+  return list
+    .filter((page) => page && page.role)
+    .slice()
+    .sort(
+      (left, right) =>
+        (rank[left.role] === undefined ? 9 : rank[left.role]) - (rank[right.role] === undefined ? 9 : rank[right.role])
+    )
+}
+
+/**
+ * The pages a proof may show for one audience. A learner copy prints the cover, the learner page
+ * and captioned plates; the parent guide and the answer guide never reach it.
+ */
+function cbTakeHomeProofPages(pack) {
+  const audience = (pack && pack.audience) || 'parent'
+  const allowed =
+    audience === 'learner'
+      ? new Set(['cover', 'learner_page', 'plate'])
+      : new Set(['cover', 'parent_guide', 'learner_page', 'plate', 'answer_guide'])
+  return cbTakeHomePageOrder(pack && pack.pages).filter((page) => allowed.has(page.role))
+}
+
+function cbTakeHomeBlockedCopy(reason) {
+  if (!reason) return 'This lesson cannot be printed yet.'
+  return CB_TAKEHOME_BLOCKED_WORD[reason] || `This lesson cannot be printed: ${reason}.`
+}
+
+function cbTakeHomeExportCopy(error) {
+  const details = (error && error.details) || {}
+  const reason = details.reason
+  if (reason && CB_TAKEHOME_EXPORT_WORD[reason]) return CB_TAKEHOME_EXPORT_WORD[reason]
+  return `${error && error.code ? error.code + ': ' : ''}${describeError(error)}`
+}
+
+function TakeHomePaperBadge({ children, tone }) {
+  return jsx('span', {
+    'data-cb-takehome-badge': tone || 'plain',
+    style: {
+      fontFamily: CB_SANS,
+      fontSize: CB_TYPE.caption,
+      fontWeight: 600,
+      letterSpacing: '0.01em',
+      color: tone === 'warn' ? 'var(--cb-coral)' : 'var(--cb-ink-soft)',
+      border: '1px solid var(--cb-rule)',
+      borderRadius: '999px',
+      padding: '0.05rem 0.5rem',
+      whiteSpace: 'nowrap'
+    },
+    children
+  })
+}
+
+/** The source shelf: courses this profile already teaches, without their parent plans. */
+function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
+  const sources = cbTakeHomeSourceRows(rows)
+  if (status === 'loading' && !rows) {
+    return jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading the courses you teach' }) })
+  }
+  if (status === 'error' && !rows) {
+    return jsx(sdk.ErrorState, {
+      title: 'The courses you teach could not be read',
+      description: `${error && error.code ? error.code + ': ' : ''}${describeError(error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: onRetry, children: 'Try again' })
+    })
+  }
+  if (sources.length === 0) {
+    return jsx(EmptyState, {
+      title: 'No learner course to draw from',
+      description:
+        'A take-home pack is printed from a Game or Textbook lesson you already teach. Write or import a learner course first; a parent plan belongs under My lesson plans.',
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: onRetry, children: 'Check again' })
+    })
+  }
+  return jsxs('section', {
+    'data-cb-takehome-shelf': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      padding: '1rem 1rem 1.1rem',
+      background: 'var(--cb-plum-soft)',
+      borderTop: '1px solid var(--cb-plum)',
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsx(PlateHead, {
+        label: 'Take-home from a lesson',
+        title: 'Draw a take-home from a course you already teach',
+        caption:
+          'The source course is not copied, changed or re-approved. The pack binds to this lesson’s version and hash, so printing it never touches the course.'
+      }),
+      jsx('div', {
+        role: 'list',
+        'aria-label': 'Courses you can draw a take-home from',
+        style: { display: 'flex', flexDirection: 'column' },
+        children: sources.map((row) =>
+          jsxs(
+            'div',
+            {
+              role: 'listitem',
+              'data-cb-source-course': row.course_id,
+              style: {
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: '0.4rem 1rem',
+                padding: '0.7rem 0',
+                borderTop: '1px solid var(--cb-rule)'
+              },
+              children: [
+              jsxs(
+                'div',
+                {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 },
+                  children: [
+                    jsx('div', {
+                      style: {
+                        fontFamily: CB_SERIF,
+                        fontSize: CB_TYPE.body,
+                        fontWeight: 600,
+                        color: 'var(--cb-ink)',
+                        overflowWrap: 'anywhere'
+                      },
+                      children: row.title || 'Untitled course'
+                    }),
+                    jsx('div', {
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      children:
+                        `${(row.provenance && row.provenance.source) === 'bundled' ? 'Bundled' : (row.provenance && row.provenance.source) === 'community' ? 'Imported' : 'Written here'} · ` +
+                        `${row.learner_label || 'Learner course'}`
+                    })
+                  ]
+                }
+              ),
+              jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'secondary',
+                onClick: () => onSelect(row),
+                children: 'Choose this course'
+              })
+              ]
+            }
+          )
+        )
+      })
+    ]
+  })
+}
+
+/** Sections and their written lessons, with the source's mode stated before anything is made. */
+function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjective, onRetry, onBack }) {
+  const objectives = (source && source.objectives) || []
+  const groups = []
+  for (const objective of objectives) {
+    const last = groups[groups.length - 1]
+    if (last && last.title === objective.section_title) last.items.push(objective)
+    else groups.push({ title: objective.section_title, items: [objective] })
+  }
+  return jsxs('section', {
+    'data-cb-takehome-source': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 1rem 1.1rem', boxSizing: 'border-box' },
+    children: [
+      jsx(PlateHead, {
+        label: 'Source lesson',
+        title: courseTitle || 'Choose a lesson',
+        caption:
+          'Pick the written lesson to print. The preview is read-only: the course, its plan and its approval are not touched.',
+        actions: jsx(sdk.Button, { size: 'sm', variant: 'tertiary', onClick: onBack, children: 'Back to courses' })
+      }),
+      status === 'loading'
+        ? jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Reading the lessons in this course' }) })
+        : status === 'error'
+          ? jsx(sdk.ErrorState, {
+              title: 'This course’s lessons could not be read',
+              description: `${error && error.code ? error.code + ': ' : ''}${describeError(error)}`,
+              children: jsx(sdk.Button, { variant: 'secondary', onClick: onRetry, children: 'Try again' })
+            })
+          : objectives.length === 0
+            ? jsx(EmptyState, {
+                title: 'This course has no written lessons yet',
+                description:
+                  'A take-home pack prints the lesson as it already exists. Write the lesson in the course first, then come back.',
+                children: jsx(sdk.Button, { variant: 'secondary', onClick: onBack, children: 'Choose another course' })
+              })
+            : jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+                children: [
+                  jsxs('div', {
+                    'data-cb-source-mode': (source && source.presentation_mode) || '',
+                    style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' },
+                    children: [
+                      jsx(TakeHomePaperBadge, { children: cbTakeHomeModeWord(source && source.presentation_mode) }),
+                      jsx(TakeHomePaperBadge, { children: plural(objectives.length, 'written lesson', 'written lessons') }),
+                      jsx('span', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children: 'No child account and no child chat: the adult prepares and prints.'
+                      })
+                    ]
+                  }),
+                  ...groups.map((group) =>
+                    jsxs(
+                      'div',
+                      {
+                        'data-cb-source-section': group.title,
+                        style: { display: 'flex', flexDirection: 'column' },
+                        children: [
+                          jsx('h3', {
+                            style: {
+                              margin: 0,
+                              fontFamily: CB_SERIF,
+                              fontSize: CB_TYPE.body,
+                              fontWeight: 600,
+                              color: 'var(--cb-ink)',
+                              paddingBottom: '0.3rem',
+                              borderBottom: '1px solid var(--cb-rule)'
+                            },
+                            children: group.title
+                          }),
+                          ...group.items.map((objective) =>
+                            jsxs(
+                              'div',
+                              {
+                                'data-cb-source-objective': objective.objective_id,
+                                'data-cb-source-available': objective.available ? 'true' : 'false',
+                                style: {
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  alignItems: 'baseline',
+                                  justifyContent: 'space-between',
+                                  gap: '0.4rem 1rem',
+                                  padding: '0.65rem 0',
+                                  borderBottom: '1px solid var(--cb-rule)'
+                                },
+                                children: [
+                                jsxs(
+                                  'div',
+                                  {
+                                    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 },
+                                    children: [
+                                      jsx('div', {
+                                        style: {
+                                          fontFamily: CB_SERIF,
+                                          fontSize: CB_TYPE.body,
+                                          color: 'var(--cb-ink)',
+                                          overflowWrap: 'anywhere'
+                                        },
+                                        children: `${objective.ordinal}. ${objective.title}`
+                                      }),
+                                      jsx('div', {
+                                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                                        children: objective.available
+                                          ? `Evidence target: ${objective.evidence_target} · ${objective.lesson_state}` +
+                                            (objective.has_world_plate ? ' · world plates available' : ' · no world art')
+                                          : cbTakeHomeBlockedCopy(objective.blocked_reason)
+                                      })
+                                    ]
+                                  }
+                                ),
+                                jsx(sdk.Button, {
+                                  size: 'sm',
+                                  variant: 'secondary',
+                                  disabled: !objective.available,
+                                  onClick: () => onSelectObjective(objective),
+                                  children: objective.available ? 'Preview this lesson' : 'Not printable yet'
+                                })
+                                ]
+                              }
+                            )
+                          )
+                        ]
+                      },
+                      group.title
+                    )
+                  )
+                ]
+              })
+    ]
+  })
+}
+
+/**
+ * The proof of the actual pages. Page sheets are real DOM text in reading order, not a thumbnail:
+ * a parent approves what is on this screen, and the learner page and answer guide are visibly
+ * different objects with their own audience label.
+ */
+function TakeHomeProof({ pages, audience, title, printProfile }) {
+  const list = cbTakeHomeProofPages({ pages, audience })
+  if (list.length === 0) return null
+  const profile = printProfile || {}
+  const paper = (profile.paper || 'letter') === 'a4' ? 'A4' : 'Letter'
+  const margin = profile.margin_pt || 56
+  return jsxs('section', {
+    'data-cb-takehome-proof': '',
+    'data-cb-proof-audience': audience || 'parent',
+    'data-cb-proof-pages': String(list.length),
+    'aria-label': 'Print proof of the pack pages',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+    children: [
+      jsxs(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: '0.3rem 1rem'
+          },
+          children: [
+            jsx(CbLabel, { children: 'Print proof' }),
+            jsx('span', {
+              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+              children: `${plural(list.length, 'page', 'pages')} · ${paper} · ${margin} pt margins · selectable text`
+            })
+          ]
+        }
+      ),
+      jsx('div', {
+        role: 'list',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.85rem' },
+        children: list.map((page, index) => {
+          const role = page.role
+          // One sheet voice per role: warm paper for parent pages, the field edge for the learner
+          // page, and the plum wash plus a dashed rule for the parent-only answer guide.
+          const sheet =
+            {
+              cover: { background: 'var(--cb-lamp-soft)', borderColor: 'var(--cb-lamp)' },
+              parent_guide: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-accent)' },
+              learner_page: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-field)' },
+              plate: { background: 'var(--cb-accent-soft)', borderColor: 'var(--cb-accent)' },
+              answer_guide: { background: 'var(--cb-plum-soft)', borderColor: 'var(--cb-plum)' }
+            }[role] || { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-rule)' }
+          return jsxs(
+            'article',
+            {
+              role: 'listitem',
+              'data-cb-proof-page': role,
+              'data-cb-proof-audience': page.audience,
+              'data-cb-proof-index': String(index + 1),
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.45rem',
+                width: '100%',
+                maxWidth: '46rem',
+                boxSizing: 'border-box',
+                padding: '1.1rem 1.25rem 1rem',
+                background: sheet.background,
+                border: '1px solid ' + sheet.borderColor,
+                borderTopStyle: role === 'answer_guide' ? 'dashed' : 'solid',
+                borderLeftWidth: role === 'learner_page' || role === 'answer_guide' ? '3px' : '1px'
+              },
+              children: [
+            jsxs(
+              'header',
+              {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem 0.6rem' },
+                children: [
+                  jsx(TakeHomePaperBadge, {
+                    tone: role === 'answer_guide' ? 'warn' : 'plain',
+                    children: CB_TAKEHOME_PAGE_WORD[role] || role
+                  }),
+                  jsx('span', {
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    children: CB_TAKEHOME_PAGE_NOTE[role] || ''
+                  }),
+                  jsx('span', {
+                    style: {
+                      marginLeft: 'auto',
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.caption,
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: `Page ${index + 1} of ${list.length}`
+                  })
+                ]
+              }
+            ),
+            jsx('h3', {
+              style: {
+                margin: 0,
+                fontFamily: CB_SERIF,
+                fontSize: CB_TYPE.body,
+                fontWeight: 600,
+                lineHeight: 1.25,
+                color: 'var(--cb-ink)',
+                overflowWrap: 'anywhere'
+              },
+              children: page.title
+            }),
+            page.alt_text
+              ? jsx('p', {
+                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                  children: `Text alternative: ${page.alt_text}`
+                })
+              : null,
+            jsx(ProseText, {
+              'data-cb-proof-text': role,
+              style: {
+                fontFamily: CB_SERIF,
+                fontSize: CB_TYPE.body,
+                lineHeight: 1.6,
+                color: 'var(--cb-ink)',
+                maxWidth: CB_MEASURE
+              },
+              text: page.text
+            })
+              ]
+            }
+          )
+        })
+      })
+    ]
+  })
+}
+
+/**
+ * The pack workspace: choose what to make, preview the actual pages, save the draft, approve the
+ * exact pages and print. It is presentational; `TakeHomeStudio` owns the command sequence so a
+ * test can render every state without a live backend.
+ */
+function TakeHomePackPanel({
+  courseTitle,
+  source,
+  objective,
+  kind,
+  audience,
+  onKind,
+  onAudience,
+  preview,
+  previewStatus,
+  previewError,
+  onPreview,
+  onRetryPreview,
+  onBack,
+  pack,
+  busy,
+  error,
+  exportError,
+  exported,
+  artifact,
+  onSaveDraft,
+  onApprove,
+  onExport
+}) {
+  const pages = preview ? preview.pages : null
+  const ready = Boolean(preview)
+  const state = (pack && pack.state) || null
+  const revision = pack && typeof pack.revision === 'number' ? pack.revision : null
+  const approved = state === 'approved' || state === 'exported'
+  const isBusy = Boolean(busy)
+  return jsxs('section', {
+    'data-cb-takehome-pack': '',
+    'data-cb-takehome-pack-state': state || 'none',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1rem 1rem 1.2rem', boxSizing: 'border-box' },
+    children: [
+      jsx(PlateHead, {
+        label: 'Take-home from a lesson',
+        title: objective ? objective.title : 'Take-home',
+        caption: objective ? objective.section_title : '',
+        actions: jsx(sdk.Button, { size: 'sm', variant: 'tertiary', onClick: onBack, children: 'Back to the lesson list' })
+      }),
+      jsxs(
+        'div',
+        {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+          children: [
+            jsx(TakeHomePaperBadge, { children: cbTakeHomeModeWord(source && source.presentation_mode) }),
+            jsx(TakeHomePaperBadge, {
+              children: objective ? `Evidence target: ${objective.evidence_target}` : 'Lesson'
+            }),
+            jsx(TakeHomePaperBadge, { children: cbTakeHomeKindWord(kind) })
+          ]
+        }
+      ),
+      // The source line is the pack's binding, printed where the parent makes the decision.
+      jsxs(
+        'div',
+        {
+          'data-cb-takehome-source-line': '',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.15rem',
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.caption,
+            color: 'var(--cb-ink-soft)'
+          },
+          children: [
+            jsx('div', {
+              children:
+                `Source: ${courseTitle || 'course'} · ` +
+                `${objective ? `lesson v${objective.lesson_version}` : 'lesson'} · ` +
+                `state ${objective ? objective.lesson_state : 'unknown'}`
+            }),
+            jsx('div', {
+              style: { overflowWrap: 'anywhere' },
+              children: `Source content hash: ${(preview && preview.content_hash) || (objective && objective.content_hash) || '—'}`
+            }),
+            jsx('div', { children: 'Printing this pack does not change the course, its plan or its approval.' })
+          ]
+        }
+      ),
+      jsx(CbLabel, { children: 'What to make' }),
+      jsx('div', {
+        role: 'radiogroup',
+        'aria-label': 'What to make from this lesson',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+        children: CB_TAKEHOME_KINDS.map((option) =>
+          jsxs(
+            'label',
+            {
+              'data-cb-takehome-kind': option.id,
+              style: {
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.55rem',
+                padding: '0.45rem 0.6rem',
+                border: '1px solid ' + (kind === option.id ? 'var(--cb-accent)' : 'var(--cb-rule)'),
+                background: kind === option.id ? 'var(--cb-accent-soft)' : 'transparent',
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.caption,
+                color: 'var(--cb-ink)',
+                cursor: 'pointer'
+              },
+              children: [
+              jsx('input', {
+                type: 'radio',
+                name: 'cb-takehome-kind',
+                value: option.id,
+                checked: kind === option.id,
+                onChange: () => onKind(option.id),
+                style: { marginTop: '0.15rem' }
+              }),
+              jsxs(
+                'span',
+                {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.1rem' },
+                  children: [
+                    jsx('span', { style: { fontWeight: 600, fontSize: CB_TYPE.body }, children: option.label }),
+                    jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: option.hint })
+                  ]
+                }
+              )
+              ]
+            }
+          )
+        )
+      }),
+      jsx(CbLabel, { children: 'Who holds this copy' }),
+      jsx('div', {
+        'data-cb-takehome-audience': audience,
+        children: jsx(sdk.SegmentedControl, {
+          options: CB_TAKEHOME_AUDIENCES,
+          value: audience,
+          sizing: 'content',
+          onChange: onAudience
+        })
+      }),
+      // One primary at a time, in the order the artifact actually moves.
+      !ready
+        ? jsx(CbAction, {
+            variant: 'primary',
+            disabled: isBusy || !objective || !objective.available,
+            onClick: onPreview,
+            children: busy === 'preview' ? 'Composing the pages' : 'Preview the pages'
+          })
+        : null,
+      !ready && previewStatus === 'error'
+        ? jsx(sdk.ErrorState, {
+            title: 'The pages could not be composed',
+            description: `${previewError && previewError.code ? previewError.code + ': ' : ''}${describeError(previewError)}`,
+            children: jsx(sdk.Button, { variant: 'secondary', onClick: onRetryPreview, children: 'Try again' })
+          })
+        : null,
+      ready
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+            children: [
+              jsx(TakeHomeProof, {
+                pages,
+                audience,
+                title: objective ? objective.title : '',
+                printProfile: preview.print_profile
+              }),
+              preview.sources && preview.sources.length
+                ? jsxs(
+                    'div',
+                    {
+                      'data-cb-takehome-sources': '',
+                      style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
+                      children: [
+                        jsx(CbLabel, { children: 'Recorded sources' }),
+                        ...preview.sources.map((item) =>
+                          jsx(
+                            'div',
+                            {
+                              style: {
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.caption,
+                                color: 'var(--cb-ink-soft)',
+                                overflowWrap: 'anywhere'
+                              },
+                              children: `${item.title}${item.url ? ' · ' + item.url : ''} · ${item.support_status}`
+                            },
+                            item.source_id
+                          )
+                        )
+                      ]
+                    }
+                  )
+                : jsx('div', {
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    children: 'This lesson records no external sources.'
+                  })
+            ]
+          })
+        : null,
+      ready
+        ? jsxs(
+            'div',
+            {
+              'data-cb-takehome-gate': '',
+              style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
+              children: [
+                jsx(CbLabel, { children: 'Approval and print' }),
+                jsx('div', {
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                  children: `Previewed pages: ${(preview.pages || []).length} · preview hash: ${preview.preview_hash}`
+                }),
+                state === 'draft'
+                  ? jsx('div', {
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      children: `Draft ${pack.pack_id} · revision ${revision}. Approval covers exactly the pages above.`
+                    })
+                  : null,
+                state === 'approved' || state === 'exported'
+                  ? jsx('div', {
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                      children: `${CB_TAKEHOME_STATE_WORD[state]} on ${pack.approved_at || 'approval'} · approval hash: ${pack.approval_hash || '—'}`
+                    })
+                  : null,
+                !pack
+                  ? jsx(CbAction, {
+                      variant: 'primary',
+                      disabled: isBusy,
+                      onClick: onSaveDraft,
+                      children: busy === 'draft' ? 'Saving the draft' : 'Save this draft'
+                    })
+                  : null,
+                pack && !approved
+                  ? jsx(CbAction, {
+                      variant: 'primary',
+                      disabled: isBusy,
+                      onClick: onApprove,
+                      children: busy === 'approve' ? 'Approving the pages' : 'Approve these pages'
+                    })
+                  : null,
+                approved
+                  ? jsx(CbAction, {
+                      variant: 'primary',
+                      disabled: isBusy || state === 'exported',
+                      onClick: onExport,
+                      children:
+                        state === 'exported'
+                          ? 'PDF exported'
+                          : busy === 'export'
+                            ? 'Printing the PDF'
+                            : 'Export the print-ready PDF'
+                    })
+                  : null,
+                error
+                  ? jsxs(
+                      'div',
+                      {
+                        'data-cb-takehome-error': (error.details && error.details.reason) || error.code || 'error',
+                        style: {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.15rem',
+                          fontFamily: CB_SANS,
+                          fontSize: CB_TYPE.caption,
+                          color: 'var(--cb-coral)'
+                        },
+                        children: [
+                          jsx('div', {
+                            children:
+                              (error.details && error.details.reason && CB_TAKEHOME_EXPORT_WORD[error.details.reason]) ||
+                              `${error.code ? error.code + ': ' : ''}${describeError(error)}`
+                          }),
+                          jsx('div', {
+                            style: { color: 'var(--cb-ink-soft)' },
+                            children: `Backend reason: ${(error.details && error.details.reason) || 'none reported'}.`
+                          })
+                        ]
+                      }
+                    )
+                  : null,
+                exportError
+                  ? jsx('div', {
+                      'data-cb-takehome-export-error':
+                        (exportError.details && exportError.details.reason) || exportError.code || 'error',
+                      style: {
+                        fontFamily: CB_SANS,
+                        fontSize: CB_TYPE.caption,
+                        color: 'var(--cb-coral)'
+                      },
+                      children: cbTakeHomeExportCopy(exportError)
+                    })
+                  : null,
+                exported
+                  ? jsxs(
+                      'div',
+                      {
+                        'data-cb-takehome-exported': exported.artifact_id,
+                        style: {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.3rem',
+                          fontFamily: CB_SANS,
+                          fontSize: CB_TYPE.caption,
+                          color: 'var(--cb-ink-soft)'
+                        },
+                        children: [
+                          jsx('div', {
+                            children: `Exported ${exported.exported_at || ''} · artifact ${exported.artifact_id}`
+                          }),
+                          artifact && artifact.download
+                            ? jsx(sdk.Button, {
+                                asChild: true,
+                                size: 'sm',
+                                variant: 'secondary',
+                                children: jsx('a', {
+                                  download: 'take-home-pack.pdf',
+                                  href: artifact.download.url,
+                                  children: 'Download the print-ready PDF'
+                                })
+                              })
+                            : jsx('div', { children: 'The file is recorded; its download link is not available in this host.' })
+                        ]
+                      }
+                    )
+                  : null
+              ]
+            }
+          )
+        : null
+    ]
+  })
+}
+
+/**
+ * The take-home entrance: shelf → source lessons → pack. Reads and writes only the
+ * `takehome.*` methods; every state above is a real backend answer, not a placeholder.
+ */
+function TakeHomeStudio({ implemented, onOpenSettings, sessionMinutes, triggerRef }) {
+  const canRead = Boolean(implemented && implemented.has('library.list'))
+  const library = useRpcQuery('library.list', { filter: 'all', limit: 50, sort: 'recent' }, 'takehome-shelf', canRead)
+  const [step, setStep] = useState('shelf')
+  const [course, setCourse] = useState(null)
+  const [sources, setSources] = useState({ status: 'idle', data: null, error: null })
+  const [objective, setObjective] = useState(null)
+  const [kind, setKind] = useState('print_pack')
+  const [audience, setAudience] = useState('parent')
+  const [preview, setPreview] = useState(null)
+  const [previewStatus, setPreviewStatus] = useState('idle')
+  const [previewError, setPreviewError] = useState(null)
+  const [pack, setPack] = useState(null)
+  const [exported, setExported] = useState(null)
+  const [artifact, setArtifact] = useState(null)
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState(null)
+  const [exportError, setExportError] = useState(null)
+
+  const resetPack = useCallback(() => {
+    setPreview(null)
+    setPreviewStatus('idle')
+    setPreviewError(null)
+    setPack(null)
+    setExported(null)
+    setArtifact(null)
+    setError(null)
+    setExportError(null)
+  }, [])
+
+  const chooseCourse = useCallback(async (row) => {
+    setCourse(row)
+    setStep('source')
+    setSources({ status: 'loading', data: null, error: null })
+    const response = await rpc('takehome.sources', { course_id: row.course_id })
+    if (!response.ok) {
+      setSources({ status: 'error', data: null, error: response.error })
+      return
+    }
+    setSources({ status: 'ready', data: response.result, error: null })
+  }, [])
+
+  const reloadSources = useCallback(async () => {
+    if (!course) return
+    setSources({ status: 'loading', data: null, error: null })
+    const response = await rpc('takehome.sources', { course_id: course.course_id })
+    if (!response.ok) {
+      setSources({ status: 'error', data: null, error: response.error })
+      return
+    }
+    setSources({ status: 'ready', data: response.result, error: null })
+  }, [course])
+
+  const chooseObjective = useCallback(
+    (entry) => {
+      setObjective(entry)
+      resetPack()
+      setStep('pack')
+    },
+    [resetPack]
+  )
+
+  const runPreview = useCallback(async () => {
+    if (!course || !objective) return
+    setBusy('preview')
+    setPreviewStatus('loading')
+    setPreviewError(null)
+    setError(null)
+    const response = await rpc('takehome.preview', {
+      course_id: course.course_id,
+      objective_id: objective.objective_id,
+      source_lesson_version: objective.lesson_version,
+      audience,
+      kind
+    })
+    setBusy(null)
+    if (!response.ok) {
+      setPreviewStatus('error')
+      setPreviewError(response.error)
+      return
+    }
+    setPreviewStatus('ready')
+    setPreview(response.result)
+  }, [course, objective, audience, kind])
+
+  const saveDraft = useCallback(async () => {
+    if (!course || !objective || !preview) return
+    setBusy('draft')
+    setError(null)
+    const response = await rpc(
+      'takehome.create',
+      {
+        course_id: course.course_id,
+        objective_id: objective.objective_id,
+        source_lesson_version: objective.lesson_version,
+        audience,
+        kind,
+        title: objective.title
+      },
+      { expectedRevision: 0, idempotencyKey: newOperationId('takehome-create') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setPack({ ...response.result, preview_hash: preview.preview_hash, approved_at: null, approval_hash: null })
+  }, [course, objective, preview, audience, kind])
+
+  const approvePages = useCallback(async () => {
+    if (!pack || !preview) return
+    setBusy('approve')
+    setError(null)
+    const response = await rpc(
+      'takehome.approve',
+      { pack_id: pack.pack_id, preview_hash: preview.preview_hash },
+      { expectedRevision: pack.revision, idempotencyKey: newOperationId('takehome-approve') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    // The approve response carries no revision field; approval always advances the pack by one.
+    setPack((previous) => ({ ...previous, ...response.result, revision: (previous.revision || 0) + 1 }))
+  }, [pack, preview])
+
+  const exportPdf = useCallback(async () => {
+    if (!pack) return
+    setBusy('export')
+    setExportError(null)
+    const response = await rpc(
+      'takehome.export',
+      { pack_id: pack.pack_id },
+      { expectedRevision: pack.revision, idempotencyKey: newOperationId('takehome-export') }
+    )
+    if (!response.ok) {
+      setBusy(null)
+      setExportError(response.error)
+      return
+    }
+    setExported(response.result)
+    setPack((previous) => ({ ...previous, state: 'exported', revision: previous.revision + 1 }))
+    const facts = await rpc('artifact.get', { artifact_id: response.result.artifact_id })
+    setBusy(null)
+    if (facts.ok) setArtifact(facts.result)
+  }, [pack])
+
+  if (!canRead) {
+    return jsx(EmptyState, {
+      title: 'Take-home needs the library methods',
+      description:
+        'This backend does not list library.list, so no source course can be read. Update the plugin instead of using a placeholder screen.',
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+    })
+  }
+
+  if (step === 'shelf') {
+    return jsx(TakeHomeShelf, {
+      rows: library.data && Array.isArray(library.data.items) ? library.data.items : null,
+      status: library.status,
+      error: library.error,
+      onSelect: chooseCourse,
+      onRetry: library.reload
+    })
+  }
+
+  if (step === 'source') {
+    return jsx(TakeHomeSourcePanel, {
+      courseTitle: course && course.title,
+      source: sources.data,
+      status: sources.status,
+      error: sources.error,
+      onSelectObjective: chooseObjective,
+      onRetry: reloadSources,
+      onBack: () => {
+        setStep('shelf')
+        setCourse(null)
+        setSources({ status: 'idle', data: null, error: null })
+      }
+    })
+  }
+
+  return jsx(TakeHomePackPanel, {
+    courseTitle: course && course.title,
+    source: sources.data,
+    objective,
+    kind,
+    audience,
+    onKind: (next) => {
+      setKind(next)
+      resetPack()
+    },
+    onAudience: (next) => {
+      setAudience(next)
+      resetPack()
+    },
+    preview,
+    previewStatus,
+    previewError,
+    onPreview: runPreview,
+    onRetryPreview: runPreview,
+    onBack: () => {
+      resetPack()
+      setObjective(null)
+      setStep('source')
+    },
+    pack,
+    busy,
+    error,
+    exportError,
+    exported,
+    artifact,
+    onSaveDraft: saveDraft,
+    onApprove: approvePages,
+    onExport: exportPdf,
+    sessionMinutes,
+    onOpenSettings,
+    triggerRef
+  })
+}
+
+/**
  * The §10 brief. Every field the contract requires is here, in the order a parent thinks in:
  * what they want, who it is for, where it happens and with what, what to avoid, and only then the
  * provider/egress disclosure that must be acknowledged before submit is possible.
@@ -29609,6 +30724,9 @@ function CoursebookPage() {
   const [studioSeed, setStudioSeed] = useState(null)
   const [studioRevision, setStudioRevision] = useState(0)
   const [studioReload, setStudioReload] = useState(0)
+  // GM-006: the Parent Studio has two entrances. The tab is route state beside the open plan, so
+  // leaving and returning keeps the parent where they were, and opening a plan is still a plan.
+  const [studioTab, setStudioTab] = useState('plans')
 
   const changeDestination = useCallback((next) => {
     rememberedDestination = next
@@ -29727,12 +30845,27 @@ function CoursebookPage() {
         setOpenCourse(null)
         setStudioCourse(null)
         setStudioSeed(null)
+        // "Open Parent Studio" means the authored plans, the entrance the route opens on.
+        setStudioTab('plans')
+      } else if (intent.kind === 'studio-takehome') {
+        // GM-006: the take-home entrance is its own palette destination, not a second route.
+        // It lands on the same Parent Studio and never opens a plan behind the tab.
+        rememberedDestination = 'studio'
+        setDestination('studio')
+        setCreating(false)
+        setImporting(false)
+        setSyllabusFlow(false)
+        setOpenCourse(null)
+        setStudioCourse(null)
+        setStudioSeed(null)
+        setStudioTab('takehome')
       } else if (intent.kind === 'studio-new') {
         rememberedDestination = 'studio'
         setDestination('studio')
         setCreating(false)
         setImporting(false)
         setStudioCourse(null)
+        setStudioTab('plans')
         setStudioSeed({ initial: null, note: null })
       }
     }, [])
@@ -29825,17 +30958,31 @@ function CoursebookPage() {
         onDuplicate: (brief, note) => setStudioSeed({ initial: brief, note })
       })
     } else {
-      body = jsx(StudioList, {
-        implemented,
-        reloadSignal: studioReload,
-        sessionMinutes: homePrefs.sessionMinutes,
-        onOpenSettings: openSettings,
-        triggerRef: settingsTriggerRef,
-        onCreate: () => setStudioSeed({ initial: null, note: null }),
-        onOpen: (row) => {
-          setStudioCourse(row)
-          setStudioRevision(Number(row.revision || 0))
-        }
+      body = jsxs('div', {
+        'data-cb-parent-studio': studioTab,
+        style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+        children: [
+          jsx(StudioEntranceTabs, { value: studioTab, onChange: setStudioTab }),
+          studioTab === 'takehome'
+            ? jsx(TakeHomeStudio, {
+                implemented,
+                sessionMinutes: homePrefs.sessionMinutes,
+                onOpenSettings: openSettings,
+                triggerRef: settingsTriggerRef
+              })
+            : jsx(StudioList, {
+                implemented,
+                reloadSignal: studioReload,
+                sessionMinutes: homePrefs.sessionMinutes,
+                onOpenSettings: openSettings,
+                triggerRef: settingsTriggerRef,
+                onCreate: () => setStudioSeed({ initial: null, note: null }),
+                onOpen: (row) => {
+                  setStudioCourse(row)
+                  setStudioRevision(Number(row.revision || 0))
+                }
+              })
+        ]
       })
     }
   } else if (destination === 'workshop') {
@@ -30474,6 +31621,19 @@ function CoursebookSettings() {
 // server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
   AttemptControls,
+  TakeHomeStudio,
+  TakeHomeShelf,
+  TakeHomeSourcePanel,
+  TakeHomeProof,
+  TakeHomePackPanel,
+  StudioEntranceTabs,
+  CB_STUDIO_ENTRANCES,
+  CB_TAKEHOME_KINDS,
+  cbTakeHomeSourceRows,
+  cbTakeHomeProofPages,
+  cbTakeHomePageOrder,
+  cbTakeHomeKindWord,
+  cbTakeHomeModeWord,
   AttemptVerdict,
   WorldStudio,
   CourseWorldHero,
@@ -30795,6 +31955,16 @@ export default {
           label: 'Open Parent Studio',
           keywords: ['parent', 'studio', 'lesson pack', 'teach', 'author', 'brief'],
           run: () => requestIntent({ kind: 'studio' })
+        }
+      })
+      ctx.register({
+        id: 'takehome',
+        area: AREAS.palette,
+        data: {
+          id: 'coursebook.takehome',
+          label: 'Take-home from a lesson',
+          keywords: ['take-home', 'takehome', 'print', 'pack', 'parent', 'worksheet', 'lesson plan'],
+          run: () => requestIntent({ kind: 'studio-takehome' })
         }
       })
       ctx.register({
