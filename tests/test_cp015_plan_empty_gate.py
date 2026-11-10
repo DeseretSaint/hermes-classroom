@@ -65,7 +65,7 @@ class EmptyPlanIsNotApprovableTest(KernelCase):
         self.assertIn("PLAN_ATTEMPT_TIMEOUT_S", source)
         self.assertLessEqual(
             float(source.split("PLAN_ATTEMPT_TIMEOUT_S = ", 1)[1].splitlines()[0]),
-            600.0,
+            900.0,
         )
 
 

@@ -108,8 +108,11 @@ SUCCESS_JOB_STATES = {"completed", "succeeded"}
 PLAN_ATTEMPTS = 3
 
 #: Per-attempt bound on a plan job. The provider call can outlive the job's own deadline
-#: (CP-044), so the driver refuses to wait on one attempt longer than this.
-PLAN_ATTEMPT_TIMEOUT_S = 300.0
+#: (CP-044, not merged into this branch), so the driver refuses to wait on one attempt longer
+#: than this. Measured on this backend: plan.generate answered in ~470 s and the two validation
+#: passes in ~40 s and ~54 s, so a 300 s bound would abort a healthy attempt; 700 s still turns a
+#: true hang into twelve minutes instead of the ~650 s-plus chain the old wait allowed.
+PLAN_ATTEMPT_TIMEOUT_S = 700.0
 
 
 def _log(message: str) -> None:
@@ -576,7 +579,7 @@ def export_course(slug: str, flow: dict, copy_to: Path | None = None) -> dict:
     return flow
 
 
-def run_one(slug: str, spec: dict) -> dict:
+def run_one(slug: str, spec: dict, *, with_world: bool = True) -> dict:
     _log(f"=== {slug}: {spec['title']} ===")
     flow = create_course(slug, spec)
     try:
@@ -586,10 +589,11 @@ def run_one(slug: str, spec: dict) -> dict:
         # is teachable before any image-provider call is spent on a world kit.
         flow = run_lessons(slug, flow)
         flow = render_lesson(slug, flow)
-        flow = build_world(slug, flow)
-        # Re-read the page after the kit: the same objective now has its world media, and the
-        # record must show the media actually resolves rather than only that files exist.
-        flow = render_lesson(slug, flow, after_world=True)
+        if with_world:
+            flow = build_world(slug, flow)
+            # Re-read the page after the kit: the same objective now has its world media, and the
+            # record must show the media actually resolves rather than only that files exist.
+            flow = render_lesson(slug, flow, after_world=True)
     except Exception as exc:  # noqa: BLE001 - the partial flow is the evidence
         # A per-attempt verdict list is the evidence a reviewer needs; without this the record
         # keeps only the first line of the last failure.
@@ -610,6 +614,10 @@ def main() -> int:
                         help="export the courses already in --record; generate nothing")
     parser.add_argument("--copy-exports", metavar="DIR",
                         help="copy each exported zip into DIR (committed seed directory)")
+    parser.add_argument("--skip-world", action="store_true",
+                        help="plan and lesson passes only; no image-provider calls")
+    parser.add_argument("--world-only", action="store_true",
+                        help="build the world kit for courses already in --record")
     args = parser.parse_args()
 
     selected = sorted(COURSES) if args.all or not args.only else args.only
@@ -619,7 +627,31 @@ def main() -> int:
         record = json.loads(Path(args.record).read_text(encoding="utf-8"))
         record.setdefault("courses", {})
 
-    failures = []
+    failures: list[tuple[str, str]] = []
+    if args.world_only:
+        if not args.record or not Path(args.record).is_file():
+            raise SystemExit("--world-only needs an existing --record")
+        record = json.loads(Path(args.record).read_text(encoding="utf-8"))
+        for slug, flow in (record.get("courses") or {}).items():
+            if args.only and slug not in args.only:
+                continue
+            if flow.get("error") or not flow.get("plan_approved_revision"):
+                _log(f"{slug}: skipped (no approved plan in the record)")
+                continue
+            _key_scope["scope"] = hashlib.sha256(
+                str(flow["course_id"]).encode("utf-8")).hexdigest()[:10]
+            try:
+                build_world(slug, flow)
+                render_lesson(slug, flow, after_world=True)
+            except Exception as exc:  # noqa: BLE001
+                failures.append((slug, f"world: {exc}"))
+                flow["world_error"] = str(exc)
+                _log(f"{slug}: world FAILED — {exc}")
+        Path(args.record).write_text(json.dumps(record, indent=2), encoding="utf-8")
+        for slug, error in failures:
+            _log(f"FAILED {slug}: {error.splitlines()[0]}")
+        return 1 if failures else 0
+
     copy_to = Path(args.copy_exports) if args.copy_exports else None
     if args.export_only:
         if not args.record or not Path(args.record).is_file():
@@ -644,7 +676,7 @@ def main() -> int:
 
     for slug in selected:
         try:
-            flow = run_one(slug, COURSES[slug])
+            flow = run_one(slug, COURSES[slug], with_world=not args.skip_world)
             record["courses"][slug] = flow
             if copy_to is not None:
                 try:
