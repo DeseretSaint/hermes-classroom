@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ast
 import re
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -188,6 +189,136 @@ class LiteralExtractorTest(unittest.TestCase):
     def test_returns_none_for_a_missing_or_non_literal_constant(self) -> None:
         self.assertIsNone(literal_text("const B = 1", "A"))
         self.assertIsNone(literal_text("const A = JSON.parse(X)", "A"))
+
+
+class V3GateBitesTest(unittest.TestCase):
+    """Run the **real** v3 gate against synthetic module text, good and bad.
+
+    A gate that has only ever failed because the literal was absent has not shown it would catch a
+    bad stylesheet. These controls point the real gate at a temporary module (never the product
+    file), prove a compliant v3 block passes every gated claim, and prove each defect class trips
+    the named assertion. The gate classes are skipped at import while ``V3_REQUIRED`` is False, so
+    the controls call their bodies directly rather than through the test runner.
+    """
+
+    TOKEN_KEYS = ("modes", "elevation", "radii", "type", "motion")
+
+    def good_css(self) -> str:
+        return (
+            '@font-face { font-family: "CB Display"; src: url(data:font/woff2;base64,AAAA) format("woff2"); font-display: swap; }\n'
+            '@font-face { font-family: "CB UI"; src: url(data:font/woff2;base64,BBBB) format("woff2"); font-display: swap; }\n'
+            "[data-cb-v3] {\n"
+            "  --cb3-elev-1: 0 1px 1px rgba(58, 35, 24, 0.10), 0 6px 14px -8px rgba(58, 35, 24, 0.28);\n"
+            "  --cb3-vignette: radial-gradient(ellipse at 50% 40%, transparent 40%, var(--cb3-canvas-edge) 100%);\n"
+            "  --cb3-dur-press: 120ms;\n"
+            "  --cb3-dur-lift: 150ms;\n"
+            "  --cb3-dur-route: 240ms;\n"
+            "  --cb3-dur-verdict: 300ms;\n"
+            "  --cb3-dur-complete: 600ms;\n"
+            "  background-image: var(--cb3-vignette);\n"
+            "  container-type: inline-size;\n"
+            "}\n"
+            "[data-cb-v3] .cb3-card {\n"
+            "  box-shadow: var(--cb3-elev-1);\n"
+            "  font-family: var(--cb3-font-ui);\n"
+            "  transition: opacity var(--cb3-dur-route);\n"
+            "}\n"
+            '[data-cb-v3] .cb3-title { font-family: "CB Display", Georgia, serif; }\n'
+            "[data-cb-v3] .cb3-shelf { border-bottom: 1px solid var(--cb3-wood-edge); }\n"
+        )
+
+    def module_text(self, css: str | None = None, literal: str | None = None) -> str:
+        import json
+
+        contract = json.loads(
+            (ROOT / "contracts" / "cb.tokens.v3.json").read_text(encoding="utf-8")
+        )
+        body = json.dumps(
+            {key: contract[key] for key in self.TOKEN_KEYS},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        # A JS single-quoted literal must escape its backslashes; the extractor undoes exactly that.
+        body = literal if literal is not None else body.replace("\\", "\\\\")
+        return (
+            PLUGIN_JS.read_text(encoding="utf-8")
+            + "\nconst CB_TOKENS_V3_JSON =\n  '" + body + "'\n"
+            + "const CB_V3_CSS = `\n" + (self.good_css() if css is None else css) + "\n`\n"
+        )
+
+    def run_gate(self, class_name: str, method: str, source: str) -> None:
+        import tests.test_desktop_tokens_v3 as gate
+
+        with tempfile.TemporaryDirectory(prefix="coursebook-v3gate-") as tmp:
+            path = Path(tmp) / "plugin.js"
+            path.write_text(source, encoding="utf-8")
+            original = gate.PLUGIN_JS
+            gate.PLUGIN_JS = path
+            try:
+                case = getattr(gate, class_name)(method)
+                case.setUp()
+                getattr(case, method)()
+            finally:
+                gate.PLUGIN_JS = original
+
+    GATED = [
+        ("V3TokenLiteralTest", "test_the_literal_equals_the_contract_byte_for_byte"),
+        ("V3TokenLiteralTest", "test_hex_appears_only_in_the_two_token_literals"),
+        ("V3TokenLiteralTest", "test_both_modes_carry_every_role_the_contract_declares"),
+        ("V3StylesheetTest", "test_no_backdrop_filter_and_no_blur"),
+        ("V3StylesheetTest", "test_the_stylesheet_is_not_a_stub"),
+        ("V3StylesheetTest", "test_box_shadow_only_inside_the_stylesheet_and_only_as_elevation_tokens"),
+        ("V3StylesheetTest", "test_the_only_gradient_is_the_named_vignette"),
+        ("V3StylesheetTest", "test_every_selector_is_scoped_to_data_cb_v3_except_font_face"),
+        ("V3StylesheetTest", "test_every_font_family_starts_with_cb"),
+        ("V3StylesheetTest", "test_motion_durations_come_only_from_the_motion_table"),
+        ("V3StylesheetTest", "test_no_looping_animation_or_keyframes"),
+        ("V3StylesheetTest", "test_no_viewport_unit_on_the_v3_surface"),
+    ]
+
+    def test_a_compliant_v3_block_passes_every_gated_claim(self) -> None:
+        source = self.module_text()
+        for class_name, method in self.GATED:
+            with self.subTest(claim=f"{class_name}.{method}"):
+                self.run_gate(class_name, method, source)
+
+    def test_each_defect_class_trips_the_named_claim(self) -> None:
+        cases = [
+            ("V3StylesheetTest", "test_no_backdrop_filter_and_no_blur",
+             lambda css: css.replace("container-type: inline-size;", "backdrop-filter: saturate(1.2);")),
+            ("V3StylesheetTest", "test_box_shadow_only_inside_the_stylesheet_and_only_as_elevation_tokens",
+             lambda css: css.replace("box-shadow: var(--cb3-elev-1);", "box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);")),
+            ("V3StylesheetTest", "test_the_only_gradient_is_the_named_vignette",
+             lambda css: css.replace("border-bottom: 1px solid var(--cb3-wood-edge);",
+                                     "background: linear-gradient(#fff, #000);")),
+            ("V3StylesheetTest", "test_every_selector_is_scoped_to_data_cb_v3_except_font_face",
+             lambda css: css.replace("[data-cb-v3] .cb3-shelf", ".cb3-shelf")),
+            ("V3StylesheetTest", "test_every_font_family_starts_with_cb",
+             lambda css: css.replace('font-family: "CB Display", Georgia, serif;', 'font-family: "Inter", sans-serif;')),
+            ("V3StylesheetTest", "test_motion_durations_come_only_from_the_motion_table",
+             lambda css: css.replace("transition: opacity var(--cb3-dur-route);", "transition: opacity 90ms;")),
+            ("V3StylesheetTest", "test_no_looping_animation_or_keyframes",
+             lambda css: css + "\n@keyframes cb3-spin { from { transform: rotate(0); } }\n"),
+            ("V3StylesheetTest", "test_no_viewport_unit_on_the_v3_surface",
+             lambda css: css.replace("container-type: inline-size;", "padding: 4vw;")),
+        ]
+        for class_name, method, mutate in cases:
+            with self.subTest(claim=f"{class_name}.{method}"):
+                with self.assertRaises(AssertionError):
+                    self.run_gate(class_name, method, self.module_text(css=mutate(self.good_css())))
+
+        # A drifted token value: one hex changed in the literal only.
+        stale = self.module_text().replace('"canvas":"#f5e3c8"', '"canvas":"#f5e3c9"', 1)
+        with self.subTest(claim="V3TokenLiteralTest drifted value"):
+            with self.assertRaises(AssertionError):
+                self.run_gate("V3TokenLiteralTest", "test_the_literal_equals_the_contract_byte_for_byte", stale)
+
+    def test_a_raw_hex_in_the_stylesheet_is_caught(self) -> None:
+        css = self.good_css().replace("border-bottom: 1px solid var(--cb3-wood-edge);",
+                                      "border-bottom: 1px solid #a5763f;")
+        with self.assertRaises(AssertionError):
+            self.run_gate("V3TokenLiteralTest", "test_hex_appears_only_in_the_two_token_literals",
+                          self.module_text(css=css))
 
 
 class NoProtectionDeletedTest(unittest.TestCase):

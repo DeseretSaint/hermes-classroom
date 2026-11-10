@@ -53,6 +53,7 @@ from tests.cb_source_scope import (  # noqa: E402
     split_selectors,
     style_rules,
     v3_spans,
+    without_shelf_edge_mask,
 )
 
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
@@ -230,13 +231,14 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
 
     # V-08 the named vignette
     gradients = [(prop, value) for prop, value in pairs if GRADIENT.search(value)]
-    gradient_ok = not GRADIENT.findall(outside) and all(prop.startswith("--cb3-vignette")
-                                                        for prop, _ in gradients)
+    outside_gradients = GRADIENT.findall(without_shelf_edge_mask(outside))
+    gradient_ok = not outside_gradients and all(prop.startswith("--cb3-vignette")
+                                                for prop, _ in gradients)
     claims.append(claim(
         "V-08",
         "The only gradient is the named vignette, declared on a `--cb3-vignette*` property.",
         status(gradient_ok),
-        {"gradients": [prop for prop, _ in gradients], "outside_stylesheet": len(GRADIENT.findall(outside)),
+        {"gradients": [prop for prop, _ in gradients], "outside_stylesheet": len(outside_gradients),
          **({} if built else {"reason": not_built})},
     ))
 

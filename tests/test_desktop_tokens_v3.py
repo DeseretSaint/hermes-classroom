@@ -55,6 +55,7 @@ from tests.cb_source_scope import (
     split_selectors,
     style_rules,
     v3_spans,
+    without_shelf_edge_mask,
 )
 
 #: CP-020a flips this to True as its first commit, watches the gate go red, then builds until it
@@ -226,11 +227,13 @@ class V3StylesheetTest(unittest.TestCase):
         outside = self.source
         for start, end in reversed(v3_spans(self.source)):
             outside = outside[:start] + outside[end:]
-        self.assertEqual(GRADIENT.findall(outside), [],
+        self.assertEqual(GRADIENT.findall(without_shelf_edge_mask(outside)), [],
                          "a gradient escaped the v3 stylesheet and the v2 mask exemption")
 
     def test_every_selector_is_scoped_to_data_cb_v3_except_font_face(self) -> None:
-        for prelude, _ in self.rules:
+        # At-rules (@font-face, @media, @supports) are not selectors and are excepted; every rule
+        # that paints must be scoped to the v3 route root.
+        for prelude, _ in style_rules(self.css):
             for selector in split_selectors(prelude):
                 self.assertTrue(
                     selector.startswith("[data-cb-v3]"),

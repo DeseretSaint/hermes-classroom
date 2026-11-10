@@ -254,3 +254,12 @@ def split_selectors(prelude: str) -> list[str]:
 GRADIENT = re.compile(r"[a-z-]*gradient\(", re.I)
 DURATION = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)\b")
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+
+#: GM-VISUAL-SPEC §2.5's shelf edge fade: a mask declaration, not a gradient surface. The v2 gate
+#: exempts exactly this one declaration, and a v3 gradient scan must not read it as a v3 gradient
+#: either. Shared so the exemption cannot drift between the two gates.
+SHELF_MASK = re.compile(r"\n\s*const maskImage = `[^`]*`\n")
+
+
+def without_shelf_edge_mask(source: str) -> str:
+    return SHELF_MASK.sub("\n", source, count=1)
