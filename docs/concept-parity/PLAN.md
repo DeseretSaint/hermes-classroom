@@ -1092,3 +1092,31 @@ How the partial builds are kept safe:
 6. Memory headroom: 11 workers at load 8 on a 60 GiB host with 18 GiB available. The 12th slot is
    held back deliberately; the next addition is the CP-033b rehearsal only after CP-033's driver is
    approved.
+
+## 20. Toolchain the board now works with (2026-11-10 18:10)
+
+The research is in `docs/design/TOOLCHAIN-50.md` (50 verified tools with fit verdicts) and
+`docs/design/VISUAL-IMPROVEMENTS-30.md` (30 techniques with sources). This section is the part that
+binds the board, so a card cannot claim visual work without the instrument.
+
+| Tool | Where it is used | Card / artifact |
+|---|---|---|
+| Playwright + pixelmatch | every screen change: route capture, 2x, diff vs baseline | `visual/audit.mjs`, run before review |
+| axe-core | same render, serious/critical violations fail the audit | `visual/audit.mjs` |
+| Pa11y | second engine beside axe | CP-046 follow-up, audit extension |
+| Tesseract | OCR check that a cover carries no text | CP-042 |
+| SVGO / Sharp / libvips / pngquant | deterministic covers, icons, plates; no 4 MB PNGs | CP-042 |
+| ImageMagick | contact sheets for review packets | CP-042 |
+| Style Dictionary + Utopia + Every Layout | token build and spacing primitives | CP-046 (after GM-017) |
+| Ladle + Zag.js + Floating UI + Radix patterns | component lab and correct keyboard behaviour | CP-047 (after GM-017) |
+| Rive / Lottie | fox motion, only if a state needs it | optional, post-submission |
+| Three.js | **rejected** — canvas text is not DOM, breaks accessibility and the capture contract | memo §1 |
+
+Rules that follow from the table:
+
+1. A screen card's review summary must name the `visual/audit.mjs` result (fonts, axe, diff) for the
+   routes it touched. A capture without a pass is not evidence.
+2. The audit runs on the merged tree before CP-040 re-pins the M4 evidence; a frame that fails fonts,
+   axe or the pixel diff cannot be pinned.
+3. Covers are text-free deterministic art. Tesseract is the test; a plate with glyphs is refused.
+4. Three.js is out of scope for the product UI. If the fox must move, it is Rive or CSS.
