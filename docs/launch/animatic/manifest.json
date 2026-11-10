@@ -1,7 +1,7 @@
 {
   "tool": "scripts/cp-animatic.mjs",
   "spec": "docs/launch/animatic/beats.json",
-  "spec_sha256": "24ef1414efcd3bf3955ad72319fede205c8a1d341d475362b9026238a3ff2ab5",
+  "spec_sha256": "d467ce5770f2f9ac4ae96a1bc576cca5c1b1335f79f7e4fae5fe3c56e13b28cf",
   "tokens": "contracts/cb.tokens.v3.json",
   "tokens_sha256": "6139557f8e6f60a15525bb616e611fea151ee383c24f7c1da4d3ae28f1d1f12e",
   "claim": "A chat answers. Coursebook makes the next step depend on what you did.",
@@ -23,6 +23,8 @@
       "png": "frames/S0-hook.png",
       "png_sha256": "94804e002cfb7bce3b5a5ea8fbf3fb8234d4675ee4f2c552b363cc84a72e88a2",
       "caption": "A chat can answer this.",
+      "sub": "",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -37,6 +39,8 @@
       "png": "frames/S1-problem.png",
       "png_sha256": "516dd243f7faf22dd6368f2a72d64e7e5906da94c68d2982a4c90dee0fa7b63d",
       "caption": "It cannot make the answer change what happens next.",
+      "sub": "",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -51,6 +55,8 @@
       "png": "frames/S2-reveal.png",
       "png_sha256": "3746419156644cca15c7fa4d50ecbbc5fff9f194b3a702c26a351c3ba3324733",
       "caption": "Coursebook.",
+      "sub": "A lesson is governed state, not chat.",
+      "repo": null,
       "plate": "docs/concept-parity/refs/home.png",
       "plate_sha256_prefix": "fd75bed31cd773ab",
       "placeholder": true
@@ -65,6 +71,8 @@
       "png": "frames/S3-proof1-shelf.png",
       "png_sha256": "73b114707b108da7db4f0331c5d648cf9efdc3de612626b2dc90275fffcd7380",
       "caption": "Your shelf is what you have done.",
+      "sub": "Every card carries its own evidence line and one next step.",
+      "repo": null,
       "plate": "docs/concept-parity/refs/home.png",
       "plate_sha256_prefix": "fd75bed31cd773ab",
       "placeholder": true
@@ -79,6 +87,8 @@
       "png": "frames/S4a-proof2-answer.png",
       "png_sha256": "c628cdd13ca65bd70b15fb71be7f42b02e38025f124c83de5a79a6e98b1e19ea",
       "caption": "You answer the check.",
+      "sub": "It is graded against the section's objective.",
+      "repo": null,
       "plate": "docs/concept-parity/refs/classroom.png",
       "plate_sha256_prefix": "ee0c1a664a7317ae",
       "placeholder": true
@@ -91,8 +101,10 @@
       "start_beat": 66,
       "seconds": 6,
       "png": "frames/S4b-proof2-row.png",
-      "png_sha256": "2e45e7d3df254178fb4a3842057c06ad4781ff2078c40d58b2bdbe29685856e5",
+      "png_sha256": "1a102bdd956de50d827c816122f52a519eecee1335a4c1317864f661cef7deef",
       "caption": "One row is written.",
+      "sub": "The chip is a record now.",
+      "repo": null,
       "plate": "docs/concept-parity/refs/classroom.png",
       "plate_sha256_prefix": "ee0c1a664a7317ae",
       "placeholder": true
@@ -107,6 +119,8 @@
       "png": "frames/S5a-proof3-close.png",
       "png_sha256": "71993eecfe308d636b202dc6ed2e97b03f8be19f64f6306a48329ba15c379c39",
       "caption": "Close it. Open it.",
+      "sub": "A labelled cut in the final take; the reopen is real.",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -119,8 +133,10 @@
       "start_beat": 90,
       "seconds": 6,
       "png": "frames/S5b-proof3-resume.png",
-      "png_sha256": "77554bf7787c4054f278aab3b21d836ca1bfb056b09e95486f0867900e2803e9",
-      "caption": "Same objective. Same pending check.",
+      "png_sha256": "ba66017e35e7526072f97f6892c6296e39062749809963ec3d0f655ed0637783",
+      "caption": "Same objective. Same check.",
+      "sub": "A new window on the same place.",
+      "repo": null,
       "plate": "docs/concept-parity/refs/classroom.png",
       "plate_sha256_prefix": "ee0c1a664a7317ae",
       "placeholder": true
@@ -135,6 +151,8 @@
       "png": "frames/S6-mechanism.png",
       "png_sha256": "947707c3e7fa4f0618d66519972026ed6426615fc9c02493a337def85d63e8b8",
       "caption": "One answer. One transition. One row.",
+      "sub": "",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -149,6 +167,8 @@
       "png": "frames/S7a-truth.png",
       "png_sha256": "f516b65ff7484991d0dedc15b90e0ae30b517314f820376770be6c949a35489f",
       "caption": "No stars. No XP on the shelf. No leaderboard.",
+      "sub": "Each of these is in the concept art and is refused by the build.",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -163,6 +183,8 @@
       "png": "frames/S7b-truth.png",
       "png_sha256": "5be3683220fb1557f09215c24925205c46512eb661b7cbc1235e732ba2c95866",
       "caption": "If the backend did not record it, it is not on the screen.",
+      "sub": "",
+      "repo": null,
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -177,6 +199,8 @@
       "png": "frames/S8-end.png",
       "png_sha256": "5e5caecc56d95fcb1aef03d1b2128ab31b007f1c8f51c89d0cf2a6218cac88e1",
       "caption": "Coursebook",
+      "sub": "A Hermes Desktop plugin. MIT licence.",
+      "repo": "github.com/DeseretSaint/hermes-classroom",
       "plate": null,
       "plate_sha256_prefix": null,
       "placeholder": false
@@ -189,9 +213,9 @@
   ],
   "video": {
     "file": "animatic.mp4",
-    "sha256": "39e3c88c6972d6e48693a75199f59f46aa389a55c225ff9432b0b2afce9d528e",
+    "sha256": "4a3a1ec6b487d3690f124b178d892d015cf458102cc571418fb9b3ad88117b8c",
     "probed_duration_seconds": 75,
-    "probed_bytes": 2036868,
+    "probed_bytes": 2027740,
     "audio": "none"
   }
 }

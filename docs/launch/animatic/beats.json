@@ -77,7 +77,7 @@
       "kind": "plate",
       "kicker": "Proof 2 · the row",
       "caption": "One row is written.",
-      "sub": "The evidence count moves: {n} of {total} checks recorded.",
+      "sub": "The chip is a record now.",
       "plate": "docs/concept-parity/refs/classroom.png",
       "plate_sha256_prefix": "ee0c1a664a7317ae",
       "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
@@ -97,8 +97,8 @@
       "start_beat": 90,
       "kind": "plate",
       "kicker": "Proof 3 · resume",
-      "caption": "Same objective. Same pending check.",
-      "sub": "Nothing to reconstruct.",
+      "caption": "Same objective. Same check.",
+      "sub": "A new window on the same place.",
       "plate": "docs/concept-parity/refs/classroom.png",
       "plate_sha256_prefix": "ee0c1a664a7317ae",
       "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"

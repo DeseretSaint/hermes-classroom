@@ -159,6 +159,8 @@ for (const frame of spec.frames) {
     png: `frames/${frame.id}.png`,
     png_sha256: fileSha(pngPath),
     caption: frame.caption,
+    sub: frame.sub || '',
+    repo: frame.repo || null,
     plate: frame.plate || null,
     plate_sha256_prefix: frame.plate_sha256_prefix || null,
     placeholder: Boolean(frame.plate)

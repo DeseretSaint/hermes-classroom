@@ -15,7 +15,7 @@ Spec: `docs/launch/animatic/beats.json` · Build record: `docs/launch/animatic/m
 | Frames | **2250** at 30 fps | `ffprobe -show_entries stream=nb_frames` |
 | Picture | 1920×1080, H.264, `yuv420p`, faststart | `ffprobe` stream fields |
 | Audio | **none** | no audio stream in the file |
-| File | 2,036,868 bytes, sha256 `39e3c88c6972d6e4…` | `manifest.json` `video` block |
+| File | 2,027,740 bytes, sha256 `4a3a1ec6b487d369…` | `manifest.json` `video` block |
 | Cut points | 12 shots, all on a beat of the 120 BPM grid (0.5 s per beat, 150 beats) | `beats.json` + `manifest.json` |
 | Placeholder frames | 5 of 12 (`S2`, `S3`, `S4a`, `S4b`, `S5b`) — every one carries a chip | frame PNGs, §3 below |
 
@@ -28,7 +28,7 @@ node scripts/cp-animatic.mjs --out /tmp/animatic-check   # rebuild somewhere els
 ```
 
 Measured on 2026-11-10: a rebuild into a second output directory produced **byte-identical** frames
-and MP4 (`cmp` clean on all 12 PNGs and on `animatic.mp4`, same 2,036,868 bytes, same sha256), so the
+and MP4 (`cmp` clean on all 12 PNGs and on `animatic.mp4`, same 2,027,740 bytes, same sha256), so the
 artefact in this commit is reproducible from the spec, the plates and the two OFL font files.
 
 The renderer reads `contracts/cb.tokens.v3.json` `modes.light` at build time and the product's own

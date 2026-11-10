@@ -60,6 +60,45 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def script_section_1_words() -> dict[str, list[str]]:
+    """Map every beat id in ``SCRIPT.md`` §1 to the words its on-screen column authorises.
+
+    The cell lists the caption, then the sub-line, then (end card only) the repository line,
+    separated by ``' / '``. That is the order the renderer draws them in, so ``beats.json`` has to
+    match it element for element rather than merely share a phrase with it.
+    """
+    words: dict[str, list[str]] = {}
+    text = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8")
+    section = text.split("## 1. Picture | words | hand-off", 1)[1].split("### Where each product string comes from", 1)[0]
+    for line in section.splitlines():
+        if not line.startswith("| S"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 4 or not re.fullmatch(r"S\d+[ab]?", cells[0]):
+            continue
+        words[cells[0]] = [part.strip() for part in cells[3].split(" / ")]
+    return words
+
+
+def beat_lines(spec: dict) -> dict[str, list[tuple[str, str]]]:
+    """Every piece of text a beat puts on screen, by frame id and field name.
+
+    ``beats.json`` is what the renderer draws verbatim (``scripts/cp-animatic.mjs``), so a phrase
+    removed from the documents but left in the spec is still burned into the frames.
+    """
+    lines: dict[str, list[tuple[str, str]]] = {}
+    for frame in spec["frames"]:
+        entries = []
+        for field in ("kicker", "caption", "sub", "repo"):
+            value = frame.get(field)
+            if value:
+                entries.append((field, value))
+        for index, row in enumerate(frame.get("strike", [])):
+            entries.append((f"strike[{index}]", row))
+        lines[frame["id"]] = entries
+    return lines
+
+
 def refs_plate_status() -> dict[str, bool]:
     """Map every image in ``REFS.md`` to whether the owner ratified it.
 
@@ -574,10 +613,40 @@ class DriverSteps(unittest.TestCase):
             note = (step.get("note") or "").lower()
             for phrase in VALUE_CLAIM_PHRASES:
                 self.assertNotIn(phrase, note, f"step {index} note claims {phrase!r}")
+        # The renderer draws beats.json verbatim, so the spec is a launch document too: a phrase
+        # the prose dropped but the spec kept is burned into the frames and the MP4.
+        for beat, lines in beat_lines(self.animatic).items():
+            for field, value in lines:
+                low = value.lower()
+                for phrase in VALUE_CLAIM_PHRASES:
+                    self.assertNotIn(
+                        phrase, low,
+                        f"beats.json {beat} {field} claims {phrase!r}; the take does not measure that",
+                    )
+        if MANIFEST.exists():
+            built = json.loads(MANIFEST.read_text(encoding="utf-8"))
+            for frame in built["frames"]:
+                for field in ("caption", "sub"):
+                    low = (frame.get(field) or "").lower()
+                    for phrase in VALUE_CLAIM_PHRASES:
+                        self.assertNotIn(
+                            phrase, low,
+                            f"manifest.json {frame['id']} {field} claims {phrase!r}",
+                        )
         script = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8")
         for marker, word in (("S4b-proof2-row", "compare"), ("S5b-proof3-resume", "equals")):
             row = next(line for line in script.splitlines() if line.startswith(f"| `{marker}` |"))
             self.assertIn(word, row.lower(), f"SCRIPT.md §4 must say what {marker} measures")
+
+    def test_no_beat_claims_the_reopened_check_is_pending(self):
+        """brief.md §6: pending-vs-graded across the reopen is explicitly NOT compared."""
+        frames = {frame["id"]: frame for frame in self.animatic["frames"]}
+        for field, value in beat_lines(self.animatic)["S5b-proof3-resume"]:
+            self.assertNotIn(
+                "pending", value.lower(),
+                f"beats.json S5b {field} says the check is pending; the take compares the block id only",
+            )
+        self.assertIn("same check", frames["S5b-proof3-resume"]["caption"].lower())
 
     def test_setup_names_the_unanswered_check_and_the_reset_between_takes(self):
         setup = " ".join(self.spec.get("setup", [])).lower()
@@ -586,6 +655,44 @@ class DriverSteps(unittest.TestCase):
         script = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8").lower()
         self.assertIn("unanswered", script, "SCRIPT.md §4 must repeat the unanswered-check precondition")
         self.assertIn("reset", script, "SCRIPT.md §4 must repeat the reset between takes")
+
+
+class BeatText(unittest.TestCase):
+    """The picture's words are exactly the words SCRIPT.md §1 authorises, and no others."""
+
+    def setUp(self):
+        self.spec = json.loads(BEATS.read_text(encoding="utf-8"))
+        self.frames = {frame["id"]: frame for frame in self.spec["frames"]}
+        # SCRIPT.md §1 names shots by the short id (S4b); beats.json names the frame by the shot
+        # id plus its surface (S4b-proof2-row). The short id is the join key.
+        self.by_script = {frame["id"].split("-")[0]: frame for frame in self.spec["frames"]}
+        self.authorised = script_section_1_words()
+
+    def test_script_section_1_covers_every_beat(self):
+        self.assertEqual(sorted(self.authorised), sorted(self.by_script))
+
+    def test_rendered_caption_and_sub_are_the_words_the_script_authorises(self):
+        for beat, frame in self.by_script.items():
+            parts = self.authorised[beat]
+            self.assertEqual(frame.get("caption", ""), parts[0],
+                             f"{beat} caption is not SCRIPT.md §1's words-on-screen line")
+            expected_sub = parts[1] if len(parts) > 1 else ""
+            self.assertEqual(frame.get("sub", ""), expected_sub,
+                             f"{beat} sub is not SCRIPT.md §1's second line")
+            if len(parts) > 2:
+                self.assertEqual(frame.get("repo", ""), parts[2],
+                                 f"{beat} repo line is not SCRIPT.md §1's third line")
+            else:
+                self.assertNotIn("repo", frame,
+                                 f"{beat} draws a repo line SCRIPT.md §1 does not authorise")
+
+    def test_the_built_manifest_records_the_words_that_were_burned_in(self):
+        if not MANIFEST.exists():
+            self.skipTest("animatic not built: run node scripts/cp-animatic.mjs")
+        built = {frame["id"]: frame for frame in json.loads(MANIFEST.read_text(encoding="utf-8"))["frames"]}
+        for beat, frame in self.frames.items():
+            self.assertEqual(built[beat]["caption"], frame.get("caption", ""), beat)
+            self.assertEqual(built[beat].get("sub", ""), frame.get("sub", ""), beat)
 
 
 class DriverTransitionSelfTest(unittest.TestCase):
