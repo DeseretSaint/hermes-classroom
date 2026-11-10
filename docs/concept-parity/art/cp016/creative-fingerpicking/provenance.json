@@ -1,0 +1,438 @@
+{
+  "card": "CP-016",
+  "topic": "Fingerpicking patterns for acoustic guitar",
+  "brief": {
+    "course_id": "course_cp016_guitar",
+    "title": "Fingerpicking patterns for acoustic guitar",
+    "subject_domain": "music",
+    "end_capability": "Play three fingerpicking patterns in steady time",
+    "audience": "adult beginner",
+    "level": "novice",
+    "locale": "en-US",
+    "tone": "warm, unhurried, curious",
+    "safety_class": "none",
+    "motifs": [
+      "studio bench",
+      "acoustic guitar",
+      "felt pick",
+      "open notebook"
+    ],
+    "forbidden": [
+      "brand logos",
+      "text"
+    ],
+    "sections": [
+      {
+        "id": "s1",
+        "title": "Thumb and finger independence"
+      },
+      {
+        "id": "s2",
+        "title": "A first travis pattern"
+      }
+    ]
+  },
+  "grammar": "studio_bench",
+  "prompt_version": "world-prompt-v2",
+  "style_selection": {
+    "style_id": "studio_bench--authored",
+    "rule": "deterministic authored direction; the World Studio owner-approval gate is review, not asserted by this proof"
+  },
+  "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+  "plates": [
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/01-style_board-authored.png",
+      "role": "style_board",
+      "section_id": null,
+      "style_id": "studio_bench--authored",
+      "aspect_ratio": "3:2",
+      "host_aspect_ratio": "landscape",
+      "prompt_hash": "sha256:66a5fd9018e059f58c8dd6cd9bf46a4edd0c8a8a6da207a190fe1338adff3b29",
+      "prompt_version": "world-prompt-v2",
+      "prompt": "Textless painted style board plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign. Direction: authored palette.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "coral #9c2e1c (terracotta)",
+        "ochre #7b4b0a (wood)",
+        "field green #2f6047 (forest)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:a68797f4d77817cab5a713680d319be08391c7dc27bd43d5a3b6e6fac8e953a4"
+      },
+      "sha256": "b927b06dbf80f635e37523db742453e72a7ff340fc064096cc3d38b8c7fed4fd",
+      "bytes": 1043758,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T16:46:32.720034+00:00",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation",
+        "evidence": "Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.",
+        "read": "{\"notation\":false,\"kind\":\"painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation\",\"evidence\":\"Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation\",\"evidence\":\"Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.\"}}"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/02-style_board-warm-paper.png",
+      "role": "style_board",
+      "section_id": null,
+      "style_id": "studio_bench--warm-paper",
+      "aspect_ratio": "3:2",
+      "host_aspect_ratio": "landscape",
+      "prompt_hash": "sha256:562f1d79c4dec6cceec37aedef1b8794a10aa210760bf816f17f69f50565203f",
+      "prompt_version": "world-prompt-v3",
+      "prompt": "Textless painted style board plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), ochre (wood), lamp (gold), fox cream (paper/lamp-soft family), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses; one extra flat brush-shaped mark per mass, paper grain a little more visible. Light comes from one soft key light from the upper left about a third of the way above the horizon, warmer in temperature; the same single shade plane down-right in a darker tint. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no musical notation, no staves, no clefs and no noteheads; no chord diagrams or chord boxes, no finger-dot charts; no tablature, no fret numbers and no string grids; no sheet music, no open songbooks and no printed pages; no brand logos; no text; no studio bench lettering or sign. Direction: warm paper.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no diagrams, charts, tables or grids, no notation of any kind, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no musical notation, no staves, no clefs and no noteheads, no chord diagrams or chord boxes, no finger-dot charts, no tablature, no fret numbers and no string grids, no sheet music, no open songbooks and no printed pages, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses; one extra flat brush-shaped mark per mass, paper grain a little more visible",
+      "light": "one soft key light from the upper left about a third of the way above the horizon, warmer in temperature; the same single shade plane down-right in a darker tint",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "ochre #7b4b0a (wood)",
+        "lamp #e8a93a (gold)",
+        "fox cream #efe0c2 (paper/lamp-soft family)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:6220ee2acede8bafd58a9df6f5814e219147773a91aac74e0599b988702ae244"
+      },
+      "sha256": "1e660d713d53ae8b30be98f8e7fbaf8e9c2c7b163f9e72ad1ca1b9d24afd8699",
+      "bytes": 1061067,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T19:12:31.137695+00:00",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing",
+        "evidence": "Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands ar",
+        "read": "{\"notation\":false,\"kind\":\"blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing\",\"evidence\":\"Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands are visible, and no frame/ceiling/walls appear in this top-down still life.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.\"}}"
+      },
+      "repair_round": 4,
+      "repair_method": "regenerate",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing\",\"evidence\":\"Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands are visible, and no frame/ceiling/walls appear in this top-down still life.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.\"}}"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/03-style_board-deep-pigment.png",
+      "role": "style_board",
+      "section_id": null,
+      "style_id": "studio_bench--deep-pigment",
+      "aspect_ratio": "3:2",
+      "host_aspect_ratio": "landscape",
+      "prompt_hash": "sha256:dff5da9b315d0311f86982f0af3fae219840cb9be133a390e7ee7817d76c4702",
+      "prompt_version": "world-prompt-v3",
+      "prompt": "Textless painted style board plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), field green (forest), ochre (wood), coral (terracotta), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses; the same opaque gouache, denser pigment and a wider quiet field. Light comes from one soft key light from the upper left about a third of the way above the horizon, dimmer; the same single shade plane down-right in a darker tint of the pigment. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no musical notation, no staves, no clefs and no noteheads; no chord diagrams or chord boxes, no finger-dot charts; no tablature, no fret numbers and no string grids; no sheet music, no open songbooks and no printed pages; no brand logos; no text; no studio bench lettering or sign. Direction: deep pigment.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no diagrams, charts, tables or grids, no notation of any kind, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no musical notation, no staves, no clefs and no noteheads, no chord diagrams or chord boxes, no finger-dot charts, no tablature, no fret numbers and no string grids, no sheet music, no open songbooks and no printed pages, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses; the same opaque gouache, denser pigment and a wider quiet field",
+      "light": "one soft key light from the upper left about a third of the way above the horizon, dimmer; the same single shade plane down-right in a darker tint of the pigment",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "field green #2f6047 (forest)",
+        "ochre #7b4b0a (wood)",
+        "coral #9c2e1c (terracotta)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:8c3ca56ab3d90468211071f7d8d4264464415e445e7198e90f98d7e2b06bfc32"
+      },
+      "sha256": "4c03e32a1b4fec95724d6f9ba34244652ea0a3baf535abd033a889f75fe13b0b",
+      "bytes": 1006676,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T18:23:55.627783+00:00",
+      "repair_round": 4,
+      "repair_suffix": " This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "prompt_with_repair": "Textless painted style board plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), field green (forest), ochre (wood), coral (terracotta), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses; the same opaque gouache, denser pigment and a wider quiet field. Light comes from one soft key light from the upper left about a third of the way above the horizon, dimmer; the same single shade plane down-right in a darker tint of the pigment. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign. Direction: deep pigment. This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing",
+        "evidence": "Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.",
+        "read": "{\"notation\":false,\"kind\":\"blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing\",\"evidence\":\"Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.\"}}"
+      },
+      "repair_method": "edit",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing\",\"evidence\":\"Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.\"}}"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/04-hero-authored.png",
+      "role": "hero",
+      "section_id": null,
+      "style_id": "studio_bench--authored",
+      "aspect_ratio": "16:9",
+      "host_aspect_ratio": "landscape",
+      "prompt_hash": "sha256:49a4ccd0b7030ef13387e2520ea884298d08ed248f8452a19ab1ff830e473649",
+      "prompt_version": "world-prompt-v2",
+      "prompt": "Textless painted hero plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "coral #9c2e1c (terracotta)",
+        "ochre #7b4b0a (wood)",
+        "field green #2f6047 (forest)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:f5fd454039a3eee84ebea3d58e6f1113cf970ef0baae1f6e4803c7225685275c"
+      },
+      "sha256": "611fd49023c2b3848dbfe61b51f15e415ab19de234b19400c29fe971c27d4e60",
+      "bytes": 939293,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T16:56:49.943350+00:00",
+      "repair_round": 1,
+      "repair_suffix": " This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "prompt_with_repair": "Textless painted hero plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign. This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "no printed marks or musical notation; blank booklets and wall cards, plain guitar",
+        "evidence": "Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.",
+        "read": "{\"notation\": false, \"kind\": \"no printed marks or musical notation; blank booklets and wall cards, plain guitar\", \"evidence\": \"Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.",
+        "reasons": [],
+        "read": "{\"notation\": false, \"kind\": \"no printed marks or musical notation; blank booklets and wall cards, plain guitar\", \"evidence\": \"Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.\"}}"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/05-cover-authored.png",
+      "role": "cover",
+      "section_id": null,
+      "style_id": "studio_bench--authored",
+      "aspect_ratio": "4:5",
+      "host_aspect_ratio": "portrait",
+      "prompt_hash": "sha256:5601ce41aef492a411899222cc564808a73eac0f25959952c3f5c8f0ef11d4f0",
+      "prompt_version": "world-prompt-v3",
+      "prompt": "Textless painted cover plate. The picture shows fingerpicking patterns for acoustic guitar.  The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no musical notation, no staves, no clefs and no noteheads; no chord diagrams or chord boxes, no finger-dot charts; no tablature, no fret numbers and no string grids; no sheet music, no open songbooks and no printed pages; no brand logos; no text; no studio bench lettering or sign.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no diagrams, charts, tables or grids, no notation of any kind, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no musical notation, no staves, no clefs and no noteheads, no chord diagrams or chord boxes, no finger-dot charts, no tablature, no fret numbers and no string grids, no sheet music, no open songbooks and no printed pages, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "coral #9c2e1c (terracotta)",
+        "ochre #7b4b0a (wood)",
+        "field green #2f6047 (forest)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:93a91f19caaf98edf46e9431e8c176705a36f5437ecc383160f65bb5574ea89f"
+      },
+      "sha256": "3bb40dcd58f3a125a495dce643845addc550e56923456d840086c8cb8b9b8e89",
+      "bytes": 1040018,
+      "ocr": {
+        "text": "\u20ac/",
+        "letters": 2,
+        "words": [
+          "\u20ac/"
+        ]
+      },
+      "generated_at": "2026-11-10T18:24:30.198494+00:00",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "No printed notation or writing; blank paper/cards and plain jars.",
+        "evidence": "Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.",
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; blank paper/cards and plain jars.\",\"evidence\":\"Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.\"}}"
+      },
+      "repair_round": 4,
+      "repair_method": "edit",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; blank paper/cards and plain jars.\",\"evidence\":\"Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.\"}}"
+      },
+      "lettering_crop": {
+        "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/crops/05-cover-mark.png",
+        "trigger": "tesseract token 'EUR/' at conf 91.5 in a 37x46 box",
+        "read": "magnified four times; fox ear edge and painted texture, no readable letter, numeral, logo or label",
+        "verdict": "cleared_no_glyph"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/06-section-s1-authored.png",
+      "role": "section",
+      "section_id": "s1",
+      "style_id": "studio_bench--authored",
+      "aspect_ratio": "1:1",
+      "host_aspect_ratio": "square",
+      "prompt_hash": "sha256:bb6e96956e3a3f06c759d1f5d61a9ae55c609211303e242bfa4cabd1a1d66aa7",
+      "prompt_version": "world-prompt-v2",
+      "prompt": "Textless painted section plate. The picture shows fingerpicking patterns for acoustic guitar.  Section scene s1 about Thumb and finger independence. The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no brand logos, no text, no studio bench lettering or sign",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "coral #9c2e1c (terracotta)",
+        "ochre #7b4b0a (wood)",
+        "field green #2f6047 (forest)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:d3836f17cc0fc7d883f44ab051e8f1dc91dcf7b61cfc8ecd6524cf803e103c7d"
+      },
+      "sha256": "37334f258a428640e54c198c80c5cdf3e29e4b754b05e12dfd621e226ccfa07a",
+      "bytes": 1875170,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T16:48:19.351532+00:00",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "No printed marks or musical notation; blank booklets and a guitar with frets/strings only",
+        "evidence": "Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or",
+        "read": "{\"notation\": false, \"kind\": \"No printed marks or musical notation; blank booklets and a guitar with frets/strings only\", \"evidence\": \"Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or walls are pictured; the background is plain speckled paper.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.",
+        "reasons": [],
+        "read": "{\"notation\": false, \"kind\": \"No printed marks or musical notation; blank booklets and a guitar with frets/strings only\", \"evidence\": \"Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or walls are pictured; the background is plain speckled paper.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.\"}}"
+      }
+    },
+    {
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/07-section-s2-authored.png",
+      "role": "section",
+      "section_id": "s2",
+      "style_id": "studio_bench--authored",
+      "aspect_ratio": "1:1",
+      "host_aspect_ratio": "square",
+      "prompt_hash": "sha256:07ac4a9b73ce323150a8fa3081fdb389f05bfa6cd8c301b8d671857f558df4ce",
+      "prompt_version": "world-prompt-v3",
+      "prompt": "Textless painted section plate. The picture shows fingerpicking patterns for acoustic guitar.  Section scene s2: place and mood only, no procedure, sequence or tool action depicted. The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no musical notation, no staves, no clefs and no noteheads; no chord diagrams or chord boxes, no finger-dot charts; no tablature, no fret numbers and no string grids; no sheet music, no open songbooks and no printed pages; no depicted procedure, no technique action; no hands mid-technique, no finger placement; no instruction diagram, step chart or sequence of steps; no brand logos; no text; no studio bench lettering or sign; no lettering of the words a first travis pattern.",
+      "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no diagrams, charts, tables or grids, no notation of any kind, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no musical notation, no staves, no clefs and no noteheads, no chord diagrams or chord boxes, no finger-dot charts, no tablature, no fret numbers and no string grids, no sheet music, no open songbooks and no printed pages, no depicted procedure, no technique action, no hands mid-technique, no finger placement, no instruction diagram, step chart or sequence of steps, no brand logos, no text, no studio bench lettering or sign, no lettering of the words a first travis pattern",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
+      "palette": [
+        "warm paper #f7f1e4 (canvas)",
+        "dark brown ink #3a2318 (ink)",
+        "coral #9c2e1c (terracotta)",
+        "ochre #7b4b0a (wood)",
+        "field green #2f6047 (forest)"
+      ],
+      "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
+      "model": "fal-ai/flux-2-pro",
+      "provider_media": {
+        "kind": "inline_data_url",
+        "sha256": "sha256:cd517e3dbefabed6ad18ad13c93ca3489488e18ce1539802aaf191ae10af63bf"
+      },
+      "sha256": "aa32653bea83e0af6c2ab5177371a62cc040f2b5a92a575a033423d8b855a3ed",
+      "bytes": 1869820,
+      "ocr": {
+        "text": "",
+        "letters": 0,
+        "words": []
+      },
+      "generated_at": "2026-11-10T18:17:27.998077+00:00",
+      "repair_round": 2,
+      "repair_suffix": " This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "prompt_with_repair": "Textless painted section plate. The picture shows fingerpicking patterns for acoustic guitar.  Section scene s2. The scene includes acoustic guitar, felt pick. It is composed as a working bench with swatches fanning left and an open quiet field right for the headline. The pigments are warm paper (canvas), dark brown ink (ink), coral (terracotta), ochre (wood), field green (forest), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; swatches, sketchbook and tins painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; generated art is never a technique authority. This plate is for adult beginner, and the mood is warm, unhurried, curious. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no brand logos; no text; no studio bench lettering or sign; no lettering of the words a first travis pattern. This is a repair attempt: leave every surface completely blank; do not invent any mark that resembles writing, letters or symbols anywhere in the image. Light is strictly from the upper left; every shadow falls to the lower right. Paint every swatch, card and sign blank, with no codes, labels or lettering on any object.",
+      "notation": {
+        "verdict": "clean",
+        "notation": false,
+        "kind": "No printed notation or writing; only guitar strings/frets and colored cards/booklets.",
+        "evidence": "Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.",
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; only guitar strings/frets and colored cards/booklets.\",\"evidence\":\"Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; only guitar strings/frets and colored cards/booklets.\",\"evidence\":\"Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.\"}}"
+      }
+    }
+  ],
+  "contact_sheet": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/contact-sheet.png"
+}

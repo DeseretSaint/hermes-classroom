@@ -1,7 +1,9 @@
 # Publication packet — gates 12, 14 and 15
 
-**Draft text only. Nothing in this file has been published, posted, tagged, opened as a pull
-request, or submitted.** Publication stays closed under `docs/SUBMISSION.md` §0.
+**Draft text only.** Nothing in this file has been posted, tagged or submitted. Item 1's text was
+used, revised, for the draft catalog pull request opened on 2026-11-10
+(`NousResearch/hermes-agent#152920`, unmerged); see the addendum below the gate table. Publication
+stays closed under `docs/SUBMISSION.md` §0.
 
 - **Prepared:** 2026-11-09 11:33 MST by the kanban worker on card `t_f9668fe2`
   (branch `wt/gate-packet`).
@@ -17,6 +19,15 @@ request, or submitted.** Publication stays closed under `docs/SUBMISSION.md` §0
   and gate 11 is `[x]`; the entry now declares both tools. No gate verdict changed.
 
 ## Gate state read at `5673047` (from `docs/SUBMISSION.md` §1, unmodified)
+
+> **Addendum, 2026-11-10.** This snapshot is left as written on 2026-11-09. Three of its rows have
+> since moved, all by measurement: gate 9 is closed (`LICENSE`, MIT, 2026-11-10); gate 10 is met —
+> `gh repo view` reports the repository `PUBLIC` and an anonymous `git ls-remote` resolves `master`
+> `3278bae`; and the catalog entry is submitted as a draft pull request
+> (`NousResearch/hermes-agent#152920`, unmerged, pinned to `3278bae`, `docs_url` at the README's
+> `#install-locally` heading). Gate 12 stays open until that pull request merges, and items 1-3 below
+> are still **not sendable** — §0 sign-off, gates 7 and 13 remain open. The license placeholder in
+> item 1 is also resolved: `LICENSE` exists at this branch head.
 
 | Gate | Status as recorded | Meaning for this packet |
 | --- | --- | --- |
@@ -46,10 +57,12 @@ it.** The three items below are drafts that are all **NOT SENDABLE today**.
 
 ## 1. Catalog PR body — gate 12
 
-**Status: NOT SENDABLE.** Contingent on §0 sign-off and gates 5, 7, 9 and 10. Gate 11 is closed:
-the entry pins `61cdb03` on `origin/master` and its seven raw URLs were fetched and hash-matched on
-2026-11-09. **The license line is a placeholder: `LICENSE` does not
-exist at this commit** (`ls LICENSE*` → no such file, 2026-11-09).
+**Status: SUPERSEDED — this text was used, revised, for the draft pull request opened 2026-11-10
+(`NousResearch/hermes-agent#152920`, unmerged, pinned to `3278bae`).** Gate 11 is closed: the
+submitted entry pins a commit on `origin/master` and its raw URLs were fetched and hash-matched on
+2026-11-09 for the in-repo copy. **The license line is no longer a placeholder: `LICENSE` (MIT)
+exists at the repository root.** Merging that pull request remains a §0 step and gates 5, 7 and 12
+stay open.
 
 ### Title
 
@@ -236,10 +249,10 @@ and the code it pins agree. If the pin moves forward, re-check `provides_tools` 
 
 ## 2. X post — gate 14
 
-**Status: NOT SENDABLE today.** Contingent on §0 sign-off and gate 10: the repository is private
-(`README.md` §Status; `docs/SUBMISSION.md` §8), so the URL in the post does not resolve for a
-reader until the repository is public. It also may not claim installability, adaptiveness or a demo
-video: gates 7 and 13 are `[ ]` and no video exists.
+**Status: NOT SENDABLE today.** Contingent on §0 sign-off and the demo gates: gates 7 and 13 are
+`[ ]` and no video exists, and the post may not claim installability, adaptiveness or a demo video.
+The repository URL in the text does resolve for a reader — the repository is public (measured
+2026-11-10) — but posting remains a §0 publication step.
 
 <!-- X-POST-START -->
 Coursebook — a learning workspace plugin for @NousResearch Hermes Desktop where a lesson is governed state, not chat: one objective at a time, typed checks, and exactly one transition per committed answer. Source: https://github.com/DeseretSaint/hermes-classroom
@@ -272,9 +285,9 @@ still open and are written as `BLOCKED: gate N` rather than invented.
 | Project name | `Coursebook` | `README.md:1` (heading); `catalog/coursebook.yaml:44` (`title: Coursebook`) |
 | One-line pitch | `Coursebook is a Hermes Desktop learning workspace where a lesson is governed state, not chat.` | `README.md:3-4`, first sentence, verbatim |
 | Description | `Coursebook is a Hermes Desktop learning workspace where a lesson is governed state, not chat: one objective at a time, typed checks, bounded grading, exactly one permitted transition per committed answer, and an evidence row you can inspect, export and resume. It is for an adult learning a real skill, and for a parent preparing a lesson pack that the parent then teaches: children do not chat with Coursebook.` | `README.md:3-7`, verbatim opening paragraph |
-| Repo URL | `BLOCKED: gate 10` — the repository is private; the URL that becomes public is `https://github.com/DeseretSaint/hermes-classroom` | `README.md:49-55` (§Status: "The source repository is private today"); `docs/SUBMISSION.md:66` (gate 10 `[~]`), `:280` (§8 review packet) |
+| Repo URL | `https://github.com/DeseretSaint/hermes-classroom` (public; gate 10 met by measurement 2026-11-10) | `docs/SUBMISSION.md` gate 10 row; `README.md` §Status; `gh repo view` + an anonymous `git ls-remote` |
 | Demo URL | `BLOCKED: gate 13` — no demo file exists; gate 7 (demo scenarios on the release commit) must close first | `docs/SUBMISSION.md:63` (gate 7 `[ ]`), `:69` (gate 13 `[ ]`), `:285` ("Demo | none"); `README.md:50-52` ("No demo video is recorded yet") |
-| License | `BLOCKED: gate 9` — no `LICENSE` file; the choice is the owner's (MIT, Apache-2.0, or ship without) | `docs/SUBMISSION.md:65` (gate 9 `[ ] owner decision`); `docs/STORY-GAPS.md` G1; `catalog/coursebook.yaml:61`; measured `ls LICENSE*` → no such file, 2026-11-09 |
+| License | `MIT` — `LICENSE` at the repository root, copyright 2026 DeseretSaint (gate 9 closed 2026-11-10 on `t_6f2d2080`) | `LICENSE`; `docs/SUBMISSION.md` gate 9 row; `README.md` §License |
 
 The description is deliberately the README paragraph and not the catalog disclosure paragraph: the
 form asks for a description of the project, and the disclosure paragraph (`catalog/coursebook.yaml`

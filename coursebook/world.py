@@ -25,10 +25,74 @@ from typing import Any, Mapping, Sequence
 from .gm_contract import WORLD_PROMPT_FORBIDDEN
 
 #: Bumped when a prompt changes in a way that must not reuse cached art.
-PROMPT_VERSION = "world-prompt-v1"
+#: v2 rewrites every grammar to the v3 art bible (one gouache medium, upper-left key, warm ink
+#: contour, five-pigment ceiling) and adds the additive 3:2 ``card`` crop role.
+#: v3 adds the notation/diagram negatives for domains where those are the natural illustration
+#: and the "place and mood only" section fence for every grammar, not only service worlds.
+#: v4 adds the emission class (§4.4) and rewrites the two grammars that made a lit fixture the
+#: light source, so every plate is lit by the single upper-left key and nothing else.
+PROMPT_VERSION = "world-prompt-v4"
 
 #: The house style. A starting point, never permission to use lanterns for a head gasket.
 DEFAULT_GRAMMAR = "field_atlas"
+
+# ── the v3 art bible (docs/concept-parity/ART-BIBLE.md §1–§2) ──────────────
+#
+# Every runtime plate shares one medium, one line and one light. Grammars choose subject, motif
+# and composition; they may not choose a different medium. The constants below are the single
+# source those prompts read, so the bible and the generated art cannot drift apart silently.
+
+#: Opaque gouache on a warm paper ground with the ink contour drawn last. The prompt text carries
+#: no digits at all (GM-003: a digit in the body is a leaked measurement until proven otherwise),
+#: so values live in ``ART_BIBLE_PIGMENTS`` for provenance and the plate speaks pigment names.
+ART_BIBLE_MEDIUM = (
+    "a storybook opaque gouache illustration, thick body colour on a warm paper "
+    "ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole "
+    "plate, a dark-brown ink contour drawn last over the paint, never black and never close to "
+    "neutral black; matte paint with body, not vector art and not a flat digital cartoon"
+)
+
+#: One soft key from the upper left, about a third of the way above the horizon (ART-BIBLE §1).
+ART_BIBLE_LIGHT = (
+    "one soft key light from the upper left about a third of the way above the horizon; "
+    "shade is a single darker tint of the same pigment, covering no more than a third of a mass, "
+    "with one narrow cream highlight on the top-left edge of the head, shoulder and tail"
+)
+
+#: The one line rule: a contour is never black and never the colder body-text ink.
+ART_BIBLE_LINE = (
+    "a single dark-brown ink contour drawn last, never black and never the colder body-text ink"
+)
+
+#: The only pigments a plate may use (ART-BIBLE §2, bound to v3 roles). Values are provenance
+#: metadata; the prompt body names the pigment without a hex so no digit reaches the plate.
+ART_BIBLE_PIGMENTS: dict[str, str] = {
+    "paper": "warm paper #f7f1e4 (canvas)",
+    "ink": "dark brown ink #3a2318 (ink)",
+    "fur": "fox fur #b7643d (identity/lamp family)",
+    "fur-shade": "fox fur shade #8f4526 (identity shade)",
+    "cream": "fox cream #efe0c2 (paper/lamp-soft family)",
+    "sock": "dark brown cuff #2b1d14 (ink)",
+    "field": "field green #2f6047 (forest)",
+    "ochre": "ochre #7b4b0a (wood)",
+    "lamp": "lamp #e8a93a (gold)",
+    "coral": "coral #9c2e1c (terracotta)",
+}
+
+#: At most five pigments in one plate, plus the line (ART-BIBLE §2).
+MAX_PLATE_PIGMENTS = 5
+
+_SPOKEN_HEX = re.compile(r"\s*#[0-9a-fA-F]{6}")
+
+
+def _spoken(pigment: str) -> str:
+    """The pigment name as a model reads it: no hex, so no digit enters a prompt body."""
+    return _SPOKEN_HEX.sub("", pigment).strip()
+
+
+def _pigments(*keys: str) -> tuple[str, ...]:
+    """Name pigments from the art-bible table only. An unknown key is a programming error."""
+    return tuple(ART_BIBLE_PIGMENTS[key] for key in keys)
 
 
 class WorldPolicyViolation(ValueError):
@@ -163,11 +227,12 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "travel desk",
         ),
         composition=(
-            "a wandering route through a lantern-lit street; the left third is a quiet parchment "
-            "field reserved for the real headline and controls"
+            "a wandering route through a street of unlit paper lanterns hung as flat hard-edged "
+            "props; the only light is the single upper-left key; the left third is a quiet "
+            "parchment field reserved for the real headline and controls"
         ),
-        palette=("parchment", "ink", "lamp ochre", "muted indigo"),
-        medium="ink and gouache on warm paper, fine line weight, single soft light source",
+        palette=_pigments("paper", "ink", "ochre", "lamp", "field"),
+        medium=ART_BIBLE_MEDIUM + "; street lanterns painted as unlit flat masses, café fittings as flat masses",
         illustration_role="place and mood only; a map is never geography evidence",
         subject_cues=("lantern district", "cafe counter", "notebook and pencil", "ticket stub"),
         cannot_do="pretend a map is a real geography lesson",
@@ -176,13 +241,14 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
         name="workshop_manual",
         label="Workshop manual",
         best_fit="auto repair, trades, engineering procedures",
-        motifs=("service bay", "car on a lift", "tool wall", "component trays", "bench light"),
+        motifs=("service bay", "car on a lift", "tool wall", "component trays", "bench vice"),
         composition=(
-            "a centered bench under one overhead lamp; a wide quiet band above carries the "
-            "headline, and the tool wall runs off the right edge"
+            "a centered bench and tool wall with no ceiling fixture; the only light is the "
+            "single upper-left key; a wide quiet band above carries the headline, and the tool "
+            "wall runs off the right edge"
         ),
-        palette=("steel grey", "oil-dark ink", "safety ochre", "parchment"),
-        medium="technical ink wash with precise line work, cold overhead light",
+        palette=_pigments("paper", "ink", "ochre", "coral", "sock"),
+        medium=ART_BIBLE_MEDIUM + "; bench, tool wall and trays painted as flat masses",
         illustration_role=(
             "orientation only; never a torque value, clearance, part number or sequence"
         ),
@@ -198,8 +264,8 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "a dark sky over a low instrument bench; the upper half stays quiet for the headline, "
             "the horizon line anchors the composition"
         ),
-        palette=("midnight ink", "moon parchment", "brass ochre", "faint indigo"),
-        medium="drypoint etching with soft night washes, one cool light source",
+        palette=_pigments("paper", "ink", "field", "lamp", "ochre"),
+        medium=ART_BIBLE_MEDIUM + "; the night field is deep field green, the instrument brass ochre",
         illustration_role="orientation only; a sky image is never a measurement",
         subject_cues=("star chart table", "brass telescope", "dome slit", "observation log"),
         cannot_do="use an AI sky image as a measurement",
@@ -208,13 +274,13 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
         name="archive_desk",
         label="Archive desk",
         best_fit="history, law, business, research",
-        motifs=("document tray", "stamp", "index cards", "map drawer", "reading lamp"),
+        motifs=("document tray", "stamp", "index cards", "map drawer", "reading chair"),
         composition=(
             "an overhead desk vignette with overlapping papers; a clean margin at the top left "
             "holds the headline"
         ),
-        palette=("aged parchment", "sepia ink", "brick ochre", "slate"),
-        medium="collage of paper textures with ink outlines, warm desk lamp",
+        palette=_pigments("paper", "ink", "ochre", "coral", "field"),
+        medium=ART_BIBLE_MEDIUM + "; papers, trays and stamps painted as flat masses",
         illustration_role="orientation only; never an invented source or quotation",
         subject_cues=("document tray", "wax stamp", "index cards", "map drawer"),
         cannot_do="invent a source or a quotation",
@@ -228,8 +294,8 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "a warm overhead table with ingredients along the lower edge and an empty board "
             "across the top for the headline"
         ),
-        palette=("flour parchment", "walnut ink", "honey ochre", "herb green"),
-        medium="soft gouache still life with a hand-drawn line, window light",
+        palette=_pigments("paper", "ink", "ochre", "lamp", "field"),
+        medium=ART_BIBLE_MEDIUM + "; ingredients and crockery painted as flat masses",
         illustration_role="orientation only; a generated dish is never a tested recipe",
         subject_cues=("flour dust", "wooden spoon", "hob rings", "herb bundle"),
         cannot_do="imply a generated dish is a tested recipe",
@@ -243,8 +309,8 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "a quiet drafting board seen at a slight angle; the blueprint grid fades out under "
             "the headline field"
         ),
-        palette=("blueprint parchment", "chalk white", "ink", "brass ochre"),
-        medium="precise drafting line on paper, cool even light",
+        palette=_pigments("paper", "ink", "field", "ochre", "coral"),
+        medium=ART_BIBLE_MEDIUM + "; the board, dividers and grid painted as flat masses",
         illustration_role="quiet and optional; never an AI illustration of a symbolic concept",
         subject_cues=("graph grid", "brass dividers", "chalk dust", "set square"),
         cannot_do="make an AI illustration a required lesson visual",
@@ -258,8 +324,8 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "a working bench with swatches fanning left and an open quiet field right for the "
             "headline"
         ),
-        palette=("raw canvas", "umber ink", "vermilion ochre", "slate"),
-        medium="mixed-media collage with soft pencil line, north-window light",
+        palette=_pigments("paper", "ink", "coral", "ochre", "field"),
+        medium=ART_BIBLE_MEDIUM + "; swatches, sketchbook and tins painted as flat masses",
         illustration_role="orientation only; generated art is never a technique authority",
         subject_cues=("material swatches", "sketchbook", "cutting mat", "paint tins"),
         cannot_do="present generated art as a technique authority",
@@ -273,8 +339,8 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "a clean bench with glassware receding right; the left half stays empty for the "
             "headline and hazard copy"
         ),
-        palette=("cool parchment", "graphite ink", "teal ochre", "amber"),
-        medium="clean technical illustration in ink and light wash, even bench light",
+        palette=_pigments("paper", "ink", "field", "lamp", "ochre"),
+        medium=ART_BIBLE_MEDIUM + "; glassware, notebook and goggles painted as flat masses",
         illustration_role="orientation only; never a safety or measurement reference",
         subject_cues=("glassware", "lab notebook", "safety goggles", "wash bottle"),
         cannot_do="use art as a safety or measurement reference",
@@ -426,9 +492,15 @@ def anti_generic_problems(
 
 
 __all__ = [
+    "ART_BIBLE_LIGHT",
+    "ART_BIBLE_LINE",
+    "ART_BIBLE_MEDIUM",
+    "ART_BIBLE_PIGMENTS",
+    "CARD_ASPECT",
     "DEFAULT_GRAMMAR",
     "GENERIC_SWAP_REASONS",
     "GRAMMARS",
+    "MAX_PLATE_PIGMENTS",
     "PROMPT_VERSION",
     "WorldBrief",
     "WorldGrammarRecord",
@@ -441,6 +513,7 @@ __all__ = [
     "build_style_boards",
     "foreign_grammar_motifs",
     "grammar_record",
+    "notation_hazards",
 ]
 
 
@@ -448,39 +521,59 @@ __all__ = [
 
 #: Prompt roles. These are prompt labels, not the stored ``world_assets.role`` values: a style
 #: board is a concept, never a kit asset, so it is deliberately absent from ``WorldRole``.
-PROMPT_ROLES = ("style_board", "hero", "cover", "section")
+#: ``card`` is additive: a 3:2 mechanical card crop (SPEC-V3 §2), never a new kit spend.
+PROMPT_ROLES = ("style_board", "hero", "cover", "section", "card")
 
-#: Three real directions from the same brief — not random noise. The first is the authored
-#: grammar; the other two change palette/light without changing the subject.
+#: Three real directions from the same brief — each one is still the art bible's single medium
+#: (opaque gouache, warm paper, upper-left key, warm ink line). They change pigment family and
+#: amount of quiet field, never the medium: v3 has one painted plate and no second technique.
 STYLE_DIRECTIONS: tuple[dict[str, str], ...] = (
     {
         "id": "authored",
         "label": "authored palette",
         "palette_shift": "as authored",
         "medium_shift": "as authored",
-        "light": "a single soft daylight source",
+        "light": ART_BIBLE_LIGHT,
     },
     {
         "id": "warm-paper",
         "label": "warm paper",
-        "palette_shift": "warmed toward parchment, honey ochre and umber ink",
-        "medium_shift": "looser gouache with a visible paper grain",
-        "light": "low afternoon window light",
+        "palette_shift": "warmed toward warm paper #f7f1e4, ochre #7b4b0a and lamp #e8a93a",
+        "medium_shift": "one extra flat brush-shaped mark per mass, paper grain a little more visible",
+        "light": (
+            "one soft key light from the upper left about a third of the way above the horizon, "
+            "warmer in temperature; the same single shade plane down-right in a darker tint"
+        ),
     },
     {
-        "id": "night-ink",
-        "label": "night ink",
-        "palette_shift": "deepened toward midnight ink, slate and brass highlights",
-        "medium_shift": "fine drypoint etching with restrained wash",
-        "light": "one cool overhead lamp against a dark ground",
+        "id": "deep-pigment",
+        "label": "deep pigment",
+        "palette_shift": "deepened toward field green #2f6047, ochre #7b4b0a and coral #9c2e1c",
+        "medium_shift": "the same opaque gouache, denser pigment and a wider quiet field",
+        "light": (
+            "one soft key light from the upper left about a third of the way above the horizon, "
+            "dimmer; the same single shade plane down-right in a darker tint of the pigment"
+        ),
     },
 )
 
-#: Roles whose aspect ratio the layout depends on.
-_ASPECT = {"style_board": "3:2", "hero": "16:9", "cover": "4:5", "section": "1:1"}
+#: Roles whose aspect ratio the layout depends on. ``card`` is a 3:2 mechanical crop of the
+#: approved plate (SPEC-V3: card art 214x143 at wide, never stretched), added additively so the
+#: four shipped roles keep their exact ratios.
+_ASPECT = {
+    "style_board": "3:2",
+    "hero": "16:9",
+    "cover": "4:5",
+    "section": "1:1",
+    "card": "3:2",
+}
+
+#: The card art ratio, named for the layout and its contract test.
+CARD_ASPECT = _ASPECT["card"]
 
 #: Every prompt carries these. They restate ``WORLD_PROMPT_FORBIDDEN`` in imperative form, so a
-#: model that reads only the main prompt still sees the textless rule.
+#: model that reads only the main prompt still sees the textless rule. The art-bible negatives
+#: (§5) are additive; the textless block and the fox rule are kept verbatim.
 _NEGATIVE = (
     "no text",
     "no letters, words or labels",
@@ -489,9 +582,106 @@ _NEGATIVE = (
     "no watermarks",
     "no UI chrome, buttons or frames",
     "no answer content, check text or rubric",
+    "no typography or lettering of any kind",
+    "no signage, poster text or hand-lettered mark",
+    "no pseudo-text, gibberish lettering or symbols that resemble letters",
+    "no signboards, wall signs or printed labels",
+    "no course title, caption or label painted in the art",
+    "no words copied from this prompt",
     "no mascot other than the fox",
     "no robots",
+    "no gradient, glow or glass",
+    "no drop shadow on the art object",
+    "no black outline and no grey shade",
+    "no off-palette colour",
+    "no photorealism or photographic texture",
+    "no star, rating, price or learner count",
+    # v4: the emission class (ART-BIBLE §4.4). "No gradient, glow or glass" above is about the
+    # paint; a lit fixture is a different failure — every technical plate in round three painted a
+    # glowing pendant with a warm cone because the composition named one as the light. Named
+    # explicitly here so the fence survives any composition a future grammar adds.
+    "no light cone or visible beam",
+    "no glowing bulb or lamp",
+    "no bloom, halo or radial glow",
+    "no second light source",
+    "no key light from the right",
+    "no lit fixture acting as a light source",
+    # v3: the printed-surface class. A single glyph, a staff, a chord box or a tick box is not a
+    # >=2-character word, so the OCR lettering gate cannot see it; the prompt is the only fence.
+    "no diagrams, charts, tables or grids",
+    "no notation of any kind",
 )
+
+#: Domains where notation, diagrams or printed grids are the *natural* illustration. A model
+#: asked for "a music course" paints staves and chord boxes unless it is told not to, and an
+#: open notebook motif becomes a bar of music. Named as suppression instructions, never as
+#: positive scene text — a positive "sheet music" line would be painted as a printed surface.
+_NOTATION_HAZARDS: dict[str, tuple[str, ...]] = {
+    "music": (
+        "no musical notation, no staves, no clefs and no noteheads",
+        "no chord diagrams or chord boxes, no finger-dot charts",
+        "no tablature, no fret numbers and no string grids",
+        "no sheet music, no open songbooks and no printed pages",
+    ),
+    "code": (
+        "no code, no syntax and no glyph lines that resemble code",
+        "no terminals, prompts or command lines",
+        "no flowcharts, boxes-and-arrows or architecture diagrams",
+    ),
+    "maths": (
+        "no equations, formulas or mathematical symbols",
+        "no graphs, axes, plots or number lines",
+        "no algebra tiles, geometry diagrams or worked examples",
+    ),
+    "checklist": (
+        "no checklists, tick boxes, forms or tables",
+        "no numbered steps, badges or step counters",
+        "no instruction cards with marks on them",
+    ),
+}
+
+#: Tokens that pull a brief into one hazard group. Matched as substrings of the brief's own
+#: words (domain, title, capability, motifs), because a music course may be filed under `art`.
+_NOTATION_ALIASES: dict[str, str] = {
+    "music": "music",
+    "guitar": "music",
+    "piano": "music",
+    "violin": "music",
+    "drum": "music",
+    "song": "music",
+    "chord": "music",
+    "code": "code",
+    "coding": "code",
+    "programming": "code",
+    "software": "code",
+    "python": "code",
+    "javascript": "code",
+    "computer science": "code",
+    "math": "maths",
+    "algebra": "maths",
+    "calculus": "maths",
+    "statistic": "maths",
+    "logic": "maths",
+    "symbolic": "maths",
+    "equation": "maths",
+    "checklist": "checklist",
+    "check list": "checklist",
+    "compliance": "checklist",
+    "audit": "checklist",
+    "procedure": "checklist",
+}
+
+
+def notation_hazards(brief: "WorldBrief") -> tuple[str, ...]:
+    """The notation/diagram negatives this brief's own words call for, in stable order."""
+    tokens = " ".join(
+        (brief.subject_domain, brief.title, brief.end_capability, *brief.motifs)
+    ).lower()
+    groups = sorted({group for alias, group in _NOTATION_ALIASES.items() if alias in tokens})
+    hazards: list[str] = []
+    for group in groups:
+        hazards.extend(_NOTATION_HAZARDS[group])
+    return tuple(hazards)
 
 
 @dataclass(frozen=True)
@@ -522,6 +712,7 @@ class WorldPrompt:
             "section_id": self.section_id,
             "palette": list(self.palette),
             "medium": self.medium,
+            "light": self.light,
         }
 
 
@@ -548,6 +739,7 @@ def build_prompt(
     section_title: str | None = None,
     palette: Sequence[str] | None = None,
     medium: str | None = None,
+    light: str | None = None,
 ) -> WorldPrompt:
     """Build one textless plate request. Pure: no provider, no database, no randomness."""
     typed = _as_brief(brief)
@@ -557,7 +749,7 @@ def build_prompt(
     chosen_palette = tuple(palette or (style.palette if style else record.palette))
     chosen_medium = medium or (style.medium if style else record.medium)
     chosen_style = style_id or (style.style_id if style else f"{record.name}--authored")
-    light = (style.light if style and style.light else "one soft daylight source")
+    chosen_light = light or (style.light if style and style.light else ART_BIBLE_LIGHT)
 
     # One fence, every interpolation site. Course text is never a reason to refuse the course
     # (a legitimate title may contain digits, e.g. "Japanese 101"), but text typed by a caller
@@ -566,7 +758,7 @@ def build_prompt(
     # procedure, or another art direction's scene. The same predicate (`_plate_text_problems`)
     # drives the refusal in `presentation_motif_problems()`, so the prompt and the fence agree
     # by construction. The stored WorldBrief stays verbatim and the cache key is unchanged.
-    subject = _plate_safe(typed.title.strip(), record.name, fallback=record.label)
+    subject = _plate_safe(typed.title.strip(), record.name, fallback="")
     capability = _plate_safe(typed.end_capability.strip(), record.name, fallback="")
     # Authored grammar cues are trusted text; a caller's or a plan's motif is fenced. Dropping
     # one unsafe motif leaves the grammar's own place cues carrying the scene.
@@ -584,34 +776,42 @@ def build_prompt(
     # reported as none.
     service = typed.needs_service_grammar or record.name == "workshop_manual"
     section_clause = ""
+    section_lettering_negative = ""
     if role == "section":
         if not section_id:
             raise WorldPolicyViolation(
                 "section_prompt_needs_section_id", "a section card prompt needs a section id."
             )
-        if record.name == "workshop_manual":
-            # Section titles in a service course name procedures ("Removing the head"). A plate
-            # is orientation, never the procedure, so the scene is place and mood only.
-            section_clause = (
-                f" Section scene {section_id}: place and mood only, no procedure, "
-                "sequence or tool action depicted."
-            )
-        else:
-            # A section title is course text and reaches the plate verbatim, so it is held to
-            # the same fence as every other interpolation site: an unsafe title (a number or
-            # answer instruction, a procedure, or another art direction's scene) is dropped and
-            # the scene falls back to the grammar's place cues. The section card itself gets
-            # the real typed title from the UI.
+        # Every section plate is orientation, never the technique — not only a service world.
+        # A section title in any subject names an action ("A first travis pattern", "Pulling air
+        # through the line"), and a model asked for it paints hands mid-procedure, which is the
+        # defect this fence exists to prevent. The title never reaches the prompt as prose.
+        section_clause = (
+            f" Section scene {section_id}: place and mood only, no procedure, "
+            "sequence or tool action depicted."
+        )
+        if record.name != "workshop_manual":
+            # A section title is course text. Carry it only as a suppression instruction: a
+            # positive clause is painted as a heading by the image model, which breaks the
+            # textless rule. The section card gets the real typed title from the UI.
             safe_title = _plate_safe(section_title, record.name, fallback=None)
-            section_clause = (
-                f" Section scene {section_id}"
-                + (f" about {safe_title}" if safe_title else "")
-                + "."
-            )
+            if safe_title:
+                section_lettering_negative = f"no lettering of the words {safe_title.lower()}"
 
     negative: list[str] = list(_NEGATIVE)
     for item in WORLD_PROMPT_FORBIDDEN:
         negative.append(f"no {item}")
+    # The notation class: domain words decide whether staves, chord boxes, code lines, equations
+    # or tick boxes are the natural illustration this plate must refuse to paint.
+    negative.extend(notation_hazards(typed))
+    if role == "section":
+        negative.extend(
+            (
+                "no depicted procedure, no technique action",
+                "no hands mid-technique, no finger placement",
+                "no instruction diagram, step chart or sequence of steps",
+            )
+        )
     if service:
         negative.extend(
             (
@@ -627,21 +827,31 @@ def build_prompt(
         for item in typed.forbidden:
             if _plate_safe(item, record.name, fallback=None) is not None:
                 negative.append(f"no {item}")
+    # The GM-003 fence requires the grammar label to survive a fenced title. Carry it only as a
+    # suppression instruction: a positive "workshop manual" line reads as a sign to the model.
+    negative.append(f"no {record.label.lower()} lettering or sign")
+    if section_lettering_negative:
+        negative.append(section_lettering_negative)
 
     body = (
-        f"Textless {role.replace('_', ' ')} plate, {record.label.lower()} visual grammar. "
-        f"Course subject: {subject}"
-        + (f" — the learner will {capability}." if capability else ".")
+        f"Textless painted {role.replace('_', ' ')} plate. "
+        + (f"The picture shows {subject.lower()}. " if subject else "")
         + f"{section_clause} "
-        f"Audience: {audience}. Tone: {tone}. "
-        f"Subject-specific motifs: {motif_text}. "
-        f"Composition: {record.composition}. "
-        f"Palette: {', '.join(chosen_palette)}. Medium: {chosen_medium}. "
-        f"Light: {light}. "
+        f"The scene includes {motif_text}. "
+        f"It is composed as {record.composition}. "
+        f"The pigments are {', '.join(_spoken(item) for item in chosen_palette)}, and there are "
+        f"at most five of them plus the drawn line; no pigment outside the art-bible table. "
+        f"It is painted as {chosen_medium}. "
+        f"Light comes from {chosen_light}. "
+        f"The contour is {ART_BIBLE_LINE}. "
         f"Leave a quiet, low-detail field for the real typed headline and controls; "
         f"all type is supplied by the product UI, never by the image. "
-        f"Illustration role: {record.illustration_role}. "
-        f"Hard negatives: {'; '.join(negative)}."
+        f"The plate contains no words at all: no title, no caption, no sign, no label, "
+        f"no lettering, no typography and no pseudo-text. "
+        f"Keep the background plain warm paper; no signboards and no printed surfaces. "
+        f"This art is only for orientation and mood; {record.illustration_role}. "
+        f"This plate is for {audience.lower()}, and the mood is {tone.lower()}. "
+        f"Avoid everything in this list: {'; '.join(negative)}."
     )
     payload = {
         "prompt_version": PROMPT_VERSION,
@@ -656,6 +866,7 @@ def build_prompt(
         "motifs": motifs,
         "palette": list(chosen_palette),
         "medium": chosen_medium,
+        "light": chosen_light,
         "composition": record.composition,
         "negative": negative,
     }
@@ -670,7 +881,7 @@ def build_prompt(
         section_id=section_id,
         palette=chosen_palette,
         medium=chosen_medium,
-        light=light,
+        light=chosen_light,
     )
 
 
@@ -681,12 +892,9 @@ def build_style_boards(brief: WorldBrief | Mapping[str, Any]) -> list[WorldPromp
     record = grammar_record(grammar)
     boards: list[WorldPrompt] = []
     for direction in STYLE_DIRECTIONS:
-        palette = tuple(record.palette)
-        if direction["id"] == "warm-paper":
-            palette = ("warm parchment",) + tuple(record.palette[1:]) + ("honey ochre",)
-        elif direction["id"] == "night-ink":
-            palette = ("midnight ink", "slate") + tuple(record.palette[-2:])
-        medium = f"{record.medium}; {direction['medium_shift']}"
+        palette = _DIRECTION_PIGMENTS.get(direction["id"], tuple(record.palette))
+        shift = direction["medium_shift"]
+        medium = record.medium if shift == "as authored" else f"{record.medium}; {shift}"
         style_id = f"{grammar}--{direction['id']}"
         board = build_prompt(
             typed,
@@ -695,12 +903,14 @@ def build_style_boards(brief: WorldBrief | Mapping[str, Any]) -> list[WorldPromp
             style_id=style_id,
             palette=palette,
             medium=medium,
+            light=direction["light"],
         )
-        # Fold the direction's light into the prompt so the three boards are genuinely distinct
+        # Fold the direction label into the prompt so the three boards are genuinely distinct
         # requests, not the same prompt with a different id.
+        directed_prompt = f"{board.prompt} Direction: {direction['label']}."
         board = WorldPrompt(
             role=board.role,
-            prompt=f"{board.prompt} Direction: {direction['label']}, {direction['light']}.",
+            prompt=directed_prompt,
             negative_prompt=board.negative_prompt,
             aspect_ratio=board.aspect_ratio,
             prompt_hash=_prompt_hash(
@@ -711,11 +921,12 @@ def build_style_boards(brief: WorldBrief | Mapping[str, Any]) -> list[WorldPromp
                     "style_id": style_id,
                     "grammar": grammar,
                     "direction": direction["id"],
+                    "direction_light": direction["light"],
                     # The full prompt identity: a changed negative prompt (forbidden motifs) or a
                     # changed tone is a different plate, so it must not inherit this hash or the
                     # cache entry keyed from it.
                     "base_prompt_hash": board.prompt_hash,
-                    "prompt": f"{board.prompt} Direction: {direction['label']}, {direction['light']}.",
+                    "prompt": directed_prompt,
                     "negative": board.negative_prompt,
                 }
             ),
@@ -728,6 +939,14 @@ def build_style_boards(brief: WorldBrief | Mapping[str, Any]) -> list[WorldPromp
         )
         boards.append(board)
     return boards
+
+
+#: The two non-authored style boards stay inside the art-bible pigment table and its five-pigment
+#: ceiling. The authored board keeps the grammar's own palette.
+_DIRECTION_PIGMENTS: dict[str, tuple[str, ...]] = {
+    "warm-paper": _pigments("paper", "ink", "ochre", "lamp", "cream"),
+    "deep-pigment": _pigments("paper", "ink", "field", "ochre", "coral"),
+}
 
 
 def build_kit_prompts(
@@ -804,6 +1023,15 @@ def cache_key(
             "intent": intent,
         }
     )
+
+
+def _clip(value: str, limit: int) -> str:
+    """Clamp a display string to a contract ``maxLength`` without cutting mid-word."""
+    text = str(value)
+    if len(text) <= limit:
+        return text
+    head = text[: max(1, limit - 1)].rsplit(" ", 1)[0].rstrip(" ,;")
+    return (head or text[: max(1, limit - 1)]) + "…"
 
 
 def _style_hash(board: WorldPrompt) -> str:
@@ -2312,8 +2540,8 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                     "prompt_hash": board.prompt_hash,
                     "style_hash": style_hash,
                     "artifact_id": artifact_id,
-                    "palette": list(board.palette),
-                    "medium": board.medium,
+                    "palette": [_clip(item, 32) for item in board.palette],
+                    "medium": _clip(board.medium, 200),
                     "role": "orientation",
                     "textless": True,
                 }

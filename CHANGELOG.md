@@ -5,9 +5,10 @@ contract versions move independently and are named wherever they changed.
 
 ## 0.1.0 — contest candidate (unreleased)
 
-Not published, not tagged and not submitted. Atlas's operator gate holds every publication step
-until DeseretSaint signs off in chat; this section records what the tree contains, not a released
-artifact.
+Not tagged, not merged into the catalog and not announced. A draft catalog pull request is open
+(`NousResearch/hermes-agent#152920`, unmerged); Atlas's operator gate still holds every publication
+step — merge, tag, announcement, contest form — until DeseretSaint signs off in chat. This section
+records what the tree contains, not a released artifact.
 
 ### Shipped surface
 
@@ -28,7 +29,7 @@ artifact.
   changed source returns `CHECK_STALE` without touching learner evidence.
 - License: MIT, in `LICENSE` at the root (copyright 2026 DeseretSaint). The owner chose it on
   2026-11-10 in board card `t_6f2d2080`. The licence makes redistribution lawful; it does not
-  authorise publication, a tag or the catalog pull request, which stay closed under
+  authorise a tag, a catalog merge or an announcement, which stay closed under
   `docs/SUBMISSION.md` §0.
 
 ### Fixed during the candidate

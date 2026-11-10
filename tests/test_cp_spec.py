@@ -399,6 +399,10 @@ def _walk(node: dict, parts: list[str], doc: dict) -> dict:
             if not local or "items" not in node:
                 raise KeyError(f"{key!r} is not a local array")
             node = node["items"]
+            # `items` is often a local ``$ref`` (e.g. ``outline_objective``); follow it so the
+            # next segment can read the element's own properties. Without this an array of `$ref`
+            # elements is untraversable and real fields report "no property".
+            node, local = _follow(node, doc)
     return node
 
 
