@@ -358,9 +358,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 24)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 25)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v24"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v25"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -664,6 +664,13 @@ class V2AmendmentTest(unittest.TestCase):
                         },
                         "updated_at": "2026-11-06T00:00:00Z",
                         "revision": 3,
+                        "sections_done": 2,
+                        "sections_total": 6,
+                        "checks_recorded": 2,
+                        "is_new": False,
+                        "subject_label": "language",
+                        "cover_artifact_id": None,
+                        "last_studied_at": "2026-11-06T00:00:00Z",
                     }
                 ],
                 "next_cursor": None,
@@ -1396,6 +1403,9 @@ FROZEN_RPC_SHA256 = {
     "rpc.v22.json": "sha256:c187728add6c508d5643e42225a64766d4b887cfce58250fb45d04707b6eb956",
     # GM-007: v23 (GM-005's take-home wire) is now immutable history, pinned byte-identical.
     "rpc.v23.json": "sha256:b8988994d36cf7e422da0010ed157d3c4ff7dd69b5f8453e9bd7da8b8b4d3182",
+    # CP-005: v24 (the composed World Studio wire) is now immutable history too. The shelf-fact
+    # amendment is a new file, never an edit to a document a client already pinned.
+    "rpc.v24.json": "sha256:5d0484600be58cc69fad432afb88f44d4cba3dc03d6b8791eb25e625b22ecbae",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1429,7 +1439,7 @@ class V5AmendmentTest(unittest.TestCase):
         for version in range(1, 22):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1826,7 +1836,7 @@ class V6AmendmentTest(unittest.TestCase):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
@@ -2724,7 +2734,7 @@ class V10AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
@@ -3052,7 +3062,7 @@ class V11AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
@@ -3243,12 +3253,12 @@ class V14AmendmentTest(unittest.TestCase):
     def test_the_v13_snapshot_is_superseded_history(self) -> None:
         digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v13.json").read_bytes()).hexdigest()
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v13.json"])
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 24)
-        # v24 supersedes v23; v23 supersedes v22 and the older files remain frozen predecessors
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 25)
+        # v25 supersedes v24; v24 supersedes v23 and the older files remain frozen predecessors
         # pinned on disk.
         self.assertEqual(contracts.contract("cb.rpc")["x-supersedes"],
-                         "https://contracts.coursebook.hermes/rpc/v23")
+                         "https://contracts.coursebook.hermes/rpc/v24")
 
     def test_the_method_writes_one_layer_one_evidence_row(self) -> None:
         schema = contracts.method_schema(self.METHOD)
@@ -3464,7 +3474,7 @@ class DbV10AmendmentTest(unittest.TestCase):
 
     def test_the_pane_read_needs_no_rpc_bump(self) -> None:
         """``binding`` is an open object, so ``snapshot_failures`` is not a contract amendment."""
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
         binding = contracts.method_schema("binding.get")["response"]["properties"]["binding"]
         closed = binding["oneOf"][1]
         self.assertNotIn(
@@ -3519,7 +3529,7 @@ class ChecklistConfirmationWireTest(unittest.TestCase):
             )
 
     def test_the_wire_version_moved_only_for_the_blueprint(self) -> None:
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 24)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 25)
         answer = contracts.method_schema("attempt.submit")["request"]["properties"]["answer"]
         self.assertFalse(answer["additionalProperties"])
         self.assertEqual(sorted(answer["properties"]), ["kind", "selection", "text"])
@@ -4010,14 +4020,14 @@ class V17AmendmentTest(unittest.TestCase):
         echoes = _wire_echoes(current)
         self.assertEqual(len(echoes), 4, echoes)
         for path, value in echoes:
-            self.assertEqual(value, 24, path)
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 24)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
-        self.assertEqual(current["x-contract-version"], 24)
-        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v24")
-        self.assertEqual(current["title"], "Coursebook backend RPC v24")
+            self.assertEqual(value, 25, path)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 25)
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v25.json")
+        self.assertEqual(current["x-contract-version"], 25)
+        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v25")
+        self.assertEqual(current["title"], "Coursebook backend RPC v25")
         self.assertEqual(
-            current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v23"
+            current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v24"
         )
 
     def test_v15_and_v16_snapshots_stay_byte_identical_history(self) -> None:
@@ -4209,7 +4219,7 @@ class V20AmendmentTest(unittest.TestCase):
         self.assertNotIn("rpc.v19.json", contracts.CONTRACT_FILES.values())
 
     def test_v20_moves_no_method_error_code_job_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
         self.assertEqual(contracts.contract_version("cb.db"), 14)
@@ -4300,10 +4310,10 @@ class V22AmendmentTest(unittest.TestCase):
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v21.json"])
         self.assertNotIn("rpc.v21.json", contracts.CONTRACT_FILES.values())
         current = contracts.contract("cb.rpc")
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
-        self.assertEqual(_wire_echoes(current)[0][1], 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
+        self.assertEqual(_wire_echoes(current)[0][1], 25)
         self.assertEqual(current["x-supersedes"],
-                         "https://contracts.coursebook.hermes/rpc/v23")
+                         "https://contracts.coursebook.hermes/rpc/v24")
 
     def test_docs_publish_the_v22_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -4346,9 +4356,9 @@ class V23AmendmentTest(unittest.TestCase):
         self.assertEqual(new[: len(old)], old)
         self.assertEqual(tuple(new[len(old):]), self.NEW_METHODS)
         self.assertEqual(v23["x-supersedes"], v22["$id"])
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
         self.assertEqual(v23["x-contract-version"], 23)
-        # v23 is now history: the selected wire document has moved on to v24.
+        # v23 is now history: the selected wire document has moved on to v25.
         self.assertNotIn("rpc.v23.json", contracts.CONTRACT_FILES.values())
 
     def test_v22_snapshot_stays_byte_identical_history(self) -> None:
@@ -4356,7 +4366,8 @@ class V23AmendmentTest(unittest.TestCase):
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v22.json"])
         self.assertNotIn("rpc.v22.json", contracts.CONTRACT_FILES.values())
         self.assertEqual(contracts.version_files("cb.rpc"),
-                         {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"})
+                         {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json",
+                          25: "rpc.v25.json"})
         v22 = _document("rpc.v22.json")
         self.assertEqual(len(v22["$defs"]["method"]["enum"]), 77)
         self.assertEqual(v22["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v21")
@@ -4403,7 +4414,7 @@ class V23AmendmentTest(unittest.TestCase):
                 self.assertTrue(expected <= required, (method, required, expected))
 
     def test_v23_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
         self.assertEqual(contracts.contract_version("cb.db"), 14)
@@ -4456,7 +4467,9 @@ class V24AmendmentTest(unittest.TestCase):
 
     def test_v24_is_v23_plus_the_homework_family_html_and_world_family(self) -> None:
         v23 = _document("rpc.v23.json")
-        v24 = contracts.contract("cb.rpc")
+        # v25 is the live wire; this class pins the frozen v24 document it supersedes, so the
+        # GM-004/GM-007/GM-018 delta stays testable after CP-005's additive amendment.
+        v24 = _document("rpc.v24.json")
         old = list(v23["$defs"]["method"]["enum"])
         new = list(v24["$defs"]["method"]["enum"])
         self.assertEqual(new[: len(old)], old)
@@ -4465,7 +4478,7 @@ class V24AmendmentTest(unittest.TestCase):
             self.NEW_METHODS + (self.HTML_METHOD,) + self.WORLD_METHODS,
         )
         self.assertEqual(v24["x-supersedes"], v23["$id"])
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
         self.assertEqual(v24["x-contract-version"], 24)
         self.assertEqual(len(new), 93)
 
@@ -4474,7 +4487,8 @@ class V24AmendmentTest(unittest.TestCase):
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v23.json"])
         self.assertNotIn("rpc.v23.json", contracts.CONTRACT_FILES.values())
         self.assertEqual(contracts.version_files("cb.rpc"),
-                         {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"})
+                         {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json",
+                          25: "rpc.v25.json"})
         v23 = _document("rpc.v23.json")
         self.assertEqual(len(v23["$defs"]["method"]["enum"]), 83)
         self.assertEqual(v23["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v22")
@@ -4482,7 +4496,7 @@ class V24AmendmentTest(unittest.TestCase):
 
     def test_every_v23_method_survives_with_the_same_shape(self) -> None:
         v23 = _document("rpc.v23.json")
-        v24 = contracts.contract("cb.rpc")
+        v24 = _document("rpc.v24.json")
         before = v23["$defs"]["methods"]["properties"]
         after = v24["$defs"]["methods"]["properties"]
         self.assertEqual(
@@ -4578,7 +4592,7 @@ class V24AmendmentTest(unittest.TestCase):
         self.assertEqual(_schema_problems(schema["response"], "response"), [])
 
     def test_v24_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
         self.assertEqual(contracts.contract_version("cb.db"), 14)
@@ -4604,5 +4618,110 @@ class V24AmendmentTest(unittest.TestCase):
             "course.mode.set",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V25AmendmentTest(unittest.TestCase):
+    """CP-005: cb.rpc v25 is v24 plus the seven `library_item` shelf facts, and nothing else.
+
+    The v3 shelf card may not compute or invent a number. v25 hands it section counts, a recorded
+    check count, the new-course flag, the authored subject, the approved-or-pack cover and the last
+    study time from the one `library.list` read. No method, request shape, error code, job kind or
+    vocabulary value moves, and there is deliberately no rating, learner count or percentage.
+    """
+
+    NEW_FIELDS = (
+        "sections_done",
+        "sections_total",
+        "checks_recorded",
+        "is_new",
+        "subject_label",
+        "cover_artifact_id",
+        "last_studied_at",
+    )
+
+    FORBIDDEN = ("rating", "stars", "review_count", "learner_count", "percentage", "xp", "proofs")
+
+    def test_v25_is_v24_plus_the_shelf_facts(self) -> None:
+        v24 = _document("rpc.v24.json")
+        v25 = contracts.contract("cb.rpc")
+        self.assertEqual(v25["$defs"]["method"]["enum"], v24["$defs"]["method"]["enum"],
+                         "CP-005 adds no method")
+        before = v24["$defs"]["library_item"]
+        after = v25["$defs"]["library_item"]
+        self.assertEqual(set(after["properties"]) - set(before["properties"]), set(self.NEW_FIELDS))
+        self.assertEqual(set(before["properties"]) - set(after["properties"]), set())
+        self.assertEqual(set(after["required"]) - set(before["required"]), set(self.NEW_FIELDS))
+        self.assertEqual(set(before["required"]) - set(after["required"]), set())
+        self.assertEqual(v25["x-supersedes"], v24["$id"])
+        self.assertEqual(contracts.contract_version("cb.rpc"), 25)
+
+    def test_every_v24_method_survives_with_the_same_shape(self) -> None:
+        v24 = _document("rpc.v24.json")
+        v25 = contracts.contract("cb.rpc")
+        before = v24["$defs"]["methods"]["properties"]
+        after = v25["$defs"]["methods"]["properties"]
+        self.assertEqual(set(after), set(before), "v25 moved a method schema")
+        differing = [
+            method for method in before
+            if method != "health.get"
+            and json.dumps(before[method], sort_keys=True) != json.dumps(after[method], sort_keys=True)
+        ]
+        self.assertEqual(differing, [], "v25 changed a request/response shape")
+        # health.get is the one intentional difference: its echoed wire version moves with the
+        # contract, and nothing else about the read changes.
+        self.assertEqual(
+            after["health.get"]["response"]["properties"]["contract_version"]["const"], 25
+        )
+        before_health = dict(before["health.get"]["response"])
+        after_health = dict(after["health.get"]["response"])
+        before_health["properties"] = {
+            **before_health["properties"], "contract_version": {"const": 25}
+        }
+        self.assertEqual(before_health, after_health)
+
+    def test_v24_snapshot_stays_byte_identical_history(self) -> None:
+        digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v24.json").read_bytes()).hexdigest()
+        self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v24.json"])
+        self.assertNotIn("rpc.v24.json", contracts.CONTRACT_FILES.values())
+        self.assertEqual(
+            contracts.version_files("cb.rpc"),
+            {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json",
+             25: "rpc.v25.json"},
+        )
+
+    def test_the_shelf_item_is_closed_typed_and_carries_no_rating(self) -> None:
+        item = contracts.contract("cb.rpc")["$defs"]["library_item"]
+        self.assertEqual(_schema_problems(item, "library_item"), [])
+        for forbidden in self.FORBIDDEN:
+            self.assertNotIn(forbidden, item["properties"], forbidden)
+        for name in ("sections_done", "sections_total", "checks_recorded"):
+            self.assertEqual(item["properties"][name]["type"], "integer", name)
+            self.assertEqual(item["properties"][name]["minimum"], 0, name)
+        self.assertEqual(item["properties"]["is_new"]["type"], "boolean")
+        self.assertEqual(item["properties"]["subject_label"]["maxLength"], 60)
+
+    def test_v25_moves_no_error_code_job_table_or_vocabulary(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 5)
+        self.assertEqual(contracts.contract_version("cb.db"), 14)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v25_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v25 delta (CP-005)",
+            "rpc.v25.json",
+            "sections_done",
+            "sections_total",
+            "checks_recorded",
+            "is_new",
+            "subject_label",
+            "cover_artifact_id",
+            "last_studied_at",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
 if __name__ == "__main__":
     unittest.main()
