@@ -8,6 +8,10 @@ this file, never typed from memory. The script judges only what a pixel can sett
   spread under the rectangle where DOM type will sit, plus the WCAG contrast between the contract's
   `ink` value and the darkest 5 % of that field;
 * the pure-black fraction of every plate (the art bible forbids a black contour);
+* the **cool-pigment** share of every plate (`b - max(r, g) > 10`) and, for the two plates that
+  carry one, how much of it falls outside the named noren region the bible ratifies under ruling
+  `D-CP013-A`. That is the measurement `test_no_scene_carries_a_pigment_outside_the_bible_palette`
+  enforces: one cool pigment, one cloth, one region, nothing else;
 * for an object: binary alpha, zero chroma residue on opaque pixels, the transparent margin, and —
   for the rims — that the centre really is a blank for a runtime `sdk.Codicon`.
 
@@ -29,12 +33,24 @@ CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 
 #: plate -> (reserved field as fractions of the plate: x0, y0, x1, y1, why)
 #: SPEC-V3 D5: the banner's quiet field is the left 40 %, inset by its own inner pad.
-#: SPEC-V3 M4: the course-home plate reserves a quiet field for the course title; the map's is the
-#: upper-left third. The cafe frame is a scene, not a type ground: C6 carries the line, C5 the art.
+#: SPEC-V3 §5.4: the course-home hero plate (M4) reserves the course title; the map's field is its
+#: upper-left third, measured on the 16:9 master. The cafe frame is a scene, not a type ground: C6
+#: carries the line, C5 the art.
 QUIET_FIELD = {
     "discover-banner": (0.0, 0.0, 0.40, 1.0),
     "course-map": (0.0, 0.0, 0.33, 0.45),
 }
+
+#: The one ratified cool pigment — noren indigo — measured, not assumed. ART-BIBLE §9 rule 5 and
+#: §2 carry the exception as ruling `D-CP013-A`; these boxes are the named noren regions on the two
+#: shipped plates, in pixels, and each one sits outside that plate's quiet field.
+NOREN = {
+    "discover-banner": (700, 0, 961, 160),
+    "lesson-cafe": (760, 20, 1024, 310),
+}
+
+#: A pigment is "strongly cool" when blue leads both other channels by more than this.
+COOL_LEAD = 10
 
 #: object -> centre probe: only the two rims take a runtime icon, so only they must carry a blank
 CENTRE = {
@@ -73,6 +89,27 @@ def quantile(gray, fraction):
     return 255
 
 
+def cool_share(img, box=None):
+    """Share of the plate (or of the plate outside ``box``) whose blue leads both other channels.
+
+    The metric is the one the reviewer measured: ``b - max(r, g) > COOL_LEAD``. It reads a pigment
+    as cool on the pixel, not on an average that would hide a small saturated mass.
+    """
+    width, height = img.size
+    px = img.load()
+    inside = outside = 0
+    for y in range(height):
+        for x in range(width):
+            r, g, b = px[x, y]
+            if b - max(r, g) <= COOL_LEAD:
+                continue
+            if box and box[0] <= x < box[2] and box[1] <= y < box[3]:
+                inside += 1
+            else:
+                outside += 1
+    return inside, outside
+
+
 def scene_row(path, ink):
     img = Image.open(path).convert("RGB")
     width, height = img.size
@@ -106,6 +143,42 @@ def scene_row(path, ink):
         tint = [round(v / total) for v in sums]
         row["dark_tint"] = {"rgb": tint, "hex": "#%02x%02x%02x" % tuple(tint),
                             "warm": tint[0] >= tint[2] and tint[0] + 2 >= tint[1]}
+
+    box = NOREN.get(path.stem)
+    cool_in, cool_out = cool_share(img, box)
+    row["cool_share_of_plate"] = round((cool_in + cool_out) / (width * height), 5)
+    if box:
+        area = (box[2] - box[0]) * (box[3] - box[1])
+        out_lum = []
+        out_rgb = []
+        for y in range(0, height, 2):
+            for x in range(0, width, 2):
+                inside = box[0] <= x < box[2] and box[1] <= y < box[3]
+                if inside:
+                    continue
+                px = img.getpixel((x, y))
+                out_lum.append(0.299 * px[0] + 0.587 * px[1] + 0.114 * px[2])
+                out_rgb.append(px)
+        out_cutoff = sorted(out_lum)[max(0, int(0.05 * len(out_lum)) - 1)] if out_lum else 0
+        n = 0
+        acc = [0, 0, 0]
+        for lum, px in zip(out_lum, out_rgb):
+            if lum <= out_cutoff:
+                acc = [a + c for a, c in zip(acc, px)]
+                n += 1
+        out_tint = [round(v / n) for v in acc] if n else [0, 0, 0]
+        row["noren"] = {
+            "ruling": "D-CP013-A",
+            "box_px": list(box),
+            "share_of_plate": round(area / (width * height), 3),
+            "cool_share_of_plate": row["cool_share_of_plate"],
+            "cool_share_outside_region": round(cool_out / (width * height), 5),
+            "dark_tint_outside_region": {
+                "rgb": out_tint,
+                "hex": "#%02x%02x%02x" % tuple(out_tint),
+                "warm": out_tint[0] >= out_tint[2] and out_tint[0] + 2 >= out_tint[1],
+            },
+        }
 
     field = QUIET_FIELD.get(path.stem)
     if field:
@@ -151,6 +224,12 @@ def object_row(path):
         "pure_black_fraction_of_opaque": round(black / opaque, 5) if opaque else None,
         "footer_bytes": path.stat().st_size,
     }
+    #: No cutout carries the ratified noren pigment, and none carries any other cool mass.
+    cool_opaque = 0
+    for (r, g, b, a) in img.getdata():
+        if a > 8 and b - max(r, g) > COOL_LEAD:
+            cool_opaque += 1
+    row["cool_fraction_of_opaque"] = round(cool_opaque / opaque, 5) if opaque else None
     mode_radius = CENTRE.get(path.stem)
     if mode_radius is None:
         return row

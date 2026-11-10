@@ -26,7 +26,8 @@ reasons are kept in `prompts.json`.
    gateway and serves the media from `v3b.fal.media`.
 3. Scenes: cropped to their shipping aspect at the vertical offset the quiet-field probe measured
    (`scripts/cp013-quiet-probe.py`), then one deterministic print-safety lift (`+level 4%,100%`) so
-   no pixel in a shipped plate is pure black.
+   no pixel in a shipped plate is pure black. The indigo noren both scenes carry is the one ratified
+   cool pigment (`ART-BIBLE.md` §9, ruling `D-CP013-A`), measured and region-bounded below.
 4. Objects: the same chroma key as A1 (`scripts/cp010-fox-prep.py`'s recipe: sample the file's own
    corner colour, `-fuzz 30%`, trim, pad square), one colour temper (`-modulate 92,72,100`) so the
    kit sits in the same muted family as the fox, then export at 256 px RGBA.
@@ -77,14 +78,23 @@ Full prompt hashes, provider media URLs, raw-input hashes and byte counts are in
 
 - **Quiet field.** The banner's reserved field (left 40 %, SPEC-V3 D5) measures 5.93 detail energy,
   median luminance 247 with p05 193, so `ink` clears 16.67:1 at the median and 9.92:1 at the darkest
-  5 %. The course-home plate's upper-left third (SPEC-V3 M4) measures 8.68 detail, ink 14.31:1 /
+  5 %. The course-home plate's upper-left third (SPEC-V3 §5.4 M4) measures 8.68 detail, ink 14.31:1 /
   13.27:1. The cafe frame carries no reserved field: the dialogue, not the art, holds the type.
 - **Pure black.** 0.000 % on all three scenes and ≤ 0.010 % on the two rims; every other object is
-  0.000 %. The darkest 5 % of each scene is a warm family (`#200e0d`, `#2a2b1f`, `#221a1f`), never
-  neutral black.
+  0.000 %. Outside the ratified noren region (`ART-BIBLE.md` §9, `D-CP013-A`) the darkest 5 % of each
+  scene measures `#29150f` (banner), `#321e13` (cafe) and `#2a2b1f` (map) — a warm umber in every
+  case, never neutral black.
+- **Cool pigment.** The only cool pigment on any shipped plate is the indigo noren, and it is
+  ratified by `D-CP013-A`: 3.731 % of `discover-banner` (all of it inside x 700–961, y 0–160) and
+  8.094 % of `lesson-cafe` (all of it inside x 760–1024, y 20–310). Outside those regions the
+  measured cool share of both plates is **0.000 %**; `course-map` measures 0.004 % in scattered
+  antialiasing and no cool mass; all seven object blanks measure 0.000 %. The cafe's whole-plate
+  darkest 5 % reads `#221a1f`, a cool-leaning umber sampled from the noren's own shade — that is the
+  exception working as written, not a second pigment.
 - **Aspect.** `discover-banner` is 1024×233 (4.395:1, the nearest whole pixel to 4.4:1); the cafe
   and the map are 1024×576 (16:9). The cafe master is cropped mechanically to the 3:1 lesson frame
-  at render time (SPEC-V3 §3.3), never stretched.
+  at render time (SPEC-V3 §3.3), never stretched; the map is cropped to the 3:1 hero plate M4
+  (SPEC-V3 §5.4), also never stretched.
 - **Cutout.** Every object is 256×256 RGBA with a transparent margin. The rims' centres measure
   11.67 and 11.22 detail energy — a blank, not a glyph — so a 20 px `sdk.Codicon` can sit there.
 - **Text.** tesseract 5.5.3 at `--psm 3` returned an empty string for all ten recorded raws. On the
@@ -97,9 +107,10 @@ Full prompt hashes, provider media URLs, raw-input hashes and byte counts are in
 
 The medallion is one painted rim. What differs per event is the `sdk.Codicon` glyph and the DOM
 label, both added at runtime; painting five different rims would be decoration a learner cannot
-name, which `COURSEBOOK-VISUAL-IDENTITY-V3.md` §10 removes. The five events are the five recorded
-action kinds the product actually has (`coursebook/gm_contract.py::EngagementAction`) plus the
-course-end state:
+name, which `COURSEBOOK-VISUAL-IDENTITY-V3.md` §10 removes. `coursebook/gm_contract.py::EngagementAction`
+records exactly **five** kinds; this card maps four of those kinds, plus the non-enum course-end
+state, into the five medallions below. The fifth kind, `returned`, is listed as well and deliberately
+left out of scope rather than silently dropped:
 
 | event | source of truth | glyph | label id | status |
 |---|---|---|---|---|
@@ -107,7 +118,8 @@ course-end state:
 | first check | `check_submitted` | `check` | `lab.medal.first_check` | ready |
 | first review | `review` | `book` | `lab.medal.first_review` | ready |
 | first take-home | `homework_completed` | `arrow-left` (take-home pack) | `lab.medal.first_takehome` | ready |
-| course complete | course-end state | `shield` | `lab.medal.course_complete` | ready |
+| course complete | course-end state (not an `EngagementAction` kind) | `shield` | `lab.medal.course_complete` | ready |
+| return to a lesson run | `returned` (XP 10, `coursebook/engagement.py::XP_POINTS`) | — | — | **out of scope in this card**: a return is not a first-time milestone, and the deck carries no label for it; no medallion is minted for it, and the same blank serves it unchanged if a later card authors one |
 
 ## Pipeline
 
@@ -127,7 +139,8 @@ Scenes are **not** embedded. They stay where `PLAN.md` §5 and `assets/README.md
    nothing else. The row says so rather than guessing an id (same gap as A1).
 2. **The first-lesson-step medallion has no copy id.** Five blanks are delivered as one rim plus
    five event mappings; the fifth label is CP-001's to author. Until it exists, that event has no
-   medallion — it is not rendered with an invented word.
+   medallion — it is not rendered with an invented word. `EngagementAction.returned` gets no
+   medallion in this card either, and the table above says so.
 3. **The banner's quiet field is measured, not certified.** 5.93 detail energy and 9.92:1 worst-case
    ink contrast are pixel facts; whether the composition reads well at 226 px is the contact sheet
    and the reviewer's eye.

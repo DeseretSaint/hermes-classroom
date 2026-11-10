@@ -60,14 +60,17 @@ def scene_sheet(out="docs/concept-parity/art/cp013-scenes.png"):
     plates = ["discover-banner", "course-map", "lesson-cafe"]
     width = 1100
     cell_h = 430
-    head, foot = 132, 200
+    head, foot = 150, 200
     im = Image.new("RGB", (width, head + 3 * cell_h + foot), PAPER)
     d = ImageDraw.Draw(im)
     d.text((32, 28), "Scene plates — A4", font=font(32, True), fill=INK)
     d.text((32, 74), "Textless gouache plates. The reserved quiet field is outlined where DOM type "
            "will sit; the nodes, pins and labels are never painted.",
            font=font(17), fill=SOFT)
-    d.line([(32, 112), (width - 32, 112)], fill=RULE, width=1)
+    d.text((32, 100), "Terracotta outline = quiet field.  Violet outline = the ratified noren region "
+           "(D-CP013-A), the one cool pigment a plate may carry.",
+           font=font(14), fill=SOFT)
+    d.line([(32, 126), (width - 32, 126)], fill=RULE, width=1)
 
     for i, plate in enumerate(plates):
         y = head + i * cell_h
@@ -90,8 +93,21 @@ def scene_sheet(out="docs/concept-parity/art/cp013-scenes.png"):
             stats.append("quiet field detail %.2f" % q["detail_energy"])
             stats.append("ink contrast %.2f (p05) / %.2f (median)"
                          % (q["ink_contrast_p05"], q["ink_contrast_median"]))
+        if row.get("noren"):
+            left, top, right, bottom = row["noren"]["box_px"]
+            sx = art.width / row["width"]
+            sy = art.height / row["height"]
+            d.rectangle([32 + left * sx, y + 16 + top * sy, 32 + right * sx, y + 16 + bottom * sy],
+                        outline=(91, 90, 160), width=2)
         stats.append("pure black %.3f%%" % (row["pure_black_fraction"] * 100))
         stats.append("darkest 5%% %s" % row.get("dark_tint", {}).get("hex", "n/a"))
+        noren = row.get("noren")
+        if noren:
+            stats.append("noren indigo %.3f%% (D-CP013-A)"
+                         % (noren["cool_share_of_plate"] * 100,))
+            stats.append("cool outside region %.3f%%" % (noren["cool_share_outside_region"] * 100,))
+        else:
+            stats.append("cool pigment %.3f%%" % (row["cool_share_of_plate"] * 100))
         for j, line in enumerate(stats):
             d.text((760, y + 24 + j * 26), line, font=font(15), fill=SOFT)
         d.text((760, y + 24 + len(stats) * 26 + 8), ocr_text(plate),
@@ -102,7 +118,7 @@ def scene_sheet(out="docs/concept-parity/art/cp013-scenes.png"):
     d.text((32, fy + 14), "No plate is embedded: scenes stay pack or world media on the media "
            "route (assets/README.md).", font=font(15), fill=SOFT)
     d.text((32, fy + 40), "Provider media URLs, prompt hashes and per-plate sha256: "
-           "docs/concept-parity/ART-PROVENANCE.md", font=font(15), fill=SOFT)
+           "docs/concept-parity/ART-PROVENANCE-A4A5.md", font=font(15), fill=SOFT)
     d.text((32, fy + 66), "Owner approval: scenes ____    Reviewer: ______________",
            font=font(15), fill=SOFT)
     im.save(out)

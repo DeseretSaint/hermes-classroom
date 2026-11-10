@@ -86,6 +86,52 @@ class ScenePlates(unittest.TestCase):
         row = audit_rows()["lesson-cafe.png"]
         self.assertNotIn("quiet_field", row, "the lesson frame carries the scene, not the type")
 
+
+class Palette(unittest.TestCase):
+    """ART-BIBLE §2 and §9 rule 5, under ruling `D-CP013-A`: one ratified cool pigment.
+
+    The measured metric is the reviewer's: share of pixels with ``b - max(r, g) > 10``. The ruling
+    permits the indigo noren only — never a sky, a ground, a shadow or a cutout — and only inside a
+    named region that sits outside the quiet field. Either path the review offered closes here: under
+    the ruling the mass must be confined and bounded; if the ruling is ever revoked, the region rows
+    go with it and the ≤ 0.5 % cap applies to the whole plate.
+    """
+
+    def test_no_scene_carries_a_pigment_outside_the_bible_palette(self):
+        bible = BIBLE.read_text()
+        self.assertIn("D-CP013-A", bible, "the bible must carry the ruling this test judges by")
+        self.assertIn("Noren indigo", bible, "the ratified pigment must be named in the palette table")
+        rows = audit_rows()
+        for name in SCENE_PLATES:
+            row = rows[f"{name}.png"]
+            width, height = row["width"], row["height"]
+            with self.subTest(plate=name):
+                noren = row.get("noren")
+                if not noren:
+                    self.assertLessEqual(
+                        row["cool_share_of_plate"], 0.005,
+                        f"{name} carries cool pigment but declares no ratified noren region")
+                    continue
+                self.assertEqual(noren["ruling"], "D-CP013-A")
+                self.assertLessEqual(noren["cool_share_of_plate"], 0.10,
+                                     f"{name}'s noren mass grew past the ratified bound")
+                self.assertLessEqual(
+                    noren["cool_share_outside_region"], 0.005,
+                    f"{name} paints cool pigment outside its named noren region")
+                x0, y0, x1, y1 = noren["box_px"]
+                self.assertLessEqual((x1 - x0) * (y1 - y0) / (width * height), 0.25,
+                                     "the region box is drifting into a licence to paint blue")
+                self.assertGreaterEqual(x0 / width, 0.60,
+                                        "the noren sits on the right, away from the title field")
+                self.assertLessEqual(y1 / height, 0.70)
+                field = row.get("quiet_field")
+                if field:
+                    fx0, fy0, fx1, fy1 = field["box_px"]
+                    overlap = not (x1 <= fx0 or x0 >= fx1 or y1 <= fy0 or y0 >= fy1)
+                    self.assertFalse(overlap, f"{name}'s noren overlaps the quiet field")
+                self.assertTrue(noren["dark_tint_outside_region"]["warm"],
+                                f"{name}'s darkest 5 % outside the noren is not a warm pigment")
+
     def test_no_scene_carries_pure_black_and_the_darkest_pigment_is_warm(self):
         for name, row in audit_rows().items():
             if not name.startswith(("discover-", "lesson-", "course-")):
@@ -129,6 +175,14 @@ class ObjectBlanks(unittest.TestCase):
                 self.assertEqual(centre["mode"], "flat")
                 self.assertLessEqual(centre["detail_energy"], 16.0,
                                      f"{name}'s centre carries a painted mark")
+
+    def test_no_blank_carries_a_cool_pigment(self):
+        for name, row in audit_rows().items():
+            if not row["kind"] == "object":
+                continue
+            with self.subTest(object=name):
+                self.assertLessEqual(row["cool_fraction_of_opaque"] or 0, 0.005,
+                                     f"{name} carries the ratified noren pigment or another cool mass")
 
     def test_props_are_not_asked_to_hold_an_icon(self):
         rows = audit_rows()
@@ -244,9 +298,39 @@ class Pipeline(unittest.TestCase):
         self.assertIn("## 10. A5 object kit", bible)
         self.assertIn("-fuzz 30%", bible)
 
+    def test_the_review_sheet_cites_this_card_s_own_record(self):
+        """The sheet once pointed at the A1 fox provenance. A reviewer following it read the wrong
+        card's hashes, so the citation is asserted here rather than trusted to a regeneration."""
+        script = (ROOT / "scripts" / "cp013-contact-sheet.py").read_text()
+        self.assertIn("ART-PROVENANCE-A4A5.md", script)
+        self.assertNotIn("concept-parity/ART-PROVENANCE.md", script)
+
+    def test_the_bible_calls_the_marking_a_cuff(self):
+        """`D-CP010-A` retired "sock"; §2 re-introduced the word once and is not allowed to again."""
+        bible = BIBLE.read_text()
+        self.assertNotIn("Fox dark sock", bible)
+        self.assertNotIn("sock-dark", bible)
+
     def test_the_medallion_set_names_five_real_events(self):
         doc = PROVENANCE_DOC.read_text()
         for event in EVENT_NAMES:
             self.assertIn(event, doc, f"the medallion table does not name {event}")
         self.assertIn("blocked on a copy id", doc,
                       "the fifth event's missing label id must be an honest gap, not an invented word")
+
+    def test_the_medallion_set_accounts_for_every_real_action_kind(self):
+        """The doc once claimed five kinds "plus the course-end" while mapping four and dropping
+        ``returned``. The enum is the authority: every kind in it is named, mapped or explicitly out
+        of scope. A sixth kind added to the product fails here until the doc says what happened to it.
+        """
+        from coursebook.gm_contract import EngagementAction
+
+        kinds = [value for name, value in vars(EngagementAction).items()
+                 if name.isupper() and isinstance(value, str)]
+        self.assertEqual(len(kinds), 5, "EngagementAction changed shape; re-measure the medallion set")
+        doc = PROVENANCE_DOC.read_text()
+        for kind in kinds:
+            with self.subTest(kind=kind):
+                self.assertIn(kind, doc, f"the medallion section never mentions {kind}")
+        self.assertIn("out of scope in this card", doc,
+                      "`returned` must be named as deliberately out of scope, not dropped")

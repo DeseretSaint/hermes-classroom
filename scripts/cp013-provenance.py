@@ -4,7 +4,9 @@
 Nothing here is typed by hand except the provider's returned media URLs, which are recorded in
 `MEDIA_URL` because the host image tool returns them and nothing else. The output is the machine
 record `audit/cp013-scenes/provenance.json`; the markdown table printed to stdout is pasted into
-`docs/concept-parity/ART-PROVENANCE.md` without editing a value.
+`docs/concept-parity/ART-PROVENANCE-A4A5.md` without editing a value. Each row carries a
+`prompt_preview` (the first 80 characters) and a `prompt_sha256`; the verbatim prompt is in
+`prompts.json`, which is the prompt record.
 
 Usage: python3 scripts/cp013-provenance.py
 """
@@ -99,7 +101,9 @@ def main():
             "plate": prompt["plate"],
             "round": prompt["round"],
             "kind": "scene" if asset.startswith("assets/art/scenes/") else "object",
-            "prompt": prompt["prompt"][:80] + ("…" if len(prompt["prompt"]) > 80 else ""),
+            #: A preview only: the verbatim text and the hash's input are `prompts.json`. The field
+            #: is named for what it is so the record cannot be mistaken for the prompt itself.
+            "prompt_preview": prompt["prompt"][:80] + ("…" if len(prompt["prompt"]) > 80 else ""),
             "prompt_sha256": hashlib.sha256(prompt["prompt"].encode("utf-8")).hexdigest(),
             "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
             "media_url": MEDIA_URL[pid],

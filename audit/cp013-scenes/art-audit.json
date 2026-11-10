@@ -17,6 +17,7 @@
         "hex": "#2a2b1f",
         "warm": true
       },
+      "cool_share_of_plate": 4e-05,
       "quiet_field": {
         "box_px": [
           0,
@@ -49,6 +50,28 @@
         "hex": "#200e0d",
         "warm": true
       },
+      "cool_share_of_plate": 0.03731,
+      "noren": {
+        "ruling": "D-CP013-A",
+        "box_px": [
+          700,
+          0,
+          961,
+          160
+        ],
+        "share_of_plate": 0.175,
+        "cool_share_of_plate": 0.03731,
+        "cool_share_outside_region": 0.0,
+        "dark_tint_outside_region": {
+          "rgb": [
+            41,
+            21,
+            15
+          ],
+          "hex": "#29150f",
+          "warm": true
+        }
+      },
       "quiet_field": {
         "box_px": [
           0,
@@ -80,6 +103,28 @@
         ],
         "hex": "#221a1f",
         "warm": true
+      },
+      "cool_share_of_plate": 0.08094,
+      "noren": {
+        "ruling": "D-CP013-A",
+        "box_px": [
+          760,
+          20,
+          1024,
+          310
+        ],
+        "share_of_plate": 0.13,
+        "cool_share_of_plate": 0.08094,
+        "cool_share_outside_region": 0.0,
+        "dark_tint_outside_region": {
+          "rgb": [
+            50,
+            30,
+            19
+          ],
+          "hex": "#321e13",
+          "warm": true
+        }
       }
     },
     {
@@ -96,7 +141,8 @@
         251
       ],
       "pure_black_fraction_of_opaque": 3e-05,
-      "footer_bytes": 88280
+      "footer_bytes": 88280,
+      "cool_fraction_of_opaque": 0.0
     },
     {
       "file": "assets/art/objects/medallion-rim.png",
@@ -113,6 +159,7 @@
       ],
       "pure_black_fraction_of_opaque": 0.0,
       "footer_bytes": 78693,
+      "cool_fraction_of_opaque": 0.0,
       "centre_probe": {
         "mode": "flat",
         "radius_fraction": 0.22,
@@ -133,7 +180,8 @@
         223
       ],
       "pure_black_fraction_of_opaque": 0.0,
-      "footer_bytes": 64517
+      "footer_bytes": 64517,
+      "cool_fraction_of_opaque": 0.0
     },
     {
       "file": "assets/art/objects/shelf-plank.png",
@@ -149,7 +197,8 @@
         220
       ],
       "pure_black_fraction_of_opaque": 0.0,
-      "footer_bytes": 66048
+      "footer_bytes": 66048,
+      "cool_fraction_of_opaque": 0.0
     },
     {
       "file": "assets/art/objects/stamp-rim.png",
@@ -166,6 +215,7 @@
       ],
       "pure_black_fraction_of_opaque": 0.0001,
       "footer_bytes": 94090,
+      "cool_fraction_of_opaque": 0.0,
       "centre_probe": {
         "mode": "flat",
         "radius_fraction": 0.18,
@@ -186,7 +236,8 @@
         224
       ],
       "pure_black_fraction_of_opaque": 0.0,
-      "footer_bytes": 66938
+      "footer_bytes": 66938,
+      "cool_fraction_of_opaque": 0.0
     },
     {
       "file": "assets/art/objects/ticket.png",
@@ -202,7 +253,8 @@
         209
       ],
       "pure_black_fraction_of_opaque": 0.0,
-      "footer_bytes": 52202
+      "footer_bytes": 52202,
+      "cool_fraction_of_opaque": 0.0
     }
   ]
 }
