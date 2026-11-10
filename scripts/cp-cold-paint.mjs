@@ -43,6 +43,18 @@ const backendUrl = flag('backend-url', null)
 const token = flag('token', process.env.CB013_TOKEN || '')
 const expectSha = flag('expect-sha', null)
 const fixture = flag('fixture', null)
+// Like-for-like timing: a route a third the width is a different amount of layout and paint, so a
+// bare wall-clock number is not comparable to a baseline captured at another geometry. `--emulate
+// WxH` pins the layout viewport and `--expect-route-width` refuses a run whose route box does not
+// match the baseline's, rather than measuring a different surface and calling it a delta.
+const emulateFlag = flag('emulate', null)
+const expectRouteWidth = Number(flag('expect-route-width', 0)) || null
+const emulate = (() => {
+  if (!emulateFlag || emulateFlag === true) return null
+  const match = String(emulateFlag).match(/^(\d+)x(\d+)$/)
+  if (!match) throw new Error(`--emulate wants WxH, got ${String(emulateFlag)}`)
+  return { width: Number(match[1]), height: Number(match[2]) }
+})()
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
 
 const sha256File = (path) => createHash('sha256').update(readFileSync(path)).digest('hex')
@@ -123,6 +135,11 @@ const attach = async () => {
   const cdp = await connect(page.webSocketDebuggerUrl)
   await cdp.send('Page.enable')
   await cdp.send('Runtime.enable')
+  if (emulate) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', {
+      width: emulate.width, height: emulate.height, deviceScaleFactor: 1, mobile: false
+    })
+  }
   return { cdp, close: () => cdp.close(), pageUrl: page.url }
 }
 
@@ -229,9 +246,13 @@ const main = async () => {
     const median = values.length ? values[Math.floor(values.length / 2)] : null
     const expected = expectSha ? String(expectSha) : sha256File(pluginPath)
     const shaMatches = Boolean(provenance.window_sha256) && provenance.window_sha256 === expected
+    const routeWidth = provenance.route_width
+    const geometryMatches = expectRouteWidth === null || (
+      typeof routeWidth === "number" && Math.abs(routeWidth - expectRouteWidth) <= 2
+    )
     const result = {
       tool: 'scripts/cp-cold-paint.mjs',
-      ok: shaMatches && median !== null,
+      ok: shaMatches && median !== null && geometryMatches,
       captured_at: new Date().toISOString(),
       measured: '[data-cb-route] present with a non-zero box after Page.reload(ignoreCache)',
       page_url: pageUrl,
@@ -254,6 +275,15 @@ const main = async () => {
       window_width: provenance.window_width,
       window_height: provenance.window_height,
       cdp_port: fixture ? null : port,
+      emulation: emulate ? { width: emulate.width, height: emulate.height, device_scale_factor: 1 } : null,
+      geometry: {
+        expect_route_width: expectRouteWidth,
+        route_width: routeWidth,
+        route_height: provenance.route_height,
+        window_width: provenance.window_width,
+        window_height: provenance.window_height,
+        matches: geometryMatches
+      },
       samples,
       median_ms: median,
       min_ms: values[0] ?? null,
@@ -264,6 +294,11 @@ const main = async () => {
     if (!shaMatches) {
       console.error(`REFUSED: window module sha ${String(provenance.window_sha256)} does not match expected ${expected}; ` +
         'a cold-paint number without module provenance is not a baseline')
+      process.exit(2)
+    }
+    if (!geometryMatches) {
+      console.error(`REFUSED: route is ${String(routeWidth)} px wide, expected ${String(expectRouteWidth)} px; ` +
+        'a timing at another route width is not comparable to the baseline')
       process.exit(2)
     }
     if (median === null) process.exit(2)

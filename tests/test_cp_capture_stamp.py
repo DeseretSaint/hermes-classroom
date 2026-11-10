@@ -31,7 +31,7 @@ ROUTE_KEYS = {
     "selector", "marker", "width", "height", "theme", "text_scale_root_px", "reduced_motion",
     "forced_colors", "fonts_status", "images_total", "images_decoded", "host_slots",
     "host_overlays", "host_overlay_fraction", "content_width", "content_height",
-    "content_rect", "html_background", "background_color",
+    "content_rect", "html_background", "background_color", "v3_textures",
 }
 CAPTURE_KEYS = {"file", "sha256", "bytes", "clip", "crop_mode", "pixel_check"}
 BACKEND_KEYS = {"url", "wire_version", "contract_methods", "implemented_count", "plugin_root"}
@@ -70,6 +70,8 @@ class CaptureStampTests(unittest.TestCase):
         self.assertEqual(stamp["plugin"]["expected_sha256"], VALID_SHA)
         self.assertTrue(all(stamp["gates"].values()))
         self.assertTrue(REQUIRED_GATES.issubset(stamp["gates"]), sorted(REQUIRED_GATES - set(stamp["gates"])))
+        self.assertEqual(stamp["route"]["v3_textures"], "ready")
+        self.assertEqual(stamp["console"]["key_warnings"], 0)
         self.assertTrue(ROUTE_KEYS.issubset(stamp["route"]), sorted(ROUTE_KEYS - set(stamp["route"])))
         self.assertTrue(CAPTURE_KEYS.issubset(stamp["capture"]))
         self.assertEqual(len(stamp["capture"]["sha256"]), 64)
@@ -105,6 +107,27 @@ class CaptureStampTests(unittest.TestCase):
         self.assertFalse(refused["gates"]["images_decoded"])
         self.assertTrue(any("undecoded image" in reason for reason in refused["reasons"]))
         self.assertEqual(refused["route"]["images_decoded"], 0)
+
+    def test_v3_texture_fallback_is_refused(self) -> None:
+        # The route is present and the fonts settled, but the ground tiles never decoded. Stamping
+        # that frame "ready" is the round-1 defect: the packet could not tell a painted ground from
+        # a flat one.
+        completed = run_capture(self.tmp, "v3-textures-fallback.html", "--require-v3")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        refused = json.loads((self.tmp / "v3-textures-fallback.refused.json").read_text())
+        self.assertFalse(refused["gates"]["v3_ready"])
+        self.assertEqual(refused["route"]["v3_textures"], "fallback")
+        self.assertTrue(any("textures" in reason for reason in refused["reasons"]))
+        self.assertFalse((self.tmp / "v3-textures-fallback.stamp.json").exists())
+
+    def test_react_key_warning_is_refused(self) -> None:
+        # Every visual gate passes; only the renderer's console says the tree is warning-noisy.
+        completed = run_capture(self.tmp, "key-warning.html")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        refused = json.loads((self.tmp / "key-warning.refused.json").read_text())
+        self.assertFalse(refused["gates"]["no_react_key_warning"])
+        self.assertTrue(any("key" in reason for reason in refused["reasons"]))
+        self.assertFalse((self.tmp / "key-warning.stamp.json").exists())
 
     def test_render_error_marker_is_refused(self) -> None:
         completed = run_capture(self.tmp, "render-error.html", "--require-v3")
