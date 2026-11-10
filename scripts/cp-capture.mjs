@@ -488,8 +488,23 @@ const collectConsole = (cdp) => {
   return () => ({ errors: errors.slice(0, 40), warnings })
 }
 
-const evaluate = async (cdp, expression) => {
-  const result = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
+const evaluate = async (cdp, expression, { timeout = 30000 } = {}) => {
+  let timer = null
+  const timeoutPromise = new Promise((_, fail) => {
+    timer = setTimeout(() => fail(new Error(`Runtime.evaluate timed out after ${timeout}ms`)), timeout)
+  })
+  let result
+  try {
+    // A dead host bridge (e.g. `window.hermesDesktop.zoom.get` after a gateway exit) never settles
+    // its IPC promise. Without a timeout the whole capture hangs with no record; a timeout turns
+    // that into a loud refusal instead.
+    result = await Promise.race([
+      cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }),
+      timeoutPromise
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
   if (result.exceptionDetails) {
     throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text || 'evaluate failed')
   }
@@ -619,6 +634,22 @@ const driveClicks = async (cdp, selectors, ms) => {
     await sleep(120)
   }
   return record
+}
+
+const waitForImages = async (cdp, ms) => {
+  const deadline = Date.now() + ms
+  let state = null
+  while (Date.now() < deadline) {
+    state = await evaluate(cdp, `(() => {
+      const root = document.querySelector('[data-cb-route]')
+      if (!root) return null
+      const imgs = [...root.querySelectorAll('img')]
+      return { total: imgs.length, pending: imgs.filter((img) => !img.complete || img.naturalWidth === 0).length }
+    })()`).catch(() => null)
+    if (!state || state.pending === 0) return state
+    await sleep(250)
+  }
+  return state
 }
 
 /**
@@ -917,6 +948,9 @@ const liveCapture = async () => {
     : stateDir
       ? resolve(String(stateDir), 'home', 'desktop-plugins', 'coursebook', 'plugin.js')
       : null
+  // A data: cover that is still decoding at probe time is not a broken image; wait for the route's
+  // images to settle before asserting they decoded (a genuinely broken one still refuses).
+  await waitForImages(cdp, Number(flag('image-wait', 15000)))
   const probe = await evaluate(cdp, probeExpression(loadedPlugin, Boolean(loadedPlugin)))
   probe.console = consoleReader()
   probe.route.backend = null
@@ -1014,6 +1048,7 @@ const fixtureCapture = async () => {
     await evaluate(cdp, `window.scrollTo(0, 0)`)
     const scroll = await applyScroll(cdp, scrollArg)
 
+    await waitForImages(cdp, Number(flag('image-wait', 15000)))
     const probe = await evaluate(cdp, probeExpression(null, false))
     const routeBox = await evaluate(cdp, `(() => {
       const root = document.querySelector('[data-cb-route]')
