@@ -219,11 +219,12 @@ function CoursebookPage() {
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
   const canSyllabus = Boolean(implemented && implemented.has('syllabus.intake.create'))
   const canAuthor = Boolean(implemented && implemented.has('parent.brief.create'))
-  // `4vw` measures the window, not the route: with a chat and the explorer open the route is
-  // ~400px wide but the window is ~1050, so the old padding took 84px of a 407px column. The
-  // route's own measured width picks a gutter that leaves the reading/work column room.
-  const measuredRoute = useCbViewportWidth()
-  const routePad = measuredRoute > 0 && measuredRoute < 760 ? '0.7rem' : 'clamp(1.25rem, 4vw, 4rem)'
+  // R1 (CP-020b): the page gutter is a container-query rule on the route's inner wrapper, not an
+  // inline clamp on the route root. A viewport unit measured the Desktop window rather than the
+  // route, and a container unit on the container element resolves against its *ancestor*, so
+  // neither can live here. The `cb3-gutter` class in CB_V3_CSS owns the two branches (0.7rem below
+  // a 760 px route, clamp(1.25rem, 3.05cqi, 4rem) above it) and `test_v3_scope` refuses a viewport
+  // unit that reaches the rendered element's own style.
 
   let body
   if (health.status === 'loading' && !health.result) {
@@ -449,13 +450,14 @@ function CoursebookPage() {
   return jsx(CbV3Scope, {
     mode: cbMode,
     className: 'relative flex h-full min-h-0 flex-col',
+    contentClassName: 'cb3-gutter',
     attributes: {
       'data-cb-destination': destination,
       'data-cb-route': ROUTE_PATH,
       'data-cb-scope': cbMode,
       'data-cb-motion': cbMotion.preference
     },
-    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance) },
     children: [
       // Every top-level child carries a key: `children` is an array, and React warns on an
       // unkeyed element in any list — including a props array — on the console only.
