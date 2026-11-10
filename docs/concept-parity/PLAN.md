@@ -478,7 +478,9 @@ Deliverables:
 - `docs/concept-parity/ART-BIBLE.md`: medium (opaque gouache with a dark-brown ink line), light
   (soft, upper left), palette tied to v3 roles, line weight per output size, the fox model sheet
   rules (head about 45 percent of figure height, cream bib and tail tip, dark socks to the elbow,
-  dark ear backs, outline `#3a2318`-class brown, never black), forbidden content, prompt
+  dark ear backs, outline `#3a2318`-class brown, never black; **amended after the plates were
+  built** — `ART-BIBLE.md` §3 is the authority and now states a dark cuff at the wrist and ankle and
+  a 45–55 % head band, `D-CP010-A`/`D-CP010-B`), forbidden content, prompt
   templates, negative prompts, and the reference-image procedure.
 - Fox model sheet first: front, three-quarter, side and back turnaround in one image. Owner
   approves it from the contact sheet before any pose is generated.
