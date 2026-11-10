@@ -161,10 +161,12 @@ def build_anatomy_panel(out: Path, width: int) -> Path:
         shutil.rmtree(tmp, ignore_errors=True)
 
     # R-SYS's card-anatomy block (a four-item numbered callout list beside one collectible card)
-    # sits in the sheet's right-upper quadrant. The crop carries the whole card with margin on
-    # every side; the previous (660, 110, 960, 570) clipped the card's bottom third.
+    # sits in the sheet's right-upper quadrant. Measured from the reference's own border columns
+    # (card x 661..991) rather than eyeballed: the crop carries the whole card plus ~13 px of
+    # parchment on every side. The previous (660, 110, 960, 570) clipped the card's right edge and
+    # bottom third.
     reference = Image.open(REF_SYS).convert("RGB")
-    crop = reference.crop((668, 84, 992, 674))
+    crop = reference.crop((648, 88, 1004, 676))
 
     panel_w, panel_h = 660, 700
     sheet = Image.new("RGB", (panel_w * 2 + 72, 96 + panel_h), (250, 248, 243))

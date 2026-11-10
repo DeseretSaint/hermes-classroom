@@ -1,7 +1,7 @@
 {
   "kind": "component-preview",
   "label": "Component preview \u2014 rendered from the shipped primitives; not a live Desktop capture.",
-  "plugin_sha256": "1582a039ed21b4997cef0d52cee3e41ae807c30e397ced72495f7b8e5c16b15b",
+  "plugin_sha256": "1aa115774bbb6fd79f244bc27de9e16a1dacd6070fb9985f1ee6fdc124e1aed2",
   "contract": "contracts/cb.tokens.v3.json",
   "reference": "docs/concept-parity/refs/REF-SYS",
   "gutter_probe": {
@@ -26,13 +26,13 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 3046
+        "height": 2694
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "c59495bf28c4f9a037b6ec376e5357000f6b8b5728ecf4e3f5dea0f191e68965",
+      "html_sha256": "c83594d6ae8b7da62a681b246c72252784096f04592176d116998f1fe44992cd",
       "png": "lab-light-100.png",
-      "png_sha256": "89f3054e88b71ec5b1575f63f9f2fc57a5d53187f7b14b2997ad39695b8e6660",
+      "png_sha256": "786e931a8b326a75529d6dc8e2171be36931bafe71300a67ec991adddc28caf3",
       "specimen_count": 16
     },
     {
@@ -44,13 +44,13 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 3046
+        "height": 2694
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "21f478d5e8bd124bd064da6776d9e32d7b5e72ffd9a426e7c0e61ab52f218b93",
+      "html_sha256": "6f1091b5f2a665876af242e205276d56b895a1c4197a23e5b59c620cc08c34cd",
       "png": "lab-dark-100.png",
-      "png_sha256": "0fd4f0f01bd53a8de54c8f6d7d3fdfa590b48d5ae78ea845f3b483405a426548",
+      "png_sha256": "e53100e8f389238426443337d2fd010e5ccb5394e400cb940e82b4fdf1ddaf6b",
       "specimen_count": 16
     },
     {
@@ -62,13 +62,13 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 6678
+        "height": 6215
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "67f1145ec19407374ea95e2c4bb9f75a97b38b23620e47a046e44cc0ffc966df",
+      "html_sha256": "a5998fb3e48f84f7eec608f49496bafaaad8f4a8b3170c244c912581e0ed8976",
       "png": "lab-light-200.png",
-      "png_sha256": "6f1c5466cf1e3867cbf1155234360f3f3791e423ec1b7f0d1e0b192002a4c504",
+      "png_sha256": "5f3d5c8ed88d118030ff1605392e1e8571f83ead63731e9df45a2b40feb9a475",
       "specimen_count": 16
     },
     {
@@ -80,13 +80,13 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 6678
+        "height": 6215
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "8b7246be98d7462d4c42895223219e0b46cd70fa863fc9211ed75ced1934b8c4",
+      "html_sha256": "c212f94d37daca39fea5234cf86ccf89ba361deaa667e9601345b6755e8edcd8",
       "png": "lab-dark-200.png",
-      "png_sha256": "74fabdb3c980bb28b04b14c57e6f4c5bcb2376f3902b8af77358bc19bcb6ecc9",
+      "png_sha256": "1bad038c05b3851c34216cc22edb9ec1c3596cf2d608f79bcb0aed51e95f632a",
       "specimen_count": 16
     },
     {
@@ -100,13 +100,13 @@
       },
       "viewport": {
         "width": 1049,
-        "height": 3046
+        "height": 2694
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "bf8e7966cb8aa99884b11fc61f2e4a8e824801d494488e5765d8445fec94f5ab",
+      "html_sha256": "bd80216e667affb91180c4b47d359ba6429b13e823603e96d8cd234ea29bd3d8",
       "png": "lab-light-reduced-motion.png",
-      "png_sha256": "7092fe04a3de7e99ee0566b79a8e80c5e5f9c44b34c99d46ac3bcf20f9dc0580",
+      "png_sha256": "f8638d2ebb79ae497c0f1f74fbc4486ab071b693f47f92c846e4facf408a19de",
       "specimen_count": 16
     },
     {
@@ -120,13 +120,13 @@
       },
       "viewport": {
         "width": 1049,
-        "height": 3048
+        "height": 2694
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "a08a6434afa664a11cfa0b7f5eebbef3ed38bf6f4a3853e4534339be7bdca4bf",
+      "html_sha256": "89659364408059bd9b059713b0cf554d5a451b3854405f94c4e5cf1ec49b3cea",
       "png": "lab-dark-forced-colors.png",
-      "png_sha256": "c9ce95cf47e34dcb6a5e48a585c7e6a4bbd016c983600ed45fb402200d5d0a99",
+      "png_sha256": "2866f24f15321b7cd842ed9992a1eb10edf39b5eab1a33e14089f0af22180553",
       "specimen_count": 16
     }
   ],
@@ -134,7 +134,7 @@
   "sheets": {
     "contact_sheet": "contact-sheet.png",
     "anatomy_vs_rsys": "anatomy-vs-rsys.png",
-    "contact_sheet_sha256": "d42ea722a9abd391b4f00c04a0da95535328ffa27ffd1d02ade040cb35d25d79",
-    "anatomy_vs_rsys_sha256": "041df2f49d504aab564e59e50f2fc2bc98ca148c3455d4f4a5188749a47299e0"
+    "contact_sheet_sha256": "65ec092e1494146c1b18de775c0ca511a262420e1d2984ccee6565c0557720a1",
+    "anatomy_vs_rsys_sha256": "b9945055bef191ef9c9d211894d7435c6f4bcd53596d10dcea319a3f45a26b64"
   }
 }
