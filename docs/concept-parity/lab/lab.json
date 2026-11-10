@@ -1,7 +1,7 @@
 {
   "kind": "component-preview",
   "label": "Component preview \u2014 rendered from the shipped primitives; not a live Desktop capture.",
-  "plugin_sha256": "e7132fecf17c2ed9d9b23072136fd301c558db169aa384363494d57c0382cfd9",
+  "plugin_sha256": "1582a039ed21b4997cef0d52cee3e41ae807c30e397ced72495f7b8e5c16b15b",
   "contract": "contracts/cb.tokens.v3.json",
   "reference": "docs/concept-parity/refs/REF-SYS",
   "gutter_probe": {
@@ -26,14 +26,14 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 2900
+        "height": 3046
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "dd02fa47ac00877222cb7881b00c22f6eb05caee4195c55af3a6f5bc5f4dab98",
+      "html_sha256": "c59495bf28c4f9a037b6ec376e5357000f6b8b5728ecf4e3f5dea0f191e68965",
       "png": "lab-light-100.png",
-      "png_sha256": "1d1105eac444d9b84c4ea3b0c353a363cf417b2b5671343ea335d452208de4af",
-      "specimen_count": 15
+      "png_sha256": "89f3054e88b71ec5b1575f63f9f2fc57a5d53187f7b14b2997ad39695b8e6660",
+      "specimen_count": 16
     },
     {
       "cell": "dark-100",
@@ -44,14 +44,14 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 2900
+        "height": 3046
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "42b9bb6eedae20983595cd89426aff0b62d5c949324912e566eb5aecef3b3fac",
+      "html_sha256": "21f478d5e8bd124bd064da6776d9e32d7b5e72ffd9a426e7c0e61ab52f218b93",
       "png": "lab-dark-100.png",
-      "png_sha256": "f29726e0b581fb37c12c0c085c66046b8c12fa298e910441341394f2856919b8",
-      "specimen_count": 15
+      "png_sha256": "0fd4f0f01bd53a8de54c8f6d7d3fdfa590b48d5ae78ea845f3b483405a426548",
+      "specimen_count": 16
     },
     {
       "cell": "light-200",
@@ -62,14 +62,14 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 6461
+        "height": 6678
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "5dc0160c5cff89812e23078c82835c062e7c7aec7d0968b4b169b9c2f36a53c9",
+      "html_sha256": "67f1145ec19407374ea95e2c4bb9f75a97b38b23620e47a046e44cc0ffc966df",
       "png": "lab-light-200.png",
-      "png_sha256": "0a24e3e8faea893cc734e3228fa64c18ea70ebeed827aa621b26443970fb9747",
-      "specimen_count": 15
+      "png_sha256": "6f1c5466cf1e3867cbf1155234360f3f3791e423ec1b7f0d1e0b192002a4c504",
+      "specimen_count": 16
     },
     {
       "cell": "dark-200",
@@ -80,14 +80,14 @@
       "emulated_media": {},
       "viewport": {
         "width": 1049,
-        "height": 6461
+        "height": 6678
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "725e1b63b35591dd890d296eac7b088bb7e51ad91c06dd8859ed44bfb84f381b",
+      "html_sha256": "8b7246be98d7462d4c42895223219e0b46cd70fa863fc9211ed75ced1934b8c4",
       "png": "lab-dark-200.png",
-      "png_sha256": "9ec1ec0938a29dc8e07ea9c516a6ee19f1343769a1253d2dc2f461c6a2dea037",
-      "specimen_count": 15
+      "png_sha256": "74fabdb3c980bb28b04b14c57e6f4c5bcb2376f3902b8af77358bc19bcb6ecc9",
+      "specimen_count": 16
     },
     {
       "cell": "light-reduced-motion",
@@ -100,14 +100,14 @@
       },
       "viewport": {
         "width": 1049,
-        "height": 2900
+        "height": 3046
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "474c61ba30697e71b825169ca715d19a31e6366d88ff9e8c3ac5f3fec82cc1b5",
+      "html_sha256": "bf8e7966cb8aa99884b11fc61f2e4a8e824801d494488e5765d8445fec94f5ab",
       "png": "lab-light-reduced-motion.png",
-      "png_sha256": "ee9d7dba4e85c5dea9abaf2accf31e7de8b997feec139c800fc8915c583051ea",
-      "specimen_count": 15
+      "png_sha256": "7092fe04a3de7e99ee0566b79a8e80c5e5f9c44b34c99d46ac3bcf20f9dc0580",
+      "specimen_count": 16
     },
     {
       "cell": "dark-forced-colors",
@@ -120,21 +120,21 @@
       },
       "viewport": {
         "width": 1049,
-        "height": 2902
+        "height": 3048
       },
       "device_scale_factor": 2,
       "html": null,
-      "html_sha256": "ece2752364c2cf9fba7aacdfc67a893aaf4eac96c0b3040ec6f1ad7d14ce284a",
+      "html_sha256": "a08a6434afa664a11cfa0b7f5eebbef3ed38bf6f4a3853e4534339be7bdca4bf",
       "png": "lab-dark-forced-colors.png",
-      "png_sha256": "c426a031e67db4af8910e0301c61621a4fa70614f40421daaf67f37b730536cf",
-      "specimen_count": 15
+      "png_sha256": "c9ce95cf47e34dcb6a5e48a585c7e6a4bbd016c983600ed45fb402200d5d0a99",
+      "specimen_count": 16
     }
   ],
   "contract_sha256": "6139557f8e6f60a15525bb616e611fea151ee383c24f7c1da4d3ae28f1d1f12e",
   "sheets": {
     "contact_sheet": "contact-sheet.png",
     "anatomy_vs_rsys": "anatomy-vs-rsys.png",
-    "contact_sheet_sha256": "5be0f08af0c071e36bedf34115697c72a917f514ff61b528b315227280ac4344",
+    "contact_sheet_sha256": "d42ea722a9abd391b4f00c04a0da95535328ffa27ffd1d02ade040cb35d25d79",
     "anatomy_vs_rsys_sha256": "041df2f49d504aab564e59e50f2fc2bc98ca148c3455d4f4a5188749a47299e0"
   }
 }

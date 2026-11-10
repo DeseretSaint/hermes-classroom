@@ -21225,6 +21225,16 @@ const CB3_LAB_COPY = Object.freeze({
     wood: 'Wood ledge',
     elevation: 'Elevation',
     radius: 'Radius'
+  }),
+  // CP-020b: the two states a plate and a paper card each own. The lab shows both, because a
+  // primitive with an unshown state is a primitive nobody has looked at.
+  cover: Object.freeze({
+    media: 'Cover window with an installed artifact',
+    type: 'No artifact: the title itself is the cover'
+  }),
+  paper: Object.freeze({
+    rule: 'PaperCard · rule edge',
+    elev: 'PaperCard · elevation'
   })
 })
 
@@ -21416,6 +21426,36 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                         style: { width: '214px' }
                       }, 'card')
                     }, 'shelf'),
+                    // CoverPlate3's two states: a real installed artifact, and the typographic
+                    // fallback where the title is the only thing on the plate.
+                    jsx('div', {
+                      'data-cb3-specimen': 'cover-states',
+                      style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '214px' },
+                      children: [
+                        jsx(CoverPlate3, { src: cb3ObjectSource('passport-tray'), title: 'Japanese Lantern District' }, 'media'),
+                        jsx('p', {
+                          style: {
+                            margin: 0,
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('caption'),
+                            lineHeight: cb3Lead('caption'),
+                            color: cb3Role('ink-soft')
+                          },
+                          children: CB3_LAB_COPY.cover.media
+                        }, 'media-note'),
+                        jsx(CoverPlate3, { title: 'Japanese Lantern District' }, 'type'),
+                        jsx('p', {
+                          style: {
+                            margin: 0,
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('caption'),
+                            lineHeight: cb3Lead('caption'),
+                            color: cb3Role('ink-soft')
+                          },
+                          children: CB3_LAB_COPY.cover.type
+                        }, 'type-note')
+                      ]
+                    }, 'covers'),
                     jsx('ol', {
                       style: {
                         margin: 0,
@@ -21450,7 +21490,15 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                           jsx(PillAction, { variant: 'quiet', label: 'Saving', busy: true, onClick: () => {} }, 'busy')
                         ]
                       })
-                    }, 'actions')
+                    }, 'actions'),
+                    // The other half of the paper pair: rule edge, no shadow. One object never has
+                    // both, so the lab has to show the two side by side rather than invent a third.
+                    jsx(PaperCard, {
+                      emphasis: 'rule',
+                      title: CB3_LAB_COPY.paper.rule,
+                      meta: CB3_LAB_COPY.paper.elev + ' sits beside it',
+                      style: { minWidth: '200px' }
+                    }, 'paper-rule')
                   ]
                 })
               }, 'card'),
