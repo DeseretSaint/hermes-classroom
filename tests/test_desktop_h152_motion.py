@@ -14,6 +14,13 @@ This suite reads the *shipped* module twice over:
 What this does NOT prove: that the installed Desktop paints the same pixels, that the transitions
 actually run on a compositor thread at 60 fps, or that the host SDK's own controls are still. Those
 are captured live by ``scripts/h152-motion-capture.mjs`` (docs/H152-EVIDENCE.md).
+
+Versioned by CP-003: the source half reads ``v2_source()``. The v2 ladder (press 100, route 280,
+verdict 160, complete 600) is not the v3 ladder (press 120, lift 150, route 240, verdict 300,
+complete 600), so v2 durations are gated against the v2 region and the v3 table against
+``tests/test_desktop_tokens_v3.py``. The universal claims stay whole-file: no keyframe, no loop, no
+decorative beat, and the learner motion setting reaches the hook. Table:
+``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations
@@ -27,6 +34,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.cb_source_scope import v2_source
 from tests.test_desktop_lesson_views import _desktop_node_modules
 from tests.test_desktop_field_desk import SDK_STUB
 
@@ -492,7 +500,11 @@ class ReducedMotionTest(MotionHarness):
 
 class MotionSourceTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.source = PLUGIN_JS.read_text(encoding="utf-8")
+        # v2 region only (CP-003). The v3 stylesheet owns its own ladder, elevation shadows and
+        # the named vignette; scanning it here would either fail on legitimate v3 paint or force
+        # the v2 gate to be deleted. Whole-file claims read `full_source` instead.
+        self.source = v2_source()
+        self.full_source = PLUGIN_JS.read_text(encoding="utf-8")
 
     def test_one_motion_table_and_one_hook_supply_every_duration(self) -> None:
         self.assertEqual(self.source.count("const CB_MOTION = Object.freeze({"), 1)
@@ -549,9 +561,9 @@ class MotionSourceTest(unittest.TestCase):
             self.assertEqual(name, "colors", utilities)
 
     def test_no_decorative_beat_survives(self) -> None:
-        # Out of scope by card: seal draw, beacon loop, hover lift, parallax, confetti, shake.
+        # Universal (CP-003): these are banned on v2 and v3 alike, so the scan stays whole-file.
         for banned in ("seal-draw", "beacon", "parallax", "confetti", "particle", "shake", "hover-lift", "count-up"):
-            self.assertNotIn(banned, self.source, banned)
+            self.assertNotIn(banned, self.full_source, banned)
 
 
 class MotionEvidenceTest(unittest.TestCase):

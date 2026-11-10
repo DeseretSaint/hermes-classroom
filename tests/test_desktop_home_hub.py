@@ -8,6 +8,11 @@ empty/loading/error/archived/parent-only states staying distinct.
 
 They do not prove a live backend currently returns these rows, and they do not prove a human
 understood the screen; the card's live frames and walkthrough cover that.
+
+Versioned by CP-003: the projection and route assertions bind the v2 hub. The paint claim
+("only token-layer values") is universal and stays whole-render; the v3 Home is a different screen
+and is gated by ``tests/test_desktop_tokens_v3.py``. No assertion was removed. Table:
+``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations
