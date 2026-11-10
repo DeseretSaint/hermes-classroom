@@ -158,6 +158,11 @@ const CB_HOME_PREF_DEFAULTS = Object.freeze({
   // H-176 — the learner's own Hermes pet may stand at the trailhead. It is identity, not an
   // avatar system: when the host has no pet sprite the plate simply carries no companion.
   companion: true,
+  // GM-010 — the one play-layer switch a learner owns on this device. It hides the XP chip, the
+  // cosmetic level and the `Game progress` bar; it never deletes a ledger row and never touches the
+  // course. The backend's own `game_feedback` setting hides the same layer profile-wide, and
+  // `engagement.read` reports that as `progress.feedback_visible = false`.
+  gameFeedback: true,
   classrooms: Object.freeze({})
 })
 const CB_APPEARANCE_OPTIONS = Object.freeze([
@@ -243,6 +248,8 @@ function sanitizeCbHomePrefs(raw) {
     // Only an explicit `false` hides the companion; an absent or hand-edited value keeps the
     // default of showing the pet the learner already installed.
     companion: source.companion !== false,
+    // GM-010: only an explicit `false` hides the play layer, so an older stored document shows it.
+    gameFeedback: source.gameFeedback !== false,
     classrooms
   }
 }
@@ -5629,6 +5636,11 @@ function CbSettingsSection({ id, title, description, resetLabel, atDefault, onRe
  */
 function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose }) {
   const panelRef = useRef(null)
+  // GM-010: the SDK switch paints its own on/off colour but the host reset clears the UA focus
+  // ring, so a keyboard reader cannot see which switch they are on. React's focus events bubble
+  // from the SDK button, so the plugin-owned wrapper paints the identity ring while the inner
+  // control matches `:focus-visible` — the same rule every other keyboard stop in this plugin uses.
+  const [gameFeedbackFocused, setGameFeedbackFocused] = useState(false)
   const courseId = classroom && classroom.courseId ? classroom.courseId : null
   const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
 
@@ -6008,6 +6020,39 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               })
             },
             'reduced-motion'
+          ),
+          // GM-010: the play layer's own switch. It sits beside Sound and Reduced motion because
+          // it changes feedback, not the course; turning it off keeps every ledger row.
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'game-feedback',
+              title: 'Game feedback',
+              description:
+                'XP, the cosmetic level and the Game progress bar in Game mode. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
+              resetLabel: 'Reset Game feedback to shown',
+              atDefault: prefs.gameFeedback === CB_HOME_PREF_DEFAULTS.gameFeedback,
+              onReset: () => onReset('gameFeedback'),
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'game-feedback',
+                'data-cb-settings-focus': gameFeedbackFocused ? 'ring' : null,
+                onFocus: (event) => setGameFeedbackFocused(focusRingVisible(event.target)),
+                onBlur: () => setGameFeedbackFocused(false),
+                style: {
+                  borderRadius: '0.5rem',
+                  outline: gameFeedbackFocused ? CB_FOCUS_RING : 'none',
+                  outlineOffset: '2px'
+                },
+                children: jsx(sdk.ToggleRow, {
+                  checked: prefs.gameFeedback !== false,
+                  label: 'Show Game feedback',
+                  description:
+                    'The XP chip, level and progress bar in Game mode. Textbook, Guided and Parent Studio never show them either way.',
+                  onChange: (on) => onUpdate({ gameFeedback: on === true })
+                })
+              })
+            },
+            'game-feedback'
           )
         ]
       },
@@ -6103,6 +6148,350 @@ function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
   })
 }
 
+/**
+ * GM-010 — the Game-only play layer: XP chip, cosmetic level and `Game progress`.
+ *
+ * `engagement.read` is the only source of every number painted here. The renderer never adds a
+ * point, never derives a level, never turns a count into a percentage of skill and never stores
+ * anything: the ledger belongs to the backend (GM-009), and this block reads it.
+ *
+ * The layer is mounted only where the *course's own durable mode* is `game`, so Textbook, Guided,
+ * Parent Studio, packs and exports cannot show it by accident — those surfaces never mount this
+ * block at all. A parent-led course (`recipe === 'parent'`) is excluded as well: §10B.4 says a
+ * child using a parent-led lesson does not get a child-facing XP surface.
+ */
+const CB_GAME_ACTION_WORD = Object.freeze({
+  lesson_step: 'Lesson step',
+  check_submitted: 'Check',
+  review: 'Review',
+  homework_completed: 'Homework done',
+  returned: 'Came back'
+})
+
+/**
+ * The one honesty line every game surface carries. The plan allows the play layer and forbids
+ * calling it learning: so the bar is labelled `Game progress` (the backend's own const) and this
+ * note sits beside it. No screen may say mastery, proficiency or verified skill here.
+ */
+const CB_GAME_PROGRESS_NOTE = 'Play progress, not evidence.'
+
+/** Whether the play layer may paint. The device switch and the backend setting both hide it. */
+function cbGameFeedbackVisible(prefs, engagement) {
+  if (prefs && prefs.gameFeedback === false) return false
+  const progress = engagement && engagement.progress ? engagement.progress : null
+  return !(progress && progress.feedback_visible === false)
+}
+
+/**
+ * A Game course is the durable mode read from `world.read`, never the device preference and never
+ * the recipe alone. A `library.list` row carries no mode, so a caller that has not read the mode
+ * passes `null` and gets no play layer — the honest answer for "unknown".
+ */
+function cbGameCourse(row, mode) {
+  if (!row || !row.course_id || row.recipe === 'parent') return false
+  return readCoursePresentationMode(mode) === 'game'
+}
+
+/**
+ * The Game header: one slim band of small chips over one honest bar.
+ *
+ * It is deliberately short. The primary action, the current objective and the check live in their
+ * own surfaces below and keep their hierarchy; this band names play progress and nothing else. A
+ * zero-step course paints no bar rather than an empty frame.
+ */
+function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
+  const motion = useCbMotion()
+  if (!cbGameFeedbackVisible(prefs, engagement)) return null
+
+  const wrapStyle = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: compact ? '0.35rem 0.5rem' : '0.4rem 0.75rem',
+    minWidth: 0,
+    padding: '0.45rem 0',
+    borderTop: '1px solid var(--cb-rule)',
+    borderBottom: '1px solid var(--cb-rule)'
+  }
+
+  if (status === 'error') {
+    return jsxs('div', {
+      'data-cb-game': 'error',
+      role: 'status',
+      style: { ...wrapStyle, borderBottomColor: 'var(--cb-rule)' },
+      children: [
+        jsx('span', {
+          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+          children: `The field journal could not be read: ${describeError(error)} Your course is unaffected.`
+        }),
+        onRetry
+          ? jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
+          : null
+      ]
+    })
+  }
+
+  if (!engagement) {
+    // A read in flight is a state, not a zero: no chip and no bar until the backend answers.
+    return jsx('div', {
+      'data-cb-game': 'loading',
+      role: 'status',
+      style: wrapStyle,
+      children: jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Reading the field journal…'
+      })
+    })
+  }
+
+  const level = engagement.level || {}
+  const progress = engagement.progress || {}
+  const xp = Math.max(0, Number(engagement.xp_total) || 0)
+  const assigned = Math.max(0, Number(progress.assigned_steps) || 0)
+  const completed = Math.max(0, Number(progress.completed_steps) || 0)
+  // `completed_steps` can exceed the plan's assigned count after a re-plan; the bar shows reached
+  // of assigned and never a ratio that implies a skill score.
+  const done = assigned ? Math.min(completed, assigned) : 0
+  const ratio = assigned ? done / assigned : 0
+  const levelNumber = Math.max(1, Number(level.level) || 1)
+
+  return jsxs('section', {
+    'data-cb-game': 'ready',
+    'aria-label': 'Game',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        style: wrapStyle,
+        children: [
+          jsx('span', {
+            'data-cb-game-xp': String(xp),
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 700,
+              lineHeight: 1.3,
+              letterSpacing: '0.02em',
+              color: 'var(--cb-on-lamp)',
+              background: 'var(--cb-lamp)',
+              border: '1px solid var(--cb-ochre)',
+              borderRadius: '999px',
+              padding: '0.15rem 0.55rem',
+              whiteSpace: 'nowrap'
+            },
+            children: `${xp} XP`
+          }),
+          jsxs('span', {
+            'data-cb-game-level': String(levelNumber),
+            style: {
+              display: 'inline-flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              gap: '0.35rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.4,
+              color: 'var(--cb-ink)',
+              border: '1px solid var(--cb-rule)',
+              borderRadius: '999px',
+              padding: '0.15rem 0.55rem',
+              whiteSpace: 'nowrap'
+            },
+            children: [
+              jsx('strong', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }),
+              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: level.title || 'Explorer' }),
+              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: '· cosmetic' })
+            ]
+          }),
+          jsxs('div', {
+            'data-cb-game-progress': String(done),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: '1 1 12rem', minWidth: 0 },
+            children: [
+              jsxs('div', {
+                style: {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: '0.15rem 0.5rem',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  lineHeight: 1.4,
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: [
+                  jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: progress.label || 'Game progress' }),
+                  jsx('span', {
+                    children: assigned
+                      ? `${done} of ${assigned} ${assigned === 1 ? 'step' : 'steps'}`
+                      : 'No steps assigned yet'
+                  })
+                ]
+              }),
+              assigned
+                ? jsx('div', {
+                    role: 'progressbar',
+                    'aria-label': progress.label || 'Game progress',
+                    'aria-valuemin': 0,
+                    'aria-valuemax': assigned,
+                    'aria-valuenow': done,
+                    style: {
+                      position: 'relative',
+                      height: '0.35rem',
+                      width: '100%',
+                      background: 'var(--cb-rule)',
+                      borderRadius: '999px',
+                      overflow: 'hidden'
+                    },
+                    children: jsx('div', {
+                      style: {
+                        position: 'absolute',
+                        inset: '0',
+                        width: `${Math.round(ratio * 100)}%`,
+                        background: 'var(--cb-lamp)',
+                        // Restrained motion: the fill arrives once; a reduced-motion reader gets
+                        // the same state with no travel at all.
+                        transition: motion.reduced
+                          ? 'none'
+                          : `width var(--cb-dur-complete) var(--cb-ease)`
+                      }
+                    })
+                  })
+                : null
+            ]
+          }),
+          jsx('span', {
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.4,
+              color: 'var(--cb-ink-soft)',
+              flex: '0 1 auto'
+            },
+            children: CB_GAME_PROGRESS_NOTE
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * Collectible section cards, earned only by real evidence.
+ *
+ * A card is stamped when the outline says that section carries independent evidence
+ * (`objective.independent`), which is the same fact the evidence surfaces print. No star, no
+ * rating, no invented count: a card that has not been earned says what it actually is.
+ */
+function cbGameSectionCards(objectives) {
+  const rows = Array.isArray(objectives) ? objectives.filter(Boolean) : []
+  return rows.slice(0, 12).map((entry) => ({
+    id: entry.objective_id,
+    title: entry.title || 'Untitled section',
+    ordinal: entry.ordinal ? Number(entry.ordinal) : null,
+    state: entry.state || 'not_started',
+    earned: entry.independent === true
+  }))
+}
+
+function GameJournal({ objectives, compact }) {
+  const cards = cbGameSectionCards(objectives)
+  if (cards.length === 0) return null
+  const earned = cards.filter((card) => card.earned).length
+  return jsxs('section', {
+    'data-cb-game-journal': String(earned),
+    'aria-label': 'Field journal',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.meta,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: 'Field journal'
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+            children: earned
+              ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
+              : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
+          })
+        ]
+      }),
+      jsx('ul', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+          minWidth: 0
+        },
+        children: cards.map((card) =>
+          jsxs(
+            'li',
+            {
+              'data-cb-game-card': card.earned ? 'earned' : card.state,
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.2rem',
+                minWidth: compact ? 0 : '8.5rem',
+                flex: compact ? '1 1 8rem' : '0 1 11rem',
+                padding: '0.5rem 0.6rem',
+                borderRadius: '0.5rem',
+                // Tactile, not glossy: a paper card with one honest hairline, and the warm Game
+                // accent only where the card was actually earned.
+                background: card.earned ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
+                border: `1px solid ${card.earned ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`
+              },
+              children: [
+                jsx('span', {
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', letterSpacing: '0.04em' },
+                  children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                }),
+                jsx('span', {
+                  style: {
+                    fontFamily: CB_SERIF,
+                    fontSize: CB_TYPE.meta,
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    color: 'var(--cb-ink)',
+                    overflowWrap: 'anywhere'
+                  },
+                  children: card.title
+                }),
+                jsx('span', {
+                  style: {
+                    fontFamily: CB_SANS,
+                    fontSize: CB_TYPE.caption,
+                    fontWeight: card.earned ? 700 : 500,
+                    lineHeight: 1.4,
+                    color: card.earned ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
+                  },
+                  children: card.earned ? 'Stamped' : (DESK_STATE_WORD[card.state] || 'Not started')
+                })
+              ]
+            },
+            card.id
+          )
+        )
+      })
+    ]
+  })
+}
+
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -6124,6 +6513,8 @@ function FieldDeskHome({
   onSelectCourse,
   onOpenStudio,
   world,
+  engagement,
+  prefs,
   onSetMode,
   onWorldChanged,
   onOpen,
@@ -6403,6 +6794,27 @@ function FieldDeskHome({
     style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0, width: '100%' },
     children: [continueCard, pathCard]
   }, 'trail')
+  // GM-010: the play layer is pinned to a Game course and rides in its own slot under the trail,
+  // so the trailhead, Continue and the check keep the first read of the page. Textbook, Guided and
+  // parent-led courses mount nothing here.
+  const gameCourse = cbGameCourse(desk.row, courseMode)
+  const gameHeader = gameCourse
+    ? jsx(
+        GameHeader,
+        {
+          engagement: engagement ? engagement.data : null,
+          status: engagement ? engagement.status : 'idle',
+          error: engagement ? engagement.error : null,
+          prefs,
+          compact: !wide,
+          onRetry: engagement ? engagement.reload : null
+        },
+        'game-header'
+      )
+    : null
+  const gameJournal = gameCourse
+    ? jsx(GameJournal, { objectives: desk.objectives, compact: !wide }, 'game-journal')
+    : null
   // The shelf and the field notes are below the first viewport; sources stay a drawer. One
   // content column, not a rail beside a table: the trail is one object.
   const belowColumn = jsxs('div', {
@@ -6445,7 +6857,7 @@ function FieldDeskHome({
       modeRow,
       jsxs('div', {
         style: { display: 'flex', flexDirection: 'column', gap: '1.1rem', minWidth: 0, width: '100%' },
-        children: [worldSurface, trailColumn, belowColumn]
+        children: [gameHeader, worldSurface, trailColumn, gameJournal, belowColumn]
       }, 'layout'),
       studio,
       modeDialog
@@ -6643,6 +7055,16 @@ function FieldDesk({
   // GM-004: the durable course mode and its latest world. A failed or unsupported read is a state
   // the surface names; neither the badge nor the world hero is guessed from the device preference.
   const world = useWorldRead(row ? row.course_id : null, Boolean(row))
+  // GM-010: the play layer is read from `engagement.read` and nowhere else. It is enabled only for
+  // a Game course, and the mode comes from `world.read` — a `library.list` row carries no mode, so
+  // no device preference and no stale row can turn the layer on.
+  const deskMode = world.data ? readCoursePresentationMode(world.data.presentation_mode) : null
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: row ? row.course_id : null, enrollment_id: row ? row.enrollment_id : null },
+    `desk-game-${row ? row.enrollment_id : 'none'}`,
+    Boolean(row) && cbGameCourse(row, deskMode) && supports('engagement.read')
+  )
   const onSetMode = useCallback(
     async (mode) => {
       if (!desk.row) return null
@@ -6718,6 +7140,8 @@ function FieldDesk({
     onSelectCourse,
     onOpenStudio,
     world,
+    engagement,
+    prefs,
     onSetMode,
     onWorldChanged,
     notes,
@@ -17501,7 +17925,8 @@ function LessonPlayer({
   onReload,
   onReadSection,
   onSaveBlock,
-  pronunciation
+  pronunciation,
+  takeHome
 }) {
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const steps = playerSteps(document)
@@ -17740,7 +18165,12 @@ function LessonPlayer({
           jsx('span', {
             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
             children: action.disabled && state.phase === 'awaiting_input' ? 'Answer above, then press Enter.' : 'Enter does the same.'
-          })
+          }),
+          // H-149: the take-with-you action lives in the player's own footer row, so every lesson
+          // mode offers it while the player keeps exactly one footer.
+          takeHome
+            ? jsx(TakeThisWithYou, { ...takeHome })
+            : null
         ]
       })
     ]
@@ -17827,6 +18257,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
         onExit: player.onExit,
         onReload: player.onReload,
         onReadSection: player.onReadSection,
+        takeHome: player.takeHome,
         onSaveBlock,
         pronunciation
       },
@@ -18447,6 +18878,13 @@ function SectionPage({
   // The player owns the screen's one primary (`Check`), so the chat action beside it is secondary
   // while the player is on screen. It keeps its handler: nothing becomes a dead control.
   const playerSurface = Boolean(document) && lessonView === 'player'
+  // The footer accounting follows the surface that actually mounts, not the selected name. A
+  // parent-led course (`parentLed`, no player document) and a blockless page keep the section
+  // footer, so the take-with-you action is never lost to a view name that renders no footer of
+  // its own. `playerSteps` maps blocks one-to-one, so `blocks.length` is exactly "a player will
+  // render".
+  const playerOnScreen =
+    playerSurface && !parentLed && Boolean(document && document.blocks && document.blocks.length > 0)
   // The Field Stop header lives inside the player (STOP n OF m, title, objective, step, exit). The
   // shell's own title block and metadata strip step aside there so the surface has one header; the
   // view switcher stays in `shellActions` because the learner must be able to leave for Textbook.
@@ -18596,6 +19034,14 @@ function SectionPage({
                       state: playerCheckState,
                       controller: playerController,
                       section,
+                      takeHome: {
+                        enrollmentId: row.enrollment_id,
+                        courseId: row.course_id,
+                        objectiveId,
+                        sectionTitle: section ? section.title : null,
+                        implemented,
+                        onChanged
+                      },
                       onExit: onBack,
                       onReload: onRetryPage,
                       // `Read the section` opens the same document in Textbook without leaving the
@@ -18875,19 +19321,39 @@ function SectionPage({
       : null,
     children: [
       body,
-      page && document && !playerSurface
+      // H-149: the section footer belongs to the section index. While the player is on screen
+      // it owns the screen's single footer, and the take-with-you action travels into that row
+      // instead — no surface may render data-cb-section-footer beside data-cb-player-footer.
+      page && pageReadable && !playerOnScreen
         ? jsx('div', {
             'data-cb-section-footer': '',
             style: {
               display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
+              flexDirection: 'column',
               gap: '0.5rem',
               paddingTop: '0.9rem',
               borderTop: '1px solid var(--cb-rule)',
               maxWidth: CB_MEASURE
             },
-            children: jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'Back to the section index' })
+            children: [
+              jsx('div', {
+                style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+                children: jsx(TakeThisWithYou, {
+                  enrollmentId: row.enrollment_id,
+                  courseId: row.course_id,
+                  objectiveId,
+                  sectionTitle: section ? section.title : null,
+                  implemented,
+                  onChanged
+                })
+              }, 'homework'),
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                onClick: onBack,
+                children: 'Back to the section index'
+              }, 'back')
+            ]
           })
         : null,
       jsx(NotebookSaveDialog, {
@@ -19682,6 +20148,29 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
         : String(left.created_at || '').localeCompare(String(right.created_at || ''))
     )
 
+  // GM-008 — homework taken with you. A homework task is not a notebook entry: the notebook is
+  // where the learner finds it again. The ids come from a save whose `source_ref` names the task
+  // and from this device's index; every row is then read through `homework.read`, so a state
+  // shown here is the backend's, never a cached copy.
+  const homeworkIds = []
+  const addHomework = (taskId, objectiveId, createdAt) => {
+    if (!taskId || homeworkIds.some((row) => row.task_id === taskId)) return
+    homeworkIds.push({ task_id: taskId, objective_id: objectiveId || null, created_at: createdAt || '' })
+  }
+  entries.forEach((entry) => {
+    const taskId = cbHomeworkRefTaskId(entry.source_ref)
+    if (taskId) addHomework(taskId, entry.objective_id, entry.created_at)
+  })
+  cbHomeworkIndexRows(row.enrollment_id).forEach((item) =>
+    addHomework(item.task_id, item.objective_id, item.created_at)
+  )
+  homeworkIds.sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))
+  const homeworkRows = homeworkIds.map((item) => ({
+    task_id: item.task_id,
+    lesson_title: sectionTitles[item.objective_id] || '',
+    course_title: row.title || ''
+  }))
+
   const saveEdit = useCallback(async () => {
     if (!editing) return
     const payload = { entry_id: editing.entry_id }
@@ -19800,6 +20289,24 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                 children: 'Removed from the notebook. The lesson and any media it referenced are untouched.'
               }),
               jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: undoRemove, children: 'Undo (restores as a new entry)' })
+            ]
+          })
+        : null,
+
+      homeworkRows.length > 0
+        ? jsxs('div', {
+            'data-cb-notebook-homework': String(homeworkRows.length),
+            className: 'flex flex-col gap-2',
+            children: [
+              jsx(CbLabel, { children: 'Taken with you' }),
+              jsx(HomeworkRecordList, {
+                rows: homeworkRows,
+                actor: 'learner',
+                canSave: false,
+                onChange: onChanged,
+                emptyTitle: 'No homework yet',
+                emptyDescription: 'A task you take with you from a lesson is listed here.'
+              })
             ]
           })
         : null,
@@ -21281,7 +21788,7 @@ function lessonHeroPlan(readiness, { overview = false, sectionOpen = false } = {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus, onOpenLibrary }) {
+function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus, onOpenLibrary }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -21349,6 +21856,20 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     { enrollment_id: row.enrollment_id, objective_id: pageObjectiveId },
     `page-${row.enrollment_id}-${pageObjectiveId}`,
     supports('lesson.page') && Boolean(pageObjectiveId)
+  )
+
+  // GM-010: the play layer belongs to the course's Game overview and nowhere else. The durable mode
+  // comes from `world.read` (a library row carries none); the read is enabled only on that surface,
+  // so opening the reading path (Textbook, Guided or Field Quest) issues no engagement call and
+  // cannot paint a chip, and no other surface mounts this block.
+  const world = useWorldRead(row.course_id, true)
+  const courseMode = world.data ? readCoursePresentationMode(world.data.presentation_mode) : null
+  const courseGame = cbGameCourse(row, courseMode)
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: row.course_id, enrollment_id: row.enrollment_id },
+    `game-${row.enrollment_id}`,
+    courseGame && supports('engagement.read') && view === 'overview'
   )
 
   const refresh = useCallback(() => {
@@ -21627,6 +22148,28 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     if (moreActive) setMoreOpen(true)
   }, [moreActive])
 
+  // GM-010: a Game course paints its play band above the surfaces and its field journal under the
+  // overview body. Both are absent from every reading view, so Textbook and Guided stay calm.
+  const gameHeader =
+    courseGame && view === 'overview'
+      ? jsx(
+          GameHeader,
+          {
+            engagement: engagement.data,
+            status: engagement.status,
+            error: engagement.error,
+            prefs,
+            compact: phone,
+            onRetry: engagement.reload
+          },
+          'game-header'
+        )
+      : null
+  const gameJournal =
+    courseGame && view === 'overview'
+      ? jsx(GameJournal, { objectives, compact: phone }, 'game-journal')
+      : null
+
   return jsxs('div', {
     'data-cb-course-detail': view,
     className: 'flex flex-col gap-4',
@@ -21736,6 +22279,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
         })
       }),
 
+      // GM-010: a live Game band, one hairline strip, under the hero and above the surfaces.
+      gameHeader,
+
       // H-174: when there is no approved page, the hero says who owns it and what the one next
       // action is. It sits between the hero and the surfaces so the reading column never opens on a
       // contradictory pair of buttons.
@@ -21833,7 +22379,11 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             })
           })
         : null,
-      body
+      body,
+      // GM-010: the collectible section cards close the Game overview. They are earned from the
+      // outline's own evidence, so they sit after the sections they describe, never before the
+      // course's first action.
+      gameJournal
     ]
   })
 }
@@ -22661,7 +23211,9 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
 
 const CB_STUDIO_ENTRANCES = [
   { id: 'plans', label: 'My lesson plans' },
-  { id: 'takehome', label: 'Take-home from a lesson' }
+  { id: 'takehome', label: 'Take-home from a lesson' },
+  // GM-008: the parent's door to the tasks a learner took with them. It is a record, not a chat.
+  { id: 'homework', label: 'Homework' }
 ]
 
 /** The three things a parent can make from one source lesson. */
@@ -23757,6 +24309,1319 @@ function TakeHomeStudio({ implemented, onOpenSettings, sessionMinutes, triggerRe
     sessionMinutes,
     onOpenSettings,
     triggerRef
+  })
+}
+
+/* ── GM-008 · homework the learner takes with them ─────────────────────────────────────────
+ * One small task, taken out of the lesson and into the learner's day. The plan (§10A.4-§10A.7)
+ * fixes the shape: one target, one context, at most three steps, one observable success
+ * criterion, 3-10 minutes, and a completion that is *reported* by the learner or the parent and
+ * never graded.
+ *
+ * Honesty rules this surface is built on:
+ *   - every task on screen is a `homework.read` answer; the sheet is the backend's own rendered
+ *     field card (`task.sheet.html`), not a second template that could drift from the print;
+ *   - the index in `pluginContext.storage` holds task *ids* only. It is a door to `homework.read`,
+ *     never a copy of the task, so a state shown here is always the backend's;
+ *   - there is no `homework.list` in cb.rpc v24. A task is enumerable because the learner saved it
+ *     to the notebook (`notebook.save`, kind `personal_note`, `source_ref.homework_task_id`) or
+ *     because this device proposed it. Nothing is invented for a task neither source knows;
+ *   - print and download are local. No file is sent, no photo is asked for, and no XP, score,
+ *     grade or mastery word exists anywhere in this block.
+ */
+
+const CB_HOMEWORK_STATE_WORD = Object.freeze({
+  proposed: 'Planned',
+  self_reported_done: 'Done — you recorded it',
+  parent_reported_done: 'Done — a parent recorded it',
+  skipped: 'Skipped',
+  expired: 'Expired'
+})
+
+const CB_HOMEWORK_KIND_WORD = Object.freeze({
+  real_world_use: 'Use it for real',
+  observe: 'Notice it',
+  label: 'Label it',
+  practice: 'Say it aloud',
+  make: 'Make it',
+  teach_back: 'Tell someone'
+})
+
+/** A task that still accepts a report. `skipped`/`expired` are closed, a report is final. */
+const CB_HOMEWORK_OPEN_STATES = Object.freeze(['proposed'])
+
+/** Words a learner-visible sheet must never carry (mirrors coursebook/homework.py). */
+const CB_HOMEWORK_FORBIDDEN = Object.freeze([
+  'xp',
+  'grade',
+  'graded',
+  'score',
+  'scored',
+  'mastery',
+  'streak',
+  'answer',
+  'photo'
+])
+
+const CB_HOMEWORK_INDEX_KEY = 'homework-index.v1'
+const _CB_JP_RUN = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/
+
+/** True when the copy carries Japanese, so the node can be marked `lang="ja"` for a reader. */
+function cbHasJapanese(value) {
+  return _CB_JP_RUN.test(String(value || ''))
+}
+
+/**
+ * The device index of homework task ids: `{enrollments: {id: {course_id, tasks: {task_id}}}}`.
+ * Only ids and their lesson anchors live here. A hand-edited or older document reads as empty.
+ */
+function cbHomeworkIndex() {
+  const storage = cbPrefsStorage()
+  let raw = null
+  try {
+    raw = storage ? storage.get(CB_HOMEWORK_INDEX_KEY, null) : null
+  } catch (error) {
+    raw = null
+  }
+  const source = raw && typeof raw === 'object' ? raw : {}
+  const sourceEnrollments =
+    source.enrollments && typeof source.enrollments === 'object' ? source.enrollments : {}
+  const enrollments = {}
+  for (const enrollmentId of Object.keys(sourceEnrollments)) {
+    const entry = sourceEnrollments[enrollmentId]
+    if (!entry || typeof entry !== 'object' || !entry.tasks || typeof entry.tasks !== 'object') continue
+    const tasks = {}
+    for (const taskId of Object.keys(entry.tasks)) {
+      const row = entry.tasks[taskId]
+      if (!row || typeof row !== 'object' || !row.objective_id) continue
+      tasks[taskId] = {
+        objective_id: String(row.objective_id),
+        course_id: String(row.course_id || entry.course_id || ''),
+        created_at: String(row.created_at || '')
+      }
+    }
+    if (Object.keys(tasks).length === 0) continue
+    enrollments[enrollmentId] = {
+      course_id: String(entry.course_id || ''),
+      tasks
+    }
+  }
+  return { enrollments }
+}
+
+/** Remember one proposed task so a later visit can read it again. Ids only; never the task. */
+function cbRememberHomework(task) {
+  if (!task || !task.task_id || !task.enrollment_id || !task.objective_id) return
+  const storage = cbPrefsStorage()
+  if (!storage) return
+  const index = cbHomeworkIndex()
+  const enrollment =
+    index.enrollments[task.enrollment_id] || { course_id: task.course_id || '', tasks: {} }
+  enrollment.course_id = task.course_id || enrollment.course_id
+  enrollment.tasks[task.task_id] = {
+    objective_id: task.objective_id,
+    course_id: task.course_id || enrollment.course_id,
+    created_at: task.created_at || ''
+  }
+  index.enrollments[task.enrollment_id] = enrollment
+  try {
+    storage.set(CB_HOMEWORK_INDEX_KEY, index)
+  } catch (error) {
+    // The index is a convenience door; failing to write it never hides a task the backend holds.
+  }
+}
+
+/** Indexed task ids, newest first, optionally narrowed to one enrollment. */
+function cbHomeworkIndexRows(enrollmentId) {
+  const index = cbHomeworkIndex()
+  const rows = []
+  for (const id of Object.keys(index.enrollments)) {
+    if (enrollmentId && id !== enrollmentId) continue
+    const enrollment = index.enrollments[id]
+    for (const taskId of Object.keys(enrollment.tasks)) {
+      rows.push({
+        task_id: taskId,
+        enrollment_id: id,
+        course_id: enrollment.tasks[taskId].course_id || enrollment.course_id,
+        objective_id: enrollment.tasks[taskId].objective_id,
+        created_at: enrollment.tasks[taskId].created_at
+      })
+    }
+  }
+  return rows.sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))
+}
+
+/** The task id a notebook entry was saved from, or null. */
+function cbHomeworkRefTaskId(value) {
+  if (!value) return null
+  const text = String(value)
+  if (text.charAt(0) !== '{') return null
+  try {
+    const parsed = JSON.parse(text)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    if (typeof parsed.homework_task_id === 'string' && parsed.homework_task_id) {
+      return parsed.homework_task_id
+    }
+    return null
+  } catch (error) {
+    return null
+  }
+}
+
+/** The `source_ref` a notebook save carries, so the notebook can find this task again. */
+function cbHomeworkSourceRef(task) {
+  return JSON.stringify({ homework_task_id: task.task_id, objective_id: task.objective_id })
+}
+
+/** The notebook excerpt for a saved task: the task's own words, one line. */
+function cbHomeworkExcerpt(task) {
+  const target = task && task.target ? task.target : {}
+  const head = `Take this with you: ${task.title || 'one task'}`
+  const where = task.context ? ` — ${task.context}` : ''
+  const what = target.display ? ` (${target.display})` : ''
+  return `${head}${what}${where}`.slice(0, 8000)
+}
+
+/** A sheet's own copy, flattened for the guard below. */
+function cbHomeworkSheetCopy(task) {
+  const target = (task && task.target) || {}
+  return [
+    task && task.title,
+    task && task.context,
+    (task && task.steps ? task.steps : []).join(' '),
+    task && task.success_criterion,
+    target.display,
+    target.reading,
+    target.meaning,
+    (target.completion_record || []).join(' ')
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+/** Reasons a sheet cannot be shown, in the learner's words. Rendering refuses a banned word. */
+function cbHomeworkSheetGuard(task) {
+  const copy = cbHomeworkSheetCopy(task)
+  const found = CB_HOMEWORK_FORBIDDEN.filter((word) => {
+    const pattern = new RegExp(`(?<![a-z0-9])${word}(?![a-z0-9])`)
+    return pattern.test(copy)
+  })
+  if (found.length > 0) {
+    return 'This task would print a word a take-home sheet must not carry, so it is not shown.'
+  }
+  if (task && Array.isArray(task.steps) && task.steps.length > 3) {
+    return 'A field card carries at most three steps, so this task is not shown.'
+  }
+  return null
+}
+
+/**
+ * Print one sheet. The backend's rendered HTML is loaded into a same-origin frame that is not on
+ * screen; Chromium's print dialog then prints that document alone, never the app around it.
+ */
+function cbPrintHomeworkSheet(html) {
+  if (!html || typeof document === 'undefined' || !document.body) return false
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.setAttribute('title', 'Homework sheet for printing')
+  frame.style.position = 'fixed'
+  frame.style.right = '0'
+  frame.style.bottom = '0'
+  frame.style.width = '0'
+  frame.style.height = '0'
+  frame.style.border = '0'
+  let printed = false
+  const run = () => {
+    if (printed) return
+    printed = true
+    try {
+      const win = frame.contentWindow
+      if (win) {
+        win.focus()
+        win.print()
+      }
+    } finally {
+      setTimeout(() => {
+        if (frame.parentNode) frame.parentNode.removeChild(frame)
+      }, 60000)
+    }
+  }
+  frame.addEventListener('load', run)
+  frame.srcdoc = html
+  document.body.appendChild(frame)
+  return true
+}
+
+/** Download one sheet as a local file. No upload, no share sheet. */
+function cbDownloadHomeworkSheet(html, filename) {
+  if (!html || typeof document === 'undefined' || typeof URL === 'undefined') return false
+  if (typeof URL.createObjectURL !== 'function') return false
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || 'homework-sheet.html'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => {
+    try {
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      // A revoked or already-collected URL is not a failure the learner can act on.
+    }
+  }, 4000)
+  return true
+}
+
+function cbHomeworkFilename(task) {
+  const title = String((task && task.title) || 'homework-sheet')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${title || 'homework-sheet'}-field-card.html`
+}
+
+/**
+ * The one-page field card, as the learner sees it on screen.
+ *
+ * It renders the same facts the backend prints — target, where and when, at most three steps,
+ * done-when, minutes, the completion line — from the `homework.read` task. The print and download
+ * actions hand over the backend's own `sheet.html`, so the paper cannot drift from the screen.
+ */
+function HomeworkSheetCard({ task, compact = false }) {
+  if (!task) return null
+  const target = task.target || {}
+  const steps = Array.isArray(task.steps) ? task.steps.slice(0, 3) : []
+  const record = Array.isArray(target.completion_record) ? target.completion_record : []
+  const state = task.state || 'proposed'
+  const done = state === 'self_reported_done' || state === 'parent_reported_done'
+  const reading = target.reading && target.reading !== target.display ? target.reading : null
+  const eyebrow = {
+    margin: 0,
+    fontFamily: CB_SANS,
+    fontSize: CB_TYPE.caption,
+    fontWeight: 600,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--cb-ink-soft)'
+  }
+  const label = {
+    margin: 0,
+    fontFamily: CB_SANS,
+    fontSize: CB_TYPE.caption,
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    color: 'var(--cb-ink-soft)'
+  }
+  const rule = { border: 0, borderTop: '1px solid var(--cb-rule)', margin: '0.15rem 0', width: '100%' }
+  const completion =
+    state === 'skipped'
+      ? 'Skipped. Nothing is owed and nothing is lost.'
+      : state === 'expired'
+        ? 'This task closed without a report.'
+        : state === 'parent_reported_done'
+          ? `A parent recorded this as done${task.completion && task.completion.completed_at ? ` on ${whenLabel(task.completion.completed_at)}` : ''}. A report, not a verdict.`
+          : state === 'self_reported_done'
+            ? `You recorded this as done${task.completion && task.completion.completed_at ? ` on ${whenLabel(task.completion.completed_at)}` : ''}. A report, not a verdict.`
+            : 'Done — I will record this myself.'
+  return jsxs('article', {
+    'data-cb-homework-sheet': task.task_id,
+    'data-cb-homework-state': state,
+    'aria-label': `Take-home task: ${task.title || ''}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: compact ? '0.35rem' : '0.45rem',
+      minWidth: 0,
+      maxWidth: CB_MEASURE,
+      boxSizing: 'border-box',
+      padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
+      background: 'var(--cb-paper-raised)',
+      border: '1px solid var(--cb-rule)',
+      borderRadius: '2px'
+    },
+    children: [
+      jsx('p', { style: eyebrow, children: 'Coursebook field card' }, 'eyebrow'),
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontWeight: 600,
+          lineHeight: 1.2,
+          color: 'var(--cb-ink)'
+        },
+        children: task.title || 'One task'
+      }, 'title'),
+      target.display
+        ? jsx('p', {
+            'data-cb-homework-target': '',
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: compact ? CB_TYPE.body : CB_TYPE.heading,
+              lineHeight: 1.2,
+              color: 'var(--cb-ink)',
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(target.display) ? 'ja' : undefined,
+            children: target.display
+          }, 'target')
+        : null,
+      reading
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.body,
+              color: 'var(--cb-ink-soft)',
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(reading) ? 'ja' : undefined,
+            children: reading
+          }, 'reading')
+        : null,
+      target.romaji
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: target.romaji
+          }, 'romaji')
+        : null,
+      target.meaning
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            children: target.meaning
+          }, 'meaning')
+        : null,
+      jsx('hr', { style: rule }, 'rule-a'),
+      jsx('p', { style: label, children: 'Where and when' }, 'where-label'),
+      jsx('p', {
+        'data-cb-homework-context': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: task.context || ''
+      }, 'context'),
+      jsx('p', { style: label, children: 'Do this' }, 'steps-label'),
+      jsx('ol', {
+        style: {
+          margin: 0,
+          paddingLeft: '1.2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem',
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)'
+        },
+        children: steps.map((step, index) =>
+          jsx('li', { style: { overflowWrap: 'anywhere' }, children: step }, `${task.task_id}-step-${index}`)
+        )
+      }, 'steps'),
+      record.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: `Ticks for this card: ${record.join(' · ')}`
+          }, 'record')
+        : null,
+      jsx('hr', { style: rule }, 'rule-b'),
+      jsx('p', { style: label, children: 'Done when' }, 'done-label'),
+      jsx('p', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: task.success_criterion || ''
+      }, 'criterion'),
+      jsx('p', {
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
+      }, 'minutes'),
+      jsx('p', {
+        'data-cb-homework-completion': done ? 'reported' : state,
+        style: {
+          margin: 0,
+          paddingTop: '0.35rem',
+          borderTop: '1px solid var(--cb-rule)',
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.meta,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)'
+        },
+        children: completion
+      }, 'completion'),
+      Array.isArray(task.sources) && task.sources.length > 0
+        ? jsxs('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)',
+              overflowWrap: 'anywhere'
+            },
+            children: [
+              jsx('span', { children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }, 'word'),
+              ...task.sources.map((source, index) =>
+                jsxs(
+                  'span',
+                  {
+                    children: [
+                      index > 0 ? jsx('span', { children: '; ' }, 'sep') : null,
+                      jsx('a', {
+                        href: source.url,
+                        style: { color: 'inherit', textDecoration: 'underline' },
+                        children: source.title || source.source_id
+                      }, 'link'),
+                      source.accessed ? jsx('span', { children: ` (accessed ${source.accessed})` }, 'date') : null
+                    ]
+                  },
+                  source.source_id || `src-${index}`
+                )
+              )
+            ]
+          }, 'sources')
+        : null
+    ]
+  })
+}
+
+/** The sheet's actions: print, download, save to the notebook. Local, never an external send. */
+function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownloaded, saved }) {
+  return jsxs('div', {
+    'data-cb-homework-actions': '',
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
+    children: [
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'secondary',
+        disabled: Boolean(busy),
+        onClick: () => {
+          const ok = cbPrintHomeworkSheet(task && task.sheet ? task.sheet.html : '')
+          if (onPrinted) onPrinted(ok)
+        },
+        children: 'Print the sheet'
+      }),
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'text',
+        disabled: Boolean(busy),
+        onClick: () => {
+          const ok = cbDownloadHomeworkSheet(
+            task && task.sheet ? task.sheet.html : '',
+            cbHomeworkFilename(task)
+          )
+          if (onDownloaded) onDownloaded(ok)
+        },
+        children: 'Download'
+      }),
+      canSave
+        ? jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'text',
+            disabled: Boolean(busy) || saved,
+            onClick: onSave,
+            children: saved ? 'Saved to the notebook' : 'Save to notebook'
+          })
+        : null,
+      jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Local only. Nothing is sent.'
+      })
+    ]
+  })
+}
+
+/**
+ * The quiet `Take this with you` action on a lesson.
+ *
+ * It is a text button in the reading column, not a modal: pressing it opens a small inline panel
+ * beside the lesson, so the lesson stays where it is. The learner writes the one sentence that
+ * says where and when; `homework.create` proposes the task from that context; then the card, the
+ * print/download/save actions and the two honest endings — `I did it` and `Not this one` — are
+ * all in place.
+ */
+function TakeThisWithYou({
+  enrollmentId,
+  courseId,
+  objectiveId,
+  sectionTitle,
+  implemented,
+  onChanged
+}) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const wired =
+    supports('homework.create') &&
+    supports('homework.read') &&
+    supports('homework.complete') &&
+    supports('homework.skip')
+  const [open, setOpen] = useState(false)
+  const [task, setTask] = useState(null)
+  const [status, setStatus] = useState('idle')
+  const [source, setSource] = useState({ status: 'idle', objective: null, error: null })
+  const [contextText, setContextText] = useState('')
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  const readTask = useCallback(async (taskId) => {
+    setStatus('reading')
+    setError(null)
+    const response = await rpc('homework.read', { task_id: taskId })
+    if (!response.ok) {
+      setStatus('error')
+      setError(response.error)
+      return null
+    }
+    setTask(response.result.task)
+    setStatus('ready')
+    return response.result.task
+  }, [])
+
+  // Opening reads the task the device already knows for this objective, else the source lesson.
+  const prepare = useCallback(async () => {
+    setError(null)
+    setNotice(null)
+    const known = cbHomeworkIndexRows(enrollmentId).find((row) => row.objective_id === objectiveId)
+    if (known) {
+      await readTask(known.task_id)
+      return
+    }
+    setStatus('reading')
+    const response = await rpc('takehome.sources', { course_id: courseId })
+    if (!response.ok) {
+      setSource({ status: 'error', objective: null, error: response.error })
+      setStatus('error')
+      setError(response.error)
+      return
+    }
+    const rows = response.result && Array.isArray(response.result.objectives) ? response.result.objectives : []
+    const entry = rows.find((row) => row.objective_id === objectiveId) || null
+    setSource({ status: 'ready', objective: entry, error: null })
+    setStatus('ready')
+  }, [courseId, enrollmentId, objectiveId, readTask])
+
+  const propose = useCallback(async () => {
+    const sentence = contextText.trim()
+    if (!sentence) return
+    const entry = source.objective
+    if (!entry || !entry.lesson_version) {
+      setError({
+        code: 'NO_SOURCE_LESSON',
+        message: 'The lesson for this section is not written yet, so there is no task to take with you.'
+      })
+      return
+    }
+    setBusy('propose')
+    setError(null)
+    const response = await rpc(
+      'homework.create',
+      {
+        course_id: courseId,
+        enrollment_id: enrollmentId,
+        objective_id: objectiveId,
+        audience: 'learner',
+        source_lesson_version: entry.lesson_version,
+        context: sentence
+      },
+      { expectedRevision: 0, idempotencyKey: newOperationId('homework-create') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    cbRememberHomework(response.result.task)
+    setStatus('ready')
+    setNotice('This is the whole task. It stays in your notebook and on paper; it is not a chat.')
+    if (onChanged) onChanged()
+  }, [contextText, courseId, enrollmentId, objectiveId, onChanged, source.objective])
+
+  const report = useCallback(
+    async (actor) => {
+      if (!task) return
+      setBusy(actor)
+      setError(null)
+      const method = 'homework.complete'
+      const response = await rpc(
+        method,
+        { task_id: task.task_id, actor, note: '' },
+        { expectedRevision: task.revision, idempotencyKey: newOperationId('homework-complete') }
+      )
+      setBusy(null)
+      if (!response.ok) {
+        setError(response.error)
+        return
+      }
+      setTask(response.result.task)
+      cbRememberHomework(response.result.task)
+      setNotice(
+        actor === 'parent'
+          ? 'Recorded: a parent reported this done. A report, not a mark.'
+          : 'Recorded: you reported this done. A report, not a mark.'
+      )
+      if (onChanged) onChanged()
+    },
+    [onChanged, task]
+  )
+
+  const skipTask = useCallback(async () => {
+    if (!task) return
+    setBusy('skip')
+    setError(null)
+    const response = await rpc(
+      'homework.skip',
+      { task_id: task.task_id, actor: 'learner' },
+      { expectedRevision: task.revision, idempotencyKey: newOperationId('homework-skip') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    setNotice('Skipped. Nothing is owed, nothing is lost, and no streak breaks.')
+    if (onChanged) onChanged()
+  }, [onChanged, task])
+
+  const saveToNotebook = useCallback(async () => {
+    if (!task) return
+    setBusy('save')
+    setError(null)
+    const response = await rpc('notebook.save', {
+      enrollment_id: enrollmentId,
+      objective_id: objectiveId,
+      lesson_run_id: null,
+      kind: 'personal_note',
+      excerpt: cbHomeworkExcerpt(task),
+      note: null,
+      tags: ['homework'],
+      source_ref: cbHomeworkSourceRef(task)
+    })
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setSaved(true)
+    setNotice('Saved to the notebook. The task itself stays a homework task, not a note.')
+    if (onChanged) onChanged()
+  }, [enrollmentId, objectiveId, onChanged, task])
+
+  if (!wired) return null
+
+  const blocked =
+    source.status === 'ready' && source.objective && source.objective.available === false
+      ? source.objective.blocked_reason || 'The lesson for this section is not written yet.'
+      : null
+  const sheetGuard = task ? cbHomeworkSheetGuard(task) : null
+  const openState = task && CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
+
+  const panel = !open
+    ? null
+    : jsxs('section', {
+        'data-cb-homework-panel': status,
+        'aria-label': 'Take this with you',
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.55rem',
+          minWidth: 0,
+          maxWidth: CB_MEASURE,
+          marginTop: '0.6rem',
+          paddingTop: '0.6rem',
+          borderTop: '1px solid var(--cb-rule)'
+        },
+        children: [
+          jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: sectionTitle ? `Take this with you · ${sectionTitle}` : 'Take this with you'
+          }),
+          status === 'reading'
+            ? jsx(sdk.Loader, { label: 'Reading this lesson’s task' })
+            : null,
+          error
+            ? jsxs('div', {
+                'data-cb-homework-error': error.code || 'ERROR',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.meta,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-coral)',
+                      overflowWrap: 'anywhere'
+                    },
+                    children: error.message || 'The task could not be read.'
+                  }),
+                  error.code ? jsx(QuietNote, { children: `Reason · ${error.code}` }) : null,
+                  jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'text',
+                    onClick: prepare,
+                    children: 'Try again'
+                  })
+                ]
+              })
+            : null,
+          blocked && !task
+            ? jsx('div', {
+                'data-cb-homework-blocked': 'lesson-not-ready',
+                children: jsx(QuietNote, {
+                  children: `${blocked} There is nothing to take with you from this section yet, and nothing is lost.`
+                })
+              })
+            : null,
+          status === 'ready' && !task && !blocked
+            ? jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.body,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-ink)'
+                    },
+                    children:
+                      'Coursebook can write one small task from this lesson — one thing to use where you actually are. Say where and when, in one sentence.'
+                  }),
+                  jsx('label', {
+                    htmlFor: 'cb-homework-context',
+                    style: {
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.caption,
+                      fontWeight: 600,
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: 'Where and when'
+                  }),
+                  jsx(sdk.Input, {
+                    id: 'cb-homework-context',
+                    value: contextText,
+                    placeholder: 'Before dinner at our own table',
+                    onChange: (event) => setContextText(event.target.value)
+                  }),
+                  jsxs('div', {
+                    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+                    children: [
+                      jsx(sdk.Button, {
+                        size: 'sm',
+                        variant: 'secondary',
+                        disabled: Boolean(busy) || contextText.trim().length === 0,
+                        onClick: propose,
+                        children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
+                      }),
+                      jsx('span', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children: 'One task, at most three steps, three to ten minutes.'
+                      })
+                    ]
+                  }),
+                  jsx(QuietNote, {
+                    children:
+                      'It opens no chat and sends nothing anywhere. Printing and downloading are local.'
+                  })
+                ]
+              })
+            : null,
+          task && !sheetGuard
+            ? jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 },
+                children: [
+                  jsx(HomeworkSheetCard, { task }),
+                  jsx(HomeworkSheetActions, {
+                    task,
+                    canSave: supports('notebook.save'),
+                    busy,
+                    saved,
+                    onSave: saveToNotebook,
+                    onPrinted: (ok) =>
+                      setNotice(ok ? 'The sheet is open in the print dialog.' : 'This build cannot open a print dialog.'),
+                    onDownloaded: (ok) =>
+                      setNotice(ok ? 'The sheet was saved as a file on this device.' : 'This build cannot save a file.')
+                  }),
+                  openState
+                    ? jsxs('div', {
+                        'data-cb-homework-report': 'open',
+                        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
+                        children: [
+                          jsx(CbAction, {
+                            variant: 'secondary',
+                            disabled: Boolean(busy),
+                            onClick: () => report('learner'),
+                            children: busy === 'learner' ? 'Recording' : 'I did it'
+                          }),
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            disabled: Boolean(busy),
+                            onClick: skipTask,
+                            children: busy === 'skip' ? 'Skipping' : 'Not this one'
+                          }),
+                          jsx('span', {
+                            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                            children: 'Only you record it. Nothing here is marked.'
+                          })
+                        ]
+                      })
+                    : jsx('div', {
+                        'data-cb-homework-report': task.state,
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children:
+                          task.state === 'skipped'
+                            ? 'This one is closed as skipped. A fresh task can be taken with you from another lesson.'
+                            : 'This task already carries a report; it cannot be reported twice.'
+                      })
+                ]
+              })
+            : null,
+          task && sheetGuard
+            ? jsx('div', { 'data-cb-homework-refused': 'sheet', children: jsx(QuietNote, { children: sheetGuard }) })
+            : null,
+          notice
+            ? jsx('p', {
+                'data-cb-homework-notice': '',
+                style: {
+                  margin: 0,
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink)'
+                },
+                children: notice
+              })
+            : null
+        ]
+      })
+
+  return jsxs('div', {
+    'data-cb-homework': open ? 'open' : 'closed',
+    style: { display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: CB_MEASURE },
+    children: [
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'text',
+        'data-cb-homework-action': 'take-this-with-you',
+        'aria-expanded': open ? 'true' : 'false',
+        onClick: () => {
+          const next = !open
+          setOpen(next)
+          setNotice(null)
+          if (next && !task) prepare()
+        },
+        children: 'Take this with you'
+      }),
+      panel
+    ]
+  })
+}
+
+/**
+ * One homework record, read from the backend by id.
+ *
+ * Used by the notebook and by Parent Studio: both surfaces hold ids (this device's index, or a
+ * notebook save), never a task snapshot, so the state and the sheet are always the live answer.
+ */
+function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, onChange, canSave }) {
+  const [task, setTask] = useState(null)
+  const [status, setStatus] = useState('loading')
+  const [error, setError] = useState(null)
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  const load = useCallback(async () => {
+    setStatus('loading')
+    setError(null)
+    const response = await rpc('homework.read', { task_id: taskId })
+    if (!response.ok) {
+      setStatus('error')
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    setStatus('ready')
+  }, [taskId])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const settle = useCallback(
+    async (method, payload, label) => {
+      if (!task) return
+      setBusy(label)
+      setError(null)
+      const response = await rpc(method, { task_id: task.task_id, ...payload }, {
+        expectedRevision: task.revision,
+        idempotencyKey: newOperationId(method)
+      })
+      setBusy(null)
+      if (!response.ok) {
+        setError(response.error)
+        return
+      }
+      setTask(response.result.task)
+      if (method === 'homework.complete') {
+        setNotice(
+          actor === 'parent'
+            ? 'Recorded: a parent reported this done. A report, not a mark.'
+            : 'Recorded: the learner reported this done. A report, not a mark.'
+        )
+      } else {
+        setNotice('Skipped. Nothing is owed and nothing is lost.')
+      }
+      if (onChange) onChange()
+    },
+    [actor, onChange, task]
+  )
+
+  const save = useCallback(async () => {
+    if (!task) return
+    setBusy('save')
+    const response = await rpc('notebook.save', {
+      enrollment_id: task.enrollment_id,
+      objective_id: task.objective_id,
+      lesson_run_id: null,
+      kind: 'personal_note',
+      excerpt: cbHomeworkExcerpt(task),
+      note: null,
+      tags: ['homework'],
+      source_ref: cbHomeworkSourceRef(task)
+    })
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setSaved(true)
+    if (onChange) onChange()
+  }, [onChange, task])
+
+  if (status === 'loading') {
+    return jsx('div', { 'data-cb-homework-record': 'loading', children: jsx(sdk.Loader, { label: 'Reading this task' }) })
+  }
+  if (status === 'error' || !task) {
+    return jsxs('div', {
+      'data-cb-homework-record': 'error',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: CB_MEASURE, minWidth: 0 },
+      children: [
+        jsx('p', {
+          style: {
+            margin: 0,
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.meta,
+            lineHeight: 1.5,
+            color: 'var(--cb-coral)',
+            overflowWrap: 'anywhere'
+          },
+          children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
+        }),
+        jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: load, children: 'Try again' })
+      ]
+    })
+  }
+  const openState = CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
+  return jsxs('div', {
+    'data-cb-homework-record': task.state,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.25rem',
+      minWidth: 0,
+      maxWidth: CB_MEASURE,
+      padding: '0.5rem 0',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 },
+        children: [
+          jsx('span', {
+            'data-cb-homework-record-target': '',
+            style: {
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.lead,
+              color: 'var(--cb-ink)',
+              minWidth: 0,
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(task.target && task.target.display) ? 'ja' : undefined,
+            children: (task.target && task.target.display) || task.title
+          }),
+          jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'outline',
+            'data-cb-homework-record-state': task.state,
+            children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: `${Number(task.estimated_minutes) || 5} min`
+          })
+        ]
+      }),
+      jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: [lessonTitle || null, courseTitle || null].filter(Boolean).join(' · ') || 'This course',
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
+        children: [
+          jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'text',
+            'aria-expanded': open ? 'true' : 'false',
+            onClick: () => setOpen(!open),
+            children: open ? 'Hide the sheet' : 'Show the sheet'
+          }),
+          openState
+            ? jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'secondary',
+                disabled: Boolean(busy),
+                onClick: () => settle('homework.complete', { actor, note: '' }, 'report'),
+                children: busy === 'report'
+                  ? 'Recording'
+                  : actor === 'parent'
+                    ? 'A parent recorded this'
+                    : 'I did it'
+              })
+            : null,
+          openState
+            ? jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'text',
+                disabled: Boolean(busy),
+                onClick: () => settle('homework.skip', { actor }, 'skip'),
+                children: busy === 'skip' ? 'Skipping' : 'Skip'
+              })
+            : null
+        ]
+      }),
+      open
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingTop: '0.35rem', minWidth: 0 },
+            children: [
+              jsx(HomeworkSheetCard, { task, compact: true }),
+              jsx(HomeworkSheetActions, {
+                task,
+                canSave: Boolean(canSave) && !saved,
+                busy,
+                saved,
+                onSave: save,
+                onPrinted: (ok) =>
+                  setNotice(ok ? 'The sheet is open in the print dialog.' : 'This build cannot open a print dialog.'),
+                onDownloaded: (ok) =>
+                  setNotice(ok ? 'The sheet was saved as a file on this device.' : 'This build cannot save a file.')
+              })
+            ]
+          })
+        : null,
+      notice
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink)' },
+            children: notice
+          })
+        : null,
+      error
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              color: 'var(--cb-coral)',
+              overflowWrap: 'anywhere'
+            },
+            children: `${error.code}: ${error.message}`
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * The homework list. One row per task, in the order the learner met them, with the four states the
+ * plan names: planned, done (self or parent reported), skipped.
+ */
+function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChange, canSave, title }) {
+  if (!rows || rows.length === 0) {
+    return jsx('div', {
+      'data-cb-homework-list': 'empty',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
+      children: jsx(EmptyState, { title: emptyTitle, description: emptyDescription })
+    })
+  }
+  return jsx('div', {
+    'data-cb-homework-list': String(rows.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
+    children: [
+      title
+        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) }, 'title')
+        : null,
+      ...rows.map((row) =>
+        jsx(
+          HomeworkRecord,
+          {
+            taskId: row.task_id,
+            actor,
+            courseTitle: row.course_title,
+            lessonTitle: row.lesson_title,
+            canSave,
+            onChange
+          },
+          row.task_id
+        )
+      )
+    ]
+  })
+}
+
+/**
+ * Parent Studio → Homework. The parent's door to the tasks a learner took with them.
+ *
+ * It reads the same records the learner does, through `homework.read`, and can record a
+ * `parent_reported_done`. It never opens a chat between the parent and the child, and it never
+ * turns a report into evidence.
+ */
+function HomeworkStudio({ implemented, onOpenSource }) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const wired = supports('homework.read')
+  const [rows, setRows] = useState(() => cbHomeworkIndexRows())
+  const [library, setLibrary] = useState({ status: 'idle', titles: {} })
+  const [sources, setSources] = useState({ status: 'idle', lessons: {} })
+
+  useEffect(() => {
+    if (!wired) return
+    setRows(cbHomeworkIndexRows())
+  }, [wired])
+
+  const courseIds = Array.from(new Set(rows.map((row) => row.course_id).filter(Boolean)))
+
+  useEffect(() => {
+    if (!supports('library.list')) return
+    let cancelled = false
+    ;(async () => {
+      setLibrary((previous) => ({ ...previous, status: 'loading' }))
+      const response = await rpc('library.list', { filter: 'all', limit: 50, sort: 'recent' })
+      if (cancelled) return
+      if (!response.ok) {
+        setLibrary({ status: 'error', titles: {} })
+        return
+      }
+      const titles = {}
+      for (const item of (response.result && response.result.items) || []) {
+        if (item && item.course_id) titles[item.course_id] = item.title || ''
+      }
+      setLibrary({ status: 'ready', titles })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [implemented])
+
+  useEffect(() => {
+    if (!supports('takehome.sources') || courseIds.length === 0) return undefined
+    let cancelled = false
+    ;(async () => {
+      const lessons = {}
+      let failed = false
+      for (const courseId of courseIds) {
+        const response = await rpc('takehome.sources', { course_id: courseId })
+        if (cancelled) return
+        if (!response.ok) {
+          failed = true
+          continue
+        }
+        for (const objective of (response.result && response.result.objectives) || []) {
+          if (objective && objective.objective_id) lessons[objective.objective_id] = objective.title || ''
+        }
+      }
+      setSources({ status: failed ? 'error' : 'ready', lessons })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [courseIds.join('|'), implemented])
+
+  const refresh = useCallback(() => setRows(cbHomeworkIndexRows()), [])
+
+  if (!wired) {
+    return jsx(EmptyState, {
+      title: 'Homework needs the homework methods',
+      description:
+        'This backend does not implement homework.read, so no task can be read here. Update the plugin instead of showing a placeholder.',
+      children: null
+    })
+  }
+
+  const outgoing = rows.map((row) => ({
+    task_id: row.task_id,
+    course_title: row.course_id ? (library.titles[row.course_id] || row.course_id) : '',
+    lesson_title: sources.lessons[row.objective_id] || ''
+  }))
+
+  return jsxs('div', {
+    'data-cb-homework-studio': String(rows.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.9rem 1rem 1.2rem', minWidth: 0 },
+    children: [
+      jsx('p', {
+        style: {
+          margin: 0,
+          maxWidth: CB_MEASURE,
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.meta,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink-soft)'
+        },
+        children:
+          'Tasks a learner took with them from a lesson on this device. A parent can record one as done; it is a report, never a mark, and it opens no chat.'
+      }),
+      library.status === 'error'
+        ? jsx(QuietNote, { children: 'The course names could not be read. The tasks below are unchanged.' })
+        : null,
+      sources.status === 'error'
+        ? jsx(QuietNote, { children: 'A lesson title could not be read. The task itself is unchanged.' })
+        : null,
+      jsx(HomeworkRecordList, {
+        rows: outgoing,
+        actor: 'parent',
+        canSave: supports('notebook.save'),
+        onChange: refresh,
+        title: 'Homework taken with you',
+        emptyTitle: 'No homework yet',
+        emptyDescription:
+          'When a learner takes a task with them from a lesson, it appears here. A task starts on a lesson page, never from this screen.'
+      })
+    ]
   })
 }
 
@@ -30970,7 +32835,9 @@ function CoursebookPage() {
                 onOpenSettings: openSettings,
                 triggerRef: settingsTriggerRef
               })
-            : jsx(StudioList, {
+            : studioTab === 'homework'
+              ? jsx(HomeworkStudio, { implemented })
+              : jsx(StudioList, {
                 implemented,
                 reloadSignal: studioReload,
                 sessionMinutes: homePrefs.sessionMinutes,
@@ -31003,6 +32870,8 @@ function CoursebookPage() {
   } else if (openCourse) {
     body = jsx(CourseDetail, {
       row: openCourse.row,
+      // GM-010: the play layer obeys the learner's own Game feedback switch on this device.
+      prefs: homePrefs,
       focusObjectiveId: openCourse.objectiveId,
       focusBlockId: openCourse.blockId || null,
       focusView: openCourse.view || null,
@@ -31626,6 +33495,30 @@ export {
   TakeHomeSourcePanel,
   TakeHomeProof,
   TakeHomePackPanel,
+  TakeThisWithYou,
+  HomeworkSheetCard,
+  HomeworkRecord,
+  HomeworkRecordList,
+  HomeworkStudio,
+  CB_HOMEWORK_STATE_WORD,
+  CB_HOMEWORK_KIND_WORD,
+  CB_HOMEWORK_FORBIDDEN,
+  GameHeader,
+  GameJournal,
+  CB_GAME_ACTION_WORD,
+  CB_GAME_PROGRESS_NOTE,
+  cbGameCourse,
+  cbGameFeedbackVisible,
+  cbGameSectionCards,
+  cbHasJapanese,
+  cbHomeworkIndexRows,
+  cbHomeworkRefTaskId,
+  cbHomeworkSourceRef,
+  cbHomeworkExcerpt,
+  cbHomeworkFilename,
+  cbHomeworkSheetGuard,
+  cbPrintHomeworkSheet,
+  cbDownloadHomeworkSheet,
   StudioEntranceTabs,
   CB_STUDIO_ENTRANCES,
   CB_TAKEHOME_KINDS,
