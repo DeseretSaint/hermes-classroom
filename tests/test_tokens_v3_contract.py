@@ -578,7 +578,7 @@ ROUTE_WIDTHS = (1049, 900, 460)
 # of the contract's renderings; a measurement such as `166/159 wide` or `905/905` is not.
 SIZE_WORDS = ("title", "section", "label", "micro", "question", "display", "heading", "body", "lead", "sub", "subject", "line")
 PAIR = r"(\d{1,2}(?:\.\d{1,2})?)/(\d{1,2}(?:\.\d{1,2})?)"
-SIZE_BEFORE = re.compile(r"\b(?:%s)\s+%s(?=\s)" % ("|".join(SIZE_WORDS), PAIR))
+SIZE_BEFORE = re.compile(r"\b(?:%s)\s+%s(?=[\s,.;|)])" % ("|".join(SIZE_WORDS), PAIR))
 SIZE_AFTER = re.compile(r"(?<![\d/])%s\s+(?:%s)\b" % (PAIR, "|".join(SIZE_WORDS)))
 # A retired step name followed by a size on the same cell is a citation of a step that no longer
 # exists, whichever order the pair is written in.
@@ -624,11 +624,15 @@ def _contract_renderings(contract: dict) -> set[tuple[float, float]]:
     }
 
 
-def _rubric_v3_type_row(rubric: str) -> str:
+def _rubric_v3_type_cells(rubric: str) -> list[str]:
     for cells in _table_rows(_md_section(rubric, "### 7.1 The ten dimensions")):
         if len(cells) >= 5 and cells[0] == "3" and "Type" in cells[1]:
-            return " | ".join(cells)
+            return cells
     raise AssertionError("rubric §7.1 has no dimension-3 Type row")
+
+
+def _rubric_v3_type_row(rubric: str) -> str:
+    return " | ".join(_rubric_v3_type_cells(rubric))
 
 
 class CrossDocumentParityTest(unittest.TestCase):
@@ -680,6 +684,18 @@ class CrossDocumentParityTest(unittest.TestCase):
         flat = re.sub(r"\s+", " ", self.spec)
         self.assertTrue(needle in flat, "SPEC-V3 lines 17-20 must cover radius and type, not colour only")
 
+    def test_rubric_dim_three_names_the_contracts_six_steps(self) -> None:
+        # The rubric repeats the step names in its own words, so a revert there reinstates
+        # divergence 1 in the second document this card names. Only the dim-3 pass cell is read:
+        # §1's v2 table keeps the v2 six and must stay out of this assertion.
+        pass_cell = _rubric_v3_type_cells(self.rubric)[-1]
+        named = re.findall(r"`([a-z]+)`", pass_cell)
+        contract_steps = set(self.contract["type"]["scale"])
+        self.assertEqual(set(named), contract_steps, pass_cell)
+        self.assertEqual(len(named), len(contract_steps), pass_cell)
+        for retired in RETIRED_STEPS:
+            self.assertNotIn(retired, named, f"rubric §7 dim 3 still offers the retired step {retired!r}")
+
     def test_prose_and_display_measure_agree_with_the_contract(self) -> None:
         measure = self.contract["type"]["measure"]
         self.assertIn("50-75ch", measure)
@@ -719,10 +735,13 @@ class CrossDocumentParityTest(unittest.TestCase):
     def test_no_spec_cites_a_type_size_that_no_contract_step_renders(self) -> None:
         allowed = _contract_renderings(self.contract)
         for number, line in enumerate(self.spec.splitlines(), start=1):
-            for match in list(SIZE_BEFORE.finditer(line)) + list(SIZE_AFTER.finditer(line)):
+            # Step names are written in backticks throughout this spec, so normalise them away
+            # before matching; otherwise `` `heading` 31/36 `` never reaches the guard.
+            plain = line.replace("`", "")
+            for match in list(SIZE_BEFORE.finditer(plain)) + list(SIZE_AFTER.finditer(plain)):
                 pair = (float(match.group(1)), float(match.group(2)))
                 self.assertIn(pair, allowed, f"SPEC-V3.md:{number} cites {match.group(0)!r}, not a contract step")
-            for match in RETIRED_NAME_WITH_SIZE.finditer(line):
+            for match in RETIRED_NAME_WITH_SIZE.finditer(plain):
                 self.fail(f"SPEC-V3.md:{number} cites the retired step {match.group(0)!r} with a size")
 
 
