@@ -1,0 +1,43 @@
+CP-004 round 2 evidence -- generated on this host from the committed tree
+
+== 1. --report on the real worktree writes nothing (git status before/after) ==
+exit=0
+stdout:
+  Coursebook brand assets -- size report
+  
+  fonts       2 assets   131640 B  largest assets/fonts/CBDisplay-VF.woff2 (110076 B)
+  material    6 assets     3818 B  largest assets/material/wood-plank.webp (1228 B)
+  fox        14 assets    32286 B  largest assets/fox/fox-read-128.webp (3392 B)
+  objects     7 assets    38197 B  largest assets/objects/stamp-rim.webp (11170 B)
+  
+  shipped files          205941 B
+  generated segment      462255 B  budget  2500000 B
+  desktop/plugin.js     1415919 B  budget  4500000 B
+  plugin + segment      1878174 B  budget  4500000 B
+  data-url entries           29
+  
+  VERDICT: within budget
+stderr: ''
+status unchanged: True
+
+== 2. temp-tree control: --report leaves every byte and mtime unchanged ==
+files snapshotted: 37
+exit=0  every (mtime,sha,size) identical: True
+differing paths: none
+
+== 3. control: missing segment is refused, not rebuilt ==
+exit=1 (non-zero expected)
+stderr: no committed segment at desktop/cb-assets.generated.js; run a build first
+segment recreated: False
+tree unchanged: True
+
+== 4. doc-claim gate is load-bearing (negative control) ==
+re-adding 'the allowlist gains `cb-assets.generated.js` with this card' -> exit=1 (non-zero expected)
+  FAIL: test_no_doc_claims_a_file_admission_rule_the_gate_lacks (tests.test_cb_assets.DocumentationClaims.test_no_doc_claims_a_file_admission_rule_the_gate_lacks)
+re-adding 'the assets ship inside the plugin module' -> exit=1 (non-zero expected)
+  FAIL: test_no_doc_claims_inlining_the_module_does_not_perform (tests.test_cb_assets.DocumentationClaims.test_no_doc_claims_inlining_the_module_does_not_perform)
+committed docs -> exit=0 (0 expected)
+
+== 5. plugin.js untouched by this round ==
+desktop/plugin.js sha256 cd45d64781fdb0b54d96f5eefe6fea407c445d58461ea3425881edffa1174563
+CB_ASSETS referenced in plugin.js: False
