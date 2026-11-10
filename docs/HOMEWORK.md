@@ -83,9 +83,11 @@ measurement raises before the manifest is written.
 ## Wire publication
 
 `cb.rpc` **v24** = v23 (GM-005 take-home) + exactly `homework.create`, `homework.read`,
-`homework.complete`, `homework.skip` (87 declared methods). `contracts/rpc.v23.json` stays
-byte-identical (`sha256:b8988994…3182`); `scripts/gm007_rpc_v24.py` rebuilds v24 deterministically
-from it. `tests/test_contracts.py::V24AmendmentTest` pins the additive diff, the closed payloads and
+`homework.complete`, `homework.skip` and GM-018's `takehome.html` (88 declared methods).
+`contracts/rpc.v23.json` stays
+byte-identical (`sha256:b8988994…3182`); `scripts/gm007_rpc_v24.py` rebuilds the GM-007
+portion deterministically from it, and `scripts/gm018_rpc_v24.py` composes GM-018's
+`takehome.html` into the same document. `tests/test_contracts.py::V24AmendmentTest` pins the additive diff, the closed payloads and
 a `homework_task` definition that cannot express a grade, score, mastery, verdict, XP, points or
 streak.
 
