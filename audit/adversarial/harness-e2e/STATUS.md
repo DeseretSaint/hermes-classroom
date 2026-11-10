@@ -449,3 +449,44 @@ PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
 Why the packet was re-derived rather than the key dropped: an operator reads a repaired validation
 in the plan-stage record (`coursebook/executor.py` carries `result["validation"]`), and a re-asked
 answer must never read as a first-time one.
+
+## GM-005 re-run — packet re-derived under contract v21 (`wt/gm-005-takehome`)
+
+Registering `cb.rpc` v21 for the take-home pack backend changed the version every recorded
+`api.dispatch` response echoes, so the three scenario evidence files no longer matched
+`manifest.json` (3 failures in `PacketManifestTest.test_fresh_evidence_reproduces_the_committed_bytes`,
+`contract_version: 20` on disk vs `21` from a fresh run) — the manifest doing its job, as in H-49 and
+H-191. No transcript, verdict, lesson text, check, grading row or assertion changed.
+
+Re-derived by the packet's own runner, not hand-edited:
+
+```text
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py
+  overall: PASS  (3/3 scenarios)
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
+  packet: FRESH — every evidence file and harness input matches manifest.json
+```
+
+The complete evidence diff is `contract_version: 20 -> 21` (5 sites across the three scenario
+files: 1 in `bicycle_single.json`, 2 in `music_short.json`, 2 in `soldering_full.json`) plus the
+3 `manifest.json` hashes those bytes determine. GM-015 re-audits this packet on the integrated tree;
+the re-run preserves provenance because the harness, transcripts and assertions are unchanged and
+the diff is the live contract constant only.
+
+## GM-005 round 7 — packet re-derived under contract v22 (`wt/gm-005-takehome`, rebased on 5721389)
+
+`origin/master` advanced to `5721389` (GM-009) while GM-005 was in review, so the take-home family
+moved from its branch-local v21 to `contracts/rpc.v22.json`; `contracts/rpc.v21.json` is now the
+published GM-009 document, byte-identical to `origin/master`. The wire echo therefore moved 21 -> 22
+and the packet was re-derived again with its own runner, not hand-edited:
+
+```text
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py
+  overall: PASS  (3/3 scenarios)
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
+  packet: FRESH — every evidence file and harness input matches manifest.json
+```
+
+The diff is `contract_version: 21 -> 22` at the same 5 sites (1 `bicycle_single.json`, 2
+`music_short.json`, 2 `soldering_full.json`) plus the 3 `manifest.json` hashes. No transcript,
+verdict, lesson text, check, grading row or assertion changed.

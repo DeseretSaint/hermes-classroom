@@ -17,18 +17,26 @@ Every current-tree number in this file is re-derived there and checked by
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
-The tree carries `cb.rpc` v20 (73 declared methods, 73 handlers) and `cb.db` v13 (schema v13,
-migrations `0001`-`0013`): v20 is additive over v19 — `parent.blueprint.read` now returns the
+The tree carries `cb.rpc` v23 (83 declared methods, 83 handlers) and `cb.db` v14 (schema v14,
+migrations `0001`-`0014`): v23 is additive over v22 — the Parent Studio take-home pack family
+appends six methods (`takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`,
+`takehome.export`, `takehome.read`) whose print artifact is bound to the source course, objective,
+lesson version and content hash, with the learner page and the parent-only answer guide as
+separate artifacts — v22 added GM-011's lesson-bound tutor (`tutor.ask`, `tutor.history`), and
+v21 added GM-009's game-only engagement methods (`engagement.read`,
+`engagement.award`); v20 is additive over v19 — `parent.blueprint.read` returns the
 `sections[]` identity a fine-tune call needs (section id, objective, ordinal, title, lesson
 state/version, page hash) and both it and `course.outline`'s `outline_plan` return the optional
-`plan.validation` approval provenance (the durable answer to "may this version be approved?") — and
-adds no method — and v19 itself added the fine-tune commands
+`plan.validation` approval provenance (the durable answer to "may this version be approved?"). v19
+itself added the fine-tune commands
 (`plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read`,
 `parent.final.approve`); v12 adds the two fine-tune ledgers (`plan_revisions`, `lesson_revisions`)
-in migration `0012_fine_tune_revisions`, and v13 adds GM-001's Game Mode storage — nullable
+in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage — nullable
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
-`0013_game_mode_contracts`, additive only. The suite is `Ran 2747 tests in 410.301s … OK (skipped=1)`
-at the measured commit `b9f4a19`.
+`0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
+`0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
+additive only. The suite is `Ran 2880 tests in 540.226s … OK (skipped=1)` on the merged GM-005 tree
+over `origin/master` `3fb3779` and the measured commit `b9f4a19`.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -57,7 +65,7 @@ invalidates the earlier evidence.
 
 | # | Gate | Owner | Evidence (frozen tree `b9f4a19` unless a row names another commit) | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Contracts frozen | Atlas | `contracts/rpc.v20.json` (73 declared methods), `contracts/db.v13.json`, `docs/REVIEW_CB001.md` | [x] |
+| 1 | Contracts frozen | Atlas | `contracts/rpc.v23.json` (83 declared methods), `contracts/db.v14.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh` on `b9f4a19`: admission PASS, `node --check` PASS, desktop contract tests PASS, runtime contracts PASS — 4/4 on 2786 files | [x] |
 | 3 | Backend kernel with migrations | Cinder | At `b9f4a19`: `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`; suite `Ran 2747 tests in 410.301s … OK (skipped=1)` | [x] |
 | 4 | Packs import and export | Lattice | Re-driven live on `df052eaeced56ddd7238e4fb5804110ea7b36e95` (the merged release tree: the H-210-R1 `artifact.get` repair `160c522` folded in as `8fd4ec2`; `desktop/plugin.js` still `cd862140…`) through the mounted HTTP `cb.rpc` v20 route against two isolated backends: `pack.preview` → `pack.import` for `japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0, `pack.export` twice on the same store with byte-identical results (`content_hash` `sha256:5343526d…`, archive sha256 `sha256:4aefd708…`; demo `sha256:ff5594a8…` / `sha256:747c61fd…`; the exported archive equals the imported archive byte-for-byte), then a fresh-store re-import with the same objectives / sections / checks (Japanese 4 / 4 / 4, demo 2 / 2 / 2) and the same media bytes. The step that answered `INTERNAL_ERROR` on `bc9f607` now passes: `artifact.get` resolves **every** media segment of both packs on both stores — four media links, ten live calls, six distinct digests including the two export archives — each response contract-valid with a single-prefixed `sha256:<64 hex>` matching the manifest and a download handle whose fetched bytes hash to that same digest. The legacy bare spelling was reproduced in an isolated store: a bare row reads back labelled and a later labelled import dedupes into it instead of adding a row. Evidence: `audit/adversarial/h210r2-pack-roundtrip/` (39/39 assertions PASS). The round trip ran on `df052ea`; the frozen tree `b9f4a19` is that commit plus the H-210-R2 merge, whose diff is `docs/` and `audit/` only — no product, test or contract file moved, so the capture still describes this tree | [x] |
@@ -268,8 +276,8 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified on this candidate, so they are not blockers: 73/73 `cb.rpc` v20 methods mounted with no
-contract problems, schema v13 from migrations `0001`-`0013`, 2,747 tests, pack round-trip and export
+Verified on this candidate, so they are not blockers: 83/83 `cb.rpc` v23 methods mounted with no
+contract problems, schema v14 from migrations `0001`-`0014`, 2880 tests, pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
 hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
