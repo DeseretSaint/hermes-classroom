@@ -41,6 +41,10 @@ frame below is the shipped module, not a cached renderer.
    with no Game band (`game: null`) while Continue, the objective and the check stayed present. A
    second Tab+Space sequence restored the switch (`aria-checked="true"`) and the band returned
    (`game: "ready"`). The rig was left dark, 1049 px, 100% text, feedback on.
+   The keyboard phase captures after the 460 @ 200% loop, so the script now resets the device
+   metrics override to 1049 and the root font to 16px before the sheet opens; the focus frame is a
+   true 1049 px shot (`file`: 1049 × 1400) and is recorded in `live-evidence.json` as a `frames[]`
+   entry with `settingsSheet: true` and the wrapper's ring outline, not left as an unlisted PNG.
 
 ## Frames
 
@@ -69,17 +73,17 @@ reported no horizontal overflow.
 md5:
 
 ```
-0f7f39461b74b91669ccf4abd993245e  game-home--1049--dark.png
-739984c539d1dcb742e02b72e242d0a3  game-home--900--dark.png
-8892d62a62c1ab3d52c4746100e80039  game-home--460--dark.png
-e407c8a5d5aa9f63b2ec809e0b513cd0  game-home--460--200--dark.png
-9ecdf36a0fde48b6e2aa4bf73fad7956  game-home--1049--light.png
-859de15904c573f766c091618d7c1ecd  game-home--900--light.png
-e561138f96bd46a5bedfc134e39aef8c  game-home--460--light.png
-d527a7497f8b6a96891acabfafd092bc  game-home--460--200--light.png
-9ebf70665079d86dd2face5c3b222611  game-feedback-focus--1049--light.png
-6e20d88d27d543f00dc0bc18bf06b8b7  game-feedback-off--1049--light.png
-cbee7eeb5edc9089df372b4e7355112d  game-feedback-restored--1049--light.png
+1bfe44fb062ed1a9615cc47e6c787a47  game-home--1049--dark.png
+4bb7f3d680b583e12ed4f3082ae042e0  game-home--900--dark.png
+b8c256d56c893b6195634b7dcb2001a1  game-home--460--dark.png
+20306fafe40f6687c96e59c2011ee21c  game-home--460--200--dark.png
+6f0592197f3bf715f0e2a57c1f636c08  game-home--1049--light.png
+2f0b5e4822b9b85d744e2df27700b27e  game-home--900--light.png
+387f25bc9587d0dc4005eb743a93a953  game-home--460--light.png
+5fa333f80a6536f1c37dacb2c6006c59  game-home--460--200--light.png
+77e82ade7ccf0e9a14a6760b1e428118  game-feedback-focus--1049--light.png
+03f69c5f59c19596988be053d1056960  game-feedback-off--1049--light.png
+757bd9d077355de24c034858ab166706  game-feedback-restored--1049--light.png
 ```
 
 ## Known gaps (declared, not hidden)

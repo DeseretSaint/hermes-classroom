@@ -170,6 +170,11 @@ for (const theme of ['dark', 'light']) {
 }
 
 // ---- Keyboard: the Game feedback switch, driven by Tab + Space, in light at 1049 ----
+// The 460 @ 200% loop above leaves the viewport override and the root font set. Reset both before
+// the sheet opens, or the focus frame is a 460 px / 32 px shot wearing a 1049 label.
+await setWidth(1049)
+await setText(null)
+await wait(700)
 await setAppearance('light')
 await openSettings()
 // Tab until the focus lands on the Game feedback switch itself.
@@ -199,7 +204,19 @@ const ringState = await evaluate(`(() => {
   const s = getComputedStyle(w)
   return { attr: w.getAttribute('data-cb-settings-focus'), outline: [s.outlineStyle, s.outlineWidth, s.outlineColor].join(' ') }
 })()`)
-const focusFrame = await shot('game-feedback-focus--1049--light.png')
+const focusState = await state()
+const focusShot = await shot('game-feedback-focus--1049--light.png')
+// Record the focus frame in the packet rather than leaving it as an unlisted PNG: the settings
+// sheet is open over the course home, so the state is the sheet's, not a second home frame.
+frames.push({
+  frame: focusShot.name,
+  ...focusState,
+  settingsSheet: true,
+  focusedControl: reached.label,
+  wrapperRingAttr: ringState ? ringState.attr : null,
+  wrapperRingOutline: ringState ? ringState.outline : null,
+  md5: focusShot.md5
+})
 await SPACE()
 const toggledOff = await evaluate(`(() => {
   const a = document.activeElement
@@ -219,7 +236,7 @@ const offEvidence = {
     focused: reached,
     outlineStyle: outline,
     wrapperRing: ringState,
-    focusFrame: focusFrame.name,
+    focusFrame: focusShot.name,
     switchAriaCheckedAfterSpace: toggledOff.switchAriaChecked,
     bandPresentWhileOff: toggledOff.bandPresent,
     bandAfterClose: offState.game

@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-10T08:07:27.018Z",
+  "capturedAt": "2026-11-10T08:24:14.643Z",
   "route": "course home (#/coursebook, data-cb-course-home)",
   "engagementSource": "engagement.read (cb.rpc v24)",
   "keyboard": {
@@ -41,7 +41,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "0f7f39461b74b91669ccf4abd993245e"
+      "md5": "1bfe44fb062ed1a9615cc47e6c787a47"
     },
     {
       "frame": "game-home--900--dark.png",
@@ -59,7 +59,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "739984c539d1dcb742e02b72e242d0a3"
+      "md5": "4bb7f3d680b583e12ed4f3082ae042e0"
     },
     {
       "frame": "game-home--460--dark.png",
@@ -77,7 +77,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "8892d62a62c1ab3d52c4746100e80039"
+      "md5": "b8c256d56c893b6195634b7dcb2001a1"
     },
     {
       "frame": "game-home--460--200--dark.png",
@@ -95,7 +95,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "e407c8a5d5aa9f63b2ec809e0b513cd0"
+      "md5": "20306fafe40f6687c96e59c2011ee21c"
     },
     {
       "frame": "game-home--1049--light.png",
@@ -113,7 +113,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "9ecdf36a0fde48b6e2aa4bf73fad7956"
+      "md5": "6f0592197f3bf715f0e2a57c1f636c08"
     },
     {
       "frame": "game-home--900--light.png",
@@ -131,7 +131,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "859de15904c573f766c091618d7c1ecd"
+      "md5": "2f0b5e4822b9b85d744e2df27700b27e"
     },
     {
       "frame": "game-home--460--light.png",
@@ -149,7 +149,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "e561138f96bd46a5bedfc134e39aef8c"
+      "md5": "387f25bc9587d0dc4005eb743a93a953"
     },
     {
       "frame": "game-home--460--200--light.png",
@@ -167,7 +167,29 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "d527a7497f8b6a96891acabfafd092bc"
+      "md5": "5fa333f80a6536f1c37dacb2c6006c59"
+    },
+    {
+      "frame": "game-feedback-focus--1049--light.png",
+      "hash": "#/coursebook",
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "scope": "light",
+      "overflow": false,
+      "game": "ready",
+      "xp": "25",
+      "journal": "0",
+      "cards": 4,
+      "continueVisible": true,
+      "objectiveVisible": true,
+      "checkVisible": true,
+      "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
+      "forbidden": [],
+      "settingsSheet": true,
+      "focusedControl": "Show Game feedback",
+      "wrapperRingAttr": "ring",
+      "wrapperRingOutline": "solid 2px rgb(44, 74, 140)",
+      "md5": "77e82ade7ccf0e9a14a6760b1e428118"
     },
     {
       "frame": "game-feedback-off--1049--light.png",
@@ -185,7 +207,7 @@
       "checkVisible": true,
       "text": "",
       "forbidden": [],
-      "md5": "6e20d88d27d543f00dc0bc18bf06b8b7"
+      "md5": "03f69c5f59c19596988be053d1056960"
     },
     {
       "frame": "game-feedback-restored--1049--light.png",
@@ -203,7 +225,7 @@
       "checkVisible": true,
       "text": "25 XP Level 1 Curious · cosmetic Game progress 0 of 4 steps Play progress, not evidence.",
       "forbidden": [],
-      "md5": "cbee7eeb5edc9089df372b4e7355112d"
+      "md5": "757bd9d077355de24c034858ab166706"
     }
   ]
 }
