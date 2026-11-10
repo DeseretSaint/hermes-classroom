@@ -200,6 +200,12 @@ class WorldStudioSourceTest(unittest.TestCase):
             self.assertNotIn(name, self.text, f"{name} belongs to 85-v3-primitives.js")
 
 
+def _progress_block(html: str) -> str:
+    """Slice the World Studio progress panel out of the rendered sheet."""
+    match = re.search(r'<div data-cb-world-progress="[^"]*"[^>]*>(.*?)</div>', html, re.S)
+    return match.group(0) if match else ""
+
+
 class WorldStudioRenderTest(RenderCase):
     STATES = {
         "not_requested": False,
@@ -242,6 +248,22 @@ class WorldStudioRenderTest(RenderCase):
                 self.assertIn('aria-labelledby="cb-world-studio-title"', html)
                 self.assertIn('id="cb-world-studio-title"', html)
                 self.assertEqual(html.count("<h2"), 1, "one heading names the sheet")
+
+    def test_the_generating_state_names_itself_once(self) -> None:
+        # Replacing sdk.Loader with cbWorldStateWord left the old state-word fallback in the second
+        # line, so the panel read "Choosing directions / Choosing directions — you can leave…".
+        words = {"concepts_generating": "Choosing directions", "kit_generating": "Building the world"}
+        for state, word in words.items():
+            with self.subTest(state=state):
+                html = self.render({
+                    "kind": "studio",
+                    "world": _world_value(state=state, mode_ready=state == "kit_generating"),
+                })
+                block = _progress_block(html)
+                self.assertTrue(block, f"no progress panel in {state}: {html[:600]}")
+                self.assertEqual(block.count(word), 1, f"the state word repeats in {state}: {block}")
+                self.assertIn("You can leave this open or cancel.", block)
+                self.assertIn("No lesson is built until the world is approved.", block)
 
     def test_concept_boards_are_paper_cards_with_one_named_direction(self) -> None:
         html = self.render({"kind": "studio", "world": _world_value(state="concepts_ready")})

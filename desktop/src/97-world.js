@@ -615,7 +615,11 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   }
 
   const generating = Boolean(jobId) || state === 'concepts_generating' || state === 'kit_generating'
-  const stageMessage = (job && job.progress && job.progress.message) || cbWorldStateWord(state)
+  const stateWord = cbWorldStateWord(state)
+  // The state word is the headline. A progress message is the detail under it; when the job has not
+  // reported one (or repeats the headline), do not print the same words twice — say what happens next.
+  const progressMessage = (job && job.progress && job.progress.message) || ''
+  const stageMessage = progressMessage.trim() && progressMessage.trim() !== stateWord ? progressMessage : null
 
   const body = []
   body.push(jsxs('div', {
@@ -932,8 +936,8 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
       'aria-live': 'polite',
       style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
       children: [
-        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: cbWorldStateWord(state) }),
-        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: stateWord }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: stageMessage ? `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` : 'You can leave this open or cancel. No lesson is built until the world is approved.' })
       ]
     }, 'progress'))
   }
