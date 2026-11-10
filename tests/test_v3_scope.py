@@ -20,6 +20,7 @@ browser paints the tiles. Those are ``scripts/cp-capture.mjs`` frames and the re
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 import subprocess
@@ -223,6 +224,25 @@ class V3ScopeSourceTest(unittest.TestCase):
             self.assertTrue(needle in self.source, f"{needle} layer is not rendered")
         self.assertTrue("'aria-hidden': 'true'" in self.source,
                         "a material layer is not hidden from assistive tech")
+
+    def test_material_opacities_are_the_contract_values(self) -> None:
+        # The contract owns every material opacity (`materials.grain|vignette[mode].opacity`).
+        # A hand-tuned value here (a narrower route dimming the grain, say) is drift, not a fix.
+        materials = json.loads(CONTRACT.read_text(encoding="utf-8"))["materials"]
+        css = literal_text(self.source, V3_CSS_CONST) or ""
+        for key in ("grain", "vignette"):
+            declared = sorted(
+                round(float(materials[key][mode]["opacity"]), 4)
+                for mode in ("light", "dark")
+            )
+            found = sorted({
+                round(float(value), 4)
+                for value in re.findall(
+                    r"\.cb3-material-" + key + r"\s*\{\s*opacity:\s*([0-9.]+)\s*;",
+                    css,
+                )
+            })
+            self.assertEqual(found, declared, f"{key} opacities drift from the contract")
 
 
 class V3ScopeRenderTest(unittest.TestCase):

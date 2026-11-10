@@ -15147,10 +15147,6 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   }
 }
 
-@container cb (max-width: 619px) {
-  [data-cb-v3] .cb3-material-grain { opacity: 0.06; }
-}
-
 @media (forced-colors: active) {
   [data-cb-v3] {
     background-color: Canvas;
@@ -15310,7 +15306,7 @@ function CbV3Scope({ mode, className, attributes, style, children }) {
   scopeStyle.containerName = 'cb'
   const attrs = { ...(attributes || {}) }
   attrs['data-cb-v3'] = ''
-  if (ready !== 'pending') attrs['data-cb-v3-ready'] = ''
+  if (ready !== 'pending') attrs['data-cb-v3-ready'] = 'true'
   attrs['data-cb-v3-textures'] = ready === 'pending' ? 'decoding' : ready
   return jsxs('div', {
     ...attrs,
