@@ -1023,3 +1023,34 @@ Consequences the reviewers enforce: a capture packet whose frames predate the ca
 returned unread; a reviewer who re-runs the full matrix instead of the changed cells is spending
 against the deadline; a maker who loops vision checks on the same artifact past the second call has
 to justify it in the packet. Baseline behaviour is covered by tests, not by screenshots of v2.
+
+## 18. Critical path and the deadline arithmetic (2026-11-10 11:30)
+
+Measured, not guessed, from the board database: median card wall-clock 37 minutes, mean 74, but
+the critical-path cards are 2 to 3 hours and the tail is a chain of them. CP-020a took 177 minutes
+across three review rounds; CP-013 took 119; CP-010 took 377.
+
+Remaining chain and projection (all times MST):
+
+| Stage | Est | Ends |
+|---|---|---|
+| CP-020b primitives (running since 11:13) | 2-3 h | ~14:00 |
+| Five-wide screen wave, incl. reviews | 3 h | ~17:40 |
+| Batch merge of the wave, one full suite | 45 m | ~18:30 |
+| CP-025a (last serial writer) + review | 2.5 h | ~21:30 |
+| GM-015 behavioural QA + review | 2.5 h | ~00:00 |
+| GM-016 visual parity + review | 2 h | ~02:00 |
+| CP-026 README and shots | 1.5 h | ~03:30 |
+| GM-017 integration, install, handoff | 1.5 h | ~05:00 |
+
+That is a ten-hour buffer before the 15:00 deadline, without counting the accelerations now in
+place: CP-030 capture presets (done), CP-031 copy inventory (done, produced CP-031b), CP-032 shared
+test helpers (running), CP-026d README draft (running, takes 45 minutes off the tail), the
+self-score rule now in every screen body, and the batch-merge rule that replaces five full suites
+with one. The buffer is the schedule; the risk is rounds, not stages: one screen card needing three
+rounds costs an hour and a half.
+
+What was deliberately not done, and why: starting CP-020b before CP-020a's review would have built
+primitives on tokens still under review; starting the wave before CP-020b merges would leave five
+branches to rebase; running GM-015 and GM-016 concurrently would score builds that QA may still
+change. Each buys an hour and risks more than an hour of rework.
