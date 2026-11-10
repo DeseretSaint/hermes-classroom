@@ -5,7 +5,7 @@ surface is not mounted on the route, so the eight required cells are deferred to
 `MANIFEST.md` §5). A score written against a render harness alone would be void.
 
 ```text
-Card: CP-023            Branch: wt/cp-023-classroom  Commit: ec9dd47 (partial build)
+Card: CP-023            Branch: wt/cp-023-classroom  Commit: 1dff23a (partial build)
 Maker (did not review): cinder        Reviewer: cbqa        Date: —
 Loop: 1
 Screens submitted: none yet — 0 / 8 required cells

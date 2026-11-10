@@ -5,11 +5,12 @@ claimed, because the surface is not yet reachable on the route.**
 
 ```text
 Card: CP-023 (R-CLASS)      Branch: wt/cp-023-classroom
-Base: wt/cp-020b-primitives (556a6fb, merged at 76d691a; carries CP-020a scope and CP-013 assets)
-Commit under review: ec9dd47
+Base: master f7ad3cd (merged at ce93efb; carries the deck rows) on top of
+      wt/cp-020b-primitives (556a6fb, merged at 76d691a; CP-020a scope and CP-013 assets)
+Commit under review: 1dff23a (build frozen at ec9dd47 + the six deck group labels)
 Maker (did not review): cinder       Reviewer: cbqa
-plugin.js sha256: 97d13c6a6f3fee11ee5f8f7a85e367fa2e3f2cd974151cab37abe043ebbe314e
-70-learning.js sha256: 9afbdd99e383ef721a92f0229130ad696b98fda218466629451b078cc35b8b4d
+plugin.js sha256: 2beaf778b8fe1b82ca4c78536745c1604808453bac86a7b3058c285544c82327
+70-learning.js sha256: f7f86c6f45c319cab39a1cf44a484e0b5c924fa98e91e6386ebdba46db13286d
 Captures: 0 / 8 required cells — deferred, see §5
 ```
 
@@ -35,7 +36,7 @@ The state machine, fences and commands in the check card mirror `AttemptControls
 returned. It is a separate component because `AttemptControls` is pinned by H-149/H-178 and still
 mounted on two v2 surfaces; changing it would move those tests.
 
-## 2. Named tests (all green at ec9dd47)
+## 2. Named tests (all green at 1dff23a)
 
 `python3 -m unittest tests.test_cp_023_classroom` — 10 tests:
 
@@ -52,10 +53,11 @@ test_classroom_v3_copy_is_the_deck           OK
 test_classroom_v3_paints_only_v3_tokens      OK
 ```
 
-Neighbour gates re-run on the same commit, 138 tests: `test_plugin_build`, the H-149 and H-178
-lesson tests, `test_v3_scope`, `test_v3_primitives`, `test_desktop_tokens_v3`,
-`test_desktop_gate_scope`, `test_desktop_h183_copy_inventory`, `test_desktop_breadth_copy` — OK
-(skipped=2). Full suite: see §4.
+Neighbour gates re-run on the same commit: `test_plugin_build` 11, the H-149 and H-178 lesson
+tests, `test_v3_scope`, `test_v3_primitives`, `test_desktop_tokens_v3`, `test_tokens_v3_contract`
+(119 OK together), `test_desktop_gate_scope`, `test_desktop_h183_copy_inventory`,
+`test_desktop_breadth_copy` (46 OK, skipped=2), `test_m4_visual_audit` 14 OK, `test_cp_spec` 33 OK.
+Full suite: see §4.
 
 The render test imports a **copy** of the built module with one extra `export { … }` appended
 (`tests/test_cp_023_classroom.py`), because this card may not edit the segment that owns the
@@ -71,20 +73,15 @@ stimulus. Each asserted for: one filled control, XP only in Game, stepper states
 plain kana line, romaji line, evidence count and integrity classes, one next action per
 empty/loading/error state, mascot hidden under 620 px.
 
-## 4. Full suite — 3362 tests, 897.975 s, two failures, both named below
+## 4. Full suite at 1dff23a — 3416 tests, 1196.781 s, one failure (the known, deferred one)
 
 ```text
-Ran 3362 tests in 897.975s
-FAILED (failures=2, skipped=11)
+Ran 3416 tests in 1196.781s
+FAILED (failures=1, skipped=11)
 ```
 
-**A. `test_m4_visual_audit.test_evidence_is_not_stale_against_the_shipped_module` — FIXED in
-1667d94.** `desktop/plugin.js` changed, so the M4 evidence pin was stale by construction. Regenerated
-with `python3 scripts/m4v-audit.py` on ec9dd47: 15 claims PASS, 0 not PASS, pin now
-`97d13c6a…314e`. No frame changed; `tests.test_m4_visual_audit` is green (14 tests).
-
-**B. `test_desktop_gm010_engagement_ui.test_game_header_only_in_game` — OPEN, needs the owner of
-that test file.** It asserts
+**`test_desktop_gm010_engagement_ui.test_game_header_only_in_game` — OPEN by instruction.** It
+asserts
 
 ```python
 self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 2)
@@ -96,9 +93,10 @@ rail in Game mode, so `ClassroomV3Surface` reads `engagement.read` gated on `mod
 a legitimate third mount, and the reason the read sits in my segment rather than in the manager's
 mount code. It is not reachable from a textbook surface: `test_classroom_v3_no_xp_outside_game`
 renders Guided and Textbook and asserts no `data-cb3-xp`, no `XP` string and no challenge.
-The one-line fix belongs to whoever owns `tests/test_desktop_gm010_engagement_ui.py`: expect 3 and
-name the classroom as the third, gated mount. Editing that file is outside this card's ownership,
-so it is reported, not changed. **This failure is the only red test on the branch.**
+The manager's 2026-11-10 ruling assigns this file and its third-mount assertion to **CP-040** (the
+merge seam), which updates it when the mount actually lands. It is outside this card's ownership,
+so it is reported, not changed. **This failure is the only red test on the branch; the M4 pin is
+green again** (regenerated at 1dff23a: 15 claims PASS, pin `2beaf778…2327`).
 
 ## 5. Deferred to the merge — what the manager must do (do not read this as a pass)
 
@@ -109,8 +107,8 @@ a photograph of an unreachable component and would fail evidence rule 1 (from th
    the module's `export {}` lives in the last segment, which this card may not edit. Add both names
    (plus, for tests, `ClassroomCheckCard`, `classroomStepNodes`, `classroomLineFromPage`,
    `classroomEvidence`, `classroomSceneFromWorld`, `CB3_CLASSROOM_COPY`).
-2. **The gm010 count (§4 B).** Owner of `tests/test_desktop_gm010_engagement_ui.py` updates the
-   third-mount expectation; no product file changes for it.
+2. **The gm010 count (§4).** CP-040 (merge seam) owns `tests/test_desktop_gm010_engagement_ui.py`
+   and updates the third-mount expectation when the mount lands; no product file changes for it.
 3. **Route mount.** Replace the v2 lesson pane's central reading column with `ClassroomV3Surface` in
    the route composition (98/99 segment, not this card), passing the row, enrollment, objective,
    mode and the four navigation callbacks. `ClassroomV3` is pure and stays the render target.
@@ -121,11 +119,17 @@ a photograph of an unreachable component and would fail evidence rule 1 (from th
 
 ## 6. Requests and gaps reported, not fixed (file ownership)
 
-- **Deck row needed (`COPY.md`).** `SPEC-V3 §5.3 C7` requires an answer label for the `text`
-  stimulus; the deck has no classroom row for it. The component uses the literal `Your answer` and
-  the test pins it, but the durable fix is a `classroom.answer.label` row, then the constant swaps
-  to a deck read. Two smaller strings used only as state words — `Selected` and
-  `Nothing selected yet.` — need rows too (or are absorbed by C7).
+- **Group labels: resolved at 1dff23a, by ruling.** The 2026-11-10 ruling added six deck rows —
+  `classroom.check.choices` / `.checklist` / `.answers` / `.criteria`,
+  `classroom.practice.expressions` / `.practice.transcript` — to `COPY.md` §4 and `SPEC-V3 §5.3`
+  C7/C8. Every hard-coded group name and aria-label in the learning segment now reads
+  `CB3_CLASSROOM_COPY`; the visible words are unchanged, and `test_classroom_v3_copy_is_the_deck`
+  fails if a literal comes back. `tests.test_cp_spec` 33/33 OK at that commit.
+- **One deck gap remains (reported, not fixed).** The `text` stimulus needs a visible answer label
+  and no deck row governs it (`classroom.answer.label` was proposed but is not in SPEC C7 and was
+  not added by the ruling). The constant is a literal `Your answer`, declared as such in the copy
+  block; the durable fix is a deck row, then the constant becomes a deck read. `Selected` and
+  `Nothing selected yet.` are still literals for the same reason.
 - **No `locked` field in the outline projection.** `course.outline.objectives[]` today carries no
   prerequisite flag, so `ClassroomV3` reads `objective.locked === true` and otherwise never pads a
   node with a lock. If the plan gate is meant to be visible, the projection must expose it; until
