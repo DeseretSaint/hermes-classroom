@@ -59,21 +59,32 @@ What *is* machine-checked on this tree:
 - `tests.test_desktop_tokens_v3`, `tests.test_v3_primitives`, `tests.test_plugin_build`,
   `tests.test_m4_visual_audit` — green.
 - `python3 scripts/m4v-audit.py` — re-rendered on this plugin sha, 15 PASS.
+- Full suite on this commit (`python3 -m unittest discover -s tests -t .`, log
+  `/home/deseretsaint/.hermes/profiles/sable/cache/scratch/cp-022-suite.log`): **Ran 3367 tests in
+  1123 s — 4 failures, 11 skipped**. All four failures are the stale v2 gate assertions in gap 1;
+  nothing else fails.
 
 ## Known gaps (all recorded, none hidden)
 
-1. **Three v2 composition assertions in `tests/test_desktop_gm002_home.py` are now stale** and the
-   card says the composition tests are superseded. They are red on this branch:
-   - `test_shelf_shows_four_to_six_authored_cards_and_see_all` — expects a **six**-card cap; SPEC-V3
-     §3.3/§5.1 H5 and this card's body set the shelf at four with `See all`.
-   - `test_empty_home_has_one_create_action` — expects the v2 `Browse the library`; the deck's
-     `home.secondary` is `Browse library`. (`Start a new course` and `No courses yet.` now pass.)
-   - `test_card_does_not_repeat_its_title_as_the_goal` — expects a `data-cb-home-card-goal` paragraph;
-     SPEC-V3 §3.6 fixes one metadata pattern (title / subject / evidence) with no fourth line.
-   The fix is an edit to that test module (re-point the three assertions at the v3 deck and the
-   four-card shelf). That file is outside CP-022's ownership list, so it is reported rather than
-   edited. The **behavioural** GM-002 tests (`HomeSplitRouteTest`: Home → course home → back, the
-   one-create-button count, the authored focus ring) are green.
+1. **Four v2 gate assertions are now stale** and the card says the composition tests are superseded.
+   They are red on this branch; all four are edits to modules outside CP-022's ownership list
+   (`tests/test_desktop_gm002_home.py`, `tests/test_desktop_h151_action_type.py`).
+   - `test_desktop_gm002_home.test_shelf_shows_four_to_six_authored_cards_and_see_all` — expects a
+     **six**-card cap; SPEC-V3 §3.3/§5.1 H5 and this card's body set the shelf at four with `See all`.
+   - `test_desktop_gm002_home.test_empty_home_has_one_create_action` — expects the v2
+     `Browse the library`; the deck's `home.secondary` is `Browse library`. (`Start a new course` and
+     `No courses yet.` now pass.)
+   - `test_desktop_gm002_home.test_card_does_not_repeat_its_title_as_the_goal` — expects a
+     `data-cb-home-card-goal` paragraph; SPEC-V3 §3.6 fixes one metadata pattern (title / subject /
+     evidence) with no fourth line.
+   - `test_desktop_h151_action_type.test_the_primary_is_the_lamp_field_at_44_px` — iterates every
+     rendered surface and requires every `button[data-cb-action="primary"]` to be the v2 `--cb-lamp`
+     field at 44 px. The v3 primary is `--cb3-terracotta` at 48 px (SPEC-V3 §3.10). The hook is kept
+     because the GM-002 behavioural focus case reads it; the v2 gate needs the v3 surface excluded or
+     re-pointed at `[data-cb3-pill="primary"]`.
+   The **behavioural** GM-002 tests (`HomeSplitRouteTest`: Home → course home → back, the
+   one-create-button count, the authored focus ring) are green, and nothing else in the 3367-test
+   suite fails.
 2. **The tag's age uses `updated_at`, not a creation stamp.** CP-005 exposes no `created_at`, so
    "less than fourteen days old" is measured from the newest recorded write. The rule itself (`is_new`
    + window + newest row only) is exact and tested; the field is the gap. A `created_at` on
