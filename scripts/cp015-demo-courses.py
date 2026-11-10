@@ -101,6 +101,12 @@ TERMINAL_JOB_STATES = {"completed", "succeeded", "failed", "cancelled",
 SUCCESS_JOB_STATES = {"completed", "succeeded"}
 
 
+#: How many authored plans one demo course may burn before the driver reports the rejection.
+#: A validator reject is grounded in named defects, and re-authoring is the learner's own path; the
+#: limit keeps a run from looping on an author model that cannot satisfy the contract.
+PLAN_ATTEMPTS = 3
+
+
 def _log(message: str) -> None:
     print(f"[cp015] {message}", flush=True)
 
@@ -197,6 +203,33 @@ def create_course(slug: str, spec: dict) -> dict:
     }
 
 
+def _objectives(outline: dict) -> list[dict]:
+    """The outline's objectives, in the shape this driver uses (``id`` = the stored key).
+
+    ``course.outline`` answers ``objective_id`` (the scheduling key) and the unit each objective
+    belongs to is carried on ``plan.units[].objectives[]``; the driver's own field is ``id`` so the
+    flow record reads the same for a v1 plan (flat ``objectives``) and a blueprint plan.
+    """
+    unit_of: dict[str, int] = {}
+    for unit in (outline.get("plan") or {}).get("units") or []:
+        for objective in unit.get("objectives") or []:
+            unit_of[str(objective.get("objective_id"))] = int(unit.get("ordinal") or 0)
+    objectives: list[dict] = []
+    for item in outline.get("objectives") or []:
+        key = str(item.get("objective_id") or item.get("id") or "")
+        if not key:
+            raise RuntimeError(f"outline objective without an id: {json.dumps(item)[:300]}")
+        objectives.append(
+            {
+                "id": key,
+                "title": item.get("title"),
+                "unit": item.get("unit_ordinal") or unit_of.get(key),
+                "evidence_target": item.get("evidence_target"),
+            }
+        )
+    return objectives
+
+
 def run_plan(slug: str, flow: dict) -> dict:
     spec = flow["spec"]
     brief = {
@@ -211,31 +244,64 @@ def run_plan(slug: str, flow: dict) -> dict:
         "subject_domain": spec["subject_domain"],
         "scope": spec["scope"],
     }
-    job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=keyed(slug, "plan"))
-    job_id = job["job_id"]
-    _log(f"{slug}: plan job {job_id} queued")
-    final = wait_for_job(job_id, label=f"{slug} plan", timeout=2400)
-    flow["plan_job_id"] = job_id
-    flow["plan_job_state"] = final.get("state")
-    flow["plan_job_error"] = final.get("error")
-    if final.get("state") not in SUCCESS_JOB_STATES:
-        raise RuntimeError(f"{slug}: plan job {job_id} ended {final.get('state')}: "
-                           f"{json.dumps(final.get('error'))[:600]}")
-    outline = ok("course.outline", {"enrollment_id": flow["enrollment_id"]})
-    plan = outline.get("plan") or {}
-    flow["plan_id"] = plan.get("plan_id")
-    flow["objectives"] = [
-        {"id": item["id"], "title": item.get("title"), "unit": item.get("unit_ordinal")}
-        for item in outline.get("objectives") or []
-    ]
-    flow["validation"] = plan.get("validation")
-    _log(f"{slug}: plan {flow['plan_id']} draft, {len(flow['objectives'])} objectives")
-    return flow
+    flow.setdefault("plan_attempts", [])
+    # A rejected plan is a real verdict, not an error to paper over: regenerating is what a learner
+    # does, and every attempt's verdict is recorded so the record never claims a first-time pass.
+    for attempt in range(1, PLAN_ATTEMPTS + 1):
+        key = keyed(slug, "plan") if attempt == 1 else keyed(slug, f"plan-retry{attempt - 1}")
+        job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=key)
+        job_id = job["job_id"]
+        _log(f"{slug}: plan job {job_id} queued (attempt {attempt})")
+        final = wait_for_job(job_id, label=f"{slug} plan", timeout=2400)
+        flow["plan_job_id"] = job_id
+        flow["plan_job_state"] = final.get("state")
+        flow["plan_job_error"] = final.get("error")
+        if final.get("state") not in SUCCESS_JOB_STATES:
+            raise RuntimeError(f"{slug}: plan job {job_id} ended {final.get('state')}: "
+                               f"{json.dumps(final.get('error'))[:600]}")
+        outline = ok("course.outline", {"enrollment_id": flow["enrollment_id"]})
+        plan = outline.get("plan") or {}
+        validation = plan.get("validation") or {}
+        flow["plan_attempts"].append(
+            {
+                "job_id": job_id,
+                "plan_id": plan.get("plan_id"),
+                "plan_hash": plan.get("plan_hash"),
+                "state": plan.get("state"),
+                "verdict": validation.get("verdict"),
+                "outcome": validation.get("outcome"),
+                "independence": validation.get("independence"),
+                "approvable": validation.get("approvable"),
+                "reasons": validation.get("reasons"),
+            }
+        )
+        flow["plan_id"] = plan.get("plan_id")
+        flow["objectives"] = _objectives(outline)
+        flow["validation"] = validation
+        _log(f"{slug}: plan {flow['plan_id']} {plan.get('state')}, "
+             f"verdict {validation.get('verdict')}, {len(flow['objectives'])} objectives")
+        if validation.get("approvable"):
+            return flow
+        if attempt < PLAN_ATTEMPTS:
+            _log(f"{slug}: plan not approvable; regenerating "
+                 f"({len(validation.get('reasons') or [])} reasons recorded)")
+    reasons = flow["validation"].get("reasons") or []
+    raise RuntimeError(
+        f"{slug}: plan still not approvable after {PLAN_ATTEMPTS} authored plans: "
+        + "; ".join(str(reason) for reason in reasons[:6])
+    )
 
 
 def approve_plan(slug: str, flow: dict) -> dict:
     book = ok("parent.blueprint.read", {"course_id": flow["course_id"]})
     plan = book["plan"]
+    validation = plan.get("validation") or flow.get("validation") or {}
+    if not validation.get("approvable"):
+        raise RuntimeError(
+            f"{slug}: refusing to approve a plan the validator did not clear "
+            f"(verdict {validation.get('verdict')}): "
+            + "; ".join(str(reason) for reason in (validation.get("reasons") or [])[:4])
+        )
     approved = ok(
         "plan.approve",
         {"enrollment_id": flow["enrollment_id"], "plan_id": plan["plan_id"],
@@ -355,7 +421,7 @@ def run_lessons(slug: str, flow: dict) -> dict:
 
 def render_lesson(slug: str, flow: dict) -> dict:
     outline = ok("course.outline", {"enrollment_id": flow["enrollment_id"]})
-    objectives = outline.get("objectives") or []
+    objectives = _objectives(outline)
     if not objectives:
         raise RuntimeError(f"{slug}: approved plan has no objectives")
     first = objectives[0]
@@ -382,6 +448,53 @@ def render_lesson(slug: str, flow: dict) -> dict:
     return flow
 
 
+def export_course(slug: str, flow: dict, copy_to: Path | None = None) -> dict:
+    """Package the course through ``course.export`` and optionally copy the zip out.
+
+    The export gate is the product's own: an approved plan plus pages a validator cleared (or a
+    human approved) and a content hash the caller reviewed. Nothing here bypasses it.
+    """
+    read = ok("course.export.read", {"enrollment_id": flow["enrollment_id"]})
+    if not read.get("ready"):
+        raise RuntimeError(
+            f"{slug}: export not ready: {read.get('blocked_reason')} "
+            f"{read.get('blocked_message')} {read.get('problems')}"
+        )
+    digest = str(read["content_hash"])
+    exported = ok(
+        "course.export",
+        {"enrollment_id": flow["enrollment_id"], "expected_content_hash": digest},
+        key=keyed(slug, "export"),
+    )
+    flow["export"] = {
+        "export_id": exported.get("export_id"),
+        "pack_id": (exported.get("pack") or {}).get("pack_id"),
+        "pack_version": (exported.get("pack") or {}).get("pack_version"),
+        "manifest_hash": (exported.get("pack") or {}).get("manifest_hash"),
+        "content_hash": exported.get("content_hash"),
+        "files": len(exported.get("files") or []),
+        "license": (exported.get("license") or {}).get("license_id")
+        or (exported.get("license") or {}).get("id"),
+    }
+    root = Path(os.environ.get("CP015_EXPORT_ROOT",
+                               str(Path(os.environ.get("CP015_HOME", "")).expanduser()
+                                   / "plugin-data/coursebook/pack-exports")))
+    pack_id = flow["export"]["pack_id"]
+    candidates = sorted(root.glob(f"{pack_id}-*.zip"), key=lambda p: p.stat().st_mtime)
+    if candidates:
+        source = candidates[-1]
+        flow["export"]["archive"] = str(source)
+        flow["export"]["archive_bytes"] = source.stat().st_size
+        if copy_to is not None:
+            copy_to.mkdir(parents=True, exist_ok=True)
+            destination = copy_to / f"{slug}.zip"
+            destination.write_bytes(source.read_bytes())
+            flow["export"]["copied_to"] = str(destination)
+    _log(f"{slug}: exported {pack_id} ({flow['export'].get('archive_bytes')} bytes, "
+         f"{flow['export']['files']} files)")
+    return flow
+
+
 def run_one(slug: str, spec: dict) -> dict:
     _log(f"=== {slug}: {spec['title']} ===")
     flow = create_course(slug, spec)
@@ -401,6 +514,10 @@ def main() -> int:
     parser.add_argument("--record", help="write the run record JSON here")
     parser.add_argument("--merge", action="store_true",
                         help="merge into an existing record instead of replacing it")
+    parser.add_argument("--export-only", action="store_true",
+                        help="export the courses already in --record; generate nothing")
+    parser.add_argument("--copy-exports", metavar="DIR",
+                        help="copy each exported zip into DIR (committed seed directory)")
     args = parser.parse_args()
 
     selected = sorted(COURSES) if args.all or not args.only else args.only
@@ -411,6 +528,28 @@ def main() -> int:
         record.setdefault("courses", {})
 
     failures = []
+    copy_to = Path(args.copy_exports) if args.copy_exports else None
+    if args.export_only:
+        if not args.record or not Path(args.record).is_file():
+            raise SystemExit("--export-only needs an existing --record")
+        record = json.loads(Path(args.record).read_text(encoding="utf-8"))
+        for slug, flow in (record.get("courses") or {}).items():
+            if flow.get("error") or not flow.get("enrollment_id"):
+                _log(f"{slug}: skipped (no completed course in the record)")
+                continue
+            if args.only and slug not in args.only:
+                continue
+            try:
+                export_course(slug, flow, copy_to=copy_to)
+            except Exception as exc:  # noqa: BLE001
+                failures.append((slug, str(exc)))
+                flow["export_error"] = str(exc)
+                _log(f"{slug}: export FAILED — {exc}")
+        Path(args.record).write_text(json.dumps(record, indent=2), encoding="utf-8")
+        for slug, error in failures:
+            _log(f"FAILED {slug}: {error.splitlines()[0]}")
+        return 1 if failures else 0
+
     for slug in selected:
         try:
             record["courses"][slug] = run_one(slug, COURSES[slug])

@@ -1,0 +1,11 @@
+{
+  "base": "http://127.0.0.1:44501",
+  "wire_version": 25,
+  "started_at": "2026-11-10T21:13:22.456386+00:00",
+  "courses": {
+    "astronomy": {
+      "slug": "astronomy",
+      "error": "'id'"
+    }
+  }
+}
