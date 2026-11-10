@@ -18,8 +18,16 @@ and the host's own `image_generate` tool. No test double, no re-hosted art.
   16:9, 4:5, 1:1) is recorded in the prompt and in `provenance.json`, and the contact sheet
   applies the mechanical crop the layout uses. Nothing is stretched.
 - Lettering check: CP-010 standard — a word of two or more characters at >= 70 Tesseract
-  confidence. All 14 plates are clean after one repair round (the section title had reached the
-  prompt as prose; it now travels only as a suppression instruction).
+  confidence (psm 11). **Thirteen of fourteen** plates are clean. The section title had reached the
+  prompt as prose; it now travels only as a suppression instruction.
+- Open lettering residual (not cleared): `technical-brake-bleed/04-hero-authored.png`
+  (repair round 1) returns one token, `/‘I_I`, at confidence 75.9 in a 579x73 band at
+  `+176+477`. The band is structured painted detail (Canny edge density 0.052 against 0.009 in
+  a known quiet field), so it is not a smooth-gradient artefact; the author judged it bench
+  texture, not lettering, but the gate did not clear it and no second repair round was spent.
+  Reviewer: one crop at that box decides it. If it reads as a glyph it is a textless defect
+  and the plate needs one more repair pass.
+
 - Medium/light verification: one vision pass on each final hero and on the repaired section
   frame. Both heroes read as opaque gouache on warm paper with a dark-brown ink contour and an
   upper-left key; no glyphs. Two repair frames are noted in `provenance.json`
