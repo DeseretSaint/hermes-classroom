@@ -71,10 +71,34 @@ stimulus. Each asserted for: one filled control, XP only in Game, stepper states
 plain kana line, romaji line, evidence count and integrity classes, one next action per
 empty/loading/error state, mascot hidden under 620 px.
 
-## 4. Full suite
+## 4. Full suite — 3362 tests, 897.975 s, two failures, both named below
 
-`python3 -m unittest discover -s tests -t .` is running on ec9dd47 and is recorded on the card
-comment when it lands. It does not gate this partial handoff, but its result belongs to the review.
+```text
+Ran 3362 tests in 897.975s
+FAILED (failures=2, skipped=11)
+```
+
+**A. `test_m4_visual_audit.test_evidence_is_not_stale_against_the_shipped_module` — FIXED in
+1667d94.** `desktop/plugin.js` changed, so the M4 evidence pin was stale by construction. Regenerated
+with `python3 scripts/m4v-audit.py` on ec9dd47: 15 claims PASS, 0 not PASS, pin now
+`97d13c6a…314e`. No frame changed; `tests.test_m4_visual_audit` is green (14 tests).
+
+**B. `test_desktop_gm010_engagement_ui.test_game_header_only_in_game` — OPEN, needs the owner of
+that test file.** It asserts
+
+```python
+self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 2)
+```
+
+with the comment "There is no third mount a textbook surface could reach". This card makes that
+comment stale *by design*: SPEC-V3 §5.3 puts a `ChallengeCard` and the XP chip in the classroom's
+rail in Game mode, so `ClassroomV3Surface` reads `engagement.read` gated on `mode === 'game'` —
+a legitimate third mount, and the reason the read sits in my segment rather than in the manager's
+mount code. It is not reachable from a textbook surface: `test_classroom_v3_no_xp_outside_game`
+renders Guided and Textbook and asserts no `data-cb3-xp`, no `XP` string and no challenge.
+The one-line fix belongs to whoever owns `tests/test_desktop_gm010_engagement_ui.py`: expect 3 and
+name the classroom as the third, gated mount. Editing that file is outside this card's ownership,
+so it is reported, not changed. **This failure is the only red test on the branch.**
 
 ## 5. Deferred to the merge — what the manager must do (do not read this as a pass)
 
@@ -85,13 +109,15 @@ a photograph of an unreachable component and would fail evidence rule 1 (from th
    the module's `export {}` lives in the last segment, which this card may not edit. Add both names
    (plus, for tests, `ClassroomCheckCard`, `classroomStepNodes`, `classroomLineFromPage`,
    `classroomEvidence`, `classroomSceneFromWorld`, `CB3_CLASSROOM_COPY`).
-2. **Route mount.** Replace the v2 lesson pane's central reading column with `ClassroomV3Surface` in
+2. **The gm010 count (§4 B).** Owner of `tests/test_desktop_gm010_engagement_ui.py` updates the
+   third-mount expectation; no product file changes for it.
+3. **Route mount.** Replace the v2 lesson pane's central reading column with `ClassroomV3Surface` in
    the route composition (98/99 segment, not this card), passing the row, enrollment, objective,
    mode and the four navigation callbacks. `ClassroomV3` is pure and stays the render target.
-3. **Capture.** Run `scripts/cp-capture.mjs` from the merged commit with the eight baseline cells,
+4. **Capture.** Run `scripts/cp-capture.mjs` from the merged commit with the eight baseline cells,
    every named state, forced colors and the 1349 cell, then build the side-by-sides with
    `scripts/cp-sbs.py` against the concept's classroom crop.
-4. **Review.** `cbqa` scores §1–§9 on the captures; this MANIFEST currently supports no score.
+5. **Review.** `cbqa` scores §1–§9 on the captures; this MANIFEST currently supports no score.
 
 ## 6. Requests and gaps reported, not fixed (file ownership)
 
