@@ -281,11 +281,22 @@ CSS_NUMBER = r"(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?"
 #: A duration with an ASCII case-insensitive unit: CSS units are case-insensitive, so ``900MS`` and
 #: ``0.9S`` must be seen exactly like ``900ms``.
 DURATION = re.compile(r"(?<![\w.-])(" + CSS_NUMBER + r")(ms|s)\b", re.I)
+#: A signed CSS ``<number>``: the shared numeric grammar with an optional ``[+-]`` in front.
+#: CP-003d: ``margin: -2vw`` is a declaration a browser paints, but the negative lookbehind
+#: ``(?<![\w.-])`` excludes ``-`` and the unsigned number cannot start on it, so ``-2vw`` was
+#: invisible to both implementations. The sign is composed here rather than folded into
+#: ``CSS_NUMBER`` so each scan decides for itself: ``VW`` takes it, ``DURATION`` deliberately does
+#: not (a negative duration is invalid CSS and never paints, so matching it would only turn a
+#: non-painting declaration into a failure). The lookbehind still keeps an identifier whose ``-``
+#: is part of its name (``x-2vw``) out, because the sign is only reachable from a non-word,
+#: non-dot boundary.
+SIGNED_CSS_NUMBER = r"[+-]?" + CSS_NUMBER
 #: A viewport measurement on the same numeric grammar and the same ASCII case-insensitive unit
 #: rule: `100VW` / `1E3Vw` are the declarations a browser paints, so the gate and the audit must
 #: see them exactly like `100vw`. Without `re.I` the uppercase spellings were skipped and both
-#: implementations reported PASS on a viewport measurement (CP-003c, R1).
-VW = re.compile(r"(?<![\w.-])" + CSS_NUMBER + r"vw\b", re.I)
+#: implementations reported PASS on a viewport measurement (CP-003c, R1). CP-003d: the number may
+#: carry a sign (`-2vw`, `-0.5VW`, `calc(-2vw + 1px)`); both implementations import this pattern.
+VW = re.compile(r"(?<![\w.-])" + SIGNED_CSS_NUMBER + r"vw\b", re.I)
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 
 # --------------------------------------------------------------------------------------------

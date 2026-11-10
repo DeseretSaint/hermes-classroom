@@ -489,6 +489,66 @@ class V3GateBitesTest(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.run_gate("V3StylesheetTest", method, self.module_text(css=css))
 
+    def test_signed_viewport_measurements_trip_the_vw_claim(self) -> None:
+        # CP-003d: a CSS `<number>` may carry a leading sign, so `margin: -2vw` is a declaration a
+        # browser paints. The shared grammar had no `[+-]?` and the negative lookbehind excludes
+        # `-`, so the `2vw` inside `-2vw` was never matched and both the gate and V-12 reported
+        # PASS. The sign must not become a false positive: a bare `-2`, another unit, or an
+        # identifier whose `-` is part of the name (`x-2vw`) is not a viewport measurement.
+        positives = (
+            "margin: -2vw;",
+            "margin: -2VW;",
+            "margin: -0.5VW;",
+            "margin: -1e3vw;",
+            "margin: +2vw;",
+            "margin: calc(-2vw + 1px);",
+        )
+        good = self.good_css()
+        for declaration in positives:
+            css = good.replace("container-type: inline-size;", declaration)
+            with self.subTest(declaration=declaration):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                with self.assertRaises(AssertionError):
+                    self.run_gate("V3StylesheetTest",
+                                  "test_no_viewport_unit_on_the_v3_surface",
+                                  self.module_text(css=css))
+
+        negatives = (
+            "margin: -2;",
+            "margin: -2px;",
+            "--gap-2vw: 4px;",
+            "grid-column: x-2vw;",
+        )
+        for declaration in negatives:
+            css = good.replace("container-type: inline-size;", declaration)
+            with self.subTest(control=declaration):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                self.run_gate("V3StylesheetTest",
+                              "test_no_viewport_unit_on_the_v3_surface",
+                              self.module_text(css=css))
+        with self.subTest(control="selector .x-2vw"):
+            self.run_gate("V3StylesheetTest", "test_no_viewport_unit_on_the_v3_surface",
+                          self.module_text(css=good + "[data-cb-v3] .x-2vw { color: red; }\n"))
+
+    def test_the_sign_applies_to_viewport_measurements_only(self) -> None:
+        # CP-003d, required outcome 2: deliberate decision. A negative duration is invalid CSS and
+        # never paints, so DURATION keeps the unsigned shared number; a signed viewport measurement
+        # is legal and paints, so VW composes the same number with an optional sign. Pinning both
+        # directions stops a later card from "unifying" the sign onto durations (turning a
+        # non-painting declaration into a failure) or from dropping it from VW again.
+        from tests.cb_source_scope import DURATION, VW
+
+        for text in ("-2vw", "-2VW", "-0.5VW", "-1e3vw", "+2vw", "calc(-2vw + 1px)"):
+            with self.subTest(positive=text):
+                self.assertIsNotNone(VW.search(text), f"VW cannot see {text!r}")
+        for text in ("x-2vw", ".x-2vw", "--gap-2vw", "margin: -2;", "margin: -2px;"):
+            with self.subTest(control=text):
+                self.assertIsNone(VW.search(text), f"VW false-positives on {text!r}")
+        self.assertIsNotNone(DURATION.search("900MS"),
+                             "DURATION lost its case-insensitive unit")
+        self.assertIsNone(DURATION.search("-0.9s"),
+                          "DURATION must stay unsigned: a negative duration never paints")
+
     def test_a_marker_region_cannot_smuggle_a_shadow_or_a_gradient(self) -> None:
         # Reviewer round 1, D3: a CB-V3-BEGIN…END region is cut from the v2 region, so exempting
         # it from the v3 paint scans as well would leave its content in no gate at all. Only the

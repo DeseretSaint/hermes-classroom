@@ -225,6 +225,33 @@ class V3AuditNormalisationTest(unittest.TestCase):
                     f"{ident} reported PASS on {mutation!r}: the audit cannot parse the number",
                 )
 
+    def test_signed_viewport_measurements_fail_v12(self) -> None:
+        # CP-003d: `margin: -2vw` / `-2VW` / `-0.5VW` are declarations a browser paints. The
+        # audit imports the same `VW` grammar as the gate, so the sign must be seen here too;
+        # before the fix V-12 reported PASS on every signed spelling (the lookbehind excludes `-`).
+        good = self.builder.good_css()
+        for value in ("-2vw", "-2VW", "-0.5VW", "-1e3vw", "+2vw", "calc(-2vw + 1px)"):
+            css = good.replace("container-type: inline-size;", f"margin: {value};")
+            with self.subTest(value=value):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                self.assertEqual(self.statuses(css)["V-12"], "FAIL",
+                                 f"V-12 reported PASS on {value!r}")
+
+    def test_signed_lookalikes_do_not_fail_v12(self) -> None:
+        # Negative controls: a unitless number, another unit, a custom-property name and a selector
+        # identifier are not viewport measurements, so the sign must not make V-12 false-fail.
+        good = self.builder.good_css()
+        controls = (
+            ("unitless", good.replace("container-type: inline-size;", "margin: -2;")),
+            ("other unit", good.replace("container-type: inline-size;", "margin: -2px;")),
+            ("custom prop", good.replace("container-type: inline-size;", "--gap-2vw: 4px;")),
+            ("selector", good + "[data-cb-v3] .x-2vw { color: red; }\n"),
+        )
+        for label, css in controls:
+            with self.subTest(control=label):
+                self.assertEqual(self.statuses(css)["V-12"], "PASS",
+                                 f"V-12 false-failed on {label}")
+
 
 if __name__ == "__main__":
     unittest.main()
