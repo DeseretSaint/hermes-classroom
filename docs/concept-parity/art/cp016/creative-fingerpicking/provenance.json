@@ -77,9 +77,20 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "Illustrated still life with a ukulele/guitar, colored booklets or cards, a cup, a pick, and a blank speckled paper area; no printed marks or musical notation are visible.",
-        "evidence": "I inspected the right-hand paper surface, which is blank cream paper with speckles and no writing; the colored booklets/cards on the left, which have solid covers and no text or symbols; the cup, which is plain green with white contents and no label; the ukulele body, neck, fretboard, strings, and headstock, which show wood grain, frets, strings, and tuning pegs but no staves, noteheads, clefs, ch",
-        "read": "{\"notation\": false, \"kind\": \"Illustrated still life with a ukulele/guitar, colored booklets or cards, a cup, a pick, and a blank speckled paper area; no printed marks or musical notation are visible.\", \"evidence\": \"I inspected the right-hand paper surface, which is blank cream paper with speckles and no writing; the colored booklets/cards on the left, which have solid covers and no text or symbols; the cup, which is plain green with white contents and no label; the ukulele body, neck, fretboard, strings, and headstock, which show wood grain, frets, strings, and tuning pegs but no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, or numerals; the pick, which is plain orange with no marking; and the frame/edges, which show no printed marks. No hands are present.\"}"
+        "kind": "painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation",
+        "evidence": "Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.",
+        "read": "{\"notation\":false,\"kind\":\"painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation\",\"evidence\":\"Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"painted still life with ukulele, colored booklets/cards, cup, pick, and blank paper panel; no printed notation\",\"evidence\":\"Inspected the right blank paper surface, colored booklets/cards, ukulele fretboard/body, cup, pick, tabletop, wall/background, and shadows; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, brand names, writing, labels, frame, ceiling, or hands are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, booklets/cards, cup, ukulele, pick, wall/background, and cast shadows; no lamp, pendant, bulb, lantern, sconce, or window is pictured, no fixture emits light, and no bloom/halo/radial glow appears. Lit upper-left faces and shadows falling down-right indicate the key light comes from the upper-left.\"}}"
       }
     },
     {
@@ -119,12 +130,23 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "none",
-        "evidence": "Inspected the palette (colored sections), cup (liquid contents), acoustic guitar (headstock, fretboard, body, strings), guitar pick (textured surface), stack of colored papers/cards (solid colors), open notebook (blank pages), and large blank paper sheet. No musical notation, staves, noteheads, text, numerals, brand names, or symbols resembling writing were found on any object.",
-        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"none\",\n  \"evidence\": \"Inspected the palette (colored sections), cup (liquid contents), acoustic guitar (headstock, fretboard, body, strings), guitar pick (textured surface), stack of colored papers/cards (solid colors), open notebook (blank pages), and large blank paper sheet. No musical notation, staves, noteheads, text, numerals, brand names, or symbols resembling writing were found on any object.\"\n}\n```"
+        "kind": "blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing",
+        "evidence": "Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands ar",
+        "read": "{\"notation\":false,\"kind\":\"blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing\",\"evidence\":\"Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands are visible, and no frame/ceiling/walls appear in this top-down still life.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.\"}}"
       },
       "repair_round": 4,
-      "repair_method": "regenerate"
+      "repair_method": "regenerate",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"blank paper/notebook/cards, unlabeled palette and tape, guitar with strings/frets but no notation or writing\",\"evidence\":\"Inspected the large blank paper surface, the open notebook pages, the stacked cards, the makeup palette pans, the tape roll, the guitar fretboard/headstock, and the pick; all paper/card surfaces are blank, palette/tape are unlabeled, and the guitar shows only strings/frets/tuning pegs with no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, or writing; no hands are visible, and no frame/ceiling/walls appear in this top-down still life.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body/neck, makeup palette, tape roll, pick, card stack, open notebook, and large paper; their cast shadows fall down-right and their lit edges/highlights sit upper-left, while no lamp, pendant, bulb, lantern, sconce, or window is pictured; no fixture is brighter than the surface, and there is no bloom/halo/radial glow.\"}}"
+      }
     },
     {
       "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/03-style_board-deep-pigment.png",
@@ -166,11 +188,22 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "None",
-        "evidence": "The image contains no musical notation, text, numbers, diagrams, or symbols. It is a purely illustrative graphic of a guitar and picks.",
-        "read": "The image displays a digital illustration of an acoustic guitar set against a textured, beige background that resembles paper. The guitar is positioned diagonally, with the body in the lower left and the neck extending toward the upper center. It features a light wood finish, a dark brown bridge, and a black sound hole. Behind the guitar's upper bout, there are three shield-shaped objects in dark brown, forest green, and salmon pink, which appear to be pickguards or large picks. A single brown guitar pick lies on the surface near the bottom right of the guitar body. The background has a subtle vertical division, with the left side being slightly darker, suggesting a book layout. The art style is flat and illustrative with a grainy texture overlay.\n\n```json\n{\n  \"notation\": false,\n  \"kind\": \"None\",\n  \"evidence\": \"The image contains no musical notation, text, numbers, diagrams, or symbols. It is a purely illustrative graphic of a guitar and picks.\"\n}\n```"
+        "kind": "blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing",
+        "evidence": "Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.",
+        "read": "{\"notation\":false,\"kind\":\"blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing\",\"evidence\":\"Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.\"}}"
       },
-      "repair_method": "edit"
+      "repair_method": "edit",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"blank booklets/cards, acoustic guitar, pick, and paper background; no printed notation or writing\",\"evidence\":\"Inspected the three blank booklets/cards (dark brown, green, pink), the guitar body/fretboard/headstock, the brown pick, and the beige paper background; no staves, noteheads, clefs, chord boxes, tablature, fret numbers, letters, numerals, labels, brand names, hands, or instruction steps are present.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the guitar body, booklets/cards, pick, and paper background; no lamp, pendant, bulb, lantern, sconce, window, ceiling, or wall is pictured. Highlights sit on the upper-left edges of the guitar and booklets, and shadows fall down-right; no bloom, halo, or radial glow is visible.\"}}"
+      }
     },
     {
       "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/04-hero-authored.png",
@@ -212,9 +245,20 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "Illustration of an acoustic guitar, stacked books, and abstract rectangular wall art. No musical notation, text, numbers, or diagrams are present.",
-        "evidence": "The guitar body and headstock feature only mechanical parts (strings, pegs) with no sheet music or chord diagrams. The books have blank spines and pages. The wall features solid-colored rectangles resembling art, not text or charts.",
-        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"Illustration of an acoustic guitar, stacked books, and abstract rectangular wall art. No musical notation, text, numbers, or diagrams are present.\",\n  \"evidence\": \"The guitar body and headstock feature only mechanical parts (strings, pegs) with no sheet music or chord diagrams. The books have blank spines and pages. The wall features solid-colored rectangles resembling art, not text or charts.\"\n}\n```"
+        "kind": "no printed marks or musical notation; blank booklets and wall cards, plain guitar",
+        "evidence": "Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.",
+        "read": "{\"notation\": false, \"kind\": \"no printed marks or musical notation; blank booklets and wall cards, plain guitar\", \"evidence\": \"Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.",
+        "reasons": [],
+        "read": "{\"notation\": false, \"kind\": \"no printed marks or musical notation; blank booklets and wall cards, plain guitar\", \"evidence\": \"Inspected the open booklet pages, stacked book covers, wall-mounted rectangular cards, guitar fretboard/body, tabletop, and wall; all are blank or plain with no letters, numerals, staves, noteheads, clefs, chord boxes, tablature, fret numbers, labels, brand names, code, equations, tick boxes, tables, diagrams, charts, or instruction marks.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the wall cards, guitar, books, tabletop, wall, and cast shadows; no lamp, bulb, window, lantern, sconce, or other fixture is pictured, and no bloom or radial glow is visible. The left/top faces of the guitar, books, and wall cards are lit while shadows fall to the right and downward, indicating upper-left key light.\"}}"
       }
     },
     {
@@ -256,12 +300,29 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "none",
-        "evidence": "The image shows a collection of craft and music items including an acoustic guitar, a fox figurine, a guitar pick, paint jars, color swatches, and a blank sketchbook. There are no visible letters, numbers, musical notation, diagrams, or other printed marks on any of the objects or the background.",
-        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"none\",\n  \"evidence\": \"The image shows a collection of craft and music items including an acoustic guitar, a fox figurine, a guitar pick, paint jars, color swatches, and a blank sketchbook. There are no visible letters, numbers, musical notation, diagrams, or other printed marks on any of the objects or the background.\"\n}\n```"
+        "kind": "No printed notation or writing; blank paper/cards and plain jars.",
+        "evidence": "Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.",
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; blank paper/cards and plain jars.\",\"evidence\":\"Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.\"}}"
       },
       "repair_round": 4,
-      "repair_method": "edit"
+      "repair_method": "edit",
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; blank paper/cards and plain jars.\",\"evidence\":\"Inspected the paper swatches/cards (blank colored and cream sheets), the large cream booklet/page (blank), the jar labels (plain, no text), the guitar fretboard/headstock (strings, frets, tuning pegs only, no fret numbers/tab/brand), and the fox plush; no hands, frame, ceiling, or walls are pictured, and shadows show no writing.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected tabletop, jars, guitar, paper booklet, fox, and their shadows; no lamp/pendant/bulb/lantern/sconce/window is pictured; highlights are on upper-left sides of jars/guitar/fox and shadows fall down-right; no bloom/halo/radial glow.\"}}"
+      },
+      "lettering_crop": {
+        "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/crops/05-cover-mark.png",
+        "trigger": "tesseract token 'EUR/' at conf 91.5 in a 37x46 box",
+        "read": "magnified four times; fox ear edge and painted texture, no readable letter, numeral, logo or label",
+        "verdict": "cleared_no_glyph"
+      }
     },
     {
       "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/06-section-s1-authored.png",
@@ -300,9 +361,20 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "Illustration of an acoustic guitar, stacked blank books/notebooks, two small jars, on a wooden table against textured paper; no musical notation or writing.",
-        "evidence": "Inspected the paper background (speckled grain, no marks), wooden tabletop (wood grain only), guitar body/neck/fretboard/headstock (strings, frets, rosette, pickguard, tuning pegs; no noteheads, clefs, tablature, fret numbers, or brand text), stacked booklets/cards (blank covers and pages; no letters or numerals), small jars/lids (blank; no labels), and confirmed no hands or frame are present.",
-        "read": "{\"notation\": false, \"kind\": \"Illustration of an acoustic guitar, stacked blank books/notebooks, two small jars, on a wooden table against textured paper; no musical notation or writing.\", \"evidence\": \"Inspected the paper background (speckled grain, no marks), wooden tabletop (wood grain only), guitar body/neck/fretboard/headstock (strings, frets, rosette, pickguard, tuning pegs; no noteheads, clefs, tablature, fret numbers, or brand text), stacked booklets/cards (blank covers and pages; no letters or numerals), small jars/lids (blank; no labels), and confirmed no hands or frame are present.\"}"
+        "kind": "No printed marks or musical notation; blank booklets and a guitar with frets/strings only",
+        "evidence": "Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or",
+        "read": "{\"notation\": false, \"kind\": \"No printed marks or musical notation; blank booklets and a guitar with frets/strings only\", \"evidence\": \"Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or walls are pictured; the background is plain speckled paper.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.",
+        "reasons": [],
+        "read": "{\"notation\": false, \"kind\": \"No printed marks or musical notation; blank booklets and a guitar with frets/strings only\", \"evidence\": \"Inspected the booklets and paper surfaces on the wooden table: colored covers and white pages are blank, with no letters, numerals, brand names, chord boxes, tablature, or symbols resembling writing. Inspected the guitar fretboard and headstock: only frets, strings, soundhole rosette, bridge, and tuning pegs are visible, with no fret numbers or notation. No cards, labels, hands, frame, ceiling, or walls are pictured; the background is plain speckled paper.\", \"light\": {\"fixture_visible\": false, \"fixture_emits\": false, \"glow\": false, \"key\": \"upper-left\", \"evidence\": \"Inspected the guitar body, booklets, small jars, wooden tabletop, and table legs: shadows fall to the right/lower-right across the wooden board and background, and the lit edges are on the upper-left sides of the masses. No lamp, bulb, pendant, lantern, sconce, or window is pictured, and there is no bloom or radial glow.\"}}"
       }
     },
     {
@@ -345,9 +417,20 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "none",
-        "evidence": "No musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, letters, numerals, brand names, or hands/instruction steps are visible; only guitar strings/frets, books, color swatches, pick, table, and shadows.",
-        "read": "{\"notation\": false, \"kind\": \"none\", \"evidence\": \"No musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, letters, numerals, brand names, or hands/instruction steps are visible; only guitar strings/frets, books, color swatches, pick, table, and shadows.\"}"
+        "kind": "No printed notation or writing; only guitar strings/frets and colored cards/booklets.",
+        "evidence": "Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.",
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; only guitar strings/frets and colored cards/booklets.\",\"evidence\":\"Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.\"}}"
+      },
+      "light_gate": {
+        "verdict": "clean",
+        "light": true,
+        "key": "upper-left",
+        "fixture_visible": false,
+        "fixture_emits": false,
+        "glow": false,
+        "evidence": "Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.",
+        "reasons": [],
+        "read": "{\"notation\":false,\"kind\":\"No printed notation or writing; only guitar strings/frets and colored cards/booklets.\",\"evidence\":\"Inspected the guitar fretboard/strings, soundhole, bridge, pickguard, tabletop, booklets/cards, white swatch card, green pick, background paper, and shadows; found no staves, noteheads, clefs, tablature, fret numbers, letters, numerals, brand names, tick boxes, diagrams, or instruction steps\u2014only wood grain, strings/frets, color blocks, and paper texture.\",\"light\":{\"fixture_visible\":false,\"fixture_emits\":false,\"glow\":false,\"key\":\"upper-left\",\"evidence\":\"Inspected the background paper, tabletop, guitar body/neck, booklets/cards, white swatch card, green pick, table legs, and cast shadows; no lamp, bulb, lantern, sconce, or window is pictured, and there is no glowing source or halo. The upper-left faces of the guitar, table, and cards are lit while shadows fall down-right, indicating upper-left key light.\"}}"
       }
     }
   ],

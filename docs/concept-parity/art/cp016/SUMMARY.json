@@ -7,13 +7,16 @@
       "plates": 7,
       "sheet": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/technical-brake-bleed/contact-sheet.png",
       "prompt_versions": [
-        "world-prompt-v2",
-        "world-prompt-v3"
+        "world-prompt-v4"
       ],
       "lettering_gate_clean": 6,
       "notation_gate_clean": 7,
       "notation_gate_suspect": 0,
-      "notation_gate_unchecked": 0
+      "notation_gate_unchecked": 0,
+      "light_gate_clean": 7,
+      "light_gate_suspect": 0,
+      "light_gate_unchecked": 0,
+      "light_gate_off_key": []
     },
     {
       "topic": "creative-fingerpicking",
@@ -27,7 +30,11 @@
       "lettering_gate_clean": 6,
       "notation_gate_clean": 7,
       "notation_gate_suspect": 0,
-      "notation_gate_unchecked": 0
+      "notation_gate_unchecked": 0,
+      "light_gate_clean": 7,
+      "light_gate_suspect": 0,
+      "light_gate_unchecked": 0,
+      "light_gate_off_key": []
     }
   ]
 }

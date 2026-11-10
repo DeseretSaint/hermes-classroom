@@ -9,13 +9,13 @@ and the host's own `image_generate` tool. No test double, no re-hosted art.
 | Bleed a bicycle hydraulic brake (technical) | `workshop_manual` | 3 style boards, hero, cover, 2 sections | `technical-brake-bleed/contact-sheet.png` |
 | Fingerpicking patterns for acoustic guitar (creative) | `studio_bench` | 3 style boards, hero, cover, 2 sections | `creative-fingerpicking/contact-sheet.png` |
 
-- Prompt version: `world-prompt-v3` (v3 adds the notation/diagram negatives for domains where
-  those are the natural illustration and the "place and mood only" section fence for **every**
-  grammar, not only service worlds). Each plate records the version it was actually rendered
-  from; the packets carry a mix of v2 and v3 plates, listed per plate below. The creative set
-  exercises the shipping v3 prompt in all four repaired roles; the technical set was re-rendered
-  where its own gates failed and, in round 3, where a board had recorded the wrong direction's
-  prompt (`01-style_board-authored`).
+- Prompt version: `world-prompt-v4` (v4 adds the emission class of ART-BIBLE §4.4 and rewrites the
+  two grammars that made a lit fixture the light source; v3 added the notation/diagram negatives
+  and the "place and mood only" section fence for **every** grammar). Each plate records the
+  version it was actually rendered from; the packet carries a mix of v2, v3 and v4 plates, listed
+  per plate in `provenance.json`. All seven technical plates are v4; the creative set exercises
+  the shipping v3 prompt in all four repaired roles and was measured clean on the new light gate,
+  so it was not re-rendered for a light rule it does not break.
 - Provider: the host's `image_generate` tool over the managed Nous tool gateway (`fal-queue`).
 - Model: `fal-ai/flux-2-pro`. The catalog's fast default (`flux-2/klein/9b`) rendered flat
   vector and pseudo-text on the first pass, so it is not used for this proof. The model is
@@ -24,17 +24,20 @@ and the host's own `image_generate` tool. No test double, no re-hosted art.
   16:9, 4:5, 1:1) is recorded in the prompt and in `provenance.json`, and the contact sheet
   applies the mechanical crop the layout uses. Nothing is stretched.
 
-## Two gates, two results
+## Three gates, three results
 
-Both gates are recorded per plate in `provenance.json`: `ocr` and `notation`. They measure
-different classes and neither is a plate verdict on its own.
+All three are recorded per plate in `provenance.json`: `ocr`, `notation` and `light_gate`. They
+measure different classes and none is a plate verdict on its own. `notation` and `light_gate`
+come from **one** vision read per plate (`GATE_QUESTION`), so a frame costs one read, not two.
 
 1. **Lettering (OCR, CP-010 standard).** A token of two or more characters at >= 70 Tesseract
    confidence (psm 11). Result of *this gate*: **twelve of fourteen** plates return no token.
    Two plates return one token each, and both are cleared by crop, not by the gate:
-   - `technical-brake-bleed/04-hero-authored.png`: `/‘I_I` at 75.9 in a 579x73 band at
-     `+176+477`; structured painted detail (Canny edge density 0.052 against 0.009 in a quiet
-     field). `easel` cropped the box in review round 1 and cleared it as bench slats and grain.
+   - `technical-brake-bleed/04-hero-authored.png` (round-5 render): `/\` at 75.6 in a 150x32
+     band at `+334+434`. The committed crop `technical-brake-bleed/crops/04-hero-token-band.png`
+     (magnified three times) is the base of a tripod stand on a wooden surface with its cast
+     shadow — no letter, numeral, glyph or writing-like mark. Recorded in the plate's
+     `lettering_crop` field.
    - `creative-fingerpicking/05-cover-authored.png`: `€/` at 91.5 in a 37x46 box at `+462+687`.
      The committed crop `creative-fingerpicking/crops/05-cover-mark.png` (enlarged, 4x) shows
      the fox's ear edge and painted texture; the reader reports no readable letter, numeral,
@@ -45,18 +48,66 @@ different classes and neither is a plate verdict on its own.
    A vision read per plate asks for a JSON verdict on musical notation, staves, chord boxes,
    tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, letters,
    numerals, brand names, and hands performing a technique. Result: **fourteen of fourteen
-   plates clean**. Fail-closed: an unparsed or errored answer, and — since review round 3 — any
-   answer whose `evidence` field is empty or the literal word `none`, is recorded as `unchecked`,
-   never as clean. Every `clean` in this packet carries a described observation naming the
-   objects inspected; `SUMMARY.json` counts `notation_gate_unchecked` separately from
+   plates clean**, each with a described observation. Fail-closed: an unparsed or errored answer,
+   and any answer whose `evidence` field is empty or the literal word `none`, is recorded as
+   `unchecked`, never as clean. `SUMMARY.json` counts `notation_gate_unchecked` separately from
    `notation_gate_clean`, and
    `tests/test_cp016_world_art_bible.py::ProofPacketIntegrityTest` fails if a `clean` row has no
-   evidence. (Round 2 recorded four `clean` rows with `evidence: "none"` — empty reads counted as
-   passes. Those four plates, technical 02/04 and creative 01/06, were re-read in round 3 and now
-   carry their readings.)
+   evidence. (The pre-round-4 read of technical `07-section-s2` reported a brand logo on a
+   bicycle crank; that frame was re-rendered under v4 and the logo is gone.)
+3. **Light (vision read, one per plate, added in round 4).** Fields `fixture_visible`,
+   `fixture_emits`, `glow`, `key` and `evidence`, judged by which side of each mass is lit and
+   which way shadows fall. A plate is `suspect` if any fixture is the light source, if there is
+   any bloom/halo/radial glow, or if the key is not upper-left. Result: **fourteen of fourteen
+   clean, every key upper-left, no fixture emitting anywhere**. Before the round-4 rewrite the
+   same gate read **seven of seven technical plates as suspect** (`fixture_emits` + `glow`; two
+   style boards also read a top key) while the creative set was already clean — one grammar, not
+   the model. That is the measurement `easel` asked for; see §"The light rule".
 
 The earlier "thirteen of fourteen plates are clean" line was an OCR-gate result quoted as a
-plate verdict. It is restated above: twelve OCR-clean, two crop-cleared, fourteen notation-clean.
+plate verdict. It is restated above: twelve OCR-clean, two crop-cleared, fourteen notation-clean,
+fourteen light-clean.
+
+## The light rule
+
+ART-BIBLE §Light (l.33) requires one soft key from the **upper left**, and §4.4 (l.330) forbids
+"no bloom, no halo, no radial glow around a light source ... A lit lantern is a hard-edged
+lamp-yellow mass."
+
+Round 3 shipped seven technical plates that break both, because one grammar composed the scene
+against the light clause it also emitted:
+
+- `coursebook/world.py` (v3) composed `workshop_manual` as *"a centered bench under one overhead
+  lamp"* while the same prompt ended *"Light comes from one soft key light from the upper left"*.
+  A self-contradicting instruction; the model followed the fixture.
+- Every technical style board, hero, cover and section then painted a lit pendant casting a warm
+  cone onto the bench and wall. Neither existing gate measures light, so the packet passed two
+  review rounds on lettering and notation while every technical plate broke this rule.
+
+The round-4 fix is in the shipping builder, not only in the proof:
+
+- `workshop_manual` composition: "a centered bench and tool wall with no ceiling fixture; the only
+  light is the single upper-left key; ...".
+- `field_atlas` composition: a street of **unlit** paper lanterns "hung as flat hard-edged props;
+  the only light is the single upper-left key"; its medium also says the lanterns are painted
+  unlit. The audit found no other grammar composing a fixture as the light (the observatory's
+  "night field" and the kitchen's "warm overhead table" are camera/temperature, not fixtures).
+- Motif vocabulary that named a fixture was renamed so it cannot be interpolated as scene light:
+  `bench light` -> `bench vice`, `reading lamp` -> `reading chair`.
+- `_NEGATIVE` gains the emission class on **every** plate: "no light cone or visible beam", "no
+  glowing bulb or lamp", "no bloom, halo or radial glow", "no second light source", "no key light
+  from the right", "no lit fixture acting as a light source". The class is worded without any
+  other grammar's distinctive token, so the GM-019 foreign-scene fence still holds.
+- `PROMPT_VERSION = "world-prompt-v4"`; the hash moves because the composition and negatives are
+  in the hashed payload.
+
+The gate read before the rewrite: technical 7/7 `suspect` (`fixture_emits` and `glow` on all
+seven; `key=top` on `01` and `03`), creative 7/7 `clean`. After the rewrite and re-render:
+technical 7/7 `clean`, `key=upper-left` on every plate, `fixture_visible`, `fixture_emits` and
+`glow` all false. All seven technical plates were re-rendered in round 4 (and `01`/`04` once more
+with the blank-surface hardening in round 5) because the v4 prompt changes every one of them;
+the creative plates were left as they are — the light gate found nothing to fix in that grammar
+and a re-roll would spend art the reviewer already cleared.
 
 ## Repairs in this round
 
@@ -73,9 +124,20 @@ Every re-render is listed in `provenance.json` with `repair_round` and `repair_m
 | `technical-brake-bleed/01-style_board-authored` | `SHIMANO` on the brake lever (found by the notation gate) | 2 | regenerate | OCR clean, notation clean |
 | `technical-brake-bleed/01-style_board-authored` | round 3: recorded and rendered with the **deep-pigment** prompt (lookup key bug); re-rendered from the authored request, which left one token `\'Ii`. Round 4: hardened re-roll | 3, 4 | regenerate with the direction prompt, then regenerate with the blank-surface hardening | OCR clean, notation clean |
 | `technical-brake-bleed/03-style_board-deep-pigment` | brand lettering on the frame, labels on two jars | 2 | regenerate | OCR clean, notation clean |
+| `technical-brake-bleed/01-style_board-authored` | round 4: prompt rewrite (v4, no ceiling fixture, emission negatives); the first v4 render painted lettering (`Storybook`, `Home`, `Biecycle`, `Mechanic.`), so it was re-rolled with the blank-surface hardening | 4, 5 | regenerate, then regenerate hardened | OCR clean, notation clean, light clean |
+| `technical-brake-bleed/02-style_board-warm-paper` | round 4: lit pendant / warm cone (light gate) | 4 | regenerate | all three gates clean |
+| `technical-brake-bleed/03-style_board-deep-pigment` | round 4: lit pendant / warm cone (light gate) | 4 | regenerate | all three gates clean |
+| `technical-brake-bleed/04-hero-authored` | round 4: lit pendant / warm cone; the v4 render was light-clean but painted lettering (`Hreo`, `ogansit`, `tlure.`), so it was re-rolled hardened | 4, 5 | regenerate, then regenerate hardened | notation and light clean; one symbol-only OCR token `/\`, crop-cleared |
+| `technical-brake-bleed/05-cover-authored` | round 4: lit pendant / warm cone (light gate) | 4 | regenerate | all three gates clean |
+| `technical-brake-bleed/06-section-s1-authored` | round 4: lit pendant / warm cone (light gate) | 4 | regenerate | all three gates clean |
+| `technical-brake-bleed/07-section-s2-authored` | round 4: lit pendant / warm cone, plus a brand logo on a bicycle crank found by the notation gate | 4 | regenerate | all three gates clean |
 
 `edit` is the model's own edit endpoint on the existing plate: it keeps the approved composition
-and removes the printed mark, where a fresh generation re-rolls every other detail.
+and removes the printed mark, where a fresh generation re-rolls every other detail. Round 4 used
+`--no-harden` for the seven technical re-renders: the plate was not being repaired for a defect
+of its own, it was being re-rendered from a rewritten prompt, and a repair suffix would have
+mixed two instructions. The two frames that then failed a gate were re-rolled with the hardening
+suffix under `--repair`.
 
 ## Packet integrity
 
@@ -111,7 +173,7 @@ failures) and passes on this one.
 ## Prompt contract this proof exercises
 
 - Every style board, hero, cover, section and card prompt carries the one gouache medium, the
-  upper-left key, the five-pigment ceiling and the dark-brown ink contour (`world-prompt-v3`).
+  upper-left key, the five-pigment ceiling and the dark-brown ink contour (`world-prompt-v4`).
 - Textless negatives and the fox rule ("no mascot other than the fox") are kept verbatim.
 - A music/`studio_bench` brief carries the notation class in every role: "no musical notation,
   no staves, no clefs and no noteheads", "no chord diagrams or chord boxes, no finger-dot
@@ -121,6 +183,13 @@ failures) and passes on this one.
   or tool action depicted" plus "no hands mid-technique". The typed section title travels only
   as a suppression instruction (`no lettering of the words ...`), never as positive prose.
 - Tests: `tests/test_cp016_world_art_bible.py::NotationHazardContractTest`.
+- **No grammar may make a lit fixture the light source** (v4). Every emitted prompt, in every
+  grammar and every role, carries "one soft key light from the upper left" and the whole emission
+  class; no grammar composition, medium or motif contains a lit-fixture phrase (`overhead lamp`,
+  `lantern-lit`, `lit by`, `bench light`, `reading lamp`, ...); and the two grammars that did are
+  pinned to naming the key as the only light. Tests:
+  `tests/test_cp016_world_art_bible.py::LightRuleContractTest` (four tests, 52 failing subtests on
+  the v3 builder before the rewrite).
 
 - Known limit: brush work is carried more by paper tooth and ink line than by heavy impasto;
   the reviewer (`easel`) is the art judge on that dimension.
@@ -135,9 +204,10 @@ which supplies Pillow, `httpx` and `tools.*`; the script bootstraps itself when 
 
 ```
 python3 scripts/cp016-world-proof.py --notation-only --slug creative-fingerpicking --only 06-section-s1-authored
+python3 scripts/cp016-world-proof.py --light-only
 python3 scripts/cp016-world-proof.py --summary-only
 ```
 
-`--notation-only` re-reads the plates on disk and rewrites each `notation` result; `--only`
-narrows it to named plates; `--summary-only` rebuilds `SUMMARY.json` from the per-topic
-provenance files.
+`--notation-only` and `--light-only` re-read the plates on disk and rewrite each `notation` and
+`light_gate` result from the same single vision read; `--only` narrows it to named plates;
+`--summary-only` rebuilds `SUMMARY.json` from the per-topic provenance files.
