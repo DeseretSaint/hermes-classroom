@@ -670,13 +670,15 @@ class CrossDocumentParityTest(unittest.TestCase):
                 self.assertAlmostEqual(float(lh_text), expected_lh, places=2, msg=f"{step} at {width}: line-height")
 
     def test_spec_labels_the_table_as_a_rendering_of_the_contract(self) -> None:
-        self.assertIn("the contract governs, this table is a rendering", self.type_section)
-        self.assertIn("route-container value", self.type_section)
-        self.assertIn("cqi", self.type_section)
+        flat = re.sub(r"\s+", " ", self.type_section).lower()
+        self.assertIn("the contract governs, this table is a rendering", flat)
+        self.assertIn("route-container value", flat)
+        self.assertIn("cqi", flat)
 
     def test_spec_invariant_covers_radius_and_type_not_only_colour(self) -> None:
         needle = "a hex, a px radius or a rem size written here as authority is a second contract"
-        self.assertTrue(needle in self.spec, "SPEC-V3 lines 17-20 must cover radius and type, not colour only")
+        flat = re.sub(r"\s+", " ", self.spec)
+        self.assertTrue(needle in flat, "SPEC-V3 lines 17-20 must cover radius and type, not colour only")
 
     def test_prose_and_display_measure_agree_with_the_contract(self) -> None:
         measure = self.contract["type"]["measure"]
@@ -697,15 +699,22 @@ class CrossDocumentParityTest(unittest.TestCase):
         self.assertIn("radius `round`", self.radius_section)
         rules = {rule.split(":", 1)[0].strip(): rule.split(":", 1)[1] for rule in self.contract["radius_rules"]}
         self.assertIn("card", rules["round"])
-        self.assertIn(self.contract["radii"]["round"], self.radius_section)
+        round_px = int(self.contract["radii"]["round"].removesuffix("px"))
+        self.assertRegex(self.radius_section, rf"\b{round_px}\s*px\b")
 
     def test_no_spec_line_assigns_a_card_its_own_px_radius(self) -> None:
+        # A cell that puts a number on a card's radius must attribute it to the contract. Cells are
+        # checked, not whole table rows, so a pill on an action and a passing mention of a card on
+        # the same row cannot be confused with a card radius.
         for number, line in enumerate(self.spec.splitlines(), start=1):
-            if "card" not in line.lower() or "radius" not in line.lower():
-                continue
-            if not (re.search(r"radius\s+\d", line) or re.search(r"\b\d+\s*px\b", line)):
-                continue
-            self.assertIn("contract", line, f"SPEC-V3.md:{number} gives a card a px radius as its own authority")
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")] if line.startswith("|") else [line]
+            for cell in cells:
+                low = cell.lower()
+                if "card" not in low or "radius" not in low:
+                    continue
+                if not (re.search(r"radius\s+`?\d", cell) or re.search(r"\b\d+\s*px\b", cell)):
+                    continue
+                self.assertIn("contract", cell, f"SPEC-V3.md:{number} gives a card a px radius as its own authority")
 
     def test_no_spec_cites_a_type_size_that_no_contract_step_renders(self) -> None:
         allowed = _contract_renderings(self.contract)
