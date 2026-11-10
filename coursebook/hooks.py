@@ -365,6 +365,13 @@ from . import pack_flow as _pack_flow  # noqa: E402  (same single wiring point)
 
 _pack_flow.ensure_registered()
 
+# GM-004: the four `world.*` handlers and the durable `course.mode.set` switch. Registration is
+# contract-filtered like every other module, so they bind only on a wire that declares them
+# (cb.rpc v24) and stay fenced on an older backend instead of answering behind its back.
+from . import world as _world  # noqa: E402  (same single wiring point)
+
+_world.ensure_registered()
+
 # Startup reconciliation runs once per process, at plugin load: a crashed worker's jobs become
 # `interrupted_requires_retry`, cancel-in-progress jobs become `cancelled`, and orphaned artifact
 # staging/objects are reconciled. Guarded so tests and an unmigrated install are never mutated by

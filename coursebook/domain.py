@@ -172,6 +172,20 @@ def _named_input(value: Any) -> str | None:
     return None
 
 
+def _creation_presentation_mode(value: Any) -> str | None:
+    """The mode a ``course.create`` caller recorded, or NULL for Textbook intent.
+
+    GM-004: a new course may be created with Game intent, which is what opens the World Studio
+    once a draft plan exists. The value is stored as given (``game``) only when it is exactly
+    that; every other input — omitted, null, blank, an unknown string — stores NULL, and NULL
+    reads as Textbook. Creation intent never claims an approved world, and it never changes an
+    objective, check, attempt or evidence row.
+    """
+    if isinstance(value, str) and value.strip().lower() == "game":
+        return "game"
+    return None
+
+
 def _json_load(value: Any, default: Any) -> Any:
     if value is None:
         return default
@@ -670,11 +684,12 @@ def course_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                 )
         connection.execute(
             "INSERT INTO courses (id, title, recipe, goal, locale, level, subject_domain, scope,"
-            " dials_json, status, pack_id, revision, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NULL, 0, ?, ?)",
+            " dials_json, status, pack_id, revision, created_at, updated_at, presentation_mode)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NULL, 0, ?, ?, ?)",
             (course_id, payload["title"], payload["recipe"], payload["goal"], payload.get("locale"),
              _named_input(payload.get("level")), _named_input(payload.get("subject_domain")),
-             _named_input(payload.get("scope")), _json_dump(payload.get("dials") or {}), now, now),
+             _named_input(payload.get("scope")), _json_dump(payload.get("dials") or {}), now, now,
+             _creation_presentation_mode(payload.get("presentation_mode"))),
         )
         connection.execute(
             "INSERT INTO plans (id, course_id, version, state, plan_hash, schedule_json, created_at, approved_at)"

@@ -137,10 +137,23 @@ V18_ADDED_RESPONSE_FIELDS: dict[str, tuple[str, ...]] = {"lesson.page": ("proven
 #: property and its ``required`` entry before comparing to every earlier snapshot.
 V20_ADDED_RESPONSE_FIELDS: dict[str, tuple[str, ...]] = {"parent.blueprint.read": ("sections",)}
 
+#: GM-004 / cb.rpc v24 appends one *optional* request property to ``course.create``:
+#: ``presentation_mode``, the creation-time Game/Textbook intent. It is never required, so the
+#: carried-over comparison only has to drop the property before comparing the live wire to a
+#: snapshot that predates it.
+V24_ADDED_REQUEST_FIELDS: dict[str, tuple[str, ...]] = {"course.create": ("presentation_mode",)}
+
+
+def _without_v24_course_create_intent(payload: dict, method: str) -> dict:
+    """Undo GM-004's optional ``course.create.presentation_mode`` for a carried-over comparison."""
+    for field in V24_ADDED_REQUEST_FIELDS.get(method, ()):
+        (payload.get("request", {}).get("properties") or {}).pop(field, None)
+    return payload
+
 
 def _without_v17_source_fields(payload: dict, method: str) -> dict:
     """Undo v17's additive source-item fields and v18's provenance for a carried-over comparison."""
-    carried = json.loads(json.dumps(payload))
+    carried = _without_v24_course_create_intent(json.loads(json.dumps(payload)), method)
     if method not in V17_ADDED_SOURCE_ITEMS:
         return carried
     items = carried["response"]["properties"]["sources"]["items"]
@@ -3232,7 +3245,7 @@ class V14AmendmentTest(unittest.TestCase):
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v13.json"])
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v24.json")
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 24)
-        # v23 supersedes v22; v22 supersedes v21 and the older files remain frozen predecessors
+        # v24 supersedes v23; v23 supersedes v22 and the older files remain frozen predecessors
         # pinned on disk.
         self.assertEqual(contracts.contract("cb.rpc")["x-supersedes"],
                          "https://contracts.coursebook.hermes/rpc/v23")
@@ -4325,12 +4338,15 @@ class V23AmendmentTest(unittest.TestCase):
 
     def test_v23_is_v22_plus_the_take_home_family(self) -> None:
         v22 = _document("rpc.v22.json")
+        # v24 is the live wire; this class pins the frozen v23 document it supersedes, so the
+        # GM-005 delta stays testable after two later additive amendments.
         v23 = _document("rpc.v23.json")
         old = list(v22["$defs"]["method"]["enum"])
         new = list(v23["$defs"]["method"]["enum"])
         self.assertEqual(new[: len(old)], old)
         self.assertEqual(tuple(new[len(old):]), self.NEW_METHODS)
         self.assertEqual(v23["x-supersedes"], v22["$id"])
+        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
         self.assertEqual(v23["x-contract-version"], 23)
         # v23 is now history: the selected wire document has moved on to v24.
         self.assertNotIn("rpc.v23.json", contracts.CONTRACT_FILES.values())
@@ -4354,9 +4370,9 @@ class V23AmendmentTest(unittest.TestCase):
         self.assertEqual(set(before) - set(after), set(), "v23 removed a method")
         self.assertEqual(set(before), set(v22["$defs"]["method"]["enum"]))
 
-    def test_every_take_home_method_stays_in_the_selected_schema(self) -> None:
+    def test_every_take_home_method_stays_in_the_frozen_v23_schema(self) -> None:
         """A dropped take-home method must fail here, not surface as NOT_IMPLEMENTED."""
-        selected = contracts.contract("cb.rpc")
+        selected = _document("rpc.v23.json")
         declared = set(selected["$defs"]["method"]["enum"])
         schemas = selected["$defs"]["methods"]["properties"]
         for method in self.NEW_METHODS:
@@ -4408,13 +4424,19 @@ class V23AmendmentTest(unittest.TestCase):
 
 
 class V24AmendmentTest(unittest.TestCase):
-    """GM-007 + GM-018: cb.rpc v24 appends the away-from-screen homework family and
-    the take-home HTML document to GM-005's v23.
+    """GM-007 + GM-018 + GM-004: cb.rpc v24 composes three additive amendments onto GM-005's v23.
 
-    A homework task is one target, one context, one observable criterion and 3-10 minutes. The
-    frozen response cannot express a grade, a score, a mastery claim or an XP award: completion is
-    ``self_reported_done`` or ``parent_reported_done``. ``takehome.html`` returns the stored pack as
-    self-contained content; ``artifact.get`` remains the only download handle.
+    GM-007 appends the away-from-screen homework family: one target, one context, one observable
+    criterion and 3-10 minutes, and completion is ``self_reported_done`` or
+    ``parent_reported_done`` — never a grade, score, mastery claim or XP award. GM-018 appends
+    ``takehome.html``, the stored pack as self-contained content; ``artifact.get`` remains the
+    only download handle. GM-004 appends the four frozen ``world.*`` methods plus the documented
+    ``course.mode.set``, and ``course.create`` gains one optional ``presentation_mode``
+    creation-intent field.
+
+    World plates are textless orientation art: the read never generates art and never writes the
+    mode, a style choice and a final kit are two separate hash-fenced approvals, and no method
+    carries an evidence, verdict or score field.
     """
 
     NEW_METHODS = (
@@ -4424,18 +4446,28 @@ class V24AmendmentTest(unittest.TestCase):
         "homework.skip",
     )
     HTML_METHOD = "takehome.html"
+    WORLD_METHODS = (
+        "world.read",
+        "world.style.preview",
+        "world.generate",
+        "world.approve",
+        "course.mode.set",
+    )
 
-    def test_v24_is_v23_plus_the_homework_family_and_html(self) -> None:
+    def test_v24_is_v23_plus_the_homework_family_html_and_world_family(self) -> None:
         v23 = _document("rpc.v23.json")
         v24 = contracts.contract("cb.rpc")
         old = list(v23["$defs"]["method"]["enum"])
         new = list(v24["$defs"]["method"]["enum"])
         self.assertEqual(new[: len(old)], old)
-        self.assertEqual(tuple(new[len(old):]), self.NEW_METHODS + (self.HTML_METHOD,))
+        self.assertEqual(
+            tuple(new[len(old):]),
+            self.NEW_METHODS + (self.HTML_METHOD,) + self.WORLD_METHODS,
+        )
         self.assertEqual(v24["x-supersedes"], v23["$id"])
         self.assertEqual(contracts.contract_version("cb.rpc"), 24)
         self.assertEqual(v24["x-contract-version"], 24)
-        self.assertEqual(len(new), 88)
+        self.assertEqual(len(new), 93)
 
     def test_v23_snapshot_stays_byte_identical_history(self) -> None:
         digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v23.json").read_bytes()).hexdigest()
@@ -4445,13 +4477,18 @@ class V24AmendmentTest(unittest.TestCase):
                          {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"})
         v23 = _document("rpc.v23.json")
         self.assertEqual(len(v23["$defs"]["method"]["enum"]), 83)
+        self.assertEqual(v23["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v22")
+        self.assertTrue(digest)
 
     def test_every_v23_method_survives_with_the_same_shape(self) -> None:
         v23 = _document("rpc.v23.json")
         v24 = contracts.contract("cb.rpc")
         before = v23["$defs"]["methods"]["properties"]
         after = v24["$defs"]["methods"]["properties"]
-        self.assertEqual(set(after) - set(before), set(self.NEW_METHODS) | {self.HTML_METHOD})
+        self.assertEqual(
+            set(after) - set(before),
+            set(self.NEW_METHODS) | {self.HTML_METHOD} | set(self.WORLD_METHODS),
+        )
         self.assertEqual(set(before) - set(after), set(), "v24 removed a method")
         self.assertEqual(set(before), set(v23["$defs"]["method"]["enum"]))
 
@@ -4459,6 +4496,17 @@ class V24AmendmentTest(unittest.TestCase):
         import coursebook.gm_contract as gm
 
         for method in self.NEW_METHODS:
+            with self.subTest(method=method):
+                self.assertIn(method, gm.GM_RPC_METHODS)
+                schema = contracts.method_schema(method)
+                for side in ("request", "response"):
+                    self.assertIs(schema[side].get("additionalProperties"), False, side)
+                    self.assertEqual(_schema_problems(schema[side]), [], f"{method}.{side}")
+
+    def test_every_world_method_is_closed_bounded_and_in_the_manifest(self) -> None:
+        import coursebook.gm_contract as gm
+
+        for method in self.WORLD_METHODS:
             with self.subTest(method=method):
                 self.assertIn(method, gm.GM_RPC_METHODS)
                 schema = contracts.method_schema(method)
@@ -4476,6 +4524,16 @@ class V24AmendmentTest(unittest.TestCase):
                 expected = set(gm.GM_RPC_METHODS[method]["response"]) - {"expected_revision"}
                 self.assertTrue(expected <= required, (method, required, expected))
 
+    def test_world_response_carries_the_frozen_field_names(self) -> None:
+        import coursebook.gm_contract as gm
+
+        for method in self.WORLD_METHODS:
+            with self.subTest(method=method):
+                schema = contracts.method_schema(method)["response"]
+                required = set(schema["required"])
+                expected = set(gm.GM_RPC_METHODS[method]["response"]) - {"expected_revision"}
+                self.assertTrue(expected <= required, (method, required, expected))
+
     def test_the_homework_task_cannot_express_a_grade(self) -> None:
         task = contracts.contract("cb.rpc")["$defs"]["homework_task"]
         properties = set(task["properties"])
@@ -4485,13 +4543,25 @@ class V24AmendmentTest(unittest.TestCase):
         self.assertEqual(set(completion["properties"]["basis"]["enum"]),
                          {None, "self_reported", "parent_reported"})
 
-    def test_v24_moves_no_error_code_job_table_or_vocabulary(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
-        self.assertEqual(contracts.contract_version("cb.errors"), 4)
-        self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.db"), 14)
-        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
-        self.assertEqual(contracts.audit_contracts(), [])
+    def test_world_schemas_carry_no_evidence_or_rating_key(self) -> None:
+        import coursebook.gm_contract as gm
+
+        for method in self.WORLD_METHODS:
+            schema = contracts.method_schema(method)
+            blob = json.dumps(schema)
+            for forbidden in gm.FORBIDDEN_METHOD_KEYS:
+                self.assertNotIn(f'"{forbidden}"', blob, f"{method} carries {forbidden}")
+
+    def test_course_create_accepts_one_optional_creation_intent(self) -> None:
+        create = contracts.method_schema("course.create")["request"]
+        self.assertIn("presentation_mode", create["properties"])
+        intent = create["properties"]["presentation_mode"]
+        self.assertEqual(set(intent["enum"]), {"game", "textbook", None})
+        self.assertNotIn("presentation_mode", create["required"])
+        # The creation intent is an intent, not a world: a stored NULL still reads as Textbook.
+        mode_set = contracts.method_schema("course.mode.set")
+        self.assertEqual(set(mode_set["response"]["properties"]["mode"]["enum"]),
+                         {"game", "textbook"})
 
     def test_the_html_method_is_closed_and_bounded(self) -> None:
         schema = contracts.method_schema(self.HTML_METHOD)
@@ -4507,11 +4577,20 @@ class V24AmendmentTest(unittest.TestCase):
         self.assertEqual(_schema_problems(schema["request"], "request"), [])
         self.assertEqual(_schema_problems(schema["response"], "response"), [])
 
+    def test_v24_moves_no_error_code_job_table_or_vocabulary(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.rpc"), 24)
+        self.assertEqual(contracts.contract_version("cb.errors"), 4)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 5)
+        self.assertEqual(contracts.contract_version("cb.db"), 14)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
     def test_docs_publish_the_v24_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
         for needle in (
             "v24 delta (GM-007)",
             "v24 delta (GM-018)",
+            "v24 delta (GM-004)",
             "rpc.v24.json",
             "homework.create",
             "homework.complete",
@@ -4520,10 +4599,10 @@ class V24AmendmentTest(unittest.TestCase):
             "takehome.html",
             "self-contained",
             "artifact.get",
+            "world.read",
+            "world.approve",
+            "course.mode.set",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
-
-
 if __name__ == "__main__":
     unittest.main()
-

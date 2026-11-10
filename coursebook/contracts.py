@@ -60,9 +60,10 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # GM-005: v23 appends the take-home family to GM-011's v22. v22 stays readable so a client
     # that pinned the tutor wire can still validate; v21 and older remain on disk as history but
     # are not offered by the loader.
-    # GM-007: v24 appends the four away-from-screen homework methods to GM-005's v23. v23 stays
-    # readable so a client that pinned the take-home wire can still validate.
-    # GM-018: v24 also appends `takehome.html` (the pack's self-contained HTML document).
+    # v24 is one composed document: GM-007 appends the four away-from-screen homework methods,
+    # GM-018 appends `takehome.html`, and GM-004 appends the four `world.*` methods plus the
+    # documented `course.mode.set` extra and one optional `presentation_mode` on `course.create`.
+    # v23 stays readable so a client that pinned the take-home wire can still validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"},
 }
 

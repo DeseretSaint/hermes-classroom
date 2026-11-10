@@ -1,0 +1,693 @@
+{
+  "_comment": "Additive fragment for contracts/rpc.v24.json, lifted verbatim from GM-004's reviewed contract (wt/gm-004-world-ui). scripts/gm004_rpc_v24.py appends these five method entries and four $defs to the GM-007+GM-018 v24 document, and adds course.create.properties.presentation_mode. Nothing here removes or retypes a v23 shape.",
+  "methods": {
+    "world.read": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "GET-shaped read of the course's durable mode and its latest world. It never generates art and never writes `presentation_mode`; a stored NULL reads as Textbook.",
+      "request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          }
+        }
+      },
+      "response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "presentation_mode",
+          "world",
+          "fallback",
+          "revision"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "presentation_mode": {
+            "enum": [
+              "game",
+              "textbook"
+            ]
+          },
+          "world": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/course_world"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fallback": {
+            "enum": [
+              "textbook",
+              null
+            ]
+          },
+          "revision": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"
+          }
+        }
+      }
+    },
+    "world.style.preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Reads the stored concept boards and the deterministic recommended grammar. No provider call: concept generation is `world.generate(stage=concepts)`.",
+      "request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "world_id"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "world_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          }
+        }
+      },
+      "response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "world_id",
+          "concepts",
+          "selected_concept_id",
+          "revision"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "world_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "concepts": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/$defs/world_concept"
+            }
+          },
+          "selected_concept_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 80
+          },
+          "revision": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"
+          }
+        }
+      }
+    },
+    "world.generate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Queues one `kind=media` job with `brief.stage` `world_concepts` or `world_kit`. It is never a lesson job; a retry reuses the cache key and never double-spends.",
+      "request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "stage"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "stage": {
+            "enum": [
+              "concepts",
+              "kit"
+            ]
+          },
+          "style_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 80
+          },
+          "brief_patch": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "description": "Presentation-only edits: mood (`tone`), audience, motifs to include and motifs to avoid. Classification is a course mutation, never a world request.",
+            "properties": {
+              "tone": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "audience": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "motifs": {
+                "type": "array",
+                "maxItems": 6,
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              },
+              "forbidden": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              }
+            }
+          }
+        }
+      },
+      "response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job_id",
+          "state",
+          "world_id"
+        ],
+        "properties": {
+          "job_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "state": {
+            "enum": [
+              "not_requested",
+              "concepts_generating",
+              "concepts_ready",
+              "style_selected",
+              "kit_generating",
+              "kit_ready",
+              "approved",
+              "failed",
+              "unavailable"
+            ]
+          },
+          "world_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          }
+        }
+      }
+    },
+    "world.approve": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Hash-fenced. `stage=style` records the selected concept board as `approved_hash`; `stage=final` accepts the actual kit and freezes the approved hash. It never approves a partial world.",
+      "request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "world_id",
+          "stage",
+          "approved_hash"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "world_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "stage": {
+            "enum": [
+              "style",
+              "final"
+            ]
+          },
+          "approved_hash": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+          }
+        }
+      },
+      "response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "world",
+          "state",
+          "style_hash",
+          "kit_hash",
+          "approved_hash",
+          "assets"
+        ],
+        "properties": {
+          "world": {
+            "$ref": "#/$defs/course_world"
+          },
+          "state": {
+            "enum": [
+              "not_requested",
+              "concepts_generating",
+              "concepts_ready",
+              "style_selected",
+              "kit_generating",
+              "kit_ready",
+              "approved",
+              "failed",
+              "unavailable"
+            ]
+          },
+          "style_hash": {
+            "oneOf": [
+              {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kit_hash": {
+            "oneOf": [
+              {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_hash": {
+            "oneOf": [
+              {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assets": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/$defs/world_asset"
+            }
+          }
+        }
+      }
+    },
+    "course.mode.set": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Durable mode switch. `game` without an approved world returns `requires_world=true` and leaves the stored mode unchanged; `textbook` is immediate and hides the world without deleting its assets. A switch never rewrites an objective, check, attempt, evidence row or lesson hash. `expected_revision` is the world revision the caller last read (`world.read.revision`), so a concurrent world change is refused rather than silently overwritten.",
+      "request": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "course_id",
+          "mode"
+        ],
+        "properties": {
+          "course_id": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          "mode": {
+            "enum": [
+              "game",
+              "textbook"
+            ]
+          }
+        }
+      },
+      "response": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "world_state",
+          "requires_world"
+        ],
+        "properties": {
+          "mode": {
+            "enum": [
+              "game",
+              "textbook"
+            ]
+          },
+          "world_state": {
+            "enum": [
+              "not_requested",
+              "concepts_generating",
+              "concepts_ready",
+              "style_selected",
+              "kit_generating",
+              "kit_ready",
+              "approved",
+              "failed",
+              "unavailable"
+            ]
+          },
+          "requires_world": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "defs": {
+    "course_world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "world_id",
+        "state",
+        "revision",
+        "brief",
+        "concepts",
+        "selected_concept_id",
+        "style_hash",
+        "kit_hash",
+        "approved_hash",
+        "approved_at",
+        "error",
+        "updated_at",
+        "assets"
+      ],
+      "description": "A course's governed visual kit: textless plates plus a style specification. The renderer composes them with real DOM type and controls.",
+      "properties": {
+        "world_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "state": {
+          "enum": [
+            "not_requested",
+            "concepts_generating",
+            "concepts_ready",
+            "style_selected",
+            "kit_generating",
+            "kit_ready",
+            "approved",
+            "failed",
+            "unavailable"
+          ]
+        },
+        "revision": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"
+        },
+        "brief": {
+          "$ref": "#/$defs/world_brief"
+        },
+        "concepts": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/world_concept"
+          }
+        },
+        "selected_concept_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 80
+        },
+        "style_hash": {
+          "oneOf": [
+            {
+              "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "kit_hash": {
+          "oneOf": [
+            {
+              "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approved_hash": {
+          "oneOf": [
+            {
+              "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approved_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "description": "The named failure: `reason` plus `missing_roles` when a kit is partial. It never carries a fabricated plate."
+        },
+        "updated_at": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "assets": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/world_asset"
+          }
+        }
+      }
+    },
+    "world_asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "section_id",
+        "section_key",
+        "artifact_id",
+        "style_hash",
+        "prompt_hash",
+        "textless"
+      ],
+      "description": "One textless plate of the kit. `role=orientation` is implied by the world contract: this is never an instructional authority.",
+      "properties": {
+        "role": {
+          "enum": [
+            "hero",
+            "cover",
+            "section"
+          ]
+        },
+        "section_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "section_key": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "artifact_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "style_hash": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+        },
+        "prompt_hash": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+        },
+        "textless": {
+          "const": true
+        }
+      }
+    },
+    "world_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "course_id",
+        "title",
+        "subject_domain",
+        "end_capability",
+        "audience",
+        "level",
+        "locale",
+        "tone",
+        "safety_class",
+        "motifs",
+        "forbidden",
+        "sections"
+      ],
+      "description": "The typed brief the backend builds from the approved plan. It has no answer key, check, rubric or attempt field, so the prompt builder cannot leak what it never receives.",
+      "properties": {
+        "course_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "subject_domain": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "end_capability": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "audience": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "level": {
+          "type": "string",
+          "maxLength": 35
+        },
+        "locale": {
+          "type": "string",
+          "maxLength": 35
+        },
+        "tone": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "safety_class": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "motifs": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "forbidden": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "sections": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        }
+      }
+    },
+    "world_concept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "style_id",
+        "label",
+        "prompt_hash",
+        "style_hash",
+        "artifact_id",
+        "palette",
+        "medium",
+        "role",
+        "textless"
+      ],
+      "description": "One textless concept board: a hero crop, a section-card crop and a palette strip as art only. `label` and `medium` are the policy's authored grammar words, never generated text.",
+      "properties": {
+        "style_id": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "prompt_hash": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+        },
+        "style_hash": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
+        },
+        "artifact_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "palette": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "medium": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "role": {
+          "enum": [
+            "orientation"
+          ]
+        },
+        "textless": {
+          "const": true
+        }
+      }
+    }
+  },
+  "course_create_presentation_mode": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "enum": [
+      "game",
+      "textbook",
+      null
+    ],
+    "description": "The course's mode at creation. `game` records Game intent and opens the World Studio once a draft plan exists; the course reads as Textbook and builds no lessons until both the plan and the world are approved. Omitted means Textbook, and no world job is queued."
+  }
+}
