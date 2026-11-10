@@ -47,6 +47,34 @@ from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 #: inside the v3 marker region still ships, so it is still a defect.
 SEGMENT = ROOT / "desktop" / "src" / "85-v3-primitives.js"
 
+#: The scope segment holds the `[data-cb-v3] .cb3-*` rules a primitive may paint through a class
+#: instead of an inline `cb3Role(...)` call. The token guard resolves both.
+SCOPE_SEGMENT = ROOT / "desktop" / "src" / "76-v3-scope.js"
+
+#: The copy deck every visible string on a v3 screen must come from.
+COPY = ROOT / "docs" / "concept-parity" / "COPY.md"
+COPY_ROW = re.compile(r"^\| `[a-z0-9._]+` \| (.*?) \|", re.MULTILINE)
+
+
+def _deck_texts() -> set[str]:
+    return {text.strip() for text in COPY_ROW.findall(COPY.read_text(encoding="utf-8"))}
+
+
+def _is_deck_text(value: str, deck: set[str]) -> bool:
+    """True when `value` is a deck row's text, or fills that row's `{slot}`s with sample values."""
+    if value in deck:
+        return True
+    for text in deck:
+        if "{" not in text:
+            continue
+        pattern = "^" + "".join(
+            ".+" if chunk.startswith("{") else re.escape(chunk)
+            for chunk in re.split(r"(\{[^}]*\})", text)
+        ) + "$"
+        if re.match(pattern, value):
+            return True
+    return False
+
 PRIMITIVES = (
     "PillAction",
     "ForestRail",
@@ -77,7 +105,7 @@ globalThis.__CB_TEST_MODE__ = payload.mode || 'light'
 const {
   PillAction, ForestRail, ForestBand, PaperCard, CollectibleCard, CoverPlate3, ShelfPlank,
   StampNode, Medallion, FoxPose, DialogueBubble, ChallengeCard, EvidenceTray, CbV3LabSheet,
-  CB3_POSES, CB3_STAMP_STATES, CB3_MEDALS
+  CB3_POSES, CB3_STAMP_STATES, CB3_MEDALS, CB3_LAB_COPY
 } = await import('./plugin.js')
 
 const h = React.createElement
@@ -142,6 +170,14 @@ const bubbleQuiet = mount(h(DialogueBubble, {
   en: 'This is the shop.'
 }))
 
+// A play handler with no deck label must not mint a nameless icon button (WCAG 4.1.2).
+const bubbleUnlabelled = mount(h(DialogueBubble, {
+  segments: [{ text: 'この' }, { text: '店', ruby: 'みせ' }, { text: 'です。' }],
+  romaji: 'Kono mise desu.',
+  en: 'This is the shop.',
+  onPlay: () => {}
+}))
+
 const details = mount(
   h('div', null, [
     h(ShelfPlank, { key: 'shelf' }, [h(CollectibleCard, { key: 'c', title: 'A course', meta: '0 of 4 sections done' })]),
@@ -156,7 +192,8 @@ const details = mount(
 )
 
 process.stdout.write(JSON.stringify({
-  surface, twoPrimaries, lab, stamps, fox, cardArt, cardTyped, bubble, bubbleQuiet, details,
+  surface, twoPrimaries, lab, stamps, fox, cardArt, cardTyped, bubble, bubbleQuiet, bubbleUnlabelled,
+  details, labCopy: CB3_LAB_COPY,
   poses: CB3_POSES, stampStates: CB3_STAMP_STATES, medals: Object.keys(CB3_MEDALS)
 }))
 """
@@ -298,6 +335,21 @@ class V3PrimitivesRenderTest(unittest.TestCase):
         self.assertIn("data-cb3-speak", html, "the speaker button is missing when a line can play")
         self.assertNotIn("data-cb3-speak", self.report["bubbleQuiet"],
                          "a speaker button rendered with no play handler")
+        # The speaker is a quiet *text* action (SPEC-V3 §3.10/§6): its accessible name and its
+        # visible label are the deck's `classroom.line.play`. An icon-only button failed 4.1.2.
+        speak = re.search(r"<button[^>]*data-cb3-speak[^>]*>(.*?)</button>", html, flags=re.S)
+        self.assertIsNotNone(speak, "the speaker control is not a rendered button")
+        assert speak is not None
+        button_tag = re.match(r"<button[^>]*>", speak.group(0))
+        self.assertIsNotNone(button_tag)
+        assert button_tag is not None
+        self.assertIn('aria-label="Play the line"', button_tag.group(0),
+                      "the speaker button has no accessible name")
+        self.assertEqual(strip_tags(speak.group(1)).strip(), "Play the line",
+                         "the speaker button's visible label is not the deck's line")
+        # A handler with no deck label must not mint a nameless control.
+        self.assertNotIn("data-cb3-speak", self.report["bubbleUnlabelled"],
+                         "a speaker button rendered without the deck's play label")
 
     def test_primitives_use_only_v3_tokens(self) -> None:
         source = SEGMENT.read_text(encoding="utf-8")
@@ -333,12 +385,89 @@ class V3PrimitivesRenderTest(unittest.TestCase):
             )
         # Every primitive documents the tokens it reads: a `Tokens:` line naming contract roles.
         roles = json.loads((ROOT / "contracts" / "cb.tokens.v3.json").read_text(encoding="utf-8"))["roles"]
+        scope = SCOPE_SEGMENT.read_text(encoding="utf-8")
         for name in PRIMITIVES:
-            head = source.rfind("/**", 0, source.index(f"function {name}("))
-            block = source[head:source.index(f"function {name}(")]
-            self.assertIn("Tokens:", block, f"{name} has no doc comment naming its tokens")
-            named = [role for role in roles if role in block.split("Tokens:", 1)[1]]
-            self.assertTrue(named, f"{name}'s doc comment names no contract role")
+            # Anchor the span to the primitive's *own* `/* ── Name ` header. These doc comments are
+            # single-asterisk banners, so a `rfind("/**")` walks back to an earlier block and the
+            # guard reads a neighbour's token list (round-1 defect: `Tokens: zzz-not-a-role` passed).
+            header = re.search(r"/\* ── " + re.escape(name) + r" ─", source)
+            self.assertIsNotNone(header, f"{name} has no `/* ── {name} ` doc header")
+            assert header is not None
+            head = source[header.start():source.index(f"function {name}(", header.start())]
+            self.assertIn("Tokens:", head, f"{name} has no doc comment naming its tokens")
+            declared = {
+                token.strip(" .,;")
+                for token in re.split(r"[,\s]+", head.split("Tokens:", 1)[1].splitlines()[0])
+                if token.strip(" .,;")
+            }
+            named = sorted(declared & set(roles))
+            # The body of this function only, resolved against the class rules it applies: paint may
+            # live in a class (`.cb3-primary`) rather than inline, and that still counts as read.
+            body = source[source.index(f"function {name}("):]
+            following = body.find("\n/* ── ")
+            body = body[: following if following > 0 else len(body)]
+            read = set(re.findall(r"cb3Role\('([a-z0-9-]+)'\)", body))
+            read |= set(re.findall(r"var\(--cb3-([a-z0-9-]+)\)", body))
+            for class_name in set(re.findall(r"\bcb3-[a-z0-9-]+", body)):
+                for rule in re.findall(r"\." + re.escape(class_name) + r"[^{]*\{([^}]*)\}", scope):
+                    read |= set(re.findall(r"var\(--cb3-([a-z0-9-]+)\)", rule))
+            if not named:
+                # `FoxPose` is art: it must declare that explicitly and paint no role of its own.
+                self.assertIn("none", declared, f"{name} names no contract role and does not say `none`")
+                self.assertEqual(read & set(roles), set(), f"{name} declares no tokens but paints one")
+                continue
+            unread = [role for role in named if role not in read]
+            self.assertEqual(
+                unread, [],
+                f"{name}'s Tokens: line names roles it never reads: {unread}",
+            )
+
+    def test_lab_copy_is_the_deck(self) -> None:
+        """Every visible string on the component sheet is a COPY.md row, verbatim.
+
+        The round-1 review found five captions authored in the lab ("Actions and stamps",
+        "Lesson parts", ...) that existed nowhere in the deck. A `field:` template may be rendered
+        with sample values in a component preview, so a value that fills a row's `{slot}`s passes;
+        anything else must equal a row's own text.
+        """
+        deck = _deck_texts()
+        self.assertTrue(deck, "the copy deck did not parse")
+        seen = []
+        lab_copy = self.report["labCopy"]
+
+        def check(value: str, where: str) -> None:
+            self.assertTrue(_is_deck_text(value, deck),
+                            f"{where} renders a string that is not in COPY.md: {value!r}")
+            seen.append(value)
+
+        for section, text in lab_copy["sections"].items():
+            check(text, f"lab copy sections.{section}")
+        for pose, text in lab_copy["poses"].items():
+            check(text, f"lab copy poses.{pose}")
+        for callout, text in lab_copy["anatomy"].items():
+            check(text, f"lab copy anatomy.{callout}")
+        for material, text in lab_copy["materials"].items():
+            check(text, f"lab copy materials.{material}")
+        for key, text in lab_copy["typeName"].items():
+            check(text, f"lab copy typeName.{key}")
+        for key, text in lab_copy["typeSample"].items():
+            check(text, f"lab copy typeSample.{key}")
+        for key, text in lab_copy["deck"].items():
+            check(text, f"lab copy deck.{key}")
+        for key in ("title", "sub", "readonly", "back"):
+            check(lab_copy[key], f"lab copy {key}")
+        # The sheet renders those strings, not a second set of literals beside the table. Ruby
+        # splits a line into base and `<rt>` runs, so compare the text with whitespace removed.
+        lab_text = re.sub(r"\s+", "", strip_tags(self.report["lab"]))
+        for value in seen:
+            if value.startswith("{"):
+                continue
+            if re.search(r"[\u3040-\u9fff]", value):
+                # Ruby splits the Japanese line into base and `<rt>` runs, so the flat text
+                # interleaves reading and base. That line is asserted by the dialogue test.
+                continue
+            self.assertIn(re.sub(r"\s+", "", value), lab_text,
+                          f"the sheet does not render its own table value {value!r}")
 
 
 if __name__ == "__main__":

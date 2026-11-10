@@ -20348,10 +20348,10 @@ function PillAction({ variant, label, icon, onClick, disabled, busy, type, class
 
 /* ── ForestRail ──────────────────────────────────────────────────────────────────────────────
  * The wide shell: an 80 px forest rail inside the route (never the host sidebar), one labelled
- * Codicon row per destination, 44 px targets. The current destination is a 3 px terracotta
+ * Codicon row per destination, at least 56 px targets. The current destination is a 3 px terracotta
  * marker on the rail's inner edge *plus* `aria-current="page"` and the full-contrast label —
  * a shape and a word, never colour alone (SPEC-V3 §3.11).
- * Tokens: forest, on-forest, terracotta, focus, radius.soft, type.meta.
+ * Tokens: forest, on-forest, terracotta, radius.soft, type.meta.
  */
 function ForestRail({ value, onChange, className, ...rest }) {
   return jsx('nav', {
@@ -20413,7 +20413,7 @@ function ForestRail({ value, onChange, className, ...rest }) {
  * The same four destinations below a 920 px route: a 56 px top strip that scrolls sideways
  * instead of shrinking its labels. Same markers, same accessible contract as the rail, so a
  * reader who resizes never meets a second navigation vocabulary.
- * Tokens: forest, on-forest, terracotta, focus, radius.soft, type.meta.
+ * Tokens: forest, on-forest, terracotta, radius.soft, type.meta.
  */
 function ForestBand({ value, onChange, className, ...rest }) {
   return jsxs('nav', {
@@ -20529,10 +20529,10 @@ function PaperCard({ emphasis, title, meta, children, footer, className, style, 
 /* ── CoverPlate3 ─────────────────────────────────────────────────────────────────────────────
  * A 3:2 plate, mechanically cropped. With a real artifact URL it is media (an `img`, alt empty,
  * `aria-hidden` — the card's own title carries the words). With no artifact it is a
- * **typographic** plate: the title itself at the heading step on card stock, which is DOM text
- * and the only place that title appears, so no cover is ever invented and no monogram pretends
- * to be a logo.
- * Tokens: canvas-edge, card-stock, ink, rule, radius.square, type.heading.
+ * **typographic** plate: the title itself at the heading step on the canvas-edge plate, which is
+ * DOM text and the only place that title appears, so no cover is ever invented and no monogram
+ * pretends to be a logo.
+ * Tokens: canvas-edge, ink, rule, radius.square, type.heading.
  */
 function CoverPlate3({ src, title, className, style, ...rest }) {
   const hasArt = typeof src === 'string' && src.length > 0
@@ -20734,7 +20734,7 @@ function ShelfPlank({ children, className, style, ...rest }) {
  * blank is the object, the Codicon is the icon, the label is DOM text under it, and the current
  * step adds the word `Now` beside a 3 px ring, so the state never depends on colour alone. A
  * locked node is a disabled button (the plan gates it), not a decorative padlock.
- * Tokens: ink, ink-soft, rule, terracotta, gold, sage, focus, type.caption, radius.square.
+ * Tokens: ink, ink-soft, terracotta, type.caption, radius.square.
  */
 function StampNode({ state, label, stateWord, index, onClick, className, style, ...rest }) {
   const tone = CB3_STAMP_STATES.indexOf(state) >= 0 ? state : 'upcoming'
@@ -20807,7 +20807,8 @@ function cb3StampInk(tone) {
  * One painted rim, one Codicon glyph, one *named* recorded event, one DOM label. The same blank
  * is used for every event (five different painted medallions would be decoration a learner
  * cannot name); an event this system does not know renders nothing rather than an empty seal.
- * Tokens: gold, canvas, card-stock, ink, type.caption.
+ * The rim is the object-kit `medallion-rim` blank (art), so gold is not a paint token here.
+ * Tokens: ink, type.caption.
  */
 function Medallion({ event, label, size, className, style, ...rest }) {
   const spec = CB3_MEDALS[event]
@@ -20897,8 +20898,12 @@ function FoxPose({ pose, size, className, style, ...rest }) {
  * The lesson line: the pack's kana with the deck's ruby over each kanji, one romaji line under
  * it, the English meaning, and an optional speaker button on the bubble only (never as an
  * answer option). The ruby is `<rt>` so a screen reader reads the reading with its base; the
- * romaji is a separate `lang="ja-Latn"` line, a scaffold and never the only form offered.
- * Tokens: card-stock, rule, ink, ink-soft, radius.round, type.lead, type.body, type.meta.
+ * romaji is a separate `lang="ja-Latn"` line, a scaffold and never the only form offered. The
+ * speaker is a **quiet text action**: `playLabel` (the deck's `classroom.line.play`) is its
+ * visible label *and* its accessible name, and a bubble with no label renders no control —
+ * never an unlabelled icon button.
+ * Tokens: card-stock, rule, ink, ink-soft, radius.round, radius.soft, type.lead, type.body,
+ * type.meta.
  */
 function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, style, ...rest }) {
   const parts = Array.isArray(segments) ? segments : []
@@ -20970,10 +20975,11 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
             children: en
           }, 'en')
         : null,
-      typeof onPlay === 'function'
+      typeof onPlay === 'function' && playLabel
         ? jsx('button', {
             type: 'button',
             'data-cb3-speak': '',
+            'aria-label': playLabel,
             onClick: onPlay,
             style: {
               alignSelf: 'flex-start',
@@ -20991,7 +20997,10 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
               lineHeight: cb3Lead('meta'),
               cursor: 'pointer'
             },
-            children: jsx(sdk.Codicon, { name: 'unmute', size: CB_ICON_UI })
+            children: [
+              jsx(sdk.Codicon, { name: 'unmute', size: CB_ICON_UI }, 'glyph'),
+              jsx('span', { children: playLabel }, 'label')
+            ]
           }, 'speak')
         : null
     ]
@@ -21003,7 +21012,7 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
  * **quiet** pill on purpose: the lesson's one filled control is `Check answer`, and a second
  * fill in the aside would be two primaries on one screen. The card names the check it opens and
  * carries no reward the backend did not record.
- * Tokens: card-stock, rule, ink, ink-soft, terracotta-quiet, type.heading, type.body, type.meta.
+ * Tokens: card-stock, rule, ink, ink-soft, type.heading, type.body, type.meta.
  */
 function ChallengeCard({ title, prompt, recordNote, actionLabel, onStart, className, style, ...rest }) {
   return jsxs('div', {
@@ -21067,9 +21076,10 @@ function ChallengeCard({ title, prompt, recordNote, actionLabel, onStart, classN
  * The evidence surface: a wooden tray object with its lip, the recorded-check tally in `sage`
  * (a fill, never a text background — every word sits on card stock beside it), the real event
  * names, and one refusal/observation sentence in `alert`. A zero state says `No checks recorded
- * yet` instead of painting an empty bar. The tray is interactive (record toggle, export), so it
- * is a card-stock ground with a focus ring — not a static print sheet.
- * Tokens: card-stock, wood, wood-edge, sage, ink, ink-soft, alert, rule, focus, radius.round.
+ * yet` instead of painting an empty bar. The tray is interactive: its record toggle is a quiet
+ * pill, and the focus ring belongs to that button (`.cb3-press`), never to the tray's own
+ * non-focusable `div`.
+ * Tokens: card-stock, wood, wood-edge, sage, ink, ink-soft, alert, rule, radius.round.
  */
 function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLabel, onToggle, className, style, ...rest }) {
   const marks = Math.max(0, Math.min(24, Number(recorded) || 0))
@@ -21182,9 +21192,7 @@ const CB3_LAB_COPY = Object.freeze({
     medals: 'Medallions',
     palette: 'Palette',
     type: 'Type',
-    materials: 'Materials',
-    actions: 'Actions and stamps',
-    lesson: 'Lesson parts'
+    materials: 'Materials'
   }),
   poses: Object.freeze({
     wave: 'Waving',
@@ -21226,15 +21234,27 @@ const CB3_LAB_COPY = Object.freeze({
     elevation: 'Elevation',
     radius: 'Radius'
   }),
-  // CP-020b: the two states a plate and a paper card each own. The lab shows both, because a
-  // primitive with an unshown state is a primitive nobody has looked at.
-  cover: Object.freeze({
-    media: 'Cover window with an installed artifact',
-    type: 'No artifact: the title itself is the cover'
-  }),
-  paper: Object.freeze({
-    rule: 'PaperCard · rule edge',
-    elev: 'PaperCard · elevation'
+  // Specimen content the lab borrows verbatim from the deck (COPY.md). Nothing on the sheet is
+  // authored prose: a row's text lives here only so the guard can prove it is the deck's string.
+  deck: Object.freeze({
+    primary: 'Start a course',                    // home.primary
+    continue: 'Continue',                         // course.continue.title
+    secondary: 'Browse library',                  // home.secondary
+    clearTicks: 'Clear ticks',                    // classroom.check.clear_ticks
+    checkPrimary: 'Check answer',                 // classroom.check.primary
+    play: 'Play the line',                        // classroom.line.play
+    jp: '好きです。付き合ってください。',            // classroom.line.jp
+    romaji: 'suki desu. tsukiatte kudasai.',      // classroom.line.romaji
+    en: 'I like you. Please go out with me.',     // classroom.line.en
+    stepper: 'This section',                      // classroom.stepper.label
+    challengeTitle: 'Field Challenge',            // classroom.challenge.title
+    challengeStart: 'Try it yourself',            // classroom.challenge.primary
+    question: '{check prompt}',                   // classroom.check.question (field template)
+    evidenceCount: '2 of 5 checks recorded',      // classroom.evidence.count (2 of 5 recorded)
+    evidenceEmpty: 'No checks recorded yet.',     // classroom.evidence.empty
+    evidenceFirst: 'First check',                 // lab.medal.first_check
+    errorBody: 'Your attempt is unchanged. Try again.', // classroom.error.body
+    tryAgain: 'Try again'                         // classroom.error.action
   })
 })
 
@@ -21417,45 +21437,25 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                     jsx(ShelfPlank, {
                       style: { overflowX: 'visible' },
                       children: jsxs(CollectibleCard, {
-                        title: 'Japanese Lantern District',
+                        title: CB3_LAB_COPY.typeSample.heading,
                         subject: 'Language',
                         meta: '2 of 5 sections done',
                         isNew: true,
                         newLabel: 'New',
-                        action: jsx(PillAction, { variant: 'quiet', label: CB3_LAB_COPY.anatomy.next, onClick: () => {} }, 'next'),
+                        action: jsx(PillAction, { variant: 'quiet', label: CB3_LAB_COPY.deck.continue, onClick: () => {} }, 'next'),
                         style: { width: '214px' }
                       }, 'card')
                     }, 'shelf'),
-                    // CoverPlate3's two states: a real installed artifact, and the typographic
-                    // fallback where the title is the only thing on the plate.
-                    jsx('div', {
-                      'data-cb3-specimen': 'cover-states',
-                      style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '214px' },
-                      children: [
-                        jsx(CoverPlate3, { src: cb3ObjectSource('passport-tray'), title: 'Japanese Lantern District' }, 'media'),
-                        jsx('p', {
-                          style: {
-                            margin: 0,
-                            fontFamily: 'var(--cb3-font-ui)',
-                            fontSize: cb3Type('caption'),
-                            lineHeight: cb3Lead('caption'),
-                            color: cb3Role('ink-soft')
-                          },
-                          children: CB3_LAB_COPY.cover.media
-                        }, 'media-note'),
-                        jsx(CoverPlate3, { title: 'Japanese Lantern District' }, 'type'),
-                        jsx('p', {
-                          style: {
-                            margin: 0,
-                            fontFamily: 'var(--cb3-font-ui)',
-                            fontSize: cb3Type('caption'),
-                            lineHeight: cb3Lead('caption'),
-                            color: cb3Role('ink-soft')
-                          },
-                          children: CB3_LAB_COPY.cover.type
-                        }, 'type-note')
-                      ]
-                    }, 'covers'),
+                    // The second card state: the same object with a real installed artifact in its
+                    // cover window. The typographic fallback is the card above (no `src`).
+                    jsx(CollectibleCard, {
+                      'data-cb3-specimen': 'cover-media',
+                      title: CB3_LAB_COPY.typeSample.heading,
+                      subject: 'Language',
+                      meta: '2 of 5 sections done',
+                      src: cb3ObjectSource('passport-tray'),
+                      style: { width: '214px' }
+                    }, 'cover-media'),
                     jsx('ol', {
                       style: {
                         margin: 0,
@@ -21477,42 +21477,31 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                         CB3_LAB_COPY.anatomy.cover
                       ].map((row, index) => jsx('li', { children: row }, `callout-${index}`))
                     }, 'callouts'),
+                    // PaperCard's two states, one per contract rule: `rule` is a 1 px edge and
+                    // `elev-1` is a contact shadow, never both. Each card borrows a callout's own
+                    // deck name, so no third caption is authored for the sheet.
+                    jsx(PaperCard, {
+                      emphasis: 'rule',
+                      title: CB3_LAB_COPY.anatomy.evidence,
+                      meta: CB3_LAB_COPY.anatomy.subject,
+                      style: { minWidth: '200px' }
+                    }, 'paper-rule'),
                     jsx(PaperCard, {
                       emphasis: 'elev-1',
-                      title: CB3_LAB_COPY.sections.actions,
-                      meta: 'quiet weight, disabled and busy — the primary is asserted by test',
+                      title: CB3_LAB_COPY.anatomy.next,
                       style: { minWidth: '240px' },
                       footer: jsxs('div', {
                         style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
                         children: [
-                          jsx(PillAction, { variant: 'quiet', label: 'Browse library', onClick: () => {} }, 'quiet'),
-                          jsx(PillAction, { variant: 'quiet', label: 'Disabled', disabled: true, onClick: () => {} }, 'disabled'),
-                          jsx(PillAction, { variant: 'quiet', label: 'Saving', busy: true, onClick: () => {} }, 'busy')
+                          jsx(PillAction, { variant: 'quiet', label: CB3_LAB_COPY.deck.secondary, onClick: () => {} }, 'quiet'),
+                          jsx(PillAction, { variant: 'quiet', label: CB3_LAB_COPY.deck.clearTicks, disabled: true, onClick: () => {} }, 'disabled'),
+                          jsx(PillAction, { variant: 'quiet', label: CB3_LAB_COPY.deck.checkPrimary, busy: true, onClick: () => {} }, 'busy')
                         ]
                       })
-                    }, 'actions'),
-                    // The other half of the paper pair: rule edge, no shadow. One object never has
-                    // both, so the lab has to show the two side by side rather than invent a third.
-                    jsx(PaperCard, {
-                      emphasis: 'rule',
-                      title: CB3_LAB_COPY.paper.rule,
-                      meta: CB3_LAB_COPY.paper.elev + ' sits beside it',
-                      style: { minWidth: '200px' }
-                    }, 'paper-rule')
+                    }, 'paper-elev')
                   ]
                 })
               }, 'card'),
-              jsx(CbV3LabSection, {
-                id: 'stamps',
-                title: 'Stamps',
-                children: jsx('div', {
-                  'data-cb3-specimen': 'stamps',
-                  style: { display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' },
-                  children: CB3_STAMP_STATES.map((state, index) =>
-                    jsx(StampNode, { state, index: index + 1, label: `Section ${index + 1}`, onClick: () => {} }, state)
-                  )
-                })
-              }, 'stamps'),
               jsx(CbV3LabSection, {
                 id: 'medals',
                 title: CB3_LAB_COPY.sections.medals,
@@ -21521,52 +21510,7 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                   style: { display: 'flex', flexWrap: 'wrap', gap: '1rem' },
                   children: Object.keys(CB3_MEDALS).map((event) => jsx(Medallion, { event }, event))
                 })
-              }, 'medals'),
-              jsx(CbV3LabSection, {
-                id: 'lesson',
-                title: CB3_LAB_COPY.sections.lesson,
-                children: jsxs('div', {
-                  'data-cb3-specimen': 'lesson-parts',
-                  style: { display: 'flex', flexWrap: 'wrap', gap: '1.25rem', alignItems: 'flex-start' },
-                  children: [
-                    jsx(DialogueBubble, {
-                      segments: [
-                        { text: 'この' },
-                        { text: '店', ruby: 'みせ' },
-                        { text: 'は' },
-                        { text: '提灯', ruby: 'ちょうちん' },
-                        { text: 'が' },
-                        { text: '多', ruby: 'おお' },
-                        { text: 'いです。' }
-                      ],
-                      romaji: 'Kono mise wa chouchin ga ooi desu.',
-                      en: 'This shop has many lanterns.',
-                      playLabel: 'Play the line',
-                      onPlay: () => {}
-                    }, 'bubble'),
-                    jsx(ChallengeCard, {
-                      title: 'Field challenge',
-                      prompt: 'Find one more shop with lanterns and name what it sells.',
-                      recordNote: 'Opens the served check for this section.',
-                      actionLabel: 'Open the check',
-                      onStart: () => {}
-                    }, 'challenge'),
-                    jsx(EvidenceTray, {
-                      countLabel: '2 of 5 checks recorded',
-                      recorded: 2,
-                      events: ['First check', 'Answered without a hint'],
-                      toggleLabel: 'Record a check'
-                    }, 'tray'),
-                    jsx(EvidenceTray, {
-                      recorded: 0,
-                      emptyLabel: 'No checks recorded yet',
-                      events: [],
-                      note: 'This lesson could not be recorded. Nothing you answered was lost.',
-                      toggleLabel: 'Try again'
-                    }, 'tray-empty')
-                  ]
-                })
-              }, 'lesson')
+              }, 'medals')
             ]
           }, 'left'),
           jsxs('div', {
@@ -21618,13 +21562,7 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                         lineHeight: cb3Lead('meta'),
                         fontWeight: 600
                       },
-                      children: [
-                        jsx('span', { children: 'Start a course' }, 'label'),
-                        jsx('span', {
-                          style: { marginInlineStart: '0.5rem', color: cb3Role('on-terracotta') },
-                          children: 'primary fill only'
-                        }, 'note')
-                      ]
+                      children: jsx('span', { children: CB3_LAB_COPY.deck.primary }, 'label')
                     }, 'primary')
                   ]
                 })
@@ -21782,6 +21720,62 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
           }, 'right')
         ]
       }, 'columns'),
+      // The parts the R-SYS sheet does not name: a stepper, the dialogue, the challenge and the
+      // evidence tray. SPEC-V3 §5.5 defines six sections and the deck has no id for a seventh
+      // group, so the band carries **no authored heading** — its group name is the sheet's own
+      // `lab.sub` line and each part is identified by the deck text it renders.
+      jsxs('div', {
+        'data-cb3-specimen': 'parts',
+        role: 'group',
+        'aria-label': CB3_LAB_COPY.sub,
+        style: { display: 'flex', flexWrap: 'wrap', gap: '1.25rem', alignItems: 'flex-start' },
+        children: [
+          jsx('div', {
+            'data-cb3-specimen': 'stamps',
+            style: { display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' },
+            children: CB3_STAMP_STATES.map((state, index) =>
+              jsx(StampNode, {
+                state,
+                index: index + 1,
+                label: CB3_LAB_COPY.deck.stepper,
+                onClick: () => {}
+              }, state)
+            )
+          }, 'stamps'),
+          jsx(DialogueBubble, {
+            segments: [
+              { text: '好', ruby: 'す' },
+              { text: 'きです。' },
+              { text: '付', ruby: 'つ' },
+              { text: 'き', ruby: 'あ' },
+              { text: 'ってください。' }
+            ],
+            romaji: CB3_LAB_COPY.deck.romaji,
+            en: CB3_LAB_COPY.deck.en,
+            playLabel: CB3_LAB_COPY.deck.play,
+            onPlay: () => {}
+          }, 'bubble'),
+          jsx(ChallengeCard, {
+            title: CB3_LAB_COPY.deck.challengeTitle,
+            prompt: CB3_LAB_COPY.deck.question,
+            actionLabel: CB3_LAB_COPY.deck.challengeStart,
+            onStart: () => {}
+          }, 'challenge'),
+          jsx(EvidenceTray, {
+            countLabel: CB3_LAB_COPY.deck.evidenceCount,
+            recorded: 2,
+            events: [CB3_LAB_COPY.deck.evidenceFirst],
+            toggleLabel: CB3_LAB_COPY.deck.tryAgain
+          }, 'tray'),
+          jsx(EvidenceTray, {
+            recorded: 0,
+            emptyLabel: CB3_LAB_COPY.deck.evidenceEmpty,
+            events: [],
+            note: CB3_LAB_COPY.deck.errorBody,
+            toggleLabel: CB3_LAB_COPY.deck.tryAgain
+          }, 'tray-empty')
+        ]
+      }, 'parts'),
       jsxs('div', {
         style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
         children: [
