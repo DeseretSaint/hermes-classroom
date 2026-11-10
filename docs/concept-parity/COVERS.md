@@ -155,9 +155,11 @@ marks. The judgement part (does the plate still read as the other subject?) is t
    master byte for byte.
 5. Checks: `scripts/cp012-cover-accept.py` — size, mode, crop identity, paper, palette family, no
    black contour, **no state hue**, **per-motif 4:5 retention**, quiet field, tesseract textless,
-   provenance hashes, kit motif disjointness. Plus `tests/test_cp012_covers.py` (17 tests), which
+   provenance hashes, kit motif disjointness. Plus `tests/test_cp012_covers.py` (19 tests), which
    re-derives the state-hue and retention results from the shipped bytes rather than importing the
-   acceptance script's verdict.
+   acceptance script's verdict, and includes two negative controls that run the real script on a
+   temporary copy of the tree — a painted plum patch must fail, and a motif zone moved outside the
+   crop window must fail.
 
 Paper after the pipeline measures **#f7f1e4** on all three (corner delta 0). The temper is one value
 for the whole kit — no plate can drift in saturation alone.

@@ -218,6 +218,57 @@ class NoStateHue(unittest.TestCase):
                                      f"{slug}: {plum / len(px):.2%} of sampled pixels are plum-hued")
 
 
+class AcceptanceGateCanFail(unittest.TestCase):
+    """Negative controls: the round-2 gates must reject what they claim to reject.
+
+    A gate that only ever passes is not a gate. These run the real acceptance script on a
+    temporary copy of the tree, so the shipped record is untouched.
+    """
+
+    @staticmethod
+    def _stage(tmp: Path) -> None:
+        for name in ("scripts", "audit", "assets"):
+            shutil.copytree(ROOT / name, tmp / name,
+                            ignore=shutil.ignore_patterns("__pycache__"))
+
+    def _run(self, tmp: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(("python3", str(tmp / "scripts" / "cp012-cover-accept.py")),
+                              capture_output=True, text=True, cwd=tmp)
+
+    def test_a_plum_patch_on_a_shipped_master_is_rejected(self):
+        import tempfile
+        from PIL import Image
+
+        tmp = Path(tempfile.mkdtemp(prefix="cp012-gate-plum-"))
+        self._stage(tmp)
+        master = tmp / "assets" / "art" / "covers" / "parent-master-1200x800.png"
+        with Image.open(master) as im:
+            art = im.convert("RGB")
+        # 60x120 = 7,200 px of #6a3e74, 0.75 % of a 1200x800 frame -> over the 0.5 % line
+        patch = Image.new("RGB", (60, 120), (106, 62, 116))
+        art.paste(patch, (100, 100))
+        art.save(master)
+        r = self._run(tmp)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("no state hue shipped", r.stdout)
+
+    def test_a_motif_zone_outside_the_crop_window_is_rejected(self):
+        import json
+        import tempfile
+
+        tmp = Path(tempfile.mkdtemp(prefix="cp012-gate-crop-"))
+        self._stage(tmp)
+        swap_path = tmp / "audit" / "cp012-covers" / "swap-check.json"
+        swap = json.loads(swap_path.read_text())
+        for cover in swap["covers"]:
+            if cover["pack"] == "parent-measurement-practice":
+                cover["motifs"][0]["bbox"] = [10, 10, 260, 200]   # painted, but left of x=280
+        swap_path.write_text(json.dumps(swap, indent=2))
+        r = self._run(tmp)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("4:5 keeps jug", r.stdout)
+
+
 class Provenance(unittest.TestCase):
     def test_every_hash_in_the_record_is_the_file_on_disk(self):
         prov = load("provenance.json")
