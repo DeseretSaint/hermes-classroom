@@ -45,6 +45,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
 MASTERS = ASSETS / "masters"
+#: CP-013's painted object masters (card-owned art). Not embedded; the shipped assets/objects/*
+#: files are encodes of these.
+ART_OBJECTS = ASSETS / "art" / "objects"
 GENERATED = ROOT / "desktop" / "cb-assets.generated.js"
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 VENV = ROOT / ".venv-cb-assets"
@@ -133,7 +136,17 @@ def data_url(mime: str, data: bytes) -> str:
 
 
 def ensure_venv() -> None:
-    """Re-exec inside the private venv when the running interpreter cannot import fontTools."""
+    """Re-exec inside the private venv when the running interpreter cannot import fontTools.
+
+    An inherited ``PYTHONPATH`` can shadow this venv's site-packages (a host-managed Python on the
+    path makes ``PIL`` resolve to an incompatible build). The private venv is the whole point of the
+    isolation, so an inherited path is dropped once, before the interpreter goes looking for a
+    module: the build then either runs clean or fails with the honest missing-module message.
+    """
+    if os.environ.get("PYTHONPATH") and not os.environ.get("CB_ASSETS_CLEAN_ENV"):
+        env = dict(os.environ, CB_ASSETS_CLEAN_ENV="1")
+        env.pop("PYTHONPATH", None)
+        os.execve(sys.executable, [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]], env)
     try:
         import fontTools  # noqa: F401
     except ImportError:
@@ -384,6 +397,8 @@ def write_masters() -> None:
     for pose in FOX_POSES:
         (MASTERS / "fox" / ("fox-%s.svg" % pose)).write_text(_fox_svg(pose), encoding="utf-8")
     for name in OBJECTS:
+        if (ART_OBJECTS / (name + ".png")).is_file():
+            continue  # CP-013 painted the blank; --write-masters must never clobber it
         (MASTERS / "objects" / (name + ".svg")).write_text(_object_svg(name), encoding="utf-8")
     print("masters written under %s" % MASTERS)
 
@@ -690,11 +705,28 @@ def build(check: bool = False) -> dict:
             fox_entries[prov] = entry
 
     # objects -------------------------------------------------------------------------------
+    # CP-013 replaced the provisional SVG kit with painted blanks. The painted master is the
+    # single source: it lives in assets/art/objects/<name>.png, is never embedded, and the shipped
+    # assets/objects/<name>.webp is only an encode of it. An object with no painted master still
+    # falls back to the procedural SVG so the pipeline keeps a typographic fallback.
     for name in OBJECTS:
-        master = MASTERS / "objects" / (name + ".svg")
-        if not master.exists():
-            raise SystemExit("missing object master: %s" % master)
-        img = rasterize_svg(master, 256, 256)
+        painted = ART_OBJECTS / (name + ".png")
+        svg_master = MASTERS / "objects" / (name + ".svg")
+        if painted.is_file():
+            from PIL import Image
+
+            with Image.open(painted) as opened:
+                img = opened.convert("RGBA")
+            if img.size != (256, 256):
+                raise SystemExit("painted object %s is %dx%d, not 256x256" % (painted, *img.size))
+            master_rel = "assets/art/objects/%s.png" % name
+            source = "generated:audit/cp013-scenes/provenance.json#%s" % name
+        elif svg_master.is_file():
+            img = rasterize_svg(svg_master, 256, 256)
+            master_rel = "assets/masters/objects/%s.svg" % name
+            source = "authored:%s" % master_rel
+        else:
+            raise SystemExit("missing object master: %s" % painted)
         webp = encode(img, "webp")
         rel = "assets/objects/%s.webp" % name
         out = ROOT / rel
@@ -703,7 +735,7 @@ def build(check: bool = False) -> dict:
         prov = "cb.asset.object.%s" % name
         row = _row(
             "object.%s" % name,
-            "authored:assets/masters/objects/%s.svg" % name,
+            source,
             "CC0-1.0",
             sha256_bytes(webp),
             256,
@@ -711,8 +743,8 @@ def build(check: bool = False) -> dict:
             len(webp),
             prov,
             rel,
-            master="assets/masters/objects/%s.svg" % name,
-            master_sha256=sha256_file(master),
+            master=master_rel,
+            master_sha256=sha256_file(ROOT / master_rel),
         )
         object_rows.append(row)
         entry = {
