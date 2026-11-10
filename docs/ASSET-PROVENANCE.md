@@ -11,9 +11,15 @@ Surface: the Workshop destination in `desktop/plugin.js`, its catalogue
 **The Workshop surface uses no external assets.** `desktop/plugin.js` fetches no image, icon set,
 illustration, font file or stylesheet from any host; it has no `url(http…)`, no `.svg`/`.png`/
 `.woff` reference and no `@import`. Serif and sans are system stacks (`CB_SERIF`, `CB_SANS` at
-`desktop/plugin.js`), so no typeface is redistributed. A pack cover is either the pack's own
+`desktop/plugin.js`). A pack cover is either the pack's own
 declared media, read at run time through `artifact.get`, or type — the typographic fallback draws
 its rule and station from the identity's own tokens.
+
+CP-004 adds a separate, non-Workshop lane: the v3 brand assets (two OFL typefaces, material tiles,
+fox poses, object kit) are embedded as data URLs in `desktop/cb-assets.generated.js`. They are
+first-party or openly licensed, they are not fetched from a host, and they are recorded in
+[THIRD-PARTY.md](THIRD-PARTY.md). Course covers, scene headers and world plates stay outside that
+segment and keep using the media route.
 
 H-197 opens exactly one illustration lane and no more: a cover plate composed in the Atlas Lamp
 language from the token palette by `bundled/packs/build_demo_packs.py`. It is **host-composed, not
