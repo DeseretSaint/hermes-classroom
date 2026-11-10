@@ -264,5 +264,79 @@ class TestCountsAndClarifications(unittest.TestCase):
         self.assertIn("| CP-023 | Classroom (R-CLASS) | 46 |", readme)
 
 
+class TestRound2DocsCorrections(unittest.TestCase):
+    """Review round 2: a shipped row may only claim shipped words, and a headline count must be
+    derivable from the table it summarises. Both drifted on ``3000ba0``."""
+
+    STUDIO = ROOT / "desktop" / "src" / "95-studio.js"
+
+    def shipped_pack_state_words(self) -> list[tuple[str, str]]:
+        """``(key, word)`` pairs straight out of ``CB_TAKEHOME_STATE_WORD``."""
+        lines = read(self.STUDIO).splitlines()
+        start = next(
+            index
+            for index, line in enumerate(lines)
+            if line.startswith("const CB_TAKEHOME_STATE_WORD = {")
+        )
+        pairs: list[tuple[str, str]] = []
+        for line in lines[start + 1 :]:
+            if line.strip().startswith("}"):
+                break
+            match = re.match(r"\s*([a-z_]+):\s*'([^']+)'", line)
+            if match:
+                pairs.append((match.group(1), match.group(2)))
+        return pairs
+
+    def test_cp025b_shipped_pack_state_row_lists_only_shipped_words(self):
+        text = read(COPY_DIR / "CP-025b-studio.md")
+        rows = [line for line in text.splitlines() if "pack states shipped" in line]
+        self.assertEqual(len(rows), 1, "expected exactly one shipped pack-state row")
+        row = rows[0]
+        self.assertIn("`95-studio.js:572-575`", row)
+        cell = row.strip().strip("|").split("|")[0].strip()
+        listed = [part.split(" (")[0].strip() for part in cell.split(" / ")]
+        expected = self.shipped_pack_state_words()
+        self.assertEqual(len(expected), 4, "CB_TAKEHOME_STATE_WORD no longer has four entries")
+        self.assertEqual(listed, [word for _, word in expected])
+        self.assertNotIn("Previewed", listed, "`previewed` has no shipped v2 word")
+        # A contract value with no shipped word is stated as such, and its proposal row stays.
+        self.assertIn("`previewed` has no v2 word", text)
+        self.assertIn("| Previewed | GAP-28 `studio.pack.previewed` |", text)
+
+    def test_readme_cp023_missing_strings_are_derivable_from_the_table(self):
+        gap_rows: list[list[str]] = []
+        for line in read(COPY_DIR / "CP-023-classroom.md").splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if len(cells) < 6:
+                continue
+            if "gap" in cells[5].lower():
+                gap_rows.append(cells)
+        gap_ids = sorted(
+            {match for cells in gap_rows for match in re.findall(r"GAP-\d+", cells[2])},
+            key=lambda gap: int(gap.split("-")[1]),
+        )
+        self.assertEqual(
+            len(gap_rows), 12, "the CP-023 gap-row count changed; re-derive the README verdict"
+        )
+        self.assertEqual(gap_ids, [f"GAP-{number}" for number in range(11, 18)])
+
+        row = next(
+            line for line in read(COPY_DIR / "README.md").splitlines() if line.startswith("| CP-023 |")
+        )
+        cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+        gaps_cell, verdict = cells[3], cells[5]
+        self.assertNotRegex(
+            verdict,
+            r"\b\d+\s+strings?\b",
+            "an un-derivable string count; derive it from the CP-023 table or drop it",
+        )
+        self.assertRegex(gaps_cell, rf"\b{len(gap_ids)}\b")
+        span = f"`{gap_ids[0]}`–`{gap_ids[-1]}`"
+        self.assertIn(span, gaps_cell)
+        self.assertIn(span, verdict)
+
+
 if __name__ == "__main__":
     unittest.main()

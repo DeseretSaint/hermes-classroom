@@ -152,7 +152,7 @@ states it twice ("No child account and no child chat: the adult prepares and pri
 | For me to teach from / For the learner to hold | `95-studio.js:546-547` | — |
 | Cover / Parent guide / Learner page / Plate / Answer guide (page roles) | `95-studio.js:551-555` | — |
 | The first page of the printed pack. / For the adult preparing the lesson. It is not the learner's page. / For the learner. This page carries no answers. / Captioned orientation art. It is not the lesson text. / Parent only. Keep this page back. | `95-studio.js:564-568` | — |
-| Draft / Previewed / Approved / Exported / Superseded (pack states) | `95-studio.js:572-575` | — |
+| Draft / Approved / Exported / Superseded (pack states shipped in v2) | `95-studio.js:572-575` | — |
 | Draft {pack_id} · revision {n}. Approval covers exactly the pages above. | `95-studio.js:1278` | — |
 | {state} on {date} · approval hash: {hash} | `95-studio.js:1284` | — |
 | Game course / Textbook course (source modes) | `95-studio.js:579-580` | — |

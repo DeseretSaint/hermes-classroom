@@ -51,7 +51,10 @@ All machine-checked, reproducible from the docs tree:
 5. **The inventory is machine-checked.** `tests/test_cp_copy_inventory.py` resolves every `field:`
    path in this directory against the frozen contracts, rejects a proposed source that names a
    method or setter instead of a value, checks every `== <value>` predicate against its contract
-   enum, and requires a row for every member of every enum the inventory cites.
+   enum, requires a row for every member of every enum the inventory cites, and re-derives from the
+   source and the tables two claims that drifted once: the "shipped in v2" pack-state row may only
+   list words `CB_TAKEHOME_STATE_WORD` actually defines, and the CP-023 verdict carries no string
+   count that the CP-023 gap rows do not produce.
 
 ## Result
 
@@ -59,7 +62,7 @@ All machine-checked, reproducible from the docs tree:
 |---|---|---|---|---|---|
 | CP-021 | Discover / Workshop (R-DISC) | 29 | 1 (`GAP-07`) | 3 (`GAP-08`, `GAP-09`, `GAP-10`) | shippable after 4 decisions |
 | CP-022 | Home (R-HOME) | 25 | 3 (`GAP-03`, `GAP-04`, `GAP-05`) | 1 (`GAP-06`) | shippable after 4 decisions |
-| CP-023 | Classroom (R-CLASS) | 46 | 7 (`GAP-11`–`GAP-17`) | 1 (`GAP-18`) | **not shippable** — 8 strings have no row (`GAP-17` covers all six `evidence_class` values) |
+| CP-023 | Classroom (R-CLASS) | 46 | 7 (`GAP-11`–`GAP-17`) | 1 (`GAP-18`) | **not shippable** — the stepper node label, the answer-surface words, the level line and the six evidence-class words have no deck row (`GAP-11`–`GAP-17`) |
 | CP-024 | Course home (R-MAP) | 30 | 3 (`GAP-19`, `GAP-20`, `GAP-22`) | 1 clarify (`GAP-21`) | shippable after 4 decisions |
 | CP-025a | Homework + Game | 2 | 3 (`GAP-23`–`GAP-25`, plus `GAP-30` scope) | body defect (`GAP-26`) | **blocked** — deck has no section for these surfaces |
 | CP-025b | World Studio + Parent Studio | 0 | 2 (`GAP-27`, `GAP-28`, plus `GAP-30` scope) | body defect (`GAP-29`) | **blocked** — deck has no section for these surfaces |
