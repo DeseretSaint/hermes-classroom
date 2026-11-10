@@ -1,7 +1,8 @@
 # GM-003 evidence
 
-Branch: `wt/gm-003-world` (rebased on `origin/master` `d70ceb9`, which carries GM-001 `4e3d6c6`,
-migration 0013, the published `rpc.v21.json` and GM-014's print fixtures; no master merge, no
+Branch: `wt/gm-003-world` (rebased on `origin/master` `7553925`, which carries GM-001 `4e3d6c6`,
+migration 0013, the published `rpc.v21.json`/`rpc.v22.json`, GM-014's print fixtures and the
+GM-002/GM-011 visual/tutor merges; no master merge, no
 push, no gateway restart, no manifest/contract/migration edit on this branch).
 
 ## Named tests
@@ -48,6 +49,12 @@ file.
 This is deliberate, not an omission: it avoids rewriting the ten historical contract-immutability
 tests and avoids racing GM-002/GM-005/GM-009, which are parallel backend cards that would each
 otherwise need the same single manifest bump.
+
+**Update (round 9):** the rebased base `7553925` publishes `rpc.v22.json` (GM-011's
+`tutor.ask`/`tutor.history`), but it still carries no `world.*` entry. The four world methods
+therefore remain keyed by the frozen GM manifest and non-dispatchable; the additive `world.*`
+entries plus the `coursebook/contracts.py` bump remain the integration card's work. This branch
+does not edit `contracts/*.json`.
 
 ## Review round 2 — sentinel changes requested (D1–D4)
 
