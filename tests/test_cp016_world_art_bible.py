@@ -184,8 +184,8 @@ class PromptHashContractTest(unittest.TestCase):
         self.brief = world.WorldBrief.from_mapping(BRIEF)
         self.grammar = world.WorldPolicy.select(self.brief)
 
-    def test_prompt_version_is_v2(self) -> None:
-        self.assertEqual(world.PROMPT_VERSION, "world-prompt-v2")
+    def test_prompt_version_is_v3(self) -> None:
+        self.assertEqual(world.PROMPT_VERSION, "world-prompt-v3")
 
     def test_hash_is_stable_for_the_same_request(self) -> None:
         first = world.build_prompt(self.brief, self.grammar, role="hero")
@@ -241,6 +241,128 @@ class PromptHashContractTest(unittest.TestCase):
         )
         self.assertEqual(default, explicit)
         self.assertNotEqual(default, old)
+
+
+class NotationHazardContractTest(unittest.TestCase):
+    """The notation/diagram class the OCR lettering gate cannot see.
+
+    A staff, a chord box, a tick box or a single glyph is not a >=2-character word, so the
+    CP-010 OCR gate passes it by construction. The prompt is the only fence; this class pins
+    that every role of a brief whose subject makes notation natural names the hazard.
+    """
+
+    MUSIC = {
+        "course_id": "course_cp016_music",
+        "title": "Fingerpicking patterns for acoustic guitar",
+        "subject_domain": "music",
+        "end_capability": "Play three fingerpicking patterns in steady time",
+        "audience": "adult beginner",
+        "tone": "warm, unhurried, curious",
+        "motifs": ["studio bench", "acoustic guitar", "open notebook"],
+        "sections": [
+            {"id": "s1", "title": "Thumb and finger independence"},
+            {"id": "s2", "title": "A first travis pattern"},
+        ],
+    }
+
+    def _all_prompts(self, mapping: dict) -> list[world.WorldPrompt]:
+        brief = world.WorldBrief.from_mapping(mapping)
+        grammar = world.WorldPolicy.select(brief)
+        boards = world.build_style_boards(brief)
+        kit = world.build_kit_prompts(
+            brief, grammar, style_id=boards[0].style_id, style=boards[0]
+        )
+        return list(boards) + kit
+
+    def test_music_prompts_refuse_notation_in_every_role(self) -> None:
+        for prompt in self._all_prompts(self.MUSIC):
+            with self.subTest(role=prompt.role, style=prompt.style_id):
+                negative = prompt.negative_prompt.lower()
+                self.assertIn("no musical notation", negative)
+                self.assertIn("no chord diagrams", negative)
+                self.assertIn("no tablature", negative)
+                self.assertIn("no sheet music", negative)
+                # The general printed-surface fence is on every plate, not only this domain.
+                self.assertIn("no notation of any kind", negative)
+                self.assertIn("no diagrams, charts, tables or grids", negative)
+
+    def test_other_notation_domains_carry_their_own_class(self) -> None:
+        cases = {
+            "code": (
+                {"subject_domain": "programming", "title": "Write a Python parser"},
+                ("no code", "no terminals", "no flowcharts"),
+            ),
+            "maths": (
+                {"subject_domain": "mathematics", "title": "Solve linear equations"},
+                ("no equations", "no graphs", "no algebra tiles"),
+            ),
+            "checklist": (
+                {"subject_domain": "compliance", "title": "Run a safety checklist"},
+                ("no checklists", "no numbered steps", "no instruction cards"),
+            ),
+        }
+        for group, (overrides, expected) in cases.items():
+            with self.subTest(group=group):
+                mapping = dict(BRIEF)
+                mapping.update(overrides)
+                prompt = world.build_prompt(
+                    world.WorldBrief.from_mapping(mapping),
+                    world.WorldPolicy.select(mapping),
+                    role="hero",
+                )
+                negative = prompt.negative_prompt.lower()
+                for phrase in expected:
+                    self.assertIn(phrase, negative)
+                self.assertIsNone(
+                    re.search(r"\d", " ".join(expected)), "hazard text carries a digit"
+                )
+
+    def test_a_plain_brief_does_not_grow_a_music_fence(self) -> None:
+        brief = world.WorldBrief.from_mapping(BRIEF)
+        grammar = world.WorldPolicy.select(brief)
+        negative = world.build_prompt(brief, grammar, role="hero").negative_prompt.lower()
+        self.assertNotIn("no musical notation", negative)
+        self.assertIn("no notation of any kind", negative)
+
+    def test_every_section_prompt_carries_the_place_and_mood_fence(self) -> None:
+        # Not service-only: a cooking or music section title also names an action, and a plate
+        # showing hands mid-technique is the same defect as a plate showing a torque sequence.
+        for mapping in (BRIEF, self.MUSIC):
+            brief = world.WorldBrief.from_mapping(mapping)
+            grammar = world.WorldPolicy.select(brief)
+            for section_id, section_title in brief.sections:
+                with self.subTest(grammar=grammar, section=section_id):
+                    prompt = world.build_prompt(
+                        brief,
+                        grammar,
+                        role="section",
+                        section_id=section_id,
+                        section_title=section_title,
+                    )
+                    body = prompt.prompt.lower()
+                    self.assertIn("place and mood only", body)
+                    self.assertIn("no procedure, sequence or tool action depicted", body)
+                    negative = prompt.negative_prompt.lower()
+                    self.assertIn("no depicted procedure", negative)
+                    self.assertIn("no hands mid-technique", negative)
+                    # The typed title travels only as a suppression instruction, never as prose.
+                    self.assertIn(f"no lettering of the words {section_title.lower()}", body)
+                    self.assertNotIn(f"section scene {section_id}: {section_title.lower()}", body)
+
+    def test_section_prompt_identity_is_stable_and_section_scoped(self) -> None:
+        brief = world.WorldBrief.from_mapping(BRIEF)
+        grammar = world.WorldPolicy.select(brief)
+        first = world.build_prompt(
+            brief, grammar, role="section", section_id="s1", section_title="Feeding the starter"
+        )
+        again = world.build_prompt(
+            brief, grammar, role="section", section_id="s1", section_title="Feeding the starter"
+        )
+        self.assertEqual(first.prompt_hash, again.prompt_hash)
+        other_section = world.build_prompt(
+            brief, grammar, role="section", section_id="s2", section_title="Feeding the starter"
+        )
+        self.assertNotEqual(first.prompt_hash, other_section.prompt_hash)
 
 
 class ConceptDisplayContractTest(unittest.TestCase):

@@ -27,7 +27,9 @@ from .gm_contract import WORLD_PROMPT_FORBIDDEN
 #: Bumped when a prompt changes in a way that must not reuse cached art.
 #: v2 rewrites every grammar to the v3 art bible (one gouache medium, upper-left key, warm ink
 #: contour, five-pigment ceiling) and adds the additive 3:2 ``card`` crop role.
-PROMPT_VERSION = "world-prompt-v2"
+#: v3 adds the notation/diagram negatives for domains where those are the natural illustration
+#: and the "place and mood only" section fence for every grammar, not only service worlds.
+PROMPT_VERSION = "world-prompt-v3"
 
 #: The house style. A starting point, never permission to use lanterns for a head gasket.
 DEFAULT_GRAMMAR = "field_atlas"
@@ -507,6 +509,7 @@ __all__ = [
     "build_style_boards",
     "foreign_grammar_motifs",
     "grammar_record",
+    "notation_hazards",
 ]
 
 
@@ -589,7 +592,82 @@ _NEGATIVE = (
     "no off-palette colour",
     "no photorealism or photographic texture",
     "no star, rating, price or learner count",
+    # v3: the printed-surface class. A single glyph, a staff, a chord box or a tick box is not a
+    # >=2-character word, so the OCR lettering gate cannot see it; the prompt is the only fence.
+    "no diagrams, charts, tables or grids",
+    "no notation of any kind",
 )
+
+#: Domains where notation, diagrams or printed grids are the *natural* illustration. A model
+#: asked for "a music course" paints staves and chord boxes unless it is told not to, and an
+#: open notebook motif becomes a bar of music. Named as suppression instructions, never as
+#: positive scene text — a positive "sheet music" line would be painted as a printed surface.
+_NOTATION_HAZARDS: dict[str, tuple[str, ...]] = {
+    "music": (
+        "no musical notation, no staves, no clefs and no noteheads",
+        "no chord diagrams or chord boxes, no finger-dot charts",
+        "no tablature, no fret numbers and no string grids",
+        "no sheet music, no open songbooks and no printed pages",
+    ),
+    "code": (
+        "no code, no syntax and no glyph lines that resemble code",
+        "no terminals, prompts or command lines",
+        "no flowcharts, boxes-and-arrows or architecture diagrams",
+    ),
+    "maths": (
+        "no equations, formulas or mathematical symbols",
+        "no graphs, axes, plots or number lines",
+        "no algebra tiles, geometry diagrams or worked examples",
+    ),
+    "checklist": (
+        "no checklists, tick boxes, forms or tables",
+        "no numbered steps, badges or step counters",
+        "no instruction cards with marks on them",
+    ),
+}
+
+#: Tokens that pull a brief into one hazard group. Matched as substrings of the brief's own
+#: words (domain, title, capability, motifs), because a music course may be filed under `art`.
+_NOTATION_ALIASES: dict[str, str] = {
+    "music": "music",
+    "guitar": "music",
+    "piano": "music",
+    "violin": "music",
+    "drum": "music",
+    "song": "music",
+    "chord": "music",
+    "code": "code",
+    "coding": "code",
+    "programming": "code",
+    "software": "code",
+    "python": "code",
+    "javascript": "code",
+    "computer science": "code",
+    "math": "maths",
+    "algebra": "maths",
+    "calculus": "maths",
+    "statistic": "maths",
+    "logic": "maths",
+    "symbolic": "maths",
+    "equation": "maths",
+    "checklist": "checklist",
+    "check list": "checklist",
+    "compliance": "checklist",
+    "audit": "checklist",
+    "procedure": "checklist",
+}
+
+
+def notation_hazards(brief: "WorldBrief") -> tuple[str, ...]:
+    """The notation/diagram negatives this brief's own words call for, in stable order."""
+    tokens = " ".join(
+        (brief.subject_domain, brief.title, brief.end_capability, *brief.motifs)
+    ).lower()
+    groups = sorted({group for alias, group in _NOTATION_ALIASES.items() if alias in tokens})
+    hazards: list[str] = []
+    for group in groups:
+        hazards.extend(_NOTATION_HAZARDS[group])
+    return tuple(hazards)
 
 
 @dataclass(frozen=True)
@@ -690,25 +768,36 @@ def build_prompt(
             raise WorldPolicyViolation(
                 "section_prompt_needs_section_id", "a section card prompt needs a section id."
             )
-        if record.name == "workshop_manual":
-            # Section titles in a service course name procedures ("Removing the head"). A plate
-            # is orientation, never the procedure, so the scene is place and mood only.
-            section_clause = (
-                f" Section scene {section_id}: place and mood only, no procedure, "
-                "sequence or tool action depicted."
-            )
-        else:
+        # Every section plate is orientation, never the technique — not only a service world.
+        # A section title in any subject names an action ("A first travis pattern", "Pulling air
+        # through the line"), and a model asked for it paints hands mid-procedure, which is the
+        # defect this fence exists to prevent. The title never reaches the prompt as prose.
+        section_clause = (
+            f" Section scene {section_id}: place and mood only, no procedure, "
+            "sequence or tool action depicted."
+        )
+        if record.name != "workshop_manual":
             # A section title is course text. Carry it only as a suppression instruction: a
             # positive clause is painted as a heading by the image model, which breaks the
             # textless rule. The section card gets the real typed title from the UI.
             safe_title = _plate_safe(section_title, record.name, fallback=None)
-            section_clause = f" Section scene {section_id}."
             if safe_title:
                 section_lettering_negative = f"no lettering of the words {safe_title.lower()}"
 
     negative: list[str] = list(_NEGATIVE)
     for item in WORLD_PROMPT_FORBIDDEN:
         negative.append(f"no {item}")
+    # The notation class: domain words decide whether staves, chord boxes, code lines, equations
+    # or tick boxes are the natural illustration this plate must refuse to paint.
+    negative.extend(notation_hazards(typed))
+    if role == "section":
+        negative.extend(
+            (
+                "no depicted procedure, no technique action",
+                "no hands mid-technique, no finger placement",
+                "no instruction diagram, step chart or sequence of steps",
+            )
+        )
     if service:
         negative.extend(
             (
