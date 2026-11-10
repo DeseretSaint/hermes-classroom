@@ -277,7 +277,7 @@ class ParentGuardTest(PackFlowCase):
             manifest,
             files,
             pack_id="fractions-adult-v1",
-            pack_version="2.0.0",
+            pack_version="2.1.0",
             recipe="casual",
             confirm=True,
         )

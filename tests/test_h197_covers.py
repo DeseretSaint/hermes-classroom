@@ -176,7 +176,7 @@ class LicenceAndProvenanceTests(unittest.TestCase):
                     if str(item["mime"]).startswith("image/")
                 }
                 self.assertIn(cover["path"], declared)
-                self.assertEqual(declared[cover["path"]]["role"], "visual")
+                self.assertEqual(declared[cover["path"]]["role"], "cover")
 
     def test_every_cover_file_carries_a_permissive_licence_and_an_attribution(self) -> None:
         for entry, cover in self.covers():
@@ -190,10 +190,17 @@ class LicenceAndProvenanceTests(unittest.TestCase):
                 with self.subTest(pack=entry["pack_id"], path=path):
                     self.assertIn(path, records, "a cover file needs a per-artifact licence record")
                     record = records[path]
-                    self.assertIn(record["license_id"], PERMISSIVE)
                     self.assertTrue(str(record.get("attribution") or "").strip())
-                    # A "tweak" does not cure a restrictive licence: unknown is a refusal.
-                    self.assertNotIn(record["license_id"], {"unspecified", "unknown", "proprietary"})
+                    if record["license_id"] == "unspecified":
+                        # CP-014's painted plates are model output and carry no rights verdict.
+                        # That is allowed only inside a local_only pack and only when the
+                        # attribution says so; an unknown licence may not pass silently.
+                        self.assertEqual(manifest["license"]["redistribution"], "local_only")
+                        attribution = record["attribution"].lower()
+                        self.assertIn("model output", attribution)
+                        self.assertIn("no redistribution licence", attribution)
+                    else:
+                        self.assertIn(record["license_id"], PERMISSIVE)
 
     def test_a_cc_by_cover_would_need_visible_credits(self) -> None:
         """The gate, tested as a rule even though both shipped plates are CC0."""
@@ -220,13 +227,18 @@ class LicenceAndProvenanceTests(unittest.TestCase):
                     declared = next(item for item in manifest["files"] if item["path"] == cover_path)
                     self.assertEqual(declared["sha256"], f"sha256:{digest}")
                     shipped += 1
-        self.assertEqual(shipped, 4, "two packs x (16:9 master + 3:2 crop)")
+        self.assertEqual(shipped, 6, "three packs x (3:2 master + 4:5 crop)")
 
-    def test_the_parent_pack_states_its_typographic_fallback(self) -> None:
+    def test_the_parent_pack_now_carries_the_approved_cover(self) -> None:
         entry = next(item for item in self.document["packs"] if item["pack_id"] == "parent-measurement-practice")
-        self.assertIsNone(entry["cover"])
-        self.assertIn("parent pack keeps the typographic cover", self.provenance)
-        self.assertIn("cb.pack v1", self.provenance)
+        self.assertIsNotNone(entry["cover"])
+        manifest, files = archive.read_directory(PACKS / entry["directory"])
+        self.assertEqual(manifest["contract_version"], 2)
+        self.assertIn(entry["cover"]["path"], files)
+        record = next(item for item in manifest["files"] if item["path"] == entry["cover"]["path"])
+        self.assertEqual(record["role"], "cover")
+        self.assertEqual(str(manifest["media"][0]["path"]), entry["cover"]["path"])
+        self.assertIn("parent-measurement-practice/content/cover-3x2.png", self.provenance)
 
     def test_no_cover_borrows_a_restrictive_or_competitor_source(self) -> None:
         # The art-direction doc *names* rejected sources on purpose, so the check runs over the
@@ -254,14 +266,13 @@ class AccuracyTests(unittest.TestCase):
                 continue
             with self.subTest(pack=entry["pack_id"]):
                 caption = str(cover.get("caption") or "")
-                self.assertIn("generated plate", caption.lower())
+                self.assertIn("painted illustration", caption.lower())
                 self.assertIn("not a diagram", caption.lower())
                 manifest, _ = archive.read_directory(PACKS / entry["directory"])
                 record = next(item for item in manifest["files"] if item["path"] == cover["path"])
                 text = str(record.get("text_equivalent") or "")
-                self.assertIn("pack visual", text.lower())
-                self.assertIn("decorative material only", text.lower())
-                self.assertIn("five inks", text.lower())
+                self.assertIn("painted cover plate", text.lower())
+                self.assertIn("illustration only", text.lower())
                 self.assertTrue(text.strip())
 
     def test_no_cover_carries_a_safety_critical_value(self) -> None:
@@ -289,7 +300,7 @@ class AccuracyTests(unittest.TestCase):
                 alt = str(cover.get("alt") or "")
                 self.assertGreaterEqual(len(alt), 40, "a cover needs a real alternative text, not a label")
                 self.assertNotEqual(alt, manifest["title"])
-                self.assertIn("generated plate", alt.lower())
+                self.assertIn("painted cover plate", alt.lower())
 
 
 class NoHotlinkAndIconFamilyTests(unittest.TestCase):
@@ -355,56 +366,48 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.builder = load_builder()
 
-    def test_each_committed_plate_matches_the_generator(self) -> None:
-        for kind, slug in (("japanese", "japanese-affection-context-l0"), ("technical", "technical-demo-pack")):
+    def test_each_committed_plate_matches_the_approved_kit(self) -> None:
+        for kind, slug in (
+            ("japanese", "japanese-affection-context-l0"),
+            ("parent", "parent-measurement-practice"),
+            ("technical", "technical-demo-pack"),
+        ):
             with self.subTest(plate=kind):
                 folder = PACKS / slug / "content"
-                self.assertEqual((folder / "cover-16x9.png").read_bytes(), self.builder.cover_plate_png(kind))
-                self.assertEqual((folder / "cover-3x2.png").read_bytes(), self.builder.cover_crop_png(kind))
+                self.assertEqual((folder / "cover-3x2.png").read_bytes(), self.builder.painted_cover(kind))
+                self.assertEqual(
+                    (folder / "cover-4x5.png").read_bytes(),
+                    self.builder.painted_cover(kind, portrait=True),
+                )
+                manifest, _ = archive.read_directory(PACKS / slug)
+                declared = {item["path"]: item for item in manifest["files"]}
+                self.assertEqual(declared["content/cover-3x2.png"]["role"], "cover")
+                self.assertEqual(declared["content/cover-4x5.png"]["role"], "cover")
 
-    def test_plates_are_16_by_9_and_the_crop_is_3_by_2(self) -> None:
-        widths = set()
-        heights = set()
-        for kind, slug in (("japanese", "japanese-affection-context-l0"), ("technical", "technical-demo-pack")):
-            master_w, master_h = png_size((PACKS / slug / "content" / "cover-16x9.png").read_bytes())
-            crop_w, crop_h = png_size((PACKS / slug / "content" / "cover-3x2.png").read_bytes())
-            self.assertEqual(round(master_w / master_h, 4), round(16 / 9, 4))
-            self.assertEqual(round(crop_w / crop_h, 4), round(3 / 2, 4))
+    def test_plate_geometry_is_the_a3_master_and_its_4_by_5_crop(self) -> None:
+        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-demo-pack"):
+            master_w, master_h = png_size((PACKS / slug / "content" / "cover-3x2.png").read_bytes())
+            crop_w, crop_h = png_size((PACKS / slug / "content" / "cover-4x5.png").read_bytes())
+            self.assertEqual((master_w, master_h), (1200, 800))
+            self.assertEqual((crop_w, crop_h), (640, 800))
+            self.assertEqual(round(master_w / master_h, 4), round(3 / 2, 4))
+            self.assertEqual(round(crop_w / crop_h, 4), round(4 / 5, 4))
+            # The 4:5 file is the master's exact centre crop: same height, no resampling.
             self.assertEqual(crop_h, master_h)
-            widths.add(master_w)
-            heights.add(master_h)
-        self.assertEqual(len(widths), 1, "one press: the plates share a pixel size")
-        self.assertEqual(len(heights), 1, "one press: the plates share a pixel size")
 
-    def test_the_acceptance_block_passes_on_the_committed_files(self) -> None:
-        """Five inks, left 4% clear, centroid in the middle 84%, one band at a fixed y."""
-        spec = importlib.util.spec_from_file_location(
-            "h197_cover_accept", ROOT / "scripts" / "h197-cover-accept.py"
-        )
-        if spec is None or spec.loader is None:
-            raise RuntimeError("cannot load the cover acceptance script")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        failures: list[str] = []
-        for kind, slug, palette in module.PLATES:
-            module.check_plate(kind, slug, palette, failures)
-        self.assertEqual(failures, [])
-        for kind, slug, _palette in module.PLATES:
-            width, height, rgb, channels = module.read_png(PACKS / slug / "content" / "cover-16x9.png")
-            colours = {
-                module.pixel(rgb, width, x, y) for y in range(height) for x in range(0, width, 7)
-            }
-            self.assertEqual(len(colours), 5, f"{kind} must print in exactly five inks")
-            self.assertEqual(channels, 3, "no alpha channel")
-
-    def test_a_third_unsent_plate_exists_for_the_lane_and_ships_nowhere(self) -> None:
-        """The parent plate is a real member of the family; no manifest references it."""
+    def test_the_press_plate_fallback_is_still_generated_and_never_shipped(self) -> None:
+        """H-197 stays the composed typographic fallback; CP-014 does not delete that lane."""
         data = self.builder.cover_plate_png("parent")
         self.assertGreater(len(data), 1000)
-        self.assertEqual(png_size(data)[0], self.builder.COVER_W)
-        manifest, files = archive.read_directory(PACKS / "parent-measurement-practice")
-        self.assertNotIn("content/cover-16x9.png", files)
-        self.assertEqual(manifest["contract_version"], 1)
+        self.assertEqual(png_size(data), (self.builder.COVER_W, self.builder.COVER_H))
+        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-demo-pack"):
+            manifest, files = archive.read_directory(PACKS / slug)
+            self.assertNotIn("content/cover-16x9.png", files)
+            self.assertNotIn(
+                "content/cover-16x9.png",
+                {item["path"] for item in manifest["files"]},
+                "the Press Plate is a fallback lane, not a second shipped cover",
+            )
 
 
 class CoverFlowTests(KernelCase):
@@ -465,21 +468,21 @@ class CoverFlowTests(KernelCase):
         second = self.item("japanese-affection-context-l0")
         self.assertEqual(first["cover"], second["cover"])
         self.assertEqual(first["content_hash"], second["content_hash"])
-        self.assertEqual(first["pack_version"], "2.1.0")
-        self.assertEqual(first["cover"]["caption"], "Pack visual — generated plate; not a diagram of the course.")
+        self.assertEqual(first["pack_version"], "2.2.0")
+        self.assertEqual(first["cover"]["caption"], "Cover plate — painted illustration, not a diagram of the course.")
 
-    def test_the_parent_pack_keeps_its_typographic_fallback_after_install(self) -> None:
+    def test_the_parent_pack_now_serves_its_approved_cover_after_install(self) -> None:
         workshop.install("parent-measurement-practice")
         item = self.item("parent-measurement-practice")
-        self.assertEqual(item["cover"]["kind"], "typographic")
-        self.assertIsNone(item["cover"]["artifact_id"])
+        self.assertEqual(item["cover"]["kind"], "artifact")
+        self.assertTrue(str(item["cover"]["artifact_id"]).startswith("art_"))
         self.assertIsNotNone(item["installed"])
 
-    def test_a_catalogue_cover_that_is_not_the_first_visual_is_refused(self) -> None:
+    def test_a_catalogue_cover_that_is_not_the_media_linked_cover_is_refused(self) -> None:
         document = load_catalog()
         entry = next(e for e in document["packs"] if e["pack_id"] == "japanese-affection-context-l0")
-        # The relationship map is a declared visual, but it is the pack's *second* linked visual.
-        entry["cover"]["path"] = "content/relationship-map.png"
+        # The 4:5 crop is a real role-``cover`` file, but only the 3:2 master is linked (and served).
+        entry["cover"]["path"] = "content/cover-4x5.png"
         scratch = Path(tempfile.mkdtemp(prefix="coursebook-h197-"))
         self.addCleanup(shutil.rmtree, scratch, True)
         path = scratch / "workshop.v1.json"
@@ -492,7 +495,7 @@ class CoverFlowTests(KernelCase):
             workshop.CATALOG_PATH = original
         self.assertEqual(view["count"], 2)
         reason = " ".join(refusal["reason"] for refusal in view["refused"])
-        self.assertIn("first linked visual", reason)
+        self.assertIn("one media-linked cover", reason)
         self.assertNotIn("japanese-affection-context-l0", [item["pack_id"] for item in view["items"]])
 
     def test_a_cover_no_route_can_serve_is_refused(self) -> None:

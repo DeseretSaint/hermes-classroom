@@ -48,6 +48,15 @@ class PackMediaCase(KernelCase):
         """The bundled Japanese pack re-stamped as ``cb.pack`` v2 with one narration link."""
         manifest, files = archive.read_directory(JAPANESE)
         manifest = copy.deepcopy(manifest)
+        # CP-014: this fixture isolates the narration link, so drop the cover files and their
+        # per-artifact records rather than leave a declared-but-unlinked cover in the document.
+        cover_paths = {entry["path"] for entry in manifest["files"] if entry["role"] == "cover"}
+        manifest["files"] = [entry for entry in manifest["files"] if entry["role"] != "cover"]
+        manifest["license"]["per_artifact"] = [
+            item for item in manifest["license"].get("per_artifact") or []
+            if item["path"] not in cover_paths
+        ]
+        files = {path: data for path, data in files.items() if path not in cover_paths}
         manifest["contract_version"] = 2
         manifest["minimum_coursebook_version"] = __version__
         manifest["media"] = (
@@ -225,6 +234,13 @@ class UnchangedAndRefusedTest(PackMediaCase):
         """
         manifest, files = archive.read_directory(JAPANESE)
         manifest = copy.deepcopy(manifest)
+        cover_paths = {entry["path"] for entry in manifest["files"] if entry["role"] == "cover"}
+        manifest["files"] = [entry for entry in manifest["files"] if entry["role"] != "cover"]
+        manifest["license"]["per_artifact"] = [
+            item for item in manifest["license"].get("per_artifact") or []
+            if item["path"] not in cover_paths
+        ]
+        files = {path: data for path, data in files.items() if path not in cover_paths}
         manifest["contract_version"] = 1
         manifest["pack_version"] = "1.0.0"
         manifest.pop("media", None)
@@ -256,6 +272,34 @@ class UnchangedAndRefusedTest(PackMediaCase):
         before = self.counts()
         error = self.err("pack.preview", {"staged_id": self.grant_raw(manifest, files, "bad-v1.zip")})
         self.assertEqual(error["code"], "PACK_REJECTED")
+        self.assertEqual(self.counts(), before)
+
+    def test_a_declared_cover_must_be_the_first_media_link(self) -> None:
+        manifest, files = archive.read_directory(JAPANESE)
+        manifest = copy.deepcopy(manifest)
+        manifest["media"] = [
+            link for link in manifest["media"] if link["path"] != "content/cover-3x2.png"
+        ] + [{"path": "content/cover-3x2.png", "section_path": SECTION, "caption": CAPTION}]
+        manifest.pop("content_hash", None)
+        manifest = packs.with_content_hash(manifest)
+        before = self.counts()
+        error = self.err("pack.preview", {"staged_id": self.grant_raw(manifest, files, "late-cover.zip")})
+        self.assertEqual(error["code"], "PACK_REJECTED")
+        self.assertIn("must be the first media[] link", error["message"])
+        self.assertEqual(self.counts(), before)
+
+    def test_an_unlinked_cover_is_refused(self) -> None:
+        manifest, files = archive.read_directory(JAPANESE)
+        manifest = copy.deepcopy(manifest)
+        manifest["media"] = [
+            link for link in manifest["media"] if link["path"] != "content/cover-3x2.png"
+        ]
+        manifest.pop("content_hash", None)
+        manifest = packs.with_content_hash(manifest)
+        before = self.counts()
+        error = self.err("pack.preview", {"staged_id": self.grant_raw(manifest, files, "no-cover-link.zip")})
+        self.assertEqual(error["code"], "PACK_REJECTED")
+        self.assertIn("unlinked cover", error["message"])
         self.assertEqual(self.counts(), before)
 
     def test_dangling_media_link_is_refused_before_any_write(self) -> None:
@@ -328,11 +372,13 @@ class ShippedPackMediaResolutionTest(PackMediaCase):
         self.assertNotEqual(first["course_id"], second["course_id"])
         self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts"))), 3)
 
+        # CP-014: the cover is adopted as an artifact but is not written as a lesson segment, so
+        # there are two media segments per course and three artifacts in the store.
         segments = self.media_segments()
-        self.assertGreaterEqual(len(segments), 3)
+        self.assertEqual(len(segments), 4, "two media segments for each of the two courses")
         resolved = set()
-        for segment in segments:
-            artifact_id = str(segment["artifact_id"])
+        for artifact in self.rows("SELECT * FROM artifacts ORDER BY id"):
+            artifact_id = str(artifact["id"])
             resolved.add(artifact_id)
             result = self.ok("artifact.get", {"artifact_id": artifact_id})["result"]
             self.assertRegex(result["content_hash"], r"^sha256:[a-f0-9]{64}$")

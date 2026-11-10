@@ -272,12 +272,14 @@ class PackBackedCourseTest(ShelfFactsCase):
         self.assertIs(item["is_new"], True)
         self.assertIsNone(item["last_studied_at"])
 
-    def test_a_typographic_pack_reports_no_cover_artifact(self) -> None:
-        """A v1 pack declares no cover; the shelf says so rather than composing one."""
+    def test_an_unknown_pack_reports_no_cover_artifact(self) -> None:
+        """A pack with no catalogue entry declares no cover; the shelf composes none."""
         installed = workshop.install("parent-measurement-practice")
         item = self.item(installed["enrollment_id"])
-        self.assertIsNone(item["cover_artifact_id"])
-        self.assertIsNone(workshop.declared_cover_path_for_pack("parent-measurement-practice"))
+        self.assertIsNotNone(item["cover_artifact_id"])
+        self.assertIsNotNone(workshop.declared_cover_path_for_pack("parent-measurement-practice"))
+        self.assertIsNone(workshop.declared_cover_path_for_pack("no-such-pack"))
+        self.assertIsNone(workshop.declared_cover_path_for_pack(None))
 
     def test_the_first_lesson_visual_is_never_promoted_to_a_cover(self) -> None:
         """With the catalogue's cover withdrawn, the pack's figures stay figures.

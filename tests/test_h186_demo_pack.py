@@ -121,7 +121,7 @@ class DemoPackMediaTest(DemoPackCase):
             self.assertEqual(teaching[-1]["kind"], "check_prompt")
 
         artifacts = self.rows("SELECT * FROM artifacts")
-        # H-197 added the Press Plate cover as this pack's third media artifact.
+        # H-197/CP-014 added the painted cover as this pack's third media artifact.
         self.assertEqual(len(artifacts), 3)
         self.assertEqual({row["kind"] for row in artifacts}, {"audio", "visual"})
 
@@ -130,10 +130,10 @@ class DemoPackMediaTest(DemoPackCase):
         manifest = packs.load_manifest(JAPANESE / "pack.json")
         captions = {link["path"]: link["caption"] for link in manifest["media"]}
 
-        # H-197: objective 1 now carries the cover plate and then the relationship map, in
-        # ``media[]`` order; objective 2 carries the narration.
+        # CP-014: the cover is adopted for the Workshop but is not a lesson block, so objective 1
+        # carries only the relationship map; objective 2 carries the narration.
         for ordinal, expected_paths in (
-            (1, ["content/cover-16x9.png", "content/relationship-map.png"]),
+            (1, ["content/relationship-map.png"]),
             (2, ["content/narration-polite-confession.mp3"]),
         ):
             page = self.ok(
