@@ -52,6 +52,16 @@ catalogue read; a drifted file is refused rather than rendered.
 
 ## The cover lane, in full
 
+> **Second lane added by the v3 concept-parity direction (CP-012, `wt/cp-012-covers`).** The
+> paragraphs below describe the H-197 Press Plate lane, which is still what the bundled packs ship
+> today. CP-012 draws the **painted** lane `docs/concept-parity/ART-BIBLE.md` §1 defines — opaque
+> gouache, model-generated, one upper-left light, warm-brown line — for the three bundled packs; the
+> files are in `assets/art/covers/`, the provenance rows are in `docs/concept-parity/COVERS.md`, and
+> nothing here is integrated into a pack until CP-014 does it. While both exist, "one lane" above
+> means one *shipped* lane, not one drafted lane. The painted plates carry only the pigments
+> `docs/GM-SUBJECT-WORLDS.md` §0 allows (paper, ink, cream, lamp, field); the state hues ochre, coral
+> and plum are absent by measurement, and a shipped-plate gate enforces it.
+
 - **Icons are unchanged.** `sdk.Codicon` only, 16px, `currentColor`; no icon font and no second
   icon family. A cover plate is content/brand ornament, not UI grammar, and it is the only
   illustration lane in the product.
