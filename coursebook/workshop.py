@@ -142,6 +142,25 @@ def _installed_rows(pack_id: str, version: str) -> dict[str, Any] | None:
     return dict(row) if row is not None else None
 
 
+def _course_visual_rows(connection, course_id: str):
+    """This course's own visual artifacts, in the order the media route already serves them.
+
+    An artifact row is keyed by ``(content_hash, kind)``, so a second import of the same pack
+    reuses the first course's row; the join goes through this course's lesson segments to keep
+    the read course-scoped. The artifact row's own course is the fallback for a generated visual.
+    """
+    return connection.execute(
+        "SELECT a.id AS artifact_id, a.provenance_json AS provenance_json FROM lesson_segments s"
+        " JOIN lesson_runs r ON r.id = s.lesson_run_id"
+        " JOIN objectives o ON o.id = r.objective_id"
+        " JOIN plans pl ON pl.id = o.plan_id"
+        " JOIN artifacts a ON a.id = s.artifact_id"
+        " WHERE pl.course_id = ? AND a.kind = 'visual'"
+        " ORDER BY pl.version DESC, o.ordinal ASC, s.ordinal ASC",
+        (course_id,),
+    ).fetchall()
+
+
 def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -> str | None:
     """The course's cover artifact, read through the media route the app already has.
 
@@ -153,16 +172,7 @@ def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -
     same pack reuses the first course's row. Falling back to the artifact row's own course keeps a
     generated visual working.
     """
-    rows = connection.execute(
-        "SELECT a.id AS artifact_id, a.provenance_json AS provenance_json FROM lesson_segments s"
-        " JOIN lesson_runs r ON r.id = s.lesson_run_id"
-        " JOIN objectives o ON o.id = r.objective_id"
-        " JOIN plans pl ON pl.id = o.plan_id"
-        " JOIN artifacts a ON a.id = s.artifact_id"
-        " WHERE pl.course_id = ? AND a.kind = 'visual'"
-        " ORDER BY pl.version DESC, o.ordinal ASC, s.ordinal ASC",
-        (course_id,),
-    ).fetchall()
+    rows = _course_visual_rows(connection, course_id)
     if cover_path:
         for row in rows:
             try:
@@ -184,6 +194,46 @@ def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -
 def _declared_cover_path(entry: Mapping[str, Any]) -> str | None:
     cover = _mapping(entry.get("cover"))
     return _text(cover.get("path"), limit=200) if cover else None
+
+
+def declared_cover_path_for_pack(pack_id: str | None) -> str | None:
+    """The catalogue's own declared cover file for one pack release, or None.
+
+    Read-only and catalogue-scoped. A v1 pack carries no ``media[]`` link, so it declares no cover
+    and keeps its composed typographic plate; that absence is a fact, not a lookup failure.
+    """
+    if not pack_id:
+        return None
+    try:
+        document = load_catalog()
+    except (WorkshopError, OSError):  # noqa: BLE001 - a shelf read never fails on a missing catalogue
+        return None
+    for entry in document.get("packs") or []:
+        if isinstance(entry, Mapping) and str(entry.get("pack_id") or "") == str(pack_id):
+            return _declared_cover_path(entry)
+    return None
+
+
+def pack_cover_artifact(connection, course_id: str, pack_id: str | None) -> str | None:
+    """The pack's *declared* cover artifact for one course, else None (CP-005).
+
+    Strict on purpose. The cover is the one artifact whose own provenance says
+    ``pack_file == <the catalogue's cover path>``; the first lesson visual is a figure, not a
+    cover, and a pack that declares no cover has none. The shelf card then shows the typographic
+    plate instead of an unrelated picture, and nothing is invented to fill the slot.
+    """
+    path = declared_cover_path_for_pack(pack_id)
+    if path is None:
+        return None
+    for row in _course_visual_rows(connection, course_id):
+        try:
+            provenance = json.loads(row["provenance_json"] or "{}")
+        except (TypeError, ValueError):
+            continue
+        if isinstance(provenance, Mapping) and str(provenance.get("pack_file")) == path:
+            return str(row["artifact_id"])
+    return None
+
 
 
 def _install_next_step(connection, enrollment_id: str, course_id: str) -> dict[str, Any] | None:
