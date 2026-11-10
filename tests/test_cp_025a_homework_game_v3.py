@@ -365,6 +365,10 @@ class Cp025aV3SurfacesTest(unittest.TestCase):
         self.assertNotIn('data-cb3-pill="primary"', html)
         self.assertIsNone(re.search(r"var\(--cb-(?!3)", html), "the sheet painted a v2 token")
         self.assertIn("data-cb-homework-state=\"proposed\"", html)
+        # Nothing in a take-home card is graded or played: no XP, no score, no mastery claim.
+        lowered = html.lower()
+        for forbidden in (" xp", "xp ", ">xp<", "grade", "score", "mastery", "mastered", "star"):
+            self.assertNotIn(forbidden, lowered, f"the sheet leaked {forbidden!r}")
 
     def test_homework_list_empty_state_is_authored(self) -> None:
         html = render({"kind": "list", "rows": []})
