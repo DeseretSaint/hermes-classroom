@@ -262,6 +262,13 @@ budget) and `job_deadline: true` — and the lease is released by the same `fail
 uses. Plan jobs now also record the per-call liveness rows (`gen_call_waits`) the lesson stage
 already had, so a job waiting on a slow provider is visible as *waiting* rather than as a dead row.
 
+The 1800 s default is policy, not a measurement, and it is stated as such: across the disposable
+test homes the slowest **completed** job is 852 s (`job_ee3f99b00c904664a8a1d9db8635ee94`,
+`2026-11-06T23:10:23Z` → `23:24:35Z`), 45 jobs completed and none exceeded 1800 s
+(`probes/cp044-job-duration-census.py`). That leaves ~2.1× margin over the worst observed
+legitimate run, and `COURSEBOOK_JOB_DEADLINE_SECONDS` overrides it per deployment — a unit with
+many more sections, or a much slower route, needs that number raised rather than the budget removed.
+
 A first research timeout ends that research pass (`run_research` breaks instead of spending the
 rest of the query budget on a stuck tool); the ledger records the failure and no source is invented.
 

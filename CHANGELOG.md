@@ -78,7 +78,13 @@ summarises those records and does not re-verify them.
   `gen_call_waits` liveness rows the lesson stage already had. No contract or schema change.
   The 648 s CP-015 row was re-measured: its `coursebook.plan.generate` call answered in 469 s with
   22 256 output tokens inside its own 900 s bound — the defect was the missing job budget, not a
-  deadline that failed to fire. Evidence: `probes/cp044-job-deadline.py`,
+  deadline that failed to fire. (Both numbers are the `usage_events` row for
+  `operation_id = job_659f1edba70d491b831dd9d263539db3`, `duration_ms 468992`,
+  `output_tokens 22256`, `input_tokens 8123`; the host log line for that call reads `tokens=30379`,
+  which is the same input+output sum.) The 1800 s default is policy above the slowest *completed*
+  job measured across the disposable homes (`probes/cp044-job-duration-census.py`: 852 s, 45
+  completed jobs, nothing above 1800 s), i.e. ~2.1x margin, and it is env-overridable.
+  Evidence: `probes/cp044-job-deadline.py`, `probes/cp044-job-duration-census.py`,
   `tests/test_cp044_job_deadline_hanging_provider.py`, `docs/ARCHITECTURE.md` §8.1.
 
 - H-194e: a page-title revision of a section lost its check and became unexportable. `lesson.revise`

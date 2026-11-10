@@ -140,18 +140,27 @@ class HungHostSeam:
         raise AssertionError("the async sibling must be used when the host exposes it")
 
 
-def _async_threads() -> list[str]:
-    return [
-        thread.name
+def _async_threads() -> set[threading.Thread]:
+    """Supervised async worker threads alive right now, as objects, not names.
+
+    Identity matters, not names: another test module's worker (H-199 leaves
+    ``coursebook-async-coursebook.lesson.generate`` threads winding down for a few seconds) may be
+    alive with the same name this job would use. Only a thread that this job *started* is this
+    job's leak.
+    """
+    return {
+        thread
         for thread in threading.enumerate()
         if thread.is_alive() and thread.name.startswith("coursebook-async-")
-    ]
+    }
 
 
 class JobDeadlineCancelsHangingProviderCallTest(KernelCase):
     """A job against a provider that never answers ends in bounded wall time."""
 
     def _run_plan_job(self, *, call_deadline_s: float, job_deadline_s: float | None):
+        # Snapshot before the job starts: whatever was already alive belongs to another test.
+        prior_threads = _async_threads()
         stub = HungProviderStub()
         self.addCleanup(stub.stop)
         seam = HungHostSeam(stub.port)
@@ -174,9 +183,11 @@ class JobDeadlineCancelsHangingProviderCallTest(KernelCase):
         with mock.patch.dict(os.environ, env):
             view = job_service.execute(job_id, stages, now=NOW)
         elapsed = time.monotonic() - started
-        return view, seam, stub, elapsed, job_id
+        return view, seam, stub, elapsed, job_id, prior_threads
 
-    def _assert_terminal_and_cancelled(self, view, seam, stub, elapsed, *, bound_s: float) -> None:
+    def _assert_terminal_and_cancelled(
+        self, view, seam, stub, elapsed, prior_threads, *, bound_s: float
+    ) -> None:
         # 1. The job left ``running`` inside a bound only the deadline can explain.
         self.assertEqual(view["state"], "failed", view)
         self.assertLess(elapsed, bound_s, f"the job was not bounded by its deadline: {elapsed:.1f}s")
@@ -194,16 +205,34 @@ class JobDeadlineCancelsHangingProviderCallTest(KernelCase):
         self.assertEqual(seam.opened, 1)
         self.assertEqual(seam.cancelled, 1, "the in-flight coroutine was never cancelled")
 
-        # 3. No orphan supervised worker survived the deadline.
-        time.sleep(0.3)
-        self.assertEqual(_async_threads(), [], "an abandoned async worker thread survived")
+        # 3. No supervised worker *this job started* survived the deadline. Threads that were
+        #    already alive before it (another module's) are not this job's leak, so they are not
+        #    evidence either way: the claim is about new threads only.
+        survivors = self._new_threads_after_grace(prior_threads)
+        self.assertEqual(
+            survivors,
+            [],
+            f"async worker(s) started by this job survived the deadline: {survivors}",
+        )
+
+    def _new_threads_after_grace(self, prior_threads: set[threading.Thread]) -> list[str]:
+        """Wait (bounded) for this job's worker threads to exit, then name any that did not."""
+        give_up = time.monotonic() + CLOSE_GRACE_SECONDS
+        while time.monotonic() < give_up:
+            new = _async_threads() - prior_threads
+            if not new:
+                return []
+            time.sleep(0.05)
+        return sorted(thread.name for thread in _async_threads() - prior_threads)
 
     def test_job_deadline_cancels_hanging_provider_call_before_its_purpose_deadline(self) -> None:
         """CP-044 RED case: the job deadline is 1.5 s, the call's own bound is 60 s."""
-        view, seam, stub, elapsed, _job_id = self._run_plan_job(
+        view, seam, stub, elapsed, _job_id, prior_threads = self._run_plan_job(
             call_deadline_s=60.0, job_deadline_s=1.5
         )
-        self._assert_terminal_and_cancelled(view, seam, stub, elapsed, bound_s=8.0)
+        self._assert_terminal_and_cancelled(
+            view, seam, stub, elapsed, prior_threads, bound_s=8.0
+        )
         details = view["error"]["details"]
         self.assertTrue(details.get("job_deadline"), details)
         self.assertLessEqual(float(details["deadline_s"]), 2.0, details)
@@ -211,10 +240,12 @@ class JobDeadlineCancelsHangingProviderCallTest(KernelCase):
 
     def test_purpose_deadline_cancels_hanging_provider_call_and_closes_the_socket(self) -> None:
         """The live host's async seam already cancels at the call's own deadline (regression)."""
-        view, seam, stub, elapsed, _job_id = self._run_plan_job(
+        view, seam, stub, elapsed, _job_id, prior_threads = self._run_plan_job(
             call_deadline_s=1.0, job_deadline_s=None
         )
-        self._assert_terminal_and_cancelled(view, seam, stub, elapsed, bound_s=15.0)
+        self._assert_terminal_and_cancelled(
+            view, seam, stub, elapsed, prior_threads, bound_s=15.0
+        )
         self.assertFalse(view["error"]["details"].get("job_deadline"), view["error"])
 
 

@@ -65,6 +65,10 @@ MAX_ASYNC_CALLS = 8
 #: attempt's own outer bound; a deployment overrides it with
 #: ``COURSEBOOK_JOB_DEADLINE_SECONDS``. It is policy, not a measurement: the measured per-call
 #: bounds in ``generation.PROVIDER_TIMEOUT_SECONDS`` stay untouched.
+#:
+#: The value is ~2.1x the slowest *completed* job measured across the disposable homes (852 s;
+#: 45 completed jobs, none above this budget — ``probes/cp044-job-duration-census.py``). It is a
+#: backstop for a stuck attempt, not a target: raise it per deployment rather than removing it.
 JOB_DEADLINE_SECONDS = 1800.0
 
 #: Environment variable that overrides :data:`JOB_DEADLINE_SECONDS` for one deployment.
