@@ -745,52 +745,64 @@ def verify() -> int:
     return 0
 
 
-def prove() -> int:
+def _shown(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def prove(out_dir: Path | None = None) -> int:
     """3x3 composites with ImageMagick: every tile repeated on its own ground.
 
     The card asks for a 3x3 composite per tile, so every tile gets one — including the vignette,
     where the 3x3 shows that the wrap carries no discontinuity. The vignette is *used* once at
     cover size, so it also gets `proof-once-*`: one application across a 3x canvas, which is what
     the route actually paints.
+
+    Output is byte-reproducible: ImageMagick writes `date:create`/`date:modify` into a PNG by
+    default, so those chunks are excluded. Without that, two runs of the same proof differ and the
+    evidence cannot be pinned.
     """
     if not MANIFEST.exists():
         print("manifest missing; run build")
         return 1
     document = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    PROOF_DIR.mkdir(parents=True, exist_ok=True)
+    proof_dir = out_dir or PROOF_DIR
+    proof_dir.mkdir(parents=True, exist_ok=True)
     for row in document["tiles"]:
         tile = ROOT / row["path"]
-        out = PROOF_DIR / f"proof-3x3-{row['id']}-{row['mode']}.png"
+        out = proof_dir / f"proof-3x3-{row['id']}-{row['mode']}.png"
         ground = row["ground"]
         colour_type = "PNG32" if row["format"] == "RGBA" else "PNG24"
         if row["format"] == "RGBA":
-            single = PROOF_DIR / f".single-{row['id']}-{row['mode']}.png"
+            single = proof_dir / f".single-{row['id']}-{row['mode']}.png"
             subprocess.run(
-                ["magick", "-size", f"{row['width']}x{row['height']}", f"xc:{ground}",
+                ["magick", "-define", "png:exclude-chunk=date,time", "-size", f"{row['width']}x{row['height']}", f"xc:{ground}",
                  str(tile), "-composite", f"PNG32:{single}"],
                 check=True,
             )
         else:
             single = tile
         subprocess.run(
-            ["magick",
+            ["magick", "-define", "png:exclude-chunk=date,time",
              "(", str(single), str(single), str(single), "+append", ")",
              "(", str(single), str(single), str(single), "+append", ")",
              "(", str(single), str(single), str(single), "+append", ")",
              "-append", f"{colour_type}:{out}"],
             check=True,
         )
-        print(f"wrote {out.relative_to(ROOT)}")
+        print(f"wrote {_shown(out)}")
         if row["tiling"] == "one-shot":
-            once = PROOF_DIR / f"proof-once-{row['id']}-{row['mode']}.png"
+            once = proof_dir / f"proof-once-{row['id']}-{row['mode']}.png"
             subprocess.run(
-                ["magick", "-size", f"{row['width'] * 3}x{row['height'] * 3}", f"xc:{ground}",
+                ["magick", "-define", "png:exclude-chunk=date,time", "-size", f"{row['width'] * 3}x{row['height'] * 3}", f"xc:{ground}",
                  "(", str(single), "-resize", f"{row['width'] * 3}x{row['height'] * 3}!", ")",
                  "-composite", f"{colour_type}:{once}"],
                 check=True,
             )
-            print(f"wrote {once.relative_to(ROOT)}")
-    for stale in PROOF_DIR.glob(".single-*.png"):
+            print(f"wrote {_shown(once)}")
+    for stale in proof_dir.glob(".single-*.png"):
         stale.unlink()
     return 0
 

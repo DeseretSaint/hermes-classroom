@@ -66,7 +66,9 @@ python3 scripts/cp_material_sheet.py
 ```
 
 The generator is deterministic: repainting reproduces the committed bytes exactly, and
-`tests/test_cp_material_textures.py` asserts that per tile.
+`tests/test_cp_material_textures.py` asserts that per tile. The composites are deterministic too —
+ImageMagick's `date:create`/`date:modify` chunks are excluded, and a test re-renders every proof
+into a temporary directory and requires the committed bytes back.
 
 ## Provenance
 

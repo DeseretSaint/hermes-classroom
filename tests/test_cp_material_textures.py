@@ -207,6 +207,35 @@ class ProofTests(unittest.TestCase):
                 self.assertEqual(image["width"], 512 * 3)
                 self.assertEqual(image["height"], 512 * 3)
 
+    def test_the_composites_are_byte_reproducible(self) -> None:
+        """Evidence that cannot be re-derived from the tiles is not evidence."""
+        if shutil.which("magick") is None:
+            self.skipTest("ImageMagick is not installed")
+        import contextlib
+        import io
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            with contextlib.redirect_stdout(io.StringIO()):
+                material.prove(Path(first))
+                material.prove(Path(second))
+            for produced in sorted(Path(first).glob("proof-*.png")):
+                twin = Path(second) / produced.name
+                self.assertTrue(twin.exists(), twin.name)
+                self.assertEqual(
+                    hashlib.sha256(produced.read_bytes()).hexdigest(),
+                    hashlib.sha256(twin.read_bytes()).hexdigest(),
+                    f"{produced.name} is not reproducible",
+                )
+            # and the committed proof must equal a fresh one
+            for produced in sorted(PROOF_DIR.glob("proof-*.png")):
+                twin = Path(first) / produced.name
+                self.assertEqual(
+                    hashlib.sha256(produced.read_bytes()).hexdigest(),
+                    hashlib.sha256(twin.read_bytes()).hexdigest(),
+                    f"{produced.name} drifted from the committed bytes",
+                )
+
 
 class TextureSheetTests(unittest.TestCase):
     def test_both_sheets_and_stamps_exist_and_match(self) -> None:
