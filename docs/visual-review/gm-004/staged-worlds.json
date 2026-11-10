@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-10T05:58:18Z",
-  "kind": "world.read through the real cb.rpc dispatcher",
+  "generated_at": "2026-11-10T06:12:52Z",
+  "kind": "world.read + library.list through the real cb.rpc dispatcher",
   "seam": "deterministic provider-shaped media seam; returns flat tonal swatch PNGs, no scene, no text, no numbers. Live model capture not produced.",
   "courses": {
     "japanese_demo (course-world frames)": {
@@ -168,9 +168,17 @@
         "fallback": null,
         "revision": 6
       },
-      "error": null
+      "error": null,
+      "library_rows": [
+        {
+          "enrollment_id": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+          "enrollment_status": "active",
+          "course_status": "active",
+          "title": "Japanese affection and register \u2014 an L0 demonstration classroom"
+        }
+      ]
     },
-    "head_gasket (approved, no enrollment)": {
+    "head_gasket (course-world-headgasket frames)": {
       "course_id": "crs_01bf0627f87a4265911883b85f46a5fb",
       "ok": true,
       "result": {
@@ -283,7 +291,15 @@
         "fallback": null,
         "revision": 6
       },
-      "error": null
+      "error": null,
+      "library_rows": [
+        {
+          "enrollment_id": "enr_29d642c282604aa19ec9969d77efa127",
+          "enrollment_status": "active",
+          "course_status": "draft",
+          "title": "Replace a head gasket"
+        }
+      ]
     },
     "sample_classroom (studio-concepts frames)": {
       "course_id": "crs_55d43766da5b4f25818d1a36812e1ca1",
@@ -396,7 +412,15 @@
         "fallback": "textbook",
         "revision": 1
       },
-      "error": null
+      "error": null,
+      "library_rows": [
+        {
+          "enrollment_id": "enr_f2bbbfdc0c3640daa2e323813f5b9a6e",
+          "enrollment_status": "active",
+          "course_status": "active",
+          "title": "Japanese affection and register \u2014 a Sample L0 classroom"
+        }
+      ]
     }
   }
 }

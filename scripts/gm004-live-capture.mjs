@@ -138,6 +138,7 @@ const clickText = async (selector, text) => evaluate(`(() => {
 })()`)
 
 const JAPANESE = 'Japanese affection and register'
+const HEADGASKET = 'Replace a head gasket'
 const TEXTBOOK = 'Order coffee and ask for the bill'
 const STUDIO = 'a Sample L0 classroom'
 const widths = [1049, 900, 460]
@@ -178,6 +179,10 @@ const captureSurface = async (id, match, { zoom = true } = {}) => {
 
 // ---- Approved Game world: Japanese course, field_atlas, staged through real handlers ----
 await captureSurface('course-world', JAPANESE)
+
+// ---- Approved Game world: head-gasket course, workshop_manual, staged through real handlers ----
+// Same surface, different style and content (technical_procedure, no sections, hero-only kit).
+await captureSurface('course-world-headgasket', HEADGASKET)
 
 // ---- Textbook course: no world surface, mode row + Textbook badge ----
 await captureSurface('course-textbook', TEXTBOOK)
