@@ -1,0 +1,60 @@
+{
+  "refused": {
+    "remove the intake manifold": [
+      "presentation_names_procedure_or_value"
+    ],
+    "First, remove the intake manifold": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Then drain the coolant": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Open the hood": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Release the fuel pressure": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Raise the vehicle on the hoist": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Seat the gasket on the block": [
+      "presentation_names_procedure_or_value"
+    ],
+    "Before installing the gasket, drain the coolant": [
+      "presentation_names_procedure_or_value"
+    ],
+    "two-thirds": [
+      "presentation_names_procedure_or_value"
+    ],
+    "two-fifths": [
+      "presentation_names_procedure_or_value"
+    ],
+    "three-quarters": [
+      "presentation_names_procedure_or_value"
+    ],
+    "two-percent": [
+      "presentation_names_procedure_or_value"
+    ],
+    "seventy-five": [
+      "presentation_names_procedure_or_value"
+    ],
+    "hand tight plus a quarter-turn": [
+      "presentation_names_procedure_or_value"
+    ]
+  },
+  "allowed": {
+    "workshop_manual: four-cylinder block": [],
+    "workshop_manual: two-stroke engine": [],
+    "workshop_manual: car on a lift": [],
+    "workshop_manual: engine block cutaway": [],
+    "workshop_manual: service bay": [],
+    "workshop_manual: tool wall": [],
+    "observatory: night sky": [],
+    "observatory: dome slit": [],
+    "archive_desk: stamp": [],
+    "kitchen_table: linen": [],
+    "workshop_manual: calm and precise": []
+  }
+}
+FAILURES: []

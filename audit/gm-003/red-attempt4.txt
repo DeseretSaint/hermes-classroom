@@ -1,0 +1,163 @@
+test_brief_patch_cannot_reclassify_a_technical_course (tests.test_world.WorldFailureAndModeTest.test_brief_patch_cannot_reclassify_a_technical_course) ... ok
+test_concept_failure_leaves_named_terminal_state (tests.test_world.WorldFailureAndModeTest.test_concept_failure_leaves_named_terminal_state) ... ok
+test_kit_requires_an_approved_style (tests.test_world.WorldFailureAndModeTest.test_kit_requires_an_approved_style) ... ok
+test_partial_world_failure_names_missing_roles (tests.test_world.WorldFailureAndModeTest.test_partial_world_failure_names_missing_roles) ... ok
+test_technical_world_rejects_decorative_motif_patch (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_decorative_motif_patch) ... ok
+test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) ... 
+  test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) (stage='kit') ... FAIL
+  test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) (stage='concepts') ... FAIL
+test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) ... FAIL
+test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) ... 
+  test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) (field='tone') ... FAIL
+  test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) (field='audience') ... FAIL
+test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) ... FAIL
+test_textbook_generates_no_world_job (tests.test_world.WorldFailureAndModeTest.test_textbook_generates_no_world_job) ... ok
+test_trades_course_derives_service_safety_from_grammar (tests.test_world.WorldFailureAndModeTest.test_trades_course_derives_service_safety_from_grammar) ... ok
+test_world_approval_hash_fence (tests.test_world.WorldFailureAndModeTest.test_world_approval_hash_fence) ... ok
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldFailureAndModeTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_derived_objective_titles_are_not_presentation_fenced (tests.test_world.WorldMediaJobTest.test_derived_objective_titles_are_not_presentation_fenced) ... ERROR
+test_presentation_fields_reach_the_prompt (tests.test_world.WorldMediaJobTest.test_presentation_fields_reach_the_prompt) ... ok
+test_world_cache_prevents_duplicate_spend (tests.test_world.WorldMediaJobTest.test_world_cache_prevents_duplicate_spend) ... ok
+test_world_forbidden_changes_cache_identity (tests.test_world.WorldMediaJobTest.test_world_forbidden_changes_cache_identity) ... ok
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldMediaJobTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_head_gasket_never_field_atlas (tests.test_world.WorldPolicyTest.test_head_gasket_never_field_atlas) ... ok
+test_world_grammar_deterministic (tests.test_world.WorldPolicyTest.test_world_grammar_deterministic) ... ok
+test_world_style_swap_rejects_generic_art (tests.test_world.WorldPolicyTest.test_world_style_swap_rejects_generic_art) ... ok
+test_trades_world_keeps_workshop_negatives (tests.test_world.WorldPromptTest.test_trades_world_keeps_workshop_negatives) ... ok
+test_workshop_section_prompts_have_no_procedure_title (tests.test_world.WorldPromptTest.test_workshop_section_prompts_have_no_procedure_title) ... ok
+test_world_prompts_are_textless (tests.test_world.WorldPromptTest.test_world_prompts_are_textless) ... ok
+
+======================================================================
+ERROR: test_derived_objective_titles_are_not_presentation_fenced (tests.test_world.WorldMediaJobTest.test_derived_objective_titles_are_not_presentation_fenced)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 477, in test_derived_objective_titles_are_not_presentation_fenced
+    self.ok(
+    ~~~~~~~^
+        "world.generate",
+        ^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        idempotency_key="derived-title-1",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 239, in ok
+    "result": self.call_ok(
+              ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ),
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 217, in call_ok
+    return self.call(
+           ~~~~~~~~~^
+        method, payload, expected_revision=expected_revision, idempotency_key=idempotency_key
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )[1]
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 214, in call
+    return world.HANDLERS[method](payload, envelope)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/coursebook/world.py", line 1642, in world_generate
+    raise _policy_error(
+    ...<6 lines>...
+    )
+coursebook.api.RpcError: 'service bay' belongs to the 'workshop_manual' art direction, not 'field_atlas'; a world may add its own subject motifs but never another subject's grammar.
+
+======================================================================
+FAIL: test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) (stage='kit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 707, in test_technical_world_rejects_paraphrased_decorative_motifs
+    self.assertEqual(error["code"], "POLICY_VIOLATION")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'NOT_FOUND' != 'POLICY_VIOLATION'
+- NOT_FOUND
++ POLICY_VIOLATION
+
+
+======================================================================
+FAIL: test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) (stage='concepts')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 697, in test_technical_world_rejects_paraphrased_decorative_motifs
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"paraphrase-{stage}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 712, in test_technical_world_rejects_paraphrased_decorative_motifs
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0
+
+======================================================================
+FAIL: test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) (field='tone')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 749, in test_technical_world_rejects_scene_text_in_tone_or_audience
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"scene-text-{field}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) (field='audience')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 759, in test_technical_world_rejects_scene_text_in_tone_or_audience
+    self.assertEqual(error["code"], "POLICY_VIOLATION")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STALE_REVISION' != 'POLICY_VIOLATION'
+- STALE_REVISION
++ POLICY_VIOLATION
+
+
+======================================================================
+FAIL: test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 765, in test_technical_world_rejects_scene_text_in_tone_or_audience
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0
+
+----------------------------------------------------------------------
+Ran 22 tests in 12.751s
+
+FAILED (failures=6, errors=1)

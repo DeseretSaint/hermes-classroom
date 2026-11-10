@@ -1,0 +1,9 @@
+test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) ... ok
+test_title_or_goal_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_title_or_goal_cannot_name_a_frozen_procedure_verb) ... ok
+test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 15.322s
+
+OK
+exit=0

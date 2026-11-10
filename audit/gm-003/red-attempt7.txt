@@ -1,0 +1,186 @@
+test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) ... 
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='remove the intake manifold') ... FAIL
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='drain the coolant') ... FAIL
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='lift the cylinder head straight up') ... FAIL
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='tighten to seventy five') ... FAIL
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='turn another quarter') ... FAIL
+  test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='hand tight plus a quarter turn') ... FAIL
+test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) ... FAIL
+test_section_titles_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_section_titles_cannot_name_numbers_or_answer_content) ... FAIL
+test_workshop_subject_title_cannot_name_a_foreign_scene (tests.test_world.WorldFailureAndModeTest.test_workshop_subject_title_cannot_name_a_foreign_scene) ... FAIL
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='remove the intake manifold')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='drain the coolant')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='lift the cylinder head straight up')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='tighten to seventy five')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='turn another quarter')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) (motif='hand tight plus a quarter turn')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1358, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"j1-procedure-motif-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1377, in test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 6 != 0
+
+======================================================================
+FAIL: test_section_titles_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_section_titles_cannot_name_numbers_or_answer_content)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1449, in test_section_titles_cannot_name_numbers_or_answer_content
+    self.assertNotRegex(prompt, r"\d")
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Regex matched: '2' matches '\\d' in 'Textless section plate, field atlas visual grammar. Course subject: Japanese at the cafe. Section scene obj_2693361914344835bd10110cb1984d7a about Answer key 1-2-3-4. Audience: adult learner. Tone: practical, calm, competent. Subject-specific motifs: lantern district, cafe counter, notebook and pencil, ticket stub. Composition: a wandering route through a lantern-lit street; the left third is a quiet parchment field reserved for the real headline and controls. Palette: parchment, ink, lamp ochre, muted indigo. Medium: ink and gouache on warm paper, fine line weight, single soft light source; as authored. Light: a single soft daylight source. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. Illustration role: place and mood only; a map is never geography evidence. Hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure.'
+
+======================================================================
+FAIL: test_workshop_subject_title_cannot_name_a_foreign_scene (tests.test_world.WorldFailureAndModeTest.test_workshop_subject_title_cannot_name_a_foreign_scene)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1479, in test_workshop_subject_title_cannot_name_a_foreign_scene
+    self.assertNotIn("lantern", lowered)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'lantern' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: a lantern district at night — the learner will replace the head gasket on a four-cylinder engine. audience: adult learner. tone: practical, calm, competent. subject-specific motifs: service bay, car on a lift, tool wall, component trays, bench light, torque wrench silhouette. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light; as authored. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art. direction: authored palette, a single soft daylight source.'
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.258s
+
+FAILED (failures=9)

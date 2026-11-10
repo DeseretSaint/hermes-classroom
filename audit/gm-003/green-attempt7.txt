@@ -1,0 +1,8 @@
+test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value) ... ok
+test_section_titles_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_section_titles_cannot_name_numbers_or_answer_content) ... ok
+test_workshop_subject_title_cannot_name_a_foreign_scene (tests.test_world.WorldFailureAndModeTest.test_workshop_subject_title_cannot_name_a_foreign_scene) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.326s
+
+OK
