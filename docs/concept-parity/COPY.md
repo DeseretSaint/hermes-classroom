@@ -153,6 +153,12 @@ omits the row when none is.
 | `classroom.check.wrong` | Not quite. {why} | deck + field:`attempt.submit.criteria[].observed` | 120 | C7 verdict |
 | `classroom.check.retry` | Try again | deck | 12 | C7 primary after a wrong verdict |
 | `classroom.check.next` | Next section | deck | 16 | C7 primary after a correct verdict |
+| `classroom.check.choices` | Choices | deck | 16 | C7 group name, `selection` format |
+| `classroom.check.checklist` | Checklist | deck | 16 | C7 group name, `verification` format |
+| `classroom.check.answers` | Answers | deck | 16 | C7 group name, `text` format |
+| `classroom.check.criteria` | Grading criteria | deck | 24 | C7 verdict criteria group name |
+| `classroom.practice.expressions` | Expressions to practise | deck | 32 | C8 tutor rail group name |
+| `classroom.practice.transcript` | Practice transcript | deck | 28 | C8 tutor rail transcript group name |
 | `classroom.evidence.title` | Evidence | deck | 12 | C8, C9 |
 | `classroom.evidence.count` | {n} of {total} checks recorded | computed:`count(attempt_count > 0)` over field:`lesson.page.checks[]`, total = that array's length | 32 | C8 |
 | `classroom.evidence.empty` | No checks recorded yet. | deck | 28 | C8 empty |
