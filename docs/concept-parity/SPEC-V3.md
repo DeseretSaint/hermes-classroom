@@ -16,7 +16,9 @@ Sources, in precedence order:
 3. `docs/EXPERIENCE-QUALITY-BAR.md` — Q1–Q12 and the v3 owner amendment appended by this card.
 4. `contracts/cb.tokens.v3.json` + `docs/COURSEBOOK-VISUAL-IDENTITY-V3.md` (CP-002) — every
    colour, elevation, radius, material and type value. **This document names roles and never
-   carries a colour value**; a hex here would be a second contract.
+   carries a colour value, a radius or a type size of its own**; a hex, a px radius or a rem size
+   written here as authority is a second contract. A value this document renders from the
+   contract is labelled as a rendering and never presented as authored here.
 5. The shipped backend fields named per string in `docs/concept-parity/COPY.md`.
 
 Where this document and a concept frame disagree, this document wins and the disagreement is
@@ -124,7 +126,7 @@ Widths named in this document (`1049`, `900`, `460`) are **route widths**, match
 | page gutter, each side | 32 (3.05cqi) | 24 | 16 | measured from the rail's inner edge on wide |
 | content width | 905 (86.3%) | 852 (94.7%) | 428 (93.0%) | `route − rail − 2 × gutter` |
 | top padding | 32 | 24 | 16 | below the tab strip on narrow |
-| content max-width | 1000 | 1000 | — | prose columns obey the 66ch cap separately |
+| content max-width | 1000 | 1000 | — | prose columns obey the 75ch cap separately |
 | column count | 4 | 3 | 1 (rows) | grid only for heterogeneous cards |
 | column gap | 16 (1.53cqi) | 16 | 12 | 12 px is the compact row gap |
 | card width | 214 (20.4%) | 273 (30.3%) | 428 (row) | `(content − (n−1) × gap) / n` |
@@ -149,20 +151,33 @@ and keyboard order. A card grid must not appear at 460 (rubric §7 dimension 8).
 
 ### 3.4 Type roles
 
-Six steps, from the v3 contract. Sizes below are the rendered value at that route width.
+Six steps, from the v3 contract: `caption`, `meta`, `body`, `lead`, `heading`, `display`. There is
+no seventh step and no second system.
 
-| Role | 1049 | 900 | 460 | Use |
-|---|---|---|---|---|
-| display | 56/60 | 44/48 | 32/36 | one per screen, max 18ch |
-| title | 32/40 | 28/36 | 24/32 | screen title or card title, max 34ch |
-| section | 24/32 | 22/30 | 20/28 | shelf and section headings, max 34ch |
-| body | 16/26 | 16/26 | 16/26 | prose, 50–66ch, never below 16 |
-| label | 14/20 | 14/20 | 14/20 | controls, chips, metadata |
-| micro | 12/16 | 12/16 | 12/16 | stamp labels, plate credits, ratio |
+The contract's six step names replace the six names this section used to carry, and the mapping is
+not one-to-one: `title` → `heading`; `section` → `heading`; `label` → `meta`; `micro` → `caption`;
+`body` → `body`; `display` → `display`. `lead` is a new step with no predecessor (one-sentence
+intros and lesson lines). The consequence is explicit: there is no 32 px card title in v3 — a card
+title is `heading`, 29.69 px at route width 1049. Copy ids such as `home.title` and
+`discover.shelf.title` are copy keys, not type steps, and are not renamed; only step citations
+change.
 
-Families: `CB Display` for display/title/section, `CB UI` for body/label/micro, the system CJK
-stack for Japanese. One uppercase element per region at most, and never a decorative kicker above
-a heading.
+Route-container value, derived from `contracts/cb.tokens.v3.json` at route width W; the contract
+governs, this table is a rendering. `cqi` resolves against the route container, so a display
+placed in a narrower column renders at that column's width, not the table's number.
+
+| Step | 1049 | 900 | 460 | Contract step | Use |
+|---|---|---|---|---|---|
+| caption | 12/16.2 | 12/16.2 | 12/16.2 | `0.75rem`, line-height 1.35 | stamp labels, plate credits, ratio |
+| meta | 14/19.6 | 14/19.6 | 14/19.6 | `0.875rem`, line-height 1.4 | controls, chips, metadata |
+| body | 16/24 | 16/24 | 16/24 | `1rem`, line-height 1.5 | prose, 50–75ch, never below 16 |
+| lead | 20/27 | 20/27 | 20/27 | `1.25rem`, line-height 1.35 | one-sentence intros, lesson lines |
+| heading | 29.69/34.14 | 28.20/32.43 | 24.00/27.60 | `clamp(1.5rem, 1.2rem + 1cqi, 2.25rem)`, line-height 1.15 | screen, shelf and card titles, ≤34ch |
+| display | 55.47/56.58 | 51.00/52.02 | 40.00/40.80 | `clamp(2.5rem, 1.5rem + 3cqi, 4rem)`, line-height 1.02 | one per screen, ≤20ch |
+
+Families: `CB Display` for `display` and `heading`, `CB UI` for `lead`, `body`, `meta` and
+`caption`, the system CJK stack for Japanese. One uppercase element per region at most, and never
+a decorative kicker above a heading.
 
 ### 3.5 Colour roles
 
@@ -183,8 +198,9 @@ Rules that this spec enforces independently of the values:
 
 ### 3.6 Physical objects, not floating cards
 
-- A card is a **paper object**: `card-stock` field, 1 px `rule` edge, radius 6 at wide/mid and 6 at
-  compact rows, `elev-1` contact shadow (one soft edge, no glow, no drop shadow on text).
+- A card is a **paper object**: `card-stock` field, 1 px `rule` edge, radius `round` (12 px in the contract's
+  `radii`; identical at every breakpoint — never restated per breakpoint), `elev-1` contact shadow
+  (one soft edge, no glow, no drop shadow on text).
 - A shelf is a **wood ledge**: `wood` face 12 px tall, `wood-edge` 1 px rule beneath, `elev-1`.
   Cards sit on it; they do not float above it.
 - The scene frame is a mounted plate: 8 px inner mat of `canvas-edge`, 1 px `ink` rule, `elev-1`.
@@ -405,9 +421,9 @@ trust labels and real section counts.
 | # | Region | 1049 | 900 | 460 | Copy ids |
 |---|---|---|---|---|---|
 | D1 | rail / tab strip | 80 wide | tab strip 56 | tab strip 56 | `nav.home`, `nav.courses`, `nav.workshop`, `nav.parent` (as H1) |
-| D2 | page head | 32/40 title + 16/24 sub, top 32 | 28/36 + 16/24, top 24 | 24/32 + 16/24, top 16 | `discover.title`, `discover.sub` |
+| D2 | page head | heading 29.69/34.14 + body 16/24, top 32 | heading 28.20/32.43 + body 16/24, top 24 | heading 24.00/27.60 + body 16/24, top 16 | `discover.title`, `discover.sub` |
 | D3 | surface tabs | 44 tall, gap 24, 24 under D2 | 44, gap 16 | 44, horizontally scrollable | `discover.tab.discover`, `discover.tab.library`, `discover.tab.provenance` |
-| D4 | feature banner | 905 × 226 (4:1), radius 12, 24 under D3 | 852 × 213 | 428 × 171 (2.5:1 crop) | `discover.feature.title`, `discover.feature.body`, `discover.feature.primary` |
+| D4 | feature banner | 905 × 226 (4:1), radius `round`, 24 under D3 | 852 × 213 | 428 × 171 (2.5:1 crop) | `discover.feature.title`, `discover.feature.body`, `discover.feature.primary` |
 | D5 | banner quiet field | left 40% (362 / 341 / full width above the fold), inner pad 32 | 28 | 20 | — |
 | D6 | shelf heading row | 24 tall, 32 under D4, count at the right | 24 under | 16 under | `discover.shelf.title`, `discover.shelf.count` |
 | D7 | pack grid | 905, 4 × 214, gap 16, row gap 24 | 852, 3 × 273 | rows 428 × 88 | `discover.card.meta`, `discover.card.trust.integrity`, `discover.card.trust.checks`, `discover.card.trust.human`, `discover.card.trust.model` |
@@ -462,10 +478,10 @@ touching the edge.
 | C1 | rail / tab strip | 80 wide | tab strip 56 | tab strip 56 | `nav.home`, `nav.courses`, `nav.workshop`, `nav.parent` |
 | C2 | back path | 40 tall row, top 24 | 40, top 16 | 40, top 12 | `classroom.back` |
 | C3 | stepper | column 96 wide, stamp 48, connector 2 px dotted, label 12 under | horizontal strip 56 tall, stamp 40, labels beside | strip 64, 4 stamps 40 in a row | `classroom.stepper.label`, `classroom.step.current`, `classroom.step.done`, `classroom.step.next` |
-| C4 | lesson head | title 32/40 + section 16/24, above the scene | same | same | `classroom.title`, `classroom.section` |
+| C4 | lesson head | heading 29.69/34.14 + body 16/24, above the scene | same | same | `classroom.title`, `classroom.section` |
 | C5 | scene frame | 493 × 164 (3:1), mat 8, 1 px rule, `elev-1` | 852 × 284 | 428 × 143 | `classroom.scene.credit` |
 | C6 | dialogue | max 44ch, pad 16, tail 12, 16 under C5 | same | same | `classroom.line.jp`, `classroom.line.romaji`, `classroom.line.en`, `classroom.line.play` |
-| C7 | check card | 493 wide, pad 20, question 20/28, answer surface per format below, primary 48 | 852 | 428 | `classroom.check.question`, `classroom.check.option`, `classroom.check.item`, `classroom.check.primary`, `classroom.check.edit`, `classroom.check.clear_choice`, `classroom.check.clear_ticks`, `classroom.check.correct`, `classroom.check.wrong`, `classroom.check.retry`, `classroom.check.next` |
+| C7 | check card | 493 wide, pad 20, question `lead` 20/27, answer surface per format below, primary 48 | 852 | 428 | `classroom.check.question`, `classroom.check.option`, `classroom.check.item`, `classroom.check.primary`, `classroom.check.edit`, `classroom.check.clear_choice`, `classroom.check.clear_ticks`, `classroom.check.correct`, `classroom.check.wrong`, `classroom.check.retry`, `classroom.check.next` |
 | C8 | aside | 268 wide, right column, 24 gap from C7 | below C7, full width, 32 gap | below C7, 24 gap | `classroom.evidence.title`, `classroom.evidence.count`, `classroom.evidence.empty`, `classroom.aside.next`, `classroom.aside.tutor` |
 | C9 | evidence tray | aside foot: real counts and recorded events, 72 tall | aside foot | below the check | `classroom.evidence.count`, `classroom.evidence.empty` |
 | C10 | fox box | 96 × 120 in the aside's bottom corner, 16 inside the gutter | 88 | 64 beside the evidence tray | — |
@@ -481,7 +497,7 @@ control and paints no answer surface at all.
 
 | Format | Served fields | Answer region at 493 / 852 / 428 | Focus order | One next action |
 |---|---|---|---|---|
-| `text` | `prompt`; `choices[]` empty | label `Your answer` 14/20, then a textarea 3 rows (5 in the player view), full card width, min 44 tall; one helper line under it | question → textarea → primary → quiet secondary | `Check answer`; quiet `Edit answer` |
+| `text` | `prompt`; `choices[]` empty | meta `Your answer` 14/19.6, then a textarea 3 rows (5 in the player view), full card width, min 44 tall; one helper line under it | question → textarea → primary → quiet secondary | `Check answer`; quiet `Edit answer` |
 | `selection` | `prompt`; `choices[]` 2–8 | radio rows: one choice per row, 44 tall, 8 gap, number + choice text + the word `Selected`; a live summary line `Selected: {n}. {choice}` or `Nothing selected yet.` replaces no control | question → first row (roving tabIndex, arrows and 1–8 move) → primary | `Check answer`; quiet `Clear choice` |
 | `verification` | `prompt`; `items[]` 1–24 | checklist rows: one 24 px checkbox + its `label` per row, 44 target, 8 gap; one helper line under the list; no text field | question → first checkbox → primary | `Check answer`; quiet `Clear ticks` |
 
@@ -540,7 +556,7 @@ fragment are removed (search is not shipped and a truncated duplicate action is 
 |---|---|---|---|---|---|
 | M1 | rail / tab strip | 80 wide | tab strip 56 | tab strip 56 | `nav.home`, `nav.courses`, `nav.workshop`, `nav.parent` |
 | M2 | back path | 40 tall, top 24 | 40, top 16 | 40, top 12 | `course.back` |
-| M3 | course head | title 32/40, subject 16/24, 24 under M2 | same | same | `course.title`, `course.subject` |
+| M3 | course head | heading 29.69/34.14, subject body 16/24, 24 under M2 | same | same | `course.title`, `course.subject` |
 | M4 | hero plate | 613 × 204 (3:1) at wide, mat 8, radius 12 | 852 × 284 | 428 × 214 | `course.hero.credit` |
 | M5 | route | nodes 56 dia on a spine inside M4, 88 apart, current 56 with 3 px ring, all labels 12 | same, nodes 48 | vertical list below M4, node 44 | `course.route.label`, `course.node.current`, `course.node.done`, `course.node.next`, `course.node.locked` |
 | M6 | aside Continue | 268 wide, first child of the right column, pad 16 | below M4 | below M5 | `course.continue.title`, `course.next.label` |
@@ -589,15 +605,19 @@ blank, and nothing on the sheet is a fake credential.
 | # | Region | 1049 | 900 | 460 | Copy ids |
 |---|---|---|---|---|---|
 | S1 | rail / tab strip | 80 wide | tab strip 56 | tab strip 56 | `nav.home`, `nav.courses`, `nav.workshop`, `nav.parent` |
-| S2 | sheet head | display 40/48 + 16/24 line, top 32 | 32/40 | 24/32 | `lab.title`, `lab.sub`, `lab.readonly` |
+| S2 | sheet head | display 55.47/56.58 + body 16/24 line, top 32 | display 51.00/52.02 | display 40.00/40.80 | `lab.title`, `lab.sub`, `lab.readonly` |
 | S3 | left column | 588 wide, sections stacked, 32 apart | 852 | 428 | `lab.section.fox`, `lab.section.card`, `lab.section.medals` |
 | S4 | right column | 297 wide, 20 gap | below S3 | below S3 | `lab.section.palette`, `lab.section.type`, `lab.section.materials` |
 | S5 | fox specimens | 7 cells 160 tall, 128 fox, pose name 12 | 6 per row | 2 per row | `lab.pose.wave`, `lab.pose.point`, `lab.pose.clock`, `lab.pose.read`, `lab.pose.cheer`, `lab.pose.think`, `lab.pose.sleep` |
 | S6 | card anatomy | one real `paper` card 214 × 211 with 6 numbered callouts, numbers 12 | 273 | 428 row | `lab.anatomy.plate`, `lab.anatomy.title`, `lab.anatomy.subject`, `lab.anatomy.evidence`, `lab.anatomy.next`, `lab.anatomy.cover` |
 | S7 | medallions | 4 painted blanks 64 dia with Codicon centres and event names | 4 | 2 per row | `lab.medal.first_check`, `lab.medal.first_review`, `lab.medal.first_takehome`, `lab.medal.course_complete` |
 | S8 | palette | chips 64 × 64, role name 12, ratio 12 | 4 per row | 2 per row | `lab.palette.ratio`, `lab.palette.role` |
-| S9 | type | six rows: name, size, sample line | same | same | `lab.type.display`, `lab.type.title`, `lab.type.section`, `lab.type.body`, `lab.type.label`, `lab.type.micro` |
+| S9 | type | six rows in contract order — `caption`, `meta`, `body`, `lead`, `heading`, `display` — each with name, size and a sample line | same | same | `lab.type.display`, `lab.type.title`, `lab.type.section`, `lab.type.body`, `lab.type.label`, `lab.type.micro` |
 | S10 | materials | grain, wood face, three elevations, radius 0/6/12/999 | same | same | `lab.material.grain`, `lab.material.wood`, `lab.material.elevation`, `lab.material.radius` |
+
+S2's sheet-head box was drawn for a 40 px display with a 48 px line-height, which is not the
+contract's display step at any route width; the 1049 rendering is 55.47/56.58, so its height and
+baseline are re-measured by CP-020b. No other §5 geometry changed in this reconciliation.
 
 **States**
 

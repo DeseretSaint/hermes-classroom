@@ -546,5 +546,204 @@ class ContrastGateTest(unittest.TestCase):
         self.assertEqual(focus_grounds, {"canvas", "card-stock", "canvas-edge", "forest", "terracotta-quiet"})
 
 
+# --- Cross-document parity: SPEC-V3 and the v3 rubric against the contract ----------------------
+#
+# CP-001r (t_3788bb37). SPEC-V3 was written after the contract and drifted from it on type step
+# names, type sizes, measure and card radius; the rubric repeated two of those numbers. Nothing
+# failed when they crossed, so the drift was found by eye in a review instead of by a suite. This
+# class reads all three documents, recomputes every value from the contract at run time and fails
+# on any disagreement.
+
+SPEC_DOC = ROOT / "docs" / "concept-parity" / "SPEC-V3.md"
+RUBRIC_DOC = ROOT / "docs" / "GM-CONCEPT-PARITY-RUBRIC.md"
+
+# The retired step names and the contract step each one becomes. This mapping is explicit and is
+# not one-to-one (`title` and `section` both become `heading`), and it is a mapping of step names,
+# never of copy ids: `home.title` and `discover.section` are copy keys, not type steps.
+STEP_NAME_MAP = {
+    "title": "heading",
+    "section": "heading",
+    "label": "meta",
+    "micro": "caption",
+    "body": "body",
+    "display": "display",
+}
+
+RETIRED_STEPS = ("title", "section", "label", "micro")
+
+# Route-container widths the spec renders its derived table at.
+ROUTE_WIDTHS = (1049, 900, 460)
+
+# A size citation that is adjacent to one of these words is a type-step citation and must be one
+# of the contract's renderings; a measurement such as `166/159 wide` or `905/905` is not.
+SIZE_WORDS = ("title", "section", "label", "micro", "question", "display", "heading", "body", "lead", "sub", "subject", "line")
+PAIR = r"(\d{1,2}(?:\.\d{1,2})?)/(\d{1,2}(?:\.\d{1,2})?)"
+SIZE_BEFORE = re.compile(r"\b(?:%s)\s+%s(?=[\s,.;|)])" % ("|".join(SIZE_WORDS), PAIR))
+SIZE_AFTER = re.compile(r"(?<![\d/])%s\s+(?:%s)\b" % (PAIR, "|".join(SIZE_WORDS)))
+# A retired step name followed by a size on the same cell is a citation of a step that no longer
+# exists, whichever order the pair is written in.
+RETIRED_NAME_WITH_SIZE = re.compile(r"(?<![\w.])(?:%s)\b[^\n|]{0,40}?%s\b" % ("|".join(RETIRED_STEPS), PAIR))
+
+
+def _md_section(text: str, heading: str) -> str:
+    start = text.index(heading)
+    rest = text[start + len(heading):]
+    end = re.search(r"\n#{2,3} ", rest)
+    return rest[: end.start()] if end else rest
+
+
+def _table_rows(section: str) -> list[list[str]]:
+    rows = []
+    for line in section.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if set("".join(cells)) <= set("-: "):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _step_rendering(contract: dict, step: str, width: int) -> tuple[float, float]:
+    """Resolve one contract step to (px, line-height px) at a route-container width."""
+    scale = contract["type"]["scale"][step]
+    line_height = contract["type"]["line_height"][step]
+    if scale.endswith("rem"):
+        px = float(scale[: -len("rem")]) * 16
+    else:
+        px = display_px(scale, width)
+    px = round(px, 2)
+    return px, round(px * line_height, 2)
+
+
+def _contract_renderings(contract: dict) -> set[tuple[float, float]]:
+    return {
+        _step_rendering(contract, step, width)
+        for step in contract["type"]["scale"]
+        for width in ROUTE_WIDTHS
+    }
+
+
+def _rubric_v3_type_cells(rubric: str) -> list[str]:
+    for cells in _table_rows(_md_section(rubric, "### 7.1 The ten dimensions")):
+        if len(cells) >= 5 and cells[0] == "3" and "Type" in cells[1]:
+            return cells
+    raise AssertionError("rubric §7.1 has no dimension-3 Type row")
+
+
+def _rubric_v3_type_row(rubric: str) -> str:
+    return " | ".join(_rubric_v3_type_cells(rubric))
+
+
+class CrossDocumentParityTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.contract = load_contract()
+        cls.spec = SPEC_DOC.read_text(encoding="utf-8")
+        cls.rubric = RUBRIC_DOC.read_text(encoding="utf-8")
+        cls.type_section = _md_section(cls.spec, "### 3.4 Type roles")
+        cls.radius_section = _md_section(cls.spec, "### 3.6 Physical objects, not floating cards")
+
+    def test_spec_names_the_contracts_six_steps_and_no_seventh(self) -> None:
+        steps = tuple(cell[0] for cell in _table_rows(self.type_section)[1:])
+        self.assertEqual(steps, tuple(self.contract["type"]["scale"]))
+        self.assertEqual(len(steps), 6)
+
+    def test_spec_maps_every_retired_step_name_explicitly(self) -> None:
+        pairs = dict(re.findall(r"`([a-z]+)` \u2192 `([a-z]+)`", self.type_section))
+        self.assertEqual(pairs, STEP_NAME_MAP)
+        contract_steps = set(self.contract["type"]["scale"])
+        for retired, current in STEP_NAME_MAP.items():
+            self.assertIn(current, contract_steps, retired)
+        for retired in RETIRED_STEPS:
+            self.assertNotIn(retired, contract_steps, retired)
+
+    def test_no_spec_step_row_uses_a_retired_name(self) -> None:
+        rows = {cell[0] for cell in _table_rows(self.type_section)[1:]}
+        self.assertFalse(rows & set(RETIRED_STEPS), rows)
+
+    def test_spec_renders_every_step_from_the_contract_at_each_route_width(self) -> None:
+        for cells in _table_rows(self.type_section)[1:]:
+            step = cells[0]
+            self.assertEqual(len(cells), 6, step)
+            for index, width in enumerate(ROUTE_WIDTHS):
+                written = cells[1 + index]
+                px_text, _, lh_text = written.partition("/")
+                expected_px, expected_lh = _step_rendering(self.contract, step, width)
+                self.assertAlmostEqual(float(px_text), expected_px, places=2, msg=f"{step} at {width}: px")
+                self.assertAlmostEqual(float(lh_text), expected_lh, places=2, msg=f"{step} at {width}: line-height")
+
+    def test_spec_labels_the_table_as_a_rendering_of_the_contract(self) -> None:
+        flat = re.sub(r"\s+", " ", self.type_section).lower()
+        self.assertIn("the contract governs, this table is a rendering", flat)
+        self.assertIn("route-container value", flat)
+        self.assertIn("cqi", flat)
+
+    def test_spec_invariant_covers_radius_and_type_not_only_colour(self) -> None:
+        needle = "a hex, a px radius or a rem size written here as authority is a second contract"
+        flat = re.sub(r"\s+", " ", self.spec)
+        self.assertTrue(needle in flat, "SPEC-V3 lines 17-20 must cover radius and type, not colour only")
+
+    def test_rubric_dim_three_names_the_contracts_six_steps(self) -> None:
+        # The rubric repeats the step names in its own words, so a revert there reinstates
+        # divergence 1 in the second document this card names. Only the dim-3 pass cell is read:
+        # §1's v2 table keeps the v2 six and must stay out of this assertion.
+        pass_cell = _rubric_v3_type_cells(self.rubric)[-1]
+        named = re.findall(r"`([a-z]+)`", pass_cell)
+        contract_steps = set(self.contract["type"]["scale"])
+        self.assertEqual(set(named), contract_steps, pass_cell)
+        self.assertEqual(len(named), len(contract_steps), pass_cell)
+        for retired in RETIRED_STEPS:
+            self.assertNotIn(retired, named, f"rubric §7 dim 3 still offers the retired step {retired!r}")
+
+    def test_prose_and_display_measure_agree_with_the_contract(self) -> None:
+        measure = self.contract["type"]["measure"]
+        self.assertIn("50-75ch", measure)
+        self.assertIn("20ch", measure)
+        self.assertIn("34ch", measure)
+        for text, label in ((self.type_section, "SPEC §3.4"), (_rubric_v3_type_row(self.rubric), "rubric §7 dim 3")):
+            self.assertIn("50\u201375ch", text, label)
+            self.assertIn("\u226420ch", text, label)
+            self.assertIn("\u226434ch", text, label)
+            self.assertNotIn("50\u201366ch", text, label)
+            self.assertNotIn("\u226418ch", text, label)
+        # §7 does not rewrite the v2 table: §1 keeps the v2 prose cap for v2 screens.
+        self.assertIn("\u226466ch", _md_section(self.rubric, "## 1. The nine dimensions"))
+
+    def test_card_radius_is_the_contracts_round_role_written_once(self) -> None:
+        self.assertNotIn("radius 6", self.spec)
+        self.assertIn("radius `round`", self.radius_section)
+        rules = {rule.split(":", 1)[0].strip(): rule.split(":", 1)[1] for rule in self.contract["radius_rules"]}
+        self.assertIn("card", rules["round"])
+        round_px = int(self.contract["radii"]["round"].removesuffix("px"))
+        self.assertRegex(self.radius_section, rf"\b{round_px}\s*px\b")
+
+    def test_no_spec_line_assigns_a_card_its_own_px_radius(self) -> None:
+        # A cell that puts a number on a card's radius must attribute it to the contract. Cells are
+        # checked, not whole table rows, so a pill on an action and a passing mention of a card on
+        # the same row cannot be confused with a card radius.
+        for number, line in enumerate(self.spec.splitlines(), start=1):
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")] if line.startswith("|") else [line]
+            for cell in cells:
+                low = cell.lower()
+                if "card" not in low or "radius" not in low:
+                    continue
+                if not (re.search(r"radius\s+`?\d", cell) or re.search(r"\b\d+\s*px\b", cell)):
+                    continue
+                self.assertIn("contract", cell, f"SPEC-V3.md:{number} gives a card a px radius as its own authority")
+
+    def test_no_spec_cites_a_type_size_that_no_contract_step_renders(self) -> None:
+        allowed = _contract_renderings(self.contract)
+        for number, line in enumerate(self.spec.splitlines(), start=1):
+            # Step names are written in backticks throughout this spec, so normalise them away
+            # before matching; otherwise `` `heading` 31/36 `` never reaches the guard.
+            plain = line.replace("`", "")
+            for match in list(SIZE_BEFORE.finditer(plain)) + list(SIZE_AFTER.finditer(plain)):
+                pair = (float(match.group(1)), float(match.group(2)))
+                self.assertIn(pair, allowed, f"SPEC-V3.md:{number} cites {match.group(0)!r}, not a contract step")
+            for match in RETIRED_NAME_WITH_SIZE.finditer(plain):
+                self.fail(f"SPEC-V3.md:{number} cites the retired step {match.group(0)!r} with a size")
+
+
 if __name__ == "__main__":
     unittest.main()
