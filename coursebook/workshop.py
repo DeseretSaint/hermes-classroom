@@ -161,23 +161,77 @@ def _course_visual_rows(connection, course_id: str):
     ).fetchall()
 
 
+def _course_pack_identity(connection, course_id: str) -> dict[str, str] | None:
+    """The ``(pack_id, version, manifest_hash)`` triple this course was imported from."""
+    row = connection.execute(
+        "SELECT p.pack_id AS pack_id, p.version AS version, p.manifest_hash AS manifest_hash"
+        " FROM courses c JOIN packs p ON p.id = c.pack_id"
+        " WHERE c.id = ?",
+        (course_id,),
+    ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def _declared_pack_file_sha256(identity: Mapping[str, Any] | None, pack_file: str) -> str | None:
+    """The digest *this course's own pack version* declares for one file, or None.
+
+    The provenance on an artifact row is written once, by whichever import first adopted those
+    bytes; a later pack that ships the same file reuses that row. So the row's ``pack_id`` cannot
+    identify the course's pack — but the digest of the declared file can, because the course's
+    pack version names the exact bytes it meant. Reading the pack itself (never a cached copy of
+    another version) is the only honest source: a same-id 2.0.0 and 2.1.0 may share a path.
+    """
+    if identity is None:
+        return None
+    try:
+        manifest, _files = pack_flow.library().read(str(identity["pack_id"]), str(identity["version"]))
+    except (archive.PackRejected, packs.PackRejected, OSError, ValueError):
+        return None
+    if str(manifest.get("content_hash") or "") != str(identity["manifest_hash"]):
+        return None
+    for entry in manifest.get("files") or []:
+        if isinstance(entry, Mapping) and str(entry.get("path")) == pack_file:
+            digest = entry.get("sha256")
+            return str(digest) if isinstance(digest, str) and digest else None
+    return None
+
+
 def _pack_provenance_artifact(connection, course_id: str, pack_file: str) -> str | None:
-    """The artifact adopted from one pack file for this course's pack, regardless of lesson order.
+    """The artifact adopted from one pack file for this course's pack version, else None.
 
     A cover is adopted at import but deliberately not written as a lesson segment, so it is not
-    reachable through ``_course_visual_rows``. Its provenance still names the pack file it came
-    from; that is the durable link the storefront reads. Pack identity comes from the course's own
-    pack row, so a shared artifact row (keyed by content hash) cannot leak another pack's cover.
+    reachable through ``_course_visual_rows``. Its provenance still names the pack file and that
+    file's digest; the digest (not the artifact row's ``pack_id``) is the safe link, because
+    ``artifacts`` is unique on ``(content_hash, kind)`` and a row is shared by every pack that
+    ships identical bytes. Resolving through the course's own pack version keeps a same-id
+    upgrade (2.0.0 -> 2.1.0 over the same path) from serving the older plate's bytes and licence,
+    and a shared row keeps working for a second pack with the same cover. Nothing is guessed:
+    an unreadable pack, an unlisted file or a missing adoption all return None, and the caller
+    composes the typographic plate.
     """
+    identity = _course_pack_identity(connection, course_id)
+    if identity is None:
+        return None
+    digest = _declared_pack_file_sha256(identity, pack_file)
+    if digest:
+        row = connection.execute(
+            "SELECT a.id AS artifact_id FROM artifacts a"
+            " WHERE a.kind = 'visual'"
+            " AND json_extract(a.provenance_json, '$.pack_file') = ?"
+            " AND json_extract(a.provenance_json, '$.pack_file_sha256') = ?"
+            " ORDER BY a.created_at ASC, a.rowid ASC LIMIT 1",
+            (pack_file, digest),
+        ).fetchone()
+        if row is not None:
+            return str(row["artifact_id"])
+    # Rows adopted before ``pack_file_sha256`` was recorded still identify their pack version.
     row = connection.execute(
         "SELECT a.id AS artifact_id FROM artifacts a"
-        " JOIN courses c ON c.id = ?"
-        " JOIN packs p ON p.id = c.pack_id"
         " WHERE a.kind = 'visual'"
         " AND json_extract(a.provenance_json, '$.pack_file') = ?"
-        " AND json_extract(a.provenance_json, '$.pack_id') = p.pack_id"
+        " AND json_extract(a.provenance_json, '$.pack_content_hash') = ?"
         " ORDER BY a.created_at ASC, a.rowid ASC LIMIT 1",
-        (course_id, pack_file),
+        (pack_file, str(identity["manifest_hash"])),
     ).fetchone()
     return str(row["artifact_id"]) if row is not None else None
 
@@ -205,6 +259,10 @@ def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -
                 continue
             if isinstance(provenance, Mapping) and str(provenance.get("pack_file")) == cover_path:
                 return str(row["artifact_id"])
+        # A declared cover that cannot be resolved is absent, not interchangeable with a figure.
+        # Returning any visual here would paint the relationship schematic as the pack's cover —
+        # the H-197 defect. The caller composes the typographic plate instead.
+        return None
     if rows:
         return str(rows[0]["artifact_id"])
     row = connection.execute(
