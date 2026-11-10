@@ -184,7 +184,7 @@ logger = logging.getLogger("coursebook.generation")
 #: v13: the plan author is ledger-first — it may state only objectives a supplied excerpt
 #: carries, may stay short, and records an unsupported goal capability in exclusions instead of
 #: inventing an objective (CP-015).
-PLAN_PROMPT_VERSION = "plan-prompt.v13"
+PLAN_PROMPT_VERSION = "plan-prompt.v14"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -196,7 +196,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v13"
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
 #: v14: the ledger-first authoring rule, the short-course rule and the exclusions record (CP-015).
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v14"
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v15"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -3666,8 +3666,9 @@ def _plan_length_rule() -> str:
         "value, so a field that reaches its maximum has lost its ending and the plan is rejected. "
         "Write learner_outcome in at most 450 characters, evidence_note in at most 300, "
         "time_estimate.rationale in at most 450, parent.reading_level in at most 30, "
-        "parent.parent_facing_summary in at most 450, and every other prose field well under its "
-        "maximum. Finish every sentence."
+        "parent.parent_facing_summary in at most 450, each check_plan notes entry in at most 225 "
+        "(its maximum is 300 and a value at the cap has been cut), and every other prose field "
+        "well under its maximum. Finish every sentence."
     )
 
 
@@ -6629,7 +6630,7 @@ def build_plan_validation_requests(
             recipe=recipe,
         ),
         "research_status": research_run.status,
-        "sources": _source_brief(research_run.sources),
+        "sources": [],
         "plan": plan,
         "learner_facing": False,
     }
@@ -6639,7 +6640,11 @@ def build_plan_validation_requests(
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
-    input_text = _bounded_input(payload, limit=_request_bound(scope))
+    # Same bound as the author request: the ledger is fitted against the final payload (which
+    # already carries the plan under review), never truncated.
+    request_limit = _request_bound(scope)
+    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
+    input_text = _bounded_input(payload, limit=request_limit)
     timeout = _timeout_for("coursebook.plan.validate", timeout_s)
     claims = plan_claim_labels(plan)
     return [

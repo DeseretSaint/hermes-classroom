@@ -91,8 +91,8 @@ class PlanSourcingRulesTest(unittest.TestCase):
                 self.assertIn("assess every evidence criterion", text)
 
     def test_plan_prompt_versions_are_current(self) -> None:
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v13")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v14")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v14")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v15")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):
