@@ -186,8 +186,8 @@ class PromptHashContractTest(unittest.TestCase):
         self.brief = world.WorldBrief.from_mapping(BRIEF)
         self.grammar = world.WorldPolicy.select(self.brief)
 
-    def test_prompt_version_is_v3(self) -> None:
-        self.assertEqual(world.PROMPT_VERSION, "world-prompt-v3")
+    def test_prompt_version_is_v4(self) -> None:
+        self.assertEqual(world.PROMPT_VERSION, "world-prompt-v4")
 
     def test_hash_is_stable_for_the_same_request(self) -> None:
         first = world.build_prompt(self.brief, self.grammar, role="hero")
@@ -365,6 +365,104 @@ class NotationHazardContractTest(unittest.TestCase):
             brief, grammar, role="section", section_id="s2", section_title="Feeding the starter"
         )
         self.assertNotEqual(first.prompt_hash, other_section.prompt_hash)
+
+
+#: ART-BIBLE §Light, l.33: one soft key from the upper left. The clause every prompt must carry.
+UPPER_LEFT_KEY = "one soft key light from the upper left"
+
+#: ART-BIBLE §4.4, l.330: "No bloom, no halo, no radial glow around a light source ... A lit
+#: lantern is a hard-edged lamp-yellow mass." A generic "no gradient, glow or glass" lost to the
+#: model twice, so the emission class is named explicitly on every plate.
+EMISSION_NEGATIVES = (
+    "no light cone or visible beam",
+    "no glowing bulb, lamp or lantern",
+    "no bloom, halo or radial glow",
+    "no second light source",
+    "no key light from the right",
+)
+
+#: Phrases that make a fixture the light source. A grammar may paint a lantern, a lamp or a
+#: ceiling fixture as an unlit hard-edged prop; it may never light the plate with one.
+LIT_FIXTURE_PHRASES = (
+    "overhead lamp",
+    "overhead light",
+    "ceiling lamp",
+    "ceiling light",
+    "lantern-lit",
+    "lamp-lit",
+    "bench light",
+    "reading lamp",
+    "lit by",
+    "under one lamp",
+    "glowing lamp",
+    "glowing lantern",
+)
+
+
+class LightRuleContractTest(unittest.TestCase):
+    """The light dimension of the art bible, which no gate measured until round four.
+
+    CP-016 r4: every technical plate rendered a lit pendant casting a warm cone, because
+    ``workshop_manual`` composed the scene "under one overhead lamp" while the same prompt asked
+    for an upper-left key. This class pins the three things that let that happen: the grammar
+    composition, the absence of an emission fence, and the prompt that carried both.
+    """
+
+    def test_no_composition_makes_a_fixture_the_light_source(self) -> None:
+        for name, record in world.GRAMMARS.items():
+            for field in ("composition", "medium"):
+                text = getattr(record, field).lower()
+                for phrase in LIT_FIXTURE_PHRASES:
+                    with self.subTest(grammar=name, field=field, phrase=phrase):
+                        self.assertNotIn(phrase, text, f"{name}.{field} names {phrase!r}")
+            for motif in record.motifs:
+                for phrase in LIT_FIXTURE_PHRASES:
+                    with self.subTest(grammar=name, motif=motif, phrase=phrase):
+                        self.assertNotIn(phrase, motif.lower())
+
+    def test_the_rewritten_lit_grammars_name_the_key_as_the_only_light(self) -> None:
+        # The two grammars that named a fixture as the light. "The only light" is the positive
+        # half of the fix: a bare removal invites the model to invent a light source instead.
+        for name in ("workshop_manual", "field_atlas"):
+            with self.subTest(grammar=name):
+                composition = world.GRAMMARS[name].composition.lower()
+                self.assertIn("the only light is the single upper-left key", composition)
+        # The fixture is still allowed as a prop, named as unlit, so the scene keeps its subject.
+        self.assertIn("unlit", world.GRAMMARS["field_atlas"].composition.lower())
+        self.assertIn("no ceiling fixture", world.GRAMMARS["workshop_manual"].composition.lower())
+
+    def test_every_emitted_prompt_carries_the_key_and_the_emission_fence(self) -> None:
+        brief = world.WorldBrief.from_mapping(BRIEF)
+        for name in world.GRAMMARS:
+            for role in world.PROMPT_ROLES:
+                kwargs = {}
+                if role == "section":
+                    kwargs = {"section_id": "s1", "section_title": "Feeding the starter"}
+                prompt = world.build_prompt(brief, name, role=role, **kwargs)
+                body = prompt.prompt.lower()
+                negative = prompt.negative_prompt.lower()
+                with self.subTest(grammar=name, role=role):
+                    self.assertIn(UPPER_LEFT_KEY, body)
+                    for item in EMISSION_NEGATIVES:
+                        self.assertIn(item, negative)
+                    for phrase in LIT_FIXTURE_PHRASES:
+                        self.assertNotIn(phrase, body, f"prompt body names {phrase!r}")
+
+    def test_the_emission_fence_is_domain_independent(self) -> None:
+        # Not a service-only or a technical-only rule: every plate in every grammar carries it.
+        for domain, title in (
+            ("cooking", "Sourdough starter at home"),
+            ("music", "Fingerpicking patterns"),
+            ("programming", "Write a Python parser"),
+            ("history", "The Meiji restoration"),
+        ):
+            mapping = dict(BRIEF)
+            mapping.update({"subject_domain": domain, "title": title})
+            brief = world.WorldBrief.from_mapping(mapping)
+            prompt = world.build_prompt(brief, world.WorldPolicy.select(brief), role="hero")
+            with self.subTest(domain=domain):
+                self.assertIn("no light cone or visible beam", prompt.negative_prompt.lower())
+                self.assertIn("no second light source", prompt.negative_prompt.lower())
 
 
 class ConceptDisplayContractTest(unittest.TestCase):
