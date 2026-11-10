@@ -67,7 +67,12 @@ class WayfindingTest(unittest.TestCase):
         self.assertIn("borderBottom: current ? '2px solid var(--cb-lamp)'", body)
         # GM-002: the course home is a step inside Home, so the nav also gets the way back to the
         # library when Home is already current.
-        self.assertIn("jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome })", self.source)
+        # The nav is keyed because its siblings are a children array; the key is presentational,
+        # so the assertion pins the props and accepts the optional third argument.
+        self.assertRegex(
+            self.source,
+            r"jsx\(CbDestinationNav, \{ value: destination, onChange: changeDestination, onHome: closeCourseHome \}(?:, '[^']+')?\)",
+        )
         self.assertNotIn("options: DESTINATIONS,\n                sizing: 'content'", self.source)
 
     def test_new_course_is_the_catalog_primary_and_yields_to_a_course(self) -> None:
