@@ -612,12 +612,16 @@ blank, and nothing on the sheet is a fake credential.
 | S6 | card anatomy | one real `paper` card 214 × 211 with 6 numbered callouts, numbers 12 | 273 | 428 row | `lab.anatomy.plate`, `lab.anatomy.title`, `lab.anatomy.subject`, `lab.anatomy.evidence`, `lab.anatomy.next`, `lab.anatomy.cover` |
 | S7 | medallions | 4 painted blanks 64 dia with Codicon centres and event names | 4 | 2 per row | `lab.medal.first_check`, `lab.medal.first_review`, `lab.medal.first_takehome`, `lab.medal.course_complete` |
 | S8 | palette | chips 64 × 64, role name 12, ratio 12 | 4 per row | 2 per row | `lab.palette.ratio`, `lab.palette.role` |
-| S9 | type | six rows in contract order — `caption`, `meta`, `body`, `lead`, `heading`, `display` — each with name, size and a sample line | same | same | `lab.type.display`, `lab.type.title`, `lab.type.section`, `lab.type.body`, `lab.type.label`, `lab.type.micro` |
+| S9 | type | six rows in contract order — `caption`, `meta`, `body`, `lead`, `heading`, `display` — each with name, size and a sample line | same | same | `lab.type.micro`, `lab.type.label`, `lab.type.body`, `lab.type.lead`, `lab.type.title`, `lab.type.display` |
 | S10 | materials | grain, wood face, three elevations, radius 0/6/12/999 | same | same | `lab.material.grain`, `lab.material.wood`, `lab.material.elevation`, `lab.material.radius` |
 
 S2's sheet-head box was drawn for a 40 px display with a 48 px line-height, which is not the
 contract's display step at any route width; the 1049 rendering is 55.47/56.58, so its height and
 baseline are re-measured by CP-020b. No other §5 geometry changed in this reconciliation.
+
+S9's six rows are the v3 deck rows in contract order, and their sizes are the 1049 column of §3.4,
+never an authored number. The deck also keeps one v2-only row, `lab.type.section`, for v2 surfaces:
+v2 keeps the v2 spec, so that row is not one of S9's six v3 rows and S9 paints no `section` step.
 
 **States**
 

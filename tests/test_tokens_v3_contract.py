@@ -556,6 +556,28 @@ class ContrastGateTest(unittest.TestCase):
 
 SPEC_DOC = ROOT / "docs" / "concept-parity" / "SPEC-V3.md"
 RUBRIC_DOC = ROOT / "docs" / "GM-CONCEPT-PARITY-RUBRIC.md"
+COPY_DOC = ROOT / "docs" / "concept-parity" / "COPY.md"
+
+# CP-001r-b (t_342e4a2e). SPEC-V3 §5 S9 tells the lab to draw six type rows in contract order and
+# COPY.md is the deck CP-020b paints them from, so the two documents have to agree positionally.
+# The v2 deck rows named six steps the v3 contract does not have (`title`, `section`, `label`,
+# `micro`), cited their v2 sizes and sourced the values at `type.<step>`, which is not a path in
+# the contract at all. The six v3 rows map, in contract order, to these copy ids. A copy id keeps
+# its name when the step under it changes, so this tuple — not the id's own spelling — is the only
+# authority on which id paints which step. `lab.type.section` stays in the deck for the v2 lab and
+# is deliberately not one of these six.
+S9_TYPE_COPY_IDS = (
+    ("caption", "lab.type.micro"),
+    ("meta", "lab.type.label"),
+    ("body", "lab.type.body"),
+    ("lead", "lab.type.lead"),
+    ("heading", "lab.type.title"),
+    ("display", "lab.type.display"),
+)
+
+# A visible type row reads `<step name> · <px>/<line-height px> · <sample line>`. The pair is
+# parsed exactly, never by substring, so `16/26` cannot be read as `16/2`.
+COPY_SIZE_PAIR = re.compile(r"(?<![\d./])(\d{1,2}(?:\.\d{1,2})?)/(\d{1,2}(?:\.\d{1,2})?)(?![\d/])")
 
 # The retired step names and the contract step each one becomes. This mapping is explicit and is
 # not one-to-one (`title` and `section` both become `heading`), and it is a mapping of step names,
@@ -743,6 +765,71 @@ class CrossDocumentParityTest(unittest.TestCase):
                 self.assertIn(pair, allowed, f"SPEC-V3.md:{number} cites {match.group(0)!r}, not a contract step")
             for match in RETIRED_NAME_WITH_SIZE.finditer(plain):
                 self.fail(f"SPEC-V3.md:{number} cites the retired step {match.group(0)!r} with a size")
+
+    def test_copy_deck_s9_type_rows_are_the_contracts_six_steps(self) -> None:
+        # The deck is load-bearing: CP-020b paints these rows, and tests/test_cp_spec.py resolves
+        # copy ids to rows. A row that names a retired step, quotes a v2 size or sources a path the
+        # contract does not have is a screen that draws a step the product no longer ships.
+        deck = {cells[0].strip("`"): cells for cells in _table_rows(COPY_DOC.read_text(encoding="utf-8"))}
+        lab_rows = {copy_id: cells for copy_id, cells in deck.items() if copy_id.startswith("lab.type.")}
+        renderings = _contract_renderings(self.contract)
+        scale = self.contract["type"]["scale"]
+        line_height = self.contract["type"]["line_height"]
+
+        for step, copy_id in S9_TYPE_COPY_IDS:
+            with self.subTest(copy_id=copy_id, step=step):
+                self.assertIn(copy_id, lab_rows, f"COPY.md has no `{copy_id}` row")
+                cells = lab_rows[copy_id]
+                self.assertGreaterEqual(len(cells), 5, f"{copy_id} is not a full copy row: {cells}")
+                text, source = cells[1], cells[2]
+
+                # The step the row paints, exactly — not by substring, so `Heading` cannot pass as
+                # `heading` by accident and `Meta` is never read as the retired `micro`.
+                named = text.split("\u00b7")[0].strip()
+                self.assertEqual(named.lower(), step, f"{copy_id} paints {named!r}, not the contract step {step!r}")
+                self.assertNotIn(named.lower(), RETIRED_STEPS, f"{copy_id} names the retired step {named!r}")
+
+                # The size it quotes is a rendering of that step (SPEC §3.4 renders the 1049 column;
+                # this row quotes the same column, so the deck and the region map cannot disagree).
+                match = COPY_SIZE_PAIR.search(text)
+                if match is None:
+                    self.fail(f"{copy_id} cites no px/line-height pair: {text!r}")
+                written = (float(match.group(1)), float(match.group(2)))
+                self.assertIn(written, renderings, f"{copy_id} cites {written}, which no contract step renders")
+                self.assertEqual(
+                    written,
+                    _step_rendering(self.contract, step, ROUTE_WIDTHS[0]),
+                    f"{copy_id} must quote the {ROUTE_WIDTHS[0]} px rendering of {step}",
+                )
+
+                # The source is a real path in the contract's own tree: `type.<step>` at the top
+                # level is not a path, and a retired step has no scale entry to point at.
+                tokens = re.findall(r"contract:`([^`]+)`", source)
+                self.assertEqual(
+                    tokens,
+                    [f"type.scale.{step}", f"type.line_height.{step}"],
+                    f"{copy_id} sources {source!r}; a quoted line-height cites both paths for {step}",
+                )
+                for token in tokens:
+                    parts = token.split(".")
+                    self.assertEqual(len(parts), 3, f"{copy_id}: {token!r} is not a dotted contract path")
+                    group = parts[1]
+                    self.assertIn(group, ("scale", "line_height"), f"{copy_id}: {token!r} is not a type path")
+                    self.assertIn(parts[2], (scale if group == "scale" else line_height), f"{copy_id}: {token!r} does not exist")
+
+        # Positional agreement with the region map, and no extra lab.type row claiming S9.
+        s9 = [cells for cells in _table_rows(_md_section(self.spec, "### 5.5 R-SYS")) if cells[0] == "S9"]
+        self.assertEqual(len(s9), 1, "§5.5 region map must have exactly one S9 row")
+        self.assertEqual(
+            re.findall(r"`(lab\.type\.[a-z_]+)`", s9[0][5]),
+            [copy_id for _step, copy_id in S9_TYPE_COPY_IDS],
+            "§5 S9's Copy ids column must list the six ids in contract order",
+        )
+        for copy_id, cells in lab_rows.items():
+            if copy_id in {known for _step, known in S9_TYPE_COPY_IDS}:
+                continue
+            self.assertNotIn("S9", cells[-1], f"{copy_id} claims S9 but is not one of the six v3 rows")
+        self.assertIn("lab.type.section", lab_rows, "the v2 deck row `lab.type.section` was deleted, not parked")
 
 
 if __name__ == "__main__":

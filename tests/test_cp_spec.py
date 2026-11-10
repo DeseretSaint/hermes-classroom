@@ -492,7 +492,15 @@ class TestCopySourcesResolve(unittest.TestCase):
         self.assertIn("contracts/cb.tokens.v3.json", self.spec)
         for row_id, source in self.rows:
             for token in CONTRACT_SOURCE.findall(source):
-                self.assertRegex(token, r"^(color|type)\.[a-z]+$", f"{row_id}: unexpected contract token {token!r}")
+                # CP-001r-b (t_342e4a2e) removed the dead `type.<step>` sources from COPY.md: only
+                # `type.scale.<step>` and `type.line_height.<step>` exist in the v3 contract. This
+                # grammar is widened to the real paths, not relaxed — the paths are resolved against
+                # the contract by tests/test_tokens_v3_contract.py's COPY.md parity test.
+                self.assertRegex(
+                    token,
+                    r"^(color\.[a-z][a-z-]*|type\.(?:scale|line_height)\.[a-z]+)$",
+                    f"{row_id}: unexpected contract token {token!r}",
+                )
             for token in COMPUTED_SOURCE.findall(source):
                 self.assertRegex(
                     token,

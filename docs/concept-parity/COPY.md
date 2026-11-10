@@ -33,7 +33,10 @@ Sources, exactly one of these forms per cell:
 - `pack:<repo-relative path>` — the pack's own authored content; the file must exist.
 - `art:<manifest path>` — a licence/provenance row (`license.per_artifact[].attribution`), not a
   claim about learning.
-- `contract:<role>` — a value CP-002 owns in `contracts/cb.tokens.v3.json`.
+- `contract:<path>` — a value CP-002 owns in `contracts/cb.tokens.v3.json`, written as a path into
+  that file: `color.<role>`, `type.scale.<step>` or `type.line_height.<step>`. A quoted size cites
+  the scale path and, because the row also prints the line-height, that step's line-height path. A
+  bare `type.<step>` names no path in the contract and is never written.
 - `computed:<rule>` — arithmetic the surface performs on a named field; the rule is stated in
   SPEC-V3.
 
@@ -252,12 +255,13 @@ lesson's authored line; this example is the fixture that proves the three scaffo
 | `lab.medal.course_complete` | Course complete | deck | 20 | S7 |
 | `lab.palette.role` | {role name} | contract:`color.role` key in `contracts/cb.tokens.v3.json` | 20 | S8 |
 | `lab.palette.ratio` | {ratio}:1 | computed:`contrast(pair)` from the contract's two role values | 10 | S8 |
-| `lab.type.display` | Display · 56/60 · Your field library | contract:`type.display` + deck sample | 48 | S9 |
-| `lab.type.title` | Title · 32/40 · Japanese Lantern District | contract:`type.title` + deck sample | 48 | S9 |
-| `lab.type.section` | Section · 24/32 · Your route | contract:`type.section` + deck sample | 48 | S9 |
-| `lab.type.body` | Body · 16/26 · A sentence of real lesson text. | contract:`type.body` + deck sample | 56 | S9 |
-| `lab.type.label` | Label · 14/20 · Check answer | contract:`type.label` + deck sample | 48 | S9 |
-| `lab.type.micro` | Micro · 12/16 · 4 of 5 checks recorded | contract:`type.micro` + deck sample | 48 | S9 |
+| `lab.type.micro` | Caption · 12/16.2 · 4 of 5 checks recorded | contract:`type.scale.caption` + contract:`type.line_height.caption` | 48 | S9 |
+| `lab.type.label` | Meta · 14/19.6 · Check answer | contract:`type.scale.meta` + contract:`type.line_height.meta` | 48 | S9 |
+| `lab.type.body` | Body · 16/24 · A sentence of real lesson text. | contract:`type.scale.body` + contract:`type.line_height.body` | 56 | S9 |
+| `lab.type.lead` | Lead · 20/27 · A sentence that opens the lesson. | contract:`type.scale.lead` + contract:`type.line_height.lead` | 56 | S9 |
+| `lab.type.title` | Heading · 29.69/34.14 · Japanese Lantern District | contract:`type.scale.heading` + contract:`type.line_height.heading` | 52 | S9 |
+| `lab.type.display` | Display · 55.47/56.58 · Your field library | contract:`type.scale.display` + contract:`type.line_height.display` | 48 | S9 |
+| `lab.type.section` | Section · Your route | deck (v2 lab) | 20 | v2 lab only |
 | `lab.material.grain` | Paper grain | deck | 16 | S10 |
 | `lab.material.wood` | Wood ledge | deck | 16 | S10 |
 | `lab.material.elevation` | Elevation | deck | 16 | S10 |
