@@ -101,7 +101,9 @@ class CaptureStampTests(unittest.TestCase):
         self.assertTrue(any("document.fonts.status" in reason for reason in refused["reasons"]))
 
     def test_undecoded_image_is_refused(self) -> None:
-        completed = run_capture(self.tmp, "undecoded-image.html")
+        # The door first forces every route image to eager and decodes it, so a short image-wait
+        # keeps this refusal test quick while still proving a genuinely broken image is refused.
+        completed = run_capture(self.tmp, "undecoded-image.html", "--image-wait", "3000")
         self.assertEqual(completed.returncode, 2, completed.stderr)
         refused = json.loads((self.tmp / "undecoded-image.refused.json").read_text())
         self.assertFalse(refused["gates"]["images_decoded"])

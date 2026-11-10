@@ -234,3 +234,40 @@ with `ok: false`. v3 may not regress this beyond noise without a recorded reason
 | F3 — static facts cited from `evidence.json`, block mis-described | §3 now cites `renderer-frames/frames.json` and quotes the block including the `body { font-family: system-ui… }` declaration. |
 | F4 — cold-paint baseline had no module provenance | `cp-cold-paint.mjs` reads the sha through `readPluginSource`, stamps sha/state dir/backend/theme/route/zoom, and refuses on mismatch; `tests/test_cp_cold_paint.py` covers both paths. Baseline re-measured on master: median 1646 ms. |
 | F5 — schema test did not assert the backend block | `test_backend_block_shape_is_stamped` runs the capture against a recorded stub runtime and asserts `wire_version`, contract method count, implemented count and `plugin_root`; `test_valid_fixture_writes_stamp_and_png` asserts the full gate set and pixel-check block. |
+
+## 10. Addressable destinations (CP-038)
+
+The door previously reloaded and only then set `#/coursebook`, so a capture could only ever photograph
+Home, and a frame named for another surface was indistinguishable from a Home frame. CP-038 makes a
+capture addressable and makes the provenance explicit:
+
+- `--destination home|courses|workshop|studio|#/course/<id>|#/learn/<id>` reaches the surface through
+  the product's own control (`[data-cb-nav-item]`, `[data-cb-home-card-action]`,
+  `[data-cb-section-row]`) and **refuses** (exit 2, no PNG/stamp) unless the rendered route matches.
+  The hash is set before the hard reload and re-asserted if the host restores a session route.
+- `--click <selector>` (repeatable) clicks through a state (a selected line, an opened check card)
+  after the destination renders; `--scroll <selector|px>` scrolls a region inside the route after the
+  viewport is sized and refuses if it would move `[data-cb-route]` out of the crop.
+- The stamp now carries `destination{requested,normalized,rendered,rendered_course_home,
+  rendered_lesson_view,match,controls}`, `route.destination/course_home/lesson_view/marker_names`,
+  `clicks` and `scroll`, so a still cannot lie about where it came from.
+- The door also waits for route images to settle (`--image-wait`, 15 s) and every `Runtime.evaluate`
+  has a timeout: a dead host bridge produced a silent hang before. The wait is not passive: every
+  pending `[data-cb-route] img` is forced to `loading="eager"` and decoded, and a zero-image route is
+  accepted only after it is stable for three polls. This is what makes a Workshop frame possible at
+  all — its non-hero covers are lazy and sit below the capture viewport, so a passive wait polled
+  `{total:3,pending:1}` until it refused.
+- `--appearance system|light|dark` drives the product's own settings sheet (open → choose the
+  palette → close) and **refuses** unless the route repaints to the requested `data-cb-scope`. The
+  palette is a per-profile product setting, not `prefers-color-scheme`; `--color-scheme` remains for
+  hosts whose theme does follow the media feature and is refused when it does not. The stamp carries
+  `appearance{requested,before,applied,rendered_scope,clicks}` and the gate adds
+  `appearance_applied`, so a `-light` still can never be a dark frame.
+- A success deletes any stale `<name>.refused.json` from an earlier run, so a packet cannot carry
+  both REFUSED and OK for one still.
+
+`tests/test_cp_capture_route.py` covers home unchanged, a non-Home destination, a course
+destination, a wrong/unknown destination (exit 2, no frame), a destination control that renders a
+different route (the CP-021 defect; exit 2 with `destination.match=false`), click state, scroll,
+missing click/scroll selectors, a lazy offscreen image being forced to decode, the appearance
+setting producing a real light frame, an unknown appearance, and a success clearing a stale refusal.

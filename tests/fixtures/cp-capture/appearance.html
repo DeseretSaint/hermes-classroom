@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>CP-038 fixture: appearance setting</title>
+<style>
+  html, body { margin: 0; background: #0d281b; }
+  [data-cb-route] { width: 400px; min-height: 300px; background: #f7f1e4; color: #1b1b1b; }
+  [data-cb-route][data-cb-scope="dark"] { background: #14110c; color: #f7f1e4; }
+</style>
+</head>
+<body>
+  <!-- CP-038 fixture page. Reproduces the product's settings sheet contract: a trigger with
+       [data-cb-settings-open], the sheet with [data-cb-settings-sheet], the appearance control with
+       [data-cb-settings-control="appearance"], three options in System/Light/Dark order and a
+       [data-cb-settings-close]. Choosing an option repaints [data-cb-scope]. The door must drive
+       this, not emulate prefers-color-scheme. Only the plugin sha is published. -->
+  <div data-cb-route="/coursebook" data-cb-scope="dark" data-cb-destination="home"
+       data-cb-v3-ready="true" data-cb-v3-textures="ready">
+    <h1>Appearance fixture</h1>
+    <button type="button" data-cb-settings-open aria-label="Open Coursebook settings">Settings</button>
+    <div data-cb-settings-sheet="open" hidden>
+      <div data-cb-settings-control="appearance" data-cb-settings-value="system">
+        <button type="button" aria-pressed="true">System</button>
+        <button type="button" aria-pressed="false">Light</button>
+        <button type="button" aria-pressed="false">Dark</button>
+      </div>
+      <button type="button" data-cb-settings-close aria-label="Close settings">Close</button>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const route = document.querySelector('[data-cb-route]')
+      const sheet = document.querySelector('[data-cb-settings-sheet]')
+      const control = document.querySelector('[data-cb-settings-control="appearance"]')
+      const options = ['system', 'light', 'dark']
+      document.querySelector('[data-cb-settings-open]').addEventListener('click', () => {
+        sheet.hidden = false
+        sheet.setAttribute('data-cb-settings-sheet', 'open')
+      })
+      document.querySelector('[data-cb-settings-close]').addEventListener('click', () => {
+        sheet.hidden = true
+      })
+      control.querySelectorAll('button').forEach((button, index) => {
+        button.addEventListener('click', () => {
+          const value = options[index]
+          control.setAttribute('data-cb-settings-value', value)
+          control.querySelectorAll('button').forEach((other, otherIndex) => {
+            other.setAttribute('aria-pressed', otherIndex === index ? 'true' : 'false')
+          })
+          // `system` in this fixture stands for the host theme, which is dark here.
+          route.setAttribute('data-cb-scope', value === 'system' ? 'dark' : value)
+        })
+      })
+    })()
+    window.__CP000_FIXTURE__ = {
+      plugin: {
+        window_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        loaded_path: '/tmp/fixture/plugin.js',
+        bytes: 42,
+        error: null
+      }
+    }
+  </script>
+</body>
+</html>
