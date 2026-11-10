@@ -1,0 +1,35 @@
+{
+  "count": 3,
+  "packs": [
+    {
+      "content_hash": "sha256:532a6cda1b9145b0b5a41957afe9c3a5215d7396493a41f5103835395f83da60",
+      "directory": "japanese-affection-context-l0",
+      "license": "CC-BY-4.0",
+      "pack_id": "japanese-affection-context-l0",
+      "pack_version": "2.2.0",
+      "redistribution": "allowed",
+      "title": "Japanese register: affection and closeness",
+      "validated": true
+    },
+    {
+      "content_hash": "sha256:eac9c5c0ca771097dc33dd61d73a3fb26373c32c7793816ba7f527ab79775747",
+      "directory": "parent-measurement-practice",
+      "license": "CC-BY-4.0",
+      "pack_id": "parent-measurement-practice",
+      "pack_version": "2.0.0",
+      "redistribution": "allowed",
+      "title": "Measuring together: a kitchen lesson",
+      "validated": true
+    },
+    {
+      "content_hash": "sha256:130a679dd6522aec06e40ccc3a63dc9f3d2d56cfc04927ad5a6653b762afbbb5",
+      "directory": "technical-pack-literacy",
+      "license": "CC-BY-4.0",
+      "pack_id": "technical-pack-literacy",
+      "pack_version": "2.1.0",
+      "redistribution": "allowed",
+      "title": "Reading a pack before you install it",
+      "validated": true
+    }
+  ]
+}

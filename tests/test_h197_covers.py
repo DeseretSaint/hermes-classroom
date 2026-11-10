@@ -41,7 +41,7 @@ from tests.kernel_support import KernelCase
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "catalog" / "workshop.v1.json"
 PACKS = ROOT / "bundled" / "packs"
-BUILDER = PACKS / "build_demo_packs.py"
+BUILDER = PACKS / "build_bundled_packs.py"
 PLUGIN = ROOT / "desktop" / "plugin.js"
 IDENTITY = ROOT / "docs" / "COURSEBOOK-VISUAL-IDENTITY-V2.md"
 PROVENANCE = ROOT / "docs" / "ASSET-PROVENANCE.md"
@@ -90,9 +90,9 @@ def load_catalog() -> dict:
 
 
 def load_builder():
-    spec = importlib.util.spec_from_file_location("coursebook_demo_pack_builder_h197", BUILDER)
+    spec = importlib.util.spec_from_file_location("coursebook_bundled_pack_builder_h197", BUILDER)
     if spec is None or spec.loader is None:
-        raise RuntimeError("cannot load the demo pack builder")
+        raise RuntimeError("cannot load the bundled pack builder")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -192,9 +192,8 @@ class LicenceAndProvenanceTests(unittest.TestCase):
                     record = records[path]
                     self.assertTrue(str(record.get("attribution") or "").strip())
                     if record["license_id"] == "unspecified":
-                        # CP-014's painted plates are model output and carry no rights verdict.
-                        # That is allowed only inside a local_only pack and only when the
-                        # attribution says so; an unknown licence may not pass silently.
+                        # No shipped pack may take this branch: a store course needs a real
+                        # licence. It stays here as the rule for any future local-only pack.
                         self.assertEqual(manifest["license"]["redistribution"], "local_only")
                         attribution = record["attribution"].lower()
                         self.assertIn("model output", attribution)
@@ -203,7 +202,7 @@ class LicenceAndProvenanceTests(unittest.TestCase):
                         self.assertIn(record["license_id"], PERMISSIVE)
 
     def test_a_cc_by_cover_would_need_visible_credits(self) -> None:
-        """The gate, tested as a rule even though both shipped plates are CC0."""
+        """The gate, tested as a rule: a CC-BY cover needs its credit in the pack and provenance doc."""
         for entry, cover in self.covers():
             manifest, _ = archive.read_directory(PACKS / entry["directory"])
             records = {r["path"]: r for r in (manifest.get("license") or {}).get("per_artifact") or []}
@@ -245,7 +244,7 @@ class LicenceAndProvenanceTests(unittest.TestCase):
         # data that actually ships: the catalogue and the generator.
         blob = (
             CATALOG.read_text(encoding="utf-8")
-            + (PACKS / "build_demo_packs.py").read_text(encoding="utf-8")
+            + (PACKS / "build_bundled_packs.py").read_text(encoding="utf-8")
         ).lower()
         for word in FORBIDDEN_SOURCES:
             with self.subTest(word=word):
@@ -386,7 +385,7 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
         for kind, slug in (
             ("japanese", "japanese-affection-context-l0"),
             ("parent", "parent-measurement-practice"),
-            ("technical", "technical-demo-pack"),
+            ("technical", "technical-pack-literacy"),
         ):
             with self.subTest(plate=kind):
                 folder = PACKS / slug / "content"
@@ -401,7 +400,7 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
                 self.assertEqual(declared["content/cover-4x5.png"]["role"], "cover")
 
     def test_plate_geometry_is_the_a3_master_and_its_4_by_5_crop(self) -> None:
-        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-demo-pack"):
+        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-pack-literacy"):
             master_w, master_h = png_size((PACKS / slug / "content" / "cover-3x2.png").read_bytes())
             crop_w, crop_h = png_size((PACKS / slug / "content" / "cover-4x5.png").read_bytes())
             self.assertEqual((master_w, master_h), (1200, 800))
@@ -416,7 +415,7 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
         data = self.builder.cover_plate_png("parent")
         self.assertGreater(len(data), 1000)
         self.assertEqual(png_size(data), (self.builder.COVER_W, self.builder.COVER_H))
-        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-demo-pack"):
+        for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-pack-literacy"):
             manifest, files = archive.read_directory(PACKS / slug)
             self.assertNotIn("content/cover-16x9.png", files)
             self.assertNotIn(
@@ -453,7 +452,7 @@ class CoverFlowTests(KernelCase):
     def test_after_install_the_cover_is_the_plate_the_catalogue_names(self) -> None:
         for slug, pack_id in (
             ("japanese-affection-context-l0", "japanese-affection-context-l0"),
-            ("technical-demo-pack", "technical-demo-pack"),
+            ("technical-pack-literacy", "technical-pack-literacy"),
         ):
             with self.subTest(pack=pack_id):
                 workshop.install(pack_id)
@@ -538,7 +537,7 @@ class CoverFlowTests(KernelCase):
 
     def test_a_cover_no_route_can_serve_is_refused(self) -> None:
         document = load_catalog()
-        entry = next(e for e in document["packs"] if e["pack_id"] == "technical-demo-pack")
+        entry = next(e for e in document["packs"] if e["pack_id"] == "technical-pack-literacy")
         entry["cover"]["path"] = "content/not-a-file.png"
         scratch = Path(tempfile.mkdtemp(prefix="coursebook-h197-"))
         self.addCleanup(shutil.rmtree, scratch, True)

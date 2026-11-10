@@ -34,7 +34,7 @@ DOC = ROOT / "docs" / "concept-parity" / "COVERS.md"
 PACKS = {
     "japanese-affection-context-l0": "japanese",
     "parent-measurement-practice": "parent",
-    "technical-demo-pack": "technical",
+    "technical-pack-literacy": "technical",
 }
 PAPER = (247, 241, 228)
 

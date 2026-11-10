@@ -6,8 +6,8 @@
     "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
     "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
   ],
-  "attribution": "Original teaching text, relationship schematic and narration: Coursebook demo pack. The cover plate is model output generated for this pack and is recorded with its provenance and rights position in the manifest; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
-  "content_hash": "sha256:e5dc96b86688fc17523a1f5cf4ad23688ae575151d1c695adf5b4f7f5243c2c5",
+  "attribution": "Original teaching text, relationship schematic and narration: Coursebook. The cover plate is model output generated for this pack and is recorded with its provenance and rights position in the manifest; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md. Model-generated cover produced for this pack; no third-party source or media.",
+  "content_hash": "sha256:532a6cda1b9145b0b5a41957afe9c3a5215d7396493a41f5103835395f83da60",
   "content_notes": [
     "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
     "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
@@ -17,13 +17,13 @@
     "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
     "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer.",
     "2.1.0 added one composed Press Plate cover (content/cover-16x9.png, with its 3:2 crop), linked first in media[] so the Workshop storefront, the Library row and the course detail showed the same plate. It was decorative illustration: it carried no register facts. The relationship map remained the pack's deterministic schematic and the only visual that states them. No wording, check or source changed.",
-    "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and its rights position (no redistribution licence declared; local_only) are recorded per artifact. It is decorative: it carries no text and no register fact, and the relationship map remains the schematic. No wording, check or source changed, and no native-speaker review is claimed."
+    "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and its rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. It is decorative: it carries no text and no register fact, and the relationship map remains the schematic. No wording, check or source changed, and no native-speaker review is claimed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
   "contributors": [
     {
-      "name": "Coursebook demo pack",
+      "name": "Coursebook",
       "role": "author"
     },
     {
@@ -67,7 +67,7 @@
     },
     {
       "bytes": 6948,
-      "description": "Relationship and register map drawn deterministically for the demo pack.",
+      "description": "Relationship and register map drawn deterministically for this pack.",
       "mime": "image/png",
       "path": "content/relationship-map.png",
       "role": "visual",
@@ -105,21 +105,21 @@
   ],
   "level_label": "CEFR A1 · ab initio (L0)",
   "license": {
-    "id": "unspecified",
-    "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+    "id": "CC-BY-4.0",
+    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
     "per_artifact": [
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Model-generated cover produced for this pack; no third-party source or media.",
+        "license_id": "CC-BY-4.0",
         "path": "content/cover-3x2.png"
       },
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Model-generated cover produced for this pack; no third-party source or media.",
+        "license_id": "CC-BY-4.0",
         "path": "content/cover-4x5.png"
       },
       {
-        "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+        "attribution": "Deterministic schematic generated by the Coursebook bundled pack builder; no third-party imagery.",
         "license_id": "CC0-1.0",
         "path": "content/relationship-map.png"
       },
@@ -129,7 +129,7 @@
         "path": "content/narration-polite-confession.mp3"
       }
     ],
-    "redistribution": "local_only"
+    "redistribution": "allowed"
   },
   "locale": "ja-JP",
   "media": [
@@ -392,5 +392,5 @@
     }
   ],
   "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
-  "title": "Japanese affection and register — a Sample L0 classroom"
+  "title": "Japanese register: affection and closeness"
 }

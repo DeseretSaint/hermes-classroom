@@ -450,7 +450,7 @@ In dependency order; none of them is this card, and none may be opened against a
 | H-75 | `Materialize linked pack media at import — artifact row, media segment, provenance, pre-write refusals` — `pack_flow._write_lesson_page`, adoption ordering, M1–M6, page-budget extension, provenance record, tests 4 and 6–8 | pack import path |
 | H-76 | `Resolve lesson media by referenced artifact id, not by course` — `domain.lesson_page` artifact map, cross-course reuse test 5, no wire change | kernel read path |
 | H-77 | `Serve pack media rights — licence/attribution on the media route and in the media frame` — `media.preview_artifact` two keys, `MediaFrame` rights disclosure, M4 pack fixture, tests 9–10 | host route + Desktop |
-| H-78 | `Re-issue the bundled Japanese L0 pack at cb.pack v2 with its narration linked` — `build_demo_packs.py`, `pack.json`, `content_hash`, roundtrip + fixture tests, after §13's ordering constraint is met | pack content |
+| H-78 | `Re-issue the bundled Japanese L0 pack at cb.pack v2 with its narration linked` — `build_bundled_packs.py`, `pack.json`, `content_hash`, roundtrip + fixture tests, after §13's ordering constraint is met | pack content |
 | H-79 | `Document pack media playback for authors` — `docs/PACK-AUTHORING.md` §"media you can play", `docs/ARCHITECTURE.md` media seam paragraph, pack inspector copy from §9 | docs |
 
 H-72's demo script is not reopened by any of these. If the recorded demo is ever re-shot with audio,

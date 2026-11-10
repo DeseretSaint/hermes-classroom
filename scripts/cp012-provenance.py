@@ -62,7 +62,7 @@ def main() -> int:
         slug = {
             "japanese-affection-context-l0": "japanese",
             "parent-measurement-practice": "parent",
-            "technical-demo-pack": "technical",
+            "technical-pack-literacy": "technical",
         }[src["pack"]]
 
         shipped = [

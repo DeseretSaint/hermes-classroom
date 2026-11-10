@@ -7,7 +7,7 @@ Two lanes exist in this product. They are not interchangeable:
 
 | Lane | Owner | Output | Used for |
 |---|---|---|---|
-| **Press Plate** (existing) | pack builder, `bundled/packs/build_demo_packs.py` | one flat plate per pack cover | pack and catalogue covers; rules unchanged in `docs/ART-DIRECTION-COVERS.md` |
+| **Press Plate** (existing) | pack builder, `bundled/packs/build_bundled_packs.py` | one flat plate per pack cover | pack and catalogue covers; rules unchanged in `docs/ART-DIRECTION-COVERS.md` |
 | **World plate** (this card) | `WorldPolicy` + world media job | hero, cover, section, optional scene | a course's world, its course home, its shelf card, a captioned print plate |
 
 Both lanes are **textless**. A world plate is never a screenshot, never UI chrome, never a diagram of

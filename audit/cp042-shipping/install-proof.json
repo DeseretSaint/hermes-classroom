@@ -1,0 +1,284 @@
+{
+  "discover": {
+    "count": 3,
+    "items": [
+      {
+        "cover_kind": "typographic",
+        "level_label": "CEFR A1 \u00b7 ab initio (L0)",
+        "license": {
+          "id": "CC-BY-4.0",
+          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+          "redistribution": "allowed"
+        },
+        "pack_id": "japanese-affection-context-l0",
+        "title": "Japanese register: affection and closeness"
+      },
+      {
+        "cover_kind": "typographic",
+        "level_label": "Age 8-10 \u00b7 parent-led",
+        "license": {
+          "id": "CC-BY-4.0",
+          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+          "redistribution": "allowed"
+        },
+        "pack_id": "parent-measurement-practice",
+        "title": "Measuring together: a kitchen lesson"
+      },
+      {
+        "cover_kind": "typographic",
+        "level_label": "Technical \u00b7 for pack readers",
+        "license": {
+          "id": "CC-BY-4.0",
+          "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is model output produced for this pack. No third-party text or media is included; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+          "redistribution": "allowed"
+        },
+        "pack_id": "technical-pack-literacy",
+        "title": "Reading a pack before you install it"
+      }
+    ],
+    "refused": []
+  },
+  "hermes_home": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cp042-hermes-home-50b3d3wg",
+  "installs": [
+    {
+      "course_id": "crs_ca677f23e16e465b8cad75168758f894",
+      "enrollment_id": "enr_f2c1d9f47790483fbc15a03d3fd723a2",
+      "imported": true,
+      "pack_id": "japanese-affection-context-l0",
+      "pack_version": "2.2.0",
+      "revision": 0
+    },
+    {
+      "course_id": "crs_2dac95b6c3e94044a4681a564048a615",
+      "enrollment_id": "enr_3ae691b768344b2e86acf6095018f5b3",
+      "imported": true,
+      "pack_id": "parent-measurement-practice",
+      "pack_version": "2.0.0",
+      "revision": 0
+    },
+    {
+      "course_id": "crs_9f332b88efd24a4c8bfe21d845ee9ce8",
+      "enrollment_id": "enr_5bc68b24fbf047989a78bbe00f74af88",
+      "imported": true,
+      "pack_id": "technical-pack-literacy",
+      "pack_version": "2.1.0",
+      "revision": 0
+    }
+  ],
+  "lesson_pages": [
+    {
+      "artifact_count": 1,
+      "course_id": "crs_9f332b88efd24a4c8bfe21d845ee9ce8",
+      "document_excerpt": "{\"schema_version\": 1, \"document_id\": \"doc_cd54cf51341dc3d25eea\", \"content_hash\": \"sha256:cd54cf51341dc3d25eea2f55716906f19a705150d8e60d00e23ef8a4ec085501\", \"section_title\": \"Read what a pack manifest declares\", \"objective_id\": \"obj_f636fecd67ba4d2d935b4dc83a190b3f\", \"state\": \"textbook_only\", \"view_note\": \"This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.\", \"views\": {\"textbook\": true, \"guided\": false, \"field_quest\": false, \"",
+      "document_keys": [
+        "blocks",
+        "check_id",
+        "content_hash",
+        "document_id",
+        "objective_id",
+        "schema_version",
+        "section_title",
+        "source_ids",
+        "state",
+        "view_note",
+        "views"
+      ],
+      "error": null,
+      "keys": [
+        "artifacts",
+        "attempts",
+        "checks",
+        "course",
+        "document",
+        "enrollment_id",
+        "notebook_entries",
+        "provenance",
+        "revision",
+        "runtime",
+        "section",
+        "segments",
+        "sources",
+        "state"
+      ],
+      "ok": true,
+      "section": {
+        "evidence_target": "comprehension",
+        "last_opened_at": "2026-11-10T22:40:58.706256+00:00",
+        "objective_id": "obj_f636fecd67ba4d2d935b4dc83a190b3f",
+        "ordinal": 1,
+        "state": "not_started",
+        "title": "Read what a pack manifest declares"
+      },
+      "section_count": 0,
+      "state": "not_started",
+      "title": null
+    },
+    {
+      "artifact_count": 1,
+      "course_id": "crs_2dac95b6c3e94044a4681a564048a615",
+      "document_excerpt": "{\"schema_version\": 1, \"document_id\": \"doc_aba0b5e7024f9e7ad038\", \"content_hash\": \"sha256:aba0b5e7024f9e7ad038cd7e6e6ac481199186f0676ebd835ac43a515963bed3\", \"section_title\": \"Read the marks on a measuring jug\", \"objective_id\": \"obj_bccf5a7e8b8d46b0b2fb90529cbbe446\", \"state\": \"textbook_only\", \"view_note\": \"This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.\", \"views\": {\"textbook\": true, \"guided\": false, \"field_quest\": false, \"f",
+      "document_keys": [
+        "blocks",
+        "check_id",
+        "content_hash",
+        "document_id",
+        "objective_id",
+        "schema_version",
+        "section_title",
+        "source_ids",
+        "state",
+        "view_note",
+        "views"
+      ],
+      "error": null,
+      "keys": [
+        "artifacts",
+        "attempts",
+        "checks",
+        "course",
+        "document",
+        "enrollment_id",
+        "notebook_entries",
+        "provenance",
+        "revision",
+        "runtime",
+        "section",
+        "segments",
+        "sources",
+        "state"
+      ],
+      "ok": true,
+      "section": {
+        "evidence_target": "comprehension",
+        "last_opened_at": "2026-11-10T22:40:58.452047+00:00",
+        "objective_id": "obj_bccf5a7e8b8d46b0b2fb90529cbbe446",
+        "ordinal": 1,
+        "state": "not_started",
+        "title": "Read the marks on a measuring jug"
+      },
+      "section_count": 0,
+      "state": "not_started",
+      "title": null
+    },
+    {
+      "artifact_count": 3,
+      "course_id": "crs_ca677f23e16e465b8cad75168758f894",
+      "document_excerpt": "{\"schema_version\": 1, \"document_id\": \"doc_960fb722f31e0cf021a7\", \"content_hash\": \"sha256:960fb722f31e0cf021a7a8a11a6bd7dfd2067cccbf67ed69caa7d7136adf3adc\", \"section_title\": \"Tell everyday affection from a direct romantic declaration\", \"objective_id\": \"obj_b1a31394dced40cbab624a8f52566e28\", \"state\": \"textbook_only\", \"view_note\": \"This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.\", \"views\": {\"textbook\": true, \"guided\": false,",
+      "document_keys": [
+        "blocks",
+        "check_id",
+        "content_hash",
+        "document_id",
+        "objective_id",
+        "schema_version",
+        "section_title",
+        "source_ids",
+        "state",
+        "view_note",
+        "views"
+      ],
+      "error": null,
+      "keys": [
+        "artifacts",
+        "attempts",
+        "checks",
+        "course",
+        "document",
+        "enrollment_id",
+        "notebook_entries",
+        "provenance",
+        "revision",
+        "runtime",
+        "section",
+        "segments",
+        "sources",
+        "state"
+      ],
+      "ok": true,
+      "section": {
+        "evidence_target": "discrimination",
+        "last_opened_at": "2026-11-10T22:40:58.208535+00:00",
+        "objective_id": "obj_b1a31394dced40cbab624a8f52566e28",
+        "ordinal": 1,
+        "state": "not_started",
+        "title": "Tell everyday affection from a direct romantic declaration"
+      },
+      "section_count": 0,
+      "state": "not_started",
+      "title": null
+    }
+  ],
+  "library": {
+    "items": [
+      {
+        "course_id": "crs_9f332b88efd24a4c8bfe21d845ee9ce8",
+        "evidence_summary": {
+          "current_objective_id": "obj_f636fecd67ba4d2d935b4dc83a190b3f",
+          "independent": 0,
+          "review_due": 0,
+          "total_objectives": 2
+        },
+        "level_label": null,
+        "next_step": {
+          "kind": "start_lesson",
+          "label": "Start Read what a pack manifest declares"
+        },
+        "provenance": {
+          "pack_id": "technical-pack-literacy",
+          "pack_version": "2.1.0",
+          "source": "local"
+        },
+        "sections_total": 2,
+        "subtitle": null,
+        "title": "Reading a pack before you install it"
+      },
+      {
+        "course_id": "crs_2dac95b6c3e94044a4681a564048a615",
+        "evidence_summary": {
+          "current_objective_id": "obj_bccf5a7e8b8d46b0b2fb90529cbbe446",
+          "independent": 0,
+          "review_due": 0,
+          "total_objectives": 2
+        },
+        "level_label": null,
+        "next_step": {
+          "kind": "start_lesson",
+          "label": "Start Read the marks on a measuring jug"
+        },
+        "provenance": {
+          "pack_id": "parent-measurement-practice",
+          "pack_version": "2.0.0",
+          "source": "local"
+        },
+        "sections_total": 2,
+        "subtitle": null,
+        "title": "Measuring together: a kitchen lesson"
+      },
+      {
+        "course_id": "crs_ca677f23e16e465b8cad75168758f894",
+        "evidence_summary": {
+          "current_objective_id": "obj_b1a31394dced40cbab624a8f52566e28",
+          "independent": 0,
+          "review_due": 0,
+          "total_objectives": 4
+        },
+        "level_label": null,
+        "next_step": {
+          "kind": "start_lesson",
+          "label": "Start Tell everyday affection from a direct romantic declaration"
+        },
+        "provenance": {
+          "pack_id": "japanese-affection-context-l0",
+          "pack_version": "2.2.0",
+          "source": "local"
+        },
+        "sections_total": 4,
+        "subtitle": null,
+        "title": "Japanese register: affection and closeness"
+      }
+    ],
+    "ok": true,
+    "total": 3
+  },
+  "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5d477a1b"
+}

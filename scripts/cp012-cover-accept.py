@@ -256,7 +256,7 @@ def main() -> int:
 
     slugs = {"japanese-affection-context-l0": "japanese",
              "parent-measurement-practice": "parent",
-             "technical-demo-pack": "technical"}
+             "technical-pack-literacy": "technical"}
 
     prov_by_pack = {row["pack"]: row for row in prov["rows"]}
     swap_by_pack = {c["pack"]: c for c in swap["covers"]}

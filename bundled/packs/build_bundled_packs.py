@@ -1,8 +1,8 @@
-"""Reproducible builder for the bundled demonstration packs.
+"""Reproducible builder for the bundled packs.
 
 Run from the plugin root:
 
-    python3 bundled/packs/build_demo_packs.py
+    python3 bundled/packs/build_bundled_packs.py
 
 It rewrites each ``pack.json`` from the content files beside it, generating the relationship
 schematic for the Japanese pack deterministically (fixed geometry, fixed zlib level, fixed PNG
@@ -26,26 +26,22 @@ from coursebook import packs  # noqa: E402  (path is set above for direct execut
 
 JAPANESE = ROOT / "japanese-affection-context-l0"
 PARENT = ROOT / "parent-measurement-practice"
-#: H-196 — a third real fixture so the Workshop storefront is built from real packs, not invented
+#: H-196 — a third real course so the Workshop storefront is built from real packs, not invented
 #: cards. It teaches the pack contract this repository implements; every claim is a file in this
 #: tree, and the pack bundles no third-party text or media.
-TECHNICAL = ROOT / "technical-demo-pack"
+TECHNICAL = ROOT / "technical-pack-literacy"
 
 #: H-197 — the Press Plate lane. It composes a flat printed field deterministically and remains
 #: the typographic fallback for any pack that declares no cover. CP-014 moves the three bundled
-#: fixtures to the approved painted plate from `assets/art/covers/` as role ``cover``; the parent
+#: packs to the approved painted plate from `assets/art/covers/` as role ``cover``; the parent
 #: pack therefore moves to cb.pack v2 so it can carry a cover and a media[] link (its v1
 #: compatibility is covered by the in-memory v1 fixtures in tests/test_pack_media_import.py).
 COVER_CAPTION = "Cover plate — painted illustration, not a diagram of the course."
 #: CP-014. The approved painted plates are model output made through the host image tool. The
-#: record names the provider path and the model-id gap and makes no redistribution claim: the
-#: pack stays local_only and a wider use needs the operator's rights decision.
+#: operator directed the bundled courses to ship in the Workshop store on 2026-11-10, so the
+#: model output is redistributed under the pack's CC-BY-4.0 licence with this attribution.
 MODEL_COVER_ATTRIBUTION = (
-    "Painted cover plate generated through the host image_generate tool (nous image gateway, "
-    "media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No "
-    "third-party source text or media was supplied. No redistribution licence is declared for "
-    "this model output: the pack's redistribution stays local_only, and any wider use is an "
-    "operator rights decision, not a claim made here."
+    "Model-generated cover produced for this pack; no third-party source or media."
 )
 JAPANESE_COVER_TEXT = (
     "Painted cover plate: a paper ground with a cafe counter and stool across the lower part, a "
@@ -66,16 +62,16 @@ PARENT_COVER_TEXT = (
 
 FETCHED_AT = "2026-11-06"
 ORIGINAL = (
-    "Original teaching text and schematic: Coursebook demo pack. Sources are cited by link and "
+    "Original teaching text and schematic: Coursebook. Sources are cited by link and "
     "are not bundled; see sources[] and content/source-notes.md."
 )
 JAPANESE_ATTRIBUTION = (
-    "Original teaching text, relationship schematic and narration: Coursebook demo pack. The "
+    "Original teaching text, relationship schematic and narration: Coursebook. The "
     "cover plate is model output generated for this pack and is recorded with its provenance and "
     "rights position in the manifest; no third-party imagery is bundled. The narration clip is "
     "synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack "
     "maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see "
-    "sources[] and content/source-notes.md."
+    "sources[] and content/source-notes.md. " + MODEL_COVER_ATTRIBUTION
 )
 #: The one narration asset. It is committed as bytes (synthesis needs an offline neural engine that
 #: is not a build dependency) and re-hashed by this builder from the real file, so the manifest can
@@ -98,12 +94,14 @@ VISUAL_CAPTION = (
     "Relationship and register map: friend to casual (suki da yo); respected addressee to polite "
     "(suki desu); long-term partner to intimate (aishiteru)."
 )
-UNSPECIFIED_LICENSE = {
-    "id": "unspecified",
-    "redistribution": "local_only",
+BUNDLED_LICENSE = {
+    "id": "CC-BY-4.0",
+    "redistribution": "allowed",
     "note": (
-        "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; "
-        "the operator has not chosen a redistribution license. Linked sources are cited, not bundled."
+        "Operator-directed redistribution, 2026-11-10. The teaching text is original "
+        "Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop "
+        "store. Cover plates are model output produced for these packs; no third-party source "
+        "or media is included. Linked sources are cited, not bundled."
     ),
 }
 
@@ -438,7 +436,7 @@ def japanese_manifest() -> dict:
                 "(aishiteru). The schematic states that register is a function of addressee, "
                 "relationship and setting."
             ),
-            "description": "Relationship and register map drawn deterministically for the demo pack.",
+            "description": "Relationship and register map drawn deterministically for this pack.",
         },
         COVER_MASTER: {
             "mime": "image/png",
@@ -682,13 +680,13 @@ def japanese_manifest() -> dict:
     return packs.build_manifest(
         pack_id="japanese-affection-context-l0",
         pack_version="2.2.0",
-        title="Japanese affection and register — a Sample L0 classroom",
+        title="Japanese register: affection and closeness",
         subtitle="Four lines, three addressees, one decision: who is listening, how close, and where.",
         recipe="casual",
         locale="ja-JP",
         level_label="CEFR A1 · ab initio (L0)",
         minimum_coursebook_version="0.1.0",
-        # H-186: the release now ships v2 media playback, so the bundled demo declares its two
+        # H-186: the release now ships v2 media playback, so this bundled course declares its two
         # real assets as ``media[]`` links. A v1 document may not carry them (M1-M7 in packs.py).
         contract_version=2,
         media=[
@@ -711,22 +709,22 @@ def japanese_manifest() -> dict:
             },
         ],
         license={
-            **UNSPECIFIED_LICENSE,
+            **BUNDLED_LICENSE,
             "per_artifact": [
                 {
                     "path": COVER_MASTER,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": COVER_CROP,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": "content/relationship-map.png",
                     "license_id": "CC0-1.0",
-                    "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+                    "attribution": "Deterministic schematic generated by the Coursebook bundled pack builder; no third-party imagery.",
                 },
                 {
                     "path": NARRATION_PATH,
@@ -741,7 +739,7 @@ def japanese_manifest() -> dict:
         },
         attribution=JAPANESE_ATTRIBUTION,
         contributors=[
-            {"name": "Coursebook demo pack", "role": "author"},
+            {"name": "Coursebook", "role": "author"},
             {"name": "Kokoro-82M voice jf_alpha (synthetic; no human speaker)", "role": "narrator"},
         ],
         objectives=objectives,
@@ -775,7 +773,7 @@ def japanese_manifest() -> dict:
             "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack "
             "(content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role "
             "'cover'. The plate is model output generated for this pack; its provenance and its rights position "
-            "(no redistribution licence declared; local_only) are recorded per artifact. It is decorative: it "
+            "(CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. It is decorative: it "
             "carries no text and no register fact, and the relationship map remains the schematic. No wording, "
             "check or source changed, and no native-speaker review is claimed.",
         ],
@@ -892,13 +890,13 @@ def parent_manifest() -> dict:
     return packs.build_manifest(
         pack_id="parent-measurement-practice",
         pack_version="2.0.0",
-        title="Parent demo: measuring ingredients together",
+        title="Measuring together: a kitchen lesson",
         subtitle="A ten-minute parent-led measurement practice with a separate answer guide.",
         recipe="parent",
         locale="en-US",
         level_label="Age 8-10 · parent-led",
         minimum_coursebook_version="0.1.0",
-        # CP-014: 2.0.0 moves this fixture to cb.pack v2 so it can carry the approved painted
+        # CP-014: 2.0.0 moves this pack to cb.pack v2 so it can carry the approved painted
         # cover as role ``cover`` through one media[] link. The v1 import path keeps its own
         # in-memory fixtures; this bundled pack is the parent-led course, not a schema exhibit.
         contract_version=2,
@@ -910,27 +908,27 @@ def parent_manifest() -> dict:
             },
         ],
         license={
-            **UNSPECIFIED_LICENSE,
+            **BUNDLED_LICENSE,
             "per_artifact": [
                 {
                     "path": COVER_MASTER,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": COVER_CROP,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
             ],
         },
         attribution=(
-            "Original teaching text: Coursebook demo pack. The cover plate is model output "
+            "Original teaching text: Coursebook. The cover plate is model output "
             "generated for this pack and is recorded with its provenance and rights position in "
-            "the manifest; no third-party text or imagery is bundled. Sources are cited by link "
-            "and are not bundled; see sources[] and content/source-notes.md."
+            "the manifest; no third-party text or imagery is bundled. " + MODEL_COVER_ATTRIBUTION +
+            " Sources are cited by link and are not bundled; see sources[] and content/source-notes.md."
         ),
-        contributors=[{"name": "Coursebook demo pack", "role": "author"}],
+        contributors=[{"name": "Coursebook", "role": "author"}],
         objectives=objectives,
         files=files,
         file_metadata=metadata,
@@ -1071,15 +1069,15 @@ def technical_manifest() -> dict:
         },
     ]
     return packs.build_manifest(
-        pack_id="technical-demo-pack",
+        pack_id="technical-pack-literacy",
         pack_version="2.1.0",
-        title="Technical demo: reading a pack before you install it",
+        title="Reading a pack before you install it",
         subtitle="Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
         recipe="one_off",
         locale="en-US",
         level_label="Technical · for pack readers",
         minimum_coursebook_version="0.1.0",
-        # H-197: 2.0.0 moves this fixture to cb.pack v2 so it can carry the one composed cover
+        # H-197: 2.0.0 moves this pack to cb.pack v2 so it can carry the one composed cover
         # plate through media[]. The cover is the pack's only media and it is decorative.
         contract_version=2,
         media=[
@@ -1090,34 +1088,34 @@ def technical_manifest() -> dict:
             },
         ],
         license={
-            "id": "CC0-1.0",
-            "redistribution": "local_only",
+            **BUNDLED_LICENSE,
             "note": (
-                "Original Coursebook-authored teaching text about this repository's own pack "
-                "contract. The cover plate is model output generated for this pack and carries no "
-                "redistribution licence of its own; the pack stays local_only. No third-party text "
-                "or media is bundled; the repository files it cites are read locally by the pack "
-                "maintainer, not redistributed."
+                "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored "
+                "teaching text about this repository's own pack contract, licensed CC-BY-4.0 "
+                "for distribution in the Workshop store. The cover plate is model output "
+                "produced for this pack. No third-party text or media is included; the "
+                "repository files it cites are read locally by the pack maintainer, not "
+                "redistributed."
             ),
             "per_artifact": [
                 {
                     "path": COVER_MASTER,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": COVER_CROP,
-                    "license_id": "unspecified",
+                    "license_id": "CC-BY-4.0",
                     "attribution": MODEL_COVER_ATTRIBUTION,
                 },
             ],
         },
         attribution=(
-            "Original teaching text: Coursebook demo pack. The cover plate is model output "
+            "Original teaching text: Coursebook. The cover plate is model output "
             "generated for this pack and is recorded with its provenance and rights position in "
-            "the manifest. No third-party text or media is bundled."
+            "the manifest. No third-party text or media is bundled. " + MODEL_COVER_ATTRIBUTION
         ),
-        contributors=[{"name": "Coursebook demo pack", "role": "author"}],
+        contributors=[{"name": "Coursebook", "role": "author"}],
         objectives=objectives,
         files=files,
         file_metadata=metadata,
@@ -1128,14 +1126,14 @@ def technical_manifest() -> dict:
             "quotes no third-party text.",
             "The pack claims no human review and no native-speaker or expert review: its checks are "
             "recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
-            "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
+            "This course is about the pack format. It teaches the pack format, not the subject of any other pack.",
             "2.0.0 added one composed Press Plate cover (content/cover-16x9.png with its 3:2 crop) and moved "
             "the document to cb.pack v2 so the plate could be linked through media[]. The plate was "
             "decorative: it was not a diagram of the manifest schema and stated no field, count or rule.",
             "2.1.0 replaces the Press Plate cover with the approved painted plate for this pack "
             "(content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role "
             "'cover'. The plate is model output generated for this pack; its provenance and rights position "
-            "(no redistribution licence declared; local_only) are recorded per artifact. Its pages are blank: "
+            "(CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. Its pages are blank: "
             "it states no field, count or rule, and no lesson depends on seeing it.",
         ],
         safety_notes=[

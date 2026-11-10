@@ -32,7 +32,7 @@ class CatalogDocumentTests(unittest.TestCase):
         self.assertEqual(len(entries), 3)
         self.assertEqual(
             sorted(entry["pack_id"] for entry in entries),
-            ["japanese-affection-context-l0", "parent-measurement-practice", "technical-demo-pack"],
+            ["japanese-affection-context-l0", "parent-measurement-practice", "technical-pack-literacy"],
         )
 
     def test_every_entry_matches_its_manifest_and_verifies(self) -> None:
@@ -107,9 +107,9 @@ class InstallTests(KernelCase):
         self.assertEqual(library["result"]["total"], 1)
 
     def test_install_does_not_touch_learner_history(self) -> None:
-        first = workshop.install("technical-demo-pack")
+        first = workshop.install("technical-pack-literacy")
         before = self.dispatch("library.list", {"filter": "all", "limit": 50})["result"]["items"][0]
-        again = workshop.install("technical-demo-pack")
+        again = workshop.install("technical-pack-literacy")
         after = self.dispatch("library.list", {"filter": "all", "limit": 50})["result"]["items"][0]
         self.assertEqual(again["enrollment_id"], first["enrollment_id"])
         self.assertEqual(before["updated_at"], after["updated_at"])
@@ -125,7 +125,7 @@ class InstallTests(KernelCase):
 
     def test_install_is_the_only_write_and_carries_no_learner_data(self) -> None:
         """The install result names the course, never a transcript, note or attempt."""
-        result = workshop.install("technical-demo-pack")
+        result = workshop.install("technical-pack-literacy")
         forbidden = {"transcript", "notes", "attempts", "mastery", "reflections", "credentials", "path"}
         self.assertEqual(forbidden & set(result), set())
         self.assertNotIn("path", json.dumps(result).lower())

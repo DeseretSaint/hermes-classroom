@@ -102,7 +102,7 @@ by stamping `PACK` onto a copy of a tile and requiring a hit.
 | `texture-sheet-<mode>.stamp.json` | commit, branch, engine, tile hashes and sizes, seam and contrast rows, text source and hash, sheet hash |
 
 The sheet's body text is the bundled technical pack's own teaching prose
-(`bundled/packs/technical-demo-pack/content/section-01-anatomy.md`), not copy written for the
+(`bundled/packs/technical-pack-literacy/content/section-01-anatomy.md`), not copy written for the
 sheet. The stamp records its hash.
 
 ## Honesty note on the evidence

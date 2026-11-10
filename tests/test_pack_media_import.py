@@ -27,7 +27,7 @@ from tests.kernel_support import KernelCase
 
 ROOT = Path(__file__).resolve().parent.parent
 JAPANESE = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
-TECHNICAL = ROOT / "bundled" / "packs" / "technical-demo-pack"
+TECHNICAL = ROOT / "bundled" / "packs" / "technical-pack-literacy"
 
 NARRATION = "content/narration-polite-confession.mp3"
 VISUAL = "content/relationship-map.png"
@@ -454,7 +454,7 @@ class CoverArtifactScopeTest(PackMediaCase):
 
     def test_cover_resolution_is_scoped_to_the_course_pack_version(self) -> None:
         spec = importlib.util.spec_from_file_location(
-            "cp014_build_demo_packs", ROOT / "bundled" / "packs" / "build_demo_packs.py"
+            "cp014_build_bundled_packs", ROOT / "bundled" / "packs" / "build_bundled_packs.py"
         )
         assert spec is not None and spec.loader is not None
         builder = importlib.util.module_from_spec(spec)
@@ -496,7 +496,7 @@ class CoverArtifactScopeTest(PackMediaCase):
                 by_version[str(provenance["pack_version"])] = str(row["id"])
         self.assertEqual(sorted(by_version), ["2.0.0", "2.1.0"])
         with db.read() as connection:
-            served = workshop.pack_cover_artifact(connection, new["course_id"], "technical-demo-pack")
+            served = workshop.pack_cover_artifact(connection, new["course_id"], "technical-pack-literacy")
         self.assertEqual(served, by_version["2.1.0"], "the course's own version supplies its plate")
 
 

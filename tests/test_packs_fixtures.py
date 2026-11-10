@@ -1,4 +1,4 @@
-"""Fixture validation: the demo packs match their builder, honour the L0 script policy, and
+"""Pack validation: the bundled packs match their builder, honour the L0 script policy, and
 never place the answer key on a learner page."""
 
 from __future__ import annotations
@@ -14,16 +14,16 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "bundled" / "packs"
 JAPANESE = PACKS / "japanese-affection-context-l0"
 PARENT = PACKS / "parent-measurement-practice"
-BUILDER = PACKS / "build_demo_packs.py"
+BUILDER = PACKS / "build_bundled_packs.py"
 
 CJK = re.compile(r"[\u3040-\u30ff\u4e00-\u9fff]")
 LATIN = re.compile(r"[A-Za-z]{2,}")
 
 
 def load_builder():
-    spec = importlib.util.spec_from_file_location("coursebook_demo_pack_builder", BUILDER)
+    spec = importlib.util.spec_from_file_location("coursebook_bundled_pack_builder", BUILDER)
     if spec is None or spec.loader is None:
-        raise RuntimeError("cannot load the demo pack builder")
+        raise RuntimeError("cannot load the bundled pack builder")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -38,7 +38,7 @@ class BuilderTests(unittest.TestCase):
         for directory, build in (
             (JAPANESE, self.builder.japanese_manifest),
             (PARENT, self.builder.parent_manifest),
-            (PACKS / "technical-demo-pack", self.builder.technical_manifest),
+            (PACKS / "technical-pack-literacy", self.builder.technical_manifest),
         ):
             with self.subTest(pack=directory.name):
                 committed = packs.load_manifest(directory / "pack.json")
@@ -156,8 +156,9 @@ class JapanesePackTests(unittest.TestCase):
             },
         )
 
-    def test_title_labels_the_sample_and_avoids_ticket_names(self) -> None:
-        self.assertIn("Sample", self.manifest["title"])
+    def test_title_is_a_course_title_and_avoids_ticket_names(self) -> None:
+        self.assertEqual(self.manifest["title"], "Japanese register: affection and closeness")
+        self.assertNotRegex(self.manifest["title"], r"(?i)demo|sample|fixture")
         printed = " ".join(
             [self.manifest["title"], self.manifest.get("subtitle") or ""]
             + list(self.manifest.get("content_notes") or [])
@@ -211,10 +212,10 @@ class JapanesePackTests(unittest.TestCase):
         self.assertTrue(visual["text_equivalent"])
         self.assertTrue(any(item["path"] == visual["path"] for item in self.manifest["license"]["per_artifact"]))
 
-    def test_licence_is_unset_for_local_use_not_assumed(self) -> None:
-        self.assertEqual(self.manifest["license"]["id"], "unspecified")
-        self.assertEqual(self.manifest["license"]["redistribution"], "local_only")
-        self.assertIn("operator has not chosen", self.manifest["license"]["note"])
+    def test_licence_is_cc_by_for_store_redistribution(self) -> None:
+        self.assertEqual(self.manifest["license"]["id"], "CC-BY-4.0")
+        self.assertEqual(self.manifest["license"]["redistribution"], "allowed")
+        self.assertIn("Operator-directed redistribution, 2026-11-10", self.manifest["license"]["note"])
 
     def test_narration_asset_is_declared_licensed_and_not_a_stub(self) -> None:
         narration = next(entry for entry in self.manifest["files"] if entry["role"] == "narration")
@@ -282,7 +283,7 @@ class ParentPackTests(unittest.TestCase):
         self.assertEqual(self.manifest["recipe"], "parent")
         roles = {entry["role"] for entry in self.manifest["files"]}
         self.assertEqual(roles, {"learner_page", "answer_guide", "parent_guide", "cover"})
-        self.assertEqual(self.manifest["license"]["redistribution"], "local_only")
+        self.assertEqual(self.manifest["license"]["redistribution"], "allowed")
 
 
 if __name__ == "__main__":

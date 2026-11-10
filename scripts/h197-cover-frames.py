@@ -46,7 +46,7 @@ base.OUT = OUT
 base.SITE = SITE
 base.HTML_DIR = HTML_DIR
 
-COVER_PACKS = ("japanese-affection-context-l0", "technical-demo-pack")
+COVER_PACKS = ("japanese-affection-context-l0", "technical-pack-literacy")
 
 
 def _envelope(method: str, payload: dict) -> dict:
