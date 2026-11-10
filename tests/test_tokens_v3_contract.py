@@ -763,6 +763,9 @@ class CrossDocumentParityTest(unittest.TestCase):
             for match in list(SIZE_BEFORE.finditer(plain)) + list(SIZE_AFTER.finditer(plain)):
                 pair = (float(match.group(1)), float(match.group(2)))
                 self.assertIn(pair, allowed, f"SPEC-V3.md:{number} cites {match.group(0)!r}, not a contract step")
+            for match in RETIRED_NAME_WITH_SIZE.finditer(plain):
+                self.fail(f"SPEC-V3.md:{number} cites the retired step {match.group(0)!r} with a size")
+
     def test_copy_deck_s9_type_rows_are_the_contracts_six_steps(self) -> None:
         # The deck is load-bearing: CP-020b paints these rows, and tests/test_cp_spec.py resolves
         # copy ids to rows. A row that names a retired step, quotes a v2 size or sources a path the
