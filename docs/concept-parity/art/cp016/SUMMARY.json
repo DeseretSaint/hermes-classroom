@@ -1,0 +1,17 @@
+{
+  "card": "CP-016",
+  "topics": [
+    {
+      "topic": "technical-brake-bleed",
+      "grammar": "workshop_manual",
+      "plates": 7,
+      "sheet": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/technical-brake-bleed/contact-sheet.png"
+    },
+    {
+      "topic": "creative-fingerpicking",
+      "grammar": "studio_bench",
+      "plates": 7,
+      "sheet": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_483a0af4/docs/concept-parity/art/cp016/creative-fingerpicking/contact-sheet.png"
+    }
+  ]
+}

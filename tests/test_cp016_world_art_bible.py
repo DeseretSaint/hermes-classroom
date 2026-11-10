@@ -155,7 +155,7 @@ class ArtBibleMediumTest(unittest.TestCase):
                 self.assertIn("dark-brown ink contour", body)
                 self.assertIn("upper left", body)
                 self.assertIn("above the horizon", body)
-                self.assertIn("at most five pigments", body)
+                self.assertIn("at most five of them plus the drawn line", body)
                 self.assertIn("quiet", body)
                 self.assertIn("never by the image", body)
                 # GM-003: the prompt body is digit-free; a hex or a measurement is a leak. The

@@ -42,9 +42,10 @@ DEFAULT_GRAMMAR = "field_atlas"
 #: no digits at all (GM-003: a digit in the body is a leaked measurement until proven otherwise),
 #: so values live in ``ART_BIBLE_PIGMENTS`` for provenance and the plate speaks pigment names.
 ART_BIBLE_MEDIUM = (
-    "opaque gouache on a warm paper ground, flat brush-shaped marks inside each mass, "
-    "subtle paper grain over the whole plate, a dark-brown ink contour drawn last over the "
-    "paint, never black and never close to neutral black"
+    "a storybook opaque gouache illustration, thick body colour on a warm paper "
+    "ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole "
+    "plate, a dark-brown ink contour drawn last over the paint, never black and never close to "
+    "neutral black; matte paint with body, not vector art and not a flat digital cartoon"
 )
 
 #: One soft key from the upper left, about a third of the way above the horizon (ART-BIBLE §1).
@@ -574,6 +575,12 @@ _NEGATIVE = (
     "no watermarks",
     "no UI chrome, buttons or frames",
     "no answer content, check text or rubric",
+    "no typography or lettering of any kind",
+    "no signage, poster text or hand-lettered mark",
+    "no pseudo-text, gibberish lettering or symbols that resemble letters",
+    "no signboards, wall signs or printed labels",
+    "no course title, caption or label painted in the art",
+    "no words copied from this prompt",
     "no mascot other than the fox",
     "no robots",
     "no gradient, glow or glass",
@@ -659,7 +666,7 @@ def build_prompt(
     # procedure, or another art direction's scene. The same predicate (`_plate_text_problems`)
     # drives the refusal in `presentation_motif_problems()`, so the prompt and the fence agree
     # by construction. The stored WorldBrief stays verbatim and the cache key is unchanged.
-    subject = _plate_safe(typed.title.strip(), record.name, fallback=record.label)
+    subject = _plate_safe(typed.title.strip(), record.name, fallback="")
     capability = _plate_safe(typed.end_capability.strip(), record.name, fallback="")
     # Authored grammar cues are trusted text; a caller's or a plan's motif is fenced. Dropping
     # one unsafe motif leaves the grammar's own place cues carrying the scene.
@@ -677,6 +684,7 @@ def build_prompt(
     # reported as none.
     service = typed.needs_service_grammar or record.name == "workshop_manual"
     section_clause = ""
+    section_lettering_negative = ""
     if role == "section":
         if not section_id:
             raise WorldPolicyViolation(
@@ -690,17 +698,13 @@ def build_prompt(
                 "sequence or tool action depicted."
             )
         else:
-            # A section title is course text and reaches the plate verbatim, so it is held to
-            # the same fence as every other interpolation site: an unsafe title (a number or
-            # answer instruction, a procedure, or another art direction's scene) is dropped and
-            # the scene falls back to the grammar's place cues. The section card itself gets
-            # the real typed title from the UI.
+            # A section title is course text. Carry it only as a suppression instruction: a
+            # positive clause is painted as a heading by the image model, which breaks the
+            # textless rule. The section card gets the real typed title from the UI.
             safe_title = _plate_safe(section_title, record.name, fallback=None)
-            section_clause = (
-                f" Section scene {section_id}"
-                + (f" about {safe_title}" if safe_title else "")
-                + "."
-            )
+            section_clause = f" Section scene {section_id}."
+            if safe_title:
+                section_lettering_negative = f"no lettering of the words {safe_title.lower()}"
 
     negative: list[str] = list(_NEGATIVE)
     for item in WORLD_PROMPT_FORBIDDEN:
@@ -720,24 +724,31 @@ def build_prompt(
         for item in typed.forbidden:
             if _plate_safe(item, record.name, fallback=None) is not None:
                 negative.append(f"no {item}")
+    # The GM-003 fence requires the grammar label to survive a fenced title. Carry it only as a
+    # suppression instruction: a positive "workshop manual" line reads as a sign to the model.
+    negative.append(f"no {record.label.lower()} lettering or sign")
+    if section_lettering_negative:
+        negative.append(section_lettering_negative)
 
     body = (
-        f"Textless {role.replace('_', ' ')} plate, {record.label.lower()} visual grammar. "
-        f"Course subject: {subject}"
-        + (f" — the learner will {capability}." if capability else ".")
+        f"Textless painted {role.replace('_', ' ')} plate. "
+        + (f"The picture shows {subject.lower()}. " if subject else "")
         + f"{section_clause} "
-        f"Audience: {audience}. Tone: {tone}. "
-        f"Subject-specific motifs: {motif_text}. "
-        f"Composition: {record.composition}. "
-        f"Palette: {', '.join(_spoken(item) for item in chosen_palette)}. "
-        f"At most five pigments plus the drawn line; no pigment outside the art-bible table. "
-        f"Medium: {chosen_medium}. "
-        f"Light: {chosen_light}. "
-        f"Line: {ART_BIBLE_LINE}. "
+        f"The scene includes {motif_text}. "
+        f"It is composed as {record.composition}. "
+        f"The pigments are {', '.join(_spoken(item) for item in chosen_palette)}, and there are "
+        f"at most five of them plus the drawn line; no pigment outside the art-bible table. "
+        f"It is painted as {chosen_medium}. "
+        f"Light comes from {chosen_light}. "
+        f"The contour is {ART_BIBLE_LINE}. "
         f"Leave a quiet, low-detail field for the real typed headline and controls; "
         f"all type is supplied by the product UI, never by the image. "
-        f"Illustration role: {record.illustration_role}. "
-        f"Hard negatives: {'; '.join(negative)}."
+        f"The plate contains no words at all: no title, no caption, no sign, no label, "
+        f"no lettering, no typography and no pseudo-text. "
+        f"Keep the background plain warm paper; no signboards and no printed surfaces. "
+        f"This art is only for orientation and mood; {record.illustration_role}. "
+        f"This plate is for {audience.lower()}, and the mood is {tone.lower()}. "
+        f"Avoid everything in this list: {'; '.join(negative)}."
     )
     payload = {
         "prompt_version": PROMPT_VERSION,
