@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v23.json` | 23 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v24.json` | 24 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
@@ -1649,6 +1649,7 @@ Consequences for clients (H-117 and the retry surface):
 | v21 | 2026-11-09 | GM-009 additive amendment: the game-only engagement layer reaches the wire. Two methods appended — `engagement.read` (Game header read model: `xp_total`, cosmetic `level`, `Game progress`, bounded `recent_events`; refused outside a `game` course) and `engagement.award` (one XP event for a named real action, idempotent per `(enrollment_id, action_kind, action_id)`). No existing method, request shape, response key, error code, job kind, vocabulary value or `additionalProperties` moves; `cb.db` stays v13. `rpc.v20.json` is byte-identical and `x-supersedes` names it. The remaining Game Mode method names stay frozen in `coursebook/gm_contract.py`. |
 | v22 | 2026-11-09 | GM-011 additive amendment: the lesson-bound tutor reaches the wire. Two methods appended — `tutor.ask` (one bounded, cited answer for one lesson run; no tools; context excludes answer keys/checks/rubric/attempts; `state` is `answered`, `answer_withheld` or `provider_failure`; never writes an attempt, transition or evidence row) and `tutor.history` (the persisted thread read). `practice` mode reuses the existing `practice_sessions`/`practice_turns` engine and grader, so only learner turns can produce a verdict. No existing method, request shape, response key, error code, job kind, vocabulary value or `additionalProperties` moves; `cb.db` stays v13. `rpc.v21.json` is byte-identical (pinned by sha256) and `x-supersedes` names it. |
 | v23 | 2026-11-09 | GM-005 additive amendment: the Parent Studio take-home pack backend reaches the wire on top of GM-011's v22. Six methods appended — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`, exactly the names and field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. A take-home pack is a rendered print artifact bound to `source_course_id` / `source_objective_id` / `source_lesson_version` / `content_hash`; it is not a course, not a `cb.pack` and not a `course.export`, and it carries no attempts, tutor turns, notes or private observations. The learner page and the parent-only answer guide are separate artifacts and approval is fenced on the exact previewed pages. No v1-v22 method, request shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; `cb.db` moves to v14 only in storage (one unique key removed from `takehome_packs`, see the cb.db v14 delta). `rpc.v22.json` is byte-identical (sha256 `c187728add6c508d5643e42225a64766d4b887cfce58250fb45d04707b6eb956`) and `x-supersedes` names it; v22 remains GM-011's tutor delta unchanged. |
+| v24 | 2026-11-09 | GM-007 additive amendment: the away-from-screen homework domain reaches the wire on top of GM-005's v23. Four methods appended — `homework.create`, `homework.read`, `homework.complete` and `homework.skip`, exactly the names and field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`. One task, one target, one context and one observable success criterion in 3-10 minutes; `homework.create` refuses a generic duration card, multiple targets, surveillance and graded completion with `POLICY_VIOLATION` and a named `details.reason`. `homework.complete` records `self_reported_done` or `parent_reported_done` — never a pass, a score, a mastery claim or an XP award — and a parent-reported task is not independent verification. No attempt, transition, evidence, notebook or engagement row is written by any of the four. Added `$defs.homework_task` and the two completion states; no v1-v23 method, request shape, required key, `$defs` entry, error code, job kind, answer kind, verdict, evidence class or vocabulary value is removed or retyped, and `cb.db` stays v14 (the domain uses the `homework_tasks`/`homework_events` tables frozen by GM-001). `rpc.v23.json` is byte-identical (sha256 `b8988994d36cf7e422da0010ed157d3c4ff7dd69b5f8453e9bd7da8b8b4d3182`) and `x-supersedes` names it; v23 remains GM-005's take-home delta unchanged. |
 | no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
@@ -2385,6 +2386,41 @@ Regression guard: `tests/test_gm_contract.py::GmTakeHomeRevisionScopeTest` pins 
 append-only migration plan, and a real v13-to-v14 round trip on a disposable database proving
 three existing pack rows survive byte-identical and a second draft at revision 0 can be inserted
 for the same source slot.
+
+## v24 delta (GM-007) — four homework methods, an away-from-screen task with a reported completion
+
+`cb.rpc` v24 is v23 (GM-005's take-home family) with **one family appended**: `homework.create`,
+`homework.read`, `homework.complete` and `homework.skip`, exactly the names and field tuples frozen
+in `coursebook/gm_contract.py::GM_RPC_METHODS`. No v1-v23 method, request shape, required key,
+`$defs` entry, error code, job kind, answer kind, verdict, evidence class or vocabulary value is
+removed or retyped; `cb.errors`, `cb.jobs`, `cb.pack`, `cb.projection` and `cb.db` (v14) are
+untouched — the domain uses the `homework_tasks` and `homework_events` tables GM-001 froze.
+`rpc.v23.json` stays byte-identical on disk (sha256
+`b8988994d36cf7e422da0010ed157d3c4ff7dd69b5f8453e9bd7da8b8b4d3182`) and `x-supersedes` names it.
+
+What the four commands mean, and what they cannot mean:
+
+- **`homework.create`** proposes *one* task for one objective: one target, one context, one
+  observable success criterion, at most three steps and 3-10 minutes. It is sourced from the
+  lesson's authored away-from-screen block and refused otherwise with `POLICY_VIOLATION` and a
+  named `details.reason` — `generic_task` (a duration is not a task), `multiple_targets`,
+  `surveillance` (photo, recording, geolocation), `graded_completion`, `no_transfer_target` (a
+  recall or comprehension objective earns no homework), `unsourced_target`, `minutes_out_of_range`.
+- **`homework.read`** returns the task, its append-only event trail, its cited sources and the
+  one-page sheet. It is the notebook and Parent Studio view; it is not a course and not a chat
+  thread, and it returns no attempts, notes, tutor turns or engagement.
+- **`homework.complete`** writes `self_reported_done` or `parent_reported_done` — the learner's
+  report or the parent's report — with one `homework_events` row. It never writes a pass, a
+  transition, an evidence class, a score or mastery, and `completion.independent_verification` is
+  always `false`: a parent-reported task is not independent verification, and a later retrieval
+  check is a separate object.
+- **`homework.skip`** records an honest skip with no penalty, no streak loss and no fabricated
+  completion. Game-mode XP is `engagement.award`'s business and never appears in the task or its
+  sheet.
+
+Regression guard: `tests/test_contracts.py::V24AmendmentTest` pins v23 as byte-identical history,
+the exact four appended names, the closed/bounded payloads, and a `homework_task` definition that
+cannot carry `grade`, `score`, `mastery`, `verdict`, `xp`, `points` or `streak`.
 
 ## v23 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
 

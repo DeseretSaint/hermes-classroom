@@ -48,6 +48,7 @@ from . import (
     review,
     sources as source_ledger,
     takehome as takehome_pack,
+    homework as homework_domain,
     validators,
 )
 from .api import RpcError
@@ -75,6 +76,9 @@ HANDLERS.update(pronunciation.HANDLERS)
 # module reads the live contract, so a build without the six takehome.* methods stays
 # NOT_IMPLEMENTED instead of inventing a method.
 HANDLERS.update(takehome_pack.HANDLERS)
+# GM-007: the away-from-screen commands register the same way. A build whose wire contract does
+# not carry homework.* stays NOT_IMPLEMENTED rather than inventing a homework surface.
+HANDLERS.update(homework_domain.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
 KERNEL_METHODS: tuple[str, ...] = (
@@ -123,6 +127,10 @@ KERNEL_METHODS: tuple[str, ...] = (
     "takehome.approve",
     "takehome.export",
     "takehome.read",
+    "homework.create",
+    "homework.read",
+    "homework.complete",
+    "homework.skip",
 )
 
 MAX_PAGE = 500
