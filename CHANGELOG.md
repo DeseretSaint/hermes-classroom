@@ -68,6 +68,18 @@ summarises those records and does not re-verify them.
   without the seam is reported as unbounded instead of silently uncapped. No contract or schema
   change. Evidence: `docs/GENERATION.md` §2, `tests/test_h192c_validator_output_bound.py`,
   `audit/adversarial/live-generation-2026-11-08-h192/STATUS-h192c.md`.
+- CP-044 (job attempt deadline): a generation job had per-call deadlines but no deadline of its
+  own, so calls that each finished "in time" still kept the row `running` past half an hour
+  (CP-015 checkpoint 4: a 648 s plan attempt). Each job attempt now carries one wall-clock budget
+  (`COURSEBOOK_JOB_DEADLINE_SECONDS`, default 1800 s); every bounded foreign call inside a stage is
+  clamped to what is left of it, so the in-flight request is cancelled at whichever bound arrives
+  first. On expiry the row is failed with the existing `HOST_UNAVAILABLE` shape (`details.job_deadline:
+  true`, `deadline_s` = remaining budget) and the lease is released; plan jobs now record the
+  `gen_call_waits` liveness rows the lesson stage already had. No contract or schema change.
+  The 648 s CP-015 row was re-measured: its `coursebook.plan.generate` call answered in 469 s with
+  22 256 output tokens inside its own 900 s bound — the defect was the missing job budget, not a
+  deadline that failed to fire. Evidence: `probes/cp044-job-deadline.py`,
+  `tests/test_cp044_job_deadline_hanging_provider.py`, `docs/ARCHITECTURE.md` §8.1.
 
 - H-194e: a page-title revision of a section lost its check and became unexportable. `lesson.revise`
   now copies the previous revision's `gen_lesson_checks` binding to the new `gen_lessons` row (the

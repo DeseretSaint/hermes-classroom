@@ -233,19 +233,34 @@ plugin now enforces its own wall clock in `coursebook/deadline.py`:
 | Seam | Bound | Typed failure |
 | --- | --- | --- |
 | `ctx.llm` provider call | `PROVIDER_TIMEOUT_SECONDS[purpose]` (env-overridable) | `ProviderTimeout` |
+| any of the above, inside a job attempt | `min(purpose bound, remaining attempt budget)` (`COURSEBOOK_JOB_DEADLINE_SECONDS`, default 1800 s) | `ProviderTimeout` with `details.job_deadline: true` |
 | `ctx.dispatch_tool("web_search"/"web_extract")` | 45 s / 60 s (`COURSEBOOK_WEB_*_TIMEOUT_SECONDS`) | `ResearchTimeout` (a `ResearchUnavailable`) |
 | `ctx.dispatch_tool("image_generate"/"text_to_speech")` | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, degraded to text |
 
 Two mechanisms, chosen so the normal path leaks nothing:
 
-* **Coroutines are cancelled.** When the host exposes `acomplete_structured`, the adapter runs it
-  under `asyncio.wait_for` on the pump's worker thread. At the deadline the coroutine is cancelled;
-  no thread is parked.
+* **Coroutines are cancelled.** When the host exposes `acomplete_structured`, the adapter runs it on
+  a supervised daemon thread with its own event loop, and the *calling* thread waits on an event
+  bounded by the deadline. At the deadline the coroutine's task is cancelled — the in-flight
+  request is closed, not abandoned — and the caller returns; no thread is parked in the caller.
 * **Synchronous calls use a capped pool.** `ctx.dispatch_tool` is synchronous and cannot be
   interrupted from Python. Calls run on a small set of reused daemon workers
   (`BoundedCallPool`, 4 by default). A timed-out call abandons its worker until it returns, and that
   slot counts against the cap; when every slot is stuck the next call fails fast with a typed
-  unavailable error instead of opening more threads. Normal calls reuse one worker.
+  unavailable error instead of opening more threads. Normal calls reuse one worker. This is the one
+  shape where the socket is abandoned rather than closed: Python offers no way to interrupt it, and
+  the host's own `timeout=` remains the only cancel for it.
+
+The **job attempt** has a bound of its own (CP-044). Per-call deadlines are not a job deadline: a
+plan attempt runs two author/validate rounds, so calls that each finished "in time" could still keep
+the row `running` for over half an hour (CP-015 checkpoint 4 measured a 648 s attempt). The job
+runner now declares one wall-clock budget per attempt (`COURSEBOOK_JOB_DEADLINE_SECONDS`) and every
+bounded call inside a stage is clamped to what is left of it, so the in-flight request is cancelled
+at whichever bound arrives first. On expiry the row is failed with the contract's existing
+`HOST_UNAVAILABLE` shape — `details` carry the stage, the elapsed time, `deadline_s` (the remaining
+budget) and `job_deadline: true` — and the lease is released by the same `fail` path a stage failure
+uses. Plan jobs now also record the per-call liveness rows (`gen_call_waits`) the lesson stage
+already had, so a job waiting on a slow provider is visible as *waiting* rather than as a dead row.
 
 A first research timeout ends that research pass (`run_research` breaks instead of spending the
 rest of the query budget on a stuck tool); the ledger records the failure and no source is invented.

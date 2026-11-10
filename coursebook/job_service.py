@@ -32,6 +32,7 @@ from typing import Any, Callable, Iterable, Sequence
 
 from . import contracts
 from . import db
+from . import deadline as deadline_mod
 from . import jobs as jobs_contract
 from .api import RpcError
 from .research import ResearchCancelled
@@ -41,6 +42,14 @@ logger = logging.getLogger("coursebook.job_service")
 #: Lease length. Short enough that a killed process is detected within one poll interval, long
 #: enough that a slow provider call does not lose its fence between heartbeats.
 LEASE_SECONDS = 120
+
+#: Seconds one job **attempt** may run before the in-flight provider call is cancelled and the
+#: job is failed (CP-044). Per-call deadlines are not a job deadline: a plan attempt runs two
+#: author/validate rounds, so bounded calls that each finish "in time" can still keep the row
+#: ``running`` for well over half an hour. Resolved from ``COURSEBOOK_JOB_DEADLINE_SECONDS`` when
+#: a deployment sets it; the value travels into every bounded call as the *remaining* budget.
+JOB_DEADLINE_SECONDS = deadline_mod.JOB_DEADLINE_SECONDS
+JOB_DEADLINE_ENV = deadline_mod.JOB_DEADLINE_ENV
 
 #: Identity of this process's worker. Random per process: never a hostname or pid, which can be
 #: reused and would make two workers look like one.
@@ -57,6 +66,27 @@ _MAX_ERROR_TEXT = 500
 
 def _now(moment: datetime | None = None) -> datetime:
     return moment or datetime.now(timezone.utc)
+
+
+def job_deadline_seconds() -> float:
+    """The attempt budget for this deployment: env override, else the declared default.
+
+    A malformed or non-positive override is logged and the default kept, exactly as the provider
+    deadlines behave: a typo must not silently remove the bound (CP-044).
+    """
+    raw = os.environ.get(JOB_DEADLINE_ENV)
+    default = float(JOB_DEADLINE_SECONDS)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        value = float(str(raw).strip())
+    except (TypeError, ValueError):
+        logger.warning("coursebook: ignoring %s=%r (not a number); using %.0fs", JOB_DEADLINE_ENV, raw, default)
+        return default
+    if value <= 0:
+        logger.warning("coursebook: ignoring %s=%r (not positive); using %.0fs", JOB_DEADLINE_ENV, raw, default)
+        return default
+    return value
 
 
 def _iso(moment: datetime) -> str:
@@ -647,6 +677,10 @@ def execute(
         raise
     steps_total = len(stages)
     skip = set(skip_stages)
+    #: CP-044: one wall-clock budget for the whole attempt. Every bounded foreign call inside a
+    #: stage is clamped to what is left of it, so an in-flight provider request is cancelled at
+    #: the job's deadline instead of running to its own (larger) purpose bound.
+    attempt_deadline = time.monotonic() + job_deadline_seconds()
     try:
         for index, stage in enumerate(stages, start=1):
             if stage.name in skip:
@@ -660,9 +694,18 @@ def execute(
                 begin_cancelling(lease)
                 finish(lease, state="cancelled", now=now)
                 return _view(job_id)
+            remaining = attempt_deadline - time.monotonic()
+            if remaining <= 0:
+                # The budget is spent before another call starts: no socket is opened that the
+                # job will not wait for. Recorded with the same HOST_UNAVAILABLE shape a provider
+                # deadline uses, so nothing new appears in the contract.
+                return _stop_on_job_deadline(
+                    lease, stage.name, job_deadline_seconds(), now=now
+                )
             renew(lease)
             try:
-                result = _run_with_heartbeat(lease, stage, heartbeat_seconds)
+                with deadline_mod.job_budget(remaining):
+                    result = _run_with_heartbeat(lease, stage, heartbeat_seconds)
             except CancelStateUnreadable as exc:
                 # The stage hit a provider/research boundary whose cancel read failed. Stop here,
                 # with the typed reason on the row, instead of answering "continue" (H-129).
@@ -739,6 +782,34 @@ def execute(
         return _view(job_id)
     except JobLeaseLost:
         return _view(job_id)
+
+
+def _stop_on_job_deadline(
+    lease: Lease,
+    stage_name: str,
+    deadline_s: float,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Fail the attempt because its own deadline is spent, without opening another call (CP-044).
+
+    The row leaves ``running`` with the contract's existing ``HOST_UNAVAILABLE`` shape (retryable
+    capability failure, the same code a provider timeout uses) and the lease is released by
+    :func:`fail`. ``details`` name the stage and the budget, so a reader can tell a spent job
+    budget from a slow provider.
+    """
+    exc = deadline_mod.JobDeadlineExceeded(stage_name, deadline_s=deadline_s, elapsed_s=0.0)
+    try:
+        fail(lease, _stage_error(exc), now=now)
+    except JobLeaseLost:
+        return _view(lease.job_id)
+    logger.warning(
+        "coursebook: job %s stopped before %s: the %.0fs job deadline is spent",
+        lease.job_id,
+        stage_name,
+        deadline_s,
+    )
+    return _view(lease.job_id)
 
 
 def _stop_on_unreadable_cancel(
@@ -845,7 +916,7 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
     code = _error_code(exc)
     message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
     details: dict[str, Any] = {}
-    for attribute in ("purpose", "duration_ms", "deadline_s", "schema_name", "repair_attempted"):
+    for attribute in ("purpose", "duration_ms", "deadline_s", "job_deadline", "schema_name", "repair_attempted"):
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value
