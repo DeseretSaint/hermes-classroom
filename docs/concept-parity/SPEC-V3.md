@@ -326,10 +326,12 @@ Plain language: 6th–8th grade, sentence case, no internal enums (`resolve_revi
 "governed", "runtime", "binding", "projection", no exclamation marks, no self-congratulation.
 Course subject matter keeps its register; the chrome does not.
 
-Japanese at L0 carries three scaffolds from `lesson_block` — the kana line, `furigana` ruby over
-kanji, `romaji` under the line — plus the English meaning. Romaji fades as a scaffold; it is never
-the only form offered and never evidence of reading. The worked example in COPY.md is taken from
-the bundled L0 pack, not invented.
+Japanese at L0 carries the pack's own line — kana, `romaji` and the English meaning, read from the
+pack's section content or its media `text_equivalent` — plus a `furigana` ruby over kanji that this
+deck authors. The pack carries no reading, so the ruby is deck-owned and is omitted when a pack has
+none; a reading is never derived from kana. Romaji fades as a scaffold; it is never the only form
+offered and never evidence of reading. The worked example in COPY.md is the bundled L0 pack's own
+line, not invented.
 
 ---
 
@@ -463,7 +465,7 @@ touching the edge.
 | C4 | lesson head | title 32/40 + section 16/24, above the scene | same | same | `classroom.title`, `classroom.section` |
 | C5 | scene frame | 493 × 164 (3:1), mat 8, 1 px rule, `elev-1` | 852 × 284 | 428 × 143 | `classroom.scene.credit` |
 | C6 | dialogue | max 44ch, pad 16, tail 12, 16 under C5 | same | same | `classroom.line.jp`, `classroom.line.romaji`, `classroom.line.en`, `classroom.line.play` |
-| C7 | check card | 493 wide, pad 20, question 20/28, options 44 tall gap 8, primary 48 | 852 | 428 | `classroom.check.question`, `classroom.check.option`, `classroom.check.primary`, `classroom.check.correct`, `classroom.check.wrong`, `classroom.check.retry`, `classroom.check.next` |
+| C7 | check card | 493 wide, pad 20, question 20/28, answer surface per format below, primary 48 | 852 | 428 | `classroom.check.question`, `classroom.check.option`, `classroom.check.item`, `classroom.check.primary`, `classroom.check.edit`, `classroom.check.clear_choice`, `classroom.check.clear_ticks`, `classroom.check.correct`, `classroom.check.wrong`, `classroom.check.retry`, `classroom.check.next` |
 | C8 | aside | 268 wide, right column, 24 gap from C7 | below C7, full width, 32 gap | below C7, 24 gap | `classroom.evidence.title`, `classroom.evidence.count`, `classroom.evidence.empty`, `classroom.aside.next`, `classroom.aside.tutor` |
 | C9 | evidence tray | aside foot: real counts and recorded events, 72 tall | aside foot | below the check | `classroom.evidence.count`, `classroom.evidence.empty` |
 | C10 | fox box | 96 × 120 in the aside's bottom corner, 16 inside the gutter | 88 | 64 beside the evidence tray | — |
@@ -471,11 +473,35 @@ touching the edge.
 
 Lesson column width at wide = `content − stepper − gaps − aside` = 905 − 96 − 24 − 268 − 24 = 493.
 
+**C7 answer surfaces (`check.get.stimulus.format`).** One card, three answer surfaces. The card box
+and the question line are identical in all three; only the answer region changes. The served
+`format` decides it, never the pane: `selection` with declared `choices[]` is a choice check, every
+other format keeps the written answer. A parent-led lesson is observed through the observation
+control and paints no answer surface at all.
+
+| Format | Served fields | Answer region at 493 / 852 / 428 | Focus order | One next action |
+|---|---|---|---|---|
+| `text` | `prompt`; `choices[]` empty | label `Your answer` 14/20, then a textarea 3 rows (5 in the player view), full card width, min 44 tall; one helper line under it | question → textarea → primary → quiet secondary | `Check answer`; quiet `Edit answer` |
+| `selection` | `prompt`; `choices[]` 2–8 | radio rows: one choice per row, 44 tall, 8 gap, number + choice text + the word `Selected`; a live summary line `Selected: {n}. {choice}` or `Nothing selected yet.` replaces no control | question → first row (roving tabIndex, arrows and 1–8 move) → primary | `Check answer`; quiet `Clear choice` |
+| `verification` | `prompt`; `items[]` 1–24 | checklist rows: one 24 px checkbox + its `label` per row, 44 target, 8 gap; one helper line under the list; no text field | question → first checkbox → primary | `Check answer`; quiet `Clear ticks` |
+
+Each format's primary stays 48 tall and is the only filled control in C7. The submitted answer
+differs and is frozen elsewhere: `text` sends the typed string, `selection` sends the chosen served
+choice, `verification` sends the ticked item ids (never labels and never typed text). A wrong
+verdict moves the primary to `Try again`; a correct one moves it to `Next section`. The verdict
+line is `That is right. {why}` / `Not quite. {why}`, where `{why}` is a criterion's `observed` text
+from the graded result; when the result carries no observation the sentence ends after the first
+clause and no reason is invented.
+
+If v3 does not build all three in CP-023, it may ship `text` and `selection` and defer
+`verification` to the card that owns checklists — the deferral must be written in that card, and
+the deferred format must not render a half-built surface in the meantime.
+
 **States**
 
 | State | Shows | One next action | Copy ids |
 |---|---|---|---|
-| default | scene, real line with furigana and romaji, three real options, one filled primary | `Check answer` | `classroom.check.primary`, `classroom.line.jp`, `classroom.line.romaji`, `classroom.line.en` |
+| default | scene, the pack's real line with kana, romaji, the deck ruby and the meaning, the served check in its own format, one filled primary | `Check answer` | `classroom.check.primary`, `classroom.line.jp`, `classroom.line.furigana`, `classroom.line.romaji`, `classroom.line.en` |
 | correct | stamp lands on the verdict beat; correct option marked by shape and word; the evidence count updates | `Next section` | `classroom.check.correct`, `classroom.check.next` |
 | wrong | no stamp loss, no red flood; the option is marked, the correction names the rule | `Try again` (primary moves here) | `classroom.check.wrong`, `classroom.check.retry` |
 | no-chat | scene and line still render; one sentence says this section has no chat yet | `Start a fresh run` | `classroom.nochat.title`, `classroom.nochat.body`, `classroom.nochat.action` |
@@ -612,8 +638,8 @@ renders an element not listed here is not covered by this spec and must not ship
 | Padlock on proofs | CLASS | `Opens after the check` only where the plan really gates it | course plan | `classroom.step.locked` |
 | User names and leaderboard in the aside | CLASS | nothing; the aside carries evidence and the next section | `next_step.label`, evidence counts | `classroom.aside.next` |
 | `Try it yourself` challenge card with invented reward | CLASS | Field Challenge in Game mode only, with a real check behind it | `lesson.page` check + `engagement.read` | `classroom.challenge.primary` |
-| Japanese bubble text (garbled) | CLASS | the lesson's real line, kana + furigana + romaji + meaning | `lesson_block` | `classroom.line.jp`, `classroom.line.furigana`, `classroom.line.romaji`, `classroom.line.en` |
-| `Audio Play` as an answer option | CLASS | speaker button on the dialogue only; answers are the real options | `lesson.page` check options | `classroom.line.play` |
+| Japanese bubble text (garbled) | CLASS | the pack's real line: kana + romaji + meaning read from pack content, plus a deck-authored furigana ruby omitted when the pack has no reading | pack section content / `text_equivalent` for kana, romaji and meaning; `deck` for the ruby | `classroom.line.jp`, `classroom.line.furigana`, `classroom.line.romaji`, `classroom.line.en` |
+| `Audio Play` as an answer option | CLASS | speaker button on the dialogue only; answers are the check's own served choices or items | `check.get` `stimulus.choices[]` (`selection`) / `stimulus.items[].label` (`verification`) | `classroom.line.play` |
 | Ticket, passport tray, `LIGNE 14` | CLASS | evidence tray with real counts and event names | `engagement` events, evidence counts | `classroom.evidence.count` |
 | Painted words inside art (`LANTERN DISTRICT`, `DENNIS GARAGE`) | DISC, HOME, MAP | art is textless; title and subject are DOM text | `pack.inspect` / `library_item.title` | `discover.card.meta` |
 | Search field | MAP | not shipped; no search control | — | — |

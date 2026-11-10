@@ -14,11 +14,31 @@ Binding rules:
 - Counts are real. A count the backend does not record is not rendered at all.
 - Every string is at most the char cap shown; a longer value clamps with an ellipsis at a word
   boundary and keeps its `title` attribute.
-- Japanese at L0 renders three scaffolds together: kana, `furigana` ruby over kanji, `romaji`
-  under the line, plus the English meaning. A romaji-only line is not offered.
+- Japanese at L0 renders the pack's own line: kana, `romaji` under the line, and the English
+  meaning, all read from the pack's section content or the media `text_equivalent`. A romaji-only
+  line is not offered.
+- `furigana` ruby over kanji is authored by this deck, never read from a field: the pack carries no
+  reading. Omit the ruby when the pack carries no reading; never derive one from kana.
 
-Sources: `deck` = authored here; `field:<path>` = a backend value rendered verbatim; `art` = a
-provenance row for the plate, not a claim about learning.
+Sources, exactly one of these forms per cell:
+
+- `deck` — authored here. `deck (DESTINATIONS)` means the deck owns the string and the nav constant
+  in `desktop/plugin.js` must match it.
+- `field:<path>` — one backend value rendered verbatim. `<path>` resolves in
+  `contracts/rpc.v24.json`: either `$defs.<def>.<field…>` or `<method>.<response field…>`, with
+  `[]` for an array step. `pack.inspect.manifest.<field>` resolves in
+  `contracts/pack-manifest.v2.json`. The only `field:` names outside the frozen contracts are the
+  CP-005 forward fields the closing test allowlists: `library_item.subject_label`,
+  `library_item.sections_done`, `library_item.sections_total`, `library_item.is_new`.
+- `pack:<repo-relative path>` — the pack's own authored content; the file must exist.
+- `art:<manifest path>` — a licence/provenance row (`license.per_artifact[].attribution`), not a
+  claim about learning.
+- `contract:<role>` — a value CP-002 owns in `contracts/cb.tokens.v3.json`.
+- `computed:<rule>` — arithmetic the surface performs on a named field; the rule is stated in
+  SPEC-V3.
+
+A cell may name several sources joined by ` + `; the surface renders the first that is present and
+omits the row when none is.
 
 ---
 
@@ -29,7 +49,7 @@ provenance row for the plate, not a claim about learning.
 | `nav.home` | Home | deck | 12 | rail, tab strip |
 | `nav.courses` | Courses | deck (`DESTINATIONS`) | 12 | rail, tab strip |
 | `nav.workshop` | Workshop | deck (`DESTINATIONS`) | 12 | rail, tab strip |
-| `nav.parent` | Parent Studio | field (`DESTINATIONS`) | 16 | rail, tab strip |
+| `nav.parent` | Parent Studio | deck (`DESTINATIONS`) | 16 | rail, tab strip |
 
 ---
 
@@ -43,10 +63,10 @@ provenance row for the plate, not a claim about learning.
 | `home.secondary` | Browse library | deck | 24 | H3 outline |
 | `home.settings` | Settings | deck | 12 | H7 |
 | `home.shelf.label` | Your courses | deck | 24 | H4 |
-| `home.card.subject` | {subject label} | field:`library_item.subject_label` (CP-005) or `world_brief.subject_domain` or `recipe` | 24 | H5 card, line 2 |
-| `home.card.meta` | {done} of {total} sections done | field:`sections_done`,`sections_total` (CP-005), else `evidence_summary.independent`,`total_objectives` | 32 | H5 card, line 3 |
-| `home.card.new` | New | field:`is_new` (CP-005), else `evidence_summary.independent == 0` | 4 | H5 card chip |
-| `home.card.next` | {next step} | field:`next_step.label` | 40 | H5 card, quiet action |
+| `home.card.subject` | {subject label} | field:`library_item.subject_label` (CP-005) + field:`world_brief.subject_domain` + field:`library_item.recipe` | 24 | H5 card, line 2 |
+| `home.card.meta` | {done} of {total} sections done | field:`library_item.sections_done` + field:`library_item.sections_total` (CP-005), else field:`library_item.evidence_summary.independent` + field:`library_item.evidence_summary.total_objectives` | 32 | H5 card, line 3 |
+| `home.card.new` | New | field:`library_item.is_new` (CP-005), else field:`library_item.evidence_summary.independent` | 4 | H5 card chip |
+| `home.card.next` | {next step} | field:`library_item.next_step.label` | 40 | H5 card, quiet action |
 | `home.tag.firstuse` | New course | deck | 14 | H6 paper tag, first use only |
 | `home.firstuse.title` | Your field library | deck | 24 | H2, first use |
 | `home.firstuse.sub` | Nothing here yet. Start a course and its first lesson will appear on this shelf. | deck | 84 | H2, first use |
@@ -75,15 +95,15 @@ provenance row for the plate, not a claim about learning.
 | `discover.tab.library` | Library | deck | 12 | D3 |
 | `discover.tab.provenance` | Provenance | deck | 12 | D3 |
 | `discover.feature.title` | {pack title} | field:`pack.inspect.manifest.title` | 40 | D4 quiet field |
-| `discover.feature.body` | {pack description} | field:`pack.inspect.manifest.description` | 140 | D4 quiet field |
+| `discover.feature.body` | {pack subtitle} | field:`pack.inspect.manifest.subtitle` | 140 | D4 quiet field |
 | `discover.feature.primary` | Preview this pack | deck | 24 | D4 filled |
 | `discover.shelf.title` | All packs | deck | 20 | D6 |
-| `discover.shelf.count` | {n} packs | field: count of `workshop.list` rows | 16 | D6 right |
-| `discover.card.meta` | {n} sections | field:`pack.inspect.manifest.sections` length, else CP-005 `sections_total` | 24 | D7 card, line 3 |
+| `discover.shelf.count` | {n} packs | field:`pack.list.total` (filter `installed`) | 16 | D6 right |
+| `discover.card.meta` | {n} sections | computed:`sum(objectives[].sections[])` over field:`pack.inspect.manifest.objectives[].sections[]`, else field:`library_item.sections_total` (CP-005) | 24 | D7 card, line 3 |
 | `discover.card.trust.integrity` | Files checked | field:`pack.inspect.trust.labels` contains `integrity_verified` | 20 | D7 card chip |
-| `discover.card.trust.checks` | Automated checks passed | field:`…labels` contains `automated_checks_passed` | 28 | D7 card chip |
-| `discover.card.trust.human` | Human review recorded | field:`…labels` contains `human_review_recorded` | 28 | D7 card chip |
-| `discover.card.trust.model` | Support assessed by a model | field:`…labels` contains `model_assessed_support` | 32 | D7 card chip |
+| `discover.card.trust.checks` | Automated checks passed | field:`pack.inspect.trust.labels` contains `automated_checks_passed` | 28 | D7 card chip |
+| `discover.card.trust.human` | Human review recorded | field:`pack.inspect.trust.labels` contains `human_review_recorded` | 28 | D7 card chip |
+| `discover.card.trust.model` | Support assessed by a model | field:`pack.inspect.trust.labels` contains `model_assessed_support` | 32 | D7 card chip |
 | `discover.empty.title` | No packs on this device | deck | 28 | D4 quiet field |
 | `discover.empty.body` | A pack file you add shows up here. | deck | 44 | D4 quiet field |
 | `discover.empty.action` | Import a pack | deck | 20 | D4 quiet |
@@ -94,7 +114,7 @@ provenance row for the plate, not a claim about learning.
 | `discover.offline.title` | You are offline | deck | 20 | D2 |
 | `discover.offline.body` | Packs already on this device still list. The rest waits. | deck | 60 | D2 |
 | `discover.offline.action` | Try again | deck | 12 | D9 quiet |
-| `discover.rejected.banner` | {pack title} did not pass its checks. | field: title + `trust.labels` | 56 | D9 |
+| `discover.rejected.banner` | {pack title} did not pass its checks. | field:`pack.inspect.manifest.title` + field:`pack.inspect.trust.labels` | 56 | D9 |
 | `discover.rejected.title` | This pack did not pass its checks | deck | 36 | D4 quiet field |
 | `discover.rejected.body` | Open Provenance to see what was recorded for each file. | deck | 60 | D4 quiet field |
 | `discover.rejected.action` | Open Provenance | deck | 20 | D4 quiet |
@@ -107,29 +127,33 @@ provenance row for the plate, not a claim about learning.
 |---|---|---|---|---|
 | `classroom.back` | Back to {course title} | field:`library_item.title` | 48 | C2 |
 | `classroom.title` | {course title} | field:`library_item.title` | 60 | C4 |
-| `classroom.section` | {section title} | field: current objective title | 60 | C4 |
+| `classroom.section` | {section title} | field:`lesson.page.section.title` | 60 | C4 |
 | `classroom.stepper.label` | This section | deck | 16 | C3 (screen-reader group name) |
 | `classroom.step.current` | Now | deck | 8 | C3 current stamp label |
 | `classroom.step.done` | Done | deck | 8 | C3 completed stamp label |
 | `classroom.step.next` | Next | deck | 8 | C3 upcoming stamp label |
 | `classroom.step.locked` | Opens after the check | deck | 24 | C3, only where the plan gates it |
-| `classroom.scene.credit` | {art credit} | art: asset provenance row | 40 | C5 mat, micro |
-| `classroom.line.jp` | 好きです。付き合ってください。 | field:`lesson_block` kana line | 80 | C6 |
-| `classroom.line.furigana` | 好(す)き です。付(つ)き合(あ)ってください。 | field:`lesson_block` reading (ruby) | 80 | C6 over the line |
-| `classroom.line.romaji` | suki desu. tsukiatte kudasai. | field:`lesson_block` romaji | 80 | C6 under the line |
-| `classroom.line.en` | I like you. Please go out with me. | field:`lesson_block` English meaning | 80 | C6 under romaji |
+| `classroom.scene.credit` | {art credit} | art:`license.per_artifact[].attribution` | 40 | C5 mat, micro |
+| `classroom.line.jp` | 好きです。付き合ってください。 | pack:`bundled/packs/japanese-affection-context-l0/content/section-01-two-ways.md#dialogue-b` | 80 | C6 |
+| `classroom.line.furigana` | 好(す)き です。付(つ)き合(あ)ってください。 | deck (ruby over kanji; omit when the pack carries no reading) | 80 | C6 over the line |
+| `classroom.line.romaji` | suki desu. tsukiatte kudasai. | pack:`bundled/packs/japanese-affection-context-l0/content/section-01-two-ways.md#dialogue-b` + pack:`bundled/packs/japanese-affection-context-l0/pack.json#files[].text_equivalent` | 80 | C6 under the line |
+| `classroom.line.en` | I like you. Please go out with me. | pack:`bundled/packs/japanese-affection-context-l0/content/section-01-two-ways.md#dialogue-b` + pack:`bundled/packs/japanese-affection-context-l0/pack.json#files[].text_equivalent` | 80 | C6 under romaji |
 | `classroom.line.play` | Play the line | deck | 16 | C6 quiet action |
-| `classroom.check.question` | {check prompt} | field:`lesson.page` check prompt | 120 | C7 |
-| `classroom.check.option` | {option text} | field:`lesson.page` check option | 60 | C7, 3 targets |
-| `classroom.check.primary` | Check answer | deck | 16 | C7 filled |
-| `classroom.check.correct` | That is right. {why} | field: check explanation, prefixed `deck` | 120 | C7 verdict |
-| `classroom.check.wrong` | Not quite. {why} | field: check explanation, prefixed `deck` | 120 | C7 verdict |
+| `classroom.check.question` | {check prompt} | field:`check.get.stimulus.prompt` | 120 | C7 |
+| `classroom.check.option` | {choice text} | field:`check.get.stimulus.choices[]` (`selection` format) | 60 | C7 radio row, 2–8 |
+| `classroom.check.item` | {item label} | field:`check.get.stimulus.items[].label` (`verification` format) | 60 | C7 checklist row, 1–24 |
+| `classroom.check.primary` | Check answer | deck | 16 | C7 filled, all three formats |
+| `classroom.check.edit` | Edit answer | deck | 16 | C7 quiet, `text` format |
+| `classroom.check.clear_choice` | Clear choice | deck | 16 | C7 quiet, `selection` format |
+| `classroom.check.clear_ticks` | Clear ticks | deck | 16 | C7 quiet, `verification` format |
+| `classroom.check.correct` | That is right. {why} | deck + field:`attempt.submit.criteria[].observed` | 120 | C7 verdict |
+| `classroom.check.wrong` | Not quite. {why} | deck + field:`attempt.submit.criteria[].observed` | 120 | C7 verdict |
 | `classroom.check.retry` | Try again | deck | 12 | C7 primary after a wrong verdict |
 | `classroom.check.next` | Next section | deck | 16 | C7 primary after a correct verdict |
 | `classroom.evidence.title` | Evidence | deck | 12 | C8, C9 |
-| `classroom.evidence.count` | {n} of {total} checks recorded | field: recorded checks, plan total | 32 | C8 |
+| `classroom.evidence.count` | {n} of {total} checks recorded | computed:`count(attempt_count > 0)` over field:`lesson.page.checks[]`, total = that array's length | 32 | C8 |
 | `classroom.evidence.empty` | No checks recorded yet. | deck | 28 | C8 empty |
-| `classroom.aside.next` | Next up: {next section} | field:`next_step.label` | 48 | C8 |
+| `classroom.aside.next` | Next up: {next section} | field:`library_item.next_step.label` | 48 | C8 |
 | `classroom.aside.tutor` | Ask the tutor | deck | 16 | C8 quiet action |
 | `classroom.nochat.title` | This section has no chat yet | deck | 32 | C7 region |
 | `classroom.nochat.body` | Start a fresh run to open a chat for this section. | deck | 60 | C7 region |
@@ -145,14 +169,16 @@ provenance row for the plate, not a claim about learning.
 | `classroom.offline.body` | The page you opened last is still here. Checking an answer waits. | deck | 70 | C7 region |
 | `classroom.offline.action` | Try again | deck | 12 | C7 quiet |
 | `classroom.game.xp` | {n} XP | field:`engagement.read.xp_total`, Game mode only | 12 | C11 chip |
-| `classroom.challenge.title` | Field Challenge | field: the check's own title, Game mode only | 24 | C11 |
+| `classroom.challenge.title` | Field Challenge | deck, Game mode only | 24 | C11 |
 | `classroom.challenge.primary` | Try it yourself | deck | 20 | C11 filled, Game mode only |
 
 **Worked L0 example.** The four `classroom.line.*` rows above show one real line from the bundled
-pack `bundled/packs/japanese-affection-context-l0/content/section-01-two-ways.md` (Dialogue B).
-The shot renders whatever `lesson_block` carries; this example is the fixture that proves the
-three scaffolds fit. `好(す)き` is the ruby form of 好き; the kana, the romaji and the meaning are
-the pack's own, not re-authored here.
+pack `bundled/packs/japanese-affection-context-l0/content/section-01-two-ways.md` (Dialogue B),
+whose kana, romaji and English meaning are the pack's own; the narration file's `text_equivalent`
+in the same pack repeats them. The kana and the romaji are read, not re-authored here.
+`好(す)き` is the ruby form of 好き; that reading is authored by this deck because the pack carries
+no ruby, and the ruby is omitted for any pack that carries no reading. The screen renders the
+lesson's authored line; this example is the fixture that proves the three scaffolds fit.
 
 ---
 
@@ -160,21 +186,21 @@ the pack's own, not re-authored here.
 
 | id | Text | Source | Cap | Where |
 |---|---|---|---|---|
-| `course.back` | Back to {parent} | field: destination label | 32 | M2 |
+| `course.back` | Back to {parent} | deck (destination label) | 32 | M2 |
 | `course.title` | {course title} | field:`library_item.title` | 60 | M3 |
-| `course.subject` | {subject label} | field:`subject_label` (CP-005) | 24 | M3 |
-| `course.hero.credit` | {art credit} | art: asset provenance row | 40 | M4 mat, micro |
+| `course.subject` | {subject label} | field:`library_item.subject_label` (CP-005) | 24 | M3 |
+| `course.hero.credit` | {art credit} | art:`license.per_artifact[].attribution` | 40 | M4 mat, micro |
 | `course.route.label` | Your route | deck | 16 | M5 (screen-reader group name) |
 | `course.node.current` | You are here | deck | 16 | M5 current node |
 | `course.node.done` | Done | deck | 8 | M5 completed node |
 | `course.node.next` | Next | deck | 8 | M5 next node |
 | `course.node.locked` | Opens after the section before it | deck | 36 | M5, only where the plan gates it |
 | `course.continue.title` | Continue | deck | 12 | M6 heading |
-| `course.next.label` | {next step} | field:`next_step.label` | 48 | M6 filled plate |
+| `course.next.label` | {next step} | field:`library_item.next_step.label` | 48 | M6 filled plate |
 | `course.evidence.title` | Evidence | deck | 12 | M7 |
-| `course.evidence.count` | {n} of {total} sections have evidence | field:`sections_done`,`sections_total` | 44 | M7 |
+| `course.evidence.count` | {n} of {total} sections have evidence | field:`library_item.sections_done` + field:`library_item.sections_total` (CP-005) | 44 | M7 |
 | `course.others.title` | Your other courses | deck | 24 | M8 |
-| `course.others.row` | {title} · {next step} | field:`library_item.title`, `next_step.label` | 60 | M8 rows |
+| `course.others.row` | {title} · {next step} | field:`library_item.title` + field:`library_item.next_step.label` | 60 | M8 rows |
 | `course.plan.review.title` | The plan is waiting for you | deck | 32 | M6 |
 | `course.plan.review.body` | Read it, then approve it so lessons can start. | deck | 52 | M6 |
 | `course.plan.review.action` | Review the plan | deck | 20 | M6 filled |
@@ -224,14 +250,14 @@ the pack's own, not re-authored here.
 | `lab.medal.first_review` | First review | deck | 16 | S7 |
 | `lab.medal.first_takehome` | First take-home | deck | 20 | S7 |
 | `lab.medal.course_complete` | Course complete | deck | 20 | S7 |
-| `lab.palette.role` | {role name} | field:`contracts/cb.tokens.v3.json` role key | 20 | S8 |
-| `lab.palette.ratio` | {ratio}:1 | field: computed from the contract pair | 10 | S8 |
-| `lab.type.display` | Display · 56/60 · Your field library | field: contract size + this sample | 48 | S9 |
-| `lab.type.title` | Title · 32/40 · Japanese Lantern District | field: contract size + this sample | 48 | S9 |
-| `lab.type.section` | Section · 24/32 · Your route | field: contract size + this sample | 48 | S9 |
-| `lab.type.body` | Body · 16/26 · A sentence of real lesson text. | field: contract size + this sample | 56 | S9 |
-| `lab.type.label` | Label · 14/20 · Check answer | field: contract size + this sample | 48 | S9 |
-| `lab.type.micro` | Micro · 12/16 · 4 of 5 checks recorded | field: contract size + this sample | 48 | S9 |
+| `lab.palette.role` | {role name} | contract:`color.role` key in `contracts/cb.tokens.v3.json` | 20 | S8 |
+| `lab.palette.ratio` | {ratio}:1 | computed:`contrast(pair)` from the contract's two role values | 10 | S8 |
+| `lab.type.display` | Display · 56/60 · Your field library | contract:`type.display` + deck sample | 48 | S9 |
+| `lab.type.title` | Title · 32/40 · Japanese Lantern District | contract:`type.title` + deck sample | 48 | S9 |
+| `lab.type.section` | Section · 24/32 · Your route | contract:`type.section` + deck sample | 48 | S9 |
+| `lab.type.body` | Body · 16/26 · A sentence of real lesson text. | contract:`type.body` + deck sample | 56 | S9 |
+| `lab.type.label` | Label · 14/20 · Check answer | contract:`type.label` + deck sample | 48 | S9 |
+| `lab.type.micro` | Micro · 12/16 · 4 of 5 checks recorded | contract:`type.micro` + deck sample | 48 | S9 |
 | `lab.material.grain` | Paper grain | deck | 16 | S10 |
 | `lab.material.wood` | Wood ledge | deck | 16 | S10 |
 | `lab.material.elevation` | Elevation | deck | 16 | S10 |

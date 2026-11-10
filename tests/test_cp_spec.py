@@ -31,6 +31,8 @@ REFS = PARITY / "refs" / "REFS.md"
 RUBRIC = ROOT / "docs" / "GM-CONCEPT-PARITY-RUBRIC.md"
 BAR = ROOT / "docs" / "EXPERIENCE-QUALITY-BAR.md"
 MATRIX = ROOT / "docs" / "visual-review" / "matrix.json"
+RPC = ROOT / "contracts" / "rpc.v24.json"
+PACK_MANIFEST = ROOT / "contracts" / "pack-manifest.v2.json"
 
 V3_SCREENS = ["home.v3", "discover.v3", "classroom.v3", "course-home.v3", "lab.v3"]
 V3_FRAMES = {
@@ -49,6 +51,32 @@ ID_TOKEN = re.compile(
     r"`((?:home|discover|classroom|course|lab|nav)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*)`"
 )
 SHA_ROW = re.compile(r"^- (R-[A-Z]+): ([0-9a-f]{64})$", re.MULTILINE)
+
+# COPY.md source grammar. A `field:` source must name a real value path; a bare def or method name
+# is not a value. The only names outside the frozen contracts are CP-005's forward fields.
+FIELD_SOURCE = re.compile(r"field:`([^`]+)`")
+FIELD_WITHOUT_PATH = re.compile(r"field:(?!`)")
+PACK_SOURCE = re.compile(r"pack:`([^`]+)`")
+ART_SOURCE = re.compile(r"art:`([^`]+)`")
+CONTRACT_SOURCE = re.compile(r"contract:`([^`]+)`")
+COMPUTED_SOURCE = re.compile(r"computed:`([^`]+)`")
+
+CP005_FORWARD = frozenset(
+    {
+        "library_item.subject_label",
+        "library_item.sections_done",
+        "library_item.sections_total",
+        "library_item.is_new",
+    }
+)
+
+# The exact source cells atlas rejected in review round 1. They must never resolve again.
+LEGACY_FIELD_SOURCES = (
+    ("classroom.line.jp", "lesson_block"),
+    ("discover.shelf.count", "count"),
+    ("classroom.check.question", "lesson.page"),
+    ("classroom.check.correct", "check"),
+)
 
 
 def read(path: Path) -> str:
@@ -266,7 +294,7 @@ class TestSpecCompleteness(unittest.TestCase):
         self.assertGreaterEqual(len(rows) - 2, 24, "the honesty table lost rows")
         for concept in ("Star row", "`NEW`", "240 XP", "proofs collected", "leaderboard", "Padlock"):
             self.assertIn(concept, table, f"honesty table does not cover {concept}")
-        for source in ("`next_step.label`", "`evidence_summary", "`pack.inspect", "`lesson_block`"):
+        for source in ("`next_step.label`", "`evidence_summary", "`pack.inspect", "`check.get`", "`library_item.title`"):
             self.assertIn(source, table, f"honesty table never names the source {source}")
 
     def test_the_fox_has_a_safe_area_rule_and_a_pose_per_screen(self):
@@ -323,6 +351,168 @@ class TestScoringInstrument(unittest.TestCase):
         for kept in ("glass", "gradient", "fake data", "one primary", "Codicon"):
             self.assertIn(kept, amendment, f"amendment does not keep {kept}")
         self.assertNotIn("status: frozen", amendment.lower())
+
+
+def copy_source_rows() -> list[tuple[str, str]]:
+    """(id, source cell) for every COPY.md row whose first cell is a backticked id."""
+    rows: list[tuple[str, str]] = []
+    row = re.compile(r"^\|\s*`([a-z0-9]+\.[a-z0-9._]+)`\s*\|([^|]*)\|([^|]*)\|")
+    for line in read(COPY).splitlines():
+        match = row.match(line)
+        if match:
+            rows.append((match.group(1), match.group(3).strip()))
+    return rows
+
+
+def _follow(node: dict, doc: dict) -> tuple[dict, bool]:
+    """Follow a local ``#/$defs/...`` ref. ``local`` is False at an external ref."""
+    hops = 0
+    while isinstance(node, dict) and "$ref" in node:
+        ref = str(node["$ref"])
+        if not ref.startswith("#/"):
+            return node, False
+        target: object = doc
+        for part in ref[2:].split("/"):
+            target = target[part]  # type: ignore[index]
+        node = target  # type: ignore[assignment]
+        hops += 1
+        if hops > 20:
+            raise KeyError("cyclic $ref")
+    return node, True
+
+
+def _walk(node: dict, parts: list[str], doc: dict) -> dict:
+    node, local = _follow(node, doc)
+    for part in parts:
+        if not local:
+            raise KeyError("path continues past an external $ref")
+        array = part.endswith("[]")
+        key = part[:-2] if array else part
+        if not key:
+            raise KeyError("empty path segment")
+        props = node.get("properties")
+        if not isinstance(props, dict) or key not in props:
+            raise KeyError(f"no property {key!r}")
+        node = props[key]
+        node, local = _follow(node, doc)
+        if array:
+            if not local or "items" not in node:
+                raise KeyError(f"{key!r} is not a local array")
+            node = node["items"]
+    return node
+
+
+def resolve_field(token: str) -> dict:
+    """Resolve a COPY.md ``field:`` token against the frozen contracts.
+
+    Raises ``KeyError`` when the token names nothing a surface could render. A bare ``$defs`` name
+    or a bare method name is not a value and is rejected: the token must end at a field.
+    """
+    rpc = json.loads(read(RPC))
+    manifest = json.loads(read(PACK_MANIFEST))
+    if token in CP005_FORWARD:
+        raise KeyError("CP-005 forward field is allowlisted, not frozen")
+    if token.startswith("pack.inspect.manifest."):
+        rest = token[len("pack.inspect.manifest.") :]
+        wrapper = {"properties": manifest["properties"]}
+        return _walk(wrapper, [p for p in rest.split(".") if p], {"$defs": {}, "properties": manifest["properties"]})
+    parts = [part for part in token.split(".") if part]
+    methods = rpc["$defs"]["methods"]["properties"]
+    for cut in range(len(parts) - 1, 0, -1):
+        name = ".".join(parts[:cut])
+        if name in methods:
+            return _walk(methods[name]["response"], parts[cut:], rpc)
+    if parts and parts[0] in rpc["$defs"]:
+        if len(parts) < 2:
+            raise KeyError(f"{token!r} names a definition, not a field")
+        return _walk(rpc["$defs"][parts[0]], parts[1:], rpc)
+    raise KeyError(token)
+
+
+class TestCopySourcesResolve(unittest.TestCase):
+    """The closing gate for review round 1: a copy source that cannot be read is a defect.
+
+    Every ``field:`` token in COPY.md must resolve in ``contracts/rpc.v24.json`` (or, for
+    ``pack.inspect.manifest.*``, in ``contracts/pack-manifest.v2.json``). Only CP-005's forward
+    fields, pack content and art provenance are outside the frozen contracts, and each of those
+    has its own check below.
+    """
+
+    def setUp(self):
+        self.rows = copy_source_rows()
+        self.copy = read(COPY)
+        self.spec = read(SPEC)
+
+    def test_every_ledger_row_has_a_source_cell(self):
+        self.assertGreaterEqual(len(self.rows), 80)
+
+    def test_no_field_source_omits_its_path(self):
+        bad = [row_id for row_id, source in self.rows if FIELD_WITHOUT_PATH.search(source)]
+        self.assertEqual(
+            bad,
+            [],
+            f"these rows write `field:` without a backticked path: {bad}",
+        )
+
+    def test_every_field_source_resolves(self):
+        failures: list[str] = []
+        for row_id, source in self.rows:
+            for token in FIELD_SOURCE.findall(source):
+                if token in CP005_FORWARD:
+                    continue
+                try:
+                    resolve_field(token)
+                except (KeyError, TypeError) as error:
+                    failures.append(f"{row_id}: field:`{token}` -> {error}")
+        self.assertEqual(failures, [], "COPY.md sources that no contract can serve:\n" + "\n".join(failures))
+
+    def test_every_pack_source_is_a_real_file(self):
+        for row_id, source in self.rows:
+            for token in PACK_SOURCE.findall(source):
+                path = token.split("#", 1)[0]
+                self.assertTrue(
+                    (ROOT / path).is_file(),
+                    f"{row_id} cites a pack file that does not exist: {path}",
+                )
+
+    def test_art_sources_are_provenance_rows_not_learning_claims(self):
+        manifest = json.loads(read(PACK_MANIFEST))
+        for row_id, source in self.rows:
+            for token in ART_SOURCE.findall(source):
+                self.assertTrue(
+                    token.startswith("license.per_artifact"),
+                    f"{row_id} cites art {token!r}; a credit is a licence/per-artifact row",
+                )
+                node = manifest["properties"]["license"]["properties"]["per_artifact"]["items"]
+                self.assertIn("attribution", node["properties"], f"{row_id}: no attribution field")
+
+    def test_token_and_computed_sources_are_declared_forward(self):
+        # CP-002 owns the values; until it lands, the spec must say so and the tokens must be
+        # role/size or arithmetic, never a fabricated backend field.
+        self.assertIn("contracts/cb.tokens.v3.json", self.spec)
+        for row_id, source in self.rows:
+            for token in CONTRACT_SOURCE.findall(source):
+                self.assertRegex(token, r"^(color|type)\.[a-z]+$", f"{row_id}: unexpected contract token {token!r}")
+            for token in COMPUTED_SOURCE.findall(source):
+                self.assertRegex(
+                    token,
+                    r"^(count\(|sum\(|contrast\()",
+                    f"{row_id}: computed rule {token!r} is not one of the named rules",
+                )
+
+    def test_the_resolver_rejects_the_sources_atlas_rejected(self):
+        for row_id, token in LEGACY_FIELD_SOURCES:
+            with self.subTest(row=row_id, token=token):
+                with self.assertRaises(KeyError):
+                    resolve_field(token)
+
+    def test_the_classroom_check_rows_cover_all_three_formats(self):
+        spec = self.spec.split("### 5.3 R-CLASS", 1)[1].split("\n### ", 1)[0]
+        for format_name in ("`text`", "`selection`", "`verification`"):
+            self.assertIn(format_name, spec, f"SPEC-V3 C7 omits the {format_name} answer surface")
+        self.assertIn("classroom.check.item", spec)
+        for quiet in ("classroom.check.edit", "classroom.check.clear_choice", "classroom.check.clear_ticks"):
+            self.assertIn(quiet, spec, f"C7 has no quiet control row for {quiet}")
 
 
 if __name__ == "__main__":
