@@ -1011,3 +1011,15 @@ CP-020b and the two remaining independent cards reaches that ceiling.
 
 Every card body now states its owned segments, the files it must not touch, its parallel siblings,
 and that `desktop/plugin.js` is regenerated at merge, never hand-edited.
+
+## 17. Spend guard on visual checks (owner-raised 2026-11-10)
+
+Visual evidence is expensive and proves nothing before the change exists. Rule, now in every card
+body: capture only a frame that can show the card's change; never a baseline matrix of the old
+design, never a re-capture of unchanged cells, and at most one vision check per frame. A fix is
+verified by its named test first; the camera runs once, at the end, over the states that changed.
+
+Consequences the reviewers enforce: a capture packet whose frames predate the card's own commits is
+returned unread; a reviewer who re-runs the full matrix instead of the changed cells is spending
+against the deadline; a maker who loops vision checks on the same artifact past the second call has
+to justify it in the packet. Baseline behaviour is covered by tests, not by screenshots of v2.
