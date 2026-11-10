@@ -61,6 +61,26 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 globalThis.__CB_TEST_WIDTH__ = String(payload.width || 1049)
 window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
 
+// React reports a duplicate/missing child `key` through console.error, not through a thrown
+// error, so a green render says nothing. Capture it: the route must render warning-free.
+const consoleErrors = []
+const realConsoleError = console.error.bind(console)
+console.error = (...args) => { consoleErrors.push(args.map((value) => String(value)).join(' ')) }
+
+// `textures: 'load'` decodes every tile (the happy path) and `textures: 'fail'` never settles,
+// which is the fallback path. jsdom's own Image never fires load for a data URL, so both need
+// to be explicit.
+if (payload.textures === 'load') {
+  dom.window.Image = class ImmediateImage {
+    constructor() { this.onload = null; this.onerror = null; this._src = '' }
+    get src() { return this._src }
+    set src(value) {
+      this._src = value
+      setTimeout(() => { if (typeof this.onload === 'function') this.onload() }, 5)
+    }
+  }
+}
+
 // A controllable `document.fonts.ready`: the test decides when the face settles, so "waits for
 // fonts" is observed rather than assumed. jsdom has no FontFaceSet.
 let settleFonts = () => {}
@@ -119,11 +139,13 @@ const grain = document.querySelector('[data-cb-v3] .cb3-material-grain')
 const vignette = document.querySelector('[data-cb-v3] .cb3-material-vignette')
 const styleText = styleNodes.map((node) => node.textContent || '').join('\n')
 const readyBefore = routeNode ? routeNode.hasAttribute('data-cb-v3-ready') : null
+const texturesBefore = routeNode ? routeNode.getAttribute('data-cb-v3-textures') : null
 const computed = routeNode ? window.getComputedStyle(routeNode) : null
 
 settleFonts()
 await flush(1200)
 const readyAfter = routeNode ? routeNode.hasAttribute('data-cb-v3-ready') : null
+const texturesAfter = routeNode ? routeNode.getAttribute('data-cb-v3-textures') : null
 
 process.stdout.write(JSON.stringify({
   routeExists: Boolean(routeNode),
@@ -147,6 +169,10 @@ process.stdout.write(JSON.stringify({
   vignettePresent: Boolean(vignette),
   readyBefore,
   readyAfter,
+  texturesBefore,
+  texturesAfter,
+  consoleErrors: consoleErrors.slice(0, 20),
+  consoleKeyErrors: consoleErrors.filter((line) => /unique "key"/.test(line)).slice(0, 5),
   routeText: routeNode ? routeNode.textContent.slice(0, 120) : null
 }))
 """
@@ -269,15 +295,21 @@ class V3ScopeRenderTest(unittest.TestCase):
             json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
         )
         (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
-        case = root / "case.json"
-        case.write_text(json.dumps({"width": 1049, "responses": ROUTE_RESPONSES}), encoding="utf-8")
-        result = subprocess.run(
-            ["node", str(root / "harness.mjs"), str(case)],
-            cwd=root, capture_output=True, text=True, timeout=240,
-        )
-        if result.returncode != 0:
-            raise AssertionError(result.stderr[-6000:])
-        cls.report = json.loads(result.stdout)
+        cls.reports = {}
+        for textures in ("load", "fail"):
+            case = root / f"case-{textures}.json"
+            case.write_text(
+                json.dumps({"width": 1049, "responses": ROUTE_RESPONSES, "textures": textures}),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                ["node", str(root / "harness.mjs"), str(case)],
+                cwd=root, capture_output=True, text=True, timeout=240,
+            )
+            if result.returncode != 0:
+                raise AssertionError(result.stderr[-6000:])
+            cls.reports[textures] = json.loads(result.stdout)
+        cls.report = cls.reports["load"]
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -293,6 +325,15 @@ class V3ScopeRenderTest(unittest.TestCase):
         self.assertEqual((self.report["containerType"] or "").strip(), "inline-size")
         self.assertEqual((self.report["containerName"] or "").strip(), "cb")
         self.assertIn("[data-cb-v3]", self.report["styleText"])
+
+    def test_v3_scope_renders_without_a_react_key_warning(self) -> None:
+        # A child array that mixes keyed layers with unkeyed siblings renders fine and passes every
+        # other assertion here; React only says so on console.error. The route must be silent.
+        for textures, report in self.reports.items():
+            self.assertEqual(
+                report["consoleKeyErrors"], [],
+                f"the {textures} route render raises a React key warning: {report['consoleKeyErrors']}",
+            )
 
     def test_v3_tokens_reach_the_route(self) -> None:
         contract_light = contract()["modes"]["light"]
@@ -322,12 +363,28 @@ class V3ScopeRenderTest(unittest.TestCase):
         self.assertTrue(self.report["vignettePresent"])
 
     def test_v3_ready_marker_waits_for_fonts(self) -> None:
-        self.assertFalse(self.report["readyBefore"],
+        report = self.reports["load"]
+        self.assertFalse(report["readyBefore"],
                          "data-cb-v3-ready is painted before document.fonts.ready settles")
-        self.assertTrue(self.report["readyAfter"],
+        self.assertEqual(report["texturesBefore"], "decoding",
+                         "the ground claims a texture state before the decode settles")
+        self.assertTrue(report["readyAfter"],
                         "data-cb-v3-ready never appears after fonts and textures settle")
-        self.assertTrue((self.report["routeText"] or "").strip(),
+        self.assertEqual(report["texturesAfter"], "ready")
+        self.assertTrue((report["routeText"] or "").strip(),
                         "the route painted no DOM text while the v3 ground was loading")
+
+    def test_v3_texture_failure_stays_flat_and_is_not_ready(self) -> None:
+        # A tile that never decodes must not claim readiness: the papers stay flat, the attribute
+        # says `fallback`, and the surface is still there. Otherwise a capture stamp could record a
+        # "ready" ground whose materials never painted.
+        report = self.reports["fail"]
+        self.assertFalse(report["readyAfter"],
+                         "data-cb-v3-ready is written on the texture-failure path")
+        self.assertEqual(report["texturesAfter"], "fallback")
+        self.assertTrue((report["routeText"] or "").strip(),
+                        "a failed texture left the route blank instead of the flat canvas")
+        self.assertEqual(report["consoleKeyErrors"], [])
 
 
 if __name__ == "__main__":
