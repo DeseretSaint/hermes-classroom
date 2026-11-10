@@ -4,7 +4,8 @@ The card's contract, in executable form:
 
 * ``[data-cb-v3]`` is the route root, exactly once, and it is the same element as
   ``[data-cb-route]`` — a second nested container would make ``cqi`` resolve against the wrong box;
-* ``CB_TOKENS_V3_JSON`` carries ``contracts/cb.tokens.v3.json`` (the five build-critical sections)
+* ``CB_TOKENS_V3_JSON`` carries ``contracts/cb.tokens.v3.json`` (a six-section projection of the
+  25-key contract: modes, elevation, radii, type, motion, materials)
   in canonical bytes, so no surface can paint a value the contract did not define;
 * the one ``<style>`` element inside the route carries ``CB_V3_CSS`` plus the ``@font-face`` rules
   composed from ``CB_ASSETS.fonts`` data URLs, with ``font-display: swap``;
@@ -173,7 +174,14 @@ process.stdout.write(JSON.stringify({
   texturesAfter,
   consoleErrors: consoleErrors.slice(0, 20),
   consoleKeyErrors: consoleErrors.filter((line) => /unique "key"/.test(line)).slice(0, 5),
-  routeText: routeNode ? routeNode.textContent.slice(0, 120) : null
+  routeText: routeNode ? routeNode.textContent.slice(0, 120) : null,
+  // CP-020b R1: the rendered route root's own style attribute, so a viewport unit that never
+  // appears in CB_V3_CSS (an inline clamp, say) is still visible to a test.
+  routeInlineStyle: routeNode ? (routeNode.getAttribute('style') || '') : null,
+  gutter: (() => {
+    const node = document.querySelector('[data-cb-route] .cb3-gutter')
+    return node ? { className: node.className, paddingLeft: node.style.paddingLeft || '' } : null
+  })()
 }))
 """
 
@@ -195,6 +203,23 @@ def canonical(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
+def layout_declarations(style_attr: str) -> str:
+    """The rendered inline style with custom-property declarations removed.
+
+    A custom property is inert until a rule reads it, so the v2 type token that still carries a
+    viewport unit on the route root (``--cb-text-display``, retired by CP-025b) is not a layout
+    measurement. Every real declaration — padding, margin, width, inset — is kept, which is where
+    a viewport unit would actually paint.
+    """
+    kept = []
+    for declaration in str(style_attr or "").split(";"):
+        name = declaration.split(":", 1)[0].strip().lower()
+        if not name or name.startswith("--"):
+            continue
+        kept.append(declaration.strip())
+    return "; ".join(kept).lower()
+
+
 class V3ScopeSourceTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -210,7 +235,7 @@ class V3ScopeSourceTest(unittest.TestCase):
             self.assertIn(key, tokens, f"{V3_TOKEN_CONST} does not carry {key!r}")
             self.assertEqual(tokens[key], self.contract[key], f"{key} drifted from the contract")
         self.assertEqual(set(tokens), set(V3_SECTIONS),
-                         "the literal carries only the five build-critical sections")
+                         "the literal carries only the six build-critical sections")
         self.assertEqual(raw, canonical({key: self.contract[key] for key in tokens}),
                          "the literal is not the contract's canonical bytes")
 
@@ -385,6 +410,45 @@ class V3ScopeRenderTest(unittest.TestCase):
         self.assertTrue((report["routeText"] or "").strip(),
                         "a failed texture left the route blank instead of the flat canvas")
         self.assertEqual(report["consoleKeyErrors"], [])
+
+    def test_no_viewport_unit_reaches_the_rendered_route_style(self) -> None:
+        # CP-020b R1: `test_desktop_tokens_v3` only scans the CSS text, so an *inline* viewport unit
+        # on the rendered element false-passed it. The route root must carry no gutter at all, and
+        # the gutter must be a descendant class so the container query has a box to measure.
+        # Custom properties are skipped: `--cb-text-display` is the v2 type token CP-025b retires,
+        # and it is inert until a rule reads it. A `padding`, `width` or `margin` that measures the
+        # window is what this guard exists to refuse.
+        for textures, report in self.reports.items():
+            style = (report["routeInlineStyle"] or "").lower()
+            self.assertNotIn("vw", layout_declarations(style),
+                             f"the {textures} route paints a viewport unit inline")
+            self.assertNotIn("padding-left", style, f"the {textures} route carries an inline gutter")
+            self.assertNotIn("padding-inline", style, f"the {textures} route carries an inline gutter")
+            self.assertIsNotNone(report["gutter"], f"the {textures} route has no .cb3-gutter wrapper")
+            self.assertIn("cb3-gutter", report["gutter"]["className"])
+
+    def test_the_gutter_is_a_container_query_not_a_viewport_clamp(self) -> None:
+        css = self.report["styleText"]
+        # The rule lives inside a named @container block, so cqi resolves against the route box.
+        containers = [
+            (prelude, body)
+            for prelude, body in css_blocks(css)
+            if prelude.startswith("@container") and "cb" in prelude
+        ]
+        self.assertTrue(containers, "no @container cb block in the v3 stylesheet")
+        nested = []
+        for _, body in containers:
+            for prelude, inner in css_blocks(body):
+                if prelude.startswith("@"):
+                    continue
+                props = dict(declarations(inner))
+                if "padding-inline" in props:
+                    nested.append((prelude, props["padding-inline"]))
+        self.assertTrue(nested, "no @container cb rule sets the page gutter")
+        for prelude, value in nested:
+            self.assertIn("[data-cb-v3]", prelude)
+            self.assertNotIn("vw", value.lower(), f"the gutter {value!r} measures the window")
+            self.assertIn("cqi", value, f"the gutter {value!r} does not measure the route container")
 
 
 if __name__ == "__main__":

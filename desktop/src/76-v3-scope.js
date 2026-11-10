@@ -10,8 +10,9 @@
  * aria-hidden material layers, and every existing surface keeps its own v2 paint. Screens land in
  * CP-021+ and may only use the roles their surface row permits.
  *
- * `CB_TOKENS_V3_JSON` is generated from the contract (five build-critical sections, canonical
- * bytes); `tests/test_desktop_tokens_v3.py` refuses a hand edit. `CB_V3_CSS` carries no colour —
+ * `CB_TOKENS_V3_JSON` is generated from the contract (six build-critical sections: modes,
+ * elevation, radii, type, motion, materials — canonical bytes); `tests/test_desktop_tokens_v3.py`
+ * refuses a hand edit. `CB_V3_CSS` carries no colour —
  * every value arrives through a custom property, so the two token literals stay the only hex in
  * the module. Fonts are composed from `CB_ASSETS.fonts` data URLs at render time, with
  * `font-display: swap`; a face that fails to decode leaves the system fallback in place.
@@ -107,10 +108,86 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   transition: transform var(--cb3-dur-lift) var(--cb3-ease), box-shadow var(--cb3-dur-lift) var(--cb3-ease);
 }
 
+/* ── CP-020b primitives ──────────────────────────────────────────────────────────────────────
+ * Structure only: every value below is a --cb3-* custom property written from the contract. The
+ * segment 85-v3-primitives.js composes these parts and owns none of the paint.
+ */
+
+/* The page gutter is a container-query rule on an inner wrapper, never an inline vw clamp on the
+ * route root: a viewport unit measures the Desktop window (SPEC-V3 3.1), and cqi on the container
+ * itself resolves against its ancestor, not the route. A descendant measures the route correctly. */
+[data-cb-v3] .cb3-gutter {
+  padding-inline: 0.7rem;
+}
+
+@container cb (min-width: 760px) {
+  [data-cb-v3] .cb3-gutter {
+    padding-inline: clamp(1.25rem, 3.05cqi, 4rem);
+  }
+}
+
+[data-cb-v3] .cb3-quiet-outline {
+  background-color: transparent;
+  border: 1px solid var(--cb3-rule);
+  color: var(--cb3-ink);
+}
+
+[data-cb-v3] .cb3-pill:active {
+  transform: translateY(1px);
+}
+
+[data-cb-v3] .cb3-rail-item[data-current="true"]::before {
+  content: "";
+  position: absolute;
+  left: -0.25rem;
+  top: 50%;
+  width: 3px;
+  height: 24px;
+  transform: translateY(-50%);
+  background-color: var(--cb3-terracotta);
+}
+
+[data-cb-v3] .cb3-band-item[data-current="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  right: 0.35rem;
+  bottom: 2px;
+  height: 3px;
+  background-color: var(--cb3-terracotta);
+}
+
+[data-cb-v3] .cb3-shelf {
+  box-shadow: var(--cb3-elev-1);
+}
+
+[data-cb-v3] .cb3-elev-2 {
+  box-shadow: var(--cb3-elev-2);
+}
+
+[data-cb-v3] .cb3-elev-inset {
+  box-shadow: var(--cb3-elev-inset-1);
+}
+
+[data-cb-v3] .cb3-bubble::after {
+  content: "";
+  position: absolute;
+  left: 24px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background-color: var(--cb3-card-stock);
+  border-right: 1px solid var(--cb3-rule);
+  border-bottom: 1px solid var(--cb3-rule);
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-cb-v3] .cb3-press,
-  [data-cb-v3] .cb3-lift {
+  [data-cb-v3] .cb3-lift,
+  [data-cb-v3] .cb3-pill:active {
     transition: none;
+    transform: none;
   }
 }
 
@@ -148,6 +225,10 @@ function cbV3ScopeStyle(mode) {
   const style = {}
   for (const role of CB3_V3_ROLES) style[`--cb3-${role}`] = palette[role]
   for (const key of Object.keys(elevation)) style[`--cb3-${key}`] = elevation[key]
+  // `inset-1` is a pressed-field look, not an object sitting on paper, but the v3 gate scopes every
+  // shadow to an `--cb3-elev-*` token so a raw recipe can never hide in a class. The alias keeps
+  // that one rule true for the recessed level too.
+  if (elevation['inset-1']) style['--cb3-elev-inset-1'] = elevation['inset-1']
   for (const key of Object.keys(radii)) style[`--cb3-radius-${key}`] = radii[key]
   for (const step of CB3_V3_TYPE_STEPS) {
     if (type.scale && type.scale[step]) style[`--cb3-text-${step}`] = type.scale[step]
@@ -273,7 +354,7 @@ function useCbV3Ready(mode, sources) {
  * every tile decoded. The failure path keeps `data-cb-v3-textures="fallback"`, so a capture can
  * tell a materialised ground from flat paper instead of treating both as "ready".
  */
-function CbV3Scope({ mode, className, attributes, style, children }) {
+function CbV3Scope({ mode, className, attributes, style, children, contentClassName }) {
   const layers = cbV3MaterialLayers(mode)
   const status = useCbV3Ready(mode, layers.map((layer) => layer.src))
   const scopeStyle = { ...(style || {}), ...cbV3ScopeStyle(mode) }
@@ -297,7 +378,7 @@ function CbV3Scope({ mode, className, attributes, style, children }) {
         }, `cb3-${layer.key}`)
       ),
       jsx('div', {
-        className: 'relative flex h-full min-h-0 flex-col',
+        className: ['relative flex h-full min-h-0 flex-col', contentClassName || ''].filter(Boolean).join(' '),
         style: { zIndex: 1 },
         children
       }, 'cb3-content')

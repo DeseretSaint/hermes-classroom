@@ -1,0 +1,128 @@
+{
+  "kind": "component-preview",
+  "label": "Component preview \u2014 rendered from the shipped primitives; not a live Desktop capture.",
+  "plugin_sha256": "3a8c3eff8b9269e305e1a2ebb1ab4f02d153bfccb99c52ff2b42dc7af7a26b2d",
+  "contract": "contracts/cb.tokens.v3.json",
+  "reference": "docs/concept-parity/refs/REF-SYS",
+  "cells": [
+    {
+      "cell": "light-100",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 1,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 2900
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "dd02fa47ac00877222cb7881b00c22f6eb05caee4195c55af3a6f5bc5f4dab98",
+      "png": "lab-light-100.png",
+      "png_sha256": "1d1105eac444d9b84c4ea3b0c353a363cf417b2b5671343ea335d452208de4af",
+      "specimen_count": 15
+    },
+    {
+      "cell": "dark-100",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 1,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 2900
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "42b9bb6eedae20983595cd89426aff0b62d5c949324912e566eb5aecef3b3fac",
+      "png": "lab-dark-100.png",
+      "png_sha256": "f29726e0b581fb37c12c0c085c66046b8c12fa298e910441341394f2856919b8",
+      "specimen_count": 15
+    },
+    {
+      "cell": "light-200",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 2,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 6461
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "5dc0160c5cff89812e23078c82835c062e7c7aec7d0968b4b169b9c2f36a53c9",
+      "png": "lab-light-200.png",
+      "png_sha256": "0a24e3e8faea893cc734e3228fa64c18ea70ebeed827aa621b26443970fb9747",
+      "specimen_count": 15
+    },
+    {
+      "cell": "dark-200",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 2,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 6461
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "725e1b63b35591dd890d296eac7b088bb7e51ad91c06dd8859ed44bfb84f381b",
+      "png": "lab-dark-200.png",
+      "png_sha256": "9ec1ec0938a29dc8e07ea9c516a6ee19f1343769a1253d2dc2f461c6a2dea037",
+      "specimen_count": 15
+    },
+    {
+      "cell": "light-reduced-motion",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 1,
+      "emulated_media": {
+        "prefers-reduced-motion": "reduce"
+      },
+      "viewport": {
+        "width": 1049,
+        "height": 2900
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "474c61ba30697e71b825169ca715d19a31e6366d88ff9e8c3ac5f3fec82cc1b5",
+      "png": "lab-light-reduced-motion.png",
+      "png_sha256": "ee9d7dba4e85c5dea9abaf2accf31e7de8b997feec139c800fc8915c583051ea",
+      "specimen_count": 15
+    },
+    {
+      "cell": "dark-forced-colors",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 1,
+      "emulated_media": {
+        "forced-colors": "active"
+      },
+      "viewport": {
+        "width": 1049,
+        "height": 2902
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "ece2752364c2cf9fba7aacdfc67a893aaf4eac96c0b3040ec6f1ad7d14ce284a",
+      "png": "lab-dark-forced-colors.png",
+      "png_sha256": "c426a031e67db4af8910e0301c61621a4fa70614f40421daaf67f37b730536cf",
+      "specimen_count": 15
+    }
+  ],
+  "contract_sha256": "6139557f8e6f60a15525bb616e611fea151ee383c24f7c1da4d3ae28f1d1f12e",
+  "sheets": {
+    "contact_sheet": "contact-sheet.png",
+    "anatomy_vs_rsys": "anatomy-vs-rsys.png",
+    "contact_sheet_sha256": "5be0f08af0c071e36bedf34115697c72a917f514ff61b528b315227280ac4344",
+    "anatomy_vs_rsys_sha256": "041df2f49d504aab564e59e50f2fc2bc98ca148c3455d4f4a5188749a47299e0"
+  }
+}
