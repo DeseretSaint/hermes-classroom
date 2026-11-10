@@ -1,7 +1,8 @@
 # GM-003 evidence
 
-Branch: `wt/gm-003-world` (rebased on `origin/master` `5721389`, which carries GM-001 `4e3d6c6`,
-migration 0013 and the published `rpc.v21.json`; no master merge, no push, no gateway restart).
+Branch: `wt/gm-003-world` (rebased on `origin/master` `d70ceb9`, which carries GM-001 `4e3d6c6`,
+migration 0013, the published `rpc.v21.json` and GM-014's print fixtures; no master merge, no
+push, no gateway restart, no manifest/contract/migration edit on this branch).
 
 ## Named tests
 
@@ -181,4 +182,83 @@ Red evidence: `audit/gm-003/red-attempt6.txt` (4 tests, 10 subtest failures, eve
 | **I2** derived course `title`/`goal` were interpolated verbatim, so a course created elsewhere could inject `90 ft-lb` / `answer key` without any patch | `build_prompt()` sanitises only the prompt text: the subject falls back to the grammar label and the capability clause is omitted when `_names_numbers_or_answer_content()` matches. The course is accepted and the stored brief stays verbatim | `test_course_subject_text_cannot_name_numbers_or_answer_content` |
 | **S2** a bare-string `forbidden` was iterated per character | the handler requires a list/tuple of strings and refuses `VALIDATION_FAILED` (field `forbidden`) before spend | `test_forbidden_patch_must_be_a_list` |
 | **S3** README/cost note did not state the residual paths | this section and the bullets above; `docs/GM-003-WORLD-COST.md` records the round-6 fence cost | — |
+
+## Review round 7 — sentinel changes requested (J1–J3, S7)
+
+Round 7 confirmed I1a, I2 and S2 fixed and found three remaining ways the orientation-only rule
+could be reached through course text that no presentation field guards. All three are fixed
+here, tests first.
+
+Red evidence: `audit/gm-003/red-attempt7.txt` (3 tests, 9 failures: six procedure motifs accepted
+and spent, a field-atlas section title with digits in the plate prompt, and `lantern district`
+in a workshop prompt). Green: `audit/gm-003/green-attempt7.txt` (3 OK), then
+`audit/gm-003/test_world-attempt7.txt` (34 OK) and `audit/gm-003/full-attempt7.log`.
+
+| Defect | Fix | Regression test |
+|---|---|---|
+| **J1** caller motifs accepted imperative procedure phrasing and spelled-out values (`remove the intake manifold`, `drain the coolant`, `lift the cylinder head straight up`, `tighten to seventy five`, `turn another quarter`, `hand tight plus a quarter turn`) | `presentation_motif_problems()` now runs `_names_procedure_or_spelled_value()` after the digit/unit/instruction scan and refuses `POLICY_VIOLATION reason=presentation_names_procedure_or_value` (field `motifs`) before spend. The check is verb-initial, so the native place cue `car on a lift` stays legal, and a hyphenated compound (`four-cylinder block`) is a descriptive, not a value | `test_presentation_motifs_cannot_name_a_procedure_or_spelled_out_value` |
+| **J2** field-atlas section titles were interpolated unscanned into section plate prompts (`Section scene … about Answer key 1-2-3-4`) | `build_prompt()` drops an unsafe section title (number/answer instruction, procedure phrasing, or another art direction's scene); the scene falls back to the grammar's place cues and the UI supplies the real typed title | `test_section_titles_cannot_name_numbers_or_answer_content` |
+| **J3** a workshop course title alone reached every prompt as `Course subject: A lantern district at night` | the prompt subject (and capability clause) falls back to the grammar label when the course text uses another grammar's distinctive vocabulary, exactly as I2 already does for numbers. Prompt-local: the persisted brief stays verbatim and the cache key is unchanged | `test_workshop_subject_title_cannot_name_a_foreign_scene` |
+| **S7** (should-fix) README header named an old base and did not state the round-6 residual paths | header corrected to `d70ceb9`; this section records the shipped fences and the known gaps below | — |
+
+What this round does and does not claim:
+
+- The fenced paths are: caller `brief_patch.motifs`, promoted objective titles, derived
+  `title`/`goal` used as prompt subject/capability, and section titles on a non-workshop grammar.
+- The text scans are token-level heuristics, not a semantic classifier. A procedure phrased
+  without a verb-initial imperative and without a digit/unit/spelled value (for example a bare
+  noun phrase such as `valve clearance table`) is not detected; the workshop grammar's hard
+  negatives still forbid a depicted procedure, torque value, sequence or measurement.
+- A section title is only dropped from the *prompt*; the section card still carries the real
+  typed title from the UI, which the image never supplies.
+- Known gaps unchanged: `cb.rpc` v20 does not dispatch `world.*` (additive v22 belongs to the
+  integration card), the media seam is a deterministic fake (no live provider call), the
+  `world_assets` role vocabulary follows the frozen 0013 CHECK, and create-time auto-queue is
+  owned by GM-002.
+
+## Review round 8 — supervisor directive: close the class, not the strings
+
+Rounds 3–7 each closed the interpolation sentinel named and the next round found a neighbouring
+one (I2 → J1 motifs → J2 section titles → J3 course title), and the round-7 forbidden item still
+carried a foreign scene into the prompt's hard negatives. Round 8 replaces the per-field
+`if` checks with one predicate applied at every site.
+
+**Shape**
+
+- `_plate_text_problems(value, grammar)` is the single predicate: digits/units/answer/instruction
+  vocabulary (`answer`, `key`, `solution`, `ignore`, `instead`, `textless`, …), spelled-out
+  quantities (`one`…`ninety`, `half`, `quarter`, `dozen`, with hyphenated compounds such as
+  `four-cylinder` exempt), verb-initial procedure phrasing, and another grammar's distinctive
+  vocabulary. It returns stable reason ids, not prose.
+- `_plate_safe(value, grammar, fallback=…)` is the only way `build_prompt()` interpolates text.
+  It is called for **subject** (fallback `record.label`), **capability** (omitted),
+  **each motif** (unsafe motif dropped, grammar cues carry the scene), **tone**/**audience**
+  (neutral mood/role fallback) and **section title** (dropped; the UI supplies the real type).
+  Forbidden items go through the same predicate into the negative prompt.
+- `presentation_motif_problems()`, `presentation_text_problems()` and
+  `forbidden_presentation_problems()` all call `_plate_text_problems()`, so the patch refusal and
+  the prompt cannot disagree by construction. A "motif to avoid" may name *this* world's own
+  scene (F2's `forbidden: ['lantern district']` on a field atlas is still legal) but not another
+  art direction's scene, a value, a procedure or an answer instruction.
+- Stored brief, cache key and `prompt_hash` semantics are unchanged: the fence is prompt-local.
+
+**Class-closing test** `test_every_free_text_field_is_fenced_at_the_prompt` walks every
+free-text field of `WorldBrief` (title, goal, section titles ×3, motifs, tone, audience,
+forbidden) with one hostile value per category (digit, spelled-out number, procedure verb,
+"answer key", foreign grammar word, "ignore the textless rule"), for **every grammar** and every
+prompt role (style board/hero/cover/section), and asserts no prompt or negative carries the
+hostile text while the persisted brief stays verbatim.
+
+Red evidence `audit/gm-003/red-attempt8.txt` was captured by running the new test against
+`HEAD:coursebook/world.py` (pre-round-8): hostile text reaches the plate for all six categories on
+every grammar. Green: `audit/gm-003/green-attempt8.txt` (1 OK), regression set 294 OK
+(`regression-attempt8.txt`), full suite in `full-attempt8.log`.
+
+Residual paths (out of scope for this card per the supervisor's freeze): token-level heuristics
+are not a semantic classifier, so a procedure phrased as a bare noun phrase with no digit, unit,
+spelled quantity or verb-initial imperative is not detected; the workshop grammar's hard negatives
+still forbid depicted procedures, torque values, sequences and measurements. A genuinely new
+surface (new field, role or grammar) is a follow-up card.
+
+
 

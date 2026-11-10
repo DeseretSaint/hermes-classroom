@@ -558,24 +558,26 @@ def build_prompt(
     chosen_style = style_id or (style.style_id if style else f"{record.name}--authored")
     light = (style.light if style and style.light else "one soft daylight source")
 
-    motifs = list(typed.motifs) or list(record.subject_cues)
+    # One fence, every interpolation site. Course text is never a reason to refuse the course
+    # (a legitimate title may contain digits, e.g. "Japanese 101"), but text typed by a caller
+    # or derived from a plan never reaches the plate unfenced: `_plate_safe` substitutes the
+    # grammar-appropriate fallback when the value names a value/answer instruction, a
+    # procedure, or another art direction's scene. The same predicate (`_plate_text_problems`)
+    # drives the refusal in `presentation_motif_problems()`, so the prompt and the fence agree
+    # by construction. The stored WorldBrief stays verbatim and the cache key is unchanged.
+    subject = _plate_safe(typed.title.strip(), record.name, fallback=record.label)
+    capability = _plate_safe(typed.end_capability.strip(), record.name, fallback="")
+    # Authored grammar cues are trusted text; a caller's or a plan's motif is fenced. Dropping
+    # one unsafe motif leaves the grammar's own place cues carrying the scene.
+    candidate_motifs = list(typed.motifs) or list(record.subject_cues)
+    motifs = [
+        motif
+        for motif in candidate_motifs
+        if _plate_safe(motif, record.name, fallback=None) is not None
+    ]
     motif_text = ", ".join(motifs[:6]) if motifs else ", ".join(record.motifs)
-    # A legitimate course title may contain digits ("Japanese 101"), so the course is never
-    # refused for its own subject text. Only the *prompt* is sanitised: when the title or
-    # capability names a number, unit, part number or answer instruction (I2), the plate falls
-    # back to the grammar label and the capability clause is omitted. The persisted WorldBrief
-    # keeps the verbatim course strings; this substitution is prompt-local and is not a
-    # cache-key change (the key already covers the brief it was derived from).
-    raw_subject = typed.title.strip()
-    subject = (
-        raw_subject
-        if raw_subject and not _names_numbers_or_answer_content(raw_subject)
-        else record.label
-    )
-    raw_capability = typed.end_capability.strip()
-    capability = (
-        raw_capability if not _names_numbers_or_answer_content(raw_capability) else ""
-    )
+    tone = _plate_safe(typed.tone, record.name, fallback="practical, calm, competent")
+    audience = _plate_safe(typed.audience, record.name, fallback="adult learner")
     # A service world is the grammar's business, not a keyword in the caller's text: 'trades'
     # selects workshop_manual and must keep the workshop hard negatives even if safety_class is
     # reported as none.
@@ -594,9 +596,15 @@ def build_prompt(
                 "sequence or tool action depicted."
             )
         else:
+            # A section title is course text and reaches the plate verbatim, so it is held to
+            # the same fence as every other interpolation site: an unsafe title (a number or
+            # answer instruction, a procedure, or another art direction's scene) is dropped and
+            # the scene falls back to the grammar's place cues. The section card itself gets
+            # the real typed title from the UI.
+            safe_title = _plate_safe(section_title, record.name, fallback=None)
             section_clause = (
                 f" Section scene {section_id}"
-                + (f" about {section_title}" if section_title else "")
+                + (f" about {safe_title}" if safe_title else "")
                 + "."
             )
 
@@ -612,14 +620,19 @@ def build_prompt(
             )
         )
     if typed.forbidden:
-        negative.extend(f"no {item}" for item in typed.forbidden)
+        # The same predicate as every other interpolation site: a negative may suppress this
+        # world's own scene, but never carry a value, an answer instruction, a procedure step or
+        # another art direction's scene into the plate request.
+        for item in typed.forbidden:
+            if _plate_safe(item, record.name, fallback=None) is not None:
+                negative.append(f"no {item}")
 
     body = (
         f"Textless {role.replace('_', ' ')} plate, {record.label.lower()} visual grammar. "
         f"Course subject: {subject}"
         + (f" — the learner will {capability}." if capability else ".")
         + f"{section_clause} "
-        f"Audience: {typed.audience}. Tone: {typed.tone}. "
+        f"Audience: {audience}. Tone: {tone}. "
         f"Subject-specific motifs: {motif_text}. "
         f"Composition: {record.composition}. "
         f"Palette: {', '.join(chosen_palette)}. Medium: {chosen_medium}. "
@@ -637,8 +650,8 @@ def build_prompt(
         "grammar": record.name,
         "subject": subject,
         "capability": capability,
-        "audience": typed.audience,
-        "tone": typed.tone,
+        "audience": audience,
+        "tone": tone,
         "motifs": motifs,
         "palette": list(chosen_palette),
         "medium": chosen_medium,
@@ -977,7 +990,7 @@ def _derive_brief(connection: Any, course_id: str) -> WorldBrief:
                 cleaned
                 and cleaned not in motifs
                 and len(cleaned) <= 64
-                and not _names_numbers_or_answer_content(cleaned)
+                and not _names_procedure_or_spelled_value(cleaned)
             ):
                 motifs.append(cleaned)
     for cue in cues:
@@ -1208,6 +1221,108 @@ _INSTRUCTION_TOKENS: frozenset[str] = frozenset(
         "number",
         "bolt",
         "order",
+        "instead",
+        "solution",
+        "textless",
+    }
+)
+
+#: Spelled-out values are the same content as digits: "tighten to seventy five" is a torque
+#: value, and "a quarter turn" is a sequence step. A plate never carries either (plan §4.4
+#: rules 1 and 5). Matching is token-level, so "quarter turn" and "hand tight plus a quarter
+#: turn" are both refused.
+_SPELLED_NUMBER_TOKENS: frozenset[str] = frozenset(
+    {
+        "zero",
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+        "eleven",
+        "twelve",
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen",
+        "seventeen",
+        "eighteen",
+        "nineteen",
+        "twenty",
+        "thirty",
+        "forty",
+        "fifty",
+        "sixty",
+        "seventy",
+        "eighty",
+        "ninety",
+        "hundred",
+        "thousand",
+        "quarter",
+        "half",
+        "dozen",
+        "twice",
+        "thrice",
+    }
+)
+
+#: Imperative procedure verbs. A plate is orientation, never an instruction, so a motif that
+#: *starts* with one of these ("remove the intake manifold", "lift the cylinder head") is
+#: refused. The check is verb-initial on purpose: the native place cue "car on a lift" is a
+#: scene, not the instruction "lift the car", and must stay legal.
+_PROCEDURE_VERB_TOKENS: frozenset[str] = frozenset(
+    {
+        "add",
+        "adjust",
+        "apply",
+        "assemble",
+        "attach",
+        "bleed",
+        "bolt",
+        "connect",
+        "cut",
+        "detach",
+        "dismount",
+        "drain",
+        "drill",
+        "fill",
+        "fit",
+        "flush",
+        "grease",
+        "install",
+        "inspect",
+        "lift",
+        "loosen",
+        "measure",
+        "mount",
+        "press",
+        "pull",
+        "push",
+        "refit",
+        "reinstall",
+        "remove",
+        "replace",
+        "rotate",
+        "sand",
+        "screw",
+        "secure",
+        "slide",
+        "snap",
+        "tighten",
+        "torque",
+        "turn",
+        "unbolt",
+        "unclip",
+        "unfasten",
+        "unplug",
+        "unscrew",
+        "weld",
+        "wipe",
     }
 )
 
@@ -1319,6 +1434,118 @@ def _names_numbers_or_answer_content(value: Any) -> bool:
     return bool(tokens & (_UNIT_TOKENS | _INSTRUCTION_TOKENS))
 
 
+#: Function words that carry no scene ownership. A section title ("Ordering a drink") must not
+#: be mistaken for the workshop's "car on a lift" merely because both contain "a".
+_SCENE_TEXT_STOPWORDS: frozenset[str] = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "in",
+        "into",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "over",
+        "that",
+        "the",
+        "this",
+        "to",
+        "under",
+        "with",
+        "you",
+        "your",
+    }
+)
+
+
+def _names_procedure_or_spelled_value(value: Any) -> bool:
+    """A plate is orientation, never a procedure or a value written out in words.
+
+    Digits, units and label/answer wording are already covered by
+    :func:`_names_numbers_or_answer_content`; this adds the two holes a reviewer could drive a
+    procedure through (J1, plan §4.4 rules 1 and 5):
+
+    * a spelled-out value ("tighten to seventy five", "another quarter turn"), and
+    * imperative procedure phrasing ("remove the intake manifold", "drain the coolant").
+
+    Only *verb-initial* phrasing is refused: "car on a lift" is the workshop's native place cue,
+    not the instruction "lift the car". A hyphenated compound is a descriptive, not a value:
+    "four-cylinder block" stays legal while "seventy five" does not.
+    """
+    if _names_numbers_or_answer_content(value):
+        return True
+    tokens = _phrase_tokens(value)
+    if not tokens:
+        return False
+    lowered = str(value).lower()
+    for token in tokens:
+        if token not in _SPELLED_NUMBER_TOKENS:
+            continue
+        if f"{token}-" in lowered or f"-{token}" in lowered:
+            continue  # "four-cylinder", "two-stroke": a compound adjective, not a value
+        return True
+    return tokens[0] in _PROCEDURE_VERB_TOKENS
+
+
+def _names_foreign_scene(value: Any, grammar: str) -> bool:
+    """True when text uses another grammar's distinctive vocabulary.
+
+    Used to sanitise prompt-local course text (a title, a capability clause, a section title)
+    that reaches a plate verbatim: a workshop course titled "A lantern district at night" must
+    fall back to the grammar label, the same way I2 falls back for numbers (J3). Function words
+    are excluded so an ordinary sentence is not mistaken for another art direction.
+    """
+    tokens = set(_phrase_tokens(value)) - _SCENE_TEXT_STOPWORDS
+    if not tokens:
+        return False
+    selected = grammar_record(grammar).name
+    return any(
+        tokens & _distinctive_tokens(name) for name in GRAMMARS if name != selected
+    )
+
+
+def _plate_text_problems(value: Any, grammar: str) -> tuple[str, ...]:
+    """Every reason a free-text value must not be interpolated into a plate prompt.
+
+    This is the single predicate behind both the prompt fence (:func:`_plate_safe`) and the
+    patch refusal (:func:`presentation_motif_problems`), so what a caller may store and what a
+    plate may say cannot drift apart. Reasons are stable identifiers, not prose.
+    """
+    text = str(value or "").strip()
+    if not text:
+        return ()
+    problems: list[str] = []
+    if _names_numbers_or_answer_content(text):
+        problems.append("presentation_names_number_or_answer_content")
+    elif _names_procedure_or_spelled_value(text):
+        problems.append("presentation_names_procedure_or_value")
+    if _names_foreign_scene(text, grammar):
+        problems.append("presentation_names_foreign_grammar")
+    return tuple(problems)
+
+
+def _plate_safe(value: Any, grammar: str, *, fallback: Any) -> Any:
+    """Return ``value`` only when it may appear on a plate, else the grammar fallback.
+
+    Applied at every interpolation site in :func:`build_prompt`: subject, capability, motif,
+    tone, audience and section title. A blank value also takes the fallback, so a fixture
+    without a tone still gets a neutral mood line. The stored brief is never rewritten.
+    """
+    text = str(value or "").strip()
+    if text and not _plate_text_problems(text, grammar):
+        return text
+    return fallback
+
+
 def foreign_presentation_text(
     fields: Mapping[str, Any], grammar: str
 ) -> list[tuple[str, str, tuple[str, ...]]]:
@@ -1364,13 +1591,14 @@ def presentation_text_problems(
         if field not in fields:
             continue
         value = fields[field]
-        if _names_numbers_or_answer_content(value):
-            problems.append((field, "presentation_names_number_or_answer_content", str(value)))
-            continue
-        foreign = foreign_presentation_text({field: value}, grammar)
-        if foreign:
-            _field, detail, owners = foreign[0]
-            problems.append((field, "presentation_names_foreign_grammar", detail))
+        found = _plate_text_problems(value, grammar)
+        if found:
+            reason = found[0]
+            if reason == "presentation_names_foreign_grammar":
+                _field, detail, _owners = foreign_presentation_text({field: value}, grammar)[0]
+            else:
+                detail = str(value)
+            problems.append((field, reason, detail))
             continue
         tokens = set(_phrase_tokens(value))
         unknown = sorted(tokens - _PRESENTATION_LEXICON[field])
@@ -1381,12 +1609,21 @@ def presentation_text_problems(
     return problems
 
 
-def forbidden_presentation_problems(items: Sequence[Any]) -> list[tuple[str, str]]:
-    """Validate "motifs to avoid": negatives may name a scene, never a value or an instruction."""
+def forbidden_presentation_problems(
+    items: Sequence[Any], grammar: str
+) -> list[tuple[str, str]]:
+    """Validate "motifs to avoid" with the same predicate the prompt uses.
+
+    A negative is a suppression instruction, so naming *this world's own* scene is legal and
+    useful ("no lantern district" on a field atlas). Carrying a number, part number, answer
+    instruction, procedure step or another art direction's scene is not: the latter would put
+    foreign vocabulary in the plate request through the back door.
+    """
     problems: list[tuple[str, str]] = []
     for item in items:
-        if _names_numbers_or_answer_content(item):
-            problems.append((str(item), "presentation_names_number_or_answer_content"))
+        found = _plate_text_problems(item, grammar)
+        if found:
+            problems.append((str(item), found[0]))
     return problems
 
 
@@ -1400,13 +1637,18 @@ def presentation_motif_problems(
     fails at two shared motifs — so the patch threshold must not be looser than the test.
     One genuine subject addition is allowed.
 
-    Before ownership, a motif is content-scanned: a plate is orientation only, so a caller
-    motif may never name a number, unit, part number or answer instruction (plan §4.4 rules 1
-    and 5). This is the same fence ``tone``/``audience``/``forbidden`` already carry.
+    Before ownership, a motif is content-scanned with the same predicate the prompt uses
+    (``_plate_text_problems``): a plate is orientation only, so a caller motif may never name a
+    value, an answer instruction or a procedure step (plan §4.4 rules 1 and 5). Foreign-grammar
+    ownership has its own refusal (``motif_not_in_grammar``) so it is not reported here.
     """
-    for motif in motifs:
-        if _names_numbers_or_answer_content(motif):
-            return ("presentation_names_number_or_answer_content",)
+    for reason in (
+        "presentation_names_number_or_answer_content",
+        "presentation_names_procedure_or_value",
+    ):
+        for motif in motifs:
+            if reason in _plate_text_problems(motif, grammar):
+                return (reason,)
     native_vocabulary = _grammar_phrase_tokens(grammar)
     native = sum(1 for motif in motifs if _phrase_tokens(motif) in native_vocabulary)
     non_native = len(motifs) - native
@@ -2085,10 +2327,14 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                     "presentation text may describe this world's mood but never another "
                     "subject's scene."
                 )
-            elif reason == "presentation_names_number_or_answer_content":
+            elif reason in (
+                "presentation_names_number_or_answer_content",
+                "presentation_names_procedure_or_value",
+            ):
                 message = (
-                    f"brief_patch.{field} names a number, unit, label or answer instruction; "
-                    "a plate is orientation only, never a procedure, measurement or answer."
+                    f"brief_patch.{field} names a value, a label/answer instruction or a "
+                    "procedure step; a plate is orientation only, never a procedure, "
+                    "measurement or answer."
                 )
             else:
                 message = (
@@ -2116,13 +2362,27 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                     field="forbidden",
                 )
             patched_forbidden = [item for item in raw_forbidden if item.strip()]
-        forbidden_problems = forbidden_presentation_problems(patched_forbidden)
+        forbidden_problems = forbidden_presentation_problems(patched_forbidden, grammar)
         if forbidden_problems:
             item, reason = forbidden_problems[0]
+            if reason == "presentation_names_foreign_grammar":
+                message = (
+                    "a 'motifs to avoid' entry may name this world's own scene, never another "
+                    "art direction's scene."
+                )
+            elif reason == "presentation_names_procedure_or_value":
+                message = (
+                    "a 'motifs to avoid' entry may name a scene, never a value or a "
+                    "procedure step."
+                )
+            else:
+                message = (
+                    "a 'motifs to avoid' entry may name a scene, never a number, unit, label "
+                    "or answer instruction."
+                )
             raise _policy_error(
                 reason,
-                "a 'motifs to avoid' entry may name a scene, never a number, unit, label or "
-                "answer instruction.",
+                message,
                 field="forbidden",
                 phrase=item,
                 grammar=grammar,
@@ -2133,10 +2393,24 @@ def world_generate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             # generic swap the project's own anti-generic test rejects.
             problems = presentation_motif_problems(patched_motifs, grammar)
             if problems:
+                reason = problems[0]
+                if reason in (
+                    "presentation_names_number_or_answer_content",
+                    "presentation_names_procedure_or_value",
+                ):
+                    message = (
+                        "a brief_patch.motifs entry names a value, a label/answer instruction "
+                        "or a procedure step; a plate is orientation only, never a procedure, "
+                        "measurement or answer."
+                    )
+                else:
+                    message = (
+                        "a patched motif set may add one subject-specific cue but not a second "
+                        "non-native motif; a generic swap is refused before spend."
+                    )
                 raise _policy_error(
-                    problems[0],
-                    "a patched motif set may add one subject-specific cue but not a second "
-                    "non-native motif; a generic swap is refused before spend.",
+                    reason,
+                    message,
                     field="motifs",
                     grammar=grammar,
                     motifs=patched_motifs,

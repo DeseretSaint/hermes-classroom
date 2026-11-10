@@ -70,3 +70,28 @@ still costs exactly the 3 boards + kit in the table above, with no extra model c
 
 A bare-string `forbidden` patch is a `VALIDATION_FAILED` before spend; it is no longer exploded
 per character into eleven nonsense negatives.
+
+## Round-7 content fence cost
+
+Round 7 closes the same rule for procedure phrasing and spelled-out values, and for course text
+that reaches a prompt outside `brief_patch`: a caller motif such as `remove the intake manifold`
+or `tighten to seventy five` is refused before any world row, job or provider call (**0** image
+calls). Section titles and course `title`/`goal` are never a reason to refuse the course:
+
+- an unsafe section title is dropped from the plate prompt (the UI supplies the real typed
+  title), and
+- an unsafe or foreign-scene course subject/capability falls back to the grammar label/clause.
+
+Both are prompt-local sanitisation, so a successful request still costs exactly the 3 boards +
+kit in the table above, with **0** extra model calls. The scans are pure local token checks; no
+provider round-trip is added on either the accept or the refuse path.
+
+## Round-8 class fence cost
+
+Round 8 replaces the per-field checks with one predicate (`_plate_text_problems`) applied at every
+interpolation site (subject, capability, motif, tone, audience, section title, forbidden). It
+adds **0** model calls on either path: a hostile value is substituted or dropped while building
+the prompt string, and a caller patch that fails the same predicate is refused before any world
+row, job or provider call. The cost of a successful request is unchanged (3 boards + kit), and
+the stored brief/cache key are untouched, so no new spend identity is created.
+
