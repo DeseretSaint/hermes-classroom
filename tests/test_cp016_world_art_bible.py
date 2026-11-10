@@ -243,6 +243,22 @@ class PromptHashContractTest(unittest.TestCase):
         self.assertNotEqual(default, old)
 
 
+class ConceptDisplayContractTest(unittest.TestCase):
+    """The RPC `world_concept` caps `medium` at 200 and each palette item at 32."""
+
+    def test_display_fields_fit_the_world_concept_schema(self) -> None:
+        brief = world.WorldBrief.from_mapping(BRIEF)
+        for board in world.build_style_boards(brief):
+            with self.subTest(style_id=board.style_id):
+                medium = world._clip(board.medium, 200)
+                self.assertLessEqual(len(medium), 200)
+                for item in board.palette:
+                    self.assertLessEqual(len(world._clip(item, 32)), 32)
+        # A long word without spaces is still clamped, never over the cap.
+        self.assertLessEqual(len(world._clip("x" * 300, 200)), 200)
+        self.assertLessEqual(len(world._clip("word " * 100, 32)), 32)
+
+
 class AspectRoleContractTest(unittest.TestCase):
     def test_shipped_aspects_are_unchanged_and_card_is_additive(self) -> None:
         for role, ratio in LEGACY_ASPECTS.items():

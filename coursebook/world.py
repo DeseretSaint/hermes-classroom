@@ -922,6 +922,15 @@ def cache_key(
     )
 
 
+def _clip(value: str, limit: int) -> str:
+    """Clamp a display string to a contract ``maxLength`` without cutting mid-word."""
+    text = str(value)
+    if len(text) <= limit:
+        return text
+    head = text[: max(1, limit - 1)].rsplit(" ", 1)[0].rstrip(" ,;")
+    return (head or text[: max(1, limit - 1)]) + "…"
+
+
 def _style_hash(board: WorldPrompt) -> str:
     return _prompt_hash(
         {
@@ -2428,8 +2437,8 @@ def _concept_stage(payload: Mapping[str, Any]) -> Any:  # -> job_service.Stage
                     "prompt_hash": board.prompt_hash,
                     "style_hash": style_hash,
                     "artifact_id": artifact_id,
-                    "palette": list(board.palette),
-                    "medium": board.medium,
+                    "palette": [_clip(item, 32) for item in board.palette],
+                    "medium": _clip(board.medium, 200),
                     "role": "orientation",
                     "textless": True,
                 }
