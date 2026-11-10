@@ -1,0 +1,131 @@
+{
+  "pack_id": "thp_e513352ccc44400bb1aedae496f7722b",
+  "artifact_id": "art_626299642efa434d818bd60e7083c3c4",
+  "paper": {
+    "letter": {
+      "file": "audit/gm-018/gm-018-takehome-letter.pdf",
+      "pages": 5,
+      "media_boxes": [
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ],
+        [
+          612.0,
+          792.0
+        ]
+      ],
+      "qpdf_check": "ok",
+      "extracted_chars": 2056,
+      "cover_first_line": "Take-home: searing ribs",
+      "cover_take_home_prefixes": 1,
+      "structure": {
+        "lang": "en-US",
+        "marked": true,
+        "struct_tree_root": true,
+        "struct_elements": {
+          "Document": 1,
+          "Div": 5,
+          "H1": 6,
+          "P": 74,
+          "H2": 19
+        },
+        "marked_content_ids": 99,
+        "parent_tree_keys": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "info_title": "Take-home: searing ribs",
+        "display_doc_title": true
+      }
+    },
+    "a4": {
+      "file": "audit/gm-018/gm-018-takehome-a4.pdf",
+      "pages": 5,
+      "media_boxes": [
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ],
+        [
+          595.0,
+          842.0
+        ]
+      ],
+      "qpdf_check": "ok",
+      "extracted_chars": 2056,
+      "cover_first_line": "Take-home: searing ribs",
+      "cover_take_home_prefixes": 1,
+      "structure": {
+        "lang": "en-US",
+        "marked": true,
+        "struct_tree_root": true,
+        "struct_elements": {
+          "Document": 1,
+          "Div": 5,
+          "H1": 6,
+          "P": 74,
+          "H2": 19
+        },
+        "marked_content_ids": 99,
+        "parent_tree_keys": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "info_title": "Take-home: searing ribs",
+        "display_doc_title": true
+      }
+    }
+  },
+  "html": {
+    "file": "audit/gm-018/gm-018-takehome.html",
+    "mime": "text/html",
+    "pages": 5,
+    "bytes": 4007,
+    "document_hash": "sha256:eb22adae3faa342ac7b4a5462ca2cc32f6a792a374177867c05d2b11ef0b899d",
+    "page_roles": [
+      "cover",
+      "parent_guide",
+      "learner_page",
+      "plate",
+      "answer_guide"
+    ],
+    "forbidden_constructs": "none",
+    "alt_text_region": "aria-label present on the diagram page"
+  },
+  "artifact_store": {
+    "pdf_artifact_id": "art_626299642efa434d818bd60e7083c3c4",
+    "html_adopted": false,
+    "download_handle": "artifact.get is the only download handle; HTML is content"
+  }
+}

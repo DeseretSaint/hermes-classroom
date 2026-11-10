@@ -473,7 +473,8 @@ def _styled_body(lines: Sequence[str], *, max_chars: int) -> list[tuple[str, str
 
 
 def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792,
-             max_chars: int = 88, headings: bool = False, strict_font: bool = False) -> bytes:
+             max_chars: int = 88, headings: bool = False, strict_font: bool = False,
+             tagged: bool = False, language: str = "en") -> bytes:
     """Build a minimal, valid PDF from a fixed template. Text is selectable/extractable.
 
     ``max_chars`` bounds one drawn line so it fits inside the printable width for the chosen
@@ -487,7 +488,16 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     typographic heading (Helvetica-Bold, stepped size) instead of printing the marker literally.
     ``strict_font=True`` makes unrepresentable characters raise :class:`UnprintableText` instead
     of being folded to ``?``; the take-home print path opts in.
+
+    With ``tagged=True`` the document is a **Tagged PDF**: the catalog declares ``/Lang`` and
+    ``/MarkInfo << /Marked true >>``, each printed line is wrapped in a marked-content sequence
+    with an ``/MCID``, and a ``/StructTreeRoot`` carries ``Document`` → page → ``H1``/``H2``/``P``
+    structure elements resolved through a ``/ParentTree``. A screen reader then reads headings and
+    paragraphs in order instead of one flat text wall. The title is written to the Info dictionary
+    and ``/ViewerPreferences << /DisplayDocTitle true >>`` names the document in the window bar.
+    Tagging adds no content and never changes the printed text.
     """
+
     margin = 56
     leading = 16
     if headings:
@@ -545,7 +555,36 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     for _page in pages:
         page_ids.append(next_id)
         next_id += 2
-    objects.append("<< /Type /Catalog /Pages 2 0 R >>")
+    if headings:
+        resources = "/Font << /F1 3 0 R /F2 4 0 R >>"
+    else:
+        resources = "/Font << /F1 3 0 R >>"
+
+    # Tagged documents append the structure tree after the page/content objects, so the
+    # existing object numbers do not move and the untagged template stays byte-identical.
+    struct_tree_id = doc_elem_id = parent_tree_id = info_id = 0
+    page_elem_ids: list[int] = []
+    line_elem_ids: list[list[int]] = []
+    if tagged:
+        struct_tree_id = next_id
+        doc_elem_id = next_id + 1
+        cursor = next_id + 2
+        for page in pages:
+            page_elem_ids.append(cursor)
+            cursor += 1
+            line_elem_ids.append(list(range(cursor, cursor + len(page))))
+            cursor += len(page)
+        parent_tree_id = cursor
+        info_id = cursor + 1
+
+    catalog = "<< /Type /Catalog /Pages 2 0 R"
+    if tagged:
+        catalog += (
+            f" /Lang ({_pdf_text(language, strict=True)}) /MarkInfo << /Marked true >>"
+            f" /StructTreeRoot {struct_tree_id} 0 R"
+            " /ViewerPreferences << /DisplayDocTitle true >>"
+        )
+    objects.append(catalog + " >>")
     kids = " ".join(f"{pid} 0 R" for pid in page_ids)
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>")
     objects.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
@@ -553,30 +592,78 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
         objects.append(
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
         )
-        resources = "/Font << /F1 3 0 R /F2 4 0 R >>"
-    else:
-        resources = "/Font << /F1 3 0 R >>"
+
+    def _structure_kind(font: str, size: int) -> str:
+        """The Tagged-PDF structure type for one printed line."""
+        if font == "F2":
+            return "H1" if size >= 16 else "H2"
+        return "P"
+
     for index, page in enumerate(pages):
         page_id = page_ids[index]
         content_id = page_id + 1
-        objects.append(
+        page_object = (
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page_width} {page_height}] "
-            f"/Resources << {resources} >> /Contents {content_id} 0 R >>"
+            f"/Resources << {resources} >> /Contents {content_id} 0 R"
         )
+        if tagged:
+            page_object += f" /StructParents {index} /Tabs /S"
+        objects.append(page_object + " >>")
+        commands = ["BT"]
         if headings:
-            commands = ["BT", f"{leading} TL", f"{margin} {page_height - margin} Td"]
-            for text, font, size in page:
+            commands.extend([f"{leading} TL", f"{margin} {page_height - margin} Td"])
+            for number, (text, font, size) in enumerate(page):
                 commands.append(f"/{font} {size} Tf")
-                commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+                if tagged:
+                    commands.append(f"/{_structure_kind(font, size)} <</MCID {number}>> BDC")
+                    commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+                    commands.append("EMC")
+                else:
+                    commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
                 commands.append("T*")
         else:
-            commands = ["BT", f"/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"]
-            for text, _font, _size in page:
-                commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+            commands.extend(["/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"])
+            for number, (text, _font, _size) in enumerate(page):
+                if tagged:
+                    commands.append(f"/P <</MCID {number}>> BDC")
+                    commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+                    commands.append("EMC")
+                else:
+                    commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
                 commands.append("T*")
         commands.append("ET")
         stream = "\n".join(commands)
         objects.append(f"<< /Length {len(stream.encode('cp1252'))} >>\nstream\n{stream}\nendstream")
+
+    if tagged:
+        doc_kids = " ".join(f"{pid} 0 R" for pid in page_elem_ids)
+        objects.append(
+            f"<< /Type /StructTreeRoot /K [{doc_elem_id} 0 R] /ParentTree {parent_tree_id} 0 R"
+            f" /ParentTreeNextKey {len(pages)} >>"
+        )
+        objects.append(
+            f"<< /Type /StructElem /S /Document /P {struct_tree_id} 0 R /K [{doc_kids}] >>"
+        )
+        for index, page in enumerate(pages):
+            line_kids = " ".join(f"{pid} 0 R" for pid in line_elem_ids[index])
+            objects.append(
+                f"<< /Type /StructElem /S /Div /P {doc_elem_id} 0 R /Pg {page_ids[index]} 0 R"
+                f" /K [{line_kids}] >>"
+            )
+            for number, (text, font, size) in enumerate(page):
+                objects.append(
+                    f"<< /Type /StructElem /S /{_structure_kind(font, size)}"
+                    f" /P {page_elem_ids[index]} 0 R /Pg {page_ids[index]} 0 R /K {number} >>"
+                )
+        nums = " ".join(
+            f"{index} [{ ' '.join(f'{pid} 0 R' for pid in line_elem_ids[index]) }]"
+            for index in range(len(pages))
+        )
+        objects.append(f"<< /Nums [{nums}] >>")
+        objects.append(
+            f"<< /Title ({_pdf_text(title, strict=True)})"
+            f" /Lang ({_pdf_text(language, strict=True)}) /Producer (Coursebook) >>"
+        )
 
     out = io.StringIO()
     out.write("%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
@@ -589,8 +676,9 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     out.write("0000000000 65535 f \n")
     for offset in offsets:
         out.write(f"{offset:010d} 00000 n \n")
+    info_reference = f" /Info {info_id} 0 R" if tagged else ""
     out.write(
-        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
+        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R{info_reference} >>\nstartxref\n{xref}\n%%EOF\n"
     )
     data = out.getvalue().encode("cp1252")
     if not data.startswith(b"%PDF-"):

@@ -974,6 +974,171 @@ class TakeHomeDiagramTest(TakeHomeCase):
         self.assertEqual(error["details"]["reason"], "ai_art_as_procedure")
 
 
+class TakeHomePrintFollowUpTest(TakeHomeCase):
+    """GM-018: the three PASS-with-notes gaps Sentinel recorded on GM-005."""
+
+    # ── HTML artifact ──────────────────────────────────────────────────────
+    def test_takehome_exports_standalone_html(self) -> None:
+        """The pack has a self-contained HTML document sharing the PDF page composition."""
+        from coursebook import takehome
+
+        seeded = self.seed_course(sections=1)
+        exported = self.exported_pack(seeded)
+        result = self.ok("takehome.html", {"pack_id": exported["pack_id"]})["result"]
+
+        html_text = result["html"]
+        self.assertEqual(result["mime"], "text/html")
+        self.assertEqual(result["pack_id"], exported["pack_id"])
+        self.assertRegex(result["document_hash"], r"^sha256:[a-f0-9]{64}$")
+        self.assertEqual(result["pages"], len(takehome.pdf_pages({"pages": self.pages_of(exported["pack_id"])})))
+
+        lowered = html_text.lower()
+        self.assertTrue(lowered.startswith("<!doctype html>"))
+        self.assertRegex(lowered, r'<html lang="en(-[a-z0-9]+)?">')
+        self.assertIn("<title>", lowered)
+        # Both audience parts are present in a parent pack: learner page and parent guide.
+        self.assertIn(LEARNER_MARKER, html_text)
+        self.assertIn("Parent guide", html_text)
+        self.assertIn("Answer guide", html_text)
+        self.assertIn(ANSWER_MARKER, html_text)
+        # Selectable text, never markdown markers or an image of text.
+        self.assertNotIn("## ", html_text)
+        self.assertNotIn("<img", lowered)
+        # Sanitised: no scripts, no external fetch, no remote stylesheet or import.
+        for forbidden in ("<script", "src=", "href=", "<link", "@import", "url(", "<iframe", "<object", "<embed"):
+            self.assertNotIn(forbidden, lowered, forbidden)
+        # The page composition order is the PDF's own order.
+        roles = re.findall(r'<section[^>]*data-role="([a-z_]+)"', html_text)
+        self.assertEqual(
+            roles,
+            ["cover", "parent_guide", "learner_page", "answer_guide"],
+        )
+
+        # A learner-audience pack prints the learner page without parent or answer material.
+        created, _artifact_id = self.export_learner_sheet(seeded)
+        learner_html = self.ok("takehome.html", {"pack_id": created["pack_id"]})["result"]["html"]
+        self.assertIn(LEARNER_MARKER, learner_html)
+        self.assertNotIn("Answer guide", learner_html)
+        self.assertNotIn("Parent guide", learner_html)
+        self.assertNotIn(ANSWER_MARKER, learner_html)
+
+    def test_takehome_html_preserves_alt_text(self) -> None:
+        """A captioned diagram page keeps its text equivalent in the HTML document."""
+        schematic = {
+            "kind": "visual",
+            "role": "schematic",
+            "purpose": "torque sequence",
+            "text_equivalent": "Tighten the bolts in a cross pattern, 40 N m.",
+            "label": "Deterministic torque sequence",
+            "facts": {"order": ["1", "3", "2", "4"]},
+        }
+        seeded = self.seed_course(sections=1, procedure=True, media=[schematic])
+        exported = self.exported_pack(seeded)
+        result = self.ok("takehome.html", {"pack_id": exported["pack_id"]})["result"]
+        self.assertIn("Tighten the bolts in a cross pattern", result["html"])
+        self.assertIn('aria-label="Deterministic torque sequence"', result["html"])
+
+    def test_takehome_html_escapes_authored_markup(self) -> None:
+        """A lesson that names markup prints it as text; it never becomes live markup."""
+        seeded = self.seed_course(sections=1)
+        self.set_lesson_body(seeded, 'Use <script>alert(1)</script> and img src="x" as examples.')
+        created = self.create(seeded)
+        html_text = self.ok("takehome.html", {"pack_id": created["pack_id"]})["result"]["html"]
+        self.assertNotIn("<script>", html_text.lower())
+        self.assertNotIn(' src="x"', html_text.lower())
+        self.assertIn("&lt;script&gt;", html_text)
+        self.assertIn("&quot;x&quot;", html_text)
+
+    def pages_of(self, pack_id: str) -> list[dict]:
+        row = self.rows("SELECT content_json FROM takehome_packs WHERE id = ?", (pack_id,))[0]
+        return json.loads(row["content_json"])["pages"]
+
+    # ── tagged PDF ────────────────────────────────────────────────────────
+    def test_takehome_pdf_is_tagged(self) -> None:
+        """The PDF carries a title, a language and a heading/paragraph structure tree."""
+        seeded = self.seed_course(sections=1)
+        exported = self.exported_pack(seeded)
+        data = self.pdf_bytes(exported["artifact_id"])
+
+        self.assertIn(b"/MarkInfo << /Marked true >>", data)
+        self.assertIn(b"/StructTreeRoot", data)
+        self.assertIn(b"/S /H1", data)
+        self.assertIn(b"/S /H2", data)
+        self.assertIn(b"/S /P", data)
+        self.assertIn(b"/MCID", data)
+
+        reader = PdfReader(io.BytesIO(data))
+        root = reader.trailer["/Root"]
+        self.assertEqual(str(root["/Lang"]), "en")
+        self.assertTrue(root["/MarkInfo"]["/Marked"])
+        self.assertEqual(str(reader.metadata.title), "Take-home: searing")
+
+        # Structure probe: walk the tree and count the semantic elements per type.
+        struct_root = root["/StructTreeRoot"]
+        kinds: list[str] = []
+        marked: list[int] = []
+        for element in _struct_elements(reader, struct_root):
+            kinds.append(str(element.get("/S", "")).lstrip("/"))
+            contents = element.get("/K")
+            if contents is not None and not isinstance(contents, list):
+                marked.append(int(contents))
+        self.assertIn("Document", kinds)
+        self.assertIn("H1", kinds)
+        self.assertIn("H2", kinds)
+        self.assertIn("P", kinds)
+        self.assertTrue(marked, "no paragraph carried a marked-content id")
+        # Parent tree resolves each page's MCIDs, so a screen reader can follow the tree.
+        parent_tree = struct_root["/ParentTree"]
+        self.assertIn("/Nums", parent_tree.get_object())
+        # Text is still selectable and extracts exactly as before.
+        text = self.pdf_text(exported["artifact_id"])
+        self.assertIn(LEARNER_MARKER, text)
+        self.assertIn("Answer guide", text)
+
+    # ── cover prefix ──────────────────────────────────────────────────────
+    @unittest.skipUnless(shutil.which("pdftotext"), "pdftotext (poppler) is required for the cover read")
+    def test_takehome_cover_is_single_line(self) -> None:
+        """The cover prints one clean 'Take-home:' line, never a doubled prefix or suffix."""
+        seeded = self.seed_course(sections=1)
+        exported = self.exported_pack(seeded)
+        path = self.work / "cover.pdf"
+        path.write_bytes(self.pdf_bytes(exported["artifact_id"]))
+        run = subprocess.run(
+            ["pdftotext", "-f", "1", "-l", "1", "-layout", str(path), "-"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(run.returncode, 0, run.stderr)
+        first_page = run.stdout
+        self.assertEqual(first_page.count("Take-home:"), 1, first_page)
+        self.assertNotIn("Take-home: Take-home", first_page)
+        self.assertNotIn("take-home pack - take-home pack", first_page)
+        heading_lines = [line.strip() for line in first_page.splitlines() if line.strip()]
+        self.assertTrue(heading_lines[0].startswith("Take-home: "), heading_lines[:3])
+        # The lesson title is still printed once, on its own line, inside the wrap bound.
+        self.assertIn("Section 1: the sear", first_page)
+        self.assertLessEqual(max(len(line) for line in heading_lines), 72)
+
+
+def _struct_elements(reader, node):
+    """Yield every StructElem reachable from a StructTreeRoot or element's /K."""
+    if node is None:
+        return
+    node = node.get_object() if hasattr(node, "get_object") else node
+    if isinstance(node, list):
+        for item in node:
+            yield from _struct_elements(reader, item)
+        return
+    if not hasattr(node, "get"):
+        return
+    if str(node.get("/Type", "")) == "/StructElem":
+        yield node
+    kids = node.get("/K")
+    if kids is not None:
+        yield from _struct_elements(reader, kids)
+
+
 class TakeHomeRejectionTest(TakeHomeCase):
     def test_takehome_missing_source_lesson_is_a_named_error(self) -> None:
         seeded = self.seed_course(sections=1)
