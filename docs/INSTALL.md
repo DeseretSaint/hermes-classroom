@@ -36,16 +36,18 @@ That is the same command catalog CI runs.
 
 ## 1. Get the source
 
-The repository is **private** on 2026-11-08 (`DeseretSaint/hermes-classroom`); making it public is
-publication and stays closed under `docs/SUBMISSION.md` §0, so there is no unauthenticated clone
-command to give here. With access, clone it; without access, use a local checkout:
+The repository is public (`DeseretSaint/hermes-classroom`; measured 2026-11-10 — `gh repo view`
+reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote` resolves `master`), so the clone
+needs no credentials:
 
 ```
-cd /path/to/hermes-classroom
+git clone https://github.com/DeseretSaint/hermes-classroom
+cd hermes-classroom
 git log -1 --format=%H
 ```
 
-Record that commit. It is the build you are installing.
+Record that commit. It is the build you are installing. If the clone asks for credentials, the URL is
+wrong — check it rather than supplying a token. A local checkout you already hold works the same way.
 
 ## 2. Link the package into Hermes
 

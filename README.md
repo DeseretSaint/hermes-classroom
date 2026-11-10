@@ -16,7 +16,7 @@ replacement frame set is open in `docs/STORY-GAPS.md`.*
 ## Install locally
 
 ```bash
-# the repository is private on 2026-11-08; with access to it:
+# the repository is public; no credentials needed
 git clone https://github.com/DeseretSaint/hermes-classroom && cd hermes-classroom
 scripts/install-local.sh --home ~/.hermes/profiles/<your-profile>   # link, enable, verify
 hermes gateway restart
@@ -44,15 +44,26 @@ Each is asserted by a test in the 2,724-test suite or by a state matrix run on t
    asserts they equal the artifact's declared `content_hash` ("never trust the writer"), and that
    the manifest carries teaching material rather than learner history.
 
-## Status, 2026-11-08
+## Status, 2026-11-10
 
-The source repository is private today; `catalog/coursebook.yaml` is committed but **not
-submitted**, and no release tag exists. **No demo video is recorded yet**: the demo gate
+The source repository is public and clones without credentials: `gh repo view
+DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"`, and an anonymous
+`git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves
+`3278bae`. GitHub keeps no visibility-change timestamp for a user-owned repository, so this section
+records when the public state was measured, not when it changed; the previous text here called the
+repository private, and that is corrected rather than backdated.
+
+A catalog entry exists and is submitted as a draft pull request: `plugin-catalog/coursebook.yaml` in
+`NousResearch/hermes-agent#152920`, pinned to the commit `3278bae` on `master`, with
+`docs_url` pointing at the `## Install locally` heading above. That pull request has not merged, so
+the catalog `hermes-agent` ships still does not resolve `coursebook`; cloning is the install path
+that works today. No release tag exists. **No demo video is recorded yet**: the demo gate
 `t_6a32ffe9` is open because this host runs one gateway and no profile can yet drive chat and the
 pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is a
 `LICENSE` file since 2026-11-10 (owner decision on `t_6f2d2080`, recorded as MIT in `LICENSE`).
-Publication stays closed under `docs/SUBMISSION.md` §0. Everything below is the measured record,
-limitations included — the current candidate still has open gates 7, 12, 13, 14 and 15.
+Merging the catalog pull request, tagging and announcing stay closed under `docs/SUBMISSION.md` §0.
+Everything below is the measured record, limitations included — the current candidate still has open
+gates 7, 12, 13, 14 and 15, with 5 and 6 partial.
 
 ## Release record (0.1.0 and the product line)
 
@@ -109,8 +120,8 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 | M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,120 text nodes (worst authored 5.93:1), 0 unnamed of 298 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs at this module are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (pinned to plugin `cd86214…` at the measured commit `b9f4a19`; the audit itself was measured on `ab6dc7e` against the same module and not regenerated), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
 | 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
 
-Nothing in the product line changes install status. The catalog entry pins this release candidate,
-no pull request has been opened, and no release tag exists.
+Nothing in the product line changes install status. The catalog entry pins the release candidate and
+is open as a draft pull request, and no release tag exists.
 
 ### 0.1.0 surface table (release record, post-release changes named)
 
@@ -188,14 +199,17 @@ hermes plugins doctor coursebook
 bash scripts/validate.sh
 ```
 
-Install from the plugin catalog (`hermes plugins install coursebook`) is not available: no catalog
-pull request has been opened. `catalog/coursebook.yaml` validates against `hermes-agent`'s catalog
-validator and pins this release candidate, but gates 5, 7, 9 and 10 of `docs/SUBMISSION.md` are
-open, so submitting it is on hold. Owner: Harbor and DeseretSaint.
+Cloning from GitHub is the supported install path: the repository is public, and the clone in
+`## Install locally` above is the path the catalog entry's `docs_url` points at.
 
-Cloning from GitHub is not a supported install path yet: the repository is private, and making it
-public is publication, which needs DeseretSaint's sign-off. Until then, install from a local
-checkout as above.
+`hermes plugins install coursebook` — the catalog path — does not work yet. The entry is submitted as
+`plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open draft pull request,
+and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry pins
+`3278bae` on `master` and validates under `hermes-agent`'s pinned-source catalog gate: the CP-039
+review ran that gate at the pinned sha and it exited 0, 16/16 checks, including the
+symlink-confinement check that rejected the previous pin. Gates 7 and 12 of `docs/SUBMISSION.md`
+(demo scenarios, catalog merge) are open, so the pull request stays draft. Owner: Harbor and
+DeseretSaint.
 
 ## First run
 
@@ -203,7 +217,7 @@ Open Coursebook in the Desktop sidebar. The plugin loads: the sidebar item, the 
 command-palette entries register, and the settings page registers when the host exposes a
 settings-page seam. With no chat bound to an enrollment, the pane offers `Open Coursebook` and
 reports that no durable chat is bound yet. The backend it reads answers `health.get` with
-`db.ready: true` and `schema_version: 13`.
+`db.ready: true` and `schema_version: 14`.
 
 In a window that reaches a gateway-backed backend, `#/coursebook` mounts the course library, the
 `New course` action and Parent Studio (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window whose
@@ -306,7 +320,8 @@ The product line adds surfaces with limits of their own; these are not the 0.1.0
 - A failed audio preview is typed `visual` in the internal `data-cb-media-kind` attribute while its
   visible label and transcript stay correct (`t_acd97416`, low, open).
 - The product line is not demo evidence and not a release: no video exists, the demo gate is NOT
-  MET (`docs/DEMO.md`), and no catalog PR, tag or submission was made (`docs/SUBMISSION.md` §0).
+  MET (`docs/DEMO.md`), the catalog pull request is open and draft and has not merged, and no tag or
+  contest submission was made (`docs/SUBMISSION.md` §0).
 
 There is no learning-style diagnosis, no "2 sigma" claim, no guaranteed mastery, no child safety
 or COPPA certification, and no efficacy claim. Educational research motivates the design;
@@ -365,5 +380,6 @@ Desktop runtime loader refuses everything else. It is a single-writer file; see
 MIT. The terms are in `LICENSE` at the repository root, copyright 2026 DeseretSaint. The owner chose
 MIT on 2026-11-10 in board card `t_6f2d2080`; that card's docs follow-through (this section, gate 9
 in `docs/SUBMISSION.md`, `CHANGELOG.md` and the catalog's `known_issues`) lands in the same commit.
-Publication, tagging and the catalog pull request remain closed under `docs/SUBMISSION.md` §0: a
-license makes redistribution lawful, it does not authorise announcing the release.
+Publication — merging the catalog pull request, tagging, announcing — stays closed under
+`docs/SUBMISSION.md` §0: a license makes redistribution lawful and a public repository makes the
+source clonable, and neither authorises announcing the release.
