@@ -40,7 +40,6 @@ V3_FRAMES = {
     "course-home.v3": "map.png",
     "lab.v3": "system.png",
 }
-REQUIRED_STATES = {"default", "loading", "empty", "error"}
 ROUTE_WIDTHS = ("1049", "900", "460")
 
 # The five public-claim words the v3 copy may not contain, in any form.
