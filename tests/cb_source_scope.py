@@ -19,6 +19,12 @@ So the file is treated as two regions, not one:
 ``v2_source()`` returns the module with the v3 region cut out. v2 gates scan that; v3 gates scan
 the v3 region (``test_desktop_tokens_v3.py``) or the whole file with both token literals allowed.
 
+A marker region is **not** a paint exemption. Cut from the v2 region, its content would otherwise
+belong to no gate at all — a hole both gates would report PASS through. Paint literals are legal
+only inside the two literal constants that actually ship, so the v3 shadow/gradient scans mask
+``CB_V3_CSS`` alone (``stylesheet_spans``) and leave marker content inside the scanned text. Markers
+may carry v3 control-flow scaffolding; they may not carry hex, a shadow or a gradient.
+
 The seam is only worth anything if it is load-bearing in both directions, so
 ``tests/test_desktop_gate_scope.py`` proves it with negative controls: a violation injected into
 the v2 region is still caught while a legitimate v3 declaration is not, and stripping the v3 region
@@ -141,6 +147,19 @@ def v2_source(source: str | None = None) -> str:
         cursor = end
     out.append(text[cursor:])
     return "".join(out)
+
+
+def stylesheet_spans(source: str) -> list[tuple[int, int]]:
+    """The one span whose paint declarations are exempt: the ``CB_V3_CSS`` literal.
+
+    Deliberately narrower than :func:`v3_spans`. ``test_box_shadow_only_inside_the_stylesheet...``
+    and ``test_the_only_gradient_is_the_named_vignette`` (and audit V-07/V-08) use this so a
+    ``CB-V3-BEGIN`` … ``CB-V3-END`` region cannot smuggle a raw shadow or a decorative gradient
+    past both gates. Hex is masked by the two token literals separately; v3 paint belongs in the
+    stylesheet, not in a marker.
+    """
+    span = literal_span(source, V3_CSS_CONST)
+    return [span] if span is not None else []
 
 
 def v3_source(source: str | None = None) -> str:

@@ -52,6 +52,23 @@ BASELINE = {
     "test_desktop_home_hub.py": 20,
 }
 
+#: This module is the proof the eight modules above were not weakened, so it needs its own pin:
+#: the migrated-module BASELINE does not cover it, and deleting a seam claim would otherwise be
+#: invisible. Additions are fine; a drop means a proof was removed.
+SEAM_BASELINE = 24
+
+
+def gate_is_armed() -> bool:
+    """Read ``V3_REQUIRED`` from the v3 gate module at call time.
+
+    Read dynamically, not imported by value: CP-020a flips the flag on its first commit, and the
+    negative controls below temporarily arm it to prove the hand-off. A test that bound the value at
+    import would keep asserting today's state forever.
+    """
+    import tests.test_desktop_tokens_v3 as v3_gate
+
+    return bool(getattr(v3_gate, "V3_REQUIRED", False))
+
 V3_APPENDIX = """
 // ── the v3 material, appended by CP-020a in the real module ──
 const CB_TOKENS_V3_JSON =
@@ -95,9 +112,26 @@ def v2_hex_scan(source: str) -> list[str]:
 
 class SeamDirectionTest(unittest.TestCase):
     def test_without_v3_material_the_v2_region_is_the_whole_file(self) -> None:
+        # Superseded the moment the gate is armed: CP-020a's compliant build *has* v3 material, and
+        # this claim must not red it. The hand-off is a skip, not an edit — §6.4 forbids CP-020a
+        # editing an assertion, and the converse test below keeps the skip from being a hole.
+        if gate_is_armed():
+            self.skipTest("V3_REQUIRED is True: v3 material is expected; the v3 gate owns this state")
         source = PLUGIN_JS.read_text(encoding="utf-8")
         self.assertEqual(v3_spans(source), [])
         self.assertEqual(v2_source(source), source)
+
+    def test_v3_material_may_not_exist_while_the_gate_is_disarmed(self) -> None:
+        # The mirror hole: with the flag False the v3 gate classes skip, so material that landed
+        # ahead of the flip would be examined by nothing. This is the test that closes it.
+        if gate_is_armed():
+            self.skipTest("V3_REQUIRED is True: the gate is armed, so the v3 claims govern the material")
+        spans = v3_spans(PLUGIN_JS.read_text(encoding="utf-8"))
+        self.assertEqual(
+            spans, [],
+            "v3 material exists while V3_REQUIRED is False — the gate is disarmed: flip "
+            "V3_REQUIRED in tests/test_desktop_tokens_v3.py and tests/test_v3_visual_audit.py",
+        )
 
     def test_the_v3_literals_are_cut_from_the_v2_region(self) -> None:
         source = synthetic()
@@ -129,6 +163,60 @@ class SeamDirectionTest(unittest.TestCase):
         source = PLUGIN_JS.read_text(encoding="utf-8") + "\n// CB-V3-BEGIN\nconst leak = '#abcdef'\n"
         self.assertNotIn("#abcdef", v2_source(source),
                          "an unterminated v3 marker must not leave v3 paint in the v2 region")
+
+
+class SeamHandoffControlTest(unittest.TestCase):
+    """The CP-020a hand-off, executed rather than asserted: arm the flag, replay the seam claims.
+
+    Reviewer round 1, D1: the seam used to red a legitimate v3 build. These controls point the seam
+    module and the v3 gate at the card's own contract-canonical compliant module in a temp dir and
+    flip ``V3_REQUIRED`` in memory, so both directions of the hand-off are proven today:
+
+    * armed + compliant build → the seam claims skip, they do not fail (CP-020a can go green);
+    * disarmed + compliant build → the converse fails, naming the disarmed gate (material may not
+      land ahead of the flip, which is the hole the old suite left).
+    """
+
+    def _run(self, method: str, source: str, armed: bool) -> None:
+        import tests.test_desktop_gate_scope as scope
+        import tests.test_desktop_tokens_v3 as gate
+
+        with tempfile.TemporaryDirectory(prefix="coursebook-cb003-handoff-") as tmp:
+            path = Path(tmp) / "plugin.js"
+            path.write_text(source, encoding="utf-8")
+            original_plugin, original_gate_plugin, original_armed = (
+                scope.PLUGIN_JS, gate.PLUGIN_JS, gate.V3_REQUIRED,
+            )
+            scope.PLUGIN_JS = path
+            gate.PLUGIN_JS = path
+            gate.V3_REQUIRED = armed
+            try:
+                case = SeamDirectionTest(method)
+                getattr(case, method)()
+            finally:
+                scope.PLUGIN_JS = original_plugin
+                gate.PLUGIN_JS = original_gate_plugin
+                gate.V3_REQUIRED = original_armed
+
+    def _compliant_module(self) -> str:
+        builder = V3GateBitesTest("test_a_compliant_v3_block_passes_every_gated_claim")
+        return builder.module_text()
+
+    def test_a_compliant_build_passes_the_seam_once_the_gate_is_armed(self) -> None:
+        source = self._compliant_module()
+        for method in (
+            "test_without_v3_material_the_v2_region_is_the_whole_file",
+            "test_v3_material_may_not_exist_while_the_gate_is_disarmed",
+        ):
+            with self.subTest(claim=method):
+                with self.assertRaises(unittest.SkipTest):
+                    self._run(method, source, True)
+
+    def test_material_that_lands_before_the_flip_fails_loudly(self) -> None:
+        with self.assertRaises(AssertionError) as caught:
+            self._run("test_v3_material_may_not_exist_while_the_gate_is_disarmed",
+                      self._compliant_module(), False)
+        self.assertIn("disarmed", str(caught.exception))
 
 
 class PositiveControlTest(unittest.TestCase):
@@ -313,6 +401,24 @@ class V3GateBitesTest(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 self.run_gate("V3TokenLiteralTest", "test_the_literal_equals_the_contract_byte_for_byte", stale)
 
+    def test_a_marker_region_cannot_smuggle_a_shadow_or_a_gradient(self) -> None:
+        # Reviewer round 1, D3: a CB-V3-BEGIN…END region is cut from the v2 region, so exempting
+        # it from the v3 paint scans as well would leave its content in no gate at all. Only the
+        # shipped CB_V3_CSS literal may carry these declarations.
+        cases = (
+            ("const cb3Glow = `[data-cb-v3] { box-shadow: 0 0 24px rgba(0, 0, 0, 0.4); }`",
+             "V3StylesheetTest",
+             "test_box_shadow_only_inside_the_stylesheet_and_only_as_elevation_tokens"),
+            ("const cb3Wash = `[data-cb-v3] { background-image: linear-gradient(120deg, #ffffff, #000000); }`",
+             "V3StylesheetTest",
+             "test_the_only_gradient_is_the_named_vignette"),
+        )
+        for body, class_name, method in cases:
+            source = self.module_text() + "\n// CB-V3-BEGIN\n" + body + "\n// CB-V3-END\n"
+            with self.subTest(claim=method):
+                with self.assertRaises(AssertionError):
+                    self.run_gate(class_name, method, source)
+
     def test_a_raw_hex_in_the_stylesheet_is_caught(self) -> None:
         css = self.good_css().replace("border-bottom: 1px solid var(--cb3-wood-edge);",
                                       "border-bottom: 1px solid #a5763f;")
@@ -323,6 +429,24 @@ class V3GateBitesTest(unittest.TestCase):
 
 class NoProtectionDeletedTest(unittest.TestCase):
     """The migrated v2 modules may gain assertions, never lose one."""
+
+    def test_the_seam_proof_itself_never_loses_a_claim(self) -> None:
+        # The eight-module BASELINE does not cover this module; without a pin, deleting a seam
+        # claim would leave the migration's own proof unguarded.
+        path = ROOT / "tests" / "test_desktop_gate_scope.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        count = sum(
+            1
+            for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            for item in node.body
+            if isinstance(item, ast.FunctionDef) and item.name.startswith("test_")
+        )
+        self.assertGreaterEqual(
+            count, SEAM_BASELINE,
+            f"test_desktop_gate_scope.py has {count} claims, below the CP-003 seam baseline of "
+            f"{SEAM_BASELINE}. Restore the deleted seam proof or record an owner-approved reason.",
+        )
 
     def test_the_assertion_count_never_drops_below_the_cp_003_baseline(self) -> None:
         for name, expected in BASELINE.items():

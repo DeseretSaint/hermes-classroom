@@ -13,7 +13,9 @@ Ungated (runs today):
     files on disk, so an audit cannot be inherited from a different build;
   * while the v3 material is absent, the paint claims are ``NOT-BUILT`` and never ``PASS`` — the
     audit may not claim what it did not measure;
-  * ``--full`` refuses (exit 3) with the missing pieces named, rather than inventing frames.
+  * ``--full`` refuses (exit 3) in **both** material states, naming the unimplemented paint phase —
+    literals plus a browser plus ``cp-capture.mjs`` are not a measurement, so the phase may not
+    succeed until it reads a frame and a stamp.
 
 Gated by ``V3_REQUIRED`` (CP-020a flips it): every v3 claim must be PASS and the audit must report
 ``surfaces_built``. That is the RED the card hands over.
@@ -105,14 +107,16 @@ class V3AuditStaticTest(unittest.TestCase):
                 self.assertIn("reason", item["evidence"], item["id"])
 
     def test_full_phase_refuses_instead_of_inventing_frames(self) -> None:
+        # Not material-conditional: this assertions holds whether or not CP-020a has landed the
+        # literals. The paint phase reads no frame and verifies no stamp, so it must never exit 0
+        # while that is true — the old skip let an exit-0 "painted audit" through.
         result, payload = run_audit(full=True)
-        if (PLUGIN.read_text(encoding="utf-8").find("CB_V3_CSS") >= 0
-                and (ROOT / "scripts" / "cp-capture.mjs").is_file()):
-            self.skipTest("v3 surfaces are present; the full phase has real frames to read")
-        self.assertEqual(result.returncode, 3, result.stdout[-2000:])
+        self.assertEqual(result.returncode, 3, result.stdout[-2000:] + result.stderr[-2000:])
         self.assertIn("refused", result.stderr.lower())
+        self.assertIn("unimplemented", result.stderr.lower())
+        self.assertIn("stamp", result.stderr.lower())
         # No PASS may be written by a phase that did not measure anything.
-        if payload is not None:
+        if payload is not None and not payload["summary"]["surfaces_built"]:
             self.assertTrue(payload["summary"]["not_built"])
 
 

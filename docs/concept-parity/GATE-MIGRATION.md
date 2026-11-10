@@ -64,9 +64,15 @@ Design decisions worth recording, because each is a place a later card could wea
    paint inside the v2 scan.
 3. **The seam does not edit `desktop/plugin.js`.** CP-003 does not own that file; CP-020a adds the
    literals. Until then `v2_source()` is byte-identical to the file, and
-   `test_without_v3_material_the_v2_region_is_the_whole_file` asserts that.
+   `test_without_v3_material_the_v2_region_is_the_whole_file` asserts that — skipping, not failing,
+   once `V3_REQUIRED` is armed (see §6).
 4. **No gate is allowed to read a bare region count.** `v3_spans()` merges overlapping spans, so a
    marker nested inside a literal cannot double-cut and hide text.
+5. **A marker region is not a paint exemption.** `v3_spans()` (used to cut the v2 region) includes
+   marker spans; the v3 shadow and gradient scans exempt only the shipped `CB_V3_CSS` literal via
+   `stylesheet_spans()`. Exempting markers too would leave their content in no gate at all: cut from
+   v2, unscanned by v3. Markers may carry v3 control-flow scaffolding, never hex, a shadow or a
+   gradient.
 
 ### 3.1 The edits actually made (eight modules)
 
@@ -118,6 +124,8 @@ and:
 | measure | `4vw` | route-relative claim fails |
 | drift | one hex changed in the token literal | byte-equality claim fails |
 | raw paint | `#a5763f` in the stylesheet | hex-only-in-literals claim fails |
+| marker shadow | `box-shadow: 0 0 24px …` inside `CB-V3-BEGIN`…`END` | elevation claim fails (markers are not an exemption) |
+| marker gradient | `linear-gradient(120deg, …)` inside `CB-V3-BEGIN`…`END` | vignette claim fails |
 
 The compliant control also pins the extractor: the token literal is embedded with the backslash
 escaping a real JS string literal requires, so a builder cannot satisfy the gate with a literal the
@@ -399,7 +407,9 @@ Three properties make it evidence rather than a document:
    `tests/test_v3_visual_audit.py` re-derives both from disk and fails on a mismatch, so an audit
    cannot be inherited from a different build. The commit is recorded too.
 2. **No fabricated PASS.** While the v3 material is absent, V-04…V-12 are `NOT-BUILT`, never
-   `PASS`. `--full` refuses (exit 3) and names the missing pieces instead of inventing frames.
+   `PASS`. `--full` refuses (exit 3) **in both material states** and names the unimplemented paint
+   phase: literals + a browser + `cp-capture.mjs` existing is not a measurement, and the phase reads
+   no frame and verifies no stamp, so it may never exit 0 until it does.
 3. **Black-box test.** The test runs the script through its command line and reads only the JSON it
    writes; it does not import the claims.
 
@@ -421,8 +431,30 @@ build. CP-003 does not produce a screenshot and does not claim one.
 4. CP-020a does not edit the assertions and does not edit this table. If a claim cannot be met, the
    contract or the spec is defective and the card comes back — the gate is not lowered.
 
+**The hand-off is executable on this branch (reviewer round 1, D1).**
+`test_desktop_gate_scope.py::SeamHandoffControlTest` points the seam and the v3 gate at the
+contract-canonical compliant module in a temp dir and flips `V3_REQUIRED` in memory:
+
+| Control | State | Expected |
+|---|---|---|
+| armed + compliant build | `V3_REQUIRED=True`, literals present | `test_without_v3_material_the_v2_region_is_the_whole_file` **skips**; no failure |
+| disarmed + material present | `V3_REQUIRED=False`, literals present | `test_v3_material_may_not_exist_while_the_gate_is_disarmed` **fails**, naming the disarmed gate |
+| disarmed + material absent | today's branch | both pass |
+
+So CP-020a can reach a green suite with `True` without touching a CP-003 assertion, and material
+that lands ahead of the flip is caught instead of being silently skipped. `SEAM_BASELINE = 24` pins
+this module's own claim count, since the eight-module `BASELINE` does not cover it.
+
 The expected RED output is pasted in the CP-003 review summary; it is not committed as a snapshot
 because the exact trace is a property of CP-020a's first commit, not of this branch.
+
+## 6.1 Round 1 review corrections (cbqa, D1–D3)
+
+| Defect | Correction | Test that closes it |
+|---|---|---|
+| **D1** the seam red a legitimate v3 build; the disarmed flag hid material | the "v2 region is the whole file" claim skips under `V3_REQUIRED`; the converse forbids v3 material while the gate is disarmed; hand-off controls arm the flag in memory | `SeamHandoffControlTest.test_a_compliant_build_passes_the_seam_once_the_gate_is_armed`, `test_material_that_lands_before_the_flip_fails_loudly`, `SeamDirectionTest.test_v3_material_may_not_exist_while_the_gate_is_disarmed` |
+| **D2** `--full` exited 0 having read no frame or stamp | `full_phase()` refuses unconditionally with the unimplemented-paint message while no painted claim exists (exit 3, both material states) | `test_v3_visual_audit.py::V3AuditStaticTest.test_full_phase_refuses_instead_of_inventing_frames` (no longer skips) |
+| **D3** a `CB-V3-BEGIN…END` region was exempt from the shadow and gradient claims | `stylesheet_spans()` exempts only the shipped `CB_V3_CSS` literal; gate and audit share it | `V3GateBitesTest.test_a_marker_region_cannot_smuggle_a_shadow_or_a_gradient` |
 
 ## 7. Known gaps and rulings needed
 

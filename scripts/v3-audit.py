@@ -10,9 +10,10 @@ without either weakening them or changing the contract they read. This script is
   hex only in the two token literals, no blur/glass, elevation shadows only, the named vignette only,
   selectors scoped to ``[data-cb-v3]``, ``CB `` font families, motion durations from the v3 table,
   no ``vw``).
-* **paint phase** (``--full``) — refuses to run until the v3 surfaces and a headless Chromium exist,
-  because a claim about painted contrast cannot be made from source. It exits non-zero and names
-  what is missing rather than writing a PASS it did not earn.
+* **paint phase** (``--full``) — refuses, always and non-zero, until a painted-claim implementation
+  exists. The v3 surfaces and a headless Chromium existing is not a measurement: no frame is read
+  and no capture stamp is verified, so the phase may not write a PASS it did not earn. It names what
+  is missing and what is unimplemented, and the screen cards own the stamped frames it will read.
 
 Every run writes an audit JSON with a **module sha pin** (``plugin_sha256``) and a contract pin
 (``contract_sha256``); ``tests/test_v3_visual_audit.py`` re-derives both and fails if they do not
@@ -52,7 +53,7 @@ from tests.cb_source_scope import (  # noqa: E402
     literal_text,
     split_selectors,
     style_rules,
-    v3_spans,
+    stylesheet_spans,
     without_shelf_edge_mask,
 )
 
@@ -213,7 +214,9 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
 
     # V-07 elevation shadows
     outside = source
-    for start, end in reversed(v3_spans(source)):
+    # Only CB_V3_CSS is an exemption; a CB-V3-* marker is cut from the v2 region by the seam and
+    # must not become a second, ungated home for paint declarations.
+    for start, end in reversed(stylesheet_spans(source)):
         outside = outside[:start] + outside[end:]
     shadow_values = [value for prop, value in pairs if prop == "box-shadow"]
     shadow_ok = (
@@ -321,7 +324,14 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
 
 
 def full_phase() -> int:
-    """The painted audit. Refuses honestly until the surfaces and a browser exist."""
+    """The painted audit. Refuses until a painted-claim implementation exists.
+
+    Returning success here would be the exact failure the card forbids: `CB_V3_CSS` existing and a
+    browser being installed is *not* a measurement. No frame is read and no stamp is verified below,
+    so the phase reports the missing inputs and then refuses unconditionally. A later card that
+    implements the paint claims replaces this refusal with the real reads (and must still return
+    non-zero if a frame or its stamp is missing).
+    """
     missing = []
     if literal_text(PLUGIN_JS.read_text(encoding="utf-8"), V3_CSS_CONST) is None:
         missing.append(f"desktop/plugin.js has no {V3_CSS_CONST} (CP-020a)")
@@ -329,14 +339,14 @@ def full_phase() -> int:
         missing.append("chromium is not on PATH")
     if not (ROOT / "scripts" / "cp-capture.mjs").is_file():
         missing.append("scripts/cp-capture.mjs is missing (CP-000)")
-    if missing:
-        print("v3 paint audit refused — not built:", file=sys.stderr)
-        for item in missing:
-            print("  -", item, file=sys.stderr)
-        return 3
-    print("v3 paint audit: surfaces and browser present; the screen cards own their stamped "
-          "captures, so this phase reads them rather than inventing frames.", file=sys.stderr)
-    return 0
+    print("v3 paint audit refused — the paint phase is unimplemented:", file=sys.stderr)
+    for item in missing:
+        print("  -", item, file=sys.stderr)
+    print("  - no painted-claim implementation exists: this phase reads no frame and verifies no "
+          "stamp, so it cannot report a painted PASS", file=sys.stderr)
+    print("  - the screen cards own their stamped captures through scripts/cp-capture.mjs; until "
+          "this phase reads those frames and stamps it must stay non-zero", file=sys.stderr)
+    return 3
 
 
 def main() -> int:

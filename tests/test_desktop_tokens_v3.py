@@ -54,7 +54,7 @@ from tests.cb_source_scope import (
     literal_text,
     split_selectors,
     style_rules,
-    v3_spans,
+    stylesheet_spans,
     without_shelf_edge_mask,
 )
 
@@ -200,7 +200,9 @@ class V3StylesheetTest(unittest.TestCase):
 
     def test_box_shadow_only_inside_the_stylesheet_and_only_as_elevation_tokens(self) -> None:
         outside = self.source
-        for start, end in reversed(v3_spans(self.source)):
+        # Only the shipped CB_V3_CSS literal is exempt. A CB-V3-BEGIN…END marker region is cut from
+        # the v2 region, so exempting it here too would leave its content in no gate at all.
+        for start, end in reversed(stylesheet_spans(self.source)):
             outside = outside[:start] + outside[end:]
         self.assertNotIn("box-shadow", outside.lower())
         self.assertNotIn("boxShadow", outside)
@@ -225,7 +227,7 @@ class V3StylesheetTest(unittest.TestCase):
                 f"the only permitted gradient is the named vignette; found {prop}: {value}",
             )
         outside = self.source
-        for start, end in reversed(v3_spans(self.source)):
+        for start, end in reversed(stylesheet_spans(self.source)):
             outside = outside[:start] + outside[end:]
         self.assertEqual(GRADIENT.findall(without_shelf_edge_mask(outside)), [],
                          "a gradient escaped the v3 stylesheet and the v2 mask exemption")
