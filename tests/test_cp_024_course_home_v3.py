@@ -78,6 +78,7 @@ export {
   cb3CourseRoutePlan,
   cb3CoursePlateAnchors,
   cb3CourseHeroPlate,
+  cb3CourseWorldPosture,
   cb3CourseEvidenceLine
 };
 """
@@ -111,10 +112,13 @@ for (const [name, fixture] of Object.entries(payload.cases)) {
       parentLabel: 'Home',
       width,
       busy: false,
+      worldState: fixture.worldState || null,
+      readState: fixture.readState || 'ready',
       onBack: () => {},
       onContinue: () => {},
       onOpenPlan: () => {},
-      onOpenSection: () => {}
+      onOpenSection: () => {},
+      onOpenStudio: fixture.studio ? () => {} : undefined
     })
   )
   out.cases[name] = html
@@ -164,6 +168,27 @@ out.logic.anchorsMalformed = mod.cb3CoursePlateAnchors(
   },
   null
 )
+// The live carrier: `world.read` returns the world brief, and the brief is where a plate's
+// anchors travel today. Same shape, same normalisation, same refusal on a malformed entry.
+out.logic.anchorsFromBrief = mod.cb3CoursePlateAnchors(
+  { manifest: null, artifactId: null },
+  { brief: { route_anchors: payload.probe.anchors } }
+)
+out.logic.anchorsFromBriefPlate = mod.cb3CoursePlateAnchors(
+  null,
+  { brief: { plate: { route_anchors: payload.probe.anchors } } }
+)
+out.logic.posture = [
+  'approved',
+  'kit_ready',
+  'kit_generating',
+  'concepts_generating',
+  'failed',
+  'not_requested',
+  'unavailable',
+  'stale',
+  null
+].map((state) => mod.cb3CourseWorldPosture(state))
 out.logic.evidence = [
   mod.cb3CourseEvidenceLine(2, 4),
   mod.cb3CourseEvidenceLine(0, 0),
@@ -368,6 +393,43 @@ class CourseHomeV3RenderTest(unittest.TestCase):
                 "anchors": [],
                 "others": [],
             },
+            "worldrunning": {
+                "row": _row(),
+                "objectives": _objectives(),
+                "page": _page(),
+                "plate": _plate(),
+                "anchors": None,
+                "others": [],
+                "worldState": "kit_generating",
+            },
+            "worldrejected": {
+                "row": _row(),
+                "objectives": _objectives(),
+                "page": _page(),
+                "plate": _plate(),
+                "anchors": None,
+                "others": [],
+                "worldState": "failed",
+                "studio": True,
+            },
+            "loading": {
+                "row": _row(),
+                "objectives": [],
+                "page": None,
+                "plate": _plate(anchors=[]),
+                "anchors": [],
+                "others": [],
+                "readState": "loading",
+            },
+            "readerror": {
+                "row": _row(),
+                "objectives": _objectives(),
+                "page": _page(),
+                "plate": _plate(anchors=[]),
+                "anchors": [],
+                "others": [],
+                "readState": "error",
+            },
         }
         probe = {
             "objectives": _objectives(),
@@ -462,6 +524,25 @@ class CourseHomeV3RenderTest(unittest.TestCase):
             logic["anchorsMalformed"], [], "a malformed anchor was clamped into a position"
         )
         self.assertEqual(len(logic["anchorsFromManifest"]), 5)
+        # The carrier `world.read` actually returns: the world brief. The same normalisation runs,
+        # so an anchored plate is a data question, not a rendering one.
+        self.assertEqual(len(logic["anchorsFromBrief"]), 5)
+        self.assertEqual(len(logic["anchorsFromBriefPlate"]), 5)
+        self.assertEqual(
+            logic["posture"],
+            [
+                "ready",
+                "ready",
+                "running",
+                "running",
+                "rejected",
+                "none",
+                "none",
+                "running",
+                "none",
+            ],
+            "a world state was mapped to the wrong plate posture",
+        )
 
         for name in ("noanchors", "malformed"):
             html = self.report["cases"][name]
@@ -532,6 +613,36 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         self.assertIn("Every section has evidence.", complete)
 
     # ── 4. the rest of the surface's honesty rules ────────────────────────────────────────────
+
+    def test_course_home_v3_world_and_read_states(self) -> None:
+        # world-running keeps the plate underneath and says what is happening; it never disables
+        # Continue and never invents a second action.
+        running = self.report["cases"]["worldrunning"]
+        self.assertIn('data-cb-course-world-state="running"', running)
+        self.assertIn("Painting the scene.", strip_tags(running))
+        self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', running)), 1)
+
+        # world-rejected falls back to the typographic field, says so, and offers the deck's one
+        # quiet way into the studio — never a filled control.
+        rejected = self.report["cases"]["worldrejected"]
+        self.assertIn('data-cb-course-world-state="rejected"', rejected)
+        self.assertIn('data-cb-course-plate="type"', rejected)
+        self.assertIn("This scene was not approved", strip_tags(rejected))
+        self.assertIn('data-cb-course-world-studio', rejected)
+        self.assertIn("Open World Studio", strip_tags(rejected))
+        self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', rejected)), 1)
+
+        # Loading and a failed read each say their deck line and name one next action; neither
+        # renders an empty course or a fabricated route.
+        loading = self.report["cases"]["loading"]
+        self.assertIn("Opening this course.", strip_tags(loading))
+        self.assertNotIn("data-cb-course-node=", loading)
+        error = self.report["cases"]["readerror"]
+        self.assertIn("This course could not be read", strip_tags(error))
+        self.assertIn("The route shows what was saved last. Try again.", strip_tags(error))
+        self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', error)), 1)
+        # The error head does not eat the last recorded route: the sections are still listable.
+        self.assertIn('data-cb-course-route="list"', error)
 
     def test_course_home_v3_copy_and_facts_only(self) -> None:
         html = self.report["cases"]["default"]

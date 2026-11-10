@@ -2443,10 +2443,17 @@ const CB3_COURSE_COPY = Object.freeze({
   othersTitle: 'Your other courses',
   noWorldTitle: 'No scene yet',
   noWorldBody: 'The lesson works without art.',
+  worldRunning: 'Painting the scene.',
+  worldRejectedTitle: 'This scene was not approved',
+  worldRejectedAction: 'Open World Studio',
   planReviewTitle: 'The plan is waiting for you',
   planReviewBody: 'Read it, then approve it so lessons can start.',
   endTitle: 'Course complete',
-  endBody: 'Every section has evidence.'
+  endBody: 'Every section has evidence.',
+  loading: 'Opening this course.',
+  errorTitle: 'This course could not be read',
+  errorBody: 'The route shows what was saved last. Try again.',
+  errorAction: 'Try again'
 })
 
 /** `course.evidence.count`, filled from stored section counts. A zero total prints no claim. */
@@ -2480,11 +2487,21 @@ function cb3CourseAnchorPoints(raw) {
 }
 
 /**
- * Normalised anchors declared by a plate. Three legal homes, one shape: the manifest's
- * `route_anchors`, the asset row's own `route_anchors`, or the world's.
+ * Normalised anchors declared by a plate. One shape, several legal carriers: the manifest's
+ * `route_anchors`, the asset row's own `route_anchors`, the world brief's `plate.route_anchors`
+ * or `route_anchors`, and the world row itself. The brief is the only plate document today's
+ * `world.read` returns, so it is a legal home; the asset row's own manifest is preferred when a
+ * backend exposes it, and this order keeps that preference.
  */
 function cb3CoursePlateAnchors(plate, world) {
-  const sources = [plate && plate.manifest, plate, world]
+  const brief = world && world.brief && typeof world.brief === 'object' ? world.brief : null
+  const sources = [
+    plate && plate.manifest,
+    plate,
+    brief && brief.plate,
+    brief,
+    world
+  ]
   for (const source of sources) {
     if (!source || typeof source !== 'object') continue
     const points = cb3CourseAnchorPoints(source.route_anchors)
@@ -2706,22 +2723,132 @@ function CourseRouteList({ nodes, onOpen }) {
 }
 
 /**
+ * The world's plate posture, from the state the backend recorded — never inferred from art
+ * presence. `unavailable`, `not_requested` and an absent world are `none`; a generating kit keeps
+ * the last approved plate underneath and says it is painting (`running`); a failed generation is
+ * `rejected`, and its typographic field says the scene was not approved.
+ */
+function cb3CourseWorldPosture(state) {
+  const value = String(state || '')
+  if (value === 'approved' || value === 'kit_ready') return 'ready'
+  if (value === 'failed') return 'rejected'
+  if (
+    value === 'concepts_generating' ||
+    value === 'concepts_ready' ||
+    value === 'style_selected' ||
+    value === 'kit_generating' ||
+    value === 'stale'
+  ) {
+    return 'running'
+  }
+  return 'none'
+}
+
+/**
  * The mounted hero plate (M4): an 8 px `canvas-edge` mat, a 1 px `ink` rule, `elev-1`, and art
  * that is textless. With no plate it is a typographic field carrying the course title, and the
- * `No scene yet` deck row states what the learner loses — the lesson still works.
+ * deck's own state row says what the learner loses — the lesson still works. A world in flight
+ * keeps its last approved plate underneath; a rejected world says so and offers the one quiet
+ * way into the studio, never a dead control.
  */
-function CourseHeroPlate({ plate, title, big, children }) {
+function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children }) {
   const preview = useArtifactPreview(plate && plate.artifactId ? plate.artifactId : null)
   const direct = plate && typeof plate.src === 'string' && plate.src ? plate.src : null
-  const ready =
+  const posture = cb3CourseWorldPosture(worldState)
+  const painted =
     (!plate || !plate.artifactId) && direct
       ? direct
       : preview.state === 'ready' && preview.mime && String(preview.mime).startsWith('image/')
         ? preview.data_url
         : null
+  // A rejected world never paints its refused art: the field carries the course title instead.
+  const ready = posture === 'rejected' ? null : painted
+  const note =
+    posture === 'running'
+      ? jsx('p', {
+          'data-cb-course-plate-note': '',
+          'data-cb-course-plate-running': '',
+          style: {
+            margin: 0,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            lineHeight: cb3Lead('caption'),
+            color: cb3Role('ink-soft')
+          },
+          children: CB3_COURSE_COPY.worldRunning
+        }, 'note')
+      : posture === 'rejected'
+        ? jsxs('div', {
+            'data-cb-course-plate-note': '',
+            'data-cb-course-plate-rejected': '',
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              gap: '0.5rem',
+              minWidth: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: [
+              jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.worldRejectedTitle }, 'title'),
+              typeof onOpenStudio === 'function'
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-course-world-studio': '',
+                    className: 'cb3-press',
+                    onClick: () => onOpenStudio(),
+                    style: {
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      color: cb3Role('ink'),
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      textDecoration: 'underline',
+                      cursor: 'pointer'
+                    },
+                    children: CB3_COURSE_COPY.worldRejectedAction
+                  }, 'action')
+                : null
+            ]
+          }, 'note')
+        : ready
+          ? plate && plate.credit
+            ? jsx('p', {
+                'data-cb-course-credit': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
+                },
+                children: plate.credit
+              }, 'note')
+            : null
+          : jsxs('p', {
+              'data-cb-course-plate-note': '',
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: [
+                jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
+                ' ',
+                jsx('span', { children: CB3_COURSE_COPY.noWorldBody }, 'body')
+              ]
+            }, 'note')
   return jsxs('div', {
     'data-cb-course-plate': ready ? 'art' : 'type',
     'data-cb-course-plate-state': plate && plate.artifactId ? preview.state : ready ? 'ready' : 'none',
+    'data-cb-course-world-state': posture,
     style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
       jsxs('div', {
@@ -2780,35 +2907,7 @@ function CourseHeroPlate({ plate, title, big, children }) {
           })
         ]
       }),
-      ready
-        ? plate && plate.credit
-          ? jsx('p', {
-              'data-cb-course-credit': '',
-              style: {
-                margin: 0,
-                fontFamily: 'var(--cb3-font-ui)',
-                fontSize: cb3Type('caption'),
-                lineHeight: cb3Lead('caption'),
-                color: cb3Role('ink-soft')
-              },
-              children: plate.credit
-            })
-          : null
-        : jsxs('p', {
-            'data-cb-course-plate-note': '',
-            style: {
-              margin: 0,
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('caption'),
-              lineHeight: cb3Lead('caption'),
-              color: cb3Role('ink-soft')
-            },
-            children: [
-              jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
-              ' ',
-              jsx('span', { children: CB3_COURSE_COPY.noWorldBody }, 'body')
-            ]
-          })
+      note
     ]
   })
 }
@@ -3033,11 +3132,15 @@ function CourseHomeV3({
   parentLabel,
   width,
   busy,
+  worldState,
+  readState,
   onBack,
   onContinue,
   onOpenPlan,
   onOpenSection,
-  onOpenOther
+  onOpenOther,
+  onRetry,
+  onOpenStudio
 }) {
   const measured = useCbViewportWidth()
   const routeWidth = Number(width) > 0 ? Number(width) : Number(measured) || 0
@@ -3144,7 +3247,69 @@ function CourseHomeV3({
                 },
                 children: row.subject_label
               }, 'subject')
-            : null
+            : null,
+          // The course's own read state. A loading head says it is opening; a failed read says so
+          // in place and offers one quiet way to try again, while the route keeps what was saved.
+          readState === 'loading'
+            ? jsx('p', {
+                'data-cb-course-loading': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.loading
+              }, 'loading')
+            : readState === 'error'
+              ? jsxs('div', {
+                  'data-cb-course-error': '',
+                  role: 'status',
+                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+                  children: [
+                    jsx('strong', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        fontWeight: 600,
+                        color: cb3Role('ink')
+                      },
+                      children: CB3_COURSE_COPY.errorTitle
+                    }, 'title'),
+                    jsx('span', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        color: cb3Role('ink-soft')
+                      },
+                      children: CB3_COURSE_COPY.errorBody
+                    }, 'body'),
+                    typeof onRetry === 'function'
+                      ? jsx('button', {
+                          type: 'button',
+                          'data-cb-course-retry': '',
+                          className: 'cb3-press',
+                          onClick: () => onRetry(),
+                          style: {
+                            border: 0,
+                            background: 'transparent',
+                            padding: 0,
+                            color: cb3Role('ink'),
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('meta'),
+                            lineHeight: cb3Lead('meta'),
+                            textDecoration: 'underline',
+                            cursor: 'pointer'
+                          },
+                          children: CB3_COURSE_COPY.errorAction
+                        }, 'action')
+                      : null
+                  ]
+                }, 'error')
+              : null
         ]
       }, 'head'),
       // M4/M5 and M6–M9: the hero plate with the route, and the aside. Two columns only at a wide
@@ -3165,6 +3330,8 @@ function CourseHomeV3({
                 plate: plate || { artifactId: null, src: null, anchors: [] },
                 title: (row && row.title) || '',
                 big,
+                worldState,
+                onOpenStudio,
                 children:
                   plan.mode === 'map'
                     ? jsx('div', {
@@ -3608,6 +3775,14 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   // with the route's nodes, one Continue plate, the evidence count and the other courses. The
   // compact hero stays for the reading surfaces, where the course head is context, not the page.
   const courseHomePlate = cb3CourseHeroPlate(world.data)
+  const courseWorldState =
+    world.data && world.data.world && world.data.world.state ? world.data.world.state : null
+  const courseReadState =
+    outline.status === 'error' || world.status === 'error'
+      ? 'error'
+      : outline.status === 'loading' && !outline.data
+        ? 'loading'
+        : 'ready'
   const otherCourses = (library.data && Array.isArray(library.data.items) ? library.data.items : []).filter(
     (item) => item && item.course_id !== row.course_id && item.recipe !== 'parent'
   )
@@ -3623,11 +3798,18 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
           sectionsTotal: row.sections_total,
           parentLabel: 'Home',
           busy,
+          worldState: courseWorldState,
+          readState: courseReadState,
           onBack,
           onContinue: (kind) =>
             startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
           onOpenPlan: () => selectView('plan'),
-          onOpenSection: openSection
+          onOpenSection: openSection,
+          onRetry: () => {
+            if (outline) outline.reload()
+            if (world) world.reload()
+            if (page) page.reload()
+          }
         })
       : null
 
