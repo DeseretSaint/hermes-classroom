@@ -10,6 +10,7 @@
     "render:30": "remotion render src/index.ts Hero30 out/scaffold-30s.mp4",
     "still": "remotion still src/index.ts",
     "check:fonts": "bash scripts/check-fonts.sh",
+    "check:copy": "bash scripts/check-copy.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

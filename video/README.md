@@ -16,11 +16,26 @@ npm install                       # once
 npm run render:75                 # → out/scaffold-75s.mp4, 2250 frames @ 30 fps
 npm run render:30                 # → out/scaffold-30s.mp4, 900 frames
 npm run check:fonts               # proves the bundled faces are really used
+npm run check:copy -- out/scaffold-75s.mp4   # OCRs the render against the §4 deck
 npm run typecheck
 ```
 
 Chromium is taken from `/usr/bin/chromium` (`--browser-executable`). The bundled
 Chrome headless shell works too if it is already cached.
+
+## What was measured on this scaffold
+
+| Check | Result |
+|---|---|
+| `ffprobe` Hero75 | h264 High, 1920×1080, yuv420p, `30/1`, **2250 frames**, 75.000 s, 3.08 MB |
+| `ffprobe` Hero30 | 1920×1080, `30/1`, **900 frames**, 30.000 s, 1.27 MB |
+| `scripts/check-copy.sh` | 27/27 §4 strings found in `out/scaffold-75s.mp4` at the frames §3 puts them |
+| `scripts/check-fonts.sh` | 5/5 — SS3 400/600 and Fraunces roman/italic are all distinct from the serif fallback |
+| `tsc --noEmit` | clean |
+| scene cuts (`select=gt(scene,0.15)`) | 3.5, 7.5, 11.0, 14.0, 70.0 s — placeholder→placeholder cuts at 24/38/47/56/64 s are below the threshold because both sides are the same card stock; the copy audit proves those beats changed |
+| `blackdetect` | one run, 74.833–74.967 s (4 fully black frames at the tail fade) — inside the §9 allowance |
+
+`out/` is gitignored: the mp4 is a build product, the sources are the deliverable.
 
 ## Dropping a capture in is one line
 
