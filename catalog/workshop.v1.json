@@ -6,9 +6,9 @@
   "packs": [
     {
       "pack_id": "japanese-affection-context-l0",
-      "pack_version": "2.2.0",
+      "pack_version": "2.4.0",
       "directory": "japanese-affection-context-l0",
-      "content_hash": "sha256:532a6cda1b9145b0b5a41957afe9c3a5215d7396493a41f5103835395f83da60",
+      "content_hash": "sha256:da916768278ec2066bdba059ee814083a4738f4adb124aecb7f3fb3acdac1e90",
       "featured": true,
       "categories": [
         "Languages",
@@ -25,10 +25,20 @@
       "cover": {
         "path": "content/cover-3x2.png",
         "crop": "content/cover-4x5.png",
-        "alt": "Painted cover plate: a cafe counter and stool across a paper ground, with a paper-cream lantern and a noren curtain above. Illustration only; not a diagram of the course, and it carries no text or register fact.",
-        "caption": "Cover plate — painted illustration, not a diagram of the course."
+        "alt": "Printed cover plate: a pale gold field below one indigo plane with a slanted cut edge, and a full-width gold band along the bottom. Decorative geometry only; not a diagram of the course, and it carries no glyph or register fact.",
+        "caption": "Cover plate — printed geometry, not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.4.0",
+          "date": "2026-11-10",
+          "note": "2.4.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0). The image carries no glyph; the course title is UI text. No language, check or source changed."
+        },
+        {
+          "version": "2.3.0",
+          "date": "2026-11-10",
+          "note": "2.3.0 rewrites two learner-facing phrases so the shipped course reads as a course: the first section opens as an L0 lesson for an adult beginner, and the second says no native-speaker review is recorded for this pack. The rights paragraph in the source notes now records CC-BY-4.0 with redistribution allowed under the operator-directed redistribution of 2026-11-10. No language, check or source changed."
+        },
         {
           "version": "2.2.0",
           "date": "2026-11-10",
@@ -53,9 +63,9 @@
     },
     {
       "pack_id": "parent-measurement-practice",
-      "pack_version": "2.0.0",
+      "pack_version": "2.1.0",
       "directory": "parent-measurement-practice",
-      "content_hash": "sha256:eac9c5c0ca771097dc33dd61d73a3fb26373c32c7793816ba7f527ab79775747",
+      "content_hash": "sha256:e2dbb752b7e45964f732dbdd05fdddfec9afb41305975aef12abdcf8a32daca6",
       "featured": false,
       "categories": [
         "For parents",
@@ -72,10 +82,15 @@
       "cover": {
         "path": "content/cover-3x2.png",
         "crop": "content/cover-4x5.png",
-        "alt": "Painted cover plate: a blank measuring jug, a bowl and oranges on a table with field-green linen. Illustration only; the jug has no graduations or numbers, and it states no quantity.",
-        "caption": "Cover plate — painted illustration, not a diagram of the course."
+        "alt": "Printed cover plate: a plum plane across the left two thirds with an ink cut edge, one narrow plum band across the frame, a pale gold field on the right, and a gold band along the bottom. Decorative geometry only; not a diagram of the lesson, and it carries no glyph or quantity.",
+        "caption": "Cover plate — printed geometry, not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.1.0",
+          "date": "2026-11-10",
+          "note": "2.1.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0). The image carries no glyph; the course title is UI text. No teaching text, check or answer changed."
+        },
         {
           "version": "2.0.0",
           "date": "2026-11-10",
@@ -90,9 +105,9 @@
     },
     {
       "pack_id": "technical-pack-literacy",
-      "pack_version": "2.1.0",
+      "pack_version": "2.3.0",
       "directory": "technical-pack-literacy",
-      "content_hash": "sha256:130a679dd6522aec06e40ccc3a63dc9f3d2d56cfc04927ad5a6653b762afbbb5",
+      "content_hash": "sha256:99526a93c25a6ac5950027e0c7d9dcc9bd3b26282f21c90fd3e45268444fd7f3",
       "featured": false,
       "categories": [
         "Technical",
@@ -109,10 +124,20 @@
       "cover": {
         "path": "content/cover-3x2.png",
         "crop": "content/cover-4x5.png",
-        "alt": "Painted cover plate: an open blank manual on a bench edge with a stack of loose sheets beside it. Illustration only; its pages are blank, and it is not a diagram of the pack format.",
-        "caption": "Cover plate — painted illustration, not a diagram of the course."
+        "alt": "Printed cover plate: a solid ink half on the left with a pale gold field on the right and a full-width gold band along the bottom. Decorative geometry only; not a diagram of the pack format, and it carries no glyph or field.",
+        "caption": "Cover plate — printed geometry, not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.3.0",
+          "date": "2026-11-10",
+          "note": "2.3.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0). The image carries no glyph; the course title is UI text. No contract fact, check or citation changed."
+        },
+        {
+          "version": "2.2.0",
+          "date": "2026-11-10",
+          "note": "2.2.0 rewrites three learner-facing phrases that read as if this repository's own packs were throwaway exhibit material; the passages now state the pack-contract rule they teach. No contract fact, check or citation changed."
+        },
         {
           "version": "2.1.0",
           "date": "2026-11-10",

@@ -1,16 +1,18 @@
 {
   "accessibility_notes": [
     "Plain markdown; every field name is written as literal text so it survives a screen reader.",
-    "The cover plate has a text equivalent on its file record and the caption 'Cover plate — painted illustration, not a diagram of the course.' beside it; nothing in the course depends on seeing it."
+    "The cover plate has a text equivalent on its file record and the caption 'Cover plate — printed geometry, not a diagram of the course.' beside it; nothing in the course depends on seeing it. The image carries no glyph; the course title is UI text."
   ],
-  "attribution": "Original teaching text: Coursebook. The cover plate is model output generated for this pack and is recorded with its provenance and rights position in the manifest. No third-party text or media is bundled. Model-generated cover produced for this pack; no third-party source or media.",
-  "content_hash": "sha256:130a679dd6522aec06e40ccc3a63dc9f3d2d56cfc04927ad5a6653b762afbbb5",
+  "attribution": "Original teaching text: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest. No third-party text or media is bundled. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+  "content_hash": "sha256:99526a93c25a6ac5950027e0c7d9dcc9bd3b26282f21c90fd3e45268444fd7f3",
   "content_notes": [
     "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
     "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
     "This course is about the pack format. It teaches the pack format, not the subject of any other pack.",
     "2.0.0 added one composed Press Plate cover (content/cover-16x9.png with its 3:2 crop) and moved the document to cb.pack v2 so the plate could be linked through media[]. The plate was decorative: it was not a diagram of the manifest schema and stated no field, count or rule.",
-    "2.1.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. Its pages are blank: it states no field, count or rule, and no lesson depends on seeing it."
+    "2.1.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. Its pages are blank: it states no field, count or rule, and no lesson depends on seeing it.",
+    "2.2.0 rewrites three learner-facing phrases that read as if this repository's own packs were throwaway exhibit material — in the anatomy section, the label section and content/source-notes.md — as the pack-contract rule they teach: a pack may declare `unspecified`/`local_only`, a `human_review_recorded` fact is absent when no review is on record, and `audit_state: \"unreviewed\"` is the honest default for any unreviewed check. No contract fact, check or citation changed.",
+    "2.3.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. No contract fact, check or citation changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
@@ -28,43 +30,43 @@
   },
   "files": [
     {
-      "bytes": 617107,
-      "description": "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 gouache plate. Decorative illustration; it is not a schema diagram and has no text.",
+      "bytes": 3162,
+      "description": "Printed cover plate for this pack (3:2 plate, 864x576): flat geometry printed by the pack builder. Decorative only; it is not a schema diagram and has no glyph.",
       "mime": "image/png",
       "path": "content/cover-3x2.png",
       "role": "cover",
-      "sha256": "sha256:36927aabcffa5d8ff49a2c553aa6a9814e9820c337835f9e7709460a048fc85f",
-      "text_equivalent": "Painted cover plate: an open blank manual on a bench edge with a stack of loose sheets beside it. Decorative illustration only: its pages are blank, it carries no text, and it is not a diagram of the pack format and states no field, count or rule."
+      "sha256": "sha256:3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+      "text_equivalent": "Printed cover plate: a solid ink half on the left with one pale grey band along its cut edge, a pale gold field on the right, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph and is not a diagram of the pack format; it states no field, count or rule."
     },
     {
-      "bytes": 561177,
-      "description": "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's exact centre crop. Decorative illustration; no field, count or text.",
+      "bytes": 2348,
+      "description": "Printed cover plate for this pack (3:2 card crop, 864x576), the master's exact centre crop. Decorative only; no glyph, no field, count or text.",
       "mime": "image/png",
       "path": "content/cover-4x5.png",
       "role": "cover",
-      "sha256": "sha256:4a03eaa7051318d8ab4f565a39bc8a42d4efa4073d5a91bb6fae856d54c991ff",
-      "text_equivalent": "Painted cover plate: an open blank manual on a bench edge with a stack of loose sheets beside it. Decorative illustration only: its pages are blank, it carries no text, and it is not a diagram of the pack format and states no field, count or rule."
+      "sha256": "sha256:668a63a9c38d07ca810d5b4f1a16bfd520ca23e668fdf5040836edbea94f8416",
+      "text_equivalent": "Printed cover plate: a solid ink half on the left with one pale grey band along its cut edge, a pale gold field on the right, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph and is not a diagram of the pack format; it states no field, count or rule."
     },
     {
-      "bytes": 1765,
+      "bytes": 1757,
       "mime": "text/markdown",
       "path": "content/section-01-anatomy.md",
       "role": "section",
-      "sha256": "sha256:5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c"
+      "sha256": "sha256:6ceae35f274dfc145436538f485fd5c8868b782002f83da810ff1b7261cb7f9f"
     },
     {
-      "bytes": 1341,
+      "bytes": 1348,
       "mime": "text/markdown",
       "path": "content/section-02-labels.md",
       "role": "section",
-      "sha256": "sha256:83890e910b8b1d45b5613c01cb2634cf49c0e7cfe0ee8bcb9f4e8d1371ea343a"
+      "sha256": "sha256:d0e874cda46492b695bd7bb318ddfc1b5be3993eb615128240e4cd6bfdea4d50"
     },
     {
-      "bytes": 901,
+      "bytes": 893,
       "mime": "text/markdown",
       "path": "content/source-notes.md",
       "role": "source_note",
-      "sha256": "sha256:66cd8b84c57c4a29b0935143ca8a78303547706f23f39514b0715707668c8c63"
+      "sha256": "sha256:0ebef5de5b48facab2aaca03788669fe9672a2cf4f74fb85e417fd3c95d78305"
     }
   ],
   "level_label": "Technical · for pack readers",
@@ -73,13 +75,13 @@
     "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is model output produced for this pack. No third-party text or media is included; the repository files it cites are read locally by the pack maintainer, not redistributed.",
     "per_artifact": [
       {
-        "attribution": "Model-generated cover produced for this pack; no third-party source or media.",
-        "license_id": "CC-BY-4.0",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-3x2.png"
       },
       {
-        "attribution": "Model-generated cover produced for this pack; no third-party source or media.",
-        "license_id": "CC-BY-4.0",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-4x5.png"
       }
     ],
@@ -88,7 +90,7 @@
   "locale": "en-US",
   "media": [
     {
-      "caption": "Cover plate — painted illustration, not a diagram of the course.",
+      "caption": "Cover plate — printed geometry, not a diagram of the course.",
       "path": "content/cover-3x2.png",
       "section_path": "content/section-01-anatomy.md"
     }
@@ -177,7 +179,7 @@
     }
   ],
   "pack_id": "technical-pack-literacy",
-  "pack_version": "2.1.0",
+  "pack_version": "2.3.0",
   "recipe": "one_off",
   "safety_notes": [
     "Text plus one decorative cover plate. No external services, no learner data, and no image that carries a technical claim."

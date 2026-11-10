@@ -29,7 +29,7 @@ directness and weight.
   hierarchy.
 
 These are the claims the pack relies on. They are labelled with a support status in the
-manifest, and no native-speaker review is recorded for this demo pack.
+manifest, and no native-speaker review is recorded for this pack.
 
 ## Choosing in three steps
 

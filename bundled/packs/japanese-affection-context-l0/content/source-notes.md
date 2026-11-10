@@ -55,6 +55,7 @@ this general framing, not for any specific wording claim.
 ## Rights
 
 No source text, exercise, audio or image is bundled. Sources are cited by link only; the pack
-contains original teaching prose and a schematic generated for this demo. The pack's own license
-is left `unspecified` with `local_only` redistribution because the operator has not chosen a
-redistribution license. The schematic is original geometry with no third-party imagery.
+contains original teaching prose and a schematic generated for this pack. The pack's own license
+is `CC-BY-4.0` with `redistribution: allowed`, under the operator-directed redistribution of
+2026-11-10 that ships it in the Workshop store. The covers and the relationship schematic are
+model output or original geometry produced for this pack, with no third-party imagery.

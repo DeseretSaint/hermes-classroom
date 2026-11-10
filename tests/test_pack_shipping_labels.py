@@ -12,8 +12,11 @@ and one rights fact for the model-produced covers: CC-BY-4.0 with the shipping a
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -23,11 +26,15 @@ from tests.kernel_support import KernelCase
 ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "bundled" / "packs"
 CATALOG = ROOT / "catalog" / "workshop.v1.json"
+BUILDER = PACKS / "build_bundled_packs.py"
 
 #: The owner's rule for this card, verbatim.
 FIXTURE_WORDING = re.compile(r"demo|sample|fixture", re.IGNORECASE)
 
-COVER_ATTRIBUTION = "Model-generated cover produced for this pack; no third-party source or media."
+COVER_ATTRIBUTION = (
+    "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; "
+    "no model output, no text, no third-party source or media. CC0-1.0."
+)
 
 #: ``pack_id -> the exact title the store must show``.
 SHIPPED_TITLES = {
@@ -61,6 +68,8 @@ def user_visible_strings(manifest: dict) -> dict[str, str]:
     for index, contributor in enumerate(manifest.get("contributors") or []):
         fields[f"contributors[{index}].name"] = str(contributor.get("name") or "")
         fields[f"contributors[{index}].role"] = str(contributor.get("role") or "")
+    for name in ("content_notes", "safety_notes", "accessibility_notes"):
+        fields[name] = "\n".join(str(item) for item in manifest.get(name) or [])
     return fields
 
 
@@ -91,13 +100,26 @@ class ManifestShippingTests(unittest.TestCase):
                         f"{entry['pack_id']} {field} still reads as a fixture: {text!r}",
                     )
 
+    def test_no_manifest_field_anywhere_carries_fixture_wording(self) -> None:
+        """The flat scan: a new free-text field cannot escape the field list above.
+
+        ``content_notes``, ``safety_notes`` and ``accessibility_notes`` are rendered in the pack
+        preview, so the whole serialized manifest is the honest scope, not a chosen key list.
+        """
+        for entry in self.entries:
+            manifest = manifest_for(entry)
+            blob = json.dumps(manifest, ensure_ascii=False)
+            matches = sorted({match.group(0).lower() for match in FIXTURE_WORDING.finditer(blob)})
+            with self.subTest(pack=entry["pack_id"]):
+                self.assertEqual(matches, [], f"{entry['pack_id']} manifest carries {matches}")
+
     def test_shipped_titles_are_the_course_titles(self) -> None:
         for entry in self.entries:
             manifest = manifest_for(entry)
             with self.subTest(pack=entry["pack_id"]):
                 self.assertEqual(manifest["title"], SHIPPED_TITLES[entry["pack_id"]])
 
-    def test_every_cover_artifact_is_cc_by_with_the_shipping_attribution(self) -> None:
+    def test_every_cover_artifact_is_cc0_deterministic_and_text_free(self) -> None:
         checked = 0
         for entry in self.entries:
             manifest = manifest_for(entry)
@@ -115,8 +137,9 @@ class ManifestShippingTests(unittest.TestCase):
                 with self.subTest(pack=entry["pack_id"], path=path):
                     self.assertIn(path, records, "a cover needs its own per-artifact licence record")
                     right = records[path]
-                    self.assertEqual(right["license_id"], "CC-BY-4.0")
+                    self.assertEqual(right["license_id"], "CC0-1.0")
                     self.assertEqual(right["attribution"], COVER_ATTRIBUTION)
+                    self.assertNotIn("model", str(record.get("text_equivalent") or "").lower())
                     checked += 1
         self.assertEqual(checked, 6, "three packs x (3:2 master + 4:5 crop)")
 
@@ -132,6 +155,135 @@ class ManifestShippingTests(unittest.TestCase):
                         FIXTURE_WORDING.search(text),
                         f"{entry['pack_id']} catalogue copy still reads as a fixture: {text!r}",
                     )
+
+
+class CoverArtTests(unittest.TestCase):
+    """A cover is deterministic geometry printed by the builder — never model art with glyphs.
+
+    The host image model bakes garbled lettering into plates (the live Home shelf showed
+    ``Asttomamy``/``Repir Fundamentas`` inside the art). Two checks hold the rule: the committed
+    bytes must be the generator's own output, and an OCR pass over the shipped file must find no
+    text. The course title is DOM text on the card, never part of the image.
+    """
+
+    KINDS = {
+        "japanese-affection-context-l0": "japanese",
+        "parent-measurement-practice": "parent",
+        "technical-pack-literacy": "technical",
+    }
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        spec = importlib.util.spec_from_file_location("cp042_bundled_builder", BUILDER)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("cannot load the bundled pack builder")
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        cls.builder = builder
+
+    def test_committed_cover_is_the_deterministic_generator_output(self) -> None:
+        for pack_id, kind in self.KINDS.items():
+            folder = PACKS / pack_id / "content"
+            with self.subTest(pack=pack_id):
+                self.assertEqual(
+                    (folder / "cover-3x2.png").read_bytes(),
+                    self.builder.deterministic_cover(kind),
+                    "the shipped master must be the generator's bytes, not a hand-placed image",
+                )
+                self.assertEqual(
+                    (folder / "cover-4x5.png").read_bytes(),
+                    self.builder.deterministic_cover(kind, portrait=True),
+                    "the portrait file must be the generator's mechanical crop",
+                )
+
+    def test_generator_draws_no_text(self) -> None:
+        """The drawing primitives are flat fills only; there is no font path in the generator."""
+        source = BUILDER.read_text(encoding="utf-8")
+        for forbidden in ("ImageFont", "ImageDraw", "draw.text", "load_default", "truetype", "PIL"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, source)
+
+    def test_ocr_finds_no_glyphs_in_a_shipped_cover(self) -> None:
+        engine = shutil.which("tesseract")
+        if engine is None:
+            self.skipTest("no OCR engine on this host; the generator-output check is the remaining proof")
+        checked = 0
+        for pack_id, _kind in self.KINDS.items():
+            for name in ("cover-3x2.png", "cover-4x5.png"):
+                image = PACKS / pack_id / "content" / name
+                completed = subprocess.run(
+                    [engine, str(image), "stdout"],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                recognised = "".join(
+                    character for character in completed.stdout if character.isalnum()
+                )
+                with self.subTest(pack=pack_id, file=name):
+                    self.assertEqual(recognised, "", f"OCR read text inside the cover: {recognised!r}")
+                    checked += 1
+        self.assertEqual(checked, 6)
+
+
+class PackContentShippingTests(unittest.TestCase):
+    """Lesson content is served verbatim, so the words in it are user-visible.
+
+    ``coursebook/pack_flow.py`` writes each declared ``section`` file straight into
+    ``lesson_segments``; a section or source note that calls the course a demo is shown to the
+    learner exactly as written. Scanning the manifest's metadata alone is a false green, so every
+    declared text file is scanned here in its staged bytes.
+    """
+
+    #: Roles whose declared bytes are prose a learner reads. ``mime`` is the authority; the role
+    #: list is the coverage assertion below, so a new prose role cannot slip past unread.
+    PROSE_ROLES = ("section", "source_note", "learner_page", "parent_guide", "answer_guide")
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.entries = catalog_entries()
+        cls.manifests = {
+            entry["pack_id"]: manifest_for(entry) for entry in cls.entries
+        }
+
+    def declared_text_files(self, manifest: dict) -> list[dict]:
+        declared = []
+        for entry in manifest["files"]:
+            mime = str(entry.get("mime") or "")
+            if mime.startswith("text/") or str(entry["path"]).endswith((".md", ".txt")):
+                declared.append(entry)
+        return declared
+
+    def test_every_declared_text_file_is_free_of_fixture_wording(self) -> None:
+        for pack_id, manifest in self.manifests.items():
+            directory = PACKS / pack_id
+            declared = self.declared_text_files(manifest)
+            self.assertTrue(declared, f"{pack_id} declares no text file to scan")
+            for entry in declared:
+                path = str(entry["path"])
+                text = (directory / path).read_bytes().decode("utf-8", "replace")
+                for number, line in enumerate(text.splitlines(), start=1):
+                    with self.subTest(pack=pack_id, path=path, line=number):
+                        self.assertIsNone(
+                            FIXTURE_WORDING.search(line),
+                            f"{pack_id} serves fixture wording to the learner at {path}:{number}: "
+                            f"{line.strip()!r}",
+                        )
+
+    def test_every_pack_exposes_the_prose_roles_it_ships(self) -> None:
+        for pack_id, manifest in self.manifests.items():
+            roles = {str(entry.get("role")) for entry in manifest["files"]}
+            with self.subTest(pack=pack_id):
+                self.assertTrue(roles & {"section", "learner_page"}, f"{pack_id} ships no taught page")
+                self.assertTrue(
+                    roles & {"source_note", "parent_guide", "answer_guide"},
+                    f"{pack_id} ships no supporting prose",
+                )
+                # No prose role may exist that ``declared_text_files`` would skip silently.
+                extra = roles - set(self.PROSE_ROLES) - {"cover", "visual", "narration", "manifest"}
+                self.assertEqual(extra, set(), f"{pack_id} ships an unscanned role: {sorted(extra)}")
 
 
 class CatalogSurfaceTests(KernelCase):

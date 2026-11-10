@@ -494,10 +494,10 @@ class CoverArtifactScopeTest(PackMediaCase):
             provenance = json.loads(row["provenance_json"])
             if provenance.get("pack_file") == self.COVER:
                 by_version[str(provenance["pack_version"])] = str(row["id"])
-        self.assertEqual(sorted(by_version), ["2.0.0", "2.1.0"])
+        self.assertEqual(sorted(by_version), ["2.0.0", manifest_new["pack_version"]])
         with db.read() as connection:
             served = workshop.pack_cover_artifact(connection, new["course_id"], "technical-pack-literacy")
-        self.assertEqual(served, by_version["2.1.0"], "the course's own version supplies its plate")
+        self.assertEqual(served, by_version[manifest_new["pack_version"]], "the course's own version supplies its plate")
 
 
 def manifest_file_hash(manifest: dict, path: str) -> str:

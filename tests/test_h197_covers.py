@@ -265,13 +265,13 @@ class AccuracyTests(unittest.TestCase):
                 continue
             with self.subTest(pack=entry["pack_id"]):
                 caption = str(cover.get("caption") or "")
-                self.assertIn("painted illustration", caption.lower())
+                self.assertIn("printed geometry", caption.lower())
                 self.assertIn("not a diagram", caption.lower())
                 manifest, _ = archive.read_directory(PACKS / entry["directory"])
                 record = next(item for item in manifest["files"] if item["path"] == cover["path"])
                 text = str(record.get("text_equivalent") or "")
-                self.assertIn("painted cover plate", text.lower())
-                self.assertIn("illustration only", text.lower())
+                self.assertIn("printed cover plate", text.lower())
+                self.assertIn("decorative geometry only", text.lower())
                 self.assertTrue(text.strip())
 
     def test_no_cover_carries_a_safety_critical_value(self) -> None:
@@ -299,7 +299,7 @@ class AccuracyTests(unittest.TestCase):
                 alt = str(cover.get("alt") or "")
                 self.assertGreaterEqual(len(alt), 40, "a cover needs a real alternative text, not a label")
                 self.assertNotEqual(alt, manifest["title"])
-                self.assertIn("painted cover plate", alt.lower())
+                self.assertIn("printed cover plate", alt.lower())
 
 
 class NoHotlinkAndIconFamilyTests(unittest.TestCase):
@@ -381,7 +381,7 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.builder = load_builder()
 
-    def test_each_committed_plate_matches_the_approved_kit(self) -> None:
+    def test_each_committed_plate_matches_the_generator(self) -> None:
         for kind, slug in (
             ("japanese", "japanese-affection-context-l0"),
             ("parent", "parent-measurement-practice"),
@@ -389,29 +389,30 @@ class BuilderIsTheOnlySourceTests(unittest.TestCase):
         ):
             with self.subTest(plate=kind):
                 folder = PACKS / slug / "content"
-                self.assertEqual((folder / "cover-3x2.png").read_bytes(), self.builder.painted_cover(kind))
+                self.assertEqual((folder / "cover-3x2.png").read_bytes(), self.builder.deterministic_cover(kind))
                 self.assertEqual(
                     (folder / "cover-4x5.png").read_bytes(),
-                    self.builder.painted_cover(kind, portrait=True),
+                    self.builder.deterministic_cover(kind, portrait=True),
                 )
                 manifest, _ = archive.read_directory(PACKS / slug)
                 declared = {item["path"]: item for item in manifest["files"]}
                 self.assertEqual(declared["content/cover-3x2.png"]["role"], "cover")
                 self.assertEqual(declared["content/cover-4x5.png"]["role"], "cover")
 
-    def test_plate_geometry_is_the_a3_master_and_its_4_by_5_crop(self) -> None:
+    def test_plate_geometry_is_the_16_by_9_master_and_its_4_by_5_crop(self) -> None:
         for slug in ("japanese-affection-context-l0", "parent-measurement-practice", "technical-pack-literacy"):
             master_w, master_h = png_size((PACKS / slug / "content" / "cover-3x2.png").read_bytes())
             crop_w, crop_h = png_size((PACKS / slug / "content" / "cover-4x5.png").read_bytes())
-            self.assertEqual((master_w, master_h), (1200, 800))
-            self.assertEqual((crop_w, crop_h), (640, 800))
+            self.assertEqual((master_w, master_h), (864, 576))
+            self.assertEqual((crop_w, crop_h), (460, 575))
             self.assertEqual(round(master_w / master_h, 4), round(3 / 2, 4))
             self.assertEqual(round(crop_w / crop_h, 4), round(4 / 5, 4))
-            # The 4:5 file is the master's exact centre crop: same height, no resampling.
-            self.assertEqual(crop_h, master_h)
+            # The 4:5 file is the master's exact centre crop: no resampling, no second drawing.
+            self.assertLessEqual(crop_h, master_h)
+            self.assertLessEqual(crop_w, master_w)
 
-    def test_the_press_plate_fallback_is_still_generated_and_never_shipped(self) -> None:
-        """H-197 stays the composed typographic fallback; CP-014 does not delete that lane."""
+    def test_the_press_plate_is_the_shipped_cover_and_no_second_plate_file(self) -> None:
+        """CP-042: the Press Plate generator is the shipped cover lane itself, not a fallback."""
         data = self.builder.cover_plate_png("parent")
         self.assertGreater(len(data), 1000)
         self.assertEqual(png_size(data), (self.builder.COVER_W, self.builder.COVER_H))
@@ -483,8 +484,8 @@ class CoverFlowTests(KernelCase):
         second = self.item("japanese-affection-context-l0")
         self.assertEqual(first["cover"], second["cover"])
         self.assertEqual(first["content_hash"], second["content_hash"])
-        self.assertEqual(first["pack_version"], "2.2.0")
-        self.assertEqual(first["cover"]["caption"], "Cover plate — painted illustration, not a diagram of the course.")
+        self.assertEqual(first["pack_version"], "2.4.0")
+        self.assertEqual(first["cover"]["caption"], "Cover plate — printed geometry, not a diagram of the course.")
 
     def test_the_parent_pack_now_serves_its_approved_cover_after_install(self) -> None:
         workshop.install("parent-measurement-practice")
