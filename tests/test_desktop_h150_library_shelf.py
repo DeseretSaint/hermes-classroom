@@ -4,6 +4,11 @@ The shelf had three page labels, a lead that contradicted the source badges, a d
 inspector facts (`revision 12`, `pack_id`) printed as if they were learner facts. These gates
 render the shipped row and preview with React and read the route source for the parts a static
 render cannot mount (filters, overflow menu, one lead, one h1).
+
+Versioned by CP-003: every assertion here binds the v2 Library shelf. The source reads are already
+region-scoped to named v2 functions (``LibraryView``, ``PackShelfRow``, ``PackMenu``), so no v3
+stylesheet can reach them; no assertion was removed. Table:
+``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations

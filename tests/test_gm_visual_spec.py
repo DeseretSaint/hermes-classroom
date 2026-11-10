@@ -6,6 +6,12 @@ They do not prove that a screen looks like Coursebook — that is the reviewer's
 ``docs/GM-CONCEPT-PARITY-RUBRIC.md`` is the instrument. They prove the instrument is not arbitrary:
 every colour is a shipped token, every plate is textless, every screen has a frame and a state list,
 and no document invented a seventh type step.
+
+Versioned by CP-003: these assertions bind the v2 documents and the v2 contract, which v3 does not
+mutate. The rubric check reads §1's nine v2 dimensions; §7's ten v3 dimensions are additive and are
+scored by the reviewer, not re-derived here. The matrix/frame and print-spec clauses are universal:
+a v3 screen with no comparison frame still fails. Table:
+``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations

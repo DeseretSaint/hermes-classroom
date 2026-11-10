@@ -12,6 +12,11 @@ Host-owned chrome (badges, buttons, tab strips, pickers, the host markdown rende
 of those sizes and the plugin never overrides it, so it is outside the claim. The live computed
 check against the installed Desktop is ``scripts/h93-type-verify.mjs``; this test is the
 deterministic half that runs in CI.
+
+Versioned by CP-003: the source scan reads ``v2_source()``. The six v2 steps describe the v2
+surfaces; v3 names its own six roles in ``contracts/cb.tokens.v3.json`` and is gated separately by
+``tests/test_desktop_tokens_v3.py``. The universal claims (16px body, no authored text under 12px,
+75ch measure) survive into v3 and are not relaxed here. Table: ``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.cb_source_scope import v2_source
 from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -256,7 +262,9 @@ def library_responses() -> dict:
 
 class TypeScaleSourceTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.source = PLUGIN_JS.read_text(encoding="utf-8")
+        # v2 region only (CP-003): v3 sizes live in CB_V3_CSS and are gated by
+        # tests/test_desktop_tokens_v3.py, never by the v2 `fontSize:` scan.
+        self.source = v2_source()
         self.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
 
     def test_the_contract_declares_exactly_six_steps(self) -> None:

@@ -14,6 +14,11 @@ hold the three gates that make the lane safe to use:
 
 It also proves the builder is the only source of the committed plates, so a hand-edited binary
 cannot pass as the approved artwork.
+
+Versioned by CP-003: the licence, provenance, accuracy, builder and cover-flow assertions govern
+the v2 cover lane and are unchanged. The two universal clauses (no external fetch, one icon family)
+stay whole-file; the "no font asset reference" clause is v2-region only because v3 ships an
+@font-face. Table: ``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations
@@ -30,6 +35,7 @@ import unittest
 from pathlib import Path
 
 from coursebook import archive, media, pack_flow, packs, workshop
+from tests.cb_source_scope import v2_source
 from tests.kernel_support import KernelCase
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -307,10 +313,15 @@ class NoHotlinkAndIconFamilyTests(unittest.TestCase):
         self.assertNotIn("srcset", block)
 
     def test_the_plugin_fetches_no_external_image_or_font(self) -> None:
+        # Universal: no network fetch of an image or a font, on any version of the module.
         for pattern in ("url(http", "@import", "url(https"):
             with self.subTest(pattern=pattern):
                 self.assertNotIn(pattern, self.source)
-        self.assertNotRegex(self.source, r"\.(?:png|jpg|jpeg|woff2?|svg)\b[\"']")
+        # v2 region only (CP-003): v3 ships an @font-face for `CB Display` / `CB UI`, which may
+        # name a local font file. The v2 module had no font files at all, so this "no font asset
+        # reference" clause binds the v2 region; the v3 font rule is "every family starts with
+        # `CB `" in tests/test_desktop_tokens_v3.py.
+        self.assertNotRegex(v2_source(), r"\.(?:png|jpg|jpeg|woff2?|svg)\b[\"']")
 
     def test_the_icon_family_is_unchanged(self) -> None:
         self.assertIn("sdk.Codicon", self.source)
