@@ -1,0 +1,43 @@
+{
+  "id": "cp033-take-01",
+  "for": "CP-033 launch film, 75.00 s cut",
+  "surface": "Hermes Desktop · Coursebook route",
+  "cdp_port": 9411,
+  "notes": [
+    "Selectors are the ones the module actually renders today: [data-cb-home-shelf], [data-cb-home-card-action], [data-cb-block-check], [data-cb-choice], [data-cb-verdict], [data-cb-evidence-chip], [data-cb-tally-caption], [data-cb-path-current].",
+    "The submit control carries no stable data attribute, so the click falls back to the button's own label and accepts both the v2 copy and the v3 deck row (classroom.check.primary).",
+    "Run only against the accepted commit: the capture door refuses a window whose module sha is not the checkout's, and a take driven on a different module is not evidence.",
+    "A step that cannot find its target stops the take; no step is allowed to continue anyway."
+  ],
+  "setup": [
+    "the isolated window is up on the accepted commit and listening on the port in cdp_port",
+    "the test home holds one real course with at least one section whose check is materialised",
+    "nothing else is typed into this window during the take"
+  ],
+  "steps": [
+    { "kind": "marker", "id": "take-start", "note": "window ready, idle" },
+    { "kind": "navigate", "hash": "#/coursebook", "wait_for": "[data-cb-route]", "timeout_ms": 20000 },
+    { "kind": "wait", "for": "[data-cb-home-shelf=\"ready\"]", "timeout_ms": 20000, "note": "shelf read settled" },
+    { "kind": "wait", "ms": 900, "note": "hold for the reveal" },
+    { "kind": "marker", "id": "S2-reveal" },
+    { "kind": "marker", "id": "S3-proof1-shelf" },
+    { "kind": "hover-sweep", "selector": "[data-cb-home-card-action]", "ms": 2400, "note": "slow travel across the card row; no click" },
+    { "kind": "wait", "ms": 600 },
+    { "kind": "marker", "id": "S4a-proof2-answer" },
+    { "kind": "click", "selector": "[data-cb-home-card-action]", "wait_for": "[data-cb-block-check]", "timeout_ms": 25000, "note": "open the course and land on the pending section" },
+    { "kind": "wait", "ms": 1200 },
+    { "kind": "click", "selector": "[data-cb-choice=\"1\"], [data-cb-block-check] textarea", "note": "the served answer, whatever its format" },
+    { "kind": "wait", "ms": 900, "note": "read the question back before submitting" },
+    { "kind": "marker", "id": "S4b-proof2-row" },
+    { "kind": "click", "text_any": ["Submit answer", "Submit choice", "Submit confirmation", "Check answer"], "wait_for": "[data-cb-verdict]", "timeout_ms": 25000, "note": "one answer, one transition" },
+    { "kind": "assert", "selector": "[data-cb-evidence-chip]", "note": "the recorded row is on screen" },
+    { "kind": "wait", "ms": 1600, "note": "verdict and evidence count settle" },
+    { "kind": "marker", "id": "S5a-proof3-close", "note": "close the window here; the close is a cut" },
+    { "kind": "marker", "id": "S5b-proof3-resume", "note": "re-opened window; attach again and continue from this marker" },
+    { "kind": "navigate", "hash": "#/coursebook", "wait_for": "[data-cb-route]", "timeout_ms": 20000 },
+    { "kind": "wait", "for": "[data-cb-block-check], [data-cb-path-current]", "timeout_ms": 25000, "note": "same pending check, same current node" },
+    { "kind": "assert", "selector": "[data-cb-tally-caption], [data-cb-evidence-chip]", "note": "the evidence already recorded is still there" },
+    { "kind": "wait", "ms": 2000, "note": "hold: same objective, same pending check" },
+    { "kind": "marker", "id": "take-end" }
+  ]
+}
