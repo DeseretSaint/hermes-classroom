@@ -1,0 +1,114 @@
+{
+  "card": "CP-013",
+  "owner": "easel",
+  "bible": "docs/concept-parity/ART-BIBLE.md",
+  "note": "Prompts are recorded verbatim as they were sent to the host image tool. Hashes are computed by scripts/cp013-provenance.py and written to provenance.json; no hash here is typed by hand. A rejected round is recorded by id, media URL and reason; its bytes are deleted, per PLAN.md section 5.",
+  "prompts": [
+    {
+      "id": "A4-banner-r3",
+      "plate": "discover-banner",
+      "round": 3,
+      "shipped": true,
+      "aspect_ratio": "landscape",
+      "prompt": "A wide feature-banner painting for a learning app: a Japanese lantern district at dusk, painted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, one soft key light from the upper left, flat brush-shaped marks, crisp brush-stopped edges, one shade plane on the down-right of each mass made from a darker tint of that same pigment.\n\nSTRICT COLOUR RULE: the whole plate is built from warm pigments only — cream, warm ochre, brass, deep forest green, one flat lantern yellow, one muted terracotta. NO blue, NO blue-grey, NO grey, NO neutral black, NO near-black mass anywhere; the darkest value in the painting is a warm umber brown. No cast shadow, no border, no frame.\n\nComposition: a stone path runs along the bottom of the frame. All detail is in the RIGHT 55 percent: a tall stone lantern on a rocky mound, a wooden shopfront with a plain indigo noren curtain and closed shutters, pine boughs and deep green foliage framing the right edge. The lantern is LIT but painted flat: a hard-edged lamp-yellow and ochre mass with no halo, no bloom, no radial glow, no soft light spill.\n\nThe LEFT 40 percent is a calm empty field: one flat cream sky of two or three broad horizontal brush bands of the same cream, no vertical gradient at all, above a single low soft distant hill line; no objects, no detail, reserved for a title typeset there later.\n\nAbsolutely no lettering of any kind: no letters, no words, no numbers, no kanji, no signage, no lantern inscriptions, no shop sign, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A4-cafe",
+      "plate": "lesson-cafe",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "landscape",
+      "prompt": "An interior scene painting for a language lesson, painted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, flat brush-shaped marks with crisp brush-stopped edges, one shade plane on the down-right of each mass in a darker tint of the same pigment, no gradient, no glow, no airbrush, no frame, no border.\n\nSubject: the inside of a small Japanese cafe in the late afternoon. A wooden counter runs across the right half with three plain ceramic cups and a small brass kettle on it; behind it, open shelves of stacked bowls and a rolled cloth; a plain indigo noren hangs in the doorway at the far right. On the left, a low table with one cup and a chair, and a wide window showing a soft warm street beyond. Empty space in the middle of the frame where a speech bubble will be typeset later.\n\nPalette: warm paper cream, deep forest green, ochre and wood brown, one lamp-yellow accent, one muted terracotta accent. At most five pigments plus the ink line. Keep the main subject inside the vertical middle third so the painting can be cropped to a wide band without losing the scene.\n\nAbsolutely no lettering: no letters, no words, no numbers, no kanji, no menu text, no chalkboard writing, no signs, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A4-map",
+      "plate": "course-map",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "landscape",
+      "prompt": "A painted expedition map ground for a learning app's course page, painted in opaque gouache on warm parchment paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no airbrush, no frame, no border, no drop shadow.\n\nSubject: a hand-painted map of an imaginary walking country. A single pale winding path crosses the field from the lower right to the upper right, drawn as a soft track of packed earth, with two gentle switchbacks. Around it: a low ridge of ochre hills running along the bottom, a band of deep forest green pines on the right edge, a shallow river drawn as a flat blue-green ribbon crossing the lower middle, two small empty meadows, and one tiny stone bridge. Nothing sits on the path itself.\n\nThe UPPER LEFT third of the plate is deliberately quiet and empty: flat pale parchment with one broad soft wash and the barest hint of a distant hill, reserved for a course title that will be typeset there later.\n\nStrictly no markers: no pins, no flags, no dots, no nodes, no stamps, no seals, no dotted route lines, no arrows, no compass rose, no scale bar. No lettering of any kind: no letters, no words, no numbers, no symbols, no labels, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-stamp-rim",
+      "plate": "stamp-rim",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a circular stamp rim drawn as a thick hand-inked ring with an empty blank centre, a thin brass inner ring inside it, and four short tick marks at the cardinal points. Nothing inside the centre.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground line, no border, no frame, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no symbols, no glyphs, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-medallion-rim",
+      "plate": "medallion-rim",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a blank medal with a circular brass rim, a plain empty paper-coloured centre disc, and a small brass loop at the top for a cord. No ribbon, no engraving, nothing inside the centre disc.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no dates, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-clock",
+      "plate": "clock",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a small brass alarm clock seen from the front, two small brass bells on top with a tiny hammer between them, two short feet, a plain dial with twelve simple tick marks around its edge and absolutely no numerals, and two slender dark hands fixed at ten past ten. The face is otherwise blank.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no brand mark, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-tag",
+      "plate": "tag",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a blank kraft paper luggage tag, lying flat at a slight angle, with a small punched hole at one end and a short loop of brown twine threaded through it. The tag face is completely blank.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no writing, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-ticket",
+      "plate": "ticket",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a blank paper admission ticket lying flat at a slight angle, one short perforated stub separated by a line of small round perforations at one end, and a plain rounded corner. Nothing printed on it.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no barcode, no stamp, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-passport-tray-r2",
+      "plate": "passport-tray",
+      "round": 2,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a shallow empty rectangular tray made of warm ochre wood with a thin brass lip around its rim, seen from above at a slight three-quarter angle. The inside is EMPTY and its soft inner shadow is a darker tint of the same warm wood pigment — never black, never grey. No contents.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, warm pigments only (no blue, no grey, no black), no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no watermark, no logo, no UI."
+    },
+    {
+      "id": "A5-shelf-plank",
+      "plate": "shelf-plank",
+      "round": 1,
+      "shipped": true,
+      "aspect_ratio": "square",
+      "prompt": "Single object, centred and filling the frame: a short length of plain wooden shelf plank seen from a three-quarter front view, warm ochre wood with a few long grain lines, a thin darker front lip giving it thickness, the top surface empty. Nothing stands on it.\n\nPainted in opaque gouache on warm paper, dark brown ink contour drawn last (warm #3a2318, never black), one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment, flat brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no border, flat pure magenta #ff00ff background. Textless: no letters, no numbers, no watermark, no logo, no UI."
+    }
+  ],
+  "rejected": [
+    {
+      "id": "A4-banner-r1",
+      "plate": "discover-banner",
+      "round": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf4/YDm4izHsyXubKwJpknf9e_lCOy3FTh.png",
+      "raw_sha256": "cf9779a3d47950832e2caeb41539dd474ec14c8c574b887ef3fba54b6736b9e1",
+      "reason": "A soft bloom around the lit lantern and a vertical sky gradient, both banned by ART-BIBLE section 1; the left field measured 6.42 detail but the plate carried near-black and blue-grey shadows (#2A2A35). Regenerated, bytes deleted."
+    },
+    {
+      "id": "A4-banner-r2",
+      "plate": "discover-banner",
+      "round": 2,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecff/qAsJP8m3UCZkwvritrqOD_6jZKVVih.png",
+      "raw_sha256": "53696b6f5647b1074c174b809a3155e2e8534b7c397eddd2d7a35626fb6cf5e6",
+      "reason": "Flat enough in the quiet field (6.42 detail) but 2.11% of the plate was pure black and the deep foliage still carried a cool shadow; regenerated under the strict warm-pigment rule, bytes deleted."
+    },
+    {
+      "id": "A5-passport-tray-r1",
+      "plate": "passport-tray",
+      "round": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf9/sVWxJESuDEPlCpqMQ91lL_3TUmk1fs.png",
+      "raw_sha256": "98a8aae0bb16bf016f34a8ae620f4efa08c80e3debdb9bca1ba1f55f1e96bcbc",
+      "reason": "5.24% of the opaque pixels were near-black: the tray's inner shadow was painted black instead of a darker tint of the wood pigment, which ART-BIBLE section 1 forbids. Regenerated, bytes deleted."
+    }
+  ]
+}

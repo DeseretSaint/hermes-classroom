@@ -1,0 +1,266 @@
+{
+  "card": "CP-013",
+  "bible": "docs/concept-parity/ART-BIBLE.md",
+  "recorded_at": "2026-11-10T17:13:43Z",
+  "rows": [
+    {
+      "prompt_id": "A4-banner-r3",
+      "plate": "discover-banner",
+      "round": 3,
+      "kind": "scene",
+      "prompt_preview": "A wide feature-banner painting for a learning app: a Japanese lantern district a\u2026",
+      "prompt_sha256": "d98614f55105ca8cad73998470c23ab1ddb41559106f7bb5719fb6e67161efd8",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ed0e/wlc4cUboeU9AvSr27IYsK_FW8iDjfQ.png",
+      "raw_asset": "audit/cp013-scenes/raw/scene-banner-raw-r3.png",
+      "raw_sha256": "7925eae302979beabf1791ce3134cc3c67ac1c6e9170e9caa077aae5ab1843eb",
+      "asset": "assets/art/scenes/discover-banner.png",
+      "asset_sha256": "5ef48e588928384f8301e6f727c4d49478eb72eb9fcc4c063da270ad5b92c505",
+      "bytes": 261941,
+      "width": 1024,
+      "height": 233,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A4-cafe",
+      "plate": "lesson-cafe",
+      "round": 1,
+      "kind": "scene",
+      "prompt_preview": "An interior scene painting for a language lesson, painted in opaque gouache on w\u2026",
+      "prompt_sha256": "0b9fb47cd5dbae35b4b04b1045cd81f08f5f9cf9e192893059beeebdbd26065d",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf7/6qH3m5cDMTuHd-ZsKj11G_A938Nki5.png",
+      "raw_asset": "audit/cp013-scenes/raw/scene-cafe-raw.png",
+      "raw_sha256": "64b68fc0d81051fbeaff0b34aa04b9a38ac7e94b469e9222edf289e5b1300f50",
+      "asset": "assets/art/scenes/lesson-cafe.png",
+      "asset_sha256": "6c3e4f692055b4f7c7f3a25db79fd0c23ab2acea4ff51740ffc6559e7bf88f62",
+      "bytes": 866917,
+      "width": 1024,
+      "height": 576,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A4-map",
+      "plate": "course-map",
+      "round": 1,
+      "kind": "scene",
+      "prompt_preview": "A painted expedition map ground for a learning app's course page, painted in opa\u2026",
+      "prompt_sha256": "c6f4347737a2188f51da05f3ecdffd2be4deff089034b0c3538403f2f6378368",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf7/rsfnzMpKMmpXR9LZsrVgH_jwo19DD2.png",
+      "raw_asset": "audit/cp013-scenes/raw/scene-map-raw.png",
+      "raw_sha256": "ca2daf2b38963928929c5c94133ac066ffbec8afebdc11ade5ce9e83fa133394",
+      "asset": "assets/art/scenes/course-map.png",
+      "asset_sha256": "6daf97d9b8be5ae3dc9524dc86cc85a64188393f7971ca511e4ac1430bfaa606",
+      "bytes": 949513,
+      "width": 1024,
+      "height": 576,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-stamp-rim",
+      "plate": "stamp-rim",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a circular stamp rim drawn as a th\u2026",
+      "prompt_sha256": "af1338393a7f42d40f3ea517a3814091a726f6ce5d1803b66a1ee58e650e6cda",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf8/8dYXzlqQu2gJlb8QPGLco_Ts4iyRiA.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-stamp-rim-raw.png",
+      "raw_sha256": "838edc3603ed4bd0485112f026410afc8c70da6c695c0659259f4c6d1486990c",
+      "asset": "assets/art/objects/stamp-rim.png",
+      "asset_sha256": "ddca1f614e31412ebd5f1a234902e9d77fd0d059f910b55ae722f97bb3ade288",
+      "bytes": 94090,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-medallion-rim",
+      "plate": "medallion-rim",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a blank medal with a circular bras\u2026",
+      "prompt_sha256": "f28fb6d1571ba328a7b24e8f131b3893de0d6751d5765b4e03303bde016a78b9",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf8/ELIesa8CJXblpDqVabtnI_GtHWgMq9.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-medallion-rim-raw.png",
+      "raw_sha256": "d6077144e26c2ad7c6ee8692d0ef3fcfc1bba22dfbde8d99d4d46fa06e8c54fd",
+      "asset": "assets/art/objects/medallion-rim.png",
+      "asset_sha256": "2ebe695ae90b8ed9b4e4657a24ca9d987683141f58880e26bc1ed9cef0959721",
+      "bytes": 78693,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-clock",
+      "plate": "clock",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a small brass alarm clock seen fro\u2026",
+      "prompt_sha256": "85c025416a546cb411827ec12961064e0556257a435f7ebbdf9ff5d66315b131",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf8/j7PqHrNn4p4ZpN4NA8M6D_GtPIkaxL.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-clock-raw.png",
+      "raw_sha256": "d14620a6bc4d4287e8d39187bc1b4c4ac1689b7ebdf45e7154270de621988a0b",
+      "asset": "assets/art/objects/clock.png",
+      "asset_sha256": "e734ab1231be48cd803219c5de710cb8f2cf32025d8de7e693d97f77931861a8",
+      "bytes": 88280,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-tag",
+      "plate": "tag",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a blank kraft paper luggage tag, l\u2026",
+      "prompt_sha256": "8001f94b974ed37dc6f2dcece9819da47f6513fa84bd07dca4827f787d578eef",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf8/tzAc1aE1MoujqbY4kpth1_cwISStgb.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-tag-raw.png",
+      "raw_sha256": "c30a4183b2fd09a57993eb7984ca860215080f8da505204846dda0ba591f65ae",
+      "asset": "assets/art/objects/tag.png",
+      "asset_sha256": "0f53b618b8e6efe316aeec4cf8664b66040fb8d24afc90403ae9178222a73054",
+      "bytes": 66938,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-ticket",
+      "plate": "ticket",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a blank paper admission ticket lyi\u2026",
+      "prompt_sha256": "6c5e6b8d1fec786155534054d7fa1d9023f35c730a7c246da6e6870df30e3bdd",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf9/6xF6AF5kcp7MRoQi7uycp_rWIQaZev.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-ticket-raw.png",
+      "raw_sha256": "5b226b3fe7d28b06f36439f19324142eb6a2e05f89ba72bdbf639436185e24e2",
+      "asset": "assets/art/objects/ticket.png",
+      "asset_sha256": "2851526d3e2471ed11c9831d45abe3623064700bcb788a8e7132f8167c5be189",
+      "bytes": 52202,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-passport-tray-r2",
+      "plate": "passport-tray",
+      "round": 2,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a shallow empty rectangular tray m\u2026",
+      "prompt_sha256": "b3019a1d2010c092fbca521b15e37b55af3d2a58ac21eaaa85a4942a8492aa15",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ed0e/b3Pjsj2zNLGXn2Cye3Znx_3x1EDwjM.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-passport-tray-raw-r2.png",
+      "raw_sha256": "16cc82af7b4b248216500a2b8ff4014efe718d70b7878821720f1a0d6db426eb",
+      "asset": "assets/art/objects/passport-tray.png",
+      "asset_sha256": "22def4d61f8ad1430900c21cead0b4c80d820ab33d94a2344f40e941c716493f",
+      "bytes": 64517,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    },
+    {
+      "prompt_id": "A5-shelf-plank",
+      "plate": "shelf-plank",
+      "round": 1,
+      "kind": "object",
+      "prompt_preview": "Single object, centred and filling the frame: a short length of plain wooden she\u2026",
+      "prompt_sha256": "d1918ebee4a01da070f606557ddb8354e1b40ffa486db91ab7fcd8122fc925d1",
+      "provider": "host image_generate (nous image gateway); model id not reported by the host tool",
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf9/y2qAhByYzMalzbm2MV8ao_y1GIwNX0.png",
+      "raw_asset": "audit/cp013-scenes/raw/object-shelf-plank-raw.png",
+      "raw_sha256": "7bd28651e1dd19d1b1fb44ade2278fbca50544c3b48054d3c419590bf4ba984a",
+      "asset": "assets/art/objects/shelf-plank.png",
+      "asset_sha256": "1e996a6a272ae01720d141de9292a7a427981654afd1fa4a8bd0f22dff149647",
+      "bytes": 66048,
+      "width": 256,
+      "height": 256,
+      "ocr": {
+        "run": true,
+        "psm": 3,
+        "text": ""
+      },
+      "recorded_at": "2026-11-10T16:16:32Z"
+    }
+  ],
+  "rejected": [
+    {
+      "prompt_id": "A4-banner-r1",
+      "plate": "discover-banner",
+      "round": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf4/YDm4izHsyXubKwJpknf9e_lCOy3FTh.png",
+      "raw_sha256": "cf9779a3d47950832e2caeb41539dd474ec14c8c574b887ef3fba54b6736b9e1",
+      "bytes_kept": false,
+      "reason": "A soft bloom around the lit lantern and a vertical sky gradient, both banned by ART-BIBLE section 1; the left field measured 6.42 detail but the plate carried near-black and blue-grey shadows (#2A2A35). Regenerated, bytes deleted."
+    },
+    {
+      "prompt_id": "A4-banner-r2",
+      "plate": "discover-banner",
+      "round": 2,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecff/qAsJP8m3UCZkwvritrqOD_6jZKVVih.png",
+      "raw_sha256": "53696b6f5647b1074c174b809a3155e2e8534b7c397eddd2d7a35626fb6cf5e6",
+      "bytes_kept": false,
+      "reason": "Flat enough in the quiet field (6.42 detail) but 2.11% of the plate was pure black and the deep foliage still carried a cool shadow; regenerated under the strict warm-pigment rule, bytes deleted."
+    },
+    {
+      "prompt_id": "A5-passport-tray-r1",
+      "plate": "passport-tray",
+      "round": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab1ecf9/sVWxJESuDEPlCpqMQ91lL_3TUmk1fs.png",
+      "raw_sha256": "98a8aae0bb16bf016f34a8ae620f4efa08c80e3debdb9bca1ba1f55f1e96bcbc",
+      "bytes_kept": false,
+      "reason": "5.24% of the opaque pixels were near-black: the tray's inner shadow was painted black instead of a darker tint of the wood pigment, which ART-BIBLE section 1 forbids. Regenerated, bytes deleted."
+    }
+  ]
+}
