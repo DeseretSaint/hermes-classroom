@@ -1361,10 +1361,10 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-targets-list': String(targets.length),
           children: [
-            jsx(CbLabel, { children: 'Expressions to practise' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.practiceExpressions }),
             jsx('ul', {
               className: 'flex flex-col gap-1 text-sm leading-snug',
-              'aria-label': 'Expressions to practise',
+              'aria-label': CB3_CLASSROOM_COPY.practiceExpressions,
               children: targets
                 .filter((target) => target.label)
                 .map((target) =>
@@ -1432,7 +1432,7 @@ function PracticeSurface({
             jsx(CbLabel, { children: 'Transcript' }),
             jsx('ol', {
               className: 'flex flex-col gap-1.5',
-              'aria-label': 'Practice transcript',
+              'aria-label': CB3_CLASSROOM_COPY.practiceTranscript,
               children: transcript.map((turn) =>
                 jsxs(
                   'li',
@@ -1565,11 +1565,11 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-criteria': String(criteria.length),
           children: [
-            jsx(CbLabel, { children: 'Grading criteria' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkCriteria }),
             criteria.length > 0
               ? jsx('ul', {
                   className: 'flex flex-col gap-1',
-                  'aria-label': 'Grading criteria',
+                  'aria-label': CB3_CLASSROOM_COPY.checkCriteria,
                   children: criteria.map((item, index) =>
                     jsxs(
                       'li',
@@ -2189,7 +2189,7 @@ function AttemptControls({
               choices.length > 0 && !choiceMode
                 ? jsx('ul', {
                     className: 'flex flex-col gap-1 text-sm leading-snug',
-                    'aria-label': 'Choices',
+                    'aria-label': CB3_CLASSROOM_COPY.checkChoices,
                     children: choices.map((choice, index) =>
                       jsx('li', { children: choice }, `choice-${index}`)
                     )
@@ -2201,12 +2201,12 @@ function AttemptControls({
                     'data-cb-check-items': String(checklist.length),
                     'data-cb-check-items-mode': 'selection',
                     children: [
-                      jsx(CbLabel, { children: 'Checklist' }),
+                      jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                       // One row per declared item: the served id is the submitted value, the label
                       // is the question. Ticking is the answer; nothing is typed here.
                       jsx('ul', {
                         className: 'flex flex-col gap-1.5',
-                        'aria-label': 'Checklist',
+                        'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                         children: checklist.map((item, index) =>
                           jsxs(
                             'li',
@@ -2241,11 +2241,11 @@ function AttemptControls({
                       'data-cb-check-items': String(readOnlyItems.length),
                       'data-cb-check-items-mode': 'read_only',
                       children: [
-                        jsx(CbLabel, { children: 'Checklist' }),
+                        jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                         // One label per item, printed here and nowhere else in the lesson.
                         jsx('ul', {
                           className: 'flex flex-col gap-1',
-                          'aria-label': 'Checklist',
+                          'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                           children: readOnlyItems.map((item) =>
                             jsx('li', {
                               className: 'text-sm leading-snug',
@@ -2327,7 +2327,7 @@ function AttemptControls({
                 : choiceMode
                   ? jsxs('div', {
                       role: 'radiogroup',
-                      'aria-label': 'Answers',
+                      'aria-label': CB3_CLASSROOM_COPY.checkAnswers,
                       'aria-describedby': 'cb-attempt-help',
                       'data-cb-choice-group': String(choices.length),
                       'data-cb-choice-selected': selected >= 0 ? String(selected + 1) : '',
@@ -2974,6 +2974,12 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   checkEdit: 'Edit answer',
   clearChoice: 'Clear choice',
   clearTicks: 'Clear ticks',
+  // Group names (COPY.md §4, SPEC-V3 §5.3 C7): the visible words and the aria-labels of the
+  // answer surfaces are these rows, so a group can never be named twice.
+  checkChoices: 'Choices',
+  checkChecklist: 'Checklist',
+  checkAnswers: 'Answers',
+  checkCriteria: 'Grading criteria',
   correct: 'That is right.',
   wrong: 'Not quite.',
   retry: 'Try again',
@@ -2983,6 +2989,9 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   evidenceEmpty: 'No checks recorded yet.',
   asideNext: 'Next up: {next}',
   asideTutor: 'Ask the tutor',
+  // Practice group names (COPY.md §4, SPEC-V3 §5.3 C8).
+  practiceExpressions: 'Expressions to practise',
+  practiceTranscript: 'Practice transcript',
   nochatTitle: 'This section has no chat yet',
   nochatBody: 'Start a fresh run to open a chat for this section.',
   nochatAction: 'Start a fresh run',
@@ -2998,8 +3007,9 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   gameXp: '{n} XP',
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
-  // SPEC-V3 §5.3 C7 names this label; COPY.md has no row for it, so it is reported rather than
-  // smuggled in as a second source. The manager turns it into a deck row (see review summary).
+  // SPEC-V3 §5.3 C7 does not name this label and the deck has no row for it (ruling 2026-11-10):
+  // the visible words stay identical and the missing row is reported in the review summary,
+  // never invented here as a second copy source.
   answerLabel: 'Your answer',
   selected: 'Selected',
   nothingSelected: 'Nothing selected yet.',

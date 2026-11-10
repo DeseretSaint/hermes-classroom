@@ -621,6 +621,12 @@ class ClassroomV3RenderTest(unittest.TestCase):
             "checkEdit": "classroom.check.edit",
             "clearChoice": "classroom.check.clear_choice",
             "clearTicks": "classroom.check.clear_ticks",
+            "checkChoices": "classroom.check.choices",
+            "checkChecklist": "classroom.check.checklist",
+            "checkAnswers": "classroom.check.answers",
+            "checkCriteria": "classroom.check.criteria",
+            "practiceExpressions": "classroom.practice.expressions",
+            "practiceTranscript": "classroom.practice.transcript",
             "retry": "classroom.check.retry",
             "next": "classroom.check.next",
             "evidenceTitle": "classroom.evidence.title",
@@ -646,6 +652,24 @@ class ClassroomV3RenderTest(unittest.TestCase):
         for key, row in expected.items():
             self.assertIn(row, deck, f"COPY.md has no row {row}")
             self.assertEqual(copy[key], deck[row], f"{key} does not match {row}")
+
+        # The six group labels are deck rows, not literals: no answer surface may name its own
+        # group again in the source (a second copy source is how two spellings drift apart).
+        source = SEGMENT.read_text(encoding="utf-8")
+        for literal in (
+            "'aria-label': 'Choices'",
+            "'aria-label': 'Checklist'",
+            "'aria-label': 'Answers'",
+            "'aria-label': 'Grading criteria'",
+            "'aria-label': 'Expressions to practise'",
+            "'aria-label': 'Practice transcript'",
+            "children: 'Choices'",
+            "children: 'Checklist'",
+            "children: 'Answers'",
+            "children: 'Grading criteria'",
+            "children: 'Expressions to practise'",
+        ):
+            self.assertNotIn(literal, source, f"the segment still hard-codes {literal}")
 
     def test_classroom_v3_paints_only_v3_tokens(self) -> None:
         source = SEGMENT.read_text(encoding="utf-8")
