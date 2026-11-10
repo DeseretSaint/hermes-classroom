@@ -491,7 +491,7 @@ def build_font(key: str, spec: dict) -> tuple[bytes, dict]:
             continue
 
     # Determinism: no build clock anywhere in the bytes. fontTools stores head dates in seconds
-    # since 1904-01-01, so the fixed value below is 2026-01-01T00:00:00Z in that epoch.
+    # since 1904-01-01, so 3_850_000_000 is 2025-12-31T04:26:40Z in that epoch (not 2026-01-01).
     font["head"].created = 3_850_000_000
     font["head"].modified = 3_850_000_000
     if "meta" in font:
@@ -860,12 +860,49 @@ def size_report(manifests: dict, entries: dict, js: str) -> dict:
     return {"ok": ok, "segment": segment, "plugin": plugin, "total": total, "entries": len(entries), "text": "\n".join(lines)}
 
 
+def committed_state() -> tuple[dict, dict, str]:
+    """Read the committed manifests and segment. Never writes; this is the --report path."""
+    manifests = {}
+    for group in ("fonts", "material", "fox", "objects"):
+        path = ASSETS / group / "manifest.json"
+        if not path.is_file():
+            raise SystemExit(
+                "no committed manifest at %s; run a build first" % path.relative_to(ROOT)
+            )
+        manifests[group] = json.loads(path.read_text(encoding="utf-8"))
+    if not GENERATED.is_file():
+        raise SystemExit(
+            "no committed segment at %s; run a build first" % GENERATED.relative_to(ROOT)
+        )
+    js = GENERATED.read_text(encoding="utf-8")
+    start = js.index("Object.freeze(") + len("Object.freeze(")
+    entries = json.loads(js[start : js.rindex(");")])["assets"]
+    return manifests, entries, js
+
+
+def report_only() -> dict:
+    """Print the size report for the committed tree. Read-only: no master, no segment, no build."""
+    manifests, entries, js = committed_state()
+    report = size_report(manifests, entries, js)
+    print(report["text"])
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="exit non-zero when a budget fails")
     parser.add_argument("--write-masters", action="store_true", help="redraw every art master")
-    parser.add_argument("--report", action="store_true", help="print the report only")
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="print the size report for the committed tree; writes nothing and needs no venv",
+    )
     args = parser.parse_args()
+    if args.report:
+        report = report_only()
+        if args.check and not report["ok"]:
+            raise SystemExit(1)
+        return
     ensure_venv()
     if args.write_masters:
         write_masters()

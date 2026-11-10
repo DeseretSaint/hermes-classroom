@@ -376,5 +376,140 @@ class Determinism(unittest.TestCase):
         self.assertEqual(first, GENERATED.read_bytes(), "committed segment is stale; rebuild it")
 
 
+DOC_FILES = (
+    ROOT / "docs" / "THIRD-PARTY.md",
+    ASSETS / "README.md",
+    ROOT / "tests" / "test_desktop_surface.py",
+)
+GATE = ROOT / "scripts" / "validate-plugin.sh"
+# Present-tense claims that the segment already ships inside the module. Future-tense statements
+# naming CP-020a as the owner (e.g. "CP-020a inlines the segment into plugin.js") are the truth and
+# are not in this list.
+INLINING_CLAIMS = (
+    "inside the plugin module",
+    "in the plugin module",
+    "stays one file",
+    "one plugin file",
+    "embedded in plugin.js",
+    "inlined into plugin.js",
+)
+ADMISSION_TOKENS = ("allowlist", "allow-list")
+
+
+class DocumentationClaims(unittest.TestCase):
+    """Docs must not describe enforcement or integration the repository does not perform.
+
+    Round 1 of review closed two truth defects here: THIRD-PARTY claimed a file admission rule the
+    release gate never had, and three files said the segment ships "inside the plugin module" while
+    ``plugin.js`` did not reference it. These gates fail if either claim returns before the code
+    that would make it true.
+    """
+
+    @staticmethod
+    def _offenders(predicate) -> list[str]:
+        found = []
+        for path in DOC_FILES:
+            for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if predicate(line):
+                    found.append("%s:%d: %s" % (path.relative_to(ROOT), lineno, line.strip()))
+        return found
+
+    def test_no_doc_claims_a_file_admission_rule_the_gate_lacks(self):
+        gate = GATE.read_text(encoding="utf-8").lower()
+        if any(token in gate for token in ADMISSION_TOKENS):
+            self.skipTest("the release gate now implements the rule; a doc claim would be true")
+        offenders = self._offenders(
+            lambda line: any(token in line.lower() for token in ADMISSION_TOKENS)
+        )
+        self.assertEqual(
+            offenders,
+            [],
+            "docs claim a file admission rule that scripts/validate-plugin.sh does not implement",
+        )
+
+    def test_no_doc_claims_inlining_the_module_does_not_perform(self):
+        if "CB_ASSETS" in PLUGIN.read_text(encoding="utf-8"):
+            self.skipTest("plugin.js really carries CB_ASSETS; an inlining claim is true")
+        offenders = self._offenders(
+            lambda line: any(claim in line.lower() for claim in INLINING_CLAIMS)
+        )
+        self.assertEqual(offenders, [], "docs claim the segment already ships inside plugin.js")
+
+    def test_docs_name_the_owner_of_the_pending_inlining(self):
+        plugin = PLUGIN.read_text(encoding="utf-8")
+        for path in DOC_FILES:
+            text = path.read_text(encoding="utf-8")
+            if GENERATED.name not in text and "GENERATED_SEGMENT" not in text:
+                continue
+            with self.subTest(file=path.name):
+                if "CB_ASSETS" in plugin:
+                    self.assertNotIn(
+                        "CP-020a owns",
+                        text,
+                        "%s still calls inlining pending; plugin.js already carries CB_ASSETS"
+                        % path.name,
+                    )
+                else:
+                    self.assertIn(
+                        "CP-020a",
+                        text,
+                        "%s describes the segment but not who wires it into plugin.js" % path.name,
+                    )
+
+
+class ReportIsReadOnly(unittest.TestCase):
+    """``--report`` must print the committed tree's report and write nothing (round-1 D3)."""
+
+    def _copy_tree(self, root: Path) -> None:
+        (root / "scripts").mkdir(parents=True)
+        shutil.copy2(BUILDER, root / "scripts" / "build_cb_assets.py")
+        for group in GROUPS:
+            dst = root / "assets" / group
+            dst.mkdir(parents=True)
+            for path in sorted((ASSETS / group).iterdir()):
+                if path.is_file():
+                    shutil.copy2(path, dst / path.name)
+        (root / "desktop").mkdir()
+        shutil.copy2(GENERATED, root / "desktop" / GENERATED.name)
+        shutil.copy2(PLUGIN, root / "desktop" / "plugin.js")
+
+    @staticmethod
+    def _snapshot(root: Path) -> dict:
+        return {
+            str(path.relative_to(root)): (path.stat().st_mtime_ns, _sha(path.read_bytes()))
+            for path in sorted(root.rglob("*"))
+            if path.is_file()
+        }
+
+    def _report(self, root: Path) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(root / "scripts" / "build_cb_assets.py"), "--report"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_report_leaves_every_file_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._copy_tree(root)
+            before = self._snapshot(root)
+            result = self._report(root)
+            self.assertEqual(result.returncode, 0, result.stderr[-800:])
+            self.assertIn("VERDICT:", result.stdout)
+            self.assertEqual(self._snapshot(root), before, "--report rewrote the tree")
+
+    def test_report_does_not_rebuild_a_missing_segment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._copy_tree(root)
+            (root / "desktop" / GENERATED.name).unlink()
+            before = self._snapshot(root)
+            result = self._report(root)
+            self.assertNotEqual(result.returncode, 0, "--report rebuilt instead of reporting")
+            self.assertFalse((root / "desktop" / GENERATED.name).exists())
+            self.assertEqual(self._snapshot(root), before, "--report wrote to the tree")
+
+
 if __name__ == "__main__":
     unittest.main()
