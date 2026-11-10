@@ -33637,6 +33637,7 @@ function TutorRail({
   detached = false,
   practice = null,
   practiceAvailable = false,
+  practiceSurface = null,
   practiceError = null,
   onModeChange,
   onDraftChange,
@@ -33935,11 +33936,18 @@ function TutorRail({
           ]
         })
       }
-      body = jsxs('div', {
-        'data-cb-tutor-body': 'practice',
-        style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
-        children: [modeBody, practiceState === 'active' ? composer : null]
-      })
+      body = practiceSurface
+        ? jsx('div', {
+            'data-cb-tutor-body': 'practice',
+            'data-cb-tutor-practice-surface': practiceState,
+            style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+            children: practiceSurface
+          })
+        : jsxs('div', {
+            'data-cb-tutor-body': 'practice',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+            children: [modeBody, practiceState === 'active' ? composer : null]
+          })
     } else {
       body = jsxs('div', {
         'data-cb-tutor-body': 'ask',
@@ -34209,6 +34217,7 @@ function TutorRailPane({ binding }) {
   const [width, setWidth] = useState(0)
   const rootRef = useRef(null)
   const endNonce = useRef(null)
+  const autoPractice = useRef(false)
 
   // The pane is not the route: measure the rail itself, so a 460 px window and a 1049 px window
   // with a chat beside it both choose the sheet/side layout from the space the rail really has.
@@ -34288,20 +34297,30 @@ function TutorRailPane({ binding }) {
     backendSupports('practice.end')
   )
 
+  // The ask path needs a bound run: that is the only place `no-lesson` belongs.
+  const askState =
+    !objectiveId || !runId
+      ? 'no-lesson'
+      : lessonChanged && !localTurns.length
+        ? 'lesson-changed'
+        : library.status === 'error' && !library.data
+          ? 'unavailable'
+          : (library.status === 'loading' && !row) || (page.status === 'loading' && !page.data) || (history.status === 'loading' && !history.data)
+            ? 'loading'
+            : 'ready'
+  const practiceState = practiceRead.status === 'loading' && !practiceRead.data ? 'loading' : 'ready'
+  // Practice is keyed by (enrollment_id, objective_id) and needs no lesson run, so `no-lesson` is
+  // an ask-path state only. A bound lesson with an open practice check still renders the practice
+  // in the rail even when this chat carries no run id.
+  const practiceHere = mode === 'practice' && practiceAvailable && Boolean(objectiveId)
   const railState =
     failure === 'provider'
       ? 'provider-failure'
       : failure === 'unavailable'
         ? 'unavailable'
-        : !objectiveId || !runId
-          ? 'no-lesson'
-          : lessonChanged && !localTurns.length
-            ? 'lesson-changed'
-            : library.status === 'error' && !library.data
-              ? 'unavailable'
-              : (library.status === 'loading' && !row) || (page.status === 'loading' && !page.data) || (history.status === 'loading' && !history.data)
-                ? 'loading'
-                : 'ready'
+        : practiceHere
+          ? practiceState
+          : askState
 
   const fence = Math.max(Number(fenced) || 0, Number(revision) || 0, Number(row && row.revision) || 0)
 
@@ -34537,6 +34556,34 @@ function TutorRailPane({ binding }) {
     [practiceAvailable]
   )
 
+  // A conversation-practice check on a bound lesson that has no lesson run. The rail's Ask mode
+  // needs a run to hold a thread, and the practice commands are keyed by (enrollment_id,
+  // objective_id) and need none, so the practice is both reachable and the useful opening mode.
+  const practiceCheck =
+    check.check && cbTutorPracticeDeclaration(check.check) ? check.check : null
+  const runBound = Boolean(runId)
+  useEffect(() => {
+    if (autoPractice.current) return
+    if (runBound || !practiceCheck || !practiceAvailable || !objectiveId) return
+    autoPractice.current = true
+    setMode('practice')
+  }, [runBound, practiceCheck, practiceAvailable, objectiveId])
+  // With no run there is no rail thread to write practice turns into: the learner's turns are
+  // written by the bound chat, so the pane shows the shipped PracticeSurface (the same surface the
+  // lesson check has always used) instead of a second practice implementation.
+  const practiceSurface =
+    practiceCheck && !runBound
+      ? jsx(PracticeSurface, {
+          enrollmentId: binding.enrollment_id,
+          objectiveId,
+          check: practiceCheck,
+          revision: fence,
+          implemented: backendWire.implemented,
+          bindingState: binding.status || 'active',
+          onCommitted: retry
+        })
+      : null
+  // Once the learner picks a mode, the rail never moves them again: the auto-open above fires once.
   const rail = jsx(TutorRail, {
     state: railState,
     width,
@@ -34569,6 +34616,7 @@ function TutorRailPane({ binding }) {
           }
         : null,
     practiceAvailable,
+    practiceSurface,
     practiceError: mode === 'practice' && practiceRead.status === 'error' ? practiceRead.error : null,
     onModeChange: modeChange,
     onDraftChange: setDraft,

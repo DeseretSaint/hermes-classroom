@@ -223,6 +223,8 @@ class DesktopRegistrationTest(unittest.TestCase):
                 "pane",
                 "open",
                 "focus",
+                # GM-012 §7.3: Ctrl/Cmd+J fronts the tutor rail. A keybind, never a pane.
+                "tutor",
                 # CB-011 Parent Studio: the third destination and "write a brief" intent.
                 "studio",
                 "studio-new",
