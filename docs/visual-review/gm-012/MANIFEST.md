@@ -18,6 +18,26 @@ served `lesson.page`, `tutor.history` (seeded thread), `tutor.ask`, and `practic
 Coursebook route or sidebar entry — no `[data-cb-route]`, no `codebook` text node — so the pane could
 not be driven there. That is recorded as a rig/plugin-load finding, not a route result.
 
+### Live-findings follow-up (this run)
+
+The boot-time disk-plugin scan is what fails, not the plugin: in the same shell,
+`window.hermesDesktop.desktopPluginsRoot()` resolves to `<home>/desktop-plugins`, `readDir` lists
+`coursebook`, and `readPluginSource` returns the 1.47 MB module, yet no route/nav appears and no
+`[plugins]` console error is emitted. Calling the host's own module-graph entry point from the
+renderer — `import('/src/contrib/runtime-loader.ts').then(m => m.discoverRuntimePlugins())` —
+registers it immediately: the sidebar gains the Coursebook entry, `#/coursebook` paints
+`[data-cb-route]`, the course home renders, `Start a fresh run` arms the pending binding and the
+chat banner reads `Lesson run ready: Say the before-meal greeting`, and `Open section` renders the
+lesson view. The TutorRail pane (`data-cb-tutor-pane`, gated on an active binding inside
+`CoursebookPane`) was still not mounted in that host pane layout before this run's iteration cap, so
+the select → ask → cited answer → citation → return walkthrough is **not** captured live. Treat it as
+the one open evidence gap; the route/pending-binding/section steps above were observed in a real
+window, not a fixture.
+
+That live pass used the GM-010 disposable window only after swapping its installed
+`desktop-plugins/coursebook/plugin.js` to this branch's sha; the original `cd45d647…` file was
+restored afterwards and the state's connection left on 44331.
+
 ## Frames
 
 32 PNGs: `ask`, `quote`, `practice`, `no-lesson` × light/dark × 1049/900/460 + 460 at 200% root text.
