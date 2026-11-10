@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>cp-demo selftest fixture</title>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 40px; }
+  [data-test-shelf] { margin-top: 20px; }
+  [data-test-verdict] { color: #0d281b; font-weight: 600; }
+</style>
+</head>
+<body>
+<!--
+  Fixture for `node scripts/cp-demo.mjs --selftest`.
+
+  It is not product UI and never reaches a frame: it exists so the driver's own step executor
+  (navigate, click, type, wait, hover-sweep, marker, assert) can be exercised without the Electron
+  window. Same shape as the live route: a start control, a shelf that appears after a click, one
+  field, one submit whose label matches both the v2 copy and the v3 deck, and an evidence count that
+  moves only after the submit.
+-->
+<div data-test-ready>
+  <h1>Coursebook driver fixture</h1>
+  <p>Not the product. Used by <code>cp-demo.mjs --selftest</code> only.</p>
+  <button data-test-start type="button">Start a course</button>
+  <div data-test-shelf="loading" hidden></div>
+</div>
+<script>
+  const start = document.querySelector('[data-test-start]')
+  const ready = document.querySelector('[data-test-ready]')
+  start.addEventListener('click', () => {
+    const shelf = document.createElement('div')
+    shelf.setAttribute('data-test-shelf', 'ready')
+    shelf.innerHTML = `
+      <div data-test-card="1">Sourdough</div>
+      <label for="answer">Your answer</label>
+      <input id="answer" data-test-field type="text" />
+      <button data-test-submit type="button">Submit answer</button>
+      <p data-test-verdict hidden></p>
+      <p data-test-evidence="0">0 of 1 checks recorded</p>`
+    ready.appendChild(shelf)
+    const submit = shelf.querySelector('[data-test-submit]')
+    submit.addEventListener('click', () => {
+      const verdict = shelf.querySelector('[data-test-verdict]')
+      verdict.hidden = false
+      verdict.textContent = 'That is right.'
+      shelf.querySelector('[data-test-evidence]').setAttribute('data-test-evidence', '1')
+    })
+  })
+</script>
+</body>
+</html>

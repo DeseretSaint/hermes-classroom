@@ -914,10 +914,10 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
           color: 'var(--cb-ink-soft)'
         },
         children: [
-          jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
-          jsx('span', { children: group.label })
+          jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }, 'chevron'),
+          jsx('span', { children: group.label }, 'label')
         ]
-      }),
+      }, 'summary'),
       jsx('ul', {
         style: {
           margin: '0.2rem 0 0',
@@ -944,11 +944,11 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
               },
               children: [
                 jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
-                  jsx('span', { children: member.title || 'Untitled' }),
-                  jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
-                ] }),
+                  jsx('span', { children: member.title || 'Untitled' }, 'title'),
+                  jsx('span', { children: ` · ${whenLabel(member.updated_at)}` }, 'when')
+                ] }, 'record'),
                 onOpen
-                  ? jsx(ShelfMemberOpen, { member, onOpen })
+                  ? jsx(ShelfMemberOpen, { member, onOpen }, 'open')
                   : jsxs('span', {
                       style: {
                         display: 'inline-flex',
@@ -957,22 +957,22 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
                         gap: '0.25rem 0.5rem'
                       },
                       children: [
-                        jsx('span', { children: `Can’t open “${member.title || 'this record'}” from here.` }),
+                        jsx('span', { children: `Can’t open “${member.title || 'this record'}” from here.` }, 'note'),
                         onOpenLibrary
                           ? jsx(CbAction, {
                               variant: 'tertiary',
                               onClick: onOpenLibrary,
                               children: 'Open the Library shelf'
-                            })
-                          : jsx('span', { children: 'Open it from the Library shelf.' })
+                            }, 'action')
+                          : jsx('span', { children: 'Open it from the Library shelf.' }, 'action')
                       ]
-                    })
+                    }, 'open')
               ]
             },
             member.enrollment_id
           )
         )
-      })
+      }, 'rows')
     ]
   })
 }
@@ -2628,7 +2628,7 @@ function PathStop({
                       color: kind === 'done' || kind === 'future' ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
                     },
                     children: objective.title
-                  }),
+                  }, 'title'),
                   jsx('span', {
                     'data-cb-path-word': '',
                     style: {
@@ -2643,25 +2643,25 @@ function PathStop({
                       whiteSpace: 'nowrap'
                     },
                     children: stateWord
-                  }),
+                  }, 'state'),
                   jsx('span', {
                     'data-cb-path-check-word': '',
                     style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                     children: checkWord
-                  })
+                  }, 'check')
                 ]
-              }),
+              }, 'titleline'),
               detailOpen
                 ? jsx('span', {
                     'data-cb-path-detail': objective.objective_id,
                     'data-cb-path-detail-body': '',
                     style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
                     children: cbPathDetailText(objective, attempts)
-                  })
+                  }, 'detail')
                 : null
             ]
-          })
-        })
+          }, 'body')
+        }, 'open')
       ]
     },
     objective.objective_id
@@ -2673,8 +2673,8 @@ function CheckpointDetailRow({ label, value }) {
   return jsxs('div', {
     style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
   , children: [
-    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
-    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
+    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }, 'label'),
+    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value }, 'value')
   ] })
 }
 

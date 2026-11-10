@@ -48,7 +48,7 @@
  *     --expect-sha <sha256>
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 
@@ -74,6 +74,65 @@ const expectSha = flag('expect-sha', null)
 const timeoutMs = Number(flag('timeout', 45000))
 const keepConsole = Boolean(flag('keep-console', false))
 const cropToContent = Boolean(flag('crop-to-content', false))
+// CP-038: addressable destinations and click-through states. `--click` is repeatable; every
+// value is a CSS selector resolved on the current surface, clicked in order, after the
+// destination has rendered and before the frame is measured.
+const destinationRaw = flag('destination', null)
+const clickSelectors = args.reduce((all, value, index) => {
+  if (value === '--click' && args[index + 1] && !args[index + 1].startsWith('--')) all.push(args[index + 1])
+  return all
+}, [])
+const scrollArg = flag('scroll', null)
+const clickWaitMs = Number(flag('click-wait', 800))
+// CP-038 B3: the Coursebook palette is a product setting stored per profile, not the media
+// feature. `--color-scheme` emulates `prefers-color-scheme` and is refused when the route keeps
+// painting the host's theme; `--appearance` drives the product's own settings sheet instead, so a
+// real light/dark frame is produced by the product, not by an emulation the host ignores.
+const appearanceArg = flag('appearance', null)
+const APPEARANCE_OPTIONS = ['system', 'light', 'dark']
+const appearance = appearanceArg == null
+  ? null
+  : (APPEARANCE_OPTIONS.includes(String(appearanceArg).trim().toLowerCase())
+      ? { requested: String(appearanceArg).trim().toLowerCase(), raw: String(appearanceArg) }
+      : {
+          invalid: true,
+          raw: String(appearanceArg),
+          reason: `unknown --appearance "${appearanceArg}" (known: ${APPEARANCE_OPTIONS.join(', ')})`
+        })
+
+/**
+ * A destination is a hash-like route name, not a hash to write: the plugin's destinations are
+ * product state (`data-cb-destination`), so the door *clicks the product control* that reaches
+ * one and then refuses unless the rendered route proves it arrived. Supported forms:
+ *   home | courses | workshop | studio      (optionally prefixed `#/`)
+ *   #/course/<course_id>                    (opens that course's own surface)
+ *   #/learn/<objective_id>                  (opens that section's lesson, if its row is reachable)
+ */
+const parseDestination = (raw) => {
+  if (raw == null) return null
+  const text = String(raw).trim().replace(/^#\/?/, '').replace(/\/+$/, '')
+  if (!text) return { kind: 'invalid', raw: String(raw), reason: 'empty --destination value' }
+  if (['home', 'courses', 'workshop', 'studio'].includes(text)) return { kind: 'nav', id: text, raw: String(raw) }
+  const course = /^course\/(.+)$/.exec(text)
+  if (course) return { kind: 'course', id: decodeURIComponent(course[1]), raw: String(raw) }
+  const learn = /^learn\/(.+)$/.exec(text)
+  if (learn) return { kind: 'learn', id: decodeURIComponent(learn[1]), raw: String(raw) }
+  return {
+    kind: 'invalid',
+    raw: String(raw),
+    reason: `unknown --destination "${raw}" (known: home, courses, workshop, studio, #/course/<id>, #/learn/<id>)`
+  }
+}
+const destination = parseDestination(destinationRaw)
+
+class CaptureRefusal extends Error {
+  constructor(stage, reasons, extra = null) {
+    super(reasons.join('; '))
+    this.stage = stage
+    this.reasons = reasons
+    this.extra = extra
+  }
+}
 
 mkdirSync(outDir, { recursive: true })
 const pngPath = resolve(outDir, `${name}.png`)
@@ -194,6 +253,23 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       selector: '[data-cb-route]',
       present: Boolean(root),
       marker: root ? root.getAttribute('data-cb-route') : null,
+      // CP-038: the rendered destination is product state, and the stamp must record it so a
+      // frame named for Workshop cannot be a Home frame. course_home / lesson_view record the
+      // surface below a destination (an opened course, a rendered lesson).
+      destination: root ? root.getAttribute('data-cb-destination') : null,
+      course_home: (() => { const el = document.querySelector('[data-cb-course-home]'); return el ? el.getAttribute('data-cb-course-home') : null })(),
+      course_detail: (() => { const el = document.querySelector('[data-cb-course-detail]'); return el ? el.getAttribute('data-cb-course-detail') : null })(),
+      lesson_view: (() => { const el = document.querySelector('[data-cb-lesson-view]'); return el ? el.getAttribute('data-cb-lesson-view') : null })(),
+      lesson_document: (() => { const el = document.querySelector('[data-cb-lesson-view][data-cb-document]'); return el ? el.getAttribute('data-cb-document') : null })(),
+      scroll_y: root && root.ownerDocument ? Math.round(window.scrollY) : 0,
+      // CP-038: a summary of the route's own data markers, so a click-through state can be proved
+      // from the stamp rather than assumed from the click dispatch alone.
+      marker_names: root
+        ? [...new Set([
+            ...[...root.attributes].map((a) => a.name),
+            ...[...root.querySelectorAll('*')].flatMap((el) => [...el.attributes].map((a) => a.name))
+          ].filter((name) => name.startsWith('data-cb-')))].sort().slice(0, 120)
+        : [],
       width: rect ? Math.round(rect.width * 100) / 100 : null,
       height: rect ? Math.round(rect.height * 100) / 100 : null,
       top: rect ? Math.round(rect.top * 100) / 100 : null,
@@ -252,7 +328,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
   return out
 })()`
 
-const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null }) => {
+const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null, appearance = null }) => {
   const gates = {}
   const reasons = []
   const pluginSha = probe.plugin && probe.plugin.window_sha256 ? probe.plugin.window_sha256 : null
@@ -328,6 +404,15 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, c
         `${String(route.theme)}; the host theme did not follow prefers-color-scheme`)
     }
   }
+  // CP-038 B3: when the door drove the product's appearance setting, the still must prove the
+  // route painted it. This is what stops a dark frame being filed under a `-light` name.
+  if (appearance && appearance.applied && appearance.requested !== 'system') {
+    gates.appearance_applied = route.theme === appearance.requested
+    if (!gates.appearance_applied) {
+      reasons.push(`--appearance ${appearance.requested} was chosen in the settings sheet but the ` +
+        `route paints ${String(route.theme)}`)
+    }
+  }
 
   // A renderer that logs React's duplicate/missing `key` warning renders a tree the other gates
   // cannot see. The frame is not evidence of a clean surface, so the door refuses it.
@@ -340,7 +425,7 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, c
   return { gates, reasons, ok: reasons.length === 0 }
 }
 
-const writeRefusal = (stage, probe, gate) => {
+const writeRefusal = (stage, probe, gate, extra = null) => {
   const record = {
     stamp_version: 1,
     tool: 'scripts/cp-capture.mjs',
@@ -351,7 +436,8 @@ const writeRefusal = (stage, probe, gate) => {
     reasons: gate.reasons,
     gates: gate.gates,
     plugin: probe ? probe.plugin : null,
-    route: probe ? probe.route : null
+    route: probe ? probe.route : null,
+    ...(extra || {})
   }
   writeFileSync(refusedPath, `${JSON.stringify(record, null, 2)}\n`)
   console.error(`REFUSED (${name}): ${gate.reasons.join('; ')}`)
@@ -435,12 +521,369 @@ const collectConsole = (cdp) => {
   return () => ({ errors: errors.slice(0, 40), warnings })
 }
 
-const evaluate = async (cdp, expression) => {
-  const result = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
+const evaluate = async (cdp, expression, { timeout = 30000 } = {}) => {
+  let timer = null
+  const timeoutPromise = new Promise((_, fail) => {
+    timer = setTimeout(() => fail(new Error(`Runtime.evaluate timed out after ${timeout}ms`)), timeout)
+  })
+  let result
+  try {
+    // A dead host bridge (e.g. `window.hermesDesktop.zoom.get` after a gateway exit) never settles
+    // its IPC promise. Without a timeout the whole capture hangs with no record; a timeout turns
+    // that into a loud refusal instead.
+    result = await Promise.race([
+      cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }),
+      timeoutPromise
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
   if (result.exceptionDetails) {
     throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text || 'evaluate failed')
   }
   return result.result.value
+}
+
+/* ── CP-038 · destination, click and scroll driving ──────────────────────────────────────────
+ * A destination is reached through the product's own control, never by writing state: the nav
+ * item (`[data-cb-nav-item]`), the shelf card overlay (`[data-cb-home-card-action]`) or the
+ * section row (`[data-cb-section-row]`). After the click the door waits for the surface to prove
+ * it arrived; a mismatch is a refusal, so a Home frame can never be saved under a Workshop name.
+ */
+const destinationControlSelector = (dest) => {
+  if (!dest) return null
+  if (dest.kind === 'nav') return `[data-cb-nav-item="${dest.id}"]`
+  if (dest.kind === 'course') {
+    return `[data-cb-home-card-action="${dest.id}"], [data-cb-course-id="${dest.id}"] [data-cb-home-card-action], ` +
+      `[data-cb-course-id="${dest.id}"] button, [data-cb-all-courses-row="${dest.id}"] button`
+  }
+  if (dest.kind === 'learn') return `[data-cb-section-row="${dest.id}"]`
+  return null
+}
+
+const destinationStateExpression = () => `(() => {
+  const root = document.querySelector('[data-cb-route]')
+  const attr = (selector, name) => {
+    const el = document.querySelector(selector)
+    return el ? el.getAttribute(name) : null
+  }
+  return {
+    route: root ? root.getAttribute('data-cb-destination') : null,
+    course_home: attr('[data-cb-course-home]', 'data-cb-course-home'),
+    course_detail: attr('[data-cb-course-detail]', 'data-cb-course-detail'),
+    lesson_view: attr('[data-cb-lesson-view]', 'data-cb-lesson-view'),
+    lesson_document: attr('[data-cb-lesson-view][data-cb-document]', 'data-cb-document')
+  }
+})()`
+
+const destinationMatches = (dest, state) => {
+  if (!dest) return true
+  if (!state) return false
+  if (dest.kind === 'nav') return state.route === dest.id
+  if (dest.kind === 'course') return state.course_home === dest.id || Boolean(state.course_detail)
+  if (dest.kind === 'learn') return Boolean(state.lesson_view)
+  return false
+}
+
+const clickExpression = (selector) => `(() => {
+  const el = document.querySelector(${JSON.stringify(String(selector))})
+  if (!el) return { found: false, selector: ${JSON.stringify(String(selector))} }
+  try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }) } catch { /* detached */ }
+  el.click()
+  return {
+    found: true,
+    selector: ${JSON.stringify(String(selector))},
+    tag: el.tagName.toLowerCase(),
+    label: String(el.getAttribute('aria-label') || el.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 80)
+  }
+})()`
+
+const settlePage = async (cdp) => {
+  await evaluate(cdp, `new Promise((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 80)))
+  })`).catch(() => null)
+}
+
+const waitForSelector = async (cdp, selector, ms) => {
+  const deadline = Date.now() + ms
+  while (Date.now() < deadline) {
+    const found = await evaluate(cdp, `Boolean(document.querySelector(${JSON.stringify(String(selector))}))`).catch(() => false)
+    if (found) return true
+    await sleep(120)
+  }
+  return false
+}
+
+const driveDestination = async (cdp, dest, ms) => {
+  const record = {
+    requested: dest ? dest.raw : null,
+    normalized: dest ? (dest.kind === 'nav' ? dest.id : `${dest.kind}/${dest.id}`) : null,
+    controls: [],
+    rendered: null,
+    match: null
+  }
+  if (!dest) return record
+  if (dest.kind === 'invalid') throw new CaptureRefusal('destination', [dest.reason])
+  const selector = destinationControlSelector(dest)
+  if (!(await waitForSelector(cdp, selector, Math.min(ms, 15000)))) {
+    throw new CaptureRefusal('destination', [
+      `requested destination ${dest.raw} has no addressable control on the current surface (${selector})`
+    ], { destination: record })
+  }
+  const clicked = await evaluate(cdp, clickExpression(selector))
+  record.controls.push({ purpose: 'destination', ...clicked })
+  const deadline = Date.now() + ms
+  let state = null
+  while (Date.now() < deadline) {
+    await settlePage(cdp)
+    state = await evaluate(cdp, destinationStateExpression())
+    if (destinationMatches(dest, state)) break
+    await sleep(150)
+  }
+  record.rendered = state
+  record.match = destinationMatches(dest, state)
+  if (!record.match) {
+    throw new CaptureRefusal('destination', [
+      `requested destination ${dest.raw} was not rendered: route=${String(state && state.route)}, ` +
+      `course_home=${String(state && state.course_home)}, lesson_view=${String(state && state.lesson_view)}; ` +
+      'refusing to save a frame that is not the requested destination'
+    ], { destination: record })
+  }
+  return record
+}
+
+const driveClicks = async (cdp, selectors, ms) => {
+  const record = []
+  for (const selector of selectors) {
+    if (!(await waitForSelector(cdp, selector, ms))) {
+      throw new CaptureRefusal('click', [`--click ${selector} matched no element within ${ms}ms`], { clicks: record })
+    }
+    const clicked = await evaluate(cdp, clickExpression(selector))
+    if (!clicked || !clicked.found) {
+      throw new CaptureRefusal('click', [`--click ${selector} did not resolve to a clickable element`], { clicks: record })
+    }
+    record.push({ purpose: 'click', ...clicked })
+    await settlePage(cdp)
+    await sleep(120)
+  }
+  return record
+}
+
+/**
+ * CP-038: a route image must be loaded, not merely present. A `loading="lazy"` image below the
+ * capture viewport never starts loading on its own, so a route taller than the frame (the
+ * Workshop shelf's non-hero covers) could never pass the decoded-images gate: the door polled
+ * `{total:3,pending:1}` until it refused. Force every pending route image to eager and decode it,
+ * then poll. Two early-return traps are closed here too: a transient `null` (route not mounted
+ * yet) and a zero-image route are not success. Zero is accepted only after it has been stable for
+ * three polls, so an image that mounts on a later paint is still waited for.
+ */
+const waitForImages = async (cdp, ms) => {
+  const deadline = Date.now() + ms
+  let state = null
+  let zeroPolls = 0
+  while (Date.now() < deadline) {
+    state = await evaluate(cdp, `(async () => {
+      const root = document.querySelector('[data-cb-route]')
+      if (!root) return null
+      const imgs = [...root.querySelectorAll('img')]
+      const withTimeout = (promise, ms) => Promise.race([
+        promise,
+        new Promise((done) => setTimeout(() => done(false), ms))
+      ])
+      const forceDecode = (img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve(true)
+        const start = () => {
+          try { img.loading = 'eager' } catch { /* attribute is read-only in some engines */ }
+          return img.decode().catch(() => {
+            // img.decode() does not always begin a lazy image's load; re-assigning the source does.
+            const src = img.currentSrc || img.src
+            if (!src) return false
+            try { img.src = src } catch { /* detached */ }
+            return img.decode().catch(() => false)
+          })
+        }
+        return withTimeout(start(), 4000)
+      }
+      await Promise.all(imgs.map(forceDecode))
+      const pending = imgs.filter((img) => !img.complete || img.naturalWidth === 0)
+      return {
+        total: imgs.length,
+        pending: pending.length,
+        pending_srcs: pending.map((img) => (img.currentSrc || img.src || '').slice(0, 120)),
+        pending_lazy: pending.filter((img) => img.loading === 'lazy').length
+      }
+    })()`).catch(() => null)
+    if (!state) { await sleep(250); continue }
+    if (state.total === 0) {
+      zeroPolls += 1
+      if (zeroPolls >= 3) return state
+      await sleep(250)
+      continue
+    }
+    zeroPolls = 0
+    if (state.pending === 0) return state
+    await sleep(250)
+  }
+  return state
+}
+
+/**
+ * CP-038 B3: drive the product's own appearance setting. The Coursebook palette is a per-profile
+ * setting (`data-cb-scope`), not `prefers-color-scheme`; emulating the media feature leaves the
+ * route painting the host's theme, which is why a dark frame was once filed as `-light`. This opens
+ * the settings sheet, chooses the requested option, waits for the route to repaint and closes the
+ * sheet. It refuses if the option does not exist or the route does not paint the requested palette.
+ */
+const driveAppearance = async (cdp, want, ms) => {
+  if (!want) return null
+  if (want.invalid) throw new CaptureRefusal('appearance', [want.reason], { appearance: { requested: want.raw } })
+  const control = '[data-cb-settings-control="appearance"]'
+  const openSelector = '[data-cb-settings-open]'
+  const closeSelector = '[data-cb-settings-close]'
+  const sheetSelector = '[data-cb-settings-sheet]'
+  const optionSelector = `${control} button:nth-of-type(${APPEARANCE_OPTIONS.indexOf(want.requested) + 1})`
+  const record = { requested: want.requested, before: null, applied: false, rendered_scope: null, clicks: [] }
+  const sheetOpen = () => evaluate(cdp, `(() => {
+    const el = document.querySelector(${JSON.stringify(sheetSelector)})
+    return Boolean(el) && el.hidden !== true && el.getClientRects().length > 0
+  })()`).catch(() => false)
+  if (!(await waitForSelector(cdp, openSelector, Math.min(ms, 15000)))) {
+    throw new CaptureRefusal('appearance', [
+      `--appearance ${want.requested} needs the Coursebook settings control (${openSelector}) on this surface`
+    ], { appearance: record })
+  }
+  if (!(await sheetOpen())) {
+    record.clicks.push({ purpose: 'appearance-open', ...(await evaluate(cdp, clickExpression(openSelector))) })
+    if (!(await waitForSelector(cdp, control, Math.min(ms, 15000)))) {
+      throw new CaptureRefusal('appearance', [
+        `the settings sheet opened but has no appearance control (${control})`
+      ], { appearance: record })
+    }
+  }
+  record.before = await evaluate(cdp, `(() => {
+    const el = document.querySelector(${JSON.stringify(control)})
+    return el ? el.getAttribute('data-cb-settings-value') : null
+  })()`).catch(() => null)
+  if (!(await waitForSelector(cdp, optionSelector, Math.min(ms, 15000)))) {
+    throw new CaptureRefusal('appearance', [
+      `the appearance control has no ${want.requested} option (${optionSelector})`
+    ], { appearance: record })
+  }
+  record.clicks.push({ purpose: `appearance-${want.requested}`, ...(await evaluate(cdp, clickExpression(optionSelector))) })
+  const deadline = Date.now() + ms
+  let state = null
+  while (Date.now() < deadline) {
+    await settlePage(cdp)
+    state = await evaluate(cdp, `(() => {
+      const root = document.querySelector('[data-cb-route]')
+      const control = document.querySelector(${JSON.stringify(control)})
+      return {
+        setting: control ? control.getAttribute('data-cb-settings-value') : null,
+        scope: root ? root.getAttribute('data-cb-scope') : null
+      }
+    })()`)
+    if (state && state.setting === want.requested) break
+    await sleep(150)
+  }
+  record.rendered_scope = state ? state.scope : null
+  record.applied = Boolean(state && state.setting === want.requested)
+  if (!record.applied) {
+    throw new CaptureRefusal('appearance', [
+      `the appearance control did not accept ${want.requested} (setting=${String(state && state.setting)})`
+    ], { appearance: record })
+  }
+  if (await sheetOpen()) {
+    record.clicks.push({ purpose: 'appearance-close', ...(await evaluate(cdp, clickExpression(closeSelector))) })
+    const closeDeadline = Date.now() + Math.min(ms, 5000)
+    while (Date.now() < closeDeadline) {
+      if (!(await sheetOpen())) break
+      await sleep(120)
+    }
+  }
+  // Capture hygiene: the trigger keeps keyboard focus after the sheet closes and its focus ring is
+  // not part of the evidence frame (it differed from a plain Home capture by ~31 pixels).
+  await evaluate(cdp, `(() => {
+    const el = document.activeElement
+    if (el && typeof el.blur === 'function') el.blur()
+    return true
+  })()`).catch(() => null)
+  await settlePage(cdp)
+  return record
+}
+
+/**
+ * Scroll is applied after the viewport is sized so a measurement pass cannot reset it. It is
+ * deliberately non-destructive to the crop: a numeric value scrolls the route's first nested
+ * scroll region (a long list or card body), otherwise the route scroller; a selector is scrolled
+ * into view with `block: 'nearest'`. If a scroll would move `[data-cb-route]` itself out of the
+ * viewport the crop no longer means the route, so that is a refusal. The resolved position is
+ * recorded in the stamp.
+ */
+const applyScroll = async (cdp, target) => {
+  if (target == null) return null
+  const text = String(target).trim()
+  const numeric = /^-?\d+(\.\d+)?$/.test(text)
+  const expression = numeric
+    ? `(() => {
+        const y = ${Number(text)}
+        const route = document.querySelector('[data-cb-route]')
+        const isScrollable = (el) => {
+          if (!el) return false
+          const style = getComputedStyle(el)
+          return (el.scrollHeight - el.clientHeight > 2) && /auto|scroll/.test(style.overflowY)
+        }
+        const nested = route ? [...route.querySelectorAll('*')].find(isScrollable) : null
+        const host = document.querySelector('main#cb-main-content')
+        const scroller = nested || host
+        if (scroller) scroller.scrollTop = y
+        else window.scrollTo(0, y)
+        const rect = route ? route.getBoundingClientRect() : null
+        return {
+          kind: 'px',
+          target: ${JSON.stringify(text)},
+          y: Math.round(scroller ? scroller.scrollTop : window.scrollY),
+          window_y: Math.round(window.scrollY),
+          scroller: nested ? 'route-descendant' : host ? 'main#cb-main-content' : 'window',
+          scroller_tag: scroller ? scroller.tagName.toLowerCase() : 'window',
+          route_top: rect ? Math.round(rect.top) : null,
+          route_bottom: rect ? Math.round(rect.bottom) : null,
+          viewport_height: window.innerHeight
+        }
+      })()`
+    : `(() => {
+        const el = document.querySelector(${JSON.stringify(text)})
+        if (!el) return null
+        el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+        const route = document.querySelector('[data-cb-route]')
+        const host = document.querySelector('main#cb-main-content')
+        const rect = route ? route.getBoundingClientRect() : null
+        const targetRect = el.getBoundingClientRect()
+        return {
+          kind: 'selector',
+          target: ${JSON.stringify(text)},
+          y: Math.round(host ? host.scrollTop : window.scrollY),
+          window_y: Math.round(window.scrollY),
+          scroller: host ? 'main#cb-main-content' : 'window',
+          offset_top: Math.round(targetRect.top),
+          route_top: rect ? Math.round(rect.top) : null,
+          route_bottom: rect ? Math.round(rect.bottom) : null,
+          viewport_height: window.innerHeight
+        }
+      })()`
+  const result = await evaluate(cdp, expression)
+  if (!result) throw new CaptureRefusal('scroll', [`--scroll ${text} matched no element`])
+  await settlePage(cdp)
+  const outOfFrame = result.route_top != null &&
+    (result.route_top < -1 || (result.route_bottom != null && result.route_bottom > result.viewport_height + 1))
+  if (outOfFrame) {
+    throw new CaptureRefusal('scroll', [
+      `--scroll ${text} moved [data-cb-route] out of the capture frame ` +
+      `(route ${result.route_top}..${result.route_bottom}, viewport ${result.viewport_height}px); ` +
+      'scroll a region inside the route instead'
+    ], { scroll: result })
+  }
+  return result
 }
 
 /**
@@ -525,7 +968,7 @@ const waitForRoute = async (cdp, ms) => {
   while (Date.now() < deadline) {
     const state = await evaluate(cdp, `(() => {
       const root = document.querySelector('[data-cb-route]')
-      return { route: Boolean(root), ready: document.readyState, home: root ? root.getAttribute('data-cb-destination') : null }
+      return { route: Boolean(root), ready: document.readyState, destination: root ? root.getAttribute('data-cb-destination') : null }
     })()`)
     if (state.route) return state
     await sleep(200)
@@ -537,29 +980,57 @@ const liveCapture = async () => {
   const { cdp, page } = await attachLive()
   const consoleReader = collectConsole(cdp)
 
-  // Hard reload with an empty cache so a repointed rig cannot answer from a pre-swap module.
-  // `--no-reload` is for a deep screen that the host cannot re-enter after a reload: the caller
+  // Point the host at the route *before* the hard reload (CP-038): the earlier order (reload, then
+  // set the hash) let the plugin mount on its remembered Home state and photograph Home under any
+  // requested name. Reloading after the hash is set lands on the plugin directly, and the route
+  // is re-asserted below for host builds that restore a session route instead.
+  //
+  // `--no-reload` (CP-024) is for a deep screen the host cannot re-enter after a reload: the caller
   // has already driven the window there and restarted it on the installed module, and the stamp
-  // records `capture.reloaded: false` so the frame can never be confused with a fresh-boot frame.
+  // records `capture.reloaded: false` so the frame is never mistaken for a fresh-boot frame.
   const reloaded = !flag('no-reload', false)
+  await evaluate(cdp, `location.hash = '#/coursebook'`).catch(() => null)
+  await sleep(250)
   if (reloaded) {
     await cdp.send('Page.reload', { ignoreCache: true })
     await sleep(400)
   }
-  await evaluate(cdp, `location.hash = '#/coursebook'`)
   let state = await waitForRoute(cdp, timeoutMs)
+  if (!state) {
+    await evaluate(cdp, `location.hash = '#/coursebook'`).catch(() => null)
+    state = await waitForRoute(cdp, timeoutMs)
+  }
   if (!state) {
     const probe = { plugin: { window_sha256: null, loaded_path: null, error: 'route never appeared' }, route: { present: false, render_error_markers: [] } }
     const gate = { gates: { route_present: false }, reasons: ['[data-cb-route] never appeared after reload'], ok: false }
     writeRefusal('route-wait', probe, gate)
   }
 
-  // Optional post-reload driver. A deep screen (a course home, a classroom) is shell state, not a
-  // URL, so a hard reload always lands on the destination. `--after-reload <file>` runs that
-  // screen's own *real click* driver after the reload and before any measurement;
-  // `--after-reload-wait <selector>` holds the probe until the driven surface is on screen. Both
-  // are opt-in; with neither the tool behaves exactly as before. A driver that invents UI state
-  // (rather than clicking what a learner clicks) would defeat the stamp, so the wait is required.
+  // Reach the requested destination through its product control and click through any requested
+  // state, before geometry is measured. Both steps refuse loudly rather than capture the wrong
+  // surface.
+  let destinationRecord = null
+  let clicks = []
+  let appearanceRecord = null
+  try {
+    // The palette is a profile setting, so it is chosen on the surface that owns the settings
+    // control (Home) before the door navigates away from it.
+    appearanceRecord = await driveAppearance(cdp, appearance, timeoutMs)
+    destinationRecord = await driveDestination(cdp, destination, timeoutMs)
+    clicks = await driveClicks(cdp, clickSelectors, timeoutMs)
+  } catch (error) {
+    if (error instanceof CaptureRefusal) {
+      writeRefusal(error.stage, null, { gates: {}, reasons: error.reasons, ok: false }, error.extra)
+    }
+    throw error
+  }
+
+  // Optional post-reload driver (CP-024). A deep screen that the door's destination vocabulary
+  // does not address (a course home on `#/coursebook`) is shell state, not a URL: `--after-reload
+  // <file>` runs that screen's own real-click driver after the route is up and before any
+  // measurement, and `--after-reload-wait <selector>` holds the probe until it is on screen. Both
+  // are opt-in; a driver that invents UI state instead of clicking what a learner clicks would
+  // defeat the stamp, so the wait selector is what proves the surface arrived.
   const afterReload = flag('after-reload', null)
   if (afterReload && afterReload !== true) {
     const driver = readFileSync(resolve(String(afterReload)), 'utf8')
@@ -652,6 +1123,18 @@ const liveCapture = async () => {
     await sleep(300)
   }
 
+  // Ask the page for the scroll offset only after the viewport is sized: the sizing pass resets
+  // each scroller to the top, so applying it earlier would be silently undone.
+  let scroll = null
+  try {
+    scroll = await applyScroll(cdp, scrollArg)
+  } catch (error) {
+    if (error instanceof CaptureRefusal) {
+      writeRefusal(error.stage, null, { gates: {}, reasons: error.reasons, ok: false }, error.extra)
+    }
+    throw error
+  }
+
   // Apply reduced-motion / forced-colors / colour-scheme emulation only when asked; never silently.
   // `--color-scheme` is how a mode frame is produced: the host theme follows
   // `prefers-color-scheme`, so the stamp has to record that the mode was emulated, not inferred.
@@ -670,6 +1153,9 @@ const liveCapture = async () => {
     : stateDir
       ? resolve(String(stateDir), 'home', 'desktop-plugins', 'coursebook', 'plugin.js')
       : null
+  // A data: cover that is still decoding at probe time is not a broken image; wait for the route's
+  // images to settle before asserting they decoded (a genuinely broken one still refuses).
+  await waitForImages(cdp, Number(flag('image-wait', 15000)))
   const probe = await evaluate(cdp, probeExpression(loadedPlugin, Boolean(loadedPlugin)))
   probe.console = consoleReader()
   probe.route.backend = null
@@ -709,11 +1195,11 @@ const liveCapture = async () => {
   if (captureError) throw new Error(`screenshot failed: ${captureError}`)
 
   const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme })
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme, appearance: appearanceRecord })
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -733,53 +1219,75 @@ const fixtureCapture = async () => {
     `--user-data-dir=${resolve(outDir, '.chromium-fixture')}`,
     'about:blank'
   ], { stdio: 'ignore' })
-  let targets = null
-  for (let attempt = 0; attempt < 80; attempt += 1) {
-    try {
-      targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json()
-      if (targets && targets.length) break
-    } catch { targets = null }
-    await sleep(250)
+  let cdp = null
+  const cleanup = () => {
+    if (cdp) { try { cdp.close() } catch { /* already gone */ } cdp = null }
+    try { chromium.kill() } catch { /* already gone */ }
   }
-  if (!targets || !targets.length) {
-    chromium.kill()
-    throw new Error('fixture chromium did not open a CDP port')
+  try {
+    let targets = null
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      try {
+        targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json()
+        if (targets && targets.length) break
+      } catch { targets = null }
+      await sleep(250)
+    }
+    if (!targets || !targets.length) throw new Error('fixture chromium did not open a CDP port')
+    const page = targets.find((entry) => entry.type === 'page')
+    cdp = await connectSocket(page.webSocketDebuggerUrl)
+    await cdp.send('Page.enable', {})
+    await cdp.send('Runtime.enable', {})
+    await cdp.send('Page.navigate', { url: target })
+    await sleep(500)
+
+    // The destination/click/scroll hooks run against a recorded page exactly as they run against
+    // the live rig, so their refusal paths are testable without an Electron host.
+    const appearanceRecord = await driveAppearance(cdp, appearance, timeoutMs)
+    const destinationRecord = await driveDestination(cdp, destination, timeoutMs)
+    const clicks = await driveClicks(cdp, clickSelectors, timeoutMs)
+
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: routeWidth, height: 900, deviceScaleFactor: 2, mobile: false })
+    await sleep(150)
+    // Clicking may have nudged a scroller; reset the page so the route box starts at the top of
+    // the frame before the requested scroll is applied.
+    await evaluate(cdp, `window.scrollTo(0, 0)`)
+    const scroll = await applyScroll(cdp, scrollArg)
+
+    await waitForImages(cdp, Number(flag('image-wait', 15000)))
+    const probe = await evaluate(cdp, probeExpression(null, false))
+    const routeBox = await evaluate(cdp, `(() => {
+      const root = document.querySelector('[data-cb-route]')
+      const rect = root.getBoundingClientRect()
+      return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+    })()`)
+    const contentBox = probe.route.content_rect
+    const cropMode = cropToContent ? 'content' : 'route'
+    const box = cropToContent && contentBox && contentBox.width > 0 && contentBox.height > 0 ? contentBox : routeBox
+    const shot = await cdp.send('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: false,
+      clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 }
+    })
+    const png = Buffer.from(shot.data, 'base64')
+    const pixelCheck = await pixelContamination(cdp, png, probe.route.background_color, probe.route.html_background)
+    const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
+    const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: null, cropMode, appearance: appearanceRecord })
+    if (!gate.ok) {
+      cleanup()
+      writeRefusal('gates', probe, gate)
+    }
+    writeFileSync(pngPath, png)
+    return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture', cropMode, pixelCheck, zoom: null, destinationRecord, clicks, scroll, appearanceRecord })
+  } catch (error) {
+    if (error instanceof CaptureRefusal) {
+      cleanup()
+      writeRefusal(error.stage, null, { gates: {}, reasons: error.reasons, ok: false }, error.extra)
+    }
+    throw error
+  } finally {
+    cleanup()
   }
-  const page = targets.find((entry) => entry.type === 'page')
-  const cdp = await connectSocket(page.webSocketDebuggerUrl)
-  await cdp.send('Page.enable', {})
-  await cdp.send('Runtime.enable', {})
-  await cdp.send('Page.navigate', { url: target })
-  await sleep(500)
-  const probe = await evaluate(cdp, probeExpression(null, false))
-  await cdp.send('Emulation.setDeviceMetricsOverride', { width: routeWidth, height: 900, deviceScaleFactor: 2, mobile: false })
-  await sleep(150)
-  const routeBox = await evaluate(cdp, `(() => {
-    const root = document.querySelector('[data-cb-route]')
-    const rect = root.getBoundingClientRect()
-    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
-  })()`)
-  const contentBox = probe.route.content_rect
-  const cropMode = cropToContent ? 'content' : 'route'
-  const box = cropToContent && contentBox && contentBox.width > 0 && contentBox.height > 0 ? contentBox : routeBox
-  const shot = await cdp.send('Page.captureScreenshot', {
-    format: 'png',
-    captureBeyondViewport: false,
-    clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 }
-  })
-  const png = Buffer.from(shot.data, 'base64')
-  const pixelCheck = await pixelContamination(cdp, png, probe.route.background_color, probe.route.html_background)
-  const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: null, cropMode })
-  if (!gate.ok) {
-    cdp.close()
-    chromium.kill()
-    writeRefusal('gates', probe, gate)
-  }
-  writeFileSync(pngPath, png)
-  cdp.close()
-  chromium.kill()
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture', cropMode, pixelCheck, zoom: null })
 }
 
 const fetchRuntime = async (probe) => {
@@ -810,7 +1318,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, driver = null, reloaded = true }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null, driver = null, reloaded = true }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -863,8 +1371,32 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       host_overlay_trims: probe.route.host_overlay_trims,
       content_width: probe.route.content_width,
       content_height: probe.route.content_height,
-      content_rect: probe.route.content_rect
+      content_rect: probe.route.content_rect,
+      course_home: probe.route.course_home || null,
+      course_detail: probe.route.course_detail || null,
+      lesson_view: probe.route.lesson_view || null,
+      lesson_document: probe.route.lesson_document || null,
+      scroll_y: probe.route.scroll_y,
+      marker_names: probe.route.marker_names || []
     },
+    // CP-038: the frame's provenance is not only the plugin sha. A still must say which
+    // destination was requested, which one actually rendered, what was clicked to get there and
+    // where the page was scrolled. `route.destination` alone is not enough: a Home frame under a
+    // Workshop name would otherwise be indistinguishable in the packet.
+    destination: {
+      requested: destinationRecord ? destinationRecord.requested : (destination ? destination.raw : null),
+      normalized: destinationRecord ? destinationRecord.normalized : null,
+      rendered: probe.route.destination || null,
+      rendered_course_home: probe.route.course_home || null,
+      rendered_lesson_view: probe.route.lesson_view || null,
+      match: destinationRecord ? destinationRecord.match : (destination ? false : null),
+      controls: destinationRecord ? destinationRecord.controls : []
+    },
+    clicks: Array.isArray(clicks) ? clicks : [],
+    // CP-038 B3: which palette was requested through the product's settings sheet and which one
+    // the route actually painted, so a `-light` still can never be a dark frame.
+    appearance: appearanceRecord || null,
+    scroll: scroll || null,
     zoom: zoom,
     emulated_media: emulatedMedia && emulatedMedia.length ? emulatedMedia : null,
     console: probe.console
@@ -887,6 +1419,9 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
     page_url: pageUrl
   }
   writeFileSync(stampPath, `${JSON.stringify(stamp, null, 2)}\n`)
+  // CP-038: a refusal record from an earlier run of the same name must not survive a success —
+  // otherwise a packet carries both "REFUSED" and "OK" for one still.
+  try { rmSync(refusedPath, { force: true }) } catch { /* best effort */ }
   console.log(`OK ${name}: route=${stamp.route.width}x${stamp.route.height} theme=${stamp.route.theme} ` +
     `fonts=${stamp.route.fonts_status} images=${stamp.route.images_decoded}/${stamp.route.images_total} ` +
     `sha=${String(stamp.plugin.window_sha256).slice(0, 12)}`)
@@ -902,6 +1437,9 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
 const main = async () => {
   if (flag('help', false)) {
     console.log('usage: node scripts/cp-capture.mjs --name <name> --out <dir> [--fixture <page>] [--cdp-port N]')
+    console.log('       [--destination home|courses|workshop|studio|#/course/<id>|#/learn/<id>]')
+    console.log('       [--click <selector>]... [--scroll <selector|px>] [--click-wait <ms>]')
+    console.log('       [--appearance system|light|dark] [--color-scheme light|dark] [--image-wait <ms>]')
     return
   }
   if (fixture) {
@@ -913,6 +1451,9 @@ const main = async () => {
 }
 
 main().catch((error) => {
+  if (error instanceof CaptureRefusal) {
+    writeRefusal(error.stage, null, { gates: {}, reasons: error.reasons, ok: false }, error.extra)
+  }
   const record = {
     stamp_version: 1,
     tool: 'scripts/cp-capture.mjs',

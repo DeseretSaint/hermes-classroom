@@ -233,7 +233,7 @@ function ModeBadge({ mode, pending }) {
           borderRadius: '999px',
           background: game ? 'var(--cb-ochre)' : 'var(--cb-accent)'
         }
-      }),
+      }, 'dot'),
       game ? CB_WORLD_COPY.modeGame : CB_WORLD_COPY.modeTextbook,
       pending ? ' · saving' : null
     ]
