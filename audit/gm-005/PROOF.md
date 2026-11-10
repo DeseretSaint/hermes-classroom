@@ -1,8 +1,8 @@
 # GM-005 take-home pack PDF proof
 
-- pack: `thp_c571487bcb9a45d5ac61293b9bd450ef` state `exported`
-- source lesson: `lsn_pln_25b61d54a2dd4f9f907a5bdf6dd3d478:v1` hash `sha256:8d58e298f5e0a40fd28313770bdcd62c949ddc5737d0540368e3b1248439fa8d`
-- exported artifact: `art_4a33510110f74c7cb1d6d36ecb7bce3b` (5622 bytes, application/pdf)
+- pack: `thp_334b276dd1994cd2b354227c8e6f6447` state `exported`
+- source lesson: `lsn_pln_050bcdeeb2f9479c8b3105dba4d316c5:v1` hash `sha256:83af181c097e6934d046bbc8b9cebfc1641caa72f7685ccc941aa2bbcf552b7c`
+- exported artifact: `art_02c680ec6d5646fea4d93d664c298119` (5622 bytes, application/pdf)
 - learner page contains the answer: False
 - answer guide contains the answer: True
 - diagram authority: deterministic
