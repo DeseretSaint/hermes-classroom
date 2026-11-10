@@ -205,9 +205,16 @@ class TokenContractTest(unittest.TestCase):
         # Both registered surfaces paint the layer; nothing else declares a colour.
         self.assertEqual(source.count("cbScopeStyle(cbMode)"), 2)
         self.assertEqual(source.count("'data-cb-scope': cbMode"), 2)
-        # H-148: the route gutter is measured from the route, not the window; no unused `routePad`.
-        self.assertIn("paddingLeft: routePad", source)
-        self.assertIn("paddingRight: routePad", source)
+        # H-148 / CP-020b R1: the route gutter is measured from the route, not the window. The
+        # clamp moved out of the route's inline style into a `cb @container` rule over the
+        # `.cb3-gutter` wrapper, so the root carries no inline padding and no `routePad` helper.
+        # `tests/test_v3_scope.py` reads the *rendered* style and refuses a viewport unit there;
+        # this pins the mechanism the route actually ships.
+        self.assertEqual(source.count("routePad"), 0)
+        self.assertIn("contentClassName: 'cb3-gutter'", source)
+        self.assertIn("padding-inline: 0.7rem;", source)
+        self.assertIn("@container cb (min-width: 760px)", source)
+        self.assertIn("padding-inline: clamp(1.25rem, 3.05cqi, 4rem);", source)
 
 
 class RouteShellRenderTest(unittest.TestCase):

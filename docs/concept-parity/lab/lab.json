@@ -1,0 +1,140 @@
+{
+  "kind": "component-preview",
+  "label": "Component preview \u2014 rendered from the shipped primitives; not a live Desktop capture.",
+  "plugin_sha256": "1aa115774bbb6fd79f244bc27de9e16a1dacd6070fb9985f1ee6fdc124e1aed2",
+  "contract": "contracts/cb.tokens.v3.json",
+  "reference": "docs/concept-parity/refs/REF-SYS",
+  "gutter_probe": {
+    "460": {
+      "route_width": 460,
+      "padding_left": "11.2px",
+      "padding_right": "11.2px"
+    },
+    "1049": {
+      "route_width": 1049,
+      "padding_left": "31.9945px",
+      "padding_right": "31.9945px"
+    }
+  },
+  "cells": [
+    {
+      "cell": "light-100",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 1,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 2694
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "c83594d6ae8b7da62a681b246c72252784096f04592176d116998f1fe44992cd",
+      "png": "lab-light-100.png",
+      "png_sha256": "786e931a8b326a75529d6dc8e2171be36931bafe71300a67ec991adddc28caf3",
+      "specimen_count": 16
+    },
+    {
+      "cell": "dark-100",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 1,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 2694
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "6f1091b5f2a665876af242e205276d56b895a1c4197a23e5b59c620cc08c34cd",
+      "png": "lab-dark-100.png",
+      "png_sha256": "e53100e8f389238426443337d2fd010e5ccb5394e400cb940e82b4fdf1ddaf6b",
+      "specimen_count": 16
+    },
+    {
+      "cell": "light-200",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 2,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 6215
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "a5998fb3e48f84f7eec608f49496bafaaad8f4a8b3170c244c912581e0ed8976",
+      "png": "lab-light-200.png",
+      "png_sha256": "5f3d5c8ed88d118030ff1605392e1e8571f83ead63731e9df45a2b40feb9a475",
+      "specimen_count": 16
+    },
+    {
+      "cell": "dark-200",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 2,
+      "emulated_media": {},
+      "viewport": {
+        "width": 1049,
+        "height": 6215
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "c212f94d37daca39fea5234cf86ccf89ba361deaa667e9601345b6755e8edcd8",
+      "png": "lab-dark-200.png",
+      "png_sha256": "1bad038c05b3851c34216cc22edb9ec1c3596cf2d608f79bcb0aed51e95f632a",
+      "specimen_count": 16
+    },
+    {
+      "cell": "light-reduced-motion",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "light",
+      "text_scale": 1,
+      "emulated_media": {
+        "prefers-reduced-motion": "reduce"
+      },
+      "viewport": {
+        "width": 1049,
+        "height": 2694
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "bd80216e667affb91180c4b47d359ba6429b13e823603e96d8cd234ea29bd3d8",
+      "png": "lab-light-reduced-motion.png",
+      "png_sha256": "f8638d2ebb79ae497c0f1f74fbc4486ab071b693f47f92c846e4facf408a19de",
+      "specimen_count": 16
+    },
+    {
+      "cell": "dark-forced-colors",
+      "kind": "component-preview",
+      "route": "/coursebook-lab",
+      "mode": "dark",
+      "text_scale": 1,
+      "emulated_media": {
+        "forced-colors": "active"
+      },
+      "viewport": {
+        "width": 1049,
+        "height": 2694
+      },
+      "device_scale_factor": 2,
+      "html": null,
+      "html_sha256": "89659364408059bd9b059713b0cf554d5a451b3854405f94c4e5cf1ec49b3cea",
+      "png": "lab-dark-forced-colors.png",
+      "png_sha256": "2866f24f15321b7cd842ed9992a1eb10edf39b5eab1a33e14089f0af22180553",
+      "specimen_count": 16
+    }
+  ],
+  "contract_sha256": "6139557f8e6f60a15525bb616e611fea151ee383c24f7c1da4d3ae28f1d1f12e",
+  "sheets": {
+    "contact_sheet": "contact-sheet.png",
+    "anatomy_vs_rsys": "anatomy-vs-rsys.png",
+    "contact_sheet_sha256": "65ec092e1494146c1b18de775c0ca511a262420e1d2984ccee6565c0557720a1",
+    "anatomy_vs_rsys_sha256": "b9945055bef191ef9c9d211894d7435c6f4bcd53596d10dcea319a3f45a26b64"
+  }
+}
