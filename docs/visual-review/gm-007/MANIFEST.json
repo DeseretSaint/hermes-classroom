@@ -16,7 +16,8 @@
     "japanese_extractable": "pass",
     "low_ink_band_measured": "pass",
     "no_answer_key_no_grade_no_xp": "pass",
-    "sources_present": "pass"
+    "sources_present": "pass",
+    "japanese_lang_marked": "pass"
   },
   "documents": [
     {
@@ -29,11 +30,11 @@
         841.92
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:b8c3222d8d40d42e0c659c2d68ae53b9ac6b343795d3495a200d37ecf37d7108",
-      "bytes": 63079,
+      "sha256": "sha256:1148ba55317c317a75078fe9b8f69ec332830131c0cc63ca75e5b32093d6fd26",
+      "bytes": 65544,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.0156
+      "ink_fraction": 0.0161
     },
     {
       "file": "hw_premeal-letter-sheet.pdf",
@@ -45,11 +46,11 @@
         792.0
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:3b2b2095b1ba47bb66f561a8b5df6e13bed8bb17706f45a58e9c6dacab61c36b",
-      "bytes": 63056,
+      "sha256": "sha256:cfbd7797d90435b3ad8550a2b755ec1cc0758b26589fae73511630a2865b0d92",
+      "bytes": 65485,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.0161
+      "ink_fraction": 0.0166
     },
     {
       "file": "hw_postmeal-a4-sheet.pdf",
@@ -61,8 +62,8 @@
         841.92
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:6caa4db6dde46844d2d9e9b94714f6cd0c3c115d88b59bb9b660f79c8a17bbb0",
-      "bytes": 76375,
+      "sha256": "sha256:7fae9844fc408c36ea878a0bc1c85ea93166bbfce147360dc79de4e14d34804c",
+      "bytes": 77784,
       "selectable_text": true,
       "japanese_extractable": true,
       "ink_fraction": 0.0167
@@ -77,11 +78,11 @@
         841.92
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:bfeda6c496d9c11acb0638ca11f7ad447e4e6b9b4138ecc6c0aca27d382ecd14",
-      "bytes": 56361,
+      "sha256": "sha256:39de566d351c8b1912e9d81e7936e5b8b62132d644dc9e0afdde375cea0aa492",
+      "bytes": 70619,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.0144
+      "ink_fraction": 0.0151
     },
     {
       "file": "hw_labels-letter-sheet.pdf",
@@ -93,11 +94,11 @@
         792.0
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:e0093a29360eccef36b4d3b3eb95f7c2997a0a416a39294c45e2fe6978566ed7",
-      "bytes": 56335,
+      "sha256": "sha256:3faad0710f418d078549a92c66f7a770845e7553b805634a2ee29cd8993b519b",
+      "bytes": 70510,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.0148
+      "ink_fraction": 0.0156
     },
     {
       "file": "hw_cafe-a4-sheet.pdf",
@@ -109,11 +110,11 @@
         841.92
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:59383bed26b45efd527f3b6037b3a1b1250dbdb78f5d3559805966755af349d1",
-      "bytes": 62541,
+      "sha256": "sha256:b0597e8a5c9a745621cf4536144ebd36233016b783d9aa7289a039e01d9b3597",
+      "bytes": 68628,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.015
+      "ink_fraction": 0.0153
     },
     {
       "file": "hw_cafe-letter-sheet.pdf",
@@ -125,11 +126,11 @@
         792.0
       ],
       "whitespace_ink_check": "pass",
-      "sha256": "sha256:a44440706b2f4e8c29cfd156de2740bda2e5a1196502ec3cd6a4a3a28028eb82",
-      "bytes": 62516,
+      "sha256": "sha256:5b78ac0f3f5cbe6db1341a8a8936e6ee193f34fe3f1bc36e431f5f6f2005271e",
+      "bytes": 68555,
       "selectable_text": true,
       "japanese_extractable": true,
-      "ink_fraction": 0.0155
+      "ink_fraction": 0.0159
     }
   ],
   "png": [
@@ -173,7 +174,7 @@
     {
       "file": "hw_premeal-a4-sheet-bw.png",
       "proposal": "hw_premeal",
-      "ink_fraction": 0.0156
+      "ink_fraction": 0.0161
     },
     {
       "file": "hw_postmeal-a4-sheet-bw.png",
@@ -183,12 +184,12 @@
     {
       "file": "hw_labels-a4-sheet-bw.png",
       "proposal": "hw_labels",
-      "ink_fraction": 0.0144
+      "ink_fraction": 0.0151
     },
     {
       "file": "hw_cafe-a4-sheet-bw.png",
       "proposal": "hw_cafe",
-      "ink_fraction": 0.015
+      "ink_fraction": 0.0153
     }
   ]
 }

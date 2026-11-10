@@ -11985,14 +11985,14 @@
               "type": "array",
               "maxItems": 12,
               "items": {
-                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+                "$ref": "#/$defs/homework_id"
               }
             },
             "source_ids": {
               "type": "array",
               "maxItems": 12,
               "items": {
-                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+                "$ref": "#/$defs/homework_id"
               }
             },
             "completion_record": {
@@ -12130,6 +12130,13 @@
           "maxLength": 40
         }
       }
+    },
+    "homework_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+      "description": "A lesson-owned id cited by a homework target (for example `lbl_doa`); content identity, not a Coursebook-minted id."
     }
   }
 }

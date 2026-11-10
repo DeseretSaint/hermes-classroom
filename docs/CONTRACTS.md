@@ -2398,6 +2398,17 @@ untouched — the domain uses the `homework_tasks` and `homework_events` tables 
 `rpc.v23.json` stays byte-identical on disk (sha256
 `b8988994d36cf7e422da0010ed157d3c4ff7dd69b5f8453e9bd7da8b8b4d3182`) and `x-supersedes` names it.
 
+`$defs.homework_id` is additive and private to the homework target: a lesson-owned id (`lbl_doa`,
+`src_jisho_doa`) of 1-128 characters matching `^[A-Za-z0-9][A-Za-z0-9_-]*$`. It is deliberately not
+the shared `vocabulary#identifier` (whose eight-character floor is for Coursebook-minted ids): the
+reviewed GM-014 label ids are seven characters, and retyping a fixture to fit a minting rule would
+be fabricating content. The shared `identifier` def is not modified.
+
+`homework.create` validates its own response against this schema inside the write transaction, so a
+result the contract would reject rolls back and leaves no orphan task row; `target.source_ids` are
+resolved against the source lesson page's own `sources` ledger, and an id the page does not carry is
+`unsourced_target` before any row is written.
+
 What the four commands mean, and what they cannot mean:
 
 - **`homework.create`** proposes *one* task for one objective: one target, one context, one

@@ -9,6 +9,15 @@ One task names **one target, one context, one observable success criterion**, at
 3–10 minutes. The target carries its display text, reading, romaji, meaning, register and the
 `source_ids` of the entries that support it; the task carries `audience` (`learner` or `parent`) and
 an authored `completion_record` (`breakfast / lunch / dinner`, `Day 1 / Day 2`, or one plain tick).
+`source_ids` and `label_ids` are lesson-owned ids (`src_jisho_doa`, `lbl_doa`) and are typed by the
+contract's own `$defs/homework_id`: 1–128 characters of the same alphabet as a Coursebook
+identifier, without its eight-character minting floor.
+
+`homework.create` resolves every `source_ids` entry against the **source lesson page's own
+`sources` ledger** (the one `generation` writes and `takehome.source_content` returns). An id the
+page does not carry — or a row with no https title/url — is refused as `unsourced_target` before
+any row is written; a module-local demo ledger is never substituted for a real lesson's citations.
+The resolved rows are stored with the task and returned by `homework.read` in `task.sources`.
 
 `homework_tasks` and `homework_events` are the tables GM-001 froze in migration 0013; nothing here
 adds a column, and nothing here writes an attempt, a transition, evidence, a notebook entry or an
@@ -50,9 +59,14 @@ no native-speaker review is recorded or claimed.
 
 `homework.sheet_html(task)` is a field card, not a worksheet: eyebrow, title, target, reading,
 gloss, one context, up to three steps, the authored tick row, the success criterion, the minutes,
-a source line and a footer. Every colour is a grey value (`#111`, `#333`, `#555`, `#fff`), there is
-no grid, no red pen, no grade and no streak, and every Japanese run carries `lang="ja"` in the
-HTML. Printing is local (Chromium → PDF, A4 or Letter); nothing is sent anywhere.
+one source line naming every cited source and a footer. Every colour is a grey value (`#111`,
+`#333`, `#555`, `#fff`), there is no grid, no red pen, no grade and no streak, and every Japanese
+run — including the `<title>` and the cited source titles — carries `lang="ja"` in the HTML.
+Printing is local (Chromium → PDF, A4 or Letter); nothing is sent anywhere.
+
+`homework.create` validates its own response against the frozen `cb.rpc` v24 schema **inside** the
+write transaction, so a result the contract would reject rolls back: a failed create leaves no
+orphan `homework_tasks` row for a retry to trip over.
 
 `scripts/gm007_homework_proof.py` renders and measures the committed proof under
 `docs/visual-review/gm-007/`: 7 PDFs (4 A4, 3 Letter), 7 page PNGs and 4 grayscale proofs, with

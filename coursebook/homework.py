@@ -42,7 +42,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from . import db, homework_print, takehome
+from . import contracts, db, homework_print, takehome
 from .api import RpcError
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -571,21 +571,71 @@ def demo_lesson_block(proposal_id: str) -> dict[str, Any]:
     raise KeyError(proposal_id)
 
 
-def proposal_sources(target: Mapping[str, Any]) -> list[dict[str, Any]]:
-    sources = demo_proposals()["sources"]
-    out: list[dict[str, Any]] = []
-    for source_id in target.get("source_ids") or []:
-        source = sources.get(source_id)
-        if source is not None:
-            out.append(
-                {
-                    "source_id": source["source_id"],
-                    "title": source["title"],
-                    "url": source["url"],
-                    "accessed": source["accessed"],
-                }
+def resolve_sources(page_sources: Any, source_ids: Sequence[str]) -> list[dict[str, Any]]:
+    """Resolve a target's cited ids against the lesson page's own source ledger.
+
+    A phrase is printed for a learner only when every id it cites names a keyed row on the lesson
+    page it came from. An id the page does not carry is ``unsourced_target``: the sheet will not
+    show a phrase with no citation, and a module-local demo ledger is never substituted for a real
+    lesson's sources.
+    """
+    ledger: dict[str, Mapping[str, Any]] = {}
+    for entry in page_sources or []:
+        if isinstance(entry, Mapping) and entry.get("source_id"):
+            ledger[str(entry["source_id"])] = entry
+    resolved: list[dict[str, Any]] = []
+    for source_id in source_ids:
+        identifier = str(source_id)
+        source = ledger.get(identifier)
+        if source is None:
+            raise _policy(
+                "unsourced_target",
+                "the target cites a source this lesson page does not carry; an unsourced phrase "
+                "is not printed for a learner.",
+                source_id=identifier,
             )
-    return out
+        title = str(source.get("title") or "").strip()
+        url = str(source.get("url") or "").strip()
+        if not title or not url.startswith("https://"):
+            raise _policy(
+                "unsourced_target",
+                "the cited source has no printable https title and url; an uncitable phrase is "
+                "not printed for a learner.",
+                source_id=identifier,
+            )
+        resolved.append(
+            {
+                "source_id": identifier,
+                "title": title,
+                "url": url,
+                "accessed": str(source.get("accessed") or source.get("fetched_at") or ""),
+            }
+        )
+    if not resolved:
+        raise _policy(
+            "unsourced_target",
+            "the target has no cited source; an unsourced phrase is not printed for a learner.",
+        )
+    return resolved
+
+
+def demo_page_sources(proposal_id: str) -> list[dict[str, Any]]:
+    """The lesson-page source rows for one demo proposal, shaped as ``generation`` writes them."""
+    ledger = demo_proposals()["sources"]
+    block = demo_lesson_block(proposal_id)
+    rows: list[dict[str, Any]] = []
+    for source_id in block["target"].get("source_ids") or []:
+        source = ledger[str(source_id)]
+        rows.append(
+            {
+                "source_id": str(source_id),
+                "title": source["title"],
+                "url": source["url"],
+                "accessed": source["accessed"],
+                "quote": source.get("quote", ""),
+            }
+        )
+    return rows
 
 
 # ── the one-page field card ─────────────────────────────────────────────────
@@ -649,11 +699,14 @@ def sheet_html(task: Mapping[str, Any], *, paper: str = "A4") -> str:
     sources = task.get("sources") or []
     source_line = ""
     if sources:
-        first = sources[0]
-        source_line = (
-            f'Source: <a href="{_esc(first["url"])}">{_esc(first["title"])}</a>'
-            f' (accessed {_esc(first["accessed"])})'
-        )
+        cited: list[str] = []
+        for source in sources:
+            accessed = str(source.get("accessed") or "").strip()
+            cited.append(
+                f'<a href="{_esc(source["url"])}">{_esc_jp(source["title"])}</a>'
+                + (f' (accessed {_esc(accessed)})' if accessed else "")
+            )
+        source_line = "Source: " + "; ".join(cited)
     completion = task.get("completion") or {}
     basis = completion.get("basis")
     record = [str(item) for item in (task.get("completion_record")
@@ -661,7 +714,12 @@ def sheet_html(task: Mapping[str, Any], *, paper: str = "A4") -> str:
     if record:
         boxes = " ".join(f'<span class="box"></span> {_esc_jp(item)}' for item in record)
         checkline = f"{boxes} &nbsp; Date __________"
+    elif basis == "self_reported":
+        checkline = ('<span class="box"></span> Done - recorded by the learner.'
+                     ' &nbsp; Date __________')
     elif basis == "parent_reported":
+        checkline = '<span class="box"></span> A parent recorded this. &nbsp; Date __________'
+    elif task.get("audience") == "parent":
         checkline = ('<span class="box"></span> A parent will record this when it is done.'
                      ' &nbsp; Date __________')
     else:
@@ -707,7 +765,7 @@ def sheet_html(task: Mapping[str, Any], *, paper: str = "A4") -> str:
     return (
         "<!DOCTYPE html>\n"
         '<html lang="en">\n<head>\n<meta charset="utf-8">\n'
-        f"<title>{_esc(task['title'])}</title>\n<style>{_SHEET_CSS}</style>\n</head>\n"
+        f"<title>{_esc_jp(task['title'])}</title>\n<style>{_SHEET_CSS}</style>\n</head>\n"
         f"<body>{body}</body>\n</html>\n"
     )
 
@@ -749,6 +807,9 @@ def sheet_is_single_page(html_text: str) -> bool:
 
 def _task_payload(row, connection) -> dict[str, Any]:
     target = _load(row["target"], {})
+    # The cited sources are resolved from the source lesson page at create time and stored beside
+    # the target; they are not part of the wire target shape.
+    resolved_sources = target.pop("sources", None)
     events = [
         {
             "event_id": str(event["id"]),
@@ -792,7 +853,7 @@ def _task_payload(row, connection) -> dict[str, Any]:
             # A report by the learner or the parent is not independent verification.
             "independent_verification": False,
         },
-        "sources": proposal_sources(target),
+        "sources": list(resolved_sources or []),
         "created_at": str(row["created_at"]),
     }
     task["sheet"] = {
@@ -856,6 +917,11 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
         if proposal.get("completion_record"):
             target["completion_record"] = list(proposal["completion_record"])
         target["content_hash"] = str(bundle["content_hash"])
+        # Every cited id must resolve on the source lesson page itself; an unresolvable phrase is
+        # refused here, before any row is written.
+        target["sources"] = resolve_sources(
+            (bundle.get("page") or {}).get("sources") or [], target["source_ids"]
+        )
 
         existing = _row(
             connection,
@@ -872,6 +938,7 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
                 "state": str(existing["state"]),
                 "revision": int(existing["revision"]),
             }
+            contracts.validate_response_payload(method, result)
             _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
                       int(existing["revision"]), result)
             return int(existing["revision"]), result
@@ -908,6 +975,9 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
             "state": "proposed",
             "revision": 0,
         }
+        # Validate inside the transaction: a result the wire contract would reject raises here
+        # and the whole proposal rolls back, so a failed create leaves no orphan task row.
+        contracts.validate_response_payload(method, result)
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
     return 0, result
 

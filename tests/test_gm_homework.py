@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 
 from coursebook import db, domain, generation, homework as hw, homework_print as hp
@@ -38,8 +39,31 @@ ROOT = Path(__file__).resolve().parent.parent
 PROPOSALS_PATH = ROOT / "bundled" / "homework" / "japanese-l0-mealtime" / "proposals.v1.json"
 
 
+def lesson_page_sources(block: dict) -> list[dict]:
+    """The lesson page's cited sources, in the shape ``generation`` writes.
+
+    A real lesson page carries the ledger rows its target cites; homework resolves the target's
+    ``source_ids`` against exactly this array, so the test page must carry it too.
+    """
+    ledger = hw.demo_proposals()["sources"]
+    out: list[dict] = []
+    for source_id in block["target"].get("source_ids") or []:
+        source = ledger[source_id]
+        out.append(
+            {
+                "source_id": source_id,
+                "title": source["title"],
+                "url": source["url"],
+                "accessed": source["accessed"],
+                "quote": source["quote"],
+            }
+        )
+    return out
+
+
 def japanese_page(title: str, proposal_id: str = "hw_premeal") -> dict:
     """A validated lesson page shaped the way ``generation`` writes ``gen_lessons.page_json``."""
+    block = hw.demo_lesson_block(proposal_id)
     return {
         "section_title": title,
         "lesson_intent": "Say one meal greeting at your own table today.",
@@ -56,9 +80,9 @@ def japanese_page(title: str, proposal_id: str = "hw_premeal") -> dict:
             "learner_instructions": "Say it out loud.",
             "evidence_target": "production",
         },
-        "sources": [],
+        "sources": lesson_page_sources(block),
         "media": [],
-        "homework": hw.demo_lesson_block(proposal_id),
+        "homework": block,
     }
 
 
@@ -420,6 +444,37 @@ class HomeworkSheetTest(HomeworkCase):
             self.assertGreater(coverage, 0.001, "the page carries no ink")
             self.assertLess(coverage, 0.12, "the sheet is a low-ink field card, not a slab of ink")
 
+    def test_homework_sheet_marks_every_japanese_run(self) -> None:
+        """Every Japanese text run on every printed card sits inside ``lang="ja"``."""
+        for proposal in hw.demo_proposals()["proposals"]:
+            proposal_id = proposal["proposal_id"]
+            html_text = hw.sheet_html(demo_task(proposal_id))
+            scanner = JapaneseRunScanner()
+            scanner.feed(html_text)
+            with self.subTest(proposal=proposal_id):
+                self.assertTrue(scanner.marked, "the card carries no marked Japanese at all")
+                self.assertEqual(scanner.unmarked, [], f"{proposal_id}: unmarked Japanese runs")
+
+    def test_homework_sheet_completion_line_matches_the_report(self) -> None:
+        """The tick line says what actually happened, and the future tense only before a report."""
+        base = demo_task("hw_cafe")
+        base["completion_record"] = []
+        cases = (
+            ({"completion": {"basis": None}, "audience": "parent"},
+             "A parent will record this", ("recorded this", "recorded by the learner")),
+            ({"completion": {"basis": "parent_reported"}, "audience": "parent"},
+             "A parent recorded this", ("will record", "recorded by the learner")),
+            ({"completion": {"basis": "self_reported"}, "audience": "learner"},
+             "recorded by the learner", ("will record", "A parent recorded this")),
+        )
+        for extra, expected, forbidden in cases:
+            task = {**base, **extra}
+            text = hw.sheet_text(hw.sheet_html(task))
+            with self.subTest(extra=extra):
+                self.assertIn(expected, text)
+                for absent in forbidden:
+                    self.assertNotIn(absent, text)
+
 
 class HomeworkProvenanceTest(HomeworkCase):
     def test_homework_source_phrase_is_sourced(self) -> None:
@@ -509,6 +564,142 @@ class HomeworkProvenanceTest(HomeworkCase):
         # The read view is the notebook/Parent Studio view: one page, no chat, no course.
         self.assertEqual(read_after["task"]["sheet"]["pages"], 1)
         self.assertNotIn("thread", json.dumps(read_after).lower())
+
+
+class HomeworkDemoRoundTripTest(HomeworkCase):
+    """Every required demo card is creatable, readable, sourced and free of an orphan row."""
+
+    def test_homework_creates_and_reads_every_demo_proposal(self) -> None:
+        for proposal in hw.demo_proposals()["proposals"]:
+            proposal_id = proposal["proposal_id"]
+            seeded = self.seed(page_factory=lambda title, pid=proposal_id: japanese_page(title, pid),
+                               title=f"Card {proposal_id}")
+            created = self.create(seeded, key=f"key-{proposal_id}")
+            self.assertEqual(created["state"], "proposed", proposal_id)
+            read = self.ok("homework.read", {"task_id": created["task_id"]})["result"]
+            task = read["task"]
+            with self.subTest(proposal=proposal_id):
+                self.assertEqual(task["target"]["display"], proposal["target"]["display"])
+                # The read view resolves the target's cited sources from the lesson page.
+                self.assertTrue(task["sources"], f"{proposal_id}: read view has no sources")
+                cited = {source["source_id"] for source in task["sources"]}
+                self.assertEqual(cited, set(proposal["target"]["source_ids"]))
+                self.assertIn("Source:", task["sheet"]["text"])
+                for source in task["sources"]:
+                    self.assertTrue(source["url"].startswith("https://"))
+                    self.assertIn(source["title"], task["sheet"]["text"])
+                if proposal["target"].get("label_ids"):
+                    self.assertEqual(task["target"]["label_ids"],
+                                     proposal["target"]["label_ids"])
+
+    def test_homework_rejects_unsourced_phrase(self) -> None:
+        """A target citing an id the lesson page does not carry is refused, not printed."""
+        block = hw.demo_lesson_block("hw_premeal")
+        block["target"]["display"] = "でたらめなことば"
+        block["target"]["reading"] = "でたらめなことば"
+        block["target"]["source_ids"] = ["src_not_in_any_ledger"]
+        page = japanese_page("Unsourced")
+        page["homework"] = block
+        page["sources"] = []
+        seeded = self.seed(page_factory=lambda title: page, title="Unsourced card")
+        error = self.err(
+            "homework.create",
+            {
+                "course_id": seeded["course_id"],
+                "enrollment_id": seeded["enrollment_id"],
+                "objective_id": seeded["objective_id"],
+                "audience": "learner",
+                "source_lesson_version": seeded["lesson_version"],
+                "context": "At your own table, just before you eat today.",
+            },
+            expected_revision=0,
+            idempotency_key="key-hw-unsourced",
+        )
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "unsourced_target")
+        with db.read() as connection:
+            row = connection.execute("SELECT COUNT(*) AS n FROM homework_tasks").fetchone()
+        self.assertEqual(int(row["n"]), 0, "an unsourced target left a task row")
+
+    def test_homework_contract_refusal_commits_nothing(self) -> None:
+        """A result the wire contract would reject must not be committed first."""
+        block = hw.demo_lesson_block("hw_premeal")
+        block["title"] = "Say the before-meal greeting at one meal " + "x" * 240
+        page = japanese_page("Long title")
+        page["homework"] = block
+        seeded = self.seed(page_factory=lambda title: page, title="Long title card")
+        response = self.dispatch(
+            "homework.create",
+            {
+                "course_id": seeded["course_id"],
+                "enrollment_id": seeded["enrollment_id"],
+                "objective_id": seeded["objective_id"],
+                "audience": "learner",
+                "source_lesson_version": seeded["lesson_version"],
+                "context": "At your own table, just before you eat today.",
+            },
+            expected_revision=0,
+            idempotency_key="key-hw-long-title",
+        )
+        self.assertFalse(response["ok"])
+        with db.read() as connection:
+            row = connection.execute("SELECT COUNT(*) AS n FROM homework_tasks").fetchone()
+        self.assertEqual(int(row["n"]), 0, "a contract-refused create left a task row")
+
+
+class JapaneseRunScanner(HTMLParser):
+    """Collect text nodes carrying Japanese, split by whether an ancestor carries ``lang="ja"``."""
+
+    _VOID = {"meta", "link", "br", "hr", "img", "input", "source"}
+    _JP = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]+")
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[bool] = []
+        self.marked = 0
+        self.unmarked: list[str] = []
+
+    def handle_starttag(self, tag, attrs):  # noqa: ANN001 - stdlib signature
+        if tag in self._VOID:
+            return
+        inside = bool(self.stack and self.stack[-1]) or dict(attrs).get("lang") == "ja"
+        self.stack.append(inside)
+
+    def handle_endtag(self, tag):  # noqa: ANN001 - stdlib signature
+        if tag not in self._VOID and self.stack:
+            self.stack.pop()
+
+    def handle_data(self, data):  # noqa: ANN001 - stdlib signature
+        if not self._JP.search(data):
+            return
+        if self.stack and self.stack[-1]:
+            self.marked += 1
+        else:
+            self.unmarked.append(data.strip())
+
+
+def demo_task(proposal_id: str) -> dict:
+    """The printable task for one demo proposal, the way the sheet and proof build it."""
+    block = hw.demo_lesson_block(proposal_id)
+    return {
+        "title": block["title"],
+        "target": block["target"],
+        "context": block["context"],
+        "steps": block["steps"],
+        "success_criterion": block["success_criterion"],
+        "estimated_minutes": block["estimated_minutes"],
+        "completion_record": block.get("completion_record") or [],
+        "sources": [
+            {
+                "source_id": source["source_id"],
+                "title": source["title"],
+                "url": source["url"],
+                "accessed": source["accessed"],
+            }
+            for source in lesson_page_sources(block)
+        ],
+        "completion": {"basis": None},
+    }
 
 
 def label_index_display(data: dict, label_id: str) -> str:

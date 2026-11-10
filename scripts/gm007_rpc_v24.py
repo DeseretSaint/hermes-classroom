@@ -26,6 +26,11 @@ IDENT = "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
 SHA = "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
 REVISION = "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"
 
+#: A lesson-owned vocabulary id (``lbl_doa`` is seven characters) is content, not a
+#: Coursebook-minted identity: the shared ``identifier`` def's ``minLength: 8`` would reject the
+#: reviewed fixture. Homework keeps the same character discipline without the minting length.
+HOMEWORK_ID = {"$ref": "#/$defs/homework_id"}
+
 NEW_METHODS = ("homework.create", "homework.read", "homework.complete", "homework.skip")
 
 DESCRIPTION = (
@@ -64,6 +69,19 @@ def _properties(pairs):
     return OrderedDict(pairs)
 
 
+def homework_id_schema():
+    return OrderedDict(
+        [
+            ("type", "string"),
+            ("minLength", 1),
+            ("maxLength", 128),
+            ("pattern", "^[A-Za-z0-9][A-Za-z0-9_-]*$"),
+            ("description", "A lesson-owned id cited by a homework target (for example "
+                            "`lbl_doa`); content identity, not a Coursebook-minted id."),
+        ]
+    )
+
+
 def homework_task_schema():
     target = _object(
         ("display", "reading", "romaji", "meaning", "register", "kind"),
@@ -75,10 +93,8 @@ def homework_task_schema():
                 ("meaning", {"type": "string", "maxLength": 400}),
                 ("register", {"type": "string", "maxLength": 200}),
                 ("kind", {"enum": ["single", "label_set"]}),
-                ("label_ids", {"type": "array", "maxItems": 12,
-                               "items": {"$ref": IDENT}}),
-                ("source_ids", {"type": "array", "maxItems": 12,
-                                "items": {"$ref": IDENT}}),
+                ("label_ids", {"type": "array", "maxItems": 12, "items": HOMEWORK_ID}),
+                ("source_ids", {"type": "array", "maxItems": 12, "items": HOMEWORK_ID}),
                 ("completion_record", {"type": "array", "maxItems": 4,
                                        "items": {"type": "string", "minLength": 1,
                                                  "maxLength": 40}}),
@@ -275,6 +291,7 @@ def build() -> dict:
         defs[key] = value
     # additive: one shared task object and one event object
     defs["homework_task"] = homework_task_schema()
+    defs["homework_id"] = homework_id_schema()
     patterns = defs["method"]["enum"]
     assert patterns[-1] == "takehome.read", patterns[-1]
     defs["method"]["enum"] = list(patterns) + list(NEW_METHODS)
