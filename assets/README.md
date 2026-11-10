@@ -33,6 +33,11 @@ uv pip install --python .venv-cb-assets/bin/python "fonttools[woff]==4.59.2" "br
 The venv is private, git-ignored, and never installed into the system interpreter. `rsvg-convert`
 rasterises the SVG masters; Pillow encodes WebP (and AVIF when its encoder is built in).
 
+**AVIF policy.** Every image ships as WebP. An AVIF alternate is added, and exposed as `src_avif`,
+for any asset whose WebP is already ≥ 8 KB — currently the object kit. Smaller assets stay WebP-only
+because a second encoding would add bytes to the segment without a visible gain. The builder checks
+the encoder at build time (`PIL.features.check("avif")`) rather than assuming the host decodes it.
+
 ## Determinism and budgets
 
 Two builds from the same masters produce byte-identical output: font `head` dates are pinned to a
