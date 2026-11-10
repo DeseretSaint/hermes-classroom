@@ -1054,3 +1054,41 @@ What was deliberately not done, and why: starting CP-020b before CP-020a's revie
 primitives on tokens still under review; starting the wave before CP-020b merges would leave five
 branches to rebase; running GM-015 and GM-016 concurrently would score builds that QA may still
 change. Each buys an hour and risks more than an hour of rework.
+
+## 19. Dependency deep dive and partial builds (owner-directed, 2026-11-10 13:30)
+
+A parent edge in this plan means "needs the artifact", not "needs the card closed". Where the
+artifact already exists on a branch, the child can start on that branch and defer only the final
+reconciliation. That distinction is what moved the board from six running to eleven.
+
+What each blocking parent actually provides, and the 90/10 split now in force:
+
+| Card | Parent it waited on | What the parent really provides | Built now (the 90%) | Deferred (the 10%) |
+|---|---|---|---|---|
+| CP-021 | CP-020b | v3 primitives + tokens in `80-components.js` | `96-workshop.js` layout, tabs, grid, fox placement, tests | rebase on final primitives, capture, review |
+| CP-022 | CP-020b, CP-015 | primitives; real course rows for the shelf | `30-home.js` + `32-desk.js` layout, shelf, tag rule, states | four-course shelf data, final capture |
+| CP-023 | CP-020b, CP-013 | primitives incl. `DialogueBubble` (playLabel fix in flight) | stepper, scene frame, check card, rail mount, tests | bubble a11y behaviour from CP-020b's fix, capture |
+| CP-024 | CP-020b | primitives only | `90-course.js` hero map, anchor nodes, fallback route | capture |
+| CP-025b | CP-020b | primitives only | `97-world.js` + `95-studio.js` (Parent Studio) | capture |
+| CP-025a | CP-022, CP-023, CP-025b | their segment files, which it must edit too | nothing safely: its segments are the wave's | all of it, after the three merge |
+| CP-026 | GM-016 | an accepted build for fresh shots | README and demo text already drafted (CP-026d) | screenshots only |
+| CP-033b | GM-016, CP-033 | accepted commit; driver | a rehearsal capture on the current build to validate every state and selector | the real take |
+| GM-015/016/017 | the wave | the merged screens | nothing; a gate cannot judge a tree that does not exist | all |
+
+How the partial builds are kept safe:
+
+1. Each wave card branches from `wt/cp-020b-primitives` @ `556a6fb`, which already carries CP-020a's
+   scope, CP-013's assets and the primitives. It merges that branch before editing.
+2. Segment ownership is unchanged and absolute: `80-components.js`, `75-tokens.js` and
+   `10-primitives.js` are not theirs. A needed primitive change is reported, never made.
+3. The primitives' props are the frozen contract. CP-020b's round-2 review is changing behaviour and
+   tests (the `DialogueBubble` speaker label, a token-comment test), not prop signatures, so a
+   consumer rebase should be mechanical. If a prop does change, the manager rebases all five
+   branches in one pass; no maker chases the branch.
+4. The last 10% is explicit in every card: rebase on the merged primitives, run the named tests,
+   capture, request review. That work is real and is not claimed early.
+5. CP-025a is deliberately not started: it edits three segments the wave owns, so it would create
+   real conflicts, not a partial build. It remains the one true serial remainder.
+6. Memory headroom: 11 workers at load 8 on a 60 GiB host with 18 GiB available. The 12th slot is
+   held back deliberately; the next addition is the CP-033b rehearsal only after CP-033's driver is
+   approved.
