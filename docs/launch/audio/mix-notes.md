@@ -30,9 +30,9 @@ Every cue lands on a hard cut or a beat named in §3 — none is placed by ear.
 | 2 | 5.000 | 150 | `02-paper-tap-2` | 2 | 0 dB | −18.0 dBFS |
 | B4 | 6.500 | 195 | Bed: piano D4 under card 3 | 2 | — | — |
 | 3 | 6.500 | 195 | `03-paper-tap-3` | 2 | 0 dB | −18.0 dBFS |
-| B5 | 7.400–8.125 | 222–244 | Bed: fade-out 7.400→**7.500**, then **digital silence** 7.500–8.125, one beat | 3 — "music drops out, one beat of silence" | — | −∞ (measured −999 dB) from 7.499979 s |
-| B6 | 8.125–11.000 | 244–330 | Bed: build (swept tone 70→420 Hz, band-limited swell, accelerating piano) | 3/§8 — "build at 7.5 s" | — | ramps to −9.4 dBFS RMS |
-| B7 | 11.000 | 330 | Bed: **hit** — sub impact + full Dm | 4 — "hit on frame 330, music returns" | — | −8.5 dBFS RMS |
+| B5 | 7.400–8.125 | 222–244 | Bed: fade-out 7.400→**7.500**, then **digital silence** 7.500–8.125, one beat | 3 — "music drops out, one beat of silence" | — | −∞ (measured −999 dB) from 7.499958 s |
+| B6 | 8.125–11.000 | 244–330 | Bed: build (swept tone 70→420 Hz, band-limited swell, accelerating piano) | 3/§8 — "build at 7.5 s" | — | RMS −17.12 over 8.125–11.000; −13.52 over the last 100 ms |
+| B7 | 11.000 | 330 | Bed: **hit** — sub impact + full Dm | 4 — "hit on frame 330, music returns" | — | RMS −8.46 over 11.000–11.500 |
 | 4 | 15.000 | 450 | `04-click-1` | 5 — `Start a new course` click | +1 dB | −17.0 dBFS |
 | 5 | 16.000 | 480 | `06-keyboard` | 5 — typing the topic (re-place at 17.100 if typing runs longer) | 0 dB | −18.0 dBFS |
 | 6 | 19.500 | 585 | `05-click-2` | 5 — generate/confirm click | +1 dB | −17.0 dBFS |
@@ -43,9 +43,9 @@ Every cue lands on a hard cut or a beat named in §3 — none is placed by ear.
 | 11 | 44.500 | 1335 | `09-page-turn` | 7 — "page turn on the citation" | +1 dB | −17.0 dBFS |
 | 12 | 47.000 | 1410 | `10-level-sting` | 8 — "level-up sting, short", on the cut as the XP chip counts 0→40 | +3 dB | −15.0 dBFS |
 | 13 | 56.000 | 1680 | `09-page-turn` (reuse, low) | 9 — "soft paper slide" as Parent Studio pans in | 0 dB | −18.0 dBFS |
-| B8 | 64.000–70.000 | 1920–2100 | Bed: second build | 10 — "music builds" | — | ramps to −17.6 dBFS RMS |
-| B9 | 70.000 | 2100 | Bed: **final hit** + ring through the end card | 11 — "final hit, tail 1.5 s" (see conflict 3) | — | −8.9 dBFS RMS at the hit, −17.8 at 74.0–74.2 |
-| B10 | 74.400–75.000 | 2232–2250 | Bed: tail fade to zero | 11 / §3 rule — "fade 74.4–75.0 s" | — | −49 dB in the last 100 ms |
+| B8 | 64.000–70.000 | 1920–2100 | Bed: second build | 10 — "music builds" | — | RMS −17.40 over 64.000–70.000; −15.36 over the last 200 ms |
+| B9 | 70.000 | 2100 | Bed: **final hit** + ring through the end card | 11 — "final hit, tail 1.5 s" (see conflict 3) | — | RMS −8.87 over 70.000–70.500; −17.79 over 74.000–74.200 |
+| B10 | 74.400–75.000 | 2232–2250 | Bed: tail fade to zero | 11 / §3 rule — "fade 74.4–75.0 s" | — | RMS −49.06 over the last 100 ms (74.900–75.000) |
 
 Ten files, **thirteen** SFX placements (three files are reused, marked above). The §3 sound column names
 eleven sounds; the pack is the ten-file set the card asks for, and the card/tap repeats cover the rest.
@@ -69,9 +69,11 @@ is sparse piano, so:
 2. Then a true-peak limiter:
    `alimiter=limit=0.84:attack=5:release=50:level=disabled` (0.84 ≈ −1.5 dBTP).
    **`level=disabled` is mandatory.** `alimiter`'s `level` option defaults to *enabled*, which re-normalises
-   the output back to 0 dBFS: without the flag this chain measures **−14.11 LUFS / −1.00 dBTP** (and 0.00 dBTP
-   with `limit=0.891`), i.e. on or past the §9 item 3 gate with no headroom for anything summed later. Do not
-   "clean up" the chain by dropping the flag.
+   the output back to 0 dBFS: without the flag this chain measures **−12.65 LUFS / 0.00 dBTP** (and
+   **−13.10 LUFS / 0.00 dBTP** with the older `limit=0.891`) — 4.4 dB louder than intended and at full scale,
+   a fail of the §9 item 3 true-peak gate with no headroom for anything summed later. Do not "clean up" the
+   chain by dropping the flag. (The `−14.11 LUFS / −1.00 dBTP` pair sometimes quoted for this chain belongs to
+   `limit=0.891` **with** `level=disabled` — the round-1 setting — not to the no-flag case.)
 3. Place the SFX after the limiter so their transients are not squashed; they are already 15 dB down.
 4. **Re-measure the finished programme, not just the bed.** `limit=0.84` leaves 0.5 dB under the ceiling for
    the SFX sum and the AAC encode, which is not a guarantee — run `loudnorm=print_format=json` on the completed
@@ -111,7 +113,7 @@ If the optional VO variant is cut later, apply it exactly like this:
    say "build at 7.5 s". Both are kept: the bed is **digital silence 7.500–8.125 s** and the build occupies
    **8.125–11.000 s**. The drop-out is a measured −999 dB, not a quiet pad.
    *Exact boundaries, measured on the delivered file:* the fade runs 7.400→7.500 (the last 100 ms before the
-   cut), the last non-zero sample is at **7.499937 s**, and the exact-zero run is **7.499958–8.124979 s =
+   cut), the last non-zero sample is at **7.499937 s**, and the exact-zero run is **7.499958–8.125000 s =
    0.6250 s = exactly one beat at 96 BPM**. The music is therefore audible — 17.8 dB down and decaying, but
    present — right up to the 7.500 cut (last frame 7.467–7.500 s measures −34.8 dBFS RMS against a −16.9 dBFS
    bed body), instead of going silent 150 ms early. No frame of the drop-out is dead before its cut.
@@ -156,6 +158,6 @@ ffprobe -v error -show_entries stream=sample_rate,bits_per_sample,duration \
 ```
 
 Verified on this branch: bed 75.000000 s / 48 kHz / 24-bit, peak −3.00 dBFS, RMS −16.92 dBFS, crest 13.92 dB;
-10 SFX at −18.000 dBFS peak; exact zero 7.499958–8.124979 s (one beat, starting on the 7.500 cut); hit at
+10 SFX at −18.000 dBFS peak; exact zero 7.499958–8.125000 s (one beat, starting on the 7.500 cut); hit at
 11.000 s is 7.9 dB above the pre-hit window; final hit at 70.000 s is 7.5 dB above it; the last 100 ms of the
 tail measure −49 dB. The published CP-033d chain measures I −14.16 LUFS / TP −1.51 dBTP on the bed.
