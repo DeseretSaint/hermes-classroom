@@ -1,0 +1,29 @@
+{
+  "tool": "scripts/cp-cold-paint.mjs",
+  "captured_at": "2026-11-10T10:12:28.279Z",
+  "cdp_port": "9471",
+  "measured": "[data-cb-route] present with a non-zero box after Page.reload(ignoreCache)",
+  "samples": [
+    {
+      "run": 1,
+      "ms": 1679,
+      "width": 812.7847290039062,
+      "height": 684.54296875
+    },
+    {
+      "run": 2,
+      "ms": 1671,
+      "width": 812.7847290039062,
+      "height": 684.54296875
+    },
+    {
+      "run": 3,
+      "ms": 1792,
+      "width": 812.7847290039062,
+      "height": 684.54296875
+    }
+  ],
+  "median_ms": 1679,
+  "min_ms": 1671,
+  "max_ms": 1792
+}

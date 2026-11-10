@@ -1,0 +1,107 @@
+{
+  "stamp_version": 1,
+  "tool": "scripts/cp-capture.mjs",
+  "mode": "live",
+  "name": "home-live-1049-light",
+  "captured_at": "2026-11-10T10:11:50.568Z",
+  "ok": true,
+  "gates": {
+    "plugin_sha_match": true,
+    "route_present": true,
+    "no_render_error": true,
+    "fonts_loaded": true,
+    "images_decoded": true
+  },
+  "plugin": {
+    "expected_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
+    "window_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-gm004-203620/home/desktop-plugins/coursebook/plugin.js",
+    "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_f0be3189/desktop/plugin.js",
+    "bytes": 1344249
+  },
+  "backend": {
+    "url": "http://127.0.0.1:44291",
+    "wire_contract": "cb.rpc",
+    "wire_version": 24,
+    "contract_methods": 93,
+    "implemented_count": 93,
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_1575d158",
+    "backend_package": "coursebook_plugin_backend"
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "marker": "/coursebook",
+    "destination": null,
+    "width": 1049.29,
+    "height": 1462.12,
+    "window_width": 1286,
+    "window_height": 1516,
+    "theme": "light",
+    "text_scale_root_px": "16px",
+    "motion": "full",
+    "reduced_motion": false,
+    "forced_colors": false,
+    "fonts_status": "loaded",
+    "font_faces": [
+      "KaTeX_AMS 400 unloaded",
+      "KaTeX_Caligraphic 700 unloaded",
+      "KaTeX_Caligraphic 400 unloaded",
+      "KaTeX_Fraktur 700 unloaded",
+      "KaTeX_Fraktur 400 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Math 700 unloaded",
+      "KaTeX_Math 400 unloaded",
+      "KaTeX_SansSerif 700 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_Script 400 unloaded",
+      "KaTeX_Size1 400 unloaded",
+      "KaTeX_Size2 400 unloaded",
+      "KaTeX_Size3 400 unloaded",
+      "KaTeX_Size4 400 unloaded",
+      "KaTeX_Typewriter 400 unloaded",
+      "codicon normal loaded",
+      "Collapse 700 unloaded",
+      "JetBrains Mono 400 unloaded",
+      "JetBrains Mono 700 loaded",
+      "JetBrains Mono 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 700 unloaded",
+      "Courier Prime 700 unloaded"
+    ],
+    "images_total": 0,
+    "images_decoded": 0,
+    "style_sheet_count": 18,
+    "css_rule_count": 1600,
+    "host_slots": 349,
+    "host_shell": true,
+    "heading_font_family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+    "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
+    "route_ancestors": [
+      "div.contents",
+      "div.absolute.inset-0.overflow-auto",
+      "div.relative.min-h-0.min-w-0",
+      "div."
+    ]
+  },
+  "console": {
+    "errors": [],
+    "warnings": 1
+  },
+  "capture": {
+    "file": "home-live-1049-light.png",
+    "sha256": "cdb79d1b6704be709e38f9ce36586436b4c45e2b1ded0eb7ac5a59b3a9a6e462",
+    "bytes": 194669,
+    "clip": {
+      "x": 236.99539184570312,
+      "y": 33.9909553527832,
+      "width": 1049.2921142578125,
+      "height": 1462.1165771484375
+    }
+  },
+  "page_url": "http://127.0.0.1:5174/#/coursebook"
+}
