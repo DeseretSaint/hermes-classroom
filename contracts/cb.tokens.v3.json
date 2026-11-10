@@ -57,6 +57,81 @@
     "alert": "error and destructive state text and icon. Never decoration.",
     "focus": "the focus ring only. A functional state, never a fill or a text colour."
   },
+  "surfaces": [
+    {
+      "id": "home.global",
+      "name": "Global Home (`home.global`)",
+      "route": true,
+      "ground": "canvas + grain + vignette",
+      "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "wood", "wood-edge", "gold", "alert", "focus"],
+      "note": "one primary pill; wood only on the shelf plank; the plank's lip is wood-edge; fox and tag are DOM-labelled"
+    },
+    {
+      "id": "discover",
+      "name": "Discover / Workshop",
+      "route": true,
+      "ground": "canvas + grain",
+      "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "gold", "sage", "alert", "focus"],
+      "note": "covers are media, not tokens; trust labels sit on card stock"
+    },
+    {
+      "id": "classroom",
+      "name": "Classroom",
+      "route": true,
+      "ground": "canvas + section plate",
+      "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "sage", "gold", "alert", "focus"],
+      "note": "one primary = choose the check answer; XP chip only in Game mode"
+    },
+    {
+      "id": "course.home",
+      "name": "Course home",
+      "route": true,
+      "ground": "map plate + canvas",
+      "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "terracotta", "on-terracotta", "terracotta-quiet", "gold", "alert", "focus"],
+      "note": "nodes are DOM buttons on a plate; the plate never carries labels"
+    },
+    {
+      "id": "parent.studio",
+      "name": "Parent Studio",
+      "route": true,
+      "ground": "canvas",
+      "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "plum", "alert", "focus"],
+      "note": "plum only here; no game chrome; no terracotta primary competing with the learner's course"
+    },
+    {
+      "id": "evidence",
+      "name": "Evidence tray / print sheet",
+      "route": false,
+      "ground": "card-stock",
+      "allowed": ["card-stock", "ink", "ink-soft", "rule", "sage", "wood", "wood-edge", "alert"],
+      "note": "print and take-home stay paper: no forest rail, no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill"
+    },
+    {
+      "id": "component.lab",
+      "name": "Component lab",
+      "route": false,
+      "ground": "canvas",
+      "allowed": ["canvas", "canvas-edge", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "gold", "sage", "wood", "wood-edge", "plum", "alert", "focus"],
+      "note": "a labelled preview of every primitive and state; never presented as a live screen"
+    }
+  ],
+  "surface_rules": [
+    "A surface may use a subset of the roles in its allowed list and may never use a role that is not in it.",
+    "Every route surface allows alert, because EXPERIENCE-QUALITY-BAR Q7 requires an error and offline state on every screen; alert is always a text state with a sentence, never a fill.",
+    "The evidence tray and print sheet are not routes but they are not exempt from alert: a refused export or an unrecorded observation reports on the sheet in alert text.",
+    "A wood object's lip is wood-edge everywhere wood is allowed; wood without wood-edge has no thickness.",
+    "The component lab allows every role because it must be able to show every state; it is never shipped as a screen.",
+    "plum is Parent Studio only; forest is never a fill on the evidence sheet or on Parent Studio."
+  ],
+  "text_placements": {
+    "ink": ["canvas", "canvas-edge", "card-stock", "terracotta-quiet"],
+    "ink-soft": ["canvas", "canvas-edge", "card-stock", "terracotta-quiet"],
+    "on-forest": ["forest"],
+    "on-terracotta": ["terracotta"],
+    "plum": ["canvas", "card-stock"],
+    "alert": ["canvas", "canvas-edge", "card-stock", "terracotta-quiet"]
+  },
+  "text_placement_rule": "These six roles are the only text colours in v3. A text role paints only on the grounds listed for it, and every listed pair carries a text gate below at or above 4.5:1. A surface may therefore permit a text role only if at least one of its grounds is gated for that role.",
   "modes": {
     "light": {
       "canvas": "#f5e3c8",
@@ -231,12 +306,17 @@
     { "foreground": "ink", "background": "canvas-edge", "min": 4.5, "kind": "text", "why": "text that crosses the vignette edge" },
     { "foreground": "ink-soft", "background": "canvas", "min": 4.5, "kind": "text", "why": "secondary text and captions on parchment" },
     { "foreground": "ink-soft", "background": "card-stock", "min": 4.5, "kind": "text", "why": "secondary text on a paper card" },
+    { "foreground": "ink-soft", "background": "canvas-edge", "min": 4.5, "kind": "text", "why": "secondary text that crosses the vignette edge" },
     { "foreground": "ink", "background": "terracotta-quiet", "min": 4.5, "kind": "text", "why": "text on a selected row or quiet warm panel" },
     { "foreground": "ink-soft", "background": "terracotta-quiet", "min": 4.5, "kind": "text", "why": "caption on a selected row or quiet warm panel" },
     { "foreground": "on-forest", "background": "forest", "min": 7.0, "kind": "text", "why": "rail labels and glyphs" },
     { "foreground": "on-terracotta", "background": "terracotta", "min": 4.5, "kind": "text", "why": "label on the one primary action" },
     { "foreground": "plum", "background": "canvas", "min": 4.5, "kind": "text", "why": "Parent Studio identity text" },
+    { "foreground": "plum", "background": "card-stock", "min": 4.5, "kind": "text", "why": "Parent Studio identity text on a paper card" },
     { "foreground": "alert", "background": "canvas", "min": 4.5, "kind": "text", "why": "error and destructive text" },
+    { "foreground": "alert", "background": "card-stock", "min": 4.5, "kind": "text", "why": "error text on a paper card" },
+    { "foreground": "alert", "background": "canvas-edge", "min": 4.5, "kind": "text", "why": "error text that crosses the vignette edge" },
+    { "foreground": "alert", "background": "terracotta-quiet", "min": 4.5, "kind": "text", "why": "error text on a selected row" },
     { "foreground": "rule", "background": "canvas", "min": 1.25, "kind": "non-text", "why": "hairline visibility on parchment" },
     { "foreground": "rule", "background": "card-stock", "min": 1.25, "kind": "non-text", "why": "hairline and card border visibility" },
     { "foreground": "terracotta", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "the primary fill separates from parchment as an object" },

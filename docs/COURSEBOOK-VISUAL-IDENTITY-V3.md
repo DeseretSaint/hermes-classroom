@@ -124,8 +124,12 @@ carries the full rule for each; this is the readable version.
 
 ### Identity and state
 
-- **`plum`** — Parent Studio, and only Parent Studio. Text-safe on canvas at 6.54:1.
-- **`alert`** — error and destructive text and icon. Never decoration, never a progress colour.
+- **`plum`** — Parent Studio, and only Parent Studio. Text-safe on canvas at 6.54:1 and on card
+  stock at 6.99:1.
+- **`alert`** — error and destructive text and icon. Never decoration, never a progress colour,
+  never a fill. It is a text state that always travels with its sentence, and it is permitted on
+  every route: 5.92:1 on parchment, 6.33:1 on card stock, 4.93:1 where it crosses the vignette
+  edge, 5.31:1 on a selected row (dark: 9.07 / 8.34 / 7.41 / 6.99).
 - **`focus`** — the focus ring, and nothing else. See §6.
 
 ---
@@ -151,9 +155,11 @@ Six steps, no seventh:
 | `display` | `clamp(2.5rem, 1.5rem + 3cqi, 4rem)` | one per surface, ≤20ch |
 
 **The display step is measured against the route container, not the window.** `cqi` resolves
-against `container-name: cb` on `[data-cb-v3]`. At a 460px route the headline shrinks to its floor
-instead of overflowing or being clipped; at 1049 it reaches its ceiling. A headless window resize
-must not fake this: the container is the only correct input.
+against `container-name: cb` on `[data-cb-v3]`. The fluid term is `24px + 3%` of the container, so
+the 40px floor holds up to a 533px container, a 900px container renders 51px, and a 1049px
+container renders 55.5px — still fluid. The 64px ceiling is reached only once the container passes
+1333px, which no route reaches on a laptop. A headless window resize must not fake this: the
+container is the only correct input.
 
 Body is `1rem`, so a 200 percent root scales every step. Furigana is deliberately smaller than the
 body step; it is a scaffold on a Japanese line, not a seventh authored size.
@@ -248,17 +254,26 @@ as disabled, or a dark mode that turns the fox and the plates into silhouettes.
 
 | Surface | Ground | Allowed roles | Notes |
 |---|---|---|---|
-| Global Home (`home.global`) | canvas + grain + vignette | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, terracotta-quiet, wood, wood-edge, gold, focus | one primary pill; wood only on the shelf plank; fox and tag are DOM-labelled |
-| Discover / Workshop | canvas + grain | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, gold, sage, focus | covers are media, not tokens; trust labels sit on card stock |
-| Classroom | canvas + section plate | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, terracotta-quiet, sage, gold, focus | one primary = choose the check answer; XP chip only in Game mode |
-| Course home | map plate + canvas | canvas, card-stock, ink, ink-soft, rule, terracotta, on-terracotta, terracotta-quiet, gold, focus | nodes are DOM buttons on a plate; the plate never carries labels |
-| Component lab | canvas | all roles | a labelled preview of every primitive × state; never presented as a live screen |
-| Parent Studio | canvas | canvas, card-stock, ink, ink-soft, rule, plum, focus | plum only here; no game chrome; no terracotta primary competing with the learner's course |
-| Evidence tray / print sheet | card-stock | card-stock, ink, ink-soft, rule, sage, wood (tray only) | print and take-home stay paper: no forest rail, no primary fill |
+| Global Home (`home.global`) | canvas + grain + vignette | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, terracotta-quiet, wood, wood-edge, gold, alert, focus | one primary pill; wood only on the shelf plank; the plank's lip is wood-edge; fox and tag are DOM-labelled |
+| Discover / Workshop | canvas + grain | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, gold, sage, alert, focus | covers are media, not tokens; trust labels sit on card stock |
+| Classroom | canvas + section plate | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, terracotta-quiet, sage, gold, alert, focus | one primary = choose the check answer; XP chip only in Game mode |
+| Course home | map plate + canvas | canvas, card-stock, ink, ink-soft, rule, terracotta, on-terracotta, terracotta-quiet, gold, alert, focus | nodes are DOM buttons on a plate; the plate never carries labels |
+| Parent Studio | canvas | canvas, card-stock, ink, ink-soft, rule, plum, alert, focus | plum only here; no game chrome; no terracotta primary competing with the learner's course |
+| Evidence tray / print sheet | card-stock | card-stock, ink, ink-soft, rule, sage, wood, wood-edge, alert | print and take-home stay paper: no forest rail, no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill |
+| Component lab | canvas | all roles | a labelled preview of every primitive and state; never presented as a live screen |
 
 A surface may use a subset; it may never use a colour that is not in this table. A screen with
 `forest` and `plum` and `alert` and `terracotta` at once has four jobs on one viewport and is a
 palette defect, not richness.
+
+**Errors reach every surface.** `alert` is permitted on all five route surfaces and on the
+evidence sheet, because EXPERIENCE-QUALITY-BAR Q7 requires an error and an offline state on every
+screen, and an export that refuses or an observation that does not record has to report somewhere.
+`alert` is a text state — the colour plus its sentence — never a fill, never decoration, and never
+a surface's only signal.
+
+**Objects keep their thickness.** Anywhere `wood` is permitted, `wood-edge` is permitted with it:
+a plank or a tray without its lip is a flat rectangle pretending to be an object.
 
 ---
 
@@ -292,9 +307,18 @@ These bans survive the move to v3. They are not softened by the new material lan
 - both modes define every role as a six-digit hex, with full light/dark parity;
 - elevation has three levels per mode; radii are exactly 0, 6, 12, 999;
 - the display step is the pinned container clamp, with no `vw` anywhere in a fluid step;
+- the display clamp resolves correctly: 40px floor up to a 533px container, 51px at 900px,
+  55.47px at 1049px, and the 64px ceiling only past 1333px — the same arithmetic §4 states;
 - two embedded families plus a system CJK stack;
 - grain/vignette/wood name a tile and an opacity per theme, and grain respects the ceiling;
 - motion beats, no loops, no duration above the ceiling;
+- the seven surface rows in §9 match the contract's `surfaces` table role for role, and
+  every role is permitted on at least one surface;
+- `alert` is permitted on all five route surfaces and on the evidence sheet;
+- `wood` is never permitted without `wood-edge`;
+- the text-gate roster equals a pinned literal list, so a deleted gate fails the suite rather
+  than shrinking coverage;
+- every text role's declared grounds have a gate, and no text gate exists for an undeclared pair;
 - **every gate is computed in both modes and must pass**, text gates at or above 4.5, and
   wood/gold/sage carry no text gate.
 

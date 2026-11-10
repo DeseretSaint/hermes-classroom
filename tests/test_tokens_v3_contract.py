@@ -18,6 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
+IDENTITY_DOC = ROOT / "docs" / "COURSEBOOK-VISUAL-IDENTITY-V3.md"
 
 REQUIRED_ROLES = (
     "canvas",
@@ -46,6 +47,10 @@ TOP_LEVEL_KEYS = (
     "scope",
     "roles",
     "role_rules",
+    "surfaces",
+    "surface_rules",
+    "text_placements",
+    "text_placement_rule",
     "modes",
     "elevation",
     "radii",
@@ -56,6 +61,36 @@ TOP_LEVEL_KEYS = (
     "gates",
     "never_text_on",
 )
+
+# The only roles that may carry text, and the only grounds each may sit on. A colour that is a
+# fill, a rule or a ring is absent here by design: it never carries a label.
+TEXT_ROLES = ("ink", "ink-soft", "on-forest", "on-terracotta", "plum", "alert")
+
+# Pinned text-gate roster. This is the card's "contrast pairs for every text-on-surface
+# combination" written down, so deleting a gate from the contract fails the suite instead of
+# quietly shrinking coverage. Growth is allowed only by editing this tuple in review.
+PINNED_TEXT_GATE_ROSTER = (
+    ("ink", "canvas"),
+    ("ink", "canvas-edge"),
+    ("ink", "card-stock"),
+    ("ink", "terracotta-quiet"),
+    ("ink-soft", "canvas"),
+    ("ink-soft", "canvas-edge"),
+    ("ink-soft", "card-stock"),
+    ("ink-soft", "terracotta-quiet"),
+    ("on-forest", "forest"),
+    ("on-terracotta", "terracotta"),
+    ("plum", "canvas"),
+    ("plum", "card-stock"),
+    ("alert", "canvas"),
+    ("alert", "canvas-edge"),
+    ("alert", "card-stock"),
+    ("alert", "terracotta-quiet"),
+)
+
+# Every text role must be permitted on every route surface, because an error or offline state
+# can appear anywhere; alert is the one that was missing in round 1.
+ROUTE_SURFACE_IDS = ("home.global", "discover", "classroom", "course.home", "parent.studio")
 
 HEX = re.compile(r"^#[0-9a-f]{6}$")
 
@@ -79,6 +114,44 @@ def contrast_ratio(foreground: str, background: str) -> float:
 
 def load_contract() -> dict:
     return json.loads(CONTRACT.read_text(encoding="utf-8"))
+
+
+DISPLAY_CLAMP = re.compile(r"^clamp\(([0-9.]+)rem, ([0-9.]+)rem \+ ([0-9.]+)cqi, ([0-9.]+)rem\)$")
+
+
+def display_px(clamp: str, container_px: float) -> float:
+    """Resolve a rem/rem+cqi clamp against a route container width in px, at a 16px root."""
+    match = DISPLAY_CLAMP.match(clamp)
+    if not match:
+        raise AssertionError(f"not a rem/rem+cqi clamp: {clamp!r}")
+    floor, base, slope, ceiling = (float(group) for group in match.groups())
+    preferred = base * 16 + (slope / 100) * container_px
+    return max(floor * 16, min(ceiling * 16, preferred))
+
+
+def doc_section(prefix: str) -> str:
+    text = IDENTITY_DOC.read_text(encoding="utf-8")
+    start = text.index(prefix)
+    rest = text[start + len(prefix):]
+    end = re.search(r"\n## ", rest)
+    return rest[: end.start()] if end else rest
+
+
+def parse_surface_table() -> dict:
+    """Parse the §9 markdown table. The doc is the human rendering; the JSON is the source."""
+    rows = {}
+    for line in doc_section("## 9.").splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != 4 or cells[0] == "Surface" or set(cells[0]) <= set("-: "):
+            continue
+        name, ground, allowed, note = cells
+        allowed_set = (
+            set(REQUIRED_ROLES) if allowed == "all roles" else {role.strip() for role in allowed.split(",")}
+        )
+        rows[name] = {"ground": ground, "allowed": allowed_set, "note": note}
+    return rows
 
 
 class ContractSchemaTest(unittest.TestCase):
@@ -127,6 +200,65 @@ class ContractSchemaTest(unittest.TestCase):
         self.assertEqual(values, [0, 6, 12, 999])
 
 
+class SurfaceContractTest(unittest.TestCase):
+    """Round-1 D1: a role must be permitted somewhere, and alert must reach every route."""
+
+    def setUp(self) -> None:
+        self.contract = load_contract()
+        self.surfaces = {surface["id"]: surface for surface in self.contract["surfaces"]}
+
+    def test_surfaces_have_unique_ids_real_roles_and_five_routes(self) -> None:
+        ids = [surface["id"] for surface in self.contract["surfaces"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual([sid for sid, s in self.surfaces.items() if s["route"]], list(ROUTE_SURFACE_IDS))
+        roles = set(self.contract["roles"])
+        for surface in self.contract["surfaces"]:
+            self.assertTrue(surface["name"].strip(), surface["id"])
+            self.assertTrue(surface["ground"].strip(), surface["id"])
+            self.assertTrue(surface["note"].strip(), surface["id"])
+            self.assertTrue(surface["allowed"], surface["id"])
+            self.assertLessEqual(set(surface["allowed"]), roles, surface["id"])
+
+    def test_every_role_is_permitted_on_at_least_one_surface(self) -> None:
+        permitted = {role for surface in self.contract["surfaces"] for role in surface["allowed"]}
+        self.assertEqual(permitted, set(self.contract["roles"]))
+
+    def test_alert_is_permitted_on_every_route_surface(self) -> None:
+        for surface_id in ROUTE_SURFACE_IDS:
+            self.assertIn("alert", self.surfaces[surface_id]["allowed"], surface_id)
+
+    def test_alert_is_not_exempt_on_the_evidence_sheet(self) -> None:
+        # Not a route, but a refused export reports on paper; the sheet must not forbid the colour.
+        self.assertIn("alert", self.surfaces["evidence"]["allowed"])
+
+    def test_a_permitted_text_role_has_a_gated_ground_on_that_surface(self) -> None:
+        placements = self.contract["text_placements"]
+        grounds = {"canvas", "canvas-edge", "card-stock", "terracotta", "terracotta-quiet", "forest"}
+        for surface in self.contract["surfaces"]:
+            surface_grounds = set(surface["allowed"]) & grounds
+            for role in set(surface["allowed"]) & set(TEXT_ROLES):
+                self.assertTrue(
+                    set(placements[role]) & surface_grounds,
+                    f"{surface['id']} permits {role} text but has no gated ground for it",
+                )
+
+    def test_wood_always_brings_its_edge(self) -> None:
+        for surface in self.contract["surfaces"]:
+            if "wood" in surface["allowed"]:
+                self.assertIn("wood-edge", surface["allowed"], surface["id"])
+
+    def test_doc_section_nine_matches_the_contract(self) -> None:
+        # The doc may not drift: a role permitted in prose but absent from the JSON (or the
+        # reverse) would let a downstream card paint a colour the gates never proved.
+        parsed = parse_surface_table()
+        self.assertEqual(set(parsed), {surface["name"] for surface in self.contract["surfaces"]})
+        for surface in self.contract["surfaces"]:
+            row = parsed[surface["name"]]
+            self.assertEqual(row["ground"], surface["ground"], surface["id"])
+            self.assertEqual(row["allowed"], set(surface["allowed"]), surface["id"])
+            self.assertTrue(row["note"], surface["id"])
+
+
 class TypeContractTest(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = load_contract()
@@ -134,6 +266,26 @@ class TypeContractTest(unittest.TestCase):
     def test_display_uses_the_pinned_container_clamp(self) -> None:
         scale = self.contract["type"]["scale"]
         self.assertEqual(scale["display"], "clamp(2.5rem, 1.5rem + 3cqi, 4rem)")
+
+    def test_display_clamp_arithmetic(self) -> None:
+        # Round-1 D3: the fluid term is 24px + 3% of the *container*. The floor is reached below
+        # a 533.33px container, the 64px ceiling only above 1333.33px; 1049px is fluid, not capped.
+        display = self.contract["type"]["scale"]["display"]
+
+        self.assertAlmostEqual(display_px(display, 320), 40.0, places=2)
+        self.assertAlmostEqual(display_px(display, 460), 40.0, places=2)
+        self.assertAlmostEqual(display_px(display, 900), 51.0, places=2)
+        self.assertAlmostEqual(display_px(display, 1049), 55.47, places=2)
+        self.assertLess(display_px(display, 1049), 64.0)
+        self.assertLess(display_px(display, 1333.0), 64.0)
+        self.assertAlmostEqual(display_px(display, 1333.4), 64.0, places=2)
+        self.assertAlmostEqual(display_px(display, 1920), 64.0, places=2)
+
+    def test_the_doc_does_not_claim_the_ceiling_at_1049(self) -> None:
+        section = doc_section("## 4.")
+        self.assertIn("1333", section)
+        self.assertNotIn("at 1049 it reaches its ceiling", section)
+        self.assertIn("55.5", section)
 
     def test_six_type_steps_and_no_seventh(self) -> None:
         scale = self.contract["type"]["scale"]
@@ -244,6 +396,21 @@ class ContrastGateTest(unittest.TestCase):
             table = self.contract["modes"][mode]
             ratio = contrast_ratio(table["on-terracotta"], table["terracotta"])
             self.assertGreaterEqual(round(ratio, 2), 4.5, mode)
+
+    def test_the_text_gate_roster_is_pinned(self) -> None:
+        # Round-1 D2: coverage must not be able to shrink by deleting a gate. The literal
+        # roster below is the card's "every text-on-surface combination", written down.
+        gates = [(gate["foreground"], gate["background"]) for gate in self.contract["gates"] if gate["kind"] == "text"]
+        self.assertEqual(len(gates), len(set(gates)), "duplicate text gate")
+        self.assertEqual(set(gates), set(PINNED_TEXT_GATE_ROSTER))
+
+    def test_every_text_placement_has_a_gate_and_no_gate_is_unplaced(self) -> None:
+        placements = self.contract["text_placements"]
+        self.assertEqual(set(placements), set(TEXT_ROLES))
+        derived = {(role, ground) for role, grounds in placements.items() for ground in grounds}
+        self.assertEqual(derived, set(PINNED_TEXT_GATE_ROSTER))
+        gated = {(gate["foreground"], gate["background"]) for gate in self.contract["gates"] if gate["kind"] == "text"}
+        self.assertEqual(gated, derived)
 
     def test_every_ground_a_text_gate_uses_is_covered(self) -> None:
         # A role may carry text only if some text gate proves its floor. Fills that must never
