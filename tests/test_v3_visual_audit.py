@@ -37,7 +37,7 @@ PLUGIN = ROOT / "desktop" / "plugin.js"
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 
 #: CP-020a flips this to True together with tests/test_desktop_tokens_v3.py.
-V3_REQUIRED = False
+V3_REQUIRED = True
 
 CLAIMS = [f"V-{index:02d}" for index in range(1, 13)]
 
