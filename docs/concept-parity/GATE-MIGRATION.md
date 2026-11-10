@@ -100,6 +100,29 @@ No assertion was removed, renamed to hide it, or marked skip. The count gate
 That is the difference between scoping and weakening: the mechanism is proven to still catch a
 violation while ignoring a legitimate v3 declaration.
 
+**The v3 gate is proven in both directions too.** A gate that has only ever failed because the
+literal was absent has not shown it would catch a bad stylesheet. `V3GateBitesTest` points the
+**real** gate (`tests/test_desktop_tokens_v3.py`) at a temporary module — never the product file —
+and:
+
+| Control | Input | Expected |
+|---|---|---|
+| compliant | contract-canonical token literal + `[data-cb-v3]` stylesheet with `@font-face`, `var(--cb3-elev-1)`, named vignette, `CB ` families, the five-beat table | all 12 gated claims pass |
+| glass | `backdrop-filter` added | blur claim fails |
+| shadow | `box-shadow: 0 4px 12px rgba(…)` | elevation claim fails |
+| gradient | `linear-gradient(#fff,#000)` on a normal property | vignette claim fails |
+| scope | a selector with no `[data-cb-v3]` prefix | scope claim fails |
+| font | `"Inter"` as the first family | font claim fails |
+| motion | a literal `90ms` transition | motion-table claim fails |
+| loop | `@keyframes` | no-animation claim fails |
+| measure | `4vw` | route-relative claim fails |
+| drift | one hex changed in the token literal | byte-equality claim fails |
+| raw paint | `#a5763f` in the stylesheet | hex-only-in-literals claim fails |
+
+The compliant control also pins the extractor: the token literal is embedded with the backslash
+escaping a real JS string literal requires, so a builder cannot satisfy the gate with a literal the
+runtime would mis-parse.
+
 ---
 
 ## 4. The assertion table (every assertion, all eight modules)
