@@ -1285,35 +1285,55 @@ _PROCEDURE_VERB_TOKENS: frozenset[str] = frozenset(
         "attach",
         "bleed",
         "bolt",
+        "check",
+        "clamp",
+        "close",
         "connect",
         "cut",
         "detach",
         "dismount",
         "drain",
         "drill",
+        "ensure",
         "fill",
         "fit",
         "flush",
         "grease",
+        "hold",
         "install",
         "inspect",
+        "jack",
         "lift",
         "loosen",
+        "lower",
+        "mark",
         "measure",
         "mount",
+        "open",
+        "place",
+        "position",
         "press",
+        "pry",
         "pull",
         "push",
+        "raise",
         "refit",
         "reinstall",
+        "release",
         "remove",
         "replace",
         "rotate",
+        "route",
         "sand",
         "screw",
+        "seat",
         "secure",
         "slide",
         "snap",
+        "soak",
+        "spray",
+        "support",
+        "tag",
         "tighten",
         "torque",
         "turn",
@@ -1322,8 +1342,69 @@ _PROCEDURE_VERB_TOKENS: frozenset[str] = frozenset(
         "unfasten",
         "unplug",
         "unscrew",
+        "verify",
         "weld",
         "wipe",
+    }
+)
+
+#: Discourse words that may precede an imperative without changing it: "First, remove the
+#: intake manifold" is the same procedure as "remove the intake manifold". They are skipped
+#: before the verb-initial test (L1).
+_LEADING_DISCOURSE_TOKENS: frozenset[str] = frozenset(
+    {
+        "after",
+        "afterward",
+        "afterwards",
+        "also",
+        "always",
+        "before",
+        "carefully",
+        "finally",
+        "first",
+        "firstly",
+        "gently",
+        "immediately",
+        "lastly",
+        "never",
+        "next",
+        "now",
+        "once",
+        "please",
+        "quickly",
+        "second",
+        "secondly",
+        "slowly",
+        "subsequently",
+        "then",
+        "third",
+        "thirdly",
+    }
+)
+
+#: Determiners that give a procedure verb an object wherever it sits in the phrase
+#: ("... remove the intake manifold", "Open the hood"). A native place cue such as
+#: "car on a lift" has no determiner after its noun, so it stays legal.
+_PROCEDURE_OBJECT_DETERMINERS: frozenset[str] = frozenset(
+    {
+        "a",
+        "all",
+        "an",
+        "another",
+        "any",
+        "both",
+        "each",
+        "every",
+        "her",
+        "his",
+        "its",
+        "that",
+        "the",
+        "their",
+        "these",
+        "this",
+        "those",
+        "your",
     }
 )
 
@@ -1436,9 +1517,31 @@ def _names_numbers_or_answer_content(value: Any) -> bool:
 
 
 #: Quantity words that, hyphenated, are still a value or a sequence step: "quarter-turn" is an
-#: instruction, "half-inch" a measurement, "dozen-count" a quantity. They never earn the
-#: descriptive-compound exemption (K1).
-_QUANTITY_COMPOUND_TOKENS: frozenset[str] = frozenset({"quarter", "half", "dozen", "third"})
+#: instruction, "half-inch" a measurement, "dozen-count" a quantity, "two-thirds" a fraction.
+#: They never earn the descriptive-compound exemption (K1/L2). Ordinals are listed so a plural
+#: fraction tail ("thirds", "fifths") is refused once singularised.
+_QUANTITY_COMPOUND_TOKENS: frozenset[str] = frozenset(
+    {
+        "quarter",
+        "half",
+        "dozen",
+        "third",
+        "fifth",
+        "sixth",
+        "seventh",
+        "eighth",
+        "ninth",
+        "tenth",
+        "eleventh",
+        "twelfth",
+        "hundredth",
+        "thousandth",
+        "percent",
+    }
+)
+
+#: Irregular plurals that a plain trailing-"s" strip cannot singularise.
+_IRREGULAR_PLURALS: dict[str, str] = {"halves": "half"}
 
 #: The boundary of the ``four-cylinder`` carve-out: only a spelled number followed by a plain
 #: noun is a descriptive compound ("four-cylinder block", "two-stroke engine"). A number
@@ -1478,13 +1581,27 @@ _SCENE_TEXT_STOPWORDS: frozenset[str] = frozenset(
 )
 
 
+def _singular_compound_tail(tail: str) -> str:
+    """Singularise a hyphenated compound's tail so quantity/ordinal plurals are recognised.
+
+    ``thirds`` -> ``third``, ``halves`` -> ``half``. Without this, ``two-thirds`` read as a
+    number+noun descriptive compound and slipped through the K1 carve-out (L2).
+    """
+    if tail in _IRREGULAR_PLURALS:
+        return _IRREGULAR_PLURALS[tail]
+    if len(tail) > 3 and tail.endswith("s") and not tail.endswith("ss"):
+        return tail[:-1]
+    return tail
+
+
 def _descriptive_number_compound(unit: str) -> bool:
     """True for a hyphenated spelled number that describes a thing, not a value.
 
     ``four-cylinder`` and ``two-stroke`` are compound adjectives and legal scene words. A
-    number followed by another number (``seventy-five``) is a written value; a quantity word
-    (``quarter-turn``, ``half-inch``) is a sequence step or a measurement. Both stay refused
-    (K1). Multi-part compounds are not granted the exemption.
+    number followed by another number (``seventy-five``) is a written value; a quantity or
+    fraction word (``quarter-turn``, ``half-inch``, ``two-thirds``) is a sequence step or a
+    measurement. Both stay refused (K1/L2). Multi-part compounds are not granted the
+    exemption.
     """
     parts = unit.split("-")
     if len(parts) != 2:
@@ -1492,7 +1609,27 @@ def _descriptive_number_compound(unit: str) -> bool:
     head, tail = parts
     if head not in _SPELLED_NUMBER_TOKENS or head in _QUANTITY_COMPOUND_TOKENS:
         return False
-    return tail not in _SPELLED_NUMBER_TOKENS
+    tail = _singular_compound_tail(tail)
+    return tail not in _SPELLED_NUMBER_TOKENS and tail not in _QUANTITY_COMPOUND_TOKENS
+
+
+def _procedure_verb_base(token: str) -> str | None:
+    """The procedure verb a token realises, if any (bare, gerund, or doubled-consonant gerund).
+
+    ``remove``, ``removing`` and ``installing`` all name a procedure. A gerund base is
+    compared against the same verb set so a sequence step cannot hide behind "-ing".
+    """
+    if token in _PROCEDURE_VERB_TOKENS:
+        return token
+    if len(token) > 5 and token.endswith("ing"):
+        stem = token[:-3]
+        candidates = [stem, stem + "e"]
+        if len(stem) > 1 and stem[-1] == stem[-2]:
+            candidates.append(stem[:-1])
+        for candidate in candidates:
+            if candidate in _PROCEDURE_VERB_TOKENS:
+                return candidate
+    return None
 
 
 def _names_procedure_or_spelled_value(value: Any) -> bool:
@@ -1500,30 +1637,44 @@ def _names_procedure_or_spelled_value(value: Any) -> bool:
 
     Digits, units and label/answer wording are already covered by
     :func:`_names_numbers_or_answer_content`; this adds the two holes a reviewer could drive a
-    procedure through (J1, plan §4.4 rules 1 and 5):
+    procedure through (J1/L1, plan §4.4 rules 1 and 5):
 
-    * a spelled-out value ("tighten to seventy five", "seventy-five"), and
-    * imperative procedure phrasing ("remove the intake manifold", "drain the coolant").
+    * a spelled-out value ("tighten to seventy five", "seventy-five", "two-thirds"), and
+    * imperative procedure phrasing ("remove the intake manifold", "First, remove the intake
+      manifold", "Open the hood").
 
-    Only *verb-initial* phrasing is refused: "car on a lift" is the workshop's native place cue,
-    not the instruction "lift the car". The ``four-cylinder`` carve-out is deliberately narrow:
-    only a spelled number followed by a plain noun is descriptive. Hyphenation must not shelter
-    a value or a sequence step (K1) — "seventy-five" and "quarter-turn" are still refused.
+    A leading discourse word never cancels an imperative, so it is skipped before the
+    verb-initial test. A procedure verb followed by a determiner ("remove **the** manifold")
+    is refused wherever it sits. Native place cues ("car on a lift") stay legal: their noun
+    is not followed by a determiner. The ``four-cylinder`` carve-out is deliberately narrow:
+    only a spelled number followed by a plain noun is descriptive. Hyphenation must not
+    shelter a value, a fraction or a sequence step (K1/L2).
     """
     if _names_numbers_or_answer_content(value):
         return True
-    tokens = _phrase_tokens(value)
-    if not tokens:
+    raw_tokens = _phrase_tokens(value)
+    if not raw_tokens:
         return False
     exposed = set()
     for unit in _HYPHEN_COMPOUND_UNIT.findall(str(value).lower()):
         if _descriptive_number_compound(unit):
             continue
         exposed.update(_phrase_tokens(unit))
-    for token in tokens:
+    for token in raw_tokens:
         if token in _SPELLED_NUMBER_TOKENS and token in exposed:
             return True
-    return tokens[0] in _PROCEDURE_VERB_TOKENS
+    index = 0
+    while index < len(raw_tokens) and raw_tokens[index] in _LEADING_DISCOURSE_TOKENS:
+        index += 1
+    if index < len(raw_tokens) and _procedure_verb_base(raw_tokens[index]):
+        return True
+    for position, token in enumerate(raw_tokens[:-1]):
+        if (
+            _procedure_verb_base(token)
+            and raw_tokens[position + 1] in _PROCEDURE_OBJECT_DETERMINERS
+        ):
+            return True
+    return False
 
 
 def _names_foreign_scene(value: Any, grammar: str) -> bool:

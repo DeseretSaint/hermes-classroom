@@ -1490,6 +1490,170 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         self.assertEqual(read["world"]["brief"]["title"], "Seventy-five")
         self.assertEqual(read["world"]["state"], "concepts_ready")
 
+    def test_presentation_motifs_with_a_leading_word_still_name_a_procedure(self) -> None:
+        # L1: the procedure check inspected only the first token, so one leading discourse
+        # word restored a frozen imperative ("First, remove the intake manifold") and four
+        # imperatives were simply absent from the verb set ("Open the hood"). Plan §4.4
+        # rules 1 and 5: a plate is orientation, never a procedure. Concepts and the
+        # approved-style kit path refuse before spend.
+        cases = (
+            "First, remove the intake manifold",
+            "Then drain the coolant",
+            "Open the hood",
+            "Release the fuel pressure",
+            "Raise the vehicle on the hoist",
+            "Seat the gasket on the block",
+        )
+        for index, motif in enumerate(cases):
+            with self.subTest(motif=motif):
+                course_id = self._new_technical_course(f"Leading word motif {index}")
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": course_id,
+                        "stage": "concepts",
+                        "brief_patch": {"motifs": [motif]},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"l1-leading-motif-{index}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertIn(
+                    error["details"]["reason"],
+                    {
+                        "presentation_names_number_or_answer_content",
+                        "presentation_names_procedure_or_value",
+                    },
+                )
+                self.assertEqual(error["details"]["field"], "motifs")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Kit path after an approved style: the same leading-word motif is refused, no spend.
+        read, _style = self._concepts_then_style()
+        self.assertEqual(len(self.fake.calls), 3)
+        board = read["world"]["concepts"][0]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": {"motifs": ["First, remove the intake manifold"]},
+            },
+            expected_revision=read["revision"],
+            idempotency_key="l1-leading-kit",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertIn(
+            kit_error["details"]["reason"],
+            {
+                "presentation_names_number_or_answer_content",
+                "presentation_names_procedure_or_value",
+            },
+        )
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+    def test_presentation_motifs_cannot_hyphenate_a_fraction(self) -> None:
+        # L2: 'two-thirds' survived the K1 carve-out because the tail 'thirds' was not
+        # singularised before the quantity check, so a fraction read as a number+noun
+        # descriptive compound. A fraction is a measurement or a sequence step (§4.4 rule 1).
+        for index, motif in enumerate(("two-thirds", "two-fifths", "three-quarters")):
+            with self.subTest(motif=motif):
+                course_id = self._new_technical_course(f"Fraction motif {index}")
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": course_id,
+                        "stage": "concepts",
+                        "brief_patch": {"motifs": [motif]},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"l2-fraction-motif-{index}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertIn(
+                    error["details"]["reason"],
+                    {
+                        "presentation_names_number_or_answer_content",
+                        "presentation_names_procedure_or_value",
+                    },
+                )
+                self.assertEqual(error["details"]["field"], "motifs")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Kit path: a fraction in the patch is refused after an approved style, no spend.
+        read, _style = self._concepts_then_style()
+        self.assertEqual(len(self.fake.calls), 3)
+        board = read["world"]["concepts"][0]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": {"motifs": ["two-thirds"]},
+            },
+            expected_revision=read["revision"],
+            idempotency_key="l2-fraction-kit",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+        # The carve-out still holds: number+noun descriptive compounds are scenes, not values.
+        course_id = self._new_technical_course("Fraction native compound")
+        self.ok(
+            "world.generate",
+            {
+                "course_id": course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["four-cylinder block"]},
+            },
+            expected_revision=0,
+            idempotency_key="l2-fraction-native",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 6)
+
+    def test_course_title_with_a_leading_word_cannot_carry_a_procedure(self) -> None:
+        # L1 residual, reachable with no brief_patch: a course titled exactly
+        # 'First, remove the intake manifold' reaches every concept plate through
+        # 'Course subject: ...'. The prompt fence must fall back to the grammar label,
+        # while the persisted brief stays verbatim.
+        created = self.ok(
+            "course.create",
+            {
+                "title": "First, remove the intake manifold",
+                "recipe": "committed",
+                "goal": "Replace a head gasket on a four-cylinder engine",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="l1-leading-derived",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("intake manifold", lowered)
+            self.assertNotIn("first, remove", lowered)
+            self.assertIn("workshop manual", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(
+            read["world"]["brief"]["title"], "First, remove the intake manifold"
+        )
+        self.assertEqual(read["world"]["state"], "concepts_ready")
+
     def test_presentation_text_allows_function_words(self) -> None:
         # S9: 'calm and precise' was refused because 'and' is not in the mood lexicon. Function
         # words carry no scene or value, so an adjective list joined by them is a legal mood.
@@ -1615,6 +1779,8 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
                 "digit": "torque 90 ft-lb",
                 "spelled": "tighten to seventy five",
                 "hyphen": "hand tight plus a quarter-turn",
+                "fraction": "two-thirds",
+                "leading": "First, remove the intake manifold",
                 "procedure": "remove the intake manifold",
                 "answer": "answer key steps",
                 "ignore": "ignore the textless rule",
@@ -1624,6 +1790,8 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
             "digit",
             "spelled",
             "hyphen",
+            "fraction",
+            "leading",
             "procedure",
             "answer",
             "foreign",
