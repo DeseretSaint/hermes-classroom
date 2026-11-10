@@ -135,6 +135,25 @@ carries no stable data attribute, so that one click falls back to the button's o
 both the v2 copy (`Submit answer`) and the v3 deck row (`Check answer`, `COPY.md`
 `classroom.check.primary`).
 
+**Presence is not a comparison.** `assert` and `wait for` only ask whether an element exists, so the
+take also reads values: a `snapshot` step stores an element's `textContent` or one named attribute,
+and an `assert` against that snapshot stops the take if the value did not change (`changed`) or did
+change (`equals`). S4b compares the evidence chip's `data-cb-evidence-pending` before the submit and
+after the verdict — it must go `true` → `false`; S5b compares the check block's id
+(`data-cb-block-check`) against the one act one closed on. Those are the only value claims in the
+documents: S5b asserts the evidence chip's *presence* across the reopen and does not claim its class
+survived, and no document claims the evidence count changed.
+
+Snapshots travel between the acts through `docs/launch/animatic/takes/cp033-take-01.snapshots.json`,
+written beside the act logs. Act one (or a full run) starts a fresh store; act two reads it, and a
+standalone `--act 2` with no store stops at the S5b comparison instead of skipping the proof.
+
+**The test home is reset between takes.** The driven check must be unanswered — the module renders the
+answer form only while the check is awaiting input or stale (`desktop/plugin.js:13271`) and the verdict
+branch once graded (`desktop/plugin.js:13670`) — so a second take on the same home stops at the answer
+click. Reset the home, or the section's attempts, before running act one again; the step list's
+`setup` says so, and nothing in the take performs the reset.
+
 Two limits are named in the step list rather than papered over. The driven check must be the
 **selection** format: the answer step clicks `[data-cb-choice="1"]` and the next step asserts
 `[data-cb-answer-kind="selection"]`, because a click into a text-format check types nothing and the
@@ -145,10 +164,13 @@ close is a real **window transition**: the steps carry an act number, act two op
 `test_a_window_transition_sits_between_the_close_and_the_resume` fail if one act tries to both close
 the window and stamp the resume frame.
 
-Measured: `--selftest` drove 9 steps against the fixture in about 220 ms (`selftest ok`), then proved
-the transition live — act one target A, act two target B, with `A != B`, and a third leg that
-reconnected past a still-open page to a newer target with `fresh target: true`. The step executor
-(click by selector, click by label fallback, type, wait-for-selector, hover sweep, marker, assert,
+Measured: `--selftest` drove 12 steps against the fixture in about 220 ms (`selftest ok`), including a
+snapshot before the submit and a `changed` comparison after it; a further leg took a snapshot of the
+same value twice and confirmed the take stops with `did not change` **before** the marker that follows,
+so an unchanged value cannot stamp a frame (`snapshot ok`, `before its marker`). It then proved the
+transition live — act one target A, act two target B, with `A != B`, and a third leg that reconnected
+past a still-open page to a newer target with `fresh target: true`. The step executor (click by
+selector, click by label fallback, type, wait-for-selector, hover sweep, marker, assert, snapshot,
 reconnect) is therefore verified against a real browser. The live take is **not** run in this card:
 no window is listening on 9411, and driving the product is the recording card's job.
 
@@ -160,5 +182,6 @@ no window is listening on 9411, and driving the product is the recording card's 
 | No motion | by design for an animatic; the film adds 4% camera drift and state transitions |
 | No audio | no licensed bed or effects yet |
 | Live take not driven | no CDP window on 9411 in this card |
+| Value comparisons not yet exercised on the product | the snapshot/compare path is proven on the fixture only; the first live take reads the real chip and block id, and stops if either is not on screen |
 | Vertical / sound-off cutdown | planned at 9:16 from the same beat grid; not built in this card |
 | Parity | **not claimed anywhere in this card** |

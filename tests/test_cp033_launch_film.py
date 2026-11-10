@@ -30,7 +30,13 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 REFS = ROOT / "docs" / "concept-parity" / "refs" / "REFS.md"
 
 PLACEHOLDER_WORDS = ("PLACEHOLDER", "NOT THE BUILD")
-STEP_KINDS = {"navigate", "click", "type", "wait", "hover-sweep", "marker", "assert", "reconnect"}
+STEP_KINDS = {"navigate", "click", "type", "wait", "hover-sweep", "marker", "assert", "snapshot", "reconnect"}
+# Phrases that claim a measured change or continuity. Presence checks cannot support them, so a step
+# note or a launch document may only use them where a snapshot comparison does the measuring.
+VALUE_CLAIM_PHRASES = (
+    "count moves", "count moved", "the tally changed", "nothing rebuilt",
+    "nothing to reconstruct", "went unchanged", "never rebuilt",
+)
 # Markers that are not shot boundaries.
 TAKE_MARKERS = {"take-start", "take-end"}
 # Shots whose picture is a live window state. The word cards and the end card are cut in the edit.
@@ -293,6 +299,14 @@ class DriverSteps(unittest.TestCase):
                 self.assertTrue(step.get("ms") or step.get("for"), f"step {index}")
             if step["kind"] == "marker":
                 self.assertTrue(step.get("id"), f"step {index}")
+            if step["kind"] == "snapshot":
+                self.assertTrue(step.get("id"), f"step {index}")
+                self.assertTrue(step.get("selector"), f"step {index}")
+            if step["kind"] == "assert" and step.get("snapshot"):
+                self.assertNotEqual(
+                    bool(step.get("changed")), bool(step.get("equals")),
+                    f"step {index}: a comparison expects exactly one of changed or equals",
+                )
 
     def test_every_selector_is_an_attribute_the_module_actually_renders(self):
         for step in self.spec["steps"]:
@@ -482,6 +496,97 @@ class DriverSteps(unittest.TestCase):
         row = next(line for line in script.splitlines() if line.startswith("| `S4a-proof2-answer` |"))
         self.assertIn("selection", row.lower(), "SCRIPT.md §4 must name the selection format for S4a")
 
+    # -- value comparisons: presence is not a comparison, so the marks that claim one measure it
+
+    def test_every_comparison_reads_a_value_the_take_already_measured(self):
+        steps = self.spec["steps"]
+        taken = {}
+        for index, step in enumerate(steps):
+            if step.get("kind") == "snapshot":
+                self.assertNotIn(step["id"], taken, f"snapshot {step['id']} is taken twice")
+                taken[step["id"]] = index
+            if step.get("kind") == "assert" and step.get("snapshot"):
+                self.assertIn(
+                    step["snapshot"], taken,
+                    f"step {index} compares {step['snapshot']}, which nothing read before it",
+                )
+                self.assertLess(taken[step["snapshot"]], index)
+
+    def test_the_two_proofs_that_claim_a_value_compare_it(self):
+        steps = self.spec["steps"]
+
+        def window(marker_id):
+            end = next(
+                index for index, step in enumerate(steps)
+                if step.get("kind") == "marker" and step.get("id") == marker_id
+            )
+            start = 0
+            for index in range(end - 1, -1, -1):
+                if steps[index].get("kind") == "marker":
+                    start = index + 1
+                    break
+            return start, end
+
+        # S4b: the evidence chip must go from preview to record, measured, before the marker.
+        start, end = window("S4b-proof2-row")
+        reads = [
+            step for step in steps[start:end]
+            if step.get("kind") == "snapshot"
+            and "data-cb-evidence-chip" in (step.get("selector") or "")
+            and step.get("attribute") == "data-cb-evidence-pending"
+        ]
+        self.assertTrue(reads, "S4b claims the chip became a record but nothing reads its pending state")
+        compares = [
+            step for step in steps[start:end]
+            if step.get("kind") == "assert" and step.get("snapshot") == reads[0]["id"] and step.get("changed")
+        ]
+        self.assertTrue(compares, "S4b stamps a value change the take never compares")
+
+        # S5b: the check block's identity must be read before the close and compared after the reopen.
+        start, end = window("S5b-proof3-resume")
+        compares = [
+            step for step in steps[start:end]
+            if step.get("kind") == "assert" and step.get("equals")
+            and "data-cb-block-check" in (step.get("selector") or "")
+        ]
+        self.assertTrue(compares, "S5b claims the same check survived the reopen but compares nothing")
+        taken = next(
+            (index for index, step in enumerate(steps)
+             if step.get("kind") == "snapshot" and step["id"] == compares[0]["snapshot"]),
+            -1,
+        )
+        close = next(
+            index for index, step in enumerate(steps)
+            if step.get("kind") == "marker" and step.get("id") == "S5a-proof3-close"
+        )
+        self.assertGreaterEqual(taken, 0, "S5b compares a snapshot nothing took")
+        self.assertLess(taken, close, "S5b's comparison value must be read before the window closes")
+
+    def test_no_document_claims_a_comparison_the_take_does_not_make(self):
+        for name in ("SCRIPT.md", "ANIMATIC.md", "brief.md"):
+            text = (LAUNCH / name).read_text(encoding="utf-8").lower()
+            for phrase in VALUE_CLAIM_PHRASES:
+                self.assertNotIn(
+                    phrase, text,
+                    f"{name} claims {phrase!r}; the step list does not measure that",
+                )
+        for index, step in enumerate(self.spec["steps"]):
+            note = (step.get("note") or "").lower()
+            for phrase in VALUE_CLAIM_PHRASES:
+                self.assertNotIn(phrase, note, f"step {index} note claims {phrase!r}")
+        script = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8")
+        for marker, word in (("S4b-proof2-row", "compare"), ("S5b-proof3-resume", "equals")):
+            row = next(line for line in script.splitlines() if line.startswith(f"| `{marker}` |"))
+            self.assertIn(word, row.lower(), f"SCRIPT.md §4 must say what {marker} measures")
+
+    def test_setup_names_the_unanswered_check_and_the_reset_between_takes(self):
+        setup = " ".join(self.spec.get("setup", [])).lower()
+        self.assertIn("unanswered", setup, "setup must require an unanswered check")
+        self.assertIn("reset", setup, "setup must say the home is reset between takes")
+        script = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8").lower()
+        self.assertIn("unanswered", script, "SCRIPT.md §4 must repeat the unanswered-check precondition")
+        self.assertIn("reset", script, "SCRIPT.md §4 must repeat the reset between takes")
+
 
 class DriverTransitionSelfTest(unittest.TestCase):
     """Execute the driver's own proof that act two lands on a page act one never held."""
@@ -502,6 +607,9 @@ class DriverTransitionSelfTest(unittest.TestCase):
         self.assertIn("(different)", result.stdout)
         # The third leg reopens a page while the second is still open; the driver must skip it.
         self.assertIn("fresh target: true", result.stdout)
+        # A value that never moved must stop the take before it stamps anything.
+        self.assertIn("snapshot ok:", result.stdout)
+        self.assertIn("before its marker", result.stdout)
 
 
 def _attributes(selector: str) -> list[str]:

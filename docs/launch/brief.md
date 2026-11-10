@@ -63,12 +63,19 @@ capture of a real state.
    `docs/concept-parity/COPY.md`). No stars, no progress bar, no invented count. The concept art has
    all three; SPEC-V3 §6 refuses them. First frame of proof: Home.
 2. **One answer produces exactly one durable row.** Submitting a check writes one transition and one
-   evidence row, and the screen says so: `{n} of {total} checks recorded`. The kernel test
+   evidence row, and the screen says so: the verdict line appears and the evidence chip stops being an
+   `if you submit now` preview (`data-cb-evidence-pending` `true` → `false`, a value the take reads
+   before the submit and compares after the verdict). The kernel test
    `tests/test_kernel_transitions.py` asserts the single-commit behaviour; the video shows the
-   consequence. First frame of proof: Classroom.
-3. **It resumes.** Close the window, open it, and the same objective and the same pending check are
-   there, with no reconstruction step. This is the quiet proof that the state is durable rather than
-   a chat transcript being re-read. First frame of proof: Classroom, after a labelled cut.
+   consequence. The v3 deck's `{n} of {total} checks recorded` caption (`COPY.md:157`) is the design
+   target and is not rendered by this branch's module, so the film does not caption a count. First
+   frame of proof: Classroom.
+3. **It resumes.** Close the window, open it, and the same objective and the same check block are
+   there — the take compares the block id against the one act one closed on, in a page target that is
+   genuinely new. That is the quiet proof that the state is durable rather than a chat transcript
+   being re-read. What is *not* compared: the evidence chip's class across the reopen (the take
+   asserts its presence only), and whether the reopened check is pending or already graded. First
+   frame of proof: Classroom, after a labelled cut.
 
 ## 7. What this film will not do
 

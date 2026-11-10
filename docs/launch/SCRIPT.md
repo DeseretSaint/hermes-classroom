@@ -16,9 +16,9 @@ the final take substitutes a real capture of the same surface through `scripts/c
 | S2 | 9.0 → 15.0 | **Reveal.** `Home` composition. The wordmark lands on the hit, then the shelf settles in. | Coursebook. / A lesson is governed state, not chat. | "Coursebook. A learning workspace inside Hermes Desktop." | Hold to beat 30, then the shelf gets its own beat |
 | S3 | 15.0 → 27.0 | **Proof 1 — the shelf.** `Home`, wide (1049 route). Camera drifts 4% across the card row so the evidence lines are read, not skimmed. | Your shelf is what you have done. / Every card carries its own evidence line and one next step. | "Every card tells you what you have finished and the one thing to do next." | Cut on beat 54 into the lesson |
 | S4a | 27.0 → 33.0 | **Proof 2 — the answer.** `Classroom`, wide. The section's real line, then the check card; the answer is entered and submitted. | You answer the check. / It is graded against the section's objective. | "You answer the check, and it is graded against the objective." | Same surface, no cut — the state changes |
-| S4b | 33.0 → 39.0 | **Proof 2 — the row.** Same frame: the verdict line appears, the evidence count moves to `{n} of {total} checks recorded`, the primary becomes `Next section`. | One row is written. / The evidence count moves: `{n} of {total} checks recorded`. | "One answer. One row. The count on the screen moves with it." | Hard cut on beat 78, labelled as a close |
+| S4b | 33.0 → 39.0 | **Proof 2 — the row.** Same frame: the verdict line appears, the evidence chip stops being a preview — `data-cb-evidence-pending` goes `true` → `false`, compared in the take — and the primary becomes `Next section`. | One row is written. / The chip is a record now. | "One answer. One row. The chip on the screen stops being a preview." | Hard cut on beat 78, labelled as a close |
 | S5a | 39.0 → 45.0 | Word card, labelled cut: `window closed`. | Close it. Open it. / A labelled cut in the final take; the reopen is real. | "Close it." | Cut on the reopen (beat 90) |
-| S5b | 45.0 → 51.0 | **Proof 3 — resume.** `Classroom` after reopen: the `Now` stamp is on the same section, the pending check is present, nothing is rebuilt. | Same objective. Same pending check. / Nothing to reconstruct. | "Open it. Same objective, same pending check." | Hard cut on beat 102 |
+| S5b | 45.0 → 51.0 | **Proof 3 — resume.** `Classroom` after reopen: the `Now` stamp is on the same section and the same check block is on screen — its block id is compared against the one act one closed on. The evidence chip is present; its class is *not* compared across the reopen. | Same objective. Same check. / A new window on the same place. | "Open it. Same objective, the same check, in a window that is genuinely new." | Hard cut on beat 102 |
 | S6 | 51.0 → 57.0 | Word card, the mechanism, largest type in the film. | One answer. One transition. One row. | "One answer, one transition, one row." | Hard cut on beat 114 |
 | S7a | 57.0 → 63.0 | Word card with three struck rows: stars, XP on a lesson, a leaderboard — the concept-art elements the build refuses. | No stars. No XP on the shelf. No leaderboard. / Each of these is in the concept art and is refused by the build. | "The concept art had stars, XP and a leaderboard. None of them shipped." | Hard cut on beat 126 |
 | S7b | 63.0 → 69.0 | Word card, the rule. | If the backend did not record it, it is not on the screen. | "If the backend did not record it, it is not on the screen." | Hard cut on beat 138 |
@@ -37,8 +37,14 @@ product frame.
 | S2, S3 | Your field library / Pick a course, or start a new one. / Start a course / Browse library / Your courses | `home.title`, `home.sub`, `home.primary`, `home.secondary`, `home.shelf.label` |
 | S3 | `{done} of {total} sections done` · `New` · `{next step}` | `home.card.meta`, `home.card.new`, `home.card.next` |
 | S4a | `{check prompt}` · `{choice text}` · Check answer | `classroom.check.question`, `classroom.check.option`, `classroom.check.primary` |
-| S4b | That is right. `{why}` · `{n} of {total} checks recorded` · Next section | `classroom.check.correct`, `classroom.evidence.count`, `classroom.check.next` |
+| S4b | That is right. `{why}` · `{evidence class label}` · Next section | `classroom.check.correct`, `classroom.check.next`; the chip label is `EVIDENCE_CHIP_LABEL[class]`, `desktop/plugin.js:11268` |
 | S5b | Now · Done · Next · `{section title}` | `classroom.step.current`, `classroom.step.done`, `classroom.step.next`, `classroom.section` |
+
+The v3 deck also defines `classroom.evidence.count` (`{n} of {total} checks recorded`, `COPY.md:157`).
+This branch's `desktop/plugin.js` renders no such string — the classroom surface's evidence statement
+is the `EvidenceChip` (`desktop/plugin.js:11280`, `data-cb-evidence-chip`) — so the take measures the
+chip and the picture does not claim a count. A branch that renders the caption can add it to this
+table and to `beats.json`; the film does not name a number the build did not produce.
 
 `{braces}` stay visible in the caption because the value is live state. The caption in the final
 take is a fixed sentence, and the number it points at is whatever the real course holds at capture
@@ -90,9 +96,9 @@ below has a marker id equal to the frame id, so the editor places a cut at the m
 | `S2-reveal` | navigate to `#/coursebook`, wait for `[data-cb-route]`, wait for the shelf, hold |
 | `S3-proof1-shelf` | slow pointer travel across the card row, no click |
 | `S4a-proof2-answer` | click the course card, wait for the check, click the first served choice, assert `[data-cb-answer-kind="selection"]`, pause on the filled primary |
-| `S4b-proof2-row` | click `Check answer`, wait for the verdict, wait for the evidence count to change, hold |
+| `S4b-proof2-row` | click `Check answer`, wait for the verdict, compare the evidence chip against the value read before the submit (it must have changed), hold |
 | `S5a-proof3-close` | marker only; the close is a cut in the edit. Act one ends here |
-| `S5b-proof3-resume` | re-attach to the reopened window's **new page target**, navigate to the same route, wait for the `Now` stamp and the pending check, hold |
+| `S5b-proof3-resume` | re-attach to the reopened window's **new page target**, navigate to the same route, wait for the section, assert the check block id equals the one act one closed on, hold |
 | `S8-end` | no window; the card is composited in the edit |
 
 **The answer must be the selection format.** The module renders three answer kinds — selection,
@@ -109,3 +115,27 @@ socket and refuses to attach to the page id it just left, so `S5b-proof3-resume`
 on a window that was actually reopened. Either run the whole list in one command — the driver
 announces the close and waits for the new target — or run `--act 1`, close and reopen the window,
 then `--act 2`. Act two's log records the target ids it moved between.
+
+**A mark that says a value changed has to have measured it.** `assert` and `wait for` are presence
+checks — they ask whether an element exists, not what it says — so on their own they cannot support a
+claim about a value changing. Two steps close that gap. `snapshot { id, selector, attribute? }`
+reads an element's `textContent` (or one named attribute) and keeps it; `assert { selector, snapshot,
+changed | equals }` reads the same element the same way and stops the take if the value did not move
+(`changed`) or did move (`equals`). The evidence chip is snapshotted before the submit and compared
+after the verdict: `data-cb-evidence-pending` must go `true` → `false`, so S4b cannot be stamped on a
+chip that never became a record. The check block's id (`data-cb-block-check`) is snapshotted before
+the close and compared after the reopen, so S5b cannot be stamped on a different block. Where a value
+is *not* compared, the document says so: S5b asserts the evidence chip's presence only, and does not
+claim its class survived the reopen.
+
+Snapshots are written to `docs/launch/animatic/takes/cp033-take-01.snapshots.json` beside the act
+logs, because act two may run as its own invocation. Act one (or a full run) starts a fresh store, so
+nothing carries over from an earlier take; act two reads what act one wrote, and a standalone
+`--act 2` with no store stops at the S5b comparison and says why rather than skipping the proof.
+
+**The test home is reset between takes.** The driven check must be *unanswered*: the module draws the
+answer form only while the check is awaiting input or stale (`desktop/plugin.js:13271`) and the verdict
+branch once it has been graded (`desktop/plugin.js:13670`), so on the take after the first,
+`[data-cb-choice="1"]` is gone and the answer click stops the take. Reset the test home (or the
+section's attempts) to an unanswered check before running act one again; the step list's `setup` says
+so, and nothing in the step list performs the reset itself.

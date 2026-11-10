@@ -22,8 +22,20 @@
  *   hover-sweep { selector, ms }                        slow pointer travel across matched elements
  *   marker    { id, note? }                            write a marker line with elapsed ms + beat
  *   assert    { selector, note? }                      fail the take if the selector is missing
+ *   assert    { selector, snapshot, changed|equals }   compare the element's value against a
+ *                                                      snapshot taken earlier; stop the take when
+ *                                                      the value did not move (or did move, for
+ *                                                      `equals`). Presence is not a comparison.
+ *   snapshot  { id, selector, attribute? }             read an element's `textContent` (or an
+ *                                                      attribute) and keep it under `id` for a
+ *                                                      later assert
  *   reconnect { timeout_ms? }                          window transition: close this take's socket,
  *                                                      wait for a page target with a DIFFERENT id
+ *
+ * Snapshots are the only way a note may say a value changed or stayed the same. They are written to
+ * `docs/launch/animatic/takes/<take>.snapshots.json` beside the act logs, so an `--act 2` run can
+ * compare against what `--act 1` read. Act 1 (and a full run) starts a new store; nothing carries
+ * over from a previous take.
  *
  * Every step carries an `act` (1, 2, …). The close beat ends act 1; act 2 begins with `reconnect`,
  * so the take never pretends a window that was closed is still attached. Either run the whole list
@@ -72,7 +84,7 @@ const logDefault = actNumber === null
   : `docs/launch/animatic/takes/${spec.id}-act${actNumber}.jsonl`
 const logPath = resolve(repo, String(flag('log', logDefault)))
 
-const KINDS = new Set(['navigate', 'click', 'type', 'wait', 'hover-sweep', 'marker', 'assert', 'reconnect'])
+const KINDS = new Set(['navigate', 'click', 'type', 'wait', 'hover-sweep', 'marker', 'assert', 'snapshot', 'reconnect'])
 
 function validate(list, where) {
   const problems = []
@@ -90,7 +102,16 @@ function validate(list, where) {
     if (step.kind === 'wait' && !step.ms && !step.for) problems.push(`${at}: wait needs ms or for`)
     if (step.kind === 'hover-sweep' && !step.selector) problems.push(`${at}: hover-sweep needs selector`)
     if (step.kind === 'marker' && !step.id) problems.push(`${at}: marker needs id`)
-    if (step.kind === 'assert' && !step.selector) problems.push(`${at}: assert needs selector`)
+    if (step.kind === 'snapshot' && (!step.selector || !step.id)) problems.push(`${at}: snapshot needs id and selector`)
+    if (step.kind === 'assert') {
+      if (!step.selector) problems.push(`${at}: assert needs selector`)
+      if (step.snapshot) {
+        if (!step.changed && !step.equals) problems.push(`${at}: assert against a snapshot needs changed or equals`)
+        if (step.changed && step.equals) problems.push(`${at}: assert cannot both expect change and equality`)
+      } else if (step.changed || step.equals) {
+        problems.push(`${at}: assert compares nothing without a snapshot id`)
+      }
+    }
   })
   return problems
 }
@@ -154,6 +175,11 @@ if (dryRun) {
       console.log(`  beat ${String(Math.round(elapsed / beatMs)).padStart(3)}  ~${(elapsed / 1000).toFixed(2)}s  marker ${step.id}`)
     } else if (step.kind === 'reconnect') {
       console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  reconnect  (closes this socket; waits for a DIFFERENT page target)`)
+    } else if (step.kind === 'snapshot') {
+      console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  snapshot ${step.id} of ${step.selector}${step.attribute ? `@${step.attribute}` : ''}`)
+    } else if (step.kind === 'assert' && step.snapshot) {
+      const verb = step.changed ? 'changed' : 'equals'
+      console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  assert ${step.selector} ${verb} snapshot ${step.snapshot}`)
     } else {
       console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  ${step.kind} ${step.selector || step.hash || step.for || step.id || ''}`)
     }
@@ -251,6 +277,60 @@ async function waitFor(client, selector, timeoutMs) {
   return false
 }
 
+/**
+ * The value a snapshot reads: an element's trimmed `textContent`, or one of its attributes when the
+ * step names one. Missing elements return null rather than an empty string, so a snapshot of a frame
+ * that is not on screen stops the take instead of recording a value nobody saw.
+ */
+async function readValue(client, step) {
+  const raw = await client.evaluate(`(() => {
+    const node = document.querySelector(${q(step.selector)})
+    if (!node) return null
+    const value = ${step.attribute ? `node.getAttribute(${q(step.attribute)})` : 'node.textContent'}
+    return value === null || value === undefined ? null : String(value).replace(/\\s+/g, ' ').trim()
+  })()`)
+  return raw === null || raw === undefined ? null : String(raw)
+}
+
+/**
+ * Values read by `snapshot` steps, persisted beside the act logs so an `--act 2` invocation can
+ * compare against what `--act 1` read. Act 1 and a full run start a fresh store: a snapshot from a
+ * previous take must never stand in for this one.
+ */
+const snapshotStore = {
+  path: null,
+  started: 0,
+  values: new Map(),
+  start(path) {
+    this.path = path
+    this.started = Date.now()
+    this.values = new Map()
+    try { rmSync(path, { force: true }) } catch { /* nothing to clear */ }
+  },
+  resume(path) {
+    this.path = path
+    this.started = Date.now()
+    this.values = new Map()
+    if (!existsSync(path)) return 0
+    const saved = JSON.parse(readFileSync(path, 'utf8'))
+    for (const [id, entry] of Object.entries(saved.snapshots || {})) this.values.set(id, entry)
+    return this.values.size
+  },
+  set(id, entry) {
+    this.values.set(id, entry)
+    this.save()
+  },
+  get(id) {
+    return this.values.get(id)
+  },
+  save() {
+    if (!this.path) return
+    mkdirSync(dirname(this.path), { recursive: true })
+    const snapshots = Object.fromEntries([...this.values.entries()])
+    writeFileSync(this.path, `${JSON.stringify({ take: spec.id, snapshots }, null, 2)}\n`)
+  },
+}
+
 // ---------------------------------------------------------------- step runner
 
 async function runStep(client, step) {
@@ -344,8 +424,55 @@ async function runStep(client, step) {
       return `swept ${boxes.length} targets`
     }
     case 'assert': {
-      if (!(await exists(client, step.selector))) throw new Error(`assert: ${step.selector} is missing`)
-      return `asserted ${step.selector}`
+      if (!step.snapshot) {
+        if (!(await exists(client, step.selector))) throw new Error(`assert: ${step.selector} is missing`)
+        return `asserted ${step.selector} is present`
+      }
+      const saved = snapshotStore.get(step.snapshot)
+      if (!saved) {
+        throw new Error(`assert: no snapshot named ${step.snapshot}; the take cannot compare a value it never read`)
+      }
+      // Read the value exactly the way the snapshot read it — same element, same attribute — so the
+      // comparison is of like with like. A different selector is a different measurement.
+      if (step.selector && step.selector !== saved.selector) {
+        throw new Error(
+          `assert: snapshot ${step.snapshot} was taken from ${saved.selector}, not ${step.selector}; ` +
+          'comparing two different elements is not a comparison',
+        )
+      }
+      if (step.attribute && step.attribute !== saved.attribute) {
+        throw new Error(`assert: snapshot ${step.snapshot} read ${saved.attribute || 'textContent'}, not ${step.attribute}`)
+      }
+      const current = await readValue(client, { selector: saved.selector, attribute: saved.attribute })
+      if (current === null) throw new Error(`assert: ${saved.selector} is missing`)
+      if (step.changed) {
+        if (current === saved.value) {
+          throw new Error(
+            `assert: ${step.snapshot} did not change (${saved.selector} is still ${JSON.stringify(current)}); ` +
+            'refusing to stamp a value change that did not happen',
+          )
+        }
+        return `asserted ${saved.selector} changed ${JSON.stringify(saved.value)} -> ${JSON.stringify(current)}`
+      }
+      if (current !== saved.value) {
+        throw new Error(
+          `assert: ${step.snapshot} did not survive as it was (${JSON.stringify(saved.value)} -> ` +
+          `${JSON.stringify(current)}); refusing to stamp a state the take did not observe`,
+        )
+      }
+      return `asserted ${saved.selector} still ${JSON.stringify(current)}`
+    }
+    case 'snapshot': {
+      const value = await readValue(client, step)
+      if (value === null) throw new Error(`snapshot: ${step.selector} is not on screen, so there is nothing to read`)
+      snapshotStore.set(step.id, {
+        selector: step.selector,
+        attribute: step.attribute || null,
+        value,
+        act: step.act,
+        at_ms: Date.now(),
+      })
+      return `snapshot ${step.id} = ${JSON.stringify(value)}`
     }
     case 'marker':
       return 'marker'
@@ -395,6 +522,14 @@ async function runTake(client, list, log, label, act = null, targetPort = port) 
     }
     const detail = await runStep(client, step)
     const outcome = { t_ms: Date.now() - started, kind: step.kind, detail }
+    if (step.kind === 'snapshot') {
+      outcome.snapshot = step.id
+      outcome.value = snapshotStore.get(step.id)?.value ?? null
+    }
+    if (step.kind === 'assert' && step.snapshot) {
+      outcome.snapshot = step.snapshot
+      outcome.comparison = step.changed ? 'changed' : 'equals'
+    }
     if (step.kind === 'marker') {
       outcome.marker = step.id
       outcome.beat = Math.round((Date.now() - started) / beatMs)
@@ -422,6 +557,8 @@ async function selftestRun() {
   if (!existsSync(fixture)) throw new Error(`fixture missing: ${fixture}`)
   const cdpPort = 9590 + Math.floor(Math.random() * 9)
   const profile = resolve(process.env.TMPDIR || '/tmp', `cp-demo-selftest-${Date.now()}`)
+  const snapshotFile = resolve(process.env.TMPDIR || '/tmp', `cp-demo-selftest-${Date.now()}.snapshots.json`)
+  snapshotStore.start(snapshotFile)
   const child = spawn(process.env.CHROMIUM || 'chromium', [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
     `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`,
@@ -439,8 +576,11 @@ async function selftestRun() {
       { kind: 'marker', id: 'selftest-start' },
       { kind: 'click', selector: '[data-test-start]' },
       { kind: 'wait', for: '[data-test-shelf="ready"]', timeout_ms: 5000 },
+      { kind: 'snapshot', id: 'evidence', selector: '[data-test-evidence]', attribute: 'data-test-evidence' },
       { kind: 'type', selector: '[data-test-field]', text: 'sourdough' },
       { kind: 'click', text_any: ['Submit answer', 'Check answer'], wait_for: '[data-test-verdict]', timeout_ms: 5000 },
+      { kind: 'assert', selector: '[data-test-evidence]', snapshot: 'evidence', changed: true },
+      { kind: 'snapshot', id: 'evidence-after', selector: '[data-test-evidence]', attribute: 'data-test-evidence' },
       { kind: 'hover-sweep', selector: '[data-test-card]', ms: 200 },
       { kind: 'assert', selector: '[data-test-evidence="1"]' },
       { kind: 'marker', id: 'selftest-end' }
@@ -455,7 +595,29 @@ async function selftestRun() {
     if (evidence !== '1') throw new Error(`selftest evidence count ${evidence}`)
     const answer = await client.evaluate(`document.querySelector('[data-test-field]')?.value`)
     if (answer !== 'sourdough') throw new Error(`selftest typed value ${answer}`)
-    console.log(`selftest ok: ${steps.length} steps, ${take.total} ms, navigate/click/type/wait/hover/marker/assert all executed`)
+    console.log(`selftest ok: ${steps.length} steps, ${take.total} ms, navigate/click/type/wait/hover/marker/assert/snapshot all executed`)
+
+    // --- value comparison. An unchanged snapshot must stop the take before the next marker: the
+    // log is what the editor cuts to, so a value that never moved cannot stamp a "changed" frame.
+    const refusedEntries = []
+    const refusal = await runTake(client, [
+      { kind: 'snapshot', id: 'same-evidence', selector: '[data-test-evidence]', attribute: 'data-test-evidence' },
+      { kind: 'assert', selector: '[data-test-evidence]', snapshot: 'same-evidence', changed: true },
+      { kind: 'marker', id: 'selftest-stamped-anyway' },
+    ], (entry) => refusedEntries.push(entry), 'selftest-refusal', null, cdpPort).then(() => null, (error) => error)
+    if (!refusal) throw new Error('selftest: an unchanged snapshot did not stop the take')
+    if (!/did not change/.test(refusal.message)) throw new Error(`selftest: refusal said ${refusal.message}`)
+    if (refusedEntries.some((entry) => entry.marker)) {
+      throw new Error('selftest: the take stamped a marker after the value comparison failed')
+    }
+    // The store is the only channel act two has to act one's readings; prove it survives a reload.
+    snapshotStore.resume(snapshotFile)
+    const before = snapshotStore.get('evidence')
+    const after = snapshotStore.get('evidence-after')
+    if (!before || before.value !== '0' || !after || after.value !== '1') {
+      throw new Error(`selftest: the snapshot store did not carry act one's values (${JSON.stringify({ before, after })})`)
+    }
+    console.log('snapshot ok: evidence changed 0 -> 1; an unchanged value stopped the take before its marker; store reloaded with both readings')
 
     // --- window transition. Act two must attach to a page target act one never held, and a
     // reconnect must skip the page it was told to leave even while that page is still open.
@@ -521,6 +683,7 @@ async function selftestRun() {
     child.kill('SIGINT')
     await sleep(400)
     rmSync(profile, { recursive: true, force: true })
+    rmSync(snapshotFile, { force: true })
   }
 }
 
@@ -537,6 +700,17 @@ if (selftest) {
 }
 
 let client = null
+const snapshotPath = resolve(dirname(logPath), `${spec.id}.snapshots.json`)
+if (actNumber === null || actNumber === 1) {
+  snapshotStore.start(snapshotPath)
+} else {
+  const carried = snapshotStore.resume(snapshotPath)
+  if (carried === 0) {
+    console.log(`act ${actNumber}: no snapshot store at ${snapshotPath.replace(`${repo}/`, '')}; a value comparison against act one will stop the take`)
+  } else {
+    console.log(`act ${actNumber}: read ${carried} snapshot(s) taken before the close`)
+  }
+}
 const opensWithReconnect = plan[0].kind === 'reconnect'
 if (!opensWithReconnect) {
   try {
