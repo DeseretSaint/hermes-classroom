@@ -181,7 +181,7 @@ logger = logging.getLogger("coursebook.generation")
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
 #: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
 #: blueprint prompt, so this advances to v10.
-PLAN_PROMPT_VERSION = "plan-prompt.v11"
+PLAN_PROMPT_VERSION = "plan-prompt.v12"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -192,7 +192,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v11"
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v12"
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v13"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -3621,12 +3621,22 @@ def _plan_sourcing_rules() -> list[str]:
         "'unverified'; that is a gap to close, not a finished plan.",
         "Make every graded check answerable with one defensible answer: a quiz check's notes must "
         "name the fixed stimulus (the exact items, chart, case or options the learner responds to) "
-        "and the single accepted answer or a closed list of accepted answers. Never write an open "
-        "'explain why' prompt that several correct answers would satisfy. The answer key stays in "
-        "the check record, never on the learner-facing page.",
+        "and the single accepted answer or a closed list of accepted answers. For a multiple-choice "
+        "quiz, give the stem, every option, and mark which option is accepted and why each other "
+        "option is wrong — do not give only the accepted answer. Never write an open 'explain why' "
+        "prompt that several correct answers would satisfy. The answer key stays in the check "
+        "record, never on the learner-facing page.",
         "The check kind and evidence_target must match what the learner is asked to do: asking a "
         "learner to label, trace or perform is an application or procedure check, not "
         "comprehension, and the objective's evidence target must be the same class.",
+        "Cover the goal: the objectives plus their checks must reach every capability the goal and "
+        "learner_outcome name. If the goal says 'find the major constellations', at least one "
+        "objective and its check must require locating or naming a constellation; never leave a "
+        "named capability untaught and unchecked.",
+        "One check must assess every evidence criterion on its objective. Write only criteria the "
+        "check actually exercises, and let the check observe all of them; a check that assesses one "
+        "of three stated criteria is incomplete. Keep context_needs consistent with the check plan "
+        "— do not demand more quiz items in context_needs than the checks supply.",
     ]
 
 

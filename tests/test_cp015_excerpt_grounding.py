@@ -79,10 +79,12 @@ class PlanSourcingRulesTest(unittest.TestCase):
                 self.assertIn("Ground every objective in the source ledger", text)
                 self.assertIn("single accepted answer", text)
                 self.assertIn("evidence target must be the same class", text)
+                self.assertIn("Cover the goal", text)
+                self.assertIn("assess every evidence criterion", text)
 
     def test_plan_prompt_versions_are_current(self) -> None:
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v11")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v12")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v12")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v13")
 
 
 if __name__ == "__main__":
