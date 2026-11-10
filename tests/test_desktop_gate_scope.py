@@ -453,6 +453,32 @@ class V3GateBitesTest(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 self.run_gate("V3TokenLiteralTest", "test_the_literal_equals_the_contract_byte_for_byte", stale)
 
+    def test_css_number_spellings_trip_the_motion_and_vw_claims(self) -> None:
+        # D6: CSS `<number>` is not only `\d+(\.\d+)?`. A leading dot (`.9s`) and scientific
+        # notation (`1e3ms`) are legal spellings. A duration scan that cannot see them skips the
+        # declaration entirely, so it is neither entered in the motion table nor listed as escaped
+        # and the claim reports PASS on an out-of-table duration. `vw` reads the same grammar.
+        cases = (
+            ("test_motion_durations_come_only_from_the_motion_table",
+             lambda css: css.replace("transition: opacity var(--cb3-dur-route);",
+                                     "transition: opacity .9s;")),
+            ("test_motion_durations_come_only_from_the_motion_table",
+             lambda css: css.replace("transition: opacity var(--cb3-dur-route);",
+                                     "transition: opacity 1e3ms;")),
+            ("test_motion_durations_come_only_from_the_motion_table",
+             lambda css: css.replace("transition: opacity var(--cb3-dur-route);",
+                                     "transition-duration: .4s;")),
+            ("test_no_viewport_unit_on_the_v3_surface",
+             lambda css: css.replace("container-type: inline-size;", "padding: .5vw;")),
+        )
+        good = self.good_css()
+        for method, mutate in cases:
+            css = mutate(good)
+            with self.subTest(claim=method, mutation=css):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                with self.assertRaises(AssertionError):
+                    self.run_gate("V3StylesheetTest", method, self.module_text(css=css))
+
     def test_a_marker_region_cannot_smuggle_a_shadow_or_a_gradient(self) -> None:
         # Reviewer round 1, D3: a CB-V3-BEGIN…END region is cut from the v2 region, so exempting
         # it from the v3 paint scans as well would leave its content in no gate at all. Only the

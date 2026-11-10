@@ -194,6 +194,29 @@ class V3AuditNormalisationTest(unittest.TestCase):
                     f"{ident} reported PASS on {mutation!r}: the audit does not normalise the scan",
                 )
 
+    def test_css_number_spellings_fail_their_claim(self) -> None:
+        # D6: the audit's V-11/V-12 must read the same legal `<number>` spellings the gate does
+        # (leading dot, scientific notation); otherwise both report PASS on an out-of-table
+        # duration or a viewport measurement.
+        good = self.builder.good_css()
+        cases = (
+            ("V-11", "transition: opacity .9s",
+             good.replace("transition: opacity var(--cb3-dur-route);", "transition: opacity .9s;")),
+            ("V-11", "transition: opacity 1e3ms",
+             good.replace("transition: opacity var(--cb3-dur-route);", "transition: opacity 1e3ms;")),
+            ("V-11", "transition-duration: .4s",
+             good.replace("transition: opacity var(--cb3-dur-route);", "transition-duration: .4s;")),
+            ("V-12", "padding: .5vw",
+             good.replace("container-type: inline-size;", "padding: .5vw;")),
+        )
+        for ident, mutation, css in cases:
+            with self.subTest(claim=ident, mutation=mutation):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                self.assertEqual(
+                    self.statuses(css)[ident], "FAIL",
+                    f"{ident} reported PASS on {mutation!r}: the audit cannot parse the number",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

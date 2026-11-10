@@ -493,6 +493,17 @@ focused tests OK (skipped=14). The font rule is unchanged: the contract's `type.
 (`"Noto Serif JP", …`) legitimately does not start with `CB `, so requiring every declaration to
 lead with a `CB ` family would ban the contract.
 
+## 6.4 Round 4 review correction (cbqa, D6)
+
+| Defect | Correction | Test that closes it |
+|---|---|---|
+| **D6** the motion-table and `vw` scans used `\d+(\.\d+)?`, which is not the whole CSS `<number>` grammar, so `transition: opacity .9s`, `transition: opacity 1e3ms`, `transition-duration: .4s` and `padding: .5vw` were never seen — the declaration entered neither the motion table nor the escaped list, and the gate and the audit both reported PASS | one `CSS_NUMBER` grammar in `tests/cb_source_scope.py` (`\d+`, `\d+\.\d+`, `\.\d+`, optional `[eE][+-]?\d+`), shared by `DURATION` (the unit is still required) and `VW`; the gate and `scripts/v3-audit.py` import both, so the fix cannot land in one and leave the other green | gate: `V3GateBitesTest.test_css_number_spellings_trip_the_motion_and_vw_claims`; audit: `tests/test_v3_visual_audit.py::V3AuditNormalisationTest.test_css_number_spellings_fail_their_claim` replays `static_claims` on the same mutated stylesheets |
+
+RED proven against the pre-D6 grammar (`CSS_NUMBER` temporarily reverted to `(?:\d+(?:\.\d+)?)`):
+**2 tests, FAILED (failures=8)** — the four gate controls report `AssertionError not raised` and the
+four audit controls report `'PASS' != 'FAIL'`; restored, the same 2 tests OK and the compliant
+baseline still passes V-04…V-12.
+
 ## 7. Known gaps and rulings needed
 
 - **V3 surfaces do not exist yet**, by design. Every v3 paint claim is armed and unproven; only the

@@ -35,7 +35,6 @@ gates + painted frames once surfaces exist) and the reviewer's captures.
 from __future__ import annotations
 
 import json
-import re
 import unittest
 from pathlib import Path
 
@@ -51,6 +50,7 @@ from tests.cb_source_scope import (
     TOKEN_LITERAL_CONSTS,
     V3_CSS_CONST,
     V3_TOKEN_CONST,
+    VW,
     css_blocks,
     declarations,
     is_shadow_property,
@@ -295,7 +295,7 @@ class V3StylesheetTest(unittest.TestCase):
 
     def test_no_viewport_unit_on_the_v3_surface(self) -> None:
         # SPEC-V3 §3.1: v3 measures against the route container, never the window.
-        self.assertEqual(re.findall(r"(?<![\w.-])\d+(?:\.\d+)?vw\b", self.css), [],
+        self.assertEqual(VW.findall(self.css), [],
                          "a vw value on a v3 surface ignores the route width")
 
 

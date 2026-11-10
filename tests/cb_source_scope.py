@@ -271,9 +271,19 @@ def split_selectors(prelude: str) -> list[str]:
 
 
 GRADIENT = re.compile(r"[a-z-]*gradient\(", re.I)
+#: A CSS ``<number>`` in every spelling the CSS grammar allows: ``1``, ``1.5``, ``.5`` and an
+#: optional scientific exponent (``1e3``, ``1E+3``, ``2.5e-2``). D6: a numeric scan built only from
+#: ``\d+(\.\d+)?`` silently skips ``.9s`` / ``1e3ms`` / ``.5vw``, which are legal values, so the
+#: declaration is never seen and the owning claim reports PASS. Callers still require the unit, so
+#: a bare number is not a duration or a measurement, and the shared negative lookbehind keeps
+#: ``1.5rem`` / ``12px`` out.
+CSS_NUMBER = r"(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?"
 #: A duration with an ASCII case-insensitive unit: CSS units are case-insensitive, so ``900MS`` and
 #: ``0.9S`` must be seen exactly like ``900ms``.
-DURATION = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)\b", re.I)
+DURATION = re.compile(r"(?<![\w.-])(" + CSS_NUMBER + r")(ms|s)\b", re.I)
+#: A viewport measurement on the same numeric grammar, so the gate and the audit cannot disagree
+#: about which declaration they saw.
+VW = re.compile(r"(?<![\w.-])" + CSS_NUMBER + r"vw\b")
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 
 # --------------------------------------------------------------------------------------------

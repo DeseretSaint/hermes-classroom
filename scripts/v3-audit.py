@@ -29,7 +29,6 @@ import argparse
 import hashlib
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -50,6 +49,7 @@ from tests.cb_source_scope import (  # noqa: E402
     TOKEN_LITERAL_CONSTS,
     V3_CSS_CONST,
     V3_TOKEN_CONST,
+    VW,
     css_blocks,
     declarations,
     is_shadow_property,
@@ -303,7 +303,7 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
     ))
 
     # V-12 route-relative measurement
-    vw = [] if css is None else re.findall(r"(?<![\w.-])\d+(?:\.\d+)?vw\b", css)
+    vw = [] if css is None else VW.findall(css)
     claims.append(claim(
         "V-12",
         "No `vw` value on a v3 surface: measurement is route-relative (SPEC-V3 §3.1).",
