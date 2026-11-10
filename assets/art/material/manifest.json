@@ -6,7 +6,7 @@
   "max_bytes": 60000,
   "min_px": 256,
   "max_px": 512,
-  "note": "Every tile is RGBA overlay except wood-plank (opaque RGB). Overlay alpha ceilings are the legibility argument, not a style choice: ink over the darkest possible composite must stay at or above 4.5:1 at 16 px. parchment-vignette is applied once at cover size (background-size: cover); it wraps without a discontinuity but is never repeated.",
+  "note": "Every tile is RGBA overlay except wood-plank (opaque RGB). ink_worst_contrast is the minimum WCAG ratio between the row's ink and the committed pixels themselves (RGBA composited on the row's ground), not a figure derived from the alpha ceiling. Overlay alpha ceilings are the legibility argument, not a style choice: ink over the darkest pixel a tile can produce must stay at or above 4.5:1 at 16 px. Only text_bearing rows carry text_required / legibility_passes; wood-plank is not a text surface and records text_bearing:false with a reason instead. parchment-vignette is applied once at cover size (background-size: cover); it wraps without a discontinuity but is never repeated.",
   "tiles": [
     {
       "id": "paper-grain",
@@ -22,11 +22,11 @@
       "application": "canvas overlay; aria-hidden, pointer-events none",
       "alpha_ceiling": 14,
       "ground": "#f5e3c8",
+      "text_bearing": true,
       "worst_field": "#ebd8be",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#1a1713",
       "ink_worst_contrast": 12.84,
-      "text_required": 4.5,
-      "legibility_passes": true,
       "seam": {
         "column_delta": 0.558,
         "row_delta": 0.521,
@@ -54,7 +54,9 @@
         "seed": 11011,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "paper-grain",
@@ -70,11 +72,11 @@
       "application": "canvas overlay; aria-hidden, pointer-events none",
       "alpha_ceiling": 16,
       "ground": "#171410",
+      "text_bearing": true,
       "worst_field": "#24201a",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#f2e2ce",
       "ink_worst_contrast": 12.76,
-      "text_required": 4.5,
-      "legibility_passes": true,
       "seam": {
         "column_delta": 0.569,
         "row_delta": 0.528,
@@ -102,7 +104,9 @@
         "seed": 11011,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "card-stock-fibre",
@@ -118,11 +122,11 @@
       "application": "card and sheet stock overlay behind body text",
       "alpha_ceiling": 9,
       "ground": "#f4ecd9",
-      "worst_field": "#ede5d2",
+      "text_bearing": true,
+      "worst_field": "#eee6d3",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#1a1713",
-      "ink_worst_contrast": 14.24,
-      "text_required": 4.5,
-      "legibility_passes": true,
+      "ink_worst_contrast": 14.37,
       "seam": {
         "column_delta": 0.011,
         "row_delta": 0.16,
@@ -150,7 +154,9 @@
         "seed": 12001,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "card-stock-fibre",
@@ -166,11 +172,11 @@
       "application": "card and sheet stock overlay behind body text",
       "alpha_ceiling": 10,
       "ground": "#221d17",
-      "worst_field": "#2a241d",
+      "text_bearing": true,
+      "worst_field": "#29231d",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#f2e2ce",
-      "ink_worst_contrast": 12.09,
-      "text_required": 4.5,
-      "legibility_passes": true,
+      "ink_worst_contrast": 12.23,
       "seam": {
         "column_delta": 0.004,
         "row_delta": 0.193,
@@ -198,7 +204,9 @@
         "seed": 12001,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "parchment-vignette",
@@ -214,11 +222,11 @@
       "application": "canvas edge wash; background-size cover, applied once, aria-hidden",
       "alpha_ceiling": 30,
       "ground": "#f5e3c8",
+      "text_bearing": true,
       "worst_field": "#e5d1b6",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#1a1713",
       "ink_worst_contrast": 12.01,
-      "text_required": 4.5,
-      "legibility_passes": true,
       "seam": {
         "column_delta": 0.121,
         "row_delta": 0.124,
@@ -246,7 +254,9 @@
         "seed": 12091,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "parchment-vignette",
@@ -262,11 +272,11 @@
       "application": "canvas edge wash; background-size cover, applied once, aria-hidden",
       "alpha_ceiling": 46,
       "ground": "#171410",
-      "worst_field": "#15120e",
+      "text_bearing": true,
+      "worst_field": "#171410",
+      "contrast_basis": "minimum over the committed pixels, RGBA composited on the row ground",
       "ink": "#f2e2ce",
-      "ink_worst_contrast": 14.71,
-      "text_required": 4.5,
-      "legibility_passes": true,
+      "ink_worst_contrast": 14.46,
       "seam": {
         "column_delta": 0.125,
         "row_delta": 0.127,
@@ -294,7 +304,9 @@
         "seed": 12091,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": 4.5,
+      "legibility_passes": true
     },
     {
       "id": "wood-plank",
@@ -314,11 +326,11 @@
         140,
         107
       ],
-      "worst_field": "#ad8c6b",
+      "text_bearing": false,
+      "worst_field": "#906d4e",
+      "contrast_basis": "minimum over the committed opaque pixels; informational, not gated",
       "ink": "#1a1713",
-      "ink_worst_contrast": 5.73,
-      "text_required": 4.5,
-      "legibility_passes": true,
+      "ink_worst_contrast": 3.81,
       "seam": {
         "column_delta": 0.376,
         "row_delta": 0.961,
@@ -346,7 +358,9 @@
         "seed": 13001,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": null,
+      "reason": "no text is ever placed on wood: it is the shelf plank face and the evidence tray only, so no contrast gate applies"
     },
     {
       "id": "wood-plank",
@@ -366,11 +380,11 @@
         67,
         49
       ],
-      "worst_field": "#5a4331",
+      "text_bearing": false,
+      "worst_field": "#684e3a",
+      "contrast_basis": "minimum over the committed opaque pixels; informational, not gated",
       "ink": "#f2e2ce",
-      "ink_worst_contrast": 7.25,
-      "text_required": 4.5,
-      "legibility_passes": true,
+      "ink_worst_contrast": 6.04,
       "seam": {
         "column_delta": 0.238,
         "row_delta": 0.547,
@@ -398,7 +412,9 @@
         "seed": 13001,
         "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
         "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)"
-      }
+      },
+      "text_required": null,
+      "reason": "no text is ever placed on wood: it is the shelf plank face and the evidence tray only, so no contrast gate applies"
     }
   ]
 }

@@ -3,13 +3,13 @@
   "card": "CP-011",
   "mode": "light",
   "sheet": "docs/concept-parity/art/material/texture-sheet-light.png",
-  "sheet_sha256": "4d328c032ce3a4e5e88157e91d34e139018cac64cab71287135cbed8f5eaa186",
-  "sheet_bytes": 425948,
+  "sheet_sha256": "100891bcc4f9966666771db017aea9e37e2f61f821d8ac8625aef2ac4a5ed28c",
+  "sheet_bytes": 426328,
   "sheet_size": {
     "width": 1120,
     "height": 1477
   },
-  "commit": "4957c5f2bf01170ef8d4bb23554cfaef4b7fa25d",
+  "commit": "94f658e88d267edc27a8b0836a9ffde292e0388a",
   "branch": "wt/cp-011-material",
   "engine": "Chromium 155.0.8059.84 Arch Linux",
   "device_scale": 1,
@@ -27,7 +27,10 @@
       "bytes": 40787,
       "alpha_ceiling": 14,
       "ground": "#f5e3c8",
+      "text_bearing": true,
       "ink_worst_contrast": 12.84,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         0.946,
         0.99
@@ -39,7 +42,10 @@
       "bytes": 9399,
       "alpha_ceiling": 9,
       "ground": "#f4ecd9",
-      "ink_worst_contrast": 14.24,
+      "text_bearing": true,
+      "ink_worst_contrast": 14.37,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         0.215,
         0.882
@@ -51,7 +57,10 @@
       "bytes": 25407,
       "alpha_ceiling": 30,
       "ground": "#f5e3c8",
+      "text_bearing": true,
       "ink_worst_contrast": 12.01,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         0.95,
         0.966
@@ -67,7 +76,10 @@
         140,
         107
       ],
-      "ink_worst_contrast": 5.73,
+      "text_bearing": false,
+      "ink_worst_contrast": 3.81,
+      "text_gate": null,
+      "legibility_passes": null,
       "seam_ratio": [
         0.765,
         0.918
@@ -75,6 +87,7 @@
     }
   ],
   "wood_has_no_text": true,
+  "contrast_note": "ink_worst_contrast is the minimum over the committed tile pixels against the row's ink; the 4.5:1 gate is applied only where text_bearing is true. wood-plank carries no text, so its figure is informational and legibility_passes is null.",
   "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
-  "captured_at": "2026-11-10T10:26:59+00:00"
+  "captured_at": "2026-11-10T11:13:16+00:00"
 }

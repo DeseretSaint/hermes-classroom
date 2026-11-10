@@ -142,10 +142,14 @@ def html(mode: str) -> str:
     meta = []
     for tile_id in ("paper-grain", "card-stock-fibre", "parchment-vignette", "wood-plank"):
         row = tiles[tile_id]
+        if row["text_bearing"]:
+            contrast = f"ink worst-case {row['ink_worst_contrast']}:1"
+        else:
+            contrast = "no text surface — contrast not gated"
         meta.append(
             f"<li><b>{tile_id}</b> {row['width']}×{row['height']} · {row['bytes']} B · "
             f"seam {row['seam']['column_ratio']}/{row['seam']['row_ratio']} · "
-            f"ink worst-case {row['ink_worst_contrast']}:1 · <code>{row['sha256'][:12]}</code></li>"
+            f"{contrast} · <code>{row['sha256'][:12]}</code></li>"
         )
 
     return f"""<!doctype html>
@@ -265,12 +269,20 @@ def stamp(mode: str, sheet: Path) -> Path:
             {
                 "id": row["id"], "sha256": row["sha256"], "bytes": row["bytes"],
                 "alpha_ceiling": row["alpha_ceiling"], "ground": row["ground"],
+                "text_bearing": row["text_bearing"],
                 "ink_worst_contrast": row["ink_worst_contrast"],
+                "text_gate": row["text_required"],
+                "legibility_passes": row.get("legibility_passes"),
                 "seam_ratio": [row["seam"]["column_ratio"], row["seam"]["row_ratio"]],
             }
             for row in document["tiles"] if row["mode"] == mode
         ],
         "wood_has_no_text": True,
+        "contrast_note": (
+            "ink_worst_contrast is the minimum over the committed tile pixels against the row's ink; "
+            "the 4.5:1 gate is applied only where text_bearing is true. wood-plank carries no text, "
+            "so its figure is informational and legibility_passes is null."
+        ),
         "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
         "captured_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
     }
@@ -293,8 +305,11 @@ def check() -> int:
         if len(record["tiles"]) != 4:
             problems.append(f"{mode}: stamp does not name four tiles")
         for tile in record["tiles"]:
-            if tile["ink_worst_contrast"] < 4.5:
-                problems.append(f"{mode}/{tile['id']}: contrast {tile['ink_worst_contrast']}")
+            if tile["text_bearing"]:
+                if tile["ink_worst_contrast"] < 4.5 or tile["legibility_passes"] is not True:
+                    problems.append(f"{mode}/{tile['id']}: contrast {tile['ink_worst_contrast']}")
+            elif tile["legibility_passes"] is not None:
+                problems.append(f"{mode}/{tile['id']}: non-text surface claims a legibility pass")
             if tile["seam_ratio"][0] > 1.25 or tile["seam_ratio"][1] > 1.25:
                 problems.append(f"{mode}/{tile['id']}: seam {tile['seam_ratio']}")
     if problems:

@@ -49,6 +49,7 @@ MAX_BYTES = 60_000  # the card's "at most 60 KB", read strictly
 MIN_PX = 256
 MAX_PX = 512
 LICENCE = "CC0-1.0"
+TEXT_MIN_CONTRAST = 4.5  # WCAG AA for 16 px body text, applied to text-bearing rows only
 
 # Colour anchors. Light values are measured: the parchment and card-stock fields are sampled from
 # the ratified reference frames (docs/concept-parity/refs/home.png, system.png) and the values
@@ -523,13 +524,31 @@ def ground_rgb(mode: str, tile_id: str) -> tuple[int, int, int]:
     return PALETTE[mode]["wood-rgb"] if tile_id == "wood-plank" else hex_rgb(PALETTE[mode][GROUND_ROLE[tile_id]])
 
 
-def worst_field(mode: str, tile_id: str, ceiling: int) -> tuple[int, int, int]:
-    """The darkest pixel the tile can put under text, composited on its ground."""
+def worst_pixel(image: dict, mode: str, tile_id: str) -> tuple[tuple[int, int, int], float]:
+    """The committed pixel that leaves ink at the lowest contrast — measured, not modelled.
+
+    An overlay's alpha ceiling is the *guard* that keeps this number high; it is not the number.
+    Reporting ``blend(ground, grain, ceiling)`` instead reports a field the tile may never reach
+    (no pixel need carry the ceiling at the extreme grain colour) and, for the opaque wood family,
+    reports the ground the tile is painted on rather than any pixel of the tile at all. So: walk
+    the decoded bytes, composite RGBA over the row's ground, keep the worst ratio and its colour.
+    """
     ground = ground_rgb(mode, tile_id)
-    if tile_id == "wood-plank":
-        return ground
-    over = PALETTE[mode]["grain-rgb"] if tile_id != "parchment-vignette" else PALETTE[mode]["vignette-rgb"]
-    return blend(ground, over, ceiling)
+    ink = hex_rgb(PALETTE[mode]["ink"])
+    pixels, channels = image["pixels"], image["channels"]
+    worst = float("inf")
+    worst_rgb = ground
+    for index in range(image["width"] * image["height"]):
+        base = index * channels
+        if channels == 3:
+            rgb = (pixels[base], pixels[base + 1], pixels[base + 2])
+        else:
+            alpha = pixels[base + 3]
+            rgb = blend(ground, (pixels[base], pixels[base + 1], pixels[base + 2]), alpha) if alpha else ground
+        ratio = contrast(ink, rgb)
+        if ratio < worst:
+            worst, worst_rgb = ratio, rgb
+    return worst_rgb, worst
 
 
 def ocr_check(path: Path) -> dict:
@@ -629,54 +648,68 @@ def build() -> int:
             blob = path.read_bytes()
             image = read_png(path)
             seams = seam_delta(image)
-            field = worst_field(mode, tile_id, ceiling)
-            ink = hex_rgb(PALETTE[mode]["ink"])
-            ratio = round(contrast(ink, field), 2)
-            rows.append(
-                {
-                    "id": tile_id,
-                    "mode": mode,
-                    "path": str(path.relative_to(ROOT)),
-                    "role": GROUND_ROLE[tile_id],
-                    "format": colour_format,
-                    "width": size,
-                    "height": size,
-                    "bytes": len(blob),
-                    "sha256": hashlib.sha256(blob).hexdigest(),
-                    "tiling": tiling,
-                    "application": application,
-                    "alpha_ceiling": ceiling,
-                    "ground": PALETTE[mode][GROUND_ROLE[tile_id]]
-                    if tile_id != "wood-plank"
-                    else PALETTE[mode]["wood-rgb"],
-                    "worst_field": "#%02x%02x%02x" % field,
-                    "ink": PALETTE[mode]["ink"],
-                    "ink_worst_contrast": ratio,
-                    "text_required": 4.5,
-                    "legibility_passes": ratio >= 4.5,
-                    "seam": {
-                        "column_delta": seams["column"],
-                        "row_delta": seams["row"],
-                        "column_interior": seams["column_interior"],
-                        "row_interior": seams["row_interior"],
-                        "column_ratio": seams["column_ratio"],
-                        "row_ratio": seams["row_ratio"],
-                        "seamless": seams["column_ratio"] <= 1.25 and seams["row_ratio"] <= 1.25,
-                    },
-                    "licence": LICENCE,
-                    "text_check": ocr_check(path),
-                    "provenance_id": f"material:{tile_id}:{mode}",
-                    "source": {
-                        "generator": "scripts/build_cb_material.py",
-                        "provider": "host",
-                        "model": "none",
-                        "prompt_hash": None,
-                        "seed": SEEDS[tile_id],
-                        "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
-                        "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)",
-                    },
-                }
-            )
+            field, ratio = worst_pixel(image, mode, tile_id)
+            text_bearing = tile_id != "wood-plank"
+            row = {
+                "id": tile_id,
+                "mode": mode,
+                "path": str(path.relative_to(ROOT)),
+                "role": GROUND_ROLE[tile_id],
+                "format": colour_format,
+                "width": size,
+                "height": size,
+                "bytes": len(blob),
+                "sha256": hashlib.sha256(blob).hexdigest(),
+                "tiling": tiling,
+                "application": application,
+                "alpha_ceiling": ceiling,
+                "ground": PALETTE[mode][GROUND_ROLE[tile_id]]
+                if tile_id != "wood-plank"
+                else PALETTE[mode]["wood-rgb"],
+                "text_bearing": text_bearing,
+                "worst_field": "#%02x%02x%02x" % field,
+                "contrast_basis": (
+                    "minimum over the committed pixels, RGBA composited on the row ground"
+                    if text_bearing
+                    else "minimum over the committed opaque pixels; informational, not gated"
+                ),
+                "ink": PALETTE[mode]["ink"],
+                "ink_worst_contrast": round(ratio, 2),
+                "seam": {
+                    "column_delta": seams["column"],
+                    "row_delta": seams["row"],
+                    "column_interior": seams["column_interior"],
+                    "row_interior": seams["row_interior"],
+                    "column_ratio": seams["column_ratio"],
+                    "row_ratio": seams["row_ratio"],
+                    "seamless": seams["column_ratio"] <= 1.25 and seams["row_ratio"] <= 1.25,
+                },
+                "licence": LICENCE,
+                "text_check": ocr_check(path),
+                "provenance_id": f"material:{tile_id}:{mode}",
+                "source": {
+                    "generator": "scripts/build_cb_material.py",
+                    "provider": "host",
+                    "model": "none",
+                    "prompt_hash": None,
+                    "seed": SEEDS[tile_id],
+                    "palette_light": "sampled from docs/concept-parity/refs/{home,system}.png and PLAN.md section 2",
+                    "palette_dark": "authored; no ratified dark frame exists (night atlas range, CP-002)",
+                },
+            }
+            if text_bearing:
+                row["text_required"] = TEXT_MIN_CONTRAST
+                row["legibility_passes"] = round(ratio, 2) >= TEXT_MIN_CONTRAST
+            else:
+                # Wood never sits behind type, so there is no text gate to pass. Recording
+                # `legibility_passes: true` here — as an earlier revision did — reads as a
+                # passing text field in every consumer that keys on the flag.
+                row["text_required"] = None
+                row["reason"] = (
+                    "no text is ever placed on wood: it is the shelf plank face and the evidence "
+                    "tray only, so no contrast gate applies"
+                )
+            rows.append(row)
     document = {
         "schema": "cb.material.v1",
         "card": "CP-011",
@@ -686,9 +719,13 @@ def build() -> int:
         "min_px": MIN_PX,
         "max_px": MAX_PX,
         "note": (
-            "Every tile is RGBA overlay except wood-plank (opaque RGB). Overlay alpha ceilings are "
-            "the legibility argument, not a style choice: ink over the darkest possible composite "
-            "must stay at or above 4.5:1 at 16 px. parchment-vignette is applied once at cover "
+            "Every tile is RGBA overlay except wood-plank (opaque RGB). ink_worst_contrast is the "
+            "minimum WCAG ratio between the row's ink and the committed pixels themselves (RGBA "
+            "composited on the row's ground), not a figure derived from the alpha ceiling. Overlay "
+            "alpha ceilings are the legibility argument, not a style choice: ink over the darkest "
+            "pixel a tile can produce must stay at or above 4.5:1 at 16 px. Only text_bearing rows "
+            "carry text_required / legibility_passes; wood-plank is not a text surface and records "
+            "text_bearing:false with a reason instead. parchment-vignette is applied once at cover "
             "size (background-size: cover); it wraps without a discontinuity but is never repeated."
         ),
         "tiles": rows,
@@ -696,10 +733,10 @@ def build() -> int:
     MANIFEST.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {len(rows)} tiles to {TILE_DIR.relative_to(ROOT)}")
     for row in rows:
+        gate = f"contrast {row['ink_worst_contrast']}" if row["text_bearing"] else "no text (not gated)"
         print(
             f"  {row['id']:<20} {row['mode']:<5} {row['width']}x{row['height']} "
-            f"{row['bytes']:>6} B  seam {row['seam']['column_ratio']}/{row['seam']['row_ratio']}  "
-            f"contrast {row['ink_worst_contrast']}"
+            f"{row['bytes']:>6} B  seam {row['seam']['column_ratio']}/{row['seam']['row_ratio']}  {gate}"
         )
     return 0
 
@@ -734,8 +771,25 @@ def verify() -> int:
             problems.append(f"{row['id']}/{row['mode']}: seam ratio {row['seam']}")
         if not (MIN_PX <= row["width"] <= MAX_PX and MIN_PX <= row["height"] <= MAX_PX):
             problems.append(f"{row['id']}/{row['mode']}: size out of range")
-        if not row["legibility_passes"]:
-            problems.append(f"{row['id']}/{row['mode']}: contrast {row['ink_worst_contrast']}")
+        # The contrast figure must be the committed pixels, not a model of them.
+        field, ratio = worst_pixel(read_png(path), row["mode"], row["id"])
+        if round(ratio, 2) != row["ink_worst_contrast"]:
+            problems.append(
+                f"{row['id']}/{row['mode']}: declared contrast {row['ink_worst_contrast']} "
+                f"!= committed pixels {round(ratio, 2)}"
+            )
+        if "#%02x%02x%02x" % field != row["worst_field"]:
+            problems.append(f"{row['id']}/{row['mode']}: worst_field is not the worst pixel")
+        if row["text_bearing"]:
+            if row["text_required"] != TEXT_MIN_CONTRAST:
+                problems.append(f"{row['id']}/{row['mode']}: text gate {row['text_required']}")
+            if row["ink_worst_contrast"] < TEXT_MIN_CONTRAST or not row.get("legibility_passes"):
+                problems.append(f"{row['id']}/{row['mode']}: contrast {row['ink_worst_contrast']}")
+        else:
+            if row.get("legibility_passes") is not None:
+                problems.append(f"{row['id']}/{row['mode']}: non-text row claims legibility_passes")
+            if row["text_required"] is not None or not row.get("reason"):
+                problems.append(f"{row['id']}/{row['mode']}: non-text row lacks a reason")
         if row.get("text_check", {}).get("result", "none").startswith("hit:"):
             problems.append(f"{row['id']}/{row['mode']}: text found in the tile")
     if problems:

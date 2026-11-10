@@ -3,13 +3,13 @@
   "card": "CP-011",
   "mode": "dark",
   "sheet": "docs/concept-parity/art/material/texture-sheet-dark.png",
-  "sheet_sha256": "ab879cee63533889615ca386bd9a774231d2eaaf2b21016fc62709f17923219e",
-  "sheet_bytes": 419440,
+  "sheet_sha256": "77b7e20051c12906391d91971a1594671c777c6d5c2a23ba6d2bac6bd0b5a7f2",
+  "sheet_bytes": 420143,
   "sheet_size": {
     "width": 1120,
     "height": 1477
   },
-  "commit": "4957c5f2bf01170ef8d4bb23554cfaef4b7fa25d",
+  "commit": "94f658e88d267edc27a8b0836a9ffde292e0388a",
   "branch": "wt/cp-011-material",
   "engine": "Chromium 155.0.8059.84 Arch Linux",
   "device_scale": 1,
@@ -27,7 +27,10 @@
       "bytes": 38569,
       "alpha_ceiling": 16,
       "ground": "#171410",
+      "text_bearing": true,
       "ink_worst_contrast": 12.76,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         0.946,
         0.985
@@ -39,7 +42,10 @@
       "bytes": 10032,
       "alpha_ceiling": 10,
       "ground": "#221d17",
-      "ink_worst_contrast": 12.09,
+      "text_bearing": true,
+      "ink_worst_contrast": 12.23,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         0.078,
         1.021
@@ -51,7 +57,10 @@
       "bytes": 28102,
       "alpha_ceiling": 46,
       "ground": "#171410",
-      "ink_worst_contrast": 14.71,
+      "text_bearing": true,
+      "ink_worst_contrast": 14.46,
+      "text_gate": 4.5,
+      "legibility_passes": true,
       "seam_ratio": [
         1.038,
         1.016
@@ -67,7 +76,10 @@
         67,
         49
       ],
-      "ink_worst_contrast": 7.25,
+      "text_bearing": false,
+      "ink_worst_contrast": 6.04,
+      "text_gate": null,
+      "legibility_passes": null,
       "seam_ratio": [
         0.824,
         0.751
@@ -75,6 +87,7 @@
     }
   ],
   "wood_has_no_text": true,
+  "contrast_note": "ink_worst_contrast is the minimum over the committed tile pixels against the row's ink; the 4.5:1 gate is applied only where text_bearing is true. wood-plank carries no text, so its figure is informational and legibility_passes is null.",
   "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
-  "captured_at": "2026-11-10T10:27:02+00:00"
+  "captured_at": "2026-11-10T11:13:19+00:00"
 }

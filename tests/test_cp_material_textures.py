@@ -47,6 +47,12 @@ def rows() -> list[dict]:
     return manifest()["tiles"]
 
 
+def pixel_worst(row: dict) -> tuple[tuple[int, int, int], float]:
+    """Re-measure the row's worst field from the committed PNG, using no declared figure."""
+    image = material.read_png(ROOT / row["path"])
+    return material.worst_pixel(image, row["mode"], row["id"])
+
+
 class ManifestTests(unittest.TestCase):
     def test_the_card_ships_four_families_in_both_modes(self) -> None:
         self.assertTrue(MANIFEST.exists(), "run scripts/build_cb_material.py build")
@@ -153,25 +159,60 @@ class AlphaCeilingTests(unittest.TestCase):
 
     def test_body_text_keeps_4_5_to_1_at_the_worst_pixel(self) -> None:
         for row in rows():
-            if row["id"] == "wood-plank":
+            if not row["text_bearing"]:
                 continue  # no text ever sits on wood
             with self.subTest(tile=row["id"], mode=row["mode"]):
-                field = material.worst_field(row["mode"], row["id"], row["alpha_ceiling"])
-                ink = material.hex_rgb(material.PALETTE[row["mode"]]["ink"])
+                _field, ratio = pixel_worst(row)
                 self.assertGreaterEqual(
-                    material.contrast(ink, field), TEXT_MIN_CONTRAST,
-                    f"{row['id']}/{row['mode']} worst field {field}",
+                    ratio, TEXT_MIN_CONTRAST,
+                    f"{row['id']}/{row['mode']} worst pixel {_field}",
                 )
 
-    def test_the_declared_contrast_matches_a_fresh_computation(self) -> None:
+    def test_declared_contrast_is_the_pixel_minimum(self) -> None:
+        """The manifest's contrast figure must be re-derivable from the bytes, for every tile.
+
+        This is the regression that matters: an earlier revision reported a *modelled* field
+        (``blend(ground, grain, alpha_ceiling)``) and, for the opaque wood family, the ground the
+        tile is painted on. That made 5.73:1 out of pixels whose real minimum is 3.81:1 and marked a
+        non-text surface as passing a text gate.
+        """
         for row in rows():
             with self.subTest(tile=row["id"], mode=row["mode"]):
-                self.assertGreaterEqual(row["ink_worst_contrast"], TEXT_MIN_CONTRAST)
-                field = material.worst_field(row["mode"], row["id"], row["alpha_ceiling"])
-                ink = material.hex_rgb(material.PALETTE[row["mode"]]["ink"])
+                field, ratio = pixel_worst(row)
                 self.assertAlmostEqual(
-                    material.contrast(ink, field), row["ink_worst_contrast"], places=2
+                    round(ratio, 2), row["ink_worst_contrast"], places=2,
+                    msg=f"{row['id']}/{row['mode']}: declared {row['ink_worst_contrast']} "
+                        f"but the committed pixels give {round(ratio, 2)}",
                 )
+                self.assertEqual("#%02x%02x%02x" % field, row["worst_field"])
+                if row["format"] == "RGB":
+                    # the opaque family: the figure must be a tile pixel, never the ground it sits on
+                    self.assertFalse(row["text_bearing"])
+                    self.assertNotEqual(row["worst_field"], row["ground"])
+                    self.assertNotIn("legibility_passes", row)
+                    self.assertIsNone(row["text_required"])
+                    self.assertTrue(row["reason"])
+                else:
+                    self.assertTrue(row["text_bearing"])
+                    self.assertEqual(row["text_required"], TEXT_MIN_CONTRAST)
+                    self.assertEqual(row["legibility_passes"], round(ratio, 2) >= TEXT_MIN_CONTRAST)
+
+    def test_the_old_ground_based_figure_would_fail_this_check(self) -> None:
+        """Sensitivity: the defect the test above exists for must actually trip it.
+
+        Legacy ``worst_field()`` returned ``ground`` for the opaque family, which read as 5.73:1 /
+        7.25:1. If the committed pixels agreed with that, the check above would prove nothing.
+        """
+        for row in rows():
+            if row["format"] != "RGB":
+                continue
+            with self.subTest(tile=row["id"], mode=row["mode"]):
+                ink = material.hex_rgb(row["ink"])
+                # wood's `ground` is the baked RGB triple, not a token hex string
+                ground = tuple(row["ground"]) if isinstance(row["ground"], list) else material.hex_rgb(row["ground"])
+                legacy = material.contrast(ink, ground)
+                _field, real = pixel_worst(row)
+                self.assertNotAlmostEqual(legacy, real, places=2)
 
 
 class DeterminismTests(unittest.TestCase):
@@ -266,6 +307,24 @@ class TextureSheetTests(unittest.TestCase):
         declared = {row["id"]: row["sha256"] for row in rows() if row["mode"] == "light"}
         for tile in record["tiles"]:
             self.assertEqual(tile["sha256"], declared[tile["id"]], f"{tile['id']} drifted from the sheet")
+
+    def test_the_sheet_gates_only_text_bearing_tiles(self) -> None:
+        """A stamp that says wood 'passes' a text gate is the same defect one layer down."""
+        for mode in MODES:
+            with self.subTest(mode=mode):
+                record = json.loads(
+                    (PROOF_DIR / f"texture-sheet-{mode}.stamp.json").read_text(encoding="utf-8")
+                )
+                for tile in record["tiles"]:
+                    if tile["id"] == "wood-plank":
+                        self.assertFalse(tile["text_bearing"])
+                        self.assertIsNone(tile["legibility_passes"])
+                        self.assertIsNone(tile["text_gate"])
+                    else:
+                        self.assertTrue(tile["text_bearing"])
+                        self.assertEqual(tile["text_gate"], TEXT_MIN_CONTRAST)
+                        self.assertIs(tile["legibility_passes"], True)
+                        self.assertGreaterEqual(tile["ink_worst_contrast"], TEXT_MIN_CONTRAST)
 
 
 class WoodRuleTests(unittest.TestCase):

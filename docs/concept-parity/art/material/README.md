@@ -5,21 +5,29 @@ vignette** and **wood plank**. Eight tiles, each seamless, each under 60 KB, eac
 deterministic host generator rather than a model. This folder holds the proofs and the evidence;
 the tiles themselves live in `assets/art/material/` with their provenance manifest.
 
-| tile | mode | px | bytes | alpha ceiling | ink worst-case | seam (col/row) |
+| tile | mode | px | bytes | alpha ceiling | ink worst-case (min over pixels) | seam (col/row) |
 |---|---|---|---|---|---|---|
 | `paper-grain` | light | 256 | 40,787 | 14 | 12.84:1 | 0.95 / 0.99 |
 | `paper-grain` | dark | 256 | 38,569 | 16 | 12.76:1 | 0.95 / 0.99 |
-| `card-stock-fibre` | light | 256 | 9,399 | 9 | 14.24:1 | 0.22 / 0.88 |
-| `card-stock-fibre` | dark | 256 | 10,032 | 10 | 12.09:1 | 0.08 / 1.02 |
+| `card-stock-fibre` | light | 256 | 9,399 | 9 | 14.37:1 | 0.22 / 0.88 |
+| `card-stock-fibre` | dark | 256 | 10,032 | 10 | 12.23:1 | 0.08 / 1.02 |
 | `parchment-vignette` | light | 512 | 25,407 | 30 | 12.01:1 | 0.95 / 0.97 |
-| `parchment-vignette` | dark | 512 | 28,102 | 46 | 14.71:1 | 1.04 / 1.02 |
-| `wood-plank` | light | 256 | 27,218 | — | 5.73:1 (informational) | 0.77 / 0.92 |
-| `wood-plank` | dark | 256 | 26,747 | — | 7.25:1 (informational) | 0.82 / 0.75 |
+| `parchment-vignette` | dark | 512 | 28,102 | 46 | 14.46:1 | 1.04 / 1.02 |
+| `wood-plank` | light | 256 | 27,218 | — | 3.81:1 — informational, no text is gated | 0.77 / 0.92 |
+| `wood-plank` | dark | 256 | 26,747 | — | 6.04:1 — informational, no text is gated | 0.82 / 0.75 |
 
 "Seam" is the mean pixel step across the wrap divided by the mean step of the two neighbour pairs
 immediately inside it. At or below ~1 there is no discontinuity: the seam looks exactly like the
 texture's own adjacent-pixel change. The test suite recomputes it from the committed bytes, and it
 also proves the metric catches a broken tile by forcing a mismatch on a copy.
+
+"Ink worst-case" is the **minimum** WCAG ratio between the row's ink and the committed pixels
+themselves — for overlays, each pixel composited on the row's ground. It is measured from the PNG,
+not derived from the alpha ceiling: the ceiling is the guard that keeps the minimum high, and the
+ceiling-derived figure can name a field no pixel actually carries. The suite re-derives the number
+from the bytes for every row (`test_declared_contrast_is_the_pixel_minimum`) and fails on any drift.
+Only rows with `text_bearing: true` are held to the 4.5:1 floor; `wood-plank` records
+`text_bearing: false`, no `legibility_passes`, and a `reason`, because no text is ever placed on it.
 
 ## How the tiles are used
 
@@ -42,7 +50,9 @@ ceiling lives in the manifest and the test re-derives the contrast from it.
 **Wood never carries text.** It is the shelf plank face and the evidence tray only. The plank's top
 lip, cut end and contact shadow are drawn by `ShelfPlank` (CP-020b) over this tile — they are
 deliberately *not* baked into the tile, because a baked lip would repeat as a dark band at every
-vertical wrap.
+vertical wrap. Because wood is not a text surface, its manifest row carries `text_bearing: false`,
+no text gate and no `legibility_passes`; its contrast figure is recorded as an informational
+measurement of the committed pixels, and no consumer may read it as a pass.
 
 ## Where the colours came from
 
