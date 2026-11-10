@@ -1,29 +1,57 @@
 {
   "tool": "scripts/cp-cold-paint.mjs",
-  "captured_at": "2026-11-10T10:12:28.279Z",
-  "cdp_port": "9471",
+  "ok": true,
+  "captured_at": "2026-11-10T10:31:18.029Z",
   "measured": "[data-cb-route] present with a non-zero box after Page.reload(ignoreCache)",
+  "page_url": "http://127.0.0.1:5174/#/coursebook",
+  "plugin": {
+    "expected_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
+    "window_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-gm004-203620/home/desktop-plugins/coursebook/plugin.js",
+    "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_f0be3189/desktop/plugin.js",
+    "bytes": 1344249,
+    "error": null
+  },
+  "state_dir": "/home/deseretsaint/.hermes/coursebook-test-gm004-203620",
+  "backend": {
+    "url": "http://127.0.0.1:44291",
+    "wire_contract": "cb.rpc",
+    "wire_version": 24,
+    "contract_methods": 93,
+    "implemented_count": 93,
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_1575d158",
+    "backend_package": "coursebook_plugin_backend"
+  },
+  "theme": "light",
+  "motion": "full",
+  "zoom_percent": 90,
+  "reduced_motion": false,
+  "route_width": 808.54,
+  "route_height": 681.56,
+  "window_width": 1045,
+  "window_height": 735,
+  "cdp_port": "9471",
   "samples": [
     {
       "run": 1,
-      "ms": 1679,
-      "width": 812.7847290039062,
-      "height": 684.54296875
+      "ms": 1777,
+      "width": 808.5416870117188,
+      "height": 681.5625610351562
     },
     {
       "run": 2,
-      "ms": 1671,
-      "width": 812.7847290039062,
-      "height": 684.54296875
+      "ms": 1646,
+      "width": 808.5416870117188,
+      "height": 681.5625610351562
     },
     {
       "run": 3,
-      "ms": 1792,
-      "width": 812.7847290039062,
-      "height": 684.54296875
+      "ms": 1535,
+      "width": 808.5416870117188,
+      "height": 681.5625610351562
     }
   ],
-  "median_ms": 1679,
-  "min_ms": 1671,
-  "max_ms": 1792
+  "median_ms": 1646,
+  "min_ms": 1535,
+  "max_ms": 1777
 }

@@ -2,7 +2,7 @@
   "stamp_version": 1,
   "tool": "scripts/cp-capture.mjs",
   "name": "home-live-1049-light",
-  "captured_at": "2026-11-10T10:07:00.025Z",
+  "captured_at": "2026-11-10T10:30:41.947Z",
   "ok": false,
   "stage": "gates",
   "reasons": [
@@ -13,7 +13,10 @@
     "route_present": true,
     "no_render_error": true,
     "fonts_loaded": true,
-    "images_decoded": true
+    "images_decoded": true,
+    "no_host_overlay": true,
+    "no_unpainted_region": true,
+    "zoom_neutral": true
   },
   "plugin": {
     "window_sha256": "5918cdffc94b4ac5047421fd2cd44bebfdd329b528685e185c90466d0f4f273b",
@@ -25,12 +28,12 @@
     "selector": "[data-cb-route]",
     "present": true,
     "marker": "/coursebook",
-    "width": 1196.55,
-    "height": 1462.12,
-    "top": 33.99,
+    "width": 1049,
+    "height": 1166,
+    "top": 34,
     "left": 237,
-    "window_width": 1433,
-    "window_height": 1516,
+    "window_width": 1286,
+    "window_height": 1220,
     "theme": "light",
     "motion": "full",
     "text_scale_root_px": "16px",
@@ -75,7 +78,7 @@
     "v3_ready": false,
     "style_sheet_count": 18,
     "css_rule_count": 1600,
-    "host_slots": 349,
+    "host_slots": 289,
     "host_shell": true,
     "heading_font_family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
     "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
@@ -85,6 +88,27 @@
       "div.relative.min-h-0.min-w-0",
       "div."
     ],
+    "html_background": "rgb(13, 16, 21)",
+    "body_background": "color(srgb 0.0509804 0.0625882 0.0810196)",
+    "background_color": "rgb(247, 241, 228)",
+    "host_overlays": [],
+    "host_overlay_points": 0,
+    "host_overlay_sampled": 384,
+    "host_overlay_fraction": 0,
+    "host_overlay_trims": {
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "content_rect": {
+      "x": 237,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    },
+    "content_width": 1049,
+    "content_height": 1166,
     "backend": null
   }
 }

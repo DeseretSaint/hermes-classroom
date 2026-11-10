@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CP-000 fixture: cold-paint provenance</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #f7f1e4; }
+    [data-cb-route] { width: 400px; height: 300px; background: #f7f1e4; }
+  </style>
+</head>
+<body>
+  <!-- Recorded fixture page for scripts/cp-cold-paint.mjs. It emulates the two host doors the
+       script needs — `readPluginSource` (module provenance) and `zoom.get` — so the provenance
+       block and the stale-sha refusal are exercised without an Electron host. The module text
+       below hashes to the `--expect-sha` the test supplies (and to a different sha when the test
+       wants the refusal path). -->
+  <div data-cb-route="/coursebook" data-cb-scope="light" data-cb-motion="full">
+    <h1>Cold-paint fixture</h1>
+  </div>
+  <script>
+    const MODULE_TEXT = 'CP000 COLD PAINT FIXTURE MODULE TEXT'
+    window.__CP000_COLD_MODULE_TEXT__ = MODULE_TEXT
+    window.hermesDesktop = {
+      zoom: { get: async () => ({ percent: 100, level: 0 }) },
+      readPluginSource: async () => ({ path: '/tmp/fixture/plugin.js', text: MODULE_TEXT, byteSize: MODULE_TEXT.length })
+    }
+  </script>
+</body>
+</html>

@@ -3,14 +3,17 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "home-live-1049-light",
-  "captured_at": "2026-11-10T10:11:50.568Z",
+  "captured_at": "2026-11-10T10:30:55.919Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
     "route_present": true,
     "no_render_error": true,
     "fonts_loaded": true,
-    "images_decoded": true
+    "images_decoded": true,
+    "no_host_overlay": true,
+    "no_unpainted_region": true,
+    "zoom_neutral": true
   },
   "plugin": {
     "expected_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
@@ -32,10 +35,10 @@
     "selector": "[data-cb-route]",
     "marker": "/coursebook",
     "destination": null,
-    "width": 1049.29,
-    "height": 1462.12,
+    "width": 1049,
+    "height": 1166,
     "window_width": 1286,
-    "window_height": 1516,
+    "window_height": 1220,
     "theme": "light",
     "text_scale_root_px": "16px",
     "motion": "full",
@@ -77,7 +80,7 @@
     "images_decoded": 0,
     "style_sheet_count": 18,
     "css_rule_count": 1600,
-    "host_slots": 349,
+    "host_slots": 289,
     "host_shell": true,
     "heading_font_family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
     "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
@@ -86,7 +89,33 @@
       "div.absolute.inset-0.overflow-auto",
       "div.relative.min-h-0.min-w-0",
       "div."
-    ]
+    ],
+    "html_background": "rgb(13, 16, 21)",
+    "background_color": "rgb(247, 241, 228)",
+    "host_overlays": [],
+    "host_overlay_points": 0,
+    "host_overlay_sampled": 384,
+    "host_overlay_fraction": 0,
+    "host_overlay_trims": {
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "content_width": 1049,
+    "content_height": 1166,
+    "content_rect": {
+      "x": 237,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    }
+  },
+  "zoom": {
+    "original_percent": 90,
+    "capture_percent": 100,
+    "bridge_available": true,
+    "restored_percent": 90
   },
   "console": {
     "errors": [],
@@ -94,13 +123,23 @@
   },
   "capture": {
     "file": "home-live-1049-light.png",
-    "sha256": "cdb79d1b6704be709e38f9ce36586436b4c45e2b1ded0eb7ac5a59b3a9a6e462",
-    "bytes": 194669,
+    "sha256": "5eea0c5d51df7938e8e732070c0d86518b317ee19aea6d61ae2a8f94e30e8349",
+    "bytes": 188138,
+    "crop_mode": "route",
     "clip": {
-      "x": 236.99539184570312,
-      "y": 33.9909553527832,
-      "width": 1049.2921142578125,
-      "height": 1462.1165771484375
+      "x": 237,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    },
+    "pixel_check": {
+      "ok": true,
+      "sampled": 116900,
+      "host_bg_pixels": 0,
+      "host_bg_fraction": 0,
+      "html_bg": "13, 16, 21, 1",
+      "route_bg": "247, 241, 228, 1",
+      "distinct_backgrounds": true
     }
   },
   "page_url": "http://127.0.0.1:5174/#/coursebook"

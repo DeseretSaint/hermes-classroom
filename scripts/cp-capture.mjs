@@ -12,7 +12,11 @@
  *   2. `[data-cb-route]` exists and no render-error marker is present;
  *   3. `document.fonts.status === 'loaded'`;
  *   4. every `img` inside the route is complete with naturalWidth > 0;
- *   5. with --require-v3, `[data-cb-v3-ready]` is present.
+ *   5. no host element is painted above the route box (grid hit-test); a contaminated clip needs
+ *      --crop-to-content, which records the overlay geometry and crops the unoccluded content rect;
+ *   6. the captured pixels are not a significant share of the document background (pixel veto);
+ *   7. the page zoom is 100% during capture (normalised through the host zoom bridge, restored after);
+ *   8. with --require-v3, `[data-cb-v3-ready]` is present.
  *
  * Why the sha is read through the window: `window.hermesDesktop.readPluginSource(path)` is the same
  * IPC door the host's runtime loader uses to fetch `plugin.js` before evaluating it. Hashing that
@@ -25,7 +29,7 @@
  *   node scripts/cp-capture.mjs --name home-1049-light --out docs/concept-parity/captures \
  *     --cdp-port 9411 --state "$COURSEBOOK_TEST_STATE" --plugin desktop/plugin.js \
  *     --backend-url http://127.0.0.1:44311 --token cb013-test-token \
- *     --route-width 1049 [--require-v3] [--keep-console]
+ *     --route-width 1049 [--require-v3] [--keep-console] [--crop-to-content]
  *
  * Usage (recorded fixture page, used by tests — no Electron host):
  *   node scripts/cp-capture.mjs --name fixture-ok --out <dir> --fixture tests/fixtures/cp-capture/ok.html \
@@ -57,6 +61,7 @@ const routeWidth = Number(flag('route-width', 1049))
 const expectSha = flag('expect-sha', null)
 const timeoutMs = Number(flag('timeout', 45000))
 const keepConsole = Boolean(flag('keep-console', false))
+const cropToContent = Boolean(flag('crop-to-content', false))
 
 mkdirSync(outDir, { recursive: true })
 const pngPath = resolve(outDir, `${name}.png`)
@@ -76,6 +81,11 @@ const RENDER_ERROR_SELECTORS = [
 /**
  * Probe run inside the page. `SRC_PATH` is injected. In live mode it asks the host for the raw
  * plugin source through the runtime loader's own read door and hashes it in-page.
+ *
+ * It also measures host *occlusion*: for a grid of points inside the route box, which elements sit
+ * ABOVE the route in the hit-test stack. A fixed host rail or status bar painted over the route is
+ * capture contamination, not product UI, and must never reach a parity frame. The same geometry is
+ * used to derive `content_width` / `content_height`, the actually usable painted surface.
  */
 const probeExpression = (srcPath, wantSource) => `(async () => {
   const hashText = async (text) => {
@@ -84,7 +94,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
     return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
   }
   const fixture = window.__CP000_FIXTURE__ || null
-  if (fixture) return fixture
+  const round = (n) => Math.round(n * 100) / 100
   const root = document.querySelector('[data-cb-route]')
   const rect = root ? root.getBoundingClientRect() : null
   const imgs = root ? [...root.querySelectorAll('img')] : []
@@ -95,6 +105,77 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
   }
   const h1 = document.querySelector('[data-cb-route] h1')
   const bodyFont = getComputedStyle(document.body).fontFamily
+  const isBoundary = (el) => el === root || root.contains(el) || el.contains(root)
+  const overlayProbe = () => {
+    const trims = { left: 0, right: 0, top: 0, bottom: 0 }
+    if (!root || !rect || rect.width < 1 || rect.height < 1) {
+      return { overlays: [], sampled: 0, occluded_points: 0, occluded_fraction: 0, trims, content_rect: null }
+    }
+    const cols = 16
+    const rows = 24
+    const seen = new Map()
+    let sampled = 0
+    let occluded = 0
+    for (let col = 0; col < cols; col += 1) {
+      for (let row = 0; row < rows; row += 1) {
+        const x = rect.left + ((col + 0.5) * rect.width) / cols
+        const y = rect.top + ((row + 0.5) * rect.height) / rows
+        sampled += 1
+        const stack = document.elementsFromPoint(x, y)
+        const above = []
+        for (const el of stack) {
+          if (isBoundary(el)) break
+          if (el === document.documentElement || el === document.body) continue
+          above.push(el)
+        }
+        if (!above.length) continue
+        occluded += 1
+        const el = above[0]
+        const er = el.getBoundingClientRect()
+        const key = el.tagName + '|' + String(el.className || '').split(/\\s+/).slice(0, 3).join('.') + '|' +
+          Math.round(er.x) + ',' + Math.round(er.y) + ',' + Math.round(er.width) + 'x' + Math.round(er.height)
+        if (!seen.has(key)) {
+          seen.set(key, {
+            tag: el.tagName.toLowerCase(),
+            class_fragment: String(el.className || '').split(/\\s+/).slice(0, 4).join('.'),
+            slot: el.getAttribute('data-slot'),
+            rect: { x: round(er.x), y: round(er.y), width: round(er.width), height: round(er.height) },
+            background: getComputedStyle(el).backgroundColor,
+            position: getComputedStyle(el).position,
+            z_index: getComputedStyle(el).zIndex,
+            points: 0
+          })
+        }
+        seen.get(key).points += 1
+      }
+    }
+    const overlays = [...seen.values()].sort((a, b) => b.points - a.points)
+    for (const overlay of overlays) {
+      const r = overlay.rect
+      const spansV = r.height >= rect.height * 0.5
+      const spansH = r.width >= rect.width * 0.5
+      if (spansV && r.x > rect.left + 1 && r.x + r.width >= rect.right - 1) trims.right = Math.max(trims.right, rect.right - r.x)
+      if (spansV && r.x <= rect.left + 1 && r.x + r.width < rect.right - 1) trims.left = Math.max(trims.left, r.x + r.width - rect.left)
+      if (spansH && r.y > rect.top + 1 && r.y + r.height >= rect.bottom - 1) trims.bottom = Math.max(trims.bottom, rect.bottom - r.y)
+      if (spansH && r.y <= rect.top + 1 && r.y + r.height < rect.bottom - 1) trims.top = Math.max(trims.top, r.y + r.height - rect.top)
+    }
+    const contentX = rect.left + trims.left
+    const contentY = rect.top + trims.top
+    return {
+      overlays,
+      sampled,
+      occluded_points: occluded,
+      occluded_fraction: sampled ? round(occluded / sampled) : 0,
+      trims,
+      content_rect: {
+        x: round(contentX),
+        y: round(contentY),
+        width: round(Math.max(0, rect.width - trims.left - trims.right)),
+        height: round(Math.max(0, rect.height - trims.top - trims.bottom))
+      }
+    }
+  }
+  const occlusion = overlayProbe()
   const out = {
     plugin: { window_sha256: null, loaded_path: ${JSON.stringify(srcPath || null)}, bytes: null, error: null },
     route: {
@@ -125,7 +206,18 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       host_shell: Boolean(document.querySelector('#root')) && !document.body.className.includes('cb-standalone'),
       heading_font_family: h1 ? getComputedStyle(h1).fontFamily : null,
       body_font_family: bodyFont,
-      route_ancestors: root ? (() => { const out = []; let n = root.parentElement; while (n && out.length < 4) { out.push(n.tagName.toLowerCase() + '.' + String(n.className || '').split(/\\s+/).slice(0, 3).join('.')); n = n.parentElement } return out })() : []
+      route_ancestors: root ? (() => { const out = []; let n = root.parentElement; while (n && out.length < 4) { out.push(n.tagName.toLowerCase() + '.' + String(n.className || '').split(/\\s+/).slice(0, 3).join('.')); n = n.parentElement } return out })() : [],
+      html_background: getComputedStyle(document.documentElement).backgroundColor,
+      body_background: getComputedStyle(document.body).backgroundColor,
+      background_color: root ? getComputedStyle(root).backgroundColor : null,
+      host_overlays: occlusion.overlays,
+      host_overlay_points: occlusion.occluded_points,
+      host_overlay_sampled: occlusion.sampled,
+      host_overlay_fraction: occlusion.occluded_fraction,
+      host_overlay_trims: occlusion.trims,
+      content_rect: occlusion.content_rect,
+      content_width: occlusion.content_rect ? occlusion.content_rect.width : null,
+      content_height: occlusion.content_rect ? occlusion.content_rect.height : null
     },
     console: { errors: [], warnings: 0 }
   }
@@ -139,10 +231,15 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       out.plugin.error = String(error && error.message ? error.message : error)
     }
   }
+  if (fixture) {
+    if (fixture.plugin) out.plugin = Object.assign({}, out.plugin, fixture.plugin)
+    if (fixture.route) out.route = Object.assign(out.route, fixture.route)
+    if (fixture.console) out.console = fixture.console
+  }
   return out
 })()`
 
-const runGates = ({ probe, expectedSha, requireV3 }) => {
+const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode }) => {
   const gates = {}
   const reasons = []
   const pluginSha = probe.plugin && probe.plugin.window_sha256 ? probe.plugin.window_sha256 : null
@@ -162,6 +259,42 @@ const runGates = ({ probe, expectedSha, requireV3 }) => {
 
   gates.images_decoded = (route.images_broken || []).length === 0
   if (!gates.images_decoded) reasons.push(`undecoded image(s) in the route: ${(route.images_broken || []).join(' | ')}`)
+
+  // Host chrome painted over the route box is capture contamination (a rail, a status bar, a chat
+  // pane). Refuse unless the caller explicitly crops to the unoccluded content rect, in which case
+  // the overlay geometry is recorded in the stamp and the crop excludes it.
+  const occluded = Number(route.host_overlay_points || 0)
+  if (cropMode === 'content') {
+    gates.no_host_overlay = true
+    gates.host_overlay_excluded = true
+  } else {
+    gates.no_host_overlay = occluded === 0
+    if (!gates.no_host_overlay) {
+      const overlays = (route.host_overlays || []).slice(0, 3)
+        .map((o) => `${o.tag}.${o.class_fragment || '(no class)'} ${o.rect.width}x${o.rect.height} bg=${o.background}`)
+        .join('; ')
+      reasons.push(`host chrome occludes the route box (${occluded}/${route.host_overlay_sampled} sample points; ` +
+        `content ${route.content_width}x${route.content_height} of route ${route.width}x${route.height}): ${overlays}` +
+        ' — rerun with --crop-to-content to crop the usable surface and record the overlay geometry')
+    }
+  }
+
+  // Post-capture pixel assertion: when the route paints a different background from the document,
+  // a significant share of host-background pixels inside the clip means part of the route was never
+  // painted (the historical Class C band). Only meaningful when the two colours differ.
+  if (pixelCheck && pixelCheck.ok) {
+    gates.no_unpainted_region = !pixelCheck.distinct_backgrounds || Number(pixelCheck.host_bg_fraction) <= 0.02
+    if (!gates.no_unpainted_region) {
+      reasons.push(`host background ${pixelCheck.html_bg} covers ${(Number(pixelCheck.host_bg_fraction) * 100).toFixed(1)}% ` +
+        `of the route crop while the route paints ${pixelCheck.route_bg} — part of the frame was not painted`)
+    }
+  } else {
+    gates.no_unpainted_region = false
+    reasons.push(`pixel contamination check did not run${pixelCheck && pixelCheck.error ? `: ${pixelCheck.error}` : ''}`)
+  }
+
+  gates.zoom_neutral = !zoom || zoom.capture_percent === 100
+  if (!gates.zoom_neutral) reasons.push(`page zoom was ${String(zoom && zoom.capture_percent)}% during capture; the capture door requires 100% so the emulated viewport is fully painted`)
 
   if (requireV3) {
     gates.v3_ready = route.v3_ready === true
@@ -273,6 +406,83 @@ const evaluate = async (cdp, expression) => {
   return result.result.value
 }
 
+/**
+ * Decode the freshly captured PNG back inside the page and count how much of the crop is the
+ * document (host) background. A route that paints its own paper must leave almost none; the
+ * historical Class C defect left an L-shaped host-coloured band because the emulated viewport was
+ * clipped by the rig's page zoom.
+ */
+const pixelContamination = async (cdp, png, routeBackground, htmlBackground) => {
+  const dataUrl = `data:image/png;base64,${png.toString('base64')}`
+  const expression = `(async () => {
+    try {
+      const img = new Image()
+      img.src = ${JSON.stringify(dataUrl)}
+      await img.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      ctx.drawImage(img, 0, 0)
+      const parse = (value) => {
+        const match = String(value || '').match(/rgba?\\(([^)]+)\\)/)
+        if (!match) return null
+        const parts = match[1].split(',').map((entry) => Number(entry.trim()))
+        if (parts.length < 3 || parts.some((entry) => Number.isNaN(entry))) return null
+        return [parts[0], parts[1], parts[2], parts.length > 3 ? parts[3] : 1]
+      }
+      const html = parse(${JSON.stringify(String(htmlBackground || ''))})
+      const route = parse(${JSON.stringify(String(routeBackground || ''))})
+      if (!html) return { ok: false, error: 'html background is not an rgb colour: ' + String(htmlBackground) }
+      if (html[3] === 0) {
+        return { ok: true, sampled: 0, host_bg_pixels: 0, host_bg_fraction: 0, html_bg: 'transparent', route_bg: route ? route.slice(0, 3).join(', ') : null, distinct_backgrounds: false }
+      }
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+      const stepX = Math.max(1, Math.floor(canvas.width / 320))
+      const stepY = Math.max(1, Math.floor(canvas.height / 320))
+      let sampled = 0
+      let host = 0
+      for (let y = 0; y < canvas.height; y += stepY) {
+        for (let x = 0; x < canvas.width; x += stepX) {
+          const index = (y * canvas.width + x) * 4
+          sampled += 1
+          if (Math.abs(data[index] - html[0]) <= 2 && Math.abs(data[index + 1] - html[1]) <= 2 && Math.abs(data[index + 2] - html[2]) <= 2) host += 1
+        }
+      }
+      return {
+        ok: true,
+        sampled,
+        host_bg_pixels: host,
+        host_bg_fraction: sampled ? Math.round((host / sampled) * 10000) / 10000 : 0,
+        html_bg: html.join(', '),
+        route_bg: route ? route.join(', ') : null,
+        distinct_backgrounds: Boolean(route) && (route[0] !== html[0] || route[1] !== html[1] || route[2] !== html[2])
+      }
+    } catch (error) {
+      return { ok: false, error: String(error && error.message ? error.message : error) }
+    }
+  })()`
+  return evaluate(cdp, expression)
+}
+
+const readZoom = async (cdp) => evaluate(cdp, `(async () => {
+  const zoom = window.hermesDesktop && window.hermesDesktop.zoom
+  if (!zoom || !zoom.get) return null
+  try {
+    const state = await zoom.get()
+    return { percent: state.percent, level: state.level }
+  } catch (error) {
+    return { error: String(error && error.message ? error.message : error) }
+  }
+})()`)
+
+const setZoomPercent = async (cdp, percent) => evaluate(cdp, `(async () => {
+  const zoom = window.hermesDesktop && window.hermesDesktop.zoom
+  if (!zoom || !zoom.setPercent) return false
+  await zoom.setPercent(${Number(percent)})
+  return true
+})()`)
+
 const waitForRoute = async (cdp, ms) => {
   const deadline = Date.now() + ms
   while (Date.now() < deadline) {
@@ -301,9 +511,25 @@ const liveCapture = async () => {
     writeRefusal('route-wait', probe, gate)
   }
 
-  // Measure host chrome offset once, then size the window so the ROUTE is the requested width.
-  // This Electron build runs the page at ~0.896 zoom, so an Emulation width is not the page's
-  // innerWidth; calibrate against the measured zoom on every pass instead of assuming 1:1.
+  // Neutralise the rig's page zoom. Under a non-100% zoom, `Emulation.setDeviceMetricsOverride`
+  // makes the layout viewport larger than the surface Chromium actually paints, so a route crop
+  // keeps an unpainted host-coloured band on the right/bottom. The capture door requires 100% zoom
+  // and restores the operator's setting afterwards.
+  const originalZoom = await readZoom(cdp)
+  const zoomApplied = Boolean(originalZoom && typeof originalZoom.percent === 'number')
+  if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
+    await setZoomPercent(cdp, 100)
+    await sleep(600)
+  }
+  const captureZoom = (await readZoom(cdp)) || null
+  const zoomRecord = {
+    original_percent: zoomApplied ? originalZoom.percent : null,
+    capture_percent: captureZoom && typeof captureZoom.percent === 'number' ? captureZoom.percent : null,
+    bridge_available: zoomApplied
+  }
+
+  try {
+  // Measure host chrome offset once, then size the viewport so the ROUTE is the requested width.
   let emWidth = routeWidth + 240
   let targetHeight = 1200
   let zoom = 1
@@ -368,25 +594,51 @@ const liveCapture = async () => {
   probe.console = consoleReader()
   probe.route.backend = null
 
-  const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3 })
-  if (!gate.ok) writeRefusal('gates', probe, gate)
-
-  // Re-measure the crop box after any emulation change.
-  const crop = await evaluate(cdp, `(() => {
+  const cropMode = cropToContent ? 'content' : 'route'
+  const routeCrop = await evaluate(cdp, `(() => {
     const root = document.querySelector('[data-cb-route]')
     const rect = root.getBoundingClientRect()
     return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
   })()`)
-  const shot = await cdp.send('Page.captureScreenshot', {
-    format: 'png',
-    captureBeyondViewport: true,
-    clip: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, scale: 1 }
-  })
-  const png = Buffer.from(shot.data, 'base64')
-  writeFileSync(pngPath, png)
+  const contentCrop = probe.route.content_rect
+  const crop = cropToContent && contentCrop && contentCrop.width > 0 && contentCrop.height > 0 ? contentCrop : routeCrop
+  if (cropToContent && crop === routeCrop) {
+    probe.route.host_overlay_trims = probe.route.host_overlay_trims || null
+  }
 
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live' })
+  let png = null
+  let pixelCheck = { ok: false, error: 'screenshot not attempted' }
+  let captureError = null
+  try {
+    const shot = await cdp.send('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: false,
+      clip: { x: crop.x, y: crop.y, width: crop.width, height: crop.height, scale: 1 }
+    })
+    png = Buffer.from(shot.data, 'base64')
+    pixelCheck = await pixelContamination(cdp, png, probe.route.background_color, probe.route.html_background)
+  } catch (error) {
+    captureError = String(error && error.message ? error.message : error)
+  } finally {
+    if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
+      await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
+      await sleep(250)
+    }
+    zoomRecord.restored_percent = zoomApplied ? (await readZoom(cdp).catch(() => null) || {}).percent ?? null : null
+  }
+  if (captureError) throw new Error(`screenshot failed: ${captureError}`)
+
+  const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode })
+  if (!gate.ok) writeRefusal('gates', probe, gate)
+
+  writeFileSync(pngPath, png)
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord })
+  } finally {
+    if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
+      await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
+    }
+  }
 }
 
 const fixtureCapture = async () => {
@@ -420,30 +672,34 @@ const fixtureCapture = async () => {
   await cdp.send('Page.navigate', { url: target })
   await sleep(500)
   const probe = await evaluate(cdp, probeExpression(null, false))
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: routeWidth, height: 900, deviceScaleFactor: 2, mobile: false })
+  await sleep(150)
+  const routeBox = await evaluate(cdp, `(() => {
+    const root = document.querySelector('[data-cb-route]')
+    const rect = root.getBoundingClientRect()
+    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+  })()`)
+  const contentBox = probe.route.content_rect
+  const cropMode = cropToContent ? 'content' : 'route'
+  const box = cropToContent && contentBox && contentBox.width > 0 && contentBox.height > 0 ? contentBox : routeBox
+  const shot = await cdp.send('Page.captureScreenshot', {
+    format: 'png',
+    captureBeyondViewport: false,
+    clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 }
+  })
+  const png = Buffer.from(shot.data, 'base64')
+  const pixelCheck = await pixelContamination(cdp, png, probe.route.background_color, probe.route.html_background)
   const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3 })
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: null, cropMode })
   if (!gate.ok) {
     cdp.close()
     chromium.kill()
     writeRefusal('gates', probe, gate)
   }
-  await cdp.send('Emulation.setDeviceMetricsOverride', { width: routeWidth, height: 900, deviceScaleFactor: 2, mobile: false })
-  await sleep(150)
-  const box = await evaluate(cdp, `(() => {
-    const root = document.querySelector('[data-cb-route]')
-    const rect = root.getBoundingClientRect()
-    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
-  })()`)
-  const shot = await cdp.send('Page.captureScreenshot', {
-    format: 'png',
-    captureBeyondViewport: true,
-    clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 }
-  })
-  const png = Buffer.from(shot.data, 'base64')
   writeFileSync(pngPath, png)
   cdp.close()
   chromium.kill()
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture' })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture', cropMode, pixelCheck, zoom: null })
 }
 
 const fetchRuntime = async (probe) => {
@@ -474,7 +730,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -515,14 +771,27 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       host_shell: probe.route.host_shell,
       heading_font_family: probe.route.heading_font_family,
       body_font_family: probe.route.body_font_family,
-      route_ancestors: probe.route.route_ancestors
+      route_ancestors: probe.route.route_ancestors,
+      html_background: probe.route.html_background,
+      background_color: probe.route.background_color,
+      host_overlays: probe.route.host_overlays || [],
+      host_overlay_points: probe.route.host_overlay_points,
+      host_overlay_sampled: probe.route.host_overlay_sampled,
+      host_overlay_fraction: probe.route.host_overlay_fraction,
+      host_overlay_trims: probe.route.host_overlay_trims,
+      content_width: probe.route.content_width,
+      content_height: probe.route.content_height,
+      content_rect: probe.route.content_rect
     },
+    zoom: zoom,
     console: probe.console || { errors: [], warnings: 0 },
     capture: {
       file: pngPath.split('/').pop(),
       sha256: createHash('sha256').update(png).digest('hex'),
       bytes: png.length,
-      clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height }
+      crop_mode: cropMode,
+      clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height },
+      pixel_check: pixelCheck
     },
     page_url: pageUrl
   }

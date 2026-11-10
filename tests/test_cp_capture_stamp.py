@@ -13,7 +13,9 @@ import json
 import shutil
 import subprocess
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -23,13 +25,20 @@ VALID_SHA = "a" * 64
 
 STAMP_KEYS = {
     "stamp_version", "tool", "mode", "name", "captured_at", "ok", "gates", "plugin",
-    "backend", "route", "console", "capture", "page_url",
+    "backend", "route", "console", "capture", "page_url", "zoom",
 }
 ROUTE_KEYS = {
     "selector", "marker", "width", "height", "theme", "text_scale_root_px", "reduced_motion",
     "forced_colors", "fonts_status", "images_total", "images_decoded", "host_slots",
+    "host_overlays", "host_overlay_fraction", "content_width", "content_height",
+    "content_rect", "html_background", "background_color",
 }
-CAPTURE_KEYS = {"file", "sha256", "bytes", "clip"}
+CAPTURE_KEYS = {"file", "sha256", "bytes", "clip", "crop_mode", "pixel_check"}
+BACKEND_KEYS = {"url", "wire_version", "contract_methods", "implemented_count", "plugin_root"}
+REQUIRED_GATES = {
+    "plugin_sha_match", "route_present", "no_render_error", "fonts_loaded", "images_decoded",
+    "no_host_overlay", "no_unpainted_region", "zoom_neutral",
+}
 
 
 def run_capture(tmp: Path, fixture: str, *extra: str) -> subprocess.CompletedProcess:
@@ -60,9 +69,13 @@ class CaptureStampTests(unittest.TestCase):
         self.assertEqual(stamp["plugin"]["window_sha256"], VALID_SHA)
         self.assertEqual(stamp["plugin"]["expected_sha256"], VALID_SHA)
         self.assertTrue(all(stamp["gates"].values()))
+        self.assertTrue(REQUIRED_GATES.issubset(stamp["gates"]), sorted(REQUIRED_GATES - set(stamp["gates"])))
         self.assertTrue(ROUTE_KEYS.issubset(stamp["route"]), sorted(ROUTE_KEYS - set(stamp["route"])))
         self.assertTrue(CAPTURE_KEYS.issubset(stamp["capture"]))
         self.assertEqual(len(stamp["capture"]["sha256"]), 64)
+        self.assertEqual(stamp["capture"]["crop_mode"], "route")
+        self.assertIsNotNone(stamp["capture"]["pixel_check"])
+        self.assertTrue(stamp["capture"]["pixel_check"]["ok"])
         png = self.tmp / stamp["capture"]["file"]
         self.assertTrue(png.is_file())
         self.assertEqual(png.stat().st_size, stamp["capture"]["bytes"])
@@ -100,6 +113,82 @@ class CaptureStampTests(unittest.TestCase):
         self.assertFalse(refused["gates"]["no_render_error"])
         self.assertTrue(any("render-error" in reason for reason in refused["reasons"]))
         self.assertFalse(refused["gates"]["v3_ready"])
+
+
+    def test_host_overlay_occlusion_is_refused(self) -> None:
+        completed = run_capture(self.tmp, "host-overlay.html")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        refused = json.loads((self.tmp / "host-overlay.refused.json").read_text())
+        self.assertFalse(refused["gates"]["no_host_overlay"])
+        self.assertTrue(any("occludes the route" in reason for reason in refused["reasons"]))
+        self.assertTrue(refused["route"]["host_overlays"])
+        overlay = refused["route"]["host_overlays"][0]
+        self.assertIn("rect", overlay)
+        self.assertIn("background", overlay)
+        self.assertLess(refused["route"]["content_width"], refused["route"]["width"])
+        # The route crop is also demonstrably unpainted: host background shows inside the clip.
+        self.assertFalse(refused["gates"]["no_unpainted_region"])
+        self.assertGreater(refused["route"]["host_overlay_fraction"], 0)
+        self.assertFalse((self.tmp / "host-overlay.stamp.json").exists())
+        self.assertFalse((self.tmp / "host-overlay.png").exists())
+
+    def test_crop_to_content_excludes_and_records_overlay(self) -> None:
+        completed = run_capture(self.tmp, "host-overlay.html", "--crop-to-content")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        stamp = json.loads((self.tmp / "host-overlay.stamp.json").read_text())
+        self.assertEqual(stamp["capture"]["crop_mode"], "content")
+        self.assertTrue(stamp["gates"]["no_host_overlay"])
+        self.assertTrue(stamp["gates"]["host_overlay_excluded"])
+        self.assertTrue(stamp["route"]["host_overlays"])
+        self.assertLessEqual(stamp["route"]["content_width"], stamp["route"]["width"] - 70)
+        self.assertLessEqual(stamp["route"]["content_height"], stamp["route"]["height"] - 50)
+        self.assertAlmostEqual(stamp["capture"]["clip"]["width"], stamp["route"]["content_width"], delta=1.5)
+        self.assertAlmostEqual(stamp["capture"]["clip"]["height"], stamp["route"]["content_height"], delta=1.5)
+        self.assertEqual(stamp["capture"]["pixel_check"]["host_bg_fraction"], 0)
+        self.assertTrue(stamp["capture"]["pixel_check"]["distinct_backgrounds"])
+        png = self.tmp / stamp["capture"]["file"]
+        self.assertTrue(png.is_file())
+
+    def test_backend_block_shape_is_stamped(self) -> None:
+        server = HTTPServer(("127.0.0.1", 0), _RuntimeHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            port = server.server_address[1]
+            completed = run_capture(self.tmp, "ok.html", "--require-v3", "--backend-url", f"http://127.0.0.1:{port}")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        stamp = json.loads((self.tmp / "ok.stamp.json").read_text())
+        self.assertTrue(BACKEND_KEYS.issubset(stamp["backend"]), sorted(BACKEND_KEYS - set(stamp["backend"])))
+        self.assertEqual(stamp["backend"]["wire_version"], 24)
+        self.assertEqual(stamp["backend"]["contract_methods"], 93)
+        self.assertEqual(stamp["backend"]["implemented_count"], 93)
+        self.assertEqual(stamp["backend"]["plugin_root"], "/tmp/cp000-checkout")
+
+
+class _RuntimeHandler(BaseHTTPRequestHandler):
+    payload = {
+        "wire_contract": "cb.rpc",
+        "wire_version": 24,
+        "contract_methods": 93,
+        "implemented_methods": [f"method.{index}" for index in range(93)],
+        "plugin_root": "/tmp/cp000-checkout",
+        "backend_package": "coursebook_plugin_backend",
+    }
+
+    def do_GET(self) -> None:  # noqa: N802 - http.server API
+        body = json.dumps(self.payload).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format: str, *args) -> None:  # noqa: A002 - http.server API
+        return
 
 
 if __name__ == "__main__":
