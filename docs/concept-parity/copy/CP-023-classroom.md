@@ -4,7 +4,7 @@ Card body: `docs/concept-parity/cards/CP-023.md` (this card section starts line 
 Spec: `SPEC-V3.md` §5.3 (lines 462–540), §3.10 (290), §3.8 (261–263), §6 (652–667).
 Deck: `COPY.md` §4 (lines 127–184).
 
-Deck rows used: 45 screen-specific + the 4 shared `nav.*` rows.
+Deck rows used: 46 screen-specific + the 4 shared `nav.*` rows.
 
 ## Regions
 
@@ -44,7 +44,12 @@ Deck rows used: 45 screen-specific + the 4 shared `nav.*` rows.
 | C8 | Evidence | `classroom.evidence.title` | 156 | deck | ok |
 | C8 | {n} of {total} checks recorded | `classroom.evidence.count` | 157 | `computed:count(attempt_count > 0)` over `lesson.page.checks[]` | ok |
 | C8 | No checks recorded yet. | `classroom.evidence.empty` | 158 | deck | ok |
-| C8 | First try, no hints / Hinted / Answer shown | **GAP-17** | — | `attempt_summary.evidence_class` | **gap** |
+| C8 | First try, no hints | **GAP-17** | — | `field:attempt_summary.evidence_class` == `cold` | **gap** |
+| C8 | Hinted | **GAP-17** | — | `field:attempt_summary.evidence_class` == `hinted` | **gap** |
+| C8 | Answer shown — no longer independent | **GAP-17** | — | `field:attempt_summary.evidence_class` == `answer_shown` | **gap** |
+| C8 | Self-reported — not an independent check | **GAP-17** | — | `field:attempt_summary.evidence_class` == `self_reported` | **gap (decision)** |
+| C8 | Reported by a parent — a report, not a mark | **GAP-17** | — | `field:attempt_summary.evidence_class` == `parent_reported` | **gap (decision)** |
+| C8 | Opened by an override — no evidence recorded | **GAP-17** | — | `field:attempt_summary.evidence_class` == `override` | **gap (decision)** |
 | C8 | Next up: {next section} | `classroom.aside.next` | 159 | `field:library_item.next_step.label` | ok |
 | C8 | Ask the tutor | `classroom.aside.tutor` | 160 | deck | ok |
 | C10 | — (fox `read`/`think`/`cheer`, `aria-hidden`) | — | — | — | ok, no copy |
@@ -95,9 +100,14 @@ and the primary. Only the answer region differs — and that region is the one w
 - **GAP-17 — the evidence-class words.** CP-023 lines 45–46 require "first-try, hinted and
   answer-shown states stay visible", and `docs/EXPERIENCE-QUALITY-BAR.md` requires a visible
   integrity state ("First try, no hints" / "Hinted" / "Answer shown — no longer independent").
-  The deck's evidence rows are counts only (157, 158). The field exists:
+  The deck's evidence rows are counts only (157, 158). The field is
   `$defs.attempt_summary.properties.evidence_class`, and `lesson.page.attempts[]` carries
-  `attempt_summary`. Three rows are missing and they are the integrity claim the product is built on.
+  `attempt_summary`. Its enum is `contracts/vocabulary.v1.json:20`:
+  `cold | hinted | answer_shown | self_reported | parent_reported | override`. Only `cold` counts as
+  independent evidence and `override` grants access, never mastery, so **all six values need a row**:
+  the first three are the integrity claim the product is built on, and the last three are proposed
+  but marked **decision** because a maker must not word them. A row keyed to a value that is not in
+  the enum (such as `independent`) never matches and silently deletes the honesty state.
 - **GAP-18 — the body contradicts the one-primary rule.** CP-023 line 40 says "choosing an option is
   the one primary action"; SPEC §3.10 line 290 and §5.3 line 465 say **`Check answer` is the one
   primary**. If choosing an option submitted the check, `Check answer` would have no job. The deck

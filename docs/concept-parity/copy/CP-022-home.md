@@ -5,7 +5,7 @@ Spec: `SPEC-V3.md` §5.1 (lines 356–406), §3.8 (239–269), §3.10 (288), §3
 §3.12 (322–331).
 Deck: `COPY.md` §2 (lines 59–87), §1 (48–55).
 
-Deck rows used: 24 screen-specific + the 4 shared `nav.*` rows.
+Deck rows used: 25 screen-specific + the 4 shared `nav.*` rows.
 
 ## Regions
 

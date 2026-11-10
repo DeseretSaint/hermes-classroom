@@ -26,6 +26,11 @@ Because the body names no strings, the inventory below is the **shipped v2 inven
 surfaces it names, taken from `desktop/src`. Every row is a deck gap; the proposal set is `GAP-23`
 and `GAP-24` in `GAPS.md`.
 
+**These tables are a partial sample.** They cover the homework action, sheet, field card, recording
+and the two lists, plus the Game band and field journal, but not every literal in
+`95-studio.js:1900-2950` and `30-home.js:3650-4100`; `GAP-30` records the incomplete sweep and the
+follow-up. Do not author a `hw.*` / `game.*` deck section as if this file were the whole source.
+
 ## Homework (GM-008) — strings the shipped surface renders
 
 ### The lesson action and the sheet

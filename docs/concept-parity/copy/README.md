@@ -48,17 +48,21 @@ All machine-checked, reproducible from the docs tree:
 4. **Row-level gaps are what remain.** The deck and the spec agree with each other because they
    were written together; they do not cover every string a card body tells a maker to paint.
    That is the entire GAPS list.
+5. **The inventory is machine-checked.** `tests/test_cp_copy_inventory.py` resolves every `field:`
+   path in this directory against the frozen contracts, rejects a proposed source that names a
+   method or setter instead of a value, checks every `== <value>` predicate against its contract
+   enum, and requires a row for every member of every enum the inventory cites.
 
 ## Result
 
 | Card | Screen | Deck rows used (screen-specific; +4 shared nav) | Gaps | Conflicts | Verdict |
 |---|---|---|---|---|---|
 | CP-021 | Discover / Workshop (R-DISC) | 29 | 1 (`GAP-07`) | 3 (`GAP-08`, `GAP-09`, `GAP-10`) | shippable after 4 decisions |
-| CP-022 | Home (R-HOME) | 24 | 3 (`GAP-03`, `GAP-04`, `GAP-05`) | 1 (`GAP-06`) | shippable after 4 decisions |
-| CP-023 | Classroom (R-CLASS) | 45 | 7 (`GAP-11`–`GAP-17`) | 1 (`GAP-18`) | **not shippable** — 7 strings have no row |
-| CP-024 | Course home (R-MAP) | 30 | 3 (`GAP-19`, `GAP-20`, `GAP-22`) | 1 (`GAP-21`) | shippable after 4 decisions |
-| CP-025a | Homework + Game | 2 | 3 (`GAP-23`–`GAP-25`) | body defect (`GAP-26`) | **blocked** — deck has no section for these surfaces |
-| CP-025b | World Studio + Parent Studio | 0 | 2 (`GAP-27`, `GAP-28`) | body defect (`GAP-29`) | **blocked** — deck has no section for these surfaces |
+| CP-022 | Home (R-HOME) | 25 | 3 (`GAP-03`, `GAP-04`, `GAP-05`) | 1 (`GAP-06`) | shippable after 4 decisions |
+| CP-023 | Classroom (R-CLASS) | 46 | 7 (`GAP-11`–`GAP-17`) | 1 (`GAP-18`) | **not shippable** — 8 strings have no row (`GAP-17` covers all six `evidence_class` values) |
+| CP-024 | Course home (R-MAP) | 30 | 3 (`GAP-19`, `GAP-20`, `GAP-22`) | 1 clarify (`GAP-21`) | shippable after 4 decisions |
+| CP-025a | Homework + Game | 2 | 3 (`GAP-23`–`GAP-25`, plus `GAP-30` scope) | body defect (`GAP-26`) | **blocked** — deck has no section for these surfaces |
+| CP-025b | World Studio + Parent Studio | 0 | 2 (`GAP-27`, `GAP-28`, plus `GAP-30` scope) | body defect (`GAP-29`) | **blocked** — deck has no section for these surfaces |
 
 Shell-level rows (`GAP-01` settings sheet, `GAP-02` companion line) are needed by every screen that
 paints the rail or the companion.
@@ -75,7 +79,8 @@ Studio surfaces has no deck row. Those two cards cannot start until CP-001 gains
 ## Files
 
 - `CP-021-discover.md`, `CP-022-home.md`, `CP-023-classroom.md`, `CP-024-course-home.md`
-- `CP-025a-homework-game.md`, `CP-025b-studio.md` — each carries the shipped-string inventory that
-  the deck section would be built from, with `desktop/src` file:line citations.
+- `CP-025a-homework-game.md`, `CP-025b-studio.md` — each carries a **partial sample** of the shipped
+  strings the deck section would be built from, with `desktop/src` file:line citations. `GAP-30`
+  records that the sweep is incomplete; neither file is a licence to author the whole section.
 - `GAPS.md` — every gap as a proposed deck row, with the source form, the cap, and the card that
   needs it. Proposals only.

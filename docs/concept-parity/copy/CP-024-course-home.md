@@ -35,6 +35,7 @@ Deck rows used: 30 screen-specific + the 4 shared `nav.*` rows.
 | M9 | — (fox `point`, `aria-hidden`) | — | — | — | ok, no copy |
 | M9 | {displayName} · study companion | **GAP-02** | — | `pet.info` `displayName` | **gap (shell)** |
 | aside | Field Notes | **GAP-20** | — | — | **gap** |
+| M6 | Continue (the backend's own label, never hard-coded — GAP-21) | `course.next.label` | 202 | `field:library_item.next_step.label` | ok |
 
 ## States (SPEC §5.4 lines 572–581)
 
@@ -72,12 +73,14 @@ render as an empty course. R-MAP's state table (lines 572–581) has no offline 
 - **GAP-22 — no offline copy for the course home.** The deck writes offline rows for Home (85–87),
   Discover (117–119) and Classroom (171–173) but none for Course home, and the spec's R-MAP state
   table omits the state. Required by §3.12.
-- **GAP-21 — "One primary `Continue`" contradicts the spec's primary.** CP-024 line 38 says the one
-  primary is `Continue`; SPEC line 545 and §3.10 line 291 say the one primary is the backend's
-  `library_item.next_step.label` rendered as the filled plate, with `course.continue.title` only a
-  heading. The deck rows are right and the body is wrong. If the plate label happens to be
-  "Continue", nothing breaks; if it is "Resume section 3", a maker who followed the body would
-  replace the backend's own label with the fixed word and lose the real next step.
+- **GAP-21 — a hard-code rule, not a body defect.** CP-024 line 38 says "One primary `Continue`".
+  SPEC line 545 and §3.10 line 291 say the primary is the backend's `library_item.next_step.label`
+  rendered as the filled plate, with `course.continue.title` only a heading — and SPEC's own default
+  next action is written `Continue <section>` (the backend's own label), so a plate that reads
+  "Continue" is not a contradiction. The defect only appears if a maker **hard-codes** the word
+  `Continue` instead of rendering `course.next.label` (`field:library_item.next_step.label`, 202):
+  a learner whose backend offers "Resume section 3" would lose the real next step. No deck change;
+  the maker must not hard-code the label.
 
 ## Notes
 

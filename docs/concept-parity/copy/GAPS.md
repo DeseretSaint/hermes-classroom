@@ -9,6 +9,9 @@ the card that needs it. Rows marked **decision** are not mine to word — they n
 (`atlas`) or the deck owner (`CP-001`).
 
 Proposed ids follow the existing `<surface>.<part>` convention. Caps follow the deck's column.
+A `source` cell is written in the deck's own grammar — `deck`, `field:`, `computed:`, `pack:`,
+`art:` or `host:` — and `tests/test_cp_copy_inventory.py` resolves every `field:` path against the
+frozen contracts and every `== <value>` predicate against its enum.
 
 ---
 
@@ -37,7 +40,7 @@ SPEC §3.8 requires adjacent visible text; the canvas is `aria-hidden`.
 
 | proposed id | text | source | cap |
 |---|---|---|---|
-| `companion.line` | {name} · study companion | deck + `pet.info.displayName` | 48 |
+| `companion.line` | {name} · study companion | deck + `host:pet.info.displayName` | 48 |
 | `companion.none` | Your study companion | deck | 24 |
 
 Needed by: CP-022 (trailhead), CP-023 (path stop, lesson close), CP-024 (beside Continue).
@@ -127,7 +130,7 @@ surfaces cite the same row, or add `course.route.node.label` for the map and kee
 |---|---|---|---|
 | `classroom.check.answer_label` | Your answer | deck | 16 |
 | `classroom.check.selected` | Selected | deck | 12 |
-| `classroom.check.selection_summary` | Selected: {n}. {choice} | `computed` over the picked index + `check.get.stimulus.choices[]` | 60 |
+| `classroom.check.selection_summary` | Selected: {n}. {choice} | `computed:selection_summary` over `field:check.get.stimulus.choices[]` | 60 |
 | `classroom.check.selection_none` | Nothing selected yet. | deck | 24 |
 
 ### GAP-15 — the answer-region helper lines (SPEC lines 500, 502)
@@ -145,7 +148,7 @@ be the invented copy this card exists to prevent.
 
 | proposed id | text | source | cap |
 |---|---|---|---|
-| `classroom.game.level` | {level title} · level {n} | `field:engagement.read.level.title` + `engagement.read.level.level` | 32 |
+| `classroom.game.level` | {level title} · level {n} | `field:engagement.read.level.title` + `field:engagement.read.level.level` | 32 |
 
 Shipped v2 reads `Level 1 · Curious · cosmetic` (`desktop/src/30-home.js:3846-3848`). The deck says
 XP is "cosmetic" only in the token/`is_cosmetic` field; if the word "cosmetic" is kept it needs its
@@ -153,16 +156,32 @@ own row. Needed by CP-023 (Challenge card) and CP-025a (Game band).
 
 ### GAP-17 — the evidence-integrity words
 
+`lesson.page.attempts[]` is `$defs.attempt_summary`, whose `evidence_class` is
+`contracts/vocabulary.v1.json:20`:
+
+```
+cold | hinted | answer_shown | self_reported | parent_reported | override
+```
+
+The vocabulary's own rule is that **only `cold` counts as independent evidence** and `override`
+grants access, never mastery. `lesson.page.response.attempts[]` items are `$defs.attempt_summary`
+(`contracts/rpc.v24.json:2451-2456`), so the value path is that definition's `evidence_class`.
+All six values can reach a Classroom attempt row, so all six need a row — the first three from
+`docs/EXPERIENCE-QUALITY-BAR.md`, the last three marked **decision** because the honesty claim
+must not be worded by a maker.
+
 | proposed id | text | source | cap |
 |---|---|---|---|
-| `classroom.evidence.first` | First try, no hints | `field:lesson.page.attempts[].evidence_class` == `independent` | 24 |
-| `classroom.evidence.hinted` | Hinted | … == `hinted` | 12 |
-| `classroom.evidence.shown` | Answer shown — no longer independent | … == `answer_shown` | 48 |
+| `classroom.evidence.first` | First try, no hints | `field:attempt_summary.evidence_class` == `cold` | 24 |
+| `classroom.evidence.hinted` | Hinted | `field:attempt_summary.evidence_class` == `hinted` | 12 |
+| `classroom.evidence.shown` | Answer shown — no longer independent | `field:attempt_summary.evidence_class` == `answer_shown` | 48 |
+| `classroom.evidence.reported` | Self-reported — not an independent check | `field:attempt_summary.evidence_class` == `self_reported` | 48 |
+| `classroom.evidence.parent` | Reported by a parent — a report, not a mark | `field:attempt_summary.evidence_class` == `parent_reported` | 52 |
+| `classroom.evidence.overridden` | Opened by an override — no evidence recorded | `field:attempt_summary.evidence_class` == `override` | 52 |
 
 These are the product's integrity claim (`docs/EXPERIENCE-QUALITY-BAR.md`, and CP-023 lines 45–46).
-The enum values are `attempt_summary.evidence_class` and `evidence_event.evidence_class`.
-**CP-001 must confirm the enum names** before the rows are written; a row keyed to a guessed enum is
-worse than a gap.
+A surface that receives one of the last three must never render it as `cold`; if CP-001 declines
+the three proposals, they become a **blocked** gap for CP-023, not an implicit fallback.
 
 ### GAP-18 — body contradiction (not a new row)
 
@@ -191,11 +210,15 @@ amend SPEC §5.4 and add:
 | `course.notes.title` | Field Notes | deck | 16 |
 | `course.notes.action` | All field notes | deck | 20 |
 
-### GAP-21 — body contradiction (not a new row)
+### GAP-21 — a hard-code rule, not a body defect (no new row)
 
-CP-024 line 38 "One primary `Continue`" contradicts SPEC line 545 and §3.10 line 291: the primary is
-the backend's `library_item.next_step.label` on the filled plate; `course.continue.title` is a
-heading. Correct the body.
+CP-024 line 38 says "One primary `Continue`". SPEC line 545 and §3.10 line 291 say the primary is
+the backend's `library_item.next_step.label` on the filled plate, and SPEC's own default next action
+is written `Continue <section>` (the backend's own label) — so a plate that reads "Continue" is not
+a contradiction. The defect only appears if a maker **hard-codes** the word `Continue` instead of
+rendering `course.next.label` (`field:library_item.next_step.label`, 202): a learner whose backend
+offers "Resume section 3" would lose the real next step. No deck change; the maker must not
+hard-code the label.
 
 ### GAP-22 — the missing offline state
 
@@ -246,9 +269,9 @@ table, not only this subset.)
 | proposed id | text | source | cap |
 |---|---|---|---|
 | `game.band.label` | Game | deck | 8 |
-| `game.level` | {level title} · level {n} | `engagement.read.level` | 32 |
-| `game.progress` | Game progress | `engagement.read.progress.label` (const) | 16 |
-| `game.progress.steps` | {done} of {assigned} steps | `computed` over `progress.completed_steps` / `assigned_steps` | 24 |
+| `game.level` | {level title} · level {n} | `field:engagement.read.level` | 32 |
+| `game.progress` | Game progress | `field:engagement.read.progress.label` | 16 |
+| `game.progress.steps` | {done} of {assigned} steps | `computed:progress_fraction` over `field:engagement.read.progress.completed_steps` + `field:engagement.read.progress.assigned_steps` | 24 |
 | `game.progress.none` | No steps assigned yet | deck | 24 |
 | `game.play_only` | Play progress, not evidence. | deck | 28 |
 | `game.event.lesson_step` | Lesson step | deck | 14 |
@@ -257,9 +280,10 @@ table, not only this subset.)
 | `game.event.homework` | Homework done | deck | 16 |
 | `game.event.returned` | Came back | deck | 12 |
 | `game.journal.title` | Field journal | deck | 16 |
-| `game.journal.count` | {earned} of {total} sections stamped by recorded evidence. | `computed` over `course.outline.objectives[].independent` | 60 |
+| `game.journal.count` | {earned} of {total} sections stamped by recorded evidence. | `computed:count(objectives[].independent)` over `field:course.outline.objectives[].independent` | 60 |
 | `game.journal.empty` | No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page. | deck | 100 |
-| `game.journal.stamped` | Stamped / `game.journal.not_started` Not started | deck | 8 |
+| `game.journal.stamped` | Stamped | deck | 8 |
+| `game.journal.not_started` | Not started | deck | 12 |
 
 The five `game.event.*` rows map the `recent_events[].action_kind` enum (`lesson_step`,
 `check_submitted`, `review`, `homework_completed`, `returned`) — an enum→copy map with no row today.
@@ -285,7 +309,8 @@ Full inventory: `CP-025b-studio.md`. Minimum load-bearing rows:
 
 | proposed id | text (as shipped) | source | cap |
 |---|---|---|---|
-| `world.mode.game` / `world.mode.textbook` | Game / Textbook | `course.mode` read | 12 |
+| `world.mode.game` | Game | `field:world.read.presentation_mode` == `game` | 12 |
+| `world.mode.textbook` | Textbook | `field:world.read.presentation_mode` == `textbook` | 12 |
 | `world.open_studio` | Open World Studio | deck | 20 |
 | `world.review` | Review the world | deck | 20 |
 | `world.not_approved` | This course reads as Textbook until its world is approved. Your lessons and plan are unchanged. | deck | 100 |
@@ -295,11 +320,17 @@ Full inventory: `CP-025b-studio.md`. Minimum load-bearing rows:
 | `world.missing_plates` | Some plates are missing | deck | 24 |
 | `world.missing_plates.body` | Nothing is approved until every role exists, and no placeholder art is saved. | deck | 90 |
 | `world.job_failed` | The world job did not finish. | deck | 32 |
-| `world.direction.mood` etc. | Mood / Who it is for / Motifs to include / Motifs to avoid | deck | 20 |
+| `world.direction.mood` | Mood | deck | 20 |
+| `world.direction.audience` | Who it is for | deck | 20 |
+| `world.direction.include` | Motifs to include | deck | 20 |
+| `world.direction.avoid` | Motifs to avoid | deck | 20 |
 
 The eight world archetype names and descriptions (`97-world.js:27-45`) are a fixed enum→prose map and
 need their own table; CP-001 owns that wording, because the descriptions make a claim about what the
 art is.
+
+`world.read.presentation_mode` is the read; `course.mode.set` is the setter and is never a render
+source. A stored NULL reads as Textbook (`world.read` response description, `contracts/rpc.v24.json`).
 
 ### GAP-28 — no Parent Studio section
 
@@ -314,17 +345,61 @@ art is.
 | `studio.entrance.homework` | Homework | deck | 12 |
 | `studio.child_safe` | Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks | deck | 100 |
 | `studio.child_chat` | No child account and no child chat: the adult prepares and prints. | deck | 64 |
-| `studio.session` | · Session · {n} min | `computed` | 24 |
-| `studio.page.cover` / `.parent_guide` / `.learner_page` / `.answer_guide` | Cover / Parent guide / Learner page / Answer guide | deck | 16 |
+| `studio.operator` | You are the operator: Coursebook prepares the material for you to teach, and there is no child chat, no child persona and no grading of the child. | deck | 160 |
+| `studio.session` | · Session · {n} min | `computed:session_minutes` | 24 |
+| `studio.view` | Studio view | deck | 16 |
+| `studio.view.brief` | Brief | deck | 12 |
+| `studio.view.plan` | Plan | deck | 12 |
+| `studio.view.pages` | Pages | deck | 12 |
+| `studio.view.export` | Export | deck | 12 |
+| `studio.view.reflection` | Reflection | deck | 12 |
+| `studio.all_courses` | All parent courses | deck | 20 |
+| `studio.preparation` | Parent preparation | deck | 20 |
+| `studio.export_ready` | Export ready | deck | 16 |
+| `studio.parent_view` | Parent view · what your child did and what you observed, never points, levels or rankings. | deck | 110 |
+| `studio.revision` | You are the operator · revision {n} | `computed:revision` | 40 |
+| `studio.page.cover` | Cover | deck | 16 |
+| `studio.page.parent_guide` | Parent guide | deck | 16 |
+| `studio.page.learner_page` | Learner page | deck | 16 |
+| `studio.page.answer_guide` | Answer guide | deck | 16 |
 | `studio.page.answer_back` | Parent only. Keep this page back. | deck | 32 |
-| `studio.pack.draft` / `.approved` / `.exported` / `.superseded` | Draft / Approved / Exported / Superseded | `takehome.read.state` | 12 |
-| `studio.pack.approve_hint` | Approve the exact pages above before exporting. | deck | 48 |
+| `studio.approve` | Approve these pages | deck | 24 |
+| `studio.approve_hint` | Approve the exact pages above before exporting. | deck | 48 |
+| `studio.export_pdf` | Export the print-ready PDF | deck | 32 |
+| `studio.save_draft` | Save this draft | deck | 20 |
+| `studio.previewed` | Previewed pages: {n} · preview hash: {hash} | `computed:preview_summary` | 80 |
+| `studio.pack.draft` | Draft | `field:takehome.read.pack.state` == `draft` | 12 |
+| `studio.pack.previewed` | Previewed | `field:takehome.read.pack.state` == `previewed` | 12 |
+| `studio.pack.approved` | Approved | `field:takehome.read.pack.state` == `approved` | 12 |
+| `studio.pack.exported` | Exported | `field:takehome.read.pack.state` == `exported` | 12 |
+| `studio.pack.superseded` | Superseded | `field:takehome.read.pack.state` == `superseded` | 12 |
+| `studio.refusal.pack_not_approved` | The plan is not approved. | deck | 40 |
+| `studio.refusal.course_pack_backed` | This course came from an imported pack. Use Library → Export pack for it. | deck | 80 |
+| `studio.refusal.minima` | The generated lessons do not meet the pack's teaching minima yet. | deck | 80 |
+| `studio.refusal.write_failed` | The files could not be written. Nothing was exported. | deck | 60 |
+| `studio.print_font` | The print font cannot draw every character in this lesson, so no PDF was written. Nothing was corrupted. | deck | 120 |
+| `studio.leave.title` | Unsaved section changes | deck | 24 |
+| `studio.leave.body` | The section editor has unsaved changes. Leaving discards them and leaves storage exactly as it is now. | deck | 120 |
+| `studio.leave.discard` | Discard and leave | deck | 20 |
+| `studio.leave.keep` | Keep editing | deck | 16 |
 
-(+ the take-home preview, export and source-picker rows in the inventory table.)
+(+ the take-home preview, export, source-picker and detail-chrome rows in the inventory table.)
 
 ### GAP-29 — card body corruption
 
 `cards/CP-025b.md` lines 37–55 are CP-021's body. Repair before dispatch.
+
+### GAP-30 — the shipped-string inventories are a partial sample
+
+`CP-025a-homework-game.md` and `CP-025b-studio.md` cite the visible strings of the v2 surfaces they
+replace, but the **whole** of `desktop/src/95-studio.js` (6931 lines), `97-world.js`,
+`90-course.js:880-1000` and `30-home.js:3650-4100` was not swept: the tables cover the named
+regions — the export refusals, the print-font refusal, the approval/print flow, the take-home source
+picker, the Parent Studio detail chrome, the leave guard and the adult-only claims — and a complete
+literal sweep is still outstanding. **Decision for CP-001:** author `hw.*` / `game.*` / `world.*` /
+`studio.*` from the named regions now, and keep a follow-up sweep card open, or fund the full sweep
+before authoring. Do not treat these tables as the complete shipped inventory. A follow-up card is
+requested in this card's review summary.
 
 ---
 
@@ -334,13 +409,13 @@ art is.
 2. `GAP-03`, `GAP-07`, `GAP-11`, `GAP-19` — the four missing card/node titles, and the one pack-title
    source decision in `GAP-07`.
 3. `GAP-12`–`GAP-17` — the Classroom answer surface and integrity words; CP-023 cannot ship without
-   them.
+   them. `GAP-17` needs all six `evidence_class` values, not three.
 4. `GAP-22` — the missing offline state; one row set, three strings.
 5. `GAP-23`, `GAP-24`, `GAP-27`, `GAP-28` — the two missing deck sections; CP-025a and CP-025b stay
-   blocked until these land.
+   blocked until these land. `GAP-30` says how complete the source tables are.
 6. Body corrections and card-body repairs (`GAP-06`, `GAP-08`–`GAP-10`, `GAP-18`, `GAP-21`,
    `GAP-26`, `GAP-29`) are `hermes kanban edit` work on the card bodies, not deck work.
 
 Owner decisions required (not wordable by the deck author alone): `GAP-04`, `GAP-05`, `GAP-07`
-(source), `GAP-15` (three sentences), `GAP-17` (enum names), `GAP-20`, `GAP-22` (body text),
-`GAP-25` (empty vs unavailable).
+(source), `GAP-15` (three sentences), `GAP-17` (the three non-cold integrity words), `GAP-20`,
+`GAP-22` (body text), `GAP-25` (empty vs unavailable), `GAP-30` (sweep scope).
