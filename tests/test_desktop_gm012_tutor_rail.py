@@ -408,6 +408,35 @@ class TutorRailStatesTest(unittest.TestCase):
         self.assertIn("'lesson.assist'", pane)
         self.assertIn("kind: 'hint_request'", pane)
 
+    def test_lesson_prose_is_selectable_in_a_non_selecting_host(self) -> None:
+        # The Desktop session surface sets `user-select: none` on its chrome, and the lesson is
+        # rendered inside it. Without an explicit `text` the learner cannot select a word at all,
+        # so the pill can never fire — the rail's whole selection path is dead in the real window.
+        # A render harness has no host CSS, so this is asserted on the shipped source.
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        for label, signature in (
+            ("the reading column", "jsx('div', {\n            'data-cb-reading-column'"),
+            ("the textbook block", "function TextbookBlock("),
+            ("the guided block", "function GuidedBlock("),
+        ):
+            if signature.startswith("function"):
+                body = function_body(source, signature)
+            else:
+                body = source[source.index(signature) : source.index(signature) + 700]
+            self.assertIn("userSelect: 'text'", body, label)
+            self.assertIn("WebkitUserSelect: 'text'", body, label)
+        # Every authored block is a selection target, including the procedure list items.
+        self.assertGreaterEqual(
+            source.count("data-cb-block'"),
+            3,
+            "block renderers changed shape — re-check the selectable surface",
+        )
+        self.assertGreaterEqual(
+            source.count("userSelect: 'text'"),
+            4,
+            "a block renderer lost its selectable prose",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

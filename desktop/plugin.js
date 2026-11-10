@@ -15591,7 +15591,9 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, header 
         children: [
           jsx('div', {
             'data-cb-reading-column': '',
-            style: { minWidth: 0, maxWidth: wide ? CB_MEASURE : '100%' },
+            // The host chrome sets `user-select: none` on the session surface; the lesson prose is
+            // the one place a learner must be able to select a word deliberately (tutor pill).
+            style: { minWidth: 0, maxWidth: wide ? CB_MEASURE : '100%', userSelect: 'text', WebkitUserSelect: 'text' },
             children: [
               tutorSelection ? jsx(TutorSelectionPill, { context: tutorSelection }) : null,
               children
@@ -16744,7 +16746,9 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pr
       gap: '0.5rem',
       maxWidth: CB_MEASURE,
       padding: lede ? '0 0 1.35rem' : '1.35rem 0',
-      borderTop: lede ? 'none' : '1px solid var(--cb-rule)'
+      borderTop: lede ? 'none' : '1px solid var(--cb-rule)',
+      userSelect: 'text',
+      WebkitUserSelect: 'text'
     },
     children: [
       jsxs('div', {
@@ -16793,7 +16797,9 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       gap: '0.75rem',
       maxWidth: CB_MEASURE,
       paddingLeft: phone ? 0 : '2.75rem',
-      position: 'relative'
+      position: 'relative',
+      userSelect: 'text',
+      WebkitUserSelect: 'text'
     },
     children: [
       // The step margin: a 28px node and a 1px connector in the Guided hue. At narrow widths the
@@ -17534,7 +17540,9 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
       gap: '0.7rem',
       padding: '0.7rem 0 0.7rem 0.85rem',
       borderLeft: '2px solid var(--cb-rule)',
-      listStyle: 'none'
+      listStyle: 'none',
+      userSelect: 'text',
+      WebkitUserSelect: 'text'
     },
     children: [
       jsx('span', {
