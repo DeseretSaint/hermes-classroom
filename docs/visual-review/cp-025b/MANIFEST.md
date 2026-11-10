@@ -14,7 +14,7 @@ faked, re-used or relabelled.
 | --- | --- |
 | `desktop/src/97-world.js` | World Studio, its frame, the mode badge, world plates, the Textbook→Game dialog and the course-world hero now paint from `contracts/cb.tokens.v3.json` only. All 13 `CbAction`s became `PillAction` (`primary`/`quiet`); `sdk.Button`, `sdk.EmptyState`, `sdk.ErrorState` and `sdk.Loader` are gone from the surface; the error state's 2 px left bar, the provider and partial 3 px top bars, the uppercase kicker above the `h2` and the 2 px radii are gone. |
 | `desktop/src/95-studio.js` | Parent Studio paints from the same contract (no `--cb-` v2 token, no `CB_TYPE`/`CB_SANS`/`CB_SERIF`). The three entrances are an authored v3 tab strip (`role="tab"`, `aria-selected`, 3 px terracotta marker) instead of the host `sdk.SegmentedControl`; the view switcher is route-relative tabs (was a window `min-[47.5rem]` breakpoint); the take-home "who holds this copy" choice is a labelled radio group; the leave-guard and plan-reject left bars became paper cards; the take-home proof no longer encodes page role as a 3 px left border. |
-| `tests/test_cp_025b_v3_studio.py` | 17 new tests: token/type/paint gates on both segments, no decorative bars or kickers, one primary per World Studio state (rendered), the concept boards as paper cards, the brief never rendered as UI copy, the entrance tabs and view switcher, no game chrome in Parent Studio, and the adult-only copy. |
+| `tests/test_cp_025b_v3_studio.py` | 19 new tests: token/type/paint gates on both segments, no decorative bars or kickers, one primary per World Studio state (rendered), the concept boards as paper cards, the brief never rendered as UI copy, the entrance tabs and view switcher, no game chrome in Parent Studio, and the adult-only copy. |
 | `audit/visual/m4-visual/audit.json` | regenerated with `python3 scripts/m4v-audit.py` because the shipped module sha changed (the pin is a sha, not a claim about which surface moved). |
 
 ## Not changed, by file ownership
@@ -38,8 +38,8 @@ reported, not made:
 
 | check | result |
 | --- | --- |
-| `python3 scripts/build_plugin.py` | wrote `desktop/plugin.js` from 20 segments; module sha256 `fd05777522d27f6869dd0a5f5a95a8d21996b6a44a90f1e6e73057e583cb309c` |
-| `python3 -m unittest tests.test_cp_025b_v3_studio` | 18 tests, OK |
+| `python3 scripts/build_plugin.py` | wrote `desktop/plugin.js` from 20 segments; module sha256 `d4f0eeabb556800851cd94e0f04e28424ca95d38bd4a9b0a975cf38380ae21b3` |
+| `python3 -m unittest tests.test_cp_025b_v3_studio` | 19 tests, OK |
 | `python3 -m unittest tests.test_plugin_build tests.test_desktop_tokens tests.test_desktop_tokens_v3 tests.test_v3_primitives tests.test_v3_scope` | OK |
 | `python3 -m unittest tests.test_desktop_gm004_world tests.test_desktop_h94_single_primary tests.test_desktop_gm006_parent_takehome tests.test_desktop_h156_parent_child tests.test_desktop_contracts tests.test_desktop_h194_fine_tune_ui` | OK — every GM-004 world marker, the H-94 one-primary count and the H-156 adult-only copy still hold |
 | `bash scripts/validate-plugin.sh` | release gate 4/4 on the branch tip |
@@ -53,12 +53,30 @@ Commits on `wt/cp-025b-adopt`:
 | `706d62b` | M4 audit re-pinned on the first rebuild |
 | `197eec5` | this packet |
 | `1ca0576` | the sheet-name fix (see below) and the audit re-pinned again |
+| `a398744` | round-1 review fix: the generating state names itself once, and the rebuilt module |
+| `4a0924b` | M4 audit re-pinned on the rebuilt module (15 PASS) |
 
 One defect found and fixed while reviewing the diff: `aria-labelledby="cb-world-studio-title"`
 pointed at an `h2` that only the body head rendered, so the read-failure, unsupported and loading
 states opened a modal dialog with no accessible name. `WorldStudioFrame` now renders that one `h2`
 when the body does not, and `test_the_sheet_is_named_in_the_states_that_skip_the_body_head` asserts
 it in all three states.
+
+### Review round 1 (quill, artifact lens) — the blocking defect, fixed
+
+`desktop/src/97-world.js:928-939` printed the state word twice in the two generating states:
+replacing `sdk.Loader` (*Working on the world*) with `cbWorldStateWord(state)` left the second
+line's state-word fallback in place, so a job with no `progress.message` rendered
+`Choosing directions` / `Choosing directions — you can leave this open or cancel…`.
+
+The state word is now the headline, and only a *different* `job.progress.message` becomes the detail
+under it; when the job has reported none, the second line carries the sentence alone. No primitive
+or token change. `test_the_generating_state_names_itself_once` slices the `data-cb-world-progress`
+block for `concepts_generating` and `kit_generating`, asserts the state word occurs exactly once
+inside it, and asserts both clauses of the sentence survive. Non-vacuity checked: against the
+pre-fix module (`3544ce8`) the same test fails `2 != 1` in both states; against the fixed module it
+passes. A progress message that repeats the headline is dropped the same way, so the guard does not
+depend on the backend's message never matching the state word.
 
 
 ## The cells this card still owes (deferred)
