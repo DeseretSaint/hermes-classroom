@@ -1,0 +1,37 @@
+test_brief_patch_cannot_reclassify_a_technical_course (tests.test_world.WorldFailureAndModeTest.test_brief_patch_cannot_reclassify_a_technical_course) ... ok
+test_concept_failure_leaves_named_terminal_state (tests.test_world.WorldFailureAndModeTest.test_concept_failure_leaves_named_terminal_state) ... ok
+test_course_subject_text_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_course_subject_text_cannot_name_numbers_or_answer_content) ... ok
+test_default_grammar_patch_cannot_smuggle_foreign_motifs (tests.test_world.WorldFailureAndModeTest.test_default_grammar_patch_cannot_smuggle_foreign_motifs) ... ok
+test_forbidden_patch_must_be_a_list (tests.test_world.WorldFailureAndModeTest.test_forbidden_patch_must_be_a_list) ... ok
+test_kit_requires_an_approved_style (tests.test_world.WorldFailureAndModeTest.test_kit_requires_an_approved_style) ... ok
+test_level_patch_changes_the_plate_or_is_refused (tests.test_world.WorldFailureAndModeTest.test_level_patch_changes_the_plate_or_is_refused) ... ok
+test_partial_world_failure_names_missing_roles (tests.test_world.WorldFailureAndModeTest.test_partial_world_failure_names_missing_roles) ... ok
+test_presentation_motifs_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_numbers_or_answer_content) ... ok
+test_presentation_text_cannot_name_numbers_or_answer_content (tests.test_world.WorldFailureAndModeTest.test_presentation_text_cannot_name_numbers_or_answer_content) ... ok
+test_technical_world_never_carries_torque_or_sequence (tests.test_world.WorldFailureAndModeTest.test_technical_world_never_carries_torque_or_sequence) ... ok
+test_technical_world_rejects_decorative_motif_patch (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_decorative_motif_patch) ... ok
+test_technical_world_rejects_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_decorative_motifs) ... ok
+test_technical_world_rejects_paraphrased_scene_text (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_paraphrased_scene_text) ... ok
+test_technical_world_rejects_scene_text_in_tone_or_audience (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_scene_text_in_tone_or_audience) ... ok
+test_technical_world_rejects_two_paraphrased_decorative_motifs (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_two_paraphrased_decorative_motifs) ... ok
+test_textbook_generates_no_world_job (tests.test_world.WorldFailureAndModeTest.test_textbook_generates_no_world_job) ... ok
+test_trades_course_derives_service_safety_from_grammar (tests.test_world.WorldFailureAndModeTest.test_trades_course_derives_service_safety_from_grammar) ... ok
+test_world_approval_hash_fence (tests.test_world.WorldFailureAndModeTest.test_world_approval_hash_fence) ... ok
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldFailureAndModeTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_derived_objective_titles_are_not_presentation_fenced (tests.test_world.WorldMediaJobTest.test_derived_objective_titles_are_not_presentation_fenced) ... ok
+test_presentation_fields_reach_the_prompt (tests.test_world.WorldMediaJobTest.test_presentation_fields_reach_the_prompt) ... ok
+test_world_cache_prevents_duplicate_spend (tests.test_world.WorldMediaJobTest.test_world_cache_prevents_duplicate_spend) ... ok
+test_world_forbidden_changes_cache_identity (tests.test_world.WorldMediaJobTest.test_world_forbidden_changes_cache_identity) ... ok
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldMediaJobTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_head_gasket_never_field_atlas (tests.test_world.WorldPolicyTest.test_head_gasket_never_field_atlas) ... ok
+test_world_grammar_deterministic (tests.test_world.WorldPolicyTest.test_world_grammar_deterministic) ... ok
+test_world_style_swap_rejects_generic_art (tests.test_world.WorldPolicyTest.test_world_style_swap_rejects_generic_art) ... ok
+test_trades_world_keeps_workshop_negatives (tests.test_world.WorldPromptTest.test_trades_world_keeps_workshop_negatives) ... ok
+test_workshop_section_prompts_have_no_procedure_title (tests.test_world.WorldPromptTest.test_workshop_section_prompts_have_no_procedure_title) ... ok
+test_world_prompts_are_textless (tests.test_world.WorldPromptTest.test_world_prompts_are_textless) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 17.881s
+
+OK
+exit=0

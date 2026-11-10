@@ -1,0 +1,203 @@
+test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) ... 
+  test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='clean') ... FAIL
+  test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='disconnect') ... FAIL
+  test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='refill') ... FAIL
+  test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='break') ... FAIL
+  test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='polish') ... FAIL
+test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) ... FAIL
+test_title_or_goal_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_title_or_goal_cannot_name_a_frozen_procedure_verb) ... FAIL
+test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) ... 
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:clean') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:disconnect') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:refill') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:break') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:polish') ... FAIL
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='clean')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1653, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"m1-frozen-verb-{verb}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='disconnect')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1653, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"m1-frozen-verb-{verb}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='refill')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1653, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"m1-frozen-verb-{verb}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='break')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1653, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"m1-frozen-verb-{verb}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb) (verb='polish')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1653, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"m1-frozen-verb-{verb}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_frozen_procedure_verb)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1672, in test_presentation_motifs_cannot_name_a_frozen_procedure_verb
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 5 != 0
+
+======================================================================
+FAIL: test_title_or_goal_cannot_name_a_frozen_procedure_verb (tests.test_world.WorldFailureAndModeTest.test_title_or_goal_cannot_name_a_frozen_procedure_verb)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1735, in test_title_or_goal_cannot_name_a_frozen_procedure_verb
+    self.assertNotIn("clean the head", lowered)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'clean the head' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: clean the head. audience: adult learner. tone: practical, calm, competent. subject-specific motifs: service bay, car on a lift, tool wall, bench light. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light; as authored. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art. direction: authored palette, a single soft daylight source.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:clean')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1981, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'clean the component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: clean the component — the learner will clean the component. audience: clean the component. tone: clean the component. subject-specific motifs: clean the component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no clean the component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:disconnect')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1981, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'disconnect the component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: disconnect the component — the learner will disconnect the component. audience: disconnect the component. tone: disconnect the component. subject-specific motifs: disconnect the component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no disconnect the component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:refill')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1981, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'refill the component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: refill the component — the learner will refill the component. audience: refill the component. tone: refill the component. subject-specific motifs: refill the component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no refill the component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:break')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1981, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'break the component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: break the component — the learner will break the component. audience: break the component. tone: break the component. subject-specific motifs: break the component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no break the component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='procedure:polish')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1981, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'polish the component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: polish the component — the learner will polish the component. audience: polish the component. tone: polish the component. subject-specific motifs: polish the component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no polish the component.'
+
+----------------------------------------------------------------------
+Ran 3 tests in 14.720s
+
+FAILED (failures=12)
+exit=1
