@@ -1,0 +1,109 @@
+{
+  "card": "CP-012",
+  "what_this_is": "A record of the vision passes actually run on the A3 files, in order, with what each pass reported. A vision read is evidence, never a verification: every geometric, colour, hash and retention claim is taken from scripts/cp012-cover-accept.py, scripts/cp012-motif-map.py and scripts/cp012-provenance.py, which measure the bytes.",
+  "round_2_status": "The round-2 art was generated and measured, but NO vision pass on it exists. Every attempt returned HTTP 429 'model temporarily at capacity upstream' (three attempts: the three masters in one frame, the three 4:5 crops in one frame, and the motif map). Nothing in this packet is a round-2 vision claim: the motif zones were placed from a measured pigment/density map and the reviewer should verify them on audit/cp012-covers/motif-map.png rather than take a label on trust.",
+  "passes": [
+    {
+      "id": "V1",
+      "round": 1,
+      "superseded": true,
+      "target": "audit/cp012-covers/raw/r1-montage.png (three 1024x576 round-1 raws side by side)",
+      "asked": "objects seen; any lettering/number/label; light direction; flat gouache on warm paper; defects",
+      "reported": "Japanese: lantern, noren, counter, cup with steam, two stools. Parent: jug, bowl with spoon, two oranges, plum cloth, wooden board. Technical: open book, stack of papers, brown parcel, wooden desk. No lettering in any panel; upper-left light in all three; flat gouache on warm paper; no gradient, shadow or border.",
+      "verdict": "round-1 raws admitted to prep; art superseded in round 2"
+    },
+    {
+      "id": "V2",
+      "round": 1,
+      "superseded": true,
+      "target": "the three round-1 tempered masters",
+      "asked": "one kit: paper, saturation family, line weight, light; any plate muddy or synthetic",
+      "reported": "Consistent warm ivory paper, muted earthy saturation family, consistent dark-brown outline weight, upper-left light in all three. The middle plate's lavender cloth is the only slightly synthetic hue and is a small accent.",
+      "verdict": "the phrase 'slightly synthetic hue' was the first sighting of the defect the measurement later proved: 7.08 % of that plate was plum-hued"
+    },
+    {
+      "id": "V3",
+      "round": 1,
+      "superseded": true,
+      "target": "parent-master-1200x800.png (round 1, full resolution)",
+      "asked": "what the bright green is; numbers/ticks on the jug; palette; where the form sits",
+      "reported": "Green is the orange stems only. The jug is blank: no graduations, numbers or ticks.",
+      "verdict": "no measurement claim in art"
+    },
+    {
+      "id": "V4",
+      "round": 1,
+      "superseded": true,
+      "target": "the three round-1 masters after the 97,78,100 temper",
+      "asked": "is any plate too muddy, or still synthetic in hue",
+      "reported": "No plate muddy; muted earthy palette with the oranges now in the ochre family; the lavender cloth is the only small accent.",
+      "verdict": "the second sighting of the plum defect; the round-1 acceptance script widened a HUE_PLUM allowance to admit it instead of correcting it"
+    },
+    {
+      "id": "V5",
+      "round": 1,
+      "superseded": true,
+      "retracted": true,
+      "target": "the three round-1 4:5 crops",
+      "asked": "does each crop keep the key motifs without an awkward cut",
+      "reported": "Japanese keeps the cup and the counter, cuts only frame elements. Parent keeps jug and bowl; the right orange and the cloth bleed. Technical keeps the open book; the parcel and stack bleed. All legible.",
+      "verdict": "RETRACTED. The Japanese crop cut the lantern to 46 of its 256 ink columns (18 %); the lantern is the world's place mark, not a frame element. The pass described its own frame and missed the subject. Round 2 replaces this with a per-motif pixel retention check."
+    },
+    {
+      "id": "V6",
+      "round": 1,
+      "superseded": true,
+      "target": "the leftmost 200 px of each round-1 master",
+      "asked": "does an object touch or get clipped by the left edge",
+      "reported": "Japanese: nothing touches the left edge. Parent and technical: the table plane bleeds to the left edge in the lower third, but no subject object is clipped.",
+      "verdict": "the left-4 % clearance rule belongs to the H-197 Press Plate lane and is not asserted for a painted plate; the round-1 acceptance docstring advertised a check for it that was never implemented, and that claim is removed in round 2"
+    },
+    {
+      "id": "V7",
+      "round": 2,
+      "failed": true,
+      "target": "the three square round-2 raws",
+      "error": "HTTP 429, model temporarily at capacity upstream",
+      "verdict": "no report; not retried into a claim"
+    },
+    {
+      "id": "V8",
+      "round": 2,
+      "failed": true,
+      "target": "the three shipped 4:5 crops",
+      "error": "HTTP 429, model temporarily at capacity upstream",
+      "verdict": "no report; the 4:5 question is answered by measurement (audit/cp012-covers/motif-retention.json)"
+    },
+    {
+      "id": "V9",
+      "round": 2,
+      "failed": true,
+      "target": "audit/cp012-covers/motif-map.png",
+      "error": "HTTP 429, model temporarily at capacity upstream",
+      "verdict": "no report; the motif zones are therefore declared as measured regions and drawn for the reviewer to check"
+    }
+  ],
+  "refutations": [
+    {
+      "claim": "Round-1 V2/V4: the contours are bold black outlines.",
+      "measurement": "scripts/cp012-cover-accept.py counts near-black pixels: round-1 japanese 0.017 %, parent 0.000 %, technical 0.002 % of the frame; round 2 measures 0.000 %, 0.041 %, 0.025 %.",
+      "conclusion": "The contour is warm brown #3a2318, not black. The pixel count is the record."
+    },
+    {
+      "claim": "Round-2 exploratory pass: 'each painting has a dark brown rectangular border and the paper outside each border is lighter cream than the paper inside'.",
+      "measurement": "Ink share of the plate's own left and right columns (x 200-206 and x 994-1000 on the japanese plate, equivalent columns on the other two) is 0.000; the paper patch inside the plate and outside it differ by at most 3 RGB units, and the shipped corner measures exactly #f7f1e4.",
+      "conclusion": "There is no painted border and no paper step. The pass hallucinated a frame; nothing was changed on its word, and the negatives already forbade a border."
+    },
+    {
+      "claim": "Round-1 V5: the Japanese 4:5 crop 'cuts only frame elements'.",
+      "measurement": "The lantern's ink ran x 71-326 in round 1; the centre crop window is x 280-920, so 82 % of the lantern fell outside it and the survivor was cut at the frame edge. Round 2 measures 100 % retention for every declared motif on all three plates.",
+      "conclusion": "The claim was false and is retracted; it is why the round-2 pipeline fits the whole painted ink box into the crop window."
+    }
+  ],
+  "not_claimed": [
+    "no round-2 vision pass exists; the vision provider returned 429 on every attempt",
+    "no human illustrator, native-speaker or colour-professional review exists",
+    "no claim that these plates read at 64 px; only the 240 px card cell was inspected",
+    "no owner approval: the contact sheet is submitted unsigned"
+  ]
+}

@@ -1,4 +1,10 @@
-# Catalog entry for Coursebook. NOT SUBMITTED.
+# Catalog entry for Coursebook — the in-repo review draft.
+#
+# The submitted entry lives in the catalog repository: `plugin-catalog/coursebook.yaml` in
+# NousResearch/hermes-agent#152920, an open draft pull request, pinned to `3278bae` on `master` of
+# DeseretSaint/hermes-classroom with `docs_url` at the README's `#install-locally` heading. The
+# catalog gate reads that file, not this one. This copy is kept so the fields stay reviewable here,
+# and its `sha` is 280 commits behind the pull request's pin.
 #
 # `sha` is `61cdb03`, the H-212 docs commit (board card t_48394407) on top of the frozen release
 # tree `b9f4a19`. The pin is the commit whose documents and images this entry quotes; an entry
@@ -14,8 +20,9 @@
 # repaired exactly this class of defect once (all seven URLs 404ed behind a pin at a commit that was
 # never on the remote), so the check is recorded rather than assumed; re-run it if the pin moves.
 #
-# The entry is still withheld: gates 7, 9, 12, 13, 14 and 15 of docs/SUBMISSION.md are open
-# (live drive of this commit, demo scenarios, license, publication sign-off). CB-QA-09 is not a
+# The entry is still withheld from the shipped catalog: the pull request above is a draft and
+# unmerged, and gates 7, 12, 13, 14 and 15 of docs/SUBMISSION.md are open (live drive of this
+# commit, catalog merge, demo scenarios, publication, contest form). CB-QA-09 is not a
 # plugin defect; Atlas reclassified it as P3-operational (docs/REVIEW_CB017-FINAL.md §3.1).
 
 name: coursebook

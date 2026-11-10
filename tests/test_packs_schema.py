@@ -27,13 +27,12 @@ class BundledManifestTests(unittest.TestCase):
                 packs.validate_minima(manifest)
                 packs.verify_content_hash(manifest)
                 self.assertEqual(manifest["contract"], "cb.pack")
-                # H-186/H-197: the two demo packs that carry declared assets are cb.pack v2; the
-                # parent fixture stays v1 because it is the compatibility gate.
-                self.assertEqual(
-                    manifest["contract_version"], 1 if directory == PARENT else 2
-                )
+                # H-186/H-197/CP-014: all three bundled packs are cb.pack v2; the parent moved
+                # to v2 so it can carry the approved cover, and the v1 import path is covered by
+                # in-memory v1 fixtures in tests/test_pack_media_import.py.
+                self.assertEqual(manifest["contract_version"], 2)
                 if directory == JAPANESE:
-                    # H-197 adds the 16:9 cover master as the pack's first media link.
+                    # CP-014: the painted cover, the relationship map and the narration.
                     self.assertEqual(len(manifest.get("media") or []), 3)
                 if directory == TECHNICAL:
                     # H-197 moved this pack to v2 so it could carry the cover as a real artifact.
