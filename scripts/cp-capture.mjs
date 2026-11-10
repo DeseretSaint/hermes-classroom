@@ -31,8 +31,17 @@
  * Usage (live Electron window):
  *   node scripts/cp-capture.mjs --name home-1049-light --out docs/concept-parity/captures \
  *     --cdp-port 9411 --state "$COURSEBOOK_TEST_STATE" --plugin desktop/plugin.js \
- *     --backend-url http://127.0.0.1:44311 --token cb013-test-token \
+ *     --backend-url http://127.0.0.1:44311 --token "$CB013_TOKEN" \
  *     --route-width 1049 [--require-v3] [--keep-console] [--crop-to-content]
+ *
+ * Deep screens (a course home, a classroom) are shell state, not a URL, so a hard reload lands on
+ * the destination. Those cells add an opt-in driver that clicks what a learner clicks after the
+ * reload, and a selector the probe waits for:
+ *
+ *   --after-reload docs/visual-review/cp-024/drive-course-home.js \
+ *   --after-reload-wait '[data-cb-course-home-v3]'
+ *
+ * Both flags are off by default; a frame that used them says so in its stamp (`capture.driver`).
  *
  * Usage (recorded fixture page, used by tests — no Electron host):
  *   node scripts/cp-capture.mjs --name fixture-ok --out <dir> --fixture tests/fixtures/cp-capture/ok.html \
@@ -539,6 +548,32 @@ const liveCapture = async () => {
     writeRefusal('route-wait', probe, gate)
   }
 
+  // Optional post-reload driver. A deep screen (a course home, a classroom) is shell state, not a
+  // URL, so a hard reload always lands on the destination. `--after-reload <file>` runs that
+  // screen's own *real click* driver after the reload and before any measurement;
+  // `--after-reload-wait <selector>` holds the probe until the driven surface is on screen. Both
+  // are opt-in; with neither the tool behaves exactly as before. A driver that invents UI state
+  // (rather than clicking what a learner clicks) would defeat the stamp, so the wait is required.
+  const afterReload = flag('after-reload', null)
+  if (afterReload && afterReload !== true) {
+    const driver = readFileSync(resolve(String(afterReload)), 'utf8')
+    await evaluate(cdp, `(async () => { ${driver} })()`)
+    const waitSelector = flag('after-reload-wait', null)
+    if (waitSelector && waitSelector !== true) {
+      const selector = JSON.stringify(String(waitSelector))
+      const deadline = Date.now() + timeoutMs
+      let arrived = false
+      while (Date.now() < deadline) {
+        arrived = Boolean(await evaluate(cdp, `Boolean(document.querySelector(${selector}))`))
+        if (arrived) break
+        await sleep(200)
+      }
+      if (!arrived) {
+        throw new Error(`after-reload driver finished but ${String(waitSelector)} never appeared`)
+      }
+    }
+  }
+
   // Neutralise the rig's page zoom. Under a non-100% zoom, `Emulation.setDeviceMetricsOverride`
   // makes the layout viewport larger than the surface Chromium actually paints, so a route crop
   // keeps an unpainted host-coloured band on the right/bottom. The capture door requires 100% zoom
@@ -664,7 +699,7 @@ const liveCapture = async () => {
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, driver: afterReload && afterReload !== true ? String(afterReload) : null })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -761,7 +796,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, driver = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -831,7 +866,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       bytes: png.length,
       crop_mode: cropMode,
       clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height },
-      pixel_check: pixelCheck
+      pixel_check: pixelCheck,
+      driver
     },
     page_url: pageUrl
   }
