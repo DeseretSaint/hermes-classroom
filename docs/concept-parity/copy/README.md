@@ -54,7 +54,10 @@ All machine-checked, reproducible from the docs tree:
    enum, requires a row for every member of every enum the inventory cites, and re-derives from the
    source and the tables two claims that drifted once: the "shipped in v2" pack-state row may only
    list words `CB_TAKEHOME_STATE_WORD` actually defines, and the CP-023 verdict carries no string
-   count that the CP-023 gap rows do not produce.
+   count that the CP-023 gap rows do not produce. Round 3 corrected the gate itself: it now reads
+   the real `` `field:path` `` cell form, asserts at least 50 resolved source cells so it cannot go
+   vacuous, and rejects a fabricated `field:` row; `tests/test_cp_spec.py` follows an array's
+   local-`$ref` `items` so `course.outline.objectives[].title` (the C3/M5 node label) resolves.
 
 ## Result
 

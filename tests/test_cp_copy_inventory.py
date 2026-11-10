@@ -43,7 +43,8 @@ RPC = ROOT / "contracts" / "rpc.v24.json"
 
 VOCAB_REF = "https://contracts.coursebook.hermes/vocabulary/v1#/"
 
-FIELD_TOKEN = re.compile(r"field:`([^`]+)`")
+# The real cell form is `` `field:path` `` (backtick before ``field:``).
+FIELD_TOKEN = re.compile(r"`field:([^`]+)`")
 # A `field:` mention only counts as a source when it has a value path. Prose such as
 # "every `field:` cell" must not be mistaken for a source cell.
 FIELD_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_.\[\]]*(?:\.[A-Za-z0-9_.\[\]]+)+$")
@@ -336,6 +337,62 @@ class TestRound2DocsCorrections(unittest.TestCase):
         span = f"`{gap_ids[0]}`–`{gap_ids[-1]}`"
         self.assertIn(span, gaps_cell)
         self.assertIn(span, verdict)
+
+
+class TestRound3FieldGate(unittest.TestCase):
+    """Review round 3: the field gate must read the real cell form and cannot go vacuous.
+
+    ``25817f3`` matched ``field:`path``` instead of the inventory's `` `field:path` `` cells, so the
+    resolver attempted zero of the real sources and stayed green on a fabricated row.
+    """
+
+    ALLOWLISTED = {
+        "library_item.subject_label",
+        "library_item.sections_done",
+        "library_item.sections_total",
+        "library_item.is_new",
+    }
+
+    def source_cells(self) -> list[str]:
+        cells: list[str] = []
+        for path in copy_docs():
+            for token in FIELD_TOKEN.findall(read(path)):
+                if FIELD_PATH.match(token) and token not in self.ALLOWLISTED:
+                    cells.append(token)
+        return cells
+
+    def test_the_gate_reads_the_real_cell_form_and_a_fixed_floor(self):
+        cells = self.source_cells()
+        resolved = 0
+        for token in cells:
+            try:
+                field_node(token)
+                resolved += 1
+            except (KeyError, TypeError):
+                pass
+        self.assertGreaterEqual(
+            len(cells), 50, "the inventory lost its source cells; the gate is checking too little"
+        )
+        self.assertGreaterEqual(
+            resolved, 50, "the field gate resolved fewer than 50 cells; it is close to vacuous"
+        )
+        self.assertEqual(resolved, len(cells), "every source cell must resolve")
+
+    def test_array_of_ref_elements_is_traversable(self):
+        # The C3/M5 node-label source on two screens: `items` is a local `$ref` to
+        # `$defs.outline_objective`. Before the resolver fix this reported "no property 'title'".
+        title = field_node("course.outline.objectives[].title")
+        self.assertEqual(title.get("type"), "string")
+        independent = field_node("course.outline.objectives[].independent")
+        self.assertEqual(independent.get("type"), "boolean")
+
+    def test_a_fabricated_source_row_is_caught(self):
+        # The exact row shape a maker could paste into any screen table.
+        line = "| H0 | {invented} | home.bogus | 88 | `field:no.such.method.field` | ok |"
+        tokens = FIELD_TOKEN.findall(line)
+        self.assertEqual(tokens, ["no.such.method.field"], "the gate no longer reads the row form")
+        with self.assertRaises(KeyError):
+            field_node(tokens[0])
 
 
 if __name__ == "__main__":
