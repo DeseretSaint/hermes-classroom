@@ -15297,23 +15297,31 @@ function useCbV3Ready(mode, sources) {
 /**
  * The v3 route scope. It *is* the route root (`data-cb-route` travels in `attributes`), so the
  * container query units and the paint scope agree on one box. Children paint above the ground.
+ *
+ * Every child carries a stable key: the array mixes generated material layers with two siblings,
+ * and an unkeyed sibling makes React warn on every render (a warning, not an error — visible only
+ * in the console, which is exactly where a capture stamp has to look).
+ *
+ * `data-cb-v3-ready` means *the ground painted*: it is written only once the fonts settled **and**
+ * every tile decoded. The failure path keeps `data-cb-v3-textures="fallback"`, so a capture can
+ * tell a materialised ground from flat paper instead of treating both as "ready".
  */
 function CbV3Scope({ mode, className, attributes, style, children }) {
   const layers = cbV3MaterialLayers(mode)
-  const ready = useCbV3Ready(mode, layers.map((layer) => layer.src))
+  const status = useCbV3Ready(mode, layers.map((layer) => layer.src))
   const scopeStyle = { ...(style || {}), ...cbV3ScopeStyle(mode) }
   scopeStyle.containerType = 'inline-size'
   scopeStyle.containerName = 'cb'
   const attrs = { ...(attributes || {}) }
   attrs['data-cb-v3'] = ''
-  if (ready !== 'pending') attrs['data-cb-v3-ready'] = 'true'
-  attrs['data-cb-v3-textures'] = ready === 'pending' ? 'decoding' : ready
+  if (status === 'ready') attrs['data-cb-v3-ready'] = 'true'
+  attrs['data-cb-v3-textures'] = status === 'pending' ? 'decoding' : status
   return jsxs('div', {
     ...attrs,
     className,
     style: scopeStyle,
     children: [
-      jsx('style', { children: cbV3StyleText() }),
+      jsx('style', { children: cbV3StyleText() }, 'cb3-style'),
       ...layers.map((layer) =>
         jsx('div', {
           className: `cb3-material cb3-material-${layer.key}`,
@@ -15325,7 +15333,7 @@ function CbV3Scope({ mode, className, attributes, style, children }) {
         className: 'relative flex h-full min-h-0 flex-col',
         style: { zIndex: 1 },
         children
-      })
+      }, 'cb3-content')
     ]
   })
 }
@@ -33670,7 +33678,9 @@ function CoursebookPage() {
     },
     style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
-      jsx(SkipToContent, {}),
+      // Every top-level child carries a key: `children` is an array, and React warns on an
+      // unkeyed element in any list — including a props array — on the console only.
+      jsx(SkipToContent, {}, 'skip'),
       jsxs('header', {
         className: 'flex shrink-0 flex-col gap-2 pt-3',
         children: [
@@ -33774,11 +33784,11 @@ function CoursebookPage() {
                   'Creating a course, writing a brief and grading open answers are paused until the connection returns.'
               }),
           showDestinationNav
-            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome })
+            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome }, 'destination-nav')
             : null
         ]
-      }),
-      jsx(PageBody, { label: `${pageTitle} content`, children: body }),
+      }, 'page-header'),
+      jsx(PageBody, { label: `${pageTitle} content`, children: body }, 'page-body'),
       // H-147: the sheet lives over the route, not at a route of its own. It is only mounted while
       // open, so Home is the only place a reader meets it.
       jsx(HomeSettingsSheet, {
@@ -33788,7 +33798,7 @@ function CoursebookPage() {
         onUpdate: updateHomePrefs,
         onReset: resetHomePrefs,
         onClose: closeSettings
-      })
+      }, 'settings-sheet')
     ]
   })
 }

@@ -457,7 +457,9 @@ function CoursebookPage() {
     },
     style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
-      jsx(SkipToContent, {}),
+      // Every top-level child carries a key: `children` is an array, and React warns on an
+      // unkeyed element in any list — including a props array — on the console only.
+      jsx(SkipToContent, {}, 'skip'),
       jsxs('header', {
         className: 'flex shrink-0 flex-col gap-2 pt-3',
         children: [
@@ -561,11 +563,11 @@ function CoursebookPage() {
                   'Creating a course, writing a brief and grading open answers are paused until the connection returns.'
               }),
           showDestinationNav
-            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome })
+            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome }, 'destination-nav')
             : null
         ]
-      }),
-      jsx(PageBody, { label: `${pageTitle} content`, children: body }),
+      }, 'page-header'),
+      jsx(PageBody, { label: `${pageTitle} content`, children: body }, 'page-body'),
       // H-147: the sheet lives over the route, not at a route of its own. It is only mounted while
       // open, so Home is the only place a reader meets it.
       jsx(HomeSettingsSheet, {
@@ -575,7 +577,7 @@ function CoursebookPage() {
         onUpdate: updateHomePrefs,
         onReset: resetHomePrefs,
         onClose: closeSettings
-      })
+      }, 'settings-sheet')
     ]
   })
 }

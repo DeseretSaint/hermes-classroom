@@ -16,7 +16,10 @@
  *      --crop-to-content, which records the overlay geometry and crops the unoccluded content rect;
  *   6. the captured pixels are not a significant share of the document background (pixel veto);
  *   7. the page zoom is 100% during capture (normalised through the host zoom bridge, restored after);
- *   8. with --require-v3, `[data-cb-v3-ready]` is present.
+ *   8. with --require-v3, `[data-cb-v3-ready]` is present AND `[data-cb-v3-textures]` is `ready`
+ *      (a ground whose tiles fell back to flat paper is not v3 evidence);
+ *   9. the renderer logged no React duplicate/missing `key` warning (console.errors is read, not
+ *      inferred from a clean DOM).
  *
  * Why the sha is read through the window: `window.hermesDesktop.readPluginSource(path)` is the same
  * IPC door the host's runtime loader uses to fetch `plugin.js` before evaluating it. Hashing that
@@ -200,6 +203,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       images_broken: imgs.filter((img) => !img.complete || img.naturalWidth === 0).map((img) => (img.currentSrc || img.src || '').slice(0, 160)),
       render_error_markers: ${JSON.stringify(RENDER_ERROR_SELECTORS)}.filter((sel) => document.querySelector(sel)),
       v3_ready: Boolean(document.querySelector('[data-cb-v3-ready]')),
+      v3_textures: root ? root.getAttribute('data-cb-v3-textures') : null,
       style_sheet_count: styleSheets.length,
       css_rule_count: cssRuleCount,
       host_slots: document.querySelectorAll('[data-slot]').length,
@@ -297,8 +301,23 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode })
   if (!gates.zoom_neutral) reasons.push(`page zoom was ${String(zoom && zoom.capture_percent)}% during capture; the capture door requires 100% so the emulated viewport is fully painted`)
 
   if (requireV3) {
-    gates.v3_ready = route.v3_ready === true
-    if (!gates.v3_ready) reasons.push('--require-v3 set but [data-cb-v3-ready] is absent')
+    // "Ready" must mean the ground actually painted. `data-cb-v3-textures` says which state the
+    // material tiles settled in; a fallback ground is flat paper and is not v3 evidence.
+    gates.v3_ready = route.v3_ready === true && route.v3_textures === 'ready'
+    if (route.v3_textures !== 'ready') {
+      reasons.push(`--require-v3 set but the ground textures settled as ${String(route.v3_textures)}`)
+    } else if (route.v3_ready !== true) {
+      reasons.push('--require-v3 set but [data-cb-v3-ready] is absent')
+    }
+  }
+
+  // A renderer that logs React's duplicate/missing `key` warning renders a tree the other gates
+  // cannot see. The frame is not evidence of a clean surface, so the door refuses it.
+  const keyWarnings = ((probe.console && probe.console.errors) || [])
+    .filter((line) => /unique "key"/.test(String(line)))
+  gates.no_react_key_warning = keyWarnings.length === 0
+  if (!gates.no_react_key_warning) {
+    reasons.push(`the route render logged a React key warning: ${keyWarnings[0].slice(0, 160)}`)
   }
   return { gates, reasons, ok: reasons.length === 0 }
 }
@@ -765,6 +784,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       font_faces: probe.route.font_faces,
       images_total: probe.route.images_total,
       images_decoded: probe.route.images_decoded,
+      v3_ready: probe.route.v3_ready,
+      v3_textures: probe.route.v3_textures,
       style_sheet_count: probe.route.style_sheet_count,
       css_rule_count: probe.route.css_rule_count,
       host_slots: probe.route.host_slots,
@@ -784,7 +805,13 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       content_rect: probe.route.content_rect
     },
     zoom: zoom,
-    console: probe.console || { errors: [], warnings: 0 },
+    console: probe.console
+      ? {
+          errors: probe.console.errors || [],
+          warnings: probe.console.warnings || 0,
+          key_warnings: (probe.console.errors || []).filter((line) => /unique "key"/.test(String(line))).length
+        }
+      : { errors: [], warnings: 0, key_warnings: 0 },
     capture: {
       file: pngPath.split('/').pop(),
       sha256: createHash('sha256').update(png).digest('hex'),
