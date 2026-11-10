@@ -7031,39 +7031,67 @@ function cbGameCourse(row, mode) {
 }
 
 /**
- * The Game header: one slim band of small chips over one honest bar.
+ * The Game header: one band of honest play-state chips over one bar.
  *
  * It is deliberately short. The primary action, the current objective and the check live in their
  * own surfaces below and keep their hierarchy; this band names play progress and nothing else. A
  * zero-step course paints no bar rather than an empty frame.
+ *
+ * v3 (CP-025a): the band paints from `--cb3-*` roles and the v3 type steps only. Gold is a mark in
+ * the contract, never a text background, so the XP chip carries a gold edge and ink text; the bar's
+ * fill is the same mark tone. The flame glyph is the only Game-only icon (SPEC-V3 §3.7).
+ * Tokens: rule, ink, ink-soft, gold, card-stock, radius.pill, type.meta, type.caption.
  */
 function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
   const motion = useCbMotion()
   if (!cbGameFeedbackVisible(prefs, engagement)) return null
 
-  const wrapStyle = {
+  const bandStyle = {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: compact ? '0.35rem 0.5rem' : '0.4rem 0.75rem',
+    gap: compact ? '0.4rem 0.5rem' : '0.5rem 0.75rem',
     minWidth: 0,
-    padding: '0.45rem 0',
-    borderTop: '1px solid var(--cb-rule)',
-    borderBottom: '1px solid var(--cb-rule)'
+    padding: '0.5rem 0',
+    borderTop: `1px solid ${cb3Role('rule')}`,
+    borderBottom: `1px solid ${cb3Role('rule')}`
+  }
+  const chipStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+    minHeight: '32px',
+    padding: '0.2rem 0.6rem',
+    borderRadius: cb3Radius('pill'),
+    border: `1px solid ${cb3Role('rule')}`,
+    backgroundColor: 'transparent',
+    color: cb3Role('ink'),
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('meta'),
+    lineHeight: cb3Lead('meta'),
+    whiteSpace: 'nowrap'
+  }
+  const quietLine = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink-soft')
   }
 
   if (status === 'error') {
     return jsxs('div', {
       'data-cb-game': 'error',
+      'data-cb3-game': 'error',
       role: 'status',
-      style: { ...wrapStyle, borderBottomColor: 'var(--cb-rule)' },
+      style: bandStyle,
       children: [
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+          style: quietLine,
           children: `The field journal could not be read: ${describeError(error)} Your course is unaffected.`
-        }),
+        }, 'message'),
         onRetry
-          ? jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
+          ? jsx(PillAction, { 'data-cb3-game-retry': '', variant: 'quiet', onClick: onRetry, children: 'Try again' }, 'retry')
           : null
       ]
     })
@@ -7073,12 +7101,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
     // A read in flight is a state, not a zero: no chip and no bar until the backend answers.
     return jsx('div', {
       'data-cb-game': 'loading',
+      'data-cb3-game': 'loading',
       role: 'status',
-      style: wrapStyle,
-      children: jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-        children: 'Reading the field journal…'
-      })
+      style: bandStyle,
+      children: jsx('span', { style: quietLine, children: 'Reading the field journal…' })
     })
   }
 
@@ -7095,57 +7121,40 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
 
   return jsxs('section', {
     'data-cb-game': 'ready',
+    'data-cb3-game': 'header',
     'aria-label': 'Game',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
       jsxs('div', {
-        style: wrapStyle,
+        style: bandStyle,
         children: [
-          jsx('span', {
+          jsxs('span', {
             'data-cb-game-xp': String(xp),
-            style: {
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              fontWeight: 700,
-              lineHeight: 1.3,
-              letterSpacing: '0.02em',
-              color: 'var(--cb-on-lamp)',
-              background: 'var(--cb-lamp)',
-              border: '1px solid var(--cb-ochre)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
-            children: `${xp} XP`
-          }),
+            'data-cb3-chip': 'xp',
+            style: { ...chipStyle, borderColor: cb3Role('gold'), fontWeight: 600 },
+            children: [
+              jsx('span', {
+                'aria-hidden': 'true',
+                style: { display: 'inline-flex', color: cb3Role('gold') },
+                children: jsx(sdk.Codicon, { name: 'flame', size: CB_ICON_UI })
+              }, 'flame'),
+              jsx('span', { children: `${xp} XP` }, 'value')
+            ]
+          }, 'xp'),
           jsxs('span', {
             'data-cb-game-level': String(levelNumber),
-            style: {
-              display: 'inline-flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              gap: '0.35rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink)',
-              border: '1px solid var(--cb-rule)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
+            'data-cb3-chip': 'level',
+            style: { ...chipStyle, padding: '0.2rem 0.65rem' },
             children: [
-              jsx('strong', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: level.title || 'Explorer' }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: '· cosmetic' })
+              jsx('span', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }, 'level'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: level.title || 'Explorer' }, 'title'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: '· cosmetic' }, 'cosmetic')
             ]
-          }),
+          }, 'level'),
           jsxs('div', {
             'data-cb-game-progress': String(done),
-            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: '1 1 12rem', minWidth: 0 },
+            'data-cb3-game-progress': String(done),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: '1 1 12rem', minWidth: 0 },
             children: [
               jsxs('div', {
                 style: {
@@ -7154,18 +7163,18 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                   alignItems: 'baseline',
                   justifyContent: 'space-between',
                   gap: '0.15rem 0.5rem',
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.caption,
-                  lineHeight: 1.4,
-                  color: 'var(--cb-ink-soft)'
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
                 },
                 children: [
-                  jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: progress.label || 'Game progress' }),
+                  jsx('span', { style: { fontWeight: 600, color: cb3Role('ink') }, children: progress.label || 'Game progress' }, 'label'),
                   jsx('span', {
                     children: assigned
                       ? `${done} of ${assigned} ${assigned === 1 ? 'step' : 'steps'}`
                       : 'No steps assigned yet'
-                  })
+                  }, 'count')
                 ]
               }),
               assigned
@@ -7177,10 +7186,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                     'aria-valuenow': done,
                     style: {
                       position: 'relative',
-                      height: '0.35rem',
+                      height: '0.4rem',
                       width: '100%',
-                      background: 'var(--cb-rule)',
-                      borderRadius: '999px',
+                      backgroundColor: cb3Role('rule'),
+                      borderRadius: cb3Radius('pill'),
                       overflow: 'hidden'
                     },
                     children: jsx('div', {
@@ -7188,28 +7197,22 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                         position: 'absolute',
                         inset: '0',
                         width: `${Math.round(ratio * 100)}%`,
-                        background: 'var(--cb-lamp)',
-                        // Restrained motion: the fill arrives once; a reduced-motion reader gets
+                        backgroundColor: cb3Role('gold'),
+                        // One authored beat: the fill arrives once; a reduced-motion reader gets
                         // the same state with no travel at all.
                         transition: motion.reduced
                           ? 'none'
-                          : `width var(--cb-dur-complete) var(--cb-ease)`
+                          : `width var(--cb3-dur-complete) var(--cb3-ease)`
                       }
                     })
                   })
                 : null
             ]
-          }),
+          }, 'progress'),
           jsx('span', {
-            style: {
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink-soft)',
-              flex: '0 1 auto'
-            },
+            style: { ...quietLine, flex: '0 1 auto' },
             children: CB_GAME_PROGRESS_NOTE
-          })
+          }, 'note')
         ]
       })
     ]
@@ -7234,102 +7237,149 @@ function cbGameSectionCards(objectives) {
   }))
 }
 
+/**
+ * The field journal: one paper panel, one row per real section, stamped only by recorded evidence.
+ *
+ * A card is stamped when the outline says that section carries independent evidence
+ * (`objective.independent`), which is the same fact the evidence surfaces print. No star, no
+ * rating, no invented count: a card that has not been earned says what it actually is. The rows are
+ * a list inside one paper object rather than twelve floating cards, so a small course still reads
+ * as one shelf and never as card-in-card.
+ * Tokens: card-stock, rule, ink, ink-soft, gold, radius.round, radius.pill, type.*.
+ */
 function GameJournal({ objectives, compact }) {
   const cards = cbGameSectionCards(objectives)
   if (cards.length === 0) return null
   const earned = cards.filter((card) => card.earned).length
-  return jsxs('section', {
+  return jsx(PaperCard, {
     'data-cb-game-journal': String(earned),
+    'data-cb3-game': 'journal',
     'aria-label': 'Field journal',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [
-      jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
-        children: [
-          jsx('h3', {
-            style: {
-              margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.meta,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
-            },
-            children: 'Field journal'
-          }),
-          jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
-            children: earned
-              ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
-              : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
-          })
-        ]
-      }),
-      jsx('ul', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-          margin: 0,
-          padding: 0,
-          listStyle: 'none',
-          minWidth: 0
-        },
-        children: cards.map((card) =>
-          jsxs(
-            'li',
-            {
-              'data-cb-game-card': card.earned ? 'earned' : card.state,
+    emphasis: 'elev-1',
+    style: { gap: '0.5rem', maxWidth: CB_MEASURE },
+    children: jsxs('div', {
+      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+      children: [
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
+          children: [
+            jsx('h3', {
               style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.2rem',
-                minWidth: compact ? 0 : '8.5rem',
-                flex: compact ? '1 1 8rem' : '0 1 11rem',
-                padding: '0.5rem 0.6rem',
-                borderRadius: '0.5rem',
-                // Tactile, not glossy: a paper card with one honest hairline, and the warm Game
-                // accent only where the card was actually earned.
-                background: card.earned ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
-                border: `1px solid ${card.earned ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`
+                margin: 0,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('heading'),
+                lineHeight: cb3Lead('heading'),
+                fontWeight: 600,
+                color: cb3Role('ink'),
+                maxWidth: '34ch'
               },
-              children: [
-                jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', letterSpacing: '0.04em' },
-                  children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.meta,
-                    fontWeight: 600,
-                    lineHeight: 1.3,
-                    color: 'var(--cb-ink)',
-                    overflowWrap: 'anywhere'
-                  },
-                  children: card.title
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SANS,
-                    fontSize: CB_TYPE.caption,
-                    fontWeight: card.earned ? 700 : 500,
-                    lineHeight: 1.4,
-                    color: card.earned ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
-                  },
-                  children: card.earned ? 'Stamped' : (DESK_STATE_WORD[card.state] || 'Not started')
-                })
-              ]
-            },
-            card.id
+              children: 'Field journal'
+            }, 'heading'),
+            jsx('span', {
+              style: {
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: earned
+                ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
+                : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
+            }, 'count')
+          ]
+        }),
+        jsx('ul', {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+            minWidth: 0
+          },
+          children: cards.map((card, index) =>
+            jsxs(
+              'li',
+              {
+                'data-cb-game-card': card.earned ? 'earned' : card.state,
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: compact ? 'minmax(0, 1fr)' : '5.5rem minmax(0, 1fr) auto',
+                  alignItems: 'baseline',
+                  gap: compact ? '0.15rem' : '0.75rem',
+                  padding: '0.5rem 0',
+                  borderTop: index === 0 ? 0 : `1px solid ${cb3Role('rule')}`,
+                  minWidth: 0
+                },
+                children: [
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      letterSpacing: '0.04em'
+                    },
+                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                  }, 'ordinal'),
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('meta'),
+                      lineHeight: cb3Lead('meta'),
+                      fontWeight: 600,
+                      color: cb3Role('ink'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: card.title
+                  }, 'title'),
+                  card.earned
+                    ? jsx('span', {
+                        'data-cb3-chip': 'stamped',
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.1rem 0.5rem',
+                          borderRadius: cb3Radius('pill'),
+                          border: `1px solid ${cb3Role('gold')}`,
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 600,
+                          color: cb3Role('ink')
+                        },
+                        children: [
+                          jsx('span', {
+                            'aria-hidden': 'true',
+                            style: { display: 'inline-flex', color: cb3Role('gold') },
+                            children: jsx(sdk.Codicon, { name: 'check', size: CB_ICON_UI })
+                          }, 'glyph'),
+                          jsx('span', { children: 'Stamped' }, 'word')
+                        ]
+                      }, 'state')
+                    : jsx('span', {
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 500,
+                          color: cb3Role('ink-soft')
+                        },
+                        children: DESK_STATE_WORD[card.state] || 'Not started'
+                      }, 'state')
+                ]
+              },
+              card.id
+            )
           )
-        )
-      })
-    ]
+        })
+      ]
+    })
   })
 }
-
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -28805,6 +28855,7 @@ function HomeworkSheetCard({ task, compact = false }) {
             : 'Done — I will record this myself.'
   return jsxs('article', {
     'data-cb-homework-sheet': task.task_id,
+    'data-cb3-homework': 'sheet',
     'data-cb-homework-state': state,
     'aria-label': `Take-home task: ${task.title || ''}`,
     style: {
@@ -28815,9 +28866,9 @@ function HomeworkSheetCard({ task, compact = false }) {
       maxWidth: CB_MEASURE,
       boxSizing: 'border-box',
       padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
-      background: 'var(--cb3-card-stock)',
-      border: '1px solid var(--cb3-rule)',
-      borderRadius: '2px'
+      background: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round')
     },
     children: [
       jsx('p', { style: eyebrow, children: 'Coursebook field card' }, 'eyebrow'),
@@ -28979,21 +29030,23 @@ function HomeworkSheetCard({ task, compact = false }) {
 function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownloaded, saved }) {
   return jsxs('div', {
     'data-cb-homework-actions': '',
+    'data-cb3-homework': 'actions',
     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'secondary',
+      jsx(PillAction, {
+        'data-cb-homework-action': 'print',
+        variant: 'quiet',
+        label: 'Print the sheet',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbPrintHomeworkSheet(task && task.sheet ? task.sheet.html : '')
           if (onPrinted) onPrinted(ok)
-        },
-        children: 'Print the sheet'
-      }),
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+        }
+      }, 'print'),
+      jsx(PillAction, {
+        'data-cb-homework-action': 'download',
+        variant: 'quiet',
+        label: 'Download',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbDownloadHomeworkSheet(
@@ -29001,22 +29054,21 @@ function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownlo
             cbHomeworkFilename(task)
           )
           if (onDownloaded) onDownloaded(ok)
-        },
-        children: 'Download'
-      }),
+        }
+      }, 'download'),
       canSave
-        ? jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+        ? jsx(PillAction, {
+            'data-cb-homework-action': 'save',
+            variant: 'quiet',
+            label: saved ? 'Saved to the notebook' : 'Save to notebook',
             disabled: Boolean(busy) || saved,
-            onClick: onSave,
-            children: saved ? 'Saved to the notebook' : 'Save to notebook'
-          })
+            onClick: onSave
+          }, 'save')
         : null,
       jsx('span', {
-        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: cb3Role('ink-soft') },
         children: 'Local only. Nothing is sent.'
-      })
+      }, 'note')
     ]
   })
 }
@@ -29256,12 +29308,12 @@ function TakeThisWithYou({
                     children: error.message || 'The task could not be read.'
                   }),
                   error.code ? jsx(QuietNote, { children: `Reason · ${error.code}` }) : null,
-                  jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'text',
+                  jsx(PillAction, {
+                    variant: 'quiet',
+                    'data-cb-homework-retry': '',
                     onClick: prepare,
-                    children: 'Try again'
-                  })
+                    label: 'Try again'
+                  }, 'retry')
                 ]
               })
             : null,
@@ -29307,13 +29359,13 @@ function TakeThisWithYou({
                   jsxs('div', {
                     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
                     children: [
-                      jsx(sdk.Button, {
-                        size: 'sm',
-                        variant: 'secondary',
+                      jsx(PillAction, {
+                        variant: 'quiet',
+                        'data-cb-homework-propose': '',
                         disabled: Boolean(busy) || contextText.trim().length === 0,
                         onClick: propose,
-                        children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
-                      }),
+                        label: busy === 'propose' ? 'Writing the task' : 'Show me the task'
+                      }, 'propose'),
                       jsx('span', {
                         style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'One task, at most three steps, three to ten minutes.'
@@ -29348,19 +29400,20 @@ function TakeThisWithYou({
                         'data-cb-homework-report': 'open',
                         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
                         children: [
-                          jsx(CbAction, {
-                            variant: 'secondary',
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'done',
                             disabled: Boolean(busy),
                             onClick: () => report('learner'),
-                            children: busy === 'learner' ? 'Recording' : 'I did it'
-                          }),
-                          jsx(sdk.Button, {
-                            size: 'sm',
-                            variant: 'text',
+                            label: busy === 'learner' ? 'Recording' : 'I did it'
+                          }, 'report'),
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'skip',
                             disabled: Boolean(busy),
                             onClick: skipTask,
-                            children: busy === 'skip' ? 'Skipping' : 'Not this one'
-                          }),
+                            label: busy === 'skip' ? 'Skipping' : 'Not this one'
+                          }, 'skip'),
                           jsx('span', {
                             style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                             children: 'Only you record it. Nothing here is marked.'
@@ -29399,12 +29452,15 @@ function TakeThisWithYou({
 
   return jsxs('div', {
     'data-cb-homework': open ? 'open' : 'closed',
+    'data-cb3-homework': 'action',
     style: { display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+      // The GM-008 DOM contract names this quiet action by `data-variant="text"`; the v3 quiet
+      // pill keeps that attribute so the existing contract and tests resolve the same control.
+      jsx(PillAction, {
+        variant: 'quiet',
         'data-cb-homework-action': 'take-this-with-you',
+        'data-variant': 'text',
         'aria-expanded': open ? 'true' : 'false',
         onClick: () => {
           const next = !open
@@ -29412,8 +29468,8 @@ function TakeThisWithYou({
           setNotice(null)
           if (next && !task) prepare()
         },
-        children: 'Take this with you'
-      }),
+        label: 'Take this with you'
+      }, 'trigger'),
       panel
     ]
   })
@@ -29521,13 +29577,14 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
           },
           children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
         }),
-        jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: load, children: 'Try again' })
+        jsx(PillAction, { variant: 'quiet', onClick: load, label: 'Try again' }, 'retry')
       ]
     })
   }
   const openState = CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
   return jsxs('div', {
     'data-cb-homework-record': task.state,
+    'data-cb3-homework': 'record',
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -29553,12 +29610,22 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
             lang: cbHasJapanese(task.target && task.target.display) ? 'ja' : undefined,
             children: (task.target && task.target.display) || task.title
           }),
-          jsx(sdk.Badge, {
-            size: 'xs',
-            variant: 'outline',
+          jsx('span', {
             'data-cb-homework-record-state': task.state,
+            'data-cb3-chip': 'state',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '0.1rem 0.5rem',
+              borderRadius: cb3Radius('pill'),
+              border: `1px solid ${cb3Role('rule')}`,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink')
+            },
             children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
-          }),
+          }, 'state'),
           jsx('span', {
             style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `${Number(task.estimated_minutes) || 5} min`
@@ -29572,34 +29639,34 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
         children: [
-          jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+          jsx(PillAction, {
+            variant: 'quiet',
+            'data-cb-homework-record-action': 'toggle-sheet',
             'aria-expanded': open ? 'true' : 'false',
             onClick: () => setOpen(!open),
-            children: open ? 'Hide the sheet' : 'Show the sheet'
-          }),
+            label: open ? 'Hide the sheet' : 'Show the sheet'
+          }, 'toggle'),
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'secondary',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'done',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.complete', { actor, note: '' }, 'report'),
-                children: busy === 'report'
+                label: busy === 'report'
                   ? 'Recording'
                   : actor === 'parent'
                     ? 'A parent recorded this'
                     : 'I did it'
-              })
+              }, 'report')
             : null,
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'text',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'skip',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.skip', { actor }, 'skip'),
-                children: busy === 'skip' ? 'Skipping' : 'Skip'
-              })
+                label: busy === 'skip' ? 'Skipping' : 'Skip'
+              }, 'skip')
             : null
         ]
       }),
@@ -29652,16 +29719,29 @@ function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChang
   if (!rows || rows.length === 0) {
     return jsx('div', {
       'data-cb-homework-list': 'empty',
+      'data-cb3-homework': 'list-empty',
       style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
       children: jsx(EmptyState, { title: emptyTitle, description: emptyDescription })
     })
   }
   return jsx('div', {
     'data-cb-homework-list': String(rows.length),
+    'data-cb3-homework': 'list',
     style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
     children: [
       title
-        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) }, 'title')
+        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              color: cb3Role('ink'),
+              maxWidth: '34ch'
+            },
+            children: title
+          }) }, 'title')
         : null,
       ...rows.map((row) =>
         jsx(
@@ -29767,6 +29847,7 @@ function HomeworkStudio({ implemented, onOpenSource }) {
 
   return jsxs('div', {
     'data-cb-homework-studio': String(rows.length),
+    'data-cb3-homework': 'studio',
     style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.9rem 1rem 1.2rem', minWidth: 0 },
     children: [
       jsx('p', {
