@@ -7,6 +7,11 @@ the assertions are that the desk never invents an estimate, a next step, a sourc
 
 What this does not prove: that a live backend currently returns these rows. It proves the view is
 honest about whatever it is served, including the empty, loading, failed and not-recorded cases.
+
+Versioned by CP-003: the desk is a v2 surface, so its paint gate reads ``v2_source()``. Every
+honesty, state and focus assertion here is universal and stays unchanged; the v3 desk, if it ships,
+is scored on the v3 rubric and gated by ``tests/test_desktop_tokens_v3.py``. Table:
+``docs/concept-parity/GATE-MIGRATION.md``.
 """
 
 from __future__ import annotations
@@ -19,6 +24,8 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+from tests.cb_source_scope import v2_source
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
@@ -963,7 +970,9 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertNotIn("host.newChat(", desk)
 
     def test_the_desk_paints_only_from_the_token_layer(self) -> None:
-        source = PLUGIN_JS.read_text(encoding="utf-8")
+        # v2 region first (CP-003), then the M2 block: the desk's paint is a v2 surface, and the
+        # v3 stylesheet is gated by tests/test_desktop_tokens_v3.py.
+        source = v2_source()
         desk = source.split("// ══ M2 — the Field Desk home", 1)[1].split("function CoursesView(", 1)[0]
         # GM-VISUAL-SPEC §2.5's shelf edge fade is a mask declaration, not a gradient surface;
         # drop comments and that one declaration, then keep the decorative-gradient and shadow

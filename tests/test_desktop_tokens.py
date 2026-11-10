@@ -6,8 +6,13 @@ tests read the *shipped* module: the table is compared with ``contracts/cb.token
 contrast is computed on the values that actually ship, the file is scanned for colour literals
 outside the table, and the shell is rendered through real React at a wide and a 460px viewport.
 
-What this does NOT prove: that the host paints these custom properties anywhere outside the
-Coursebook route and pane roots. The scope is the seam, and the scope is asserted, not assumed.
+What this does not prove: that a live host paints this table anywhere outside the Coursebook
+route and pane roots. The scope is the seam, and the scope is asserted, not assumed.
+
+Versioned by CP-003: these assertions bind the v2 surfaces. Source scans read ``v2_source()``
+(the module with the v3 stylesheet cut out), so a v3 declaration can never fail a v2 gate and no
+v2 gate was deleted to make room. The migration table is ``docs/concept-parity/GATE-MIGRATION.md``;
+the v3 half is ``tests/test_desktop_tokens_v3.py``.
 """
 
 from __future__ import annotations
@@ -21,6 +26,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tests.cb_source_scope import v2_source
 from tests.test_desktop_lesson_views import (
     COMPLETE_BLOCKS,
     SDK_STUB,
@@ -150,7 +156,9 @@ class TokenContractTest(unittest.TestCase):
                 self.assertRegex(value, r"^#[0-9a-f]{6}$", f"{mode}.{name}")
 
     def test_no_colour_literal_outside_the_token_table(self) -> None:
-        source = PLUGIN_JS.read_text(encoding="utf-8").replace(self.literal, "")
+        # v2 region only (CP-003): the v3 stylesheet carries its own token literal, which
+        # tests/test_desktop_tokens_v3.py gates. This scan must never read it.
+        source = v2_source().replace(self.literal, "")
         stray = re.findall(r"#[0-9a-fA-F]{3,8}\b", source)
         self.assertEqual(stray, [], f"raw colours outside the token table: {stray}")
 
@@ -161,7 +169,9 @@ class TokenContractTest(unittest.TestCase):
         return re.sub(r"\n\s*const maskImage = `[^`]*`\n", "\n", source, count=1)
 
     def test_no_decorative_gradients(self) -> None:
-        source = self._without_the_shelf_edge_mask(PLUGIN_JS.read_text(encoding="utf-8")).lower()
+        # v2 region only (CP-003): v3 permits exactly one gradient, the named parchment vignette,
+        # inside CB_V3_CSS. That is a v3 claim (test_desktop_tokens_v3), not a hole in this one.
+        source = self._without_the_shelf_edge_mask(v2_source()).lower()
         self.assertNotIn("gradient(", source)
         self.assertNotIn("linear-gradient", source)
 
