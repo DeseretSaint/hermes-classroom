@@ -1,0 +1,267 @@
+{
+  "version": 3,
+  "name": "Field Atlas",
+  "supersedes": "cb.tokens.v2.json (kept on disk as history; never mutated)",
+  "scope": "[data-cb-v3] on the Coursebook route root. v2 tokens stay bound to v2 surfaces until CP-025b migrates them.",
+  "note": "Visual contract v3. A lit paper world with physical objects: parchment ground, deep forest rail, card stock, one terracotta primary, wood-only props. Every value here is measurable; no surface may paint a raw colour outside this table. Labels never sit on wood, gold or sage.",
+  "source_measurements": {
+    "method": "dominant-colour sampling of docs/concept-parity/refs/*.png (Pillow, 160px resample) plus the reference measurements in docs/concept-parity/PLAN.md section 2",
+    "samples": {
+      "R-SYS rail": "#0a271a / #09271a (sampled); contract forest #0d281b",
+      "R-SYS parchment": "#f5e7d3 / #f8ead6 (sampled); contract canvas #f5e3c8",
+      "R-DISC parchment": "#f6e9d3 (sampled)",
+      "R-CLASS scene warm mid": "#eac99f (sampled)",
+      "R-CLASS terracotta accents": "#cf4e2f / #d57c55 (sampled)",
+      "R-SYS concept CTA": "#db6c45 (PLAN.md section 2 measurement)",
+      "R-HOME wood shelf": "#957b57 / #75593a (sampled)"
+    },
+    "cta_decision": "The concept CTA #db6c45 carries ink at 5.31:1 but separates from parchment at only 2.68:1. v3 ships the deepened fill #b4532f with a warm cream label at 4.79:1 (pure white reaches the 4.98:1 quoted in PLAN.md) and a 3.96:1 fill edge against parchment. Both options are rendered on parchment in docs/coursebook-visual-identity-v3/cta-choice.png for the reviewer."
+  },
+  "roles": [
+    "canvas",
+    "canvas-edge",
+    "card-stock",
+    "ink",
+    "ink-soft",
+    "rule",
+    "forest",
+    "on-forest",
+    "terracotta",
+    "on-terracotta",
+    "terracotta-quiet",
+    "gold",
+    "sage",
+    "wood",
+    "wood-edge",
+    "plum",
+    "alert",
+    "focus"
+  ],
+  "role_rules": {
+    "canvas": "the route ground: parchment. One per surface, never a card fill.",
+    "canvas-edge": "the darkest edge of the parchment vignette; never a fill or a text background except inside the vignette field.",
+    "card-stock": "paper card and sheet fill; sits on canvas with elev-1 or a 1px rule, never both a shadow and a thick border.",
+    "ink": "reading text and iconography on paper. AAA body text.",
+    "ink-soft": "secondary text, captions and metadata. Never below 4.5:1.",
+    "rule": "hairlines, dividers, card borders and the 1px outline of a quiet pill. Non-text only.",
+    "forest": "the rail and the top band ground. Filled field, never text on paper.",
+    "on-forest": "labels and glyphs on the forest rail.",
+    "terracotta": "the single primary action fill per surface. Never a text colour.",
+    "on-terracotta": "the label on the primary action.",
+    "terracotta-quiet": "a quiet warm field for a selected row, a tag blank or a soft aside panel; carries ink text.",
+    "gold": "a mark: medallion rim, completion seal, Game-mode XP chip border. Never a text background.",
+    "sage": "a quiet evidence fill: recorded-check tally, progress ground. Never a text background.",
+    "wood": "the shelf plank and the evidence tray only. A physical object, never a text background, never a page or card fill.",
+    "wood-edge": "the front lip and grain edge of a wood object; defines its thickness against wood.",
+    "plum": "Parent Studio identity, and only that. Text-safe on canvas.",
+    "alert": "error and destructive state text and icon. Never decoration.",
+    "focus": "the focus ring only. A functional state, never a fill or a text colour."
+  },
+  "modes": {
+    "light": {
+      "canvas": "#f5e3c8",
+      "canvas-edge": "#e6cfae",
+      "card-stock": "#f4ecd9",
+      "ink": "#1a1713",
+      "ink-soft": "#5c5347",
+      "rule": "#cdb894",
+      "forest": "#0d281b",
+      "on-forest": "#f5e3c8",
+      "terracotta": "#b4532f",
+      "on-terracotta": "#fffaf1",
+      "terracotta-quiet": "#f0d5c1",
+      "gold": "#a1741f",
+      "sage": "#7f9a72",
+      "wood": "#a5763f",
+      "wood-edge": "#7d5529",
+      "plum": "#6a3e74",
+      "alert": "#9c2e1c",
+      "focus": "#2a813f"
+    },
+    "dark": {
+      "canvas": "#14110c",
+      "canvas-edge": "#2a2419",
+      "card-stock": "#1e1a13",
+      "ink": "#f3e6cf",
+      "ink-soft": "#bfae93",
+      "rule": "#3c352a",
+      "forest": "#0e2a1c",
+      "on-forest": "#f3e6cf",
+      "terracotta": "#e0794f",
+      "on-terracotta": "#1a1713",
+      "terracotta-quiet": "#3a241a",
+      "gold": "#d8a94e",
+      "sage": "#8fae83",
+      "wood": "#825836",
+      "wood-edge": "#b07a46",
+      "plum": "#cda0d8",
+      "alert": "#f0a08c",
+      "focus": "#f2c56a"
+    }
+  },
+  "night_atlas_note": "Dark mode is the same world lit by one lamp, not an inverted theme. canvas is warm near-black, card-stock is a lifted paper brown, forest stays the rail, terracotta becomes a lit clay fill with an ink label. Gold and sage stay marks. Paper textures switch to their night tiles at a slightly higher opacity.",
+  "elevation": {
+    "light": {
+      "elev-1": "0 1px 1px rgba(58, 35, 24, 0.10), 0 6px 14px -8px rgba(58, 35, 24, 0.28)",
+      "elev-2": "0 2px 2px rgba(58, 35, 24, 0.12), 0 14px 28px -12px rgba(58, 35, 24, 0.34)",
+      "inset-1": "inset 0 1px 2px rgba(58, 35, 24, 0.18), inset 0 -1px 0 rgba(255, 250, 240, 0.50)"
+    },
+    "dark": {
+      "elev-1": "0 1px 1px rgba(0, 0, 0, 0.45), 0 6px 14px -8px rgba(0, 0, 0, 0.65)",
+      "elev-2": "0 2px 3px rgba(0, 0, 0, 0.50), 0 16px 30px -12px rgba(0, 0, 0, 0.70)",
+      "inset-1": "inset 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(255, 241, 220, 0.08)"
+    },
+    "rules": [
+      "Elevation is contact shadow for a physical object on paper, never a glow.",
+      "A card uses elev-1 or a 1px rule border, not both.",
+      "inset-1 is for pressed and recessed fields only (a tray, an input, a selected slot).",
+      "No elevation on text, rules, the rail or the canvas ground."
+    ]
+  },
+  "radii": {
+    "square": "0px",
+    "soft": "6px",
+    "round": "12px",
+    "pill": "999px"
+  },
+  "radius_scale": [0, 6, 12, 999],
+  "radius_rules": [
+    "square: plates, scene frames, rules and table cells.",
+    "soft: inputs, chips and small controls.",
+    "round: cards, sheets and panels.",
+    "pill: actions only (primary and quiet pills), never a card."
+  ],
+  "type": {
+    "families": {
+      "display": "\"CB Display\", \"Fraunces\", ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+      "ui": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "cjk": "\"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", \"Noto Serif CJK JP\", serif"
+    },
+    "subsets": {
+      "CB Display": "Fraunces, OFL, subset to Latin plus punctuation",
+      "CB UI": "Source Sans 3, OFL, subset to Latin plus punctuation",
+      "cjk": "system CJK stack; a shipped Noto Serif JP subset is the first entry when CP-004 embeds it"
+    },
+    "loading": "font-display: swap; a face that fails to load leaves the system fallback in place and never blanks the route",
+    "container": {
+      "name": "cb",
+      "type": "inline-size",
+      "measured_against": "the route container, never the window",
+      "note": "Every cqi in this table resolves against the [data-cb-v3] route container."
+    },
+    "scale": {
+      "caption": "0.75rem",
+      "meta": "0.875rem",
+      "body": "1rem",
+      "lead": "1.25rem",
+      "heading": "clamp(1.5rem, 1.2rem + 1cqi, 2.25rem)",
+      "display": "clamp(2.5rem, 1.5rem + 3cqi, 4rem)"
+    },
+    "line_height": {
+      "caption": 1.35,
+      "meta": 1.4,
+      "body": 1.5,
+      "lead": 1.35,
+      "heading": 1.15,
+      "display": 1.02
+    },
+    "weights": {
+      "display": 600,
+      "heading": 600,
+      "body": 400,
+      "strong": 600
+    },
+    "measure": "50-75ch for prose; display headings at most 20ch, section headings at most 34ch",
+    "rules": [
+      "Six steps and no seventh.",
+      "Body is 1rem so a 200 percent root scales every step.",
+      "Display is measured against the route container via cqi, so a narrow route shrinks the headline instead of overflowing it.",
+      "Japanese lesson lines use the cjk family for kana and kanji and the ui family for romaji; furigana is smaller than the body step by design, never a seventh authored size."
+    ]
+  },
+  "materials": {
+    "grain": {
+      "light": { "tile": "cb-grain-paper", "file": "material/grain-paper.webp", "opacity": 0.10 },
+      "dark": { "tile": "cb-grain-night", "file": "material/grain-night.webp", "opacity": 0.14 }
+    },
+    "vignette": {
+      "light": { "tile": "cb-vignette-parchment", "file": "material/vignette-parchment.webp", "opacity": 0.55 },
+      "dark": { "tile": "cb-vignette-night", "file": "material/vignette-night.webp", "opacity": 0.65 }
+    },
+    "wood": {
+      "light": { "tile": "cb-wood-plank", "file": "material/wood-plank.webp", "opacity": 1.0 },
+      "dark": { "tile": "cb-wood-plank-night", "file": "material/wood-plank-night.webp", "opacity": 1.0 }
+    },
+    "opacity_ceiling": 0.18,
+    "rules": [
+      "Grain and vignette are aria-hidden and pointer-events none; they sit above the canvas and below all content.",
+      "Grain opacity may never exceed opacity_ceiling over a text run.",
+      "Wood is a tile on the shelf plank and the evidence tray only; it never sits behind text.",
+      "Missing texture falls back to flat canvas; never a blank route, never a broken-image mark.",
+      "All tiles are seamless 3x3 (CP-011 proof) and at most 60 KB each."
+    ]
+  },
+  "motion": {
+    "press": 120,
+    "lift": 150,
+    "route": 240,
+    "verdict": 300,
+    "complete": 600,
+    "ceiling": 600,
+    "loops": false,
+    "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "properties": ["transform", "opacity"],
+    "reduced_motion": "transitions are removed, not shortened; the state change still happens on the next frame",
+    "rules": [
+      "No duration in this table may exceed ceiling (600 ms).",
+      "No looping, pulsing, shimmering or infinite animation anywhere.",
+      "Motion is feedback for a real event: press, lift, route change, check verdict, completion.",
+      "transform and opacity only; never animate layout, colour or filter."
+    ]
+  },
+  "focus_ring": {
+    "width": "2px",
+    "offset": "2px",
+    "style": "solid",
+    "note": "The ring is drawn outside the control on the ground it sits on, which is why the focus gates are measured against grounds, not against the fills the control itself paints."
+  },
+  "gates": [
+    { "foreground": "ink", "background": "canvas", "min": 7.0, "kind": "text", "why": "reading text on parchment, AAA body" },
+    { "foreground": "ink", "background": "card-stock", "min": 7.0, "kind": "text", "why": "reading text on a paper card" },
+    { "foreground": "ink", "background": "canvas-edge", "min": 4.5, "kind": "text", "why": "text that crosses the vignette edge" },
+    { "foreground": "ink-soft", "background": "canvas", "min": 4.5, "kind": "text", "why": "secondary text and captions on parchment" },
+    { "foreground": "ink-soft", "background": "card-stock", "min": 4.5, "kind": "text", "why": "secondary text on a paper card" },
+    { "foreground": "ink", "background": "terracotta-quiet", "min": 4.5, "kind": "text", "why": "text on a selected row or quiet warm panel" },
+    { "foreground": "ink-soft", "background": "terracotta-quiet", "min": 4.5, "kind": "text", "why": "caption on a selected row or quiet warm panel" },
+    { "foreground": "on-forest", "background": "forest", "min": 7.0, "kind": "text", "why": "rail labels and glyphs" },
+    { "foreground": "on-terracotta", "background": "terracotta", "min": 4.5, "kind": "text", "why": "label on the one primary action" },
+    { "foreground": "plum", "background": "canvas", "min": 4.5, "kind": "text", "why": "Parent Studio identity text" },
+    { "foreground": "alert", "background": "canvas", "min": 4.5, "kind": "text", "why": "error and destructive text" },
+    { "foreground": "rule", "background": "canvas", "min": 1.25, "kind": "non-text", "why": "hairline visibility on parchment" },
+    { "foreground": "rule", "background": "card-stock", "min": 1.25, "kind": "non-text", "why": "hairline and card border visibility" },
+    { "foreground": "terracotta", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "the primary fill separates from parchment as an object" },
+    { "foreground": "wood", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "the shelf plank reads as a physical object on paper" },
+    { "foreground": "wood-edge", "background": "wood", "min": 1.5, "kind": "non-text", "why": "the plank's front lip reads as thickness" },
+    { "foreground": "gold", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "medallion and seal rims are meaningful graphics" },
+    { "foreground": "sage", "background": "canvas", "min": 1.5, "kind": "non-text", "why": "the evidence tally fill separates from parchment" },
+    { "foreground": "focus", "background": "canvas", "min": 3.0, "kind": "focus", "why": "focus ring on the route ground" },
+    { "foreground": "focus", "background": "card-stock", "min": 3.0, "kind": "focus", "why": "focus ring on a card" },
+    { "foreground": "focus", "background": "canvas-edge", "min": 3.0, "kind": "focus", "why": "focus ring at the vignette edge" },
+    { "foreground": "focus", "background": "forest", "min": 3.0, "kind": "focus", "why": "focus ring on the forest rail" },
+    { "foreground": "focus", "background": "terracotta-quiet", "min": 3.0, "kind": "focus", "why": "focus ring on a selected row" }
+  ],
+  "never_text_on": {
+    "wood": "wood is a prop. Labels never sit on wood; a label that belongs to the shelf sits on the card or on the canvas beside the plank.",
+    "gold": "gold is a rim and a seal. Any label near gold sits on canvas or card stock.",
+    "sage": "sage is an evidence fill at 1.5:1 against paper. A label on sage would fail; the tally's label sits on canvas."
+  },
+  "forbidden": [
+    "backdrop-filter, blur and glass",
+    "rainbow or decorative gradients; the only gradient is the named vignette",
+    "raw hex outside the token table",
+    "a second identity hue on one screen",
+    "shadow on text, rules, the rail or the ground",
+    "looping or infinite animation",
+    "stars, ratings, review counts, invented XP or invented counts"
+  ]
+}
