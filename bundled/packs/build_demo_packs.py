@@ -31,34 +31,37 @@ PARENT = ROOT / "parent-measurement-practice"
 #: tree, and the pack bundles no third-party text or media.
 TECHNICAL = ROOT / "technical-demo-pack"
 
-#: H-197 — the cover plates. The Japanese and technical packs carry one as a real pack media
-#: artifact (cb.pack v2). The parent pack stays cb.pack v1 on purpose: it is the repository's only
-#: v1 fixture and the gate that proves a v1 pack imports byte-for-byte as before, so it keeps the
-#: typographic cover rather than gaining a `media[]` link. Its plate exists in `cover_plate_png`
-#: for the day that pack is released as v2, but nothing ships it unused.
-COVER_CAPTION = "Pack visual — generated plate; not a diagram of the course."
-COVER_ATTRIBUTION = (
-    "Host-composed Press Plate printed deterministically by the Coursebook demo pack builder "
-    "(bundled/packs/build_demo_packs.py) from the Atlas Lamp token palette: five flat inks, no "
-    "gradient, no grain, no photograph, no model call, no third-party imagery."
+#: H-197 — the Press Plate lane. It composes a flat printed field deterministically and remains
+#: the typographic fallback for any pack that declares no cover. CP-014 moves the three bundled
+#: fixtures to the approved painted plate from `assets/art/covers/` as role ``cover``; the parent
+#: pack therefore moves to cb.pack v2 so it can carry a cover and a media[] link (its v1
+#: compatibility is covered by the in-memory v1 fixtures in tests/test_pack_media_import.py).
+COVER_CAPTION = "Cover plate — painted illustration, not a diagram of the course."
+#: CP-014. The approved painted plates are model output made through the host image tool. The
+#: record names the provider path and the model-id gap and makes no redistribution claim: the
+#: pack stays local_only and a wider use needs the operator's rights decision.
+MODEL_COVER_ATTRIBUTION = (
+    "Painted cover plate generated through the host image_generate tool (nous image gateway, "
+    "media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No "
+    "third-party source text or media was supplied. No redistribution licence is declared for "
+    "this model output: the pack's redistribution stays local_only, and any wider use is an "
+    "operator rights decision, not a claim made here."
 )
 JAPANESE_COVER_TEXT = (
-    "Pack visual: a flat printed plate in five inks — warm paper, a pale gold field across the "
-    "lower half, a wide shallow indigo band rising across it, one near-black rule along the field's "
-    "edge, and a gold bar along the bottom. Decorative material only: it is not a diagram of the "
-    "course, not a photograph, and it carries no text."
+    "Painted cover plate: a paper ground with a cafe counter and stool across the lower part, a "
+    "paper-cream lantern and a noren curtain above it. Decorative illustration only: it is not a "
+    "diagram of the course, carries no text, and states no register fact. The relationship map "
+    "remains the pack's schematic."
 )
 TECHNICAL_COVER_TEXT = (
-    "Pack visual: a flat printed plate in five inks — warm paper, a solid near-black half with a "
-    "pale grey band along its cut edge, a pale gold field on the paper half, and a gold bar along "
-    "the bottom. Decorative material only: it is not a diagram of the pack format and carries no "
-    "text."
+    "Painted cover plate: an open blank manual on a bench edge with a stack of loose sheets "
+    "beside it. Decorative illustration only: its pages are blank, it carries no text, and it is "
+    "not a diagram of the pack format and states no field, count or rule."
 )
 PARENT_COVER_TEXT = (
-    "Pack visual: a flat printed plate in five inks — warm paper, a solid plum plane to two thirds "
-    "with one ink cut edge, a narrow plum band across the frame, a pale gold field, and a gold bar "
-    "along the bottom. Decorative material only: it is not a diagram of the measurement lesson and "
-    "carries no text."
+    "Painted cover plate: a blank measuring jug, a bowl, oranges and a table with field-green "
+    "linen. Decorative illustration only: the jug carries no graduations or numbers, it is not a "
+    "diagram of the lesson, and it states no quantity."
 )
 
 FETCHED_AT = "2026-11-06"
@@ -67,9 +70,9 @@ ORIGINAL = (
     "are not bundled; see sources[] and content/source-notes.md."
 )
 JAPANESE_ATTRIBUTION = (
-    "Original teaching text, cover plate, schematic and narration: Coursebook demo pack. The cover "
-    "plate and the schematic are host-composed, deterministic artwork built from the Atlas Lamp "
-    "token palette; no third-party imagery is bundled. The narration clip is "
+    "Original teaching text, relationship schematic and narration: Coursebook demo pack. The "
+    "cover plate is model output generated for this pack and is recorded with its provenance and "
+    "rights position in the manifest; no third-party imagery is bundled. The narration clip is "
     "synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack "
     "maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see "
     "sources[] and content/source-notes.md."
@@ -261,8 +264,18 @@ def relationship_map_png() -> bytes:
 # 4% clear (the app paints its 6px lamp spine there), the form's centroid inside the middle 84%,
 # and the lamp band at a fixed y. The prompts (P1–P3) remain in `docs/ART-DIRECTION-COVERS.md` for a
 # host that does have `image_generate`; nothing here claims a model made these bytes.
-COVER_MASTER = "content/cover-16x9.png"
-COVER_CROP = "content/cover-3x2.png"
+#: CP-014 — the shipped cover lane is the approved painted plate from `assets/art/covers/`.
+#: The H-197 Press Plate functions below remain as the composed typographic fallback for any pack
+#: that declares no cover; these three bundled fixtures now carry the painted plate as role
+#: ``cover``. The plate is copied byte for byte, so its sha256 is the approved artifact's own hash.
+COVER_MASTER = "content/cover-3x2.png"
+COVER_CROP = "content/cover-4x5.png"
+COVERS_DIR = ROOT.parent.parent / "assets" / "art" / "covers"
+PAINTED_COVERS = {
+    "japanese": ("japanese-crop-3x2-1200x800.png", "japanese-crop-4x5-640x800.png"),
+    "parent": ("parent-crop-3x2-1200x800.png", "parent-crop-4x5-640x800.png"),
+    "technical": ("technical-crop-3x2-1200x800.png", "technical-crop-4x5-640x800.png"),
+}
 COVER_W = 1024
 COVER_H = 576
 #: The 3:2 card crop at the same height: 864 x 576 keeps 84.4% of the width, centred.
@@ -273,8 +286,21 @@ COVER_CROP_OFFSET = (COVER_W - COVER_CROP_W) // 2  # 80
 COVER_LEFT_CLEAR = 41
 #: The lamp band is 58px = 10.1% of the frame height, full bleed, at one fixed y for the imprint.
 COVER_BAND_TOP = 518
-#: The cover surfaces present the master; the crop is the file a 3:2 surface uses.
+#: The cover surfaces present the master; the crop is the file a portrait surface uses.
 COVER_PATH = COVER_MASTER
+
+
+def painted_cover(kind: str, *, portrait: bool = False) -> bytes:
+    """The approved painted plate for one pack, copied byte for byte from the cover kit.
+
+    CP-012 owns the bytes and their provenance (`docs/concept-parity/COVERS.md`); this builder
+    never re-encodes or re-crops them, so the manifest hash is the approved artifact's hash.
+    """
+    pair = PAINTED_COVERS.get(kind)
+    if pair is None:
+        raise ValueError(f"unknown painted cover {kind!r}")
+    name = pair[1] if portrait else pair[0]
+    return (COVERS_DIR / name).read_bytes()
 
 #: Atlas Lamp, light mode, copied from contracts/cb.tokens.v2.json. A plate is a lit page, so it
 #: keeps the paper palette in both UI modes; the app mounts it on its own token background.
@@ -384,8 +410,8 @@ def japanese_manifest() -> dict:
     ]
     files = _sections(section_paths[:-4])
     files["content/relationship-map.png"] = relationship_map_png()
-    files[COVER_MASTER] = cover_plate_png("japanese")
-    files[COVER_CROP] = cover_crop_png("japanese")
+    files[COVER_MASTER] = painted_cover("japanese")
+    files[COVER_CROP] = painted_cover("japanese", portrait=True)
     files[NARRATION_PATH] = (JAPANESE / NARRATION_PATH).read_bytes()
     metadata = {
         "content/section-01-two-ways.md": {"mime": "text/markdown", "role": "section"},
@@ -416,20 +442,20 @@ def japanese_manifest() -> dict:
         },
         COVER_MASTER: {
             "mime": "image/png",
-            "role": "visual",
+            "role": "cover",
             "text_equivalent": JAPANESE_COVER_TEXT,
             "description": (
-                "Press Plate cover for this pack (16:9 master): five flat inks, printed "
-                "deterministically. Decorative material; it carries no register facts and no text."
+                "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 "
+                "gouache plate. Decorative illustration; it carries no register facts and no text."
             ),
         },
         COVER_CROP: {
             "mime": "image/png",
-            "role": "visual",
+            "role": "cover",
             "text_equivalent": JAPANESE_COVER_TEXT,
             "description": (
-                "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 "
-                "master for a 3:2 card). Same plate, same five inks."
+                "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's "
+                "exact centre crop. Decorative illustration; no register facts and no text."
             ),
         },
     }
@@ -655,7 +681,7 @@ def japanese_manifest() -> dict:
 
     return packs.build_manifest(
         pack_id="japanese-affection-context-l0",
-        pack_version="2.1.0",
+        pack_version="2.2.0",
         title="Japanese affection and register — a Sample L0 classroom",
         subtitle="Four lines, three addressees, one decision: who is listening, how close, and where.",
         recipe="casual",
@@ -689,13 +715,13 @@ def japanese_manifest() -> dict:
             "per_artifact": [
                 {
                     "path": COVER_MASTER,
-                    "license_id": "CC0-1.0",
-                    "attribution": COVER_ATTRIBUTION,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": COVER_CROP,
-                    "license_id": "CC0-1.0",
-                    "attribution": COVER_ATTRIBUTION,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": "content/relationship-map.png",
@@ -742,10 +768,16 @@ def japanese_manifest() -> dict:
             "The fourth objective is a closed choice about a third situation, graded by exact comparison against "
             "its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an "
             "open-response answer.",
-            "2.1.0 adds one composed cover plate (content/cover-plate.png), linked first in media[] so the "
-            "Workshop storefront, the Library row and the course detail show the same plate. It is decorative "
-            "illustration: it carries no register facts. The relationship map remains the pack's deterministic "
-            "schematic and the only visual that states them. No wording, check or source changed.",
+            "2.1.0 added one composed Press Plate cover (content/cover-16x9.png, with its 3:2 crop), linked first in "
+            "media[] so the Workshop storefront, the Library row and the course detail showed the same plate. It was "
+            "decorative illustration: it carried no register facts. The relationship map remained the pack's "
+            "deterministic schematic and the only visual that states them. No wording, check or source changed.",
+            "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack "
+            "(content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role "
+            "'cover'. The plate is model output generated for this pack; its provenance and its rights position "
+            "(no redistribution licence declared; local_only) are recorded per artifact. It is decorative: it "
+            "carries no text and no register fact, and the relationship map remains the schematic. No wording, "
+            "check or source changed, and no native-speaker review is claimed.",
         ],
         safety_notes=[
             "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack "
@@ -757,8 +789,8 @@ def japanese_manifest() -> dict:
             "The relationship schematic has a text equivalent on its file record and a short caption beside it on "
             "the lesson page.",
             "The cover plate is illustration only: it has a text equivalent on its file record and the caption "
-            "'Cover plate — illustration, not a technical diagram.' beside it. Nothing in the course depends on "
-            "seeing it.",
+            "'Cover plate — painted illustration, not a diagram of the course.' beside it. Nothing in the course "
+            "depends on seeing it.",
             "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as "
             "its lesson caption, and the lesson does not depend on hearing it.",
             "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities.",
@@ -770,10 +802,30 @@ def japanese_manifest() -> dict:
 def parent_manifest() -> dict:
     paths = ["content/learner-page.md", "content/answer-guide.md", "content/parent-guide.md"]
     files = {path: (PARENT / path).read_bytes() for path in paths}
+    files[COVER_MASTER] = painted_cover("parent")
+    files[COVER_CROP] = painted_cover("parent", portrait=True)
     metadata = {
         "content/learner-page.md": {"mime": "text/markdown", "role": "learner_page"},
         "content/answer-guide.md": {"mime": "text/markdown", "role": "answer_guide"},
         "content/parent-guide.md": {"mime": "text/markdown", "role": "parent_guide"},
+        COVER_MASTER: {
+            "mime": "image/png",
+            "role": "cover",
+            "text_equivalent": PARENT_COVER_TEXT,
+            "description": (
+                "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 "
+                "gouache plate. Decorative illustration; the jug is blank and it carries no text."
+            ),
+        },
+        COVER_CROP: {
+            "mime": "image/png",
+            "role": "cover",
+            "text_equivalent": PARENT_COVER_TEXT,
+            "description": (
+                "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's "
+                "exact centre crop. Decorative illustration; no quantity and no text."
+            ),
+        },
     }
     objectives = [
         {
@@ -839,20 +891,45 @@ def parent_manifest() -> dict:
     ]
     return packs.build_manifest(
         pack_id="parent-measurement-practice",
-        pack_version="1.0.0",
+        pack_version="2.0.0",
         title="Parent demo: measuring ingredients together",
         subtitle="A ten-minute parent-led measurement practice with a separate answer guide.",
         recipe="parent",
         locale="en-US",
         level_label="Age 8-10 · parent-led",
         minimum_coursebook_version="0.1.0",
-        # H-73 §13 ordering: the bundled pack stays at ``cb.pack`` v1 until the release that
-        # ships v2 media playback is the version this demo names. Re-issuing v2 first would make
-        # the bundled pack unimportable on every build that only knows v1 — a worse defect than
-        # an unplayed file.
-        contract_version=1,
-        license=UNSPECIFIED_LICENSE,
-        attribution=ORIGINAL,
+        # CP-014: 2.0.0 moves this fixture to cb.pack v2 so it can carry the approved painted
+        # cover as role ``cover`` through one media[] link. The v1 import path keeps its own
+        # in-memory fixtures; this bundled pack is the parent-led course, not a schema exhibit.
+        contract_version=2,
+        media=[
+            {
+                "path": COVER_PATH,
+                "section_path": "content/learner-page.md",
+                "caption": COVER_CAPTION,
+            },
+        ],
+        license={
+            **UNSPECIFIED_LICENSE,
+            "per_artifact": [
+                {
+                    "path": COVER_MASTER,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
+                },
+                {
+                    "path": COVER_CROP,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
+                },
+            ],
+        },
+        attribution=(
+            "Original teaching text: Coursebook demo pack. The cover plate is model output "
+            "generated for this pack and is recorded with its provenance and rights position in "
+            "the manifest; no third-party text or imagery is bundled. Sources are cited by link "
+            "and are not bundled; see sources[] and content/source-notes.md."
+        ),
         contributors=[{"name": "Coursebook demo pack", "role": "author"}],
         objectives=objectives,
         files=files,
@@ -862,11 +939,17 @@ def parent_manifest() -> dict:
             "The learner page never carries the answer key. Answers live only in the answer guide, which the manifest "
             "declares with the answer_guide role.",
             "Observation records from a session are parent-reported evidence and are never exported with the pack.",
+            "2.0.0 moves the pack to cb.pack v2 and adds the approved painted cover as role 'cover' "
+            "(content/cover-3x2.png with its exact 4:5 centre crop). The plate is decorative: the jug is drawn blank, "
+            "it carries no graduations, quantity or text, and no lesson depends on seeing it. No teaching text, "
+            "check or answer changed.",
         ],
         safety_notes=["Uses water and a jug; no heat, sharp tools or hazardous materials."],
         accessibility_notes=[
             "Learner page uses short sentences and a blank line per answer.",
             "The answer guide repeats each task number so a parent can match pages without scanning.",
+            "The cover plate has a text equivalent on its file record and the caption 'Cover plate — painted "
+            "illustration, not a diagram of the course.' beside it; nothing in the course depends on seeing it.",
         ],
         default_dials={"pace": "light", "depth": "working", "assessment": "self_check", "autonomy": "guided"},
     )
@@ -879,28 +962,28 @@ def technical_manifest() -> dict:
         "content/source-notes.md",
     ]
     files = {path: (TECHNICAL / path).read_bytes() for path in paths}
-    files[COVER_MASTER] = cover_plate_png("technical")
-    files[COVER_CROP] = cover_crop_png("technical")
+    files[COVER_MASTER] = painted_cover("technical")
+    files[COVER_CROP] = painted_cover("technical", portrait=True)
     metadata = {
         "content/section-01-anatomy.md": {"mime": "text/markdown", "role": "section"},
         "content/section-02-labels.md": {"mime": "text/markdown", "role": "section"},
         "content/source-notes.md": {"mime": "text/markdown", "role": "source_note"},
         COVER_MASTER: {
             "mime": "image/png",
-            "role": "visual",
+            "role": "cover",
             "text_equivalent": TECHNICAL_COVER_TEXT,
             "description": (
-                "Press Plate cover for this pack (16:9 master): five flat inks, printed "
-                "deterministically. Decorative material; it is not a schema diagram and has no text."
+                "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 "
+                "gouache plate. Decorative illustration; it is not a schema diagram and has no text."
             ),
         },
         COVER_CROP: {
             "mime": "image/png",
-            "role": "visual",
+            "role": "cover",
             "text_equivalent": TECHNICAL_COVER_TEXT,
             "description": (
-                "Press Plate cover for this pack (864x576, a mechanical centre crop of the 16:9 "
-                "master for a 3:2 card). Same plate, same five inks."
+                "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's "
+                "exact centre crop. Decorative illustration; no field, count or text."
             ),
         },
     }
@@ -989,7 +1072,7 @@ def technical_manifest() -> dict:
     ]
     return packs.build_manifest(
         pack_id="technical-demo-pack",
-        pack_version="2.0.0",
+        pack_version="2.1.0",
         title="Technical demo: reading a pack before you install it",
         subtitle="Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
         recipe="one_off",
@@ -1010,26 +1093,29 @@ def technical_manifest() -> dict:
             "id": "CC0-1.0",
             "redistribution": "local_only",
             "note": (
-                "Original Coursebook-authored teaching text and Press Plate about this repository's "
-                "own pack contract. No third-party text or media is bundled; the repository files it "
-                "cites are read locally by the pack maintainer, not redistributed."
+                "Original Coursebook-authored teaching text about this repository's own pack "
+                "contract. The cover plate is model output generated for this pack and carries no "
+                "redistribution licence of its own; the pack stays local_only. No third-party text "
+                "or media is bundled; the repository files it cites are read locally by the pack "
+                "maintainer, not redistributed."
             ),
             "per_artifact": [
                 {
                     "path": COVER_MASTER,
-                    "license_id": "CC0-1.0",
-                    "attribution": COVER_ATTRIBUTION,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
                 },
                 {
                     "path": COVER_CROP,
-                    "license_id": "CC0-1.0",
-                    "attribution": COVER_ATTRIBUTION,
+                    "license_id": "unspecified",
+                    "attribution": MODEL_COVER_ATTRIBUTION,
                 },
             ],
         },
         attribution=(
-            "Original teaching text and cover plate: Coursebook demo pack. No third-party text or "
-            "media is bundled."
+            "Original teaching text: Coursebook demo pack. The cover plate is model output "
+            "generated for this pack and is recorded with its provenance and rights position in "
+            "the manifest. No third-party text or media is bundled."
         ),
         contributors=[{"name": "Coursebook demo pack", "role": "author"}],
         objectives=objectives,
@@ -1043,9 +1129,14 @@ def technical_manifest() -> dict:
             "The pack claims no human review and no native-speaker or expert review: its checks are "
             "recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
             "This is a technical demo. It teaches the pack format, not the subject of any other pack.",
-            "2.0.0 adds one composed cover plate (content/cover-plate.png) and moves the document to "
-            "cb.pack v2 so the plate can be linked through media[]. The plate is decorative: it is "
-            "not a diagram of the manifest schema and states no field, count or rule.",
+            "2.0.0 added one composed Press Plate cover (content/cover-16x9.png with its 3:2 crop) and moved "
+            "the document to cb.pack v2 so the plate could be linked through media[]. The plate was "
+            "decorative: it was not a diagram of the manifest schema and stated no field, count or rule.",
+            "2.1.0 replaces the Press Plate cover with the approved painted plate for this pack "
+            "(content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role "
+            "'cover'. The plate is model output generated for this pack; its provenance and rights position "
+            "(no redistribution licence declared; local_only) are recorded per artifact. Its pages are blank: "
+            "it states no field, count or rule, and no lesson depends on seeing it.",
         ],
         safety_notes=[
             "Text plus one decorative cover plate. No external services, no learner data, and no "
@@ -1054,8 +1145,8 @@ def technical_manifest() -> dict:
         accessibility_notes=[
             "Plain markdown; every field name is written as literal text so it survives a screen reader.",
             "The cover plate has a text equivalent on its file record and the caption 'Cover plate — "
-            "illustration, not a technical diagram.' beside it; nothing in the course depends on "
-            "seeing it.",
+            "painted illustration, not a diagram of the course.' beside it; nothing in the course depends "
+            "on seeing it.",
         ],
         default_dials={"pace": "light", "depth": "survey", "assessment": "self_check", "autonomy": "independent"},
     )
@@ -1071,12 +1162,13 @@ def write_manifest(directory: Path, manifest: dict) -> Path:
 
 def main() -> int:
     (JAPANESE / "content" / "relationship-map.png").write_bytes(relationship_map_png())
-    # H-197: each plate is written beside its pack before the manifest is rebuilt, so the committed
-    # bytes, the declared sha256 and the catalogue cover path all come from one generator.
-    (JAPANESE / COVER_MASTER).write_bytes(cover_plate_png("japanese"))
-    (JAPANESE / COVER_CROP).write_bytes(cover_crop_png("japanese"))
-    (TECHNICAL / COVER_MASTER).write_bytes(cover_plate_png("technical"))
-    (TECHNICAL / COVER_CROP).write_bytes(cover_crop_png("technical"))
+    # CP-014: every pack carries the approved painted plate (byte for byte from the cover kit)
+    # before its manifest is rebuilt, so the committed bytes, the declared sha256 and the
+    # catalogue cover path all come from one source. The H-197 Press Plate functions stay as the
+    # typographic fallback lane and are not written into a pack that has a cover.
+    for directory, kind in ((JAPANESE, "japanese"), (PARENT, "parent"), (TECHNICAL, "technical")):
+        (directory / COVER_MASTER).write_bytes(painted_cover(kind))
+        (directory / COVER_CROP).write_bytes(painted_cover(kind, portrait=True))
     for directory, builder in (
         (JAPANESE, japanese_manifest),
         (PARENT, parent_manifest),

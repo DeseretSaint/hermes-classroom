@@ -129,8 +129,8 @@ class JapanesePackTests(unittest.TestCase):
 
     def test_media_links_name_the_real_assets_and_their_sections(self) -> None:
         media = self.manifest["media"]
-        # H-197: two real assets plus the composed cover plate, which is linked first so the
-        # Workshop storefront can present it as the pack's cover.
+        # H-197/CP-014: the painted cover is linked first so the Workshop storefront can present
+        # it as the pack's cover; the narration and the relationship map keep their own sections.
         self.assertEqual(len(media), 3)
         by_path = {entry["path"]: entry for entry in self.manifest["files"]}
         sections = {
@@ -141,7 +141,7 @@ class JapanesePackTests(unittest.TestCase):
         for link in media:
             with self.subTest(path=link["path"]):
                 file_entry = by_path[link["path"]]
-                self.assertIn(file_entry["role"], {"narration", "visual"})
+                self.assertIn(file_entry["role"], {"narration", "visual", "cover"})
                 self.assertIn(link["section_path"], sections)
                 self.assertTrue(1 <= len(link["caption"]) <= 200)
                 self.assertTrue(file_entry["text_equivalent"])
@@ -150,7 +150,7 @@ class JapanesePackTests(unittest.TestCase):
         self.assertEqual(
             {link["path"]: link["section_path"] for link in media},
             {
-                "content/cover-16x9.png": "content/section-01-two-ways.md",
+                "content/cover-3x2.png": "content/section-01-two-ways.md",
                 "content/narration-polite-confession.mp3": "content/section-02-choosing.md",
                 "content/relationship-map.png": "content/section-01-two-ways.md",
             },
@@ -281,7 +281,7 @@ class ParentPackTests(unittest.TestCase):
     def test_parent_recipe_is_declared(self) -> None:
         self.assertEqual(self.manifest["recipe"], "parent")
         roles = {entry["role"] for entry in self.manifest["files"]}
-        self.assertEqual(roles, {"learner_page", "answer_guide", "parent_guide"})
+        self.assertEqual(roles, {"learner_page", "answer_guide", "parent_guide", "cover"})
         self.assertEqual(self.manifest["license"]["redistribution"], "local_only")
 
 

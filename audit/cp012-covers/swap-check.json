@@ -1,0 +1,60 @@
+{
+  "card": "CP-012",
+  "rule": "docs/GM-SUBJECT-WORLDS.md §5: swapping a cover's caption to an unrelated subject must change the grammar and at least two motifs, and the swap must be rejected. `mark` is the single canonical noun for each motif. `bbox` is the motif's measured zone on the shipped 1200x800 master (x0,y0,x1,y1); scripts/cp012-cover-accept.py reads the shipped pixels inside that zone and fails when fewer than 150 non-paper pixels are painted there or when less than 60 % of them survive the mechanical 640x800 centre crop. The swap verdicts are a written judgement against the shipped pixels.",
+  "crop_rule": "One drawing, one mechanical crop. The master is 3:2; the 4:5 file is its 640x800 centre crop with no resampling, so every declared motif must sit inside x 280-920 of the master. scripts/cp012-cover-prep.py places the painted plate so that its measured ink box fits that window with 16 px of paper to spare.",
+  "covers": [
+    {
+      "pack": "japanese-affection-context-l0",
+      "title": "Japanese affection and register — a Sample L0 classroom",
+      "grammar": "field_atlas (lantern variant)",
+      "accent": "none",
+      "accent_note": "docs/GM-SUBJECT-WORLDS.md §1 permits the lamp accent; the round-2 plate paints the lantern in paper-cream and ships no lamp pigment (measured: no pixel within dE 12 of #e8a93a), so the cover declares no accent rather than claiming one it does not carry. The lit-lantern accent stays with the world hero plate (CP-016).",
+      "motifs": [
+        {"mark": "lantern", "name": "paper lantern with ink cap and one rib", "encodes": "the district the lesson is set in", "must_never_become": "a skin on a non-language course; a carrier of kanji-like marks", "bbox": [300, 50, 430, 425]},
+        {"mark": "noren", "name": "noren panel with three slits", "encodes": "the threshold of entering — the L0 social frame", "must_never_become": "a text-bearing shop sign", "bbox": [640, 0, 900, 410]},
+        {"mark": "counter", "name": "café counter edge with two stools and a cup", "encodes": "the ordering situation the dialogue happens in", "must_never_become": "a generic restaurant stock scene", "bbox": [297, 530, 903, 800]}
+      ],
+      "swaps": [
+        {"to": "Technical demo — reading a pack", "verdict": "rejected", "reason": "A lantern, a noren and a café counter cannot caption a document-inspection course; the grammar and every motif would have to change."},
+        {"to": "Parent measurement — measuring ingredients", "verdict": "rejected", "reason": "Nothing on this plate is a kitchen implement; a jug and a bowl cannot be read here, and the field-green linen of the parent world is absent."},
+        {"to": "Sourdough — kitchen table", "verdict": "rejected", "reason": "The counter and its stools do not become a bench and a banneton; only the warm paper survives, which is exactly the failure the check names."}
+      ]
+    },
+    {
+      "pack": "parent-measurement-practice",
+      "title": "Parent demo: measuring ingredients together",
+      "grammar": "kitchen_table",
+      "accent": "field",
+      "accent_note": "The accent is field green #2f6047 on the folded linen. Round 1 shipped a plum cloth (#6a3e74), which GM-SUBJECT-WORLDS.md §0 bans and ART-BIBLE.md §2 has no pigment for; the plum is gone from the art and from the pipeline.",
+      "motifs": [
+        {"mark": "jug", "name": "blank measuring jug", "encodes": "the vessel the learner reads in task 1", "must_never_become": "graduated marks, a scale readout or a recipe quantity", "bbox": [298, 345, 482, 578]},
+        {"mark": "bowl", "name": "mixing bowl with wooden spoon", "encodes": "the making the parent and child do together", "must_never_become": "a styled product still life with a brand", "bbox": [498, 300, 712, 578]},
+        {"mark": "oranges", "name": "two oranges on the folded field-green linen", "encodes": "the fruit drink of the learner page; the parent-world accent", "must_never_become": "a finished dish presented as a tested result", "bbox": [698, 370, 952, 620]},
+        {"mark": "table", "name": "kitchen table edge", "encodes": "the home bench and its scale", "must_never_become": "a café counter or a workshop bench", "bbox": [298, 515, 905, 585]}
+      ],
+      "swaps": [
+        {"to": "Japanese L0 — lantern district", "verdict": "rejected", "reason": "A jug and a mixing bowl do not become a lantern and a noren; the plate carries no threshold and no street."},
+        {"to": "Technical demo — reading a pack", "verdict": "rejected", "reason": "There is no manual and no paper stack here; the table edge alone cannot carry a document course."},
+        {"to": "Head gasket — service bay", "verdict": "rejected", "reason": "No vehicle, no lift, no tool wall and no gasket ring; a kitchen still life is not a service bay at any palette."}
+      ]
+    },
+    {
+      "pack": "technical-demo-pack",
+      "title": "Technical demo: reading a pack before you install it",
+      "grammar": "workshop_manual",
+      "accent": "none",
+      "accent_note": "GM §2 sets the subject accent to none for the workshop grammar. Paper, ink (with the dark cuff ink on the manual spine) and cream only; measured frame hue band is warm paper and brown, with no lamp, field, ochre, coral or plum pigment.",
+      "motifs": [
+        {"mark": "manual", "name": "open manual with blank pages and ink spine", "encodes": "the manifest as the authority you read first", "must_never_become": "readable procedure text, a table of values or a page of steps", "bbox": [598, 295, 905, 578]},
+        {"mark": "sheets", "name": "stack of blank sheets", "encodes": "the files the manifest names", "must_never_become": "a checklist of ticked items or a completion claim", "bbox": [296, 340, 440, 578]},
+        {"mark": "bench", "name": "bench edge", "encodes": "the working surface, orientation only", "must_never_become": "a kitchen table or a café counter", "bbox": [296, 568, 904, 634]}
+      ],
+      "swaps": [
+        {"to": "Parent measurement — measuring ingredients", "verdict": "rejected", "reason": "A blank manual and a stack of sheets cannot read as a jug and a bowl; no kitchen vessel or fruit is on the plate."},
+        {"to": "Japanese L0 — lantern district", "verdict": "rejected", "reason": "No lantern, no noren and no café threshold; the plate would have to be redrawn, not recaptioned."},
+        {"to": "Sourdough — kitchen table", "verdict": "rejected", "reason": "A stack of blank sheets is not a banneton and a bound manual is not a dough dome; only the cream paper survives the swap."}
+      ]
+    }
+  ],
+  "out_of_scope_note": "The four demo course covers are not drawn on this card; they come from the product's own world pipeline (CP-015/CP-016) and must pass this same check there."
+}

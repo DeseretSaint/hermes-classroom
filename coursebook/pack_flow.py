@@ -423,9 +423,17 @@ _PACK_NARRATION_LABEL = (
     "Narration — the pack author's transcript is the authoritative text; "
     "this is not pronunciation assessment."
 )
+#: The honesty label a pack-authored cover carries on the media route. A cover is ornament: it
+#: states no measurement, procedure or field, and seeing it is never required.
+_PACK_COVER_LABEL = (
+    "Cover plate — illustration only. It is not a measurement, procedure, technical reference, "
+    "or safety authority, and no lesson depends on seeing it."
+)
 
 #: ``media[].path`` role -> ``artifacts.kind`` (``artifacts.ARTIFACT_KINDS`` accepts both).
-_MEDIA_ROLE_KIND = {"narration": "audio", "visual": "visual"}
+#: A cover is adopted as a visual artifact; its ``pack_file`` provenance is what the Workshop
+#: reads back to serve exactly the declared plate.
+_MEDIA_ROLE_KIND = {"narration": "audio", "visual": "visual", "cover": "visual"}
 
 
 def _media_links(manifest: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -473,7 +481,12 @@ def _media_by_section(links: list[dict[str, Any]]) -> dict[str, list[dict[str, A
 
 def _media_provenance(manifest: Mapping[str, Any], link: Mapping[str, Any]) -> dict[str, Any]:
     """The provenance record a pack-authored artifact carries (H-73 §8.3)."""
-    label = _PACK_NARRATION_LABEL if link["role"] == "narration" else artifacts.ILLUSTRATION_LABEL
+    if link["role"] == "narration":
+        label = _PACK_NARRATION_LABEL
+    elif link["role"] == "cover":
+        label = _PACK_COVER_LABEL
+    else:
+        label = artifacts.ILLUSTRATION_LABEL
     return {
         "generator": "coursebook.pack_import",
         "model": None,
@@ -651,6 +664,10 @@ def _write_lesson_page(
                 (_new_id("seg"), run_id, ordinal, piece, now),
             )
         for link in grouped.get(path, []):
+            if link["role"] == "cover":
+                # A cover is adopted as a visual artifact so the Workshop can serve it, but it is
+                # not a lesson block: a cover states no teaching fact and no page depends on it.
+                continue
             artifact_id = ids.get(str(link["path"]))
             if not artifact_id:
                 # Pre-write validation guarantees a row per link; a missing one here is a bug in
