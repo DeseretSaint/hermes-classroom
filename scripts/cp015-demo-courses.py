@@ -48,7 +48,7 @@ COURSES: dict[str, dict] = {
         "level": "L0",
         "subject_domain": "language",
         "scope": "short",
-        "dials": {"pace": "steady", "depth": "working", "assessment": "graded",
+        "dials": {"pace": "steady", "depth": "deep", "assessment": "graded",
                   "autonomy": "guided"},
         "presentation_mode": "game",
     },
@@ -62,7 +62,7 @@ COURSES: dict[str, dict] = {
         "level": "beginner",
         "subject_domain": "repair",
         "scope": "short",
-        "dials": {"pace": "steady", "depth": "working", "assessment": "graded",
+        "dials": {"pace": "steady", "depth": "deep", "assessment": "graded",
                   "autonomy": "guided"},
         "presentation_mode": "game",
     },
@@ -75,7 +75,7 @@ COURSES: dict[str, dict] = {
         "level": "beginner",
         "subject_domain": "science",
         "scope": "short",
-        "dials": {"pace": "steady", "depth": "working", "assessment": "graded",
+        "dials": {"pace": "steady", "depth": "deep", "assessment": "graded",
                   "autonomy": "guided"},
         "presentation_mode": "game",
     },
@@ -88,7 +88,7 @@ COURSES: dict[str, dict] = {
         "level": "beginner",
         "subject_domain": "cooking",
         "scope": "short",
-        "dials": {"pace": "steady", "depth": "working", "assessment": "graded",
+        "dials": {"pace": "steady", "depth": "deep", "assessment": "graded",
                   "autonomy": "guided"},
         "presentation_mode": "game",
     },
@@ -105,6 +105,10 @@ SUCCESS_JOB_STATES = {"completed", "succeeded"}
 #: A validator reject is grounded in named defects, and re-authoring is the learner's own path; the
 #: limit keeps a run from looping on an author model that cannot satisfy the contract.
 PLAN_ATTEMPTS = 3
+
+#: Per-attempt bound on a plan job. The provider call can outlive the job's own deadline
+#: (CP-044), so the driver refuses to wait on one attempt longer than this.
+PLAN_ATTEMPT_TIMEOUT_S = 300.0
 
 
 def _log(message: str) -> None:
@@ -252,7 +256,10 @@ def run_plan(slug: str, flow: dict) -> dict:
         job = ok("jobs.create", {"kind": "plan", "brief": brief}, key=key)
         job_id = job["job_id"]
         _log(f"{slug}: plan job {job_id} queued (attempt {attempt})")
-        final = wait_for_job(job_id, label=f"{slug} plan", timeout=2400)
+        # CP-044 owns the job deadline that never cancels a hanging provider call. Until it lands,
+        # this driver bounds each attempt itself so one hang costs minutes, not the ~650 s a
+        # provider call can outlive the job's own limit.
+        final = wait_for_job(job_id, label=f"{slug} plan", timeout=PLAN_ATTEMPT_TIMEOUT_S)
         flow["plan_job_id"] = job_id
         flow["plan_job_state"] = final.get("state")
         flow["plan_job_error"] = final.get("error")
@@ -280,6 +287,12 @@ def run_plan(slug: str, flow: dict) -> dict:
         flow["validation"] = validation
         _log(f"{slug}: plan {flow['plan_id']} {plan.get('state')}, "
              f"verdict {validation.get('verdict')}, {len(flow['objectives'])} objectives")
+        if not flow["objectives"]:
+            # A draft row with no objectives is what `course.create` writes before authoring. It
+            # is never a course, and the approval gate now refuses it (plan_empty); treat it as a
+            # failed attempt rather than a plan to approve.
+            _log(f"{slug}: plan {flow['plan_id']} carries no objectives; not approvable")
+            continue
         if validation.get("approvable"):
             return flow
         if attempt < PLAN_ATTEMPTS:
@@ -302,6 +315,8 @@ def approve_plan(slug: str, flow: dict) -> dict:
             f"(verdict {validation.get('verdict')}): "
             + "; ".join(str(reason) for reason in (validation.get("reasons") or [])[:4])
         )
+    if not flow.get("objectives"):
+        raise RuntimeError(f"{slug}: refusing to approve a plan with no objectives")
     approved = ok(
         "plan.approve",
         {"enrollment_id": flow["enrollment_id"], "plan_id": plan["plan_id"],
@@ -419,7 +434,7 @@ def run_lessons(slug: str, flow: dict) -> dict:
     return flow
 
 
-def render_lesson(slug: str, flow: dict) -> dict:
+def render_lesson(slug: str, flow: dict, *, after_world: bool = False) -> dict:
     outline = ok("course.outline", {"enrollment_id": flow["enrollment_id"]})
     objectives = _objectives(outline)
     if not objectives:
@@ -428,21 +443,23 @@ def render_lesson(slug: str, flow: dict) -> dict:
     begun = ok(
         "lesson.begin",
         {"enrollment_id": flow["enrollment_id"], "objective_id": first["id"], "mode": "fresh"},
-        key=keyed(slug, "begin"),
+        key=keyed(slug, "begin-after-world" if after_world else "begin"),
     )
     page = ok(
         "lesson.page",
         {"enrollment_id": flow["enrollment_id"], "objective_id": first["id"]},
     )
     blocks = page.get("blocks") or page.get("segments") or []
-    flow["lesson_objective"] = {"id": first["id"], "title": first.get("title")}
-    flow["lesson_run_id"] = begun.get("lesson_run_id")
-    flow["lesson_page_state"] = page.get("state") or (page.get("page") or {}).get("state")
-    flow["lesson_page_blocks"] = len(blocks)
-    flow["lesson_page_media"] = len(page.get("media") or [])
-    flow["lesson_check"] = bool(page.get("check"))
-    _log(f"{slug}: lesson page {len(blocks)} blocks, {flow['lesson_page_media']} media, "
-         f"state {flow['lesson_page_state']}")
+    suffix = "_after_world" if after_world else ""
+    flow[f"lesson_run_id{suffix}"] = begun.get("lesson_run_id")
+    flow[f"lesson_page_state{suffix}"] = page.get("state") or (page.get("page") or {}).get("state")
+    flow[f"lesson_page_blocks{suffix}"] = len(blocks)
+    flow[f"lesson_page_media{suffix}"] = len(page.get("media") or [])
+    flow[f"lesson_check{suffix}"] = bool(page.get("check"))
+    if not after_world:
+        flow["lesson_objective"] = {"id": first["id"], "title": first.get("title")}
+    _log(f"{slug}: lesson page{' after world' if after_world else ''} {len(blocks)} blocks, "
+         f"{flow[f'lesson_page_media{suffix}']} media, state {flow[f'lesson_page_state{suffix}']}")
     if not blocks:
         raise RuntimeError(f"{slug}: lesson.page served no blocks")
     return flow
@@ -481,17 +498,45 @@ def export_course(slug: str, flow: dict, copy_to: Path | None = None) -> dict:
                                    / "plugin-data/coursebook/pack-exports")))
     pack_id = flow["export"]["pack_id"]
     candidates = sorted(root.glob(f"{pack_id}-*.zip"), key=lambda p: p.stat().st_mtime)
-    if candidates:
-        source = candidates[-1]
-        flow["export"]["archive"] = str(source)
-        flow["export"]["archive_bytes"] = source.stat().st_size
-        if copy_to is not None:
-            copy_to.mkdir(parents=True, exist_ok=True)
-            destination = copy_to / f"{slug}.zip"
-            destination.write_bytes(source.read_bytes())
-            flow["export"]["copied_to"] = str(destination)
+    if not candidates:
+        raise RuntimeError(f"{slug}: course.export wrote no archive under {root}")
+    source = candidates[-1]
+    flow["export"]["archive"] = str(source)
+    flow["export"]["archive_bytes"] = source.stat().st_size
+    if copy_to is not None:
+        copy_to.mkdir(parents=True, exist_ok=True)
+        destination = copy_to / f"{slug}.zip"
+        destination.write_bytes(source.read_bytes())
+        flow["export"]["copied_to"] = str(destination)
+
+    # The pack gate is the product's own: `pack.preview` runs packs.validate_manifest on the
+    # written archive, so this records that the artifact really is an importable pack rather than
+    # a zip we produced. The title and licence it would ship with are recorded with it.
+    granted = _request("/packs/grant", {"path": str(source)})
+    if not granted.get("ok"):
+        raise RuntimeError(f"{slug}: pack grant refused: {json.dumps(granted.get('error'))[:400]}")
+    preview = ok("pack.preview", {"staged_id": granted["staged_id"]})
+    manifest = preview.get("manifest") or {}
+    flow["export"]["pack"] = {
+        "pack_id": manifest.get("pack_id"),
+        "pack_version": manifest.get("pack_version"),
+        "title": manifest.get("title"),
+        "license_id": (manifest.get("license") or {}).get("id"),
+        "redistribution": (manifest.get("license") or {}).get("redistribution"),
+        "content_hash": manifest.get("content_hash"),
+        "files": len(manifest.get("files") or []),
+        "hashes_match": (preview.get("integrity") or {}).get("hashes_match"),
+    }
+    # Owner ruling 2026-11-10: these are starter courses, not demo data. Nothing user-visible may
+    # say demo, sample or fixture — checked on the manifest fields a learner would read.
+    visible = " ".join(str(manifest.get(key) or "") for key in ("title", "summary", "attribution"))
+    for word in ("demo", "sample", "fixture"):
+        if word in visible.lower():
+            raise RuntimeError(f"{slug}: exported pack is labelled with {word!r}: {visible[:200]}")
     _log(f"{slug}: exported {pack_id} ({flow['export'].get('archive_bytes')} bytes, "
-         f"{flow['export']['files']} files)")
+         f"{flow['export']['files']} files) validated as pack "
+         f"{manifest.get('pack_id')} title={manifest.get('title')!r} "
+         f"license={(manifest.get('license') or {}).get('id')!r}")
     return flow
 
 
@@ -500,9 +545,14 @@ def run_one(slug: str, spec: dict) -> dict:
     flow = create_course(slug, spec)
     flow = run_plan(slug, flow)
     flow = approve_plan(slug, flow)
-    flow = build_world(slug, flow)
+    # Order matters (supervisor ruling 2026-11-10): one authored lesson page proves the plan is
+    # teachable before any image-provider call is spent on a world kit.
     flow = run_lessons(slug, flow)
     flow = render_lesson(slug, flow)
+    flow = build_world(slug, flow)
+    # Re-read the page after the kit: the same objective now has its world media, and the record
+    # must show the media actually resolves rather than only that files exist in the bundle.
+    flow = render_lesson(slug, flow, after_world=True)
     flow["completed_at"] = datetime.now(timezone.utc).isoformat()
     return flow
 
@@ -552,7 +602,15 @@ def main() -> int:
 
     for slug in selected:
         try:
-            record["courses"][slug] = run_one(slug, COURSES[slug])
+            flow = run_one(slug, COURSES[slug])
+            record["courses"][slug] = flow
+            if copy_to is not None:
+                try:
+                    export_course(slug, flow, copy_to=copy_to)
+                except Exception as exc:  # noqa: BLE001 - the course stays recorded
+                    failures.append((slug, f"export: {exc}"))
+                    flow["export_error"] = str(exc)
+                    _log(f"{slug}: export FAILED — {exc}")
         except Exception as exc:  # noqa: BLE001 - recorded, then reported per course
             failures.append((slug, str(exc)))
             record["courses"][slug] = {"slug": slug, "error": str(exc)}

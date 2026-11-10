@@ -76,15 +76,22 @@ class PlanSourcingRulesTest(unittest.TestCase):
                     subject_domain="science",
                     scope="short",
                 )
-                self.assertIn("Ground every objective in the source ledger", text)
+                # Ledger-first: the author starts from the excerpt, not the goal, and may not
+                # add a mechanism, name or label the excerpt does not state.
+                self.assertIn("Author the plan from the source ledger", text)
+                self.assertIn("level of generality the excerpt actually supports", text)
                 self.assertIn("single accepted answer", text)
                 self.assertIn("evidence target must be the same class", text)
-                self.assertIn("Cover the goal", text)
+                # Fewer honest objectives beat padding; an unsupported capability is recorded
+                # in exclusions instead of invented.
+                self.assertIn("A course may be short", text)
+                self.assertIn("Not covered — no supporting source:", text)
+                self.assertNotIn("Cover the goal:", text)
                 self.assertIn("assess every evidence criterion", text)
 
     def test_plan_prompt_versions_are_current(self) -> None:
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v12")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v13")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v13")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v14")
 
 
 if __name__ == "__main__":
