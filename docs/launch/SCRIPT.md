@@ -89,8 +89,23 @@ below has a marker id equal to the frame id, so the editor places a cut at the m
 |---|---|
 | `S2-reveal` | navigate to `#/coursebook`, wait for `[data-cb-route]`, wait for the shelf, hold |
 | `S3-proof1-shelf` | slow pointer travel across the card row, no click |
-| `S4a-proof2-answer` | click the course card, wait for the check, click the served answer, pause on the filled primary |
+| `S4a-proof2-answer` | click the course card, wait for the check, click the first served choice, assert `[data-cb-answer-kind="selection"]`, pause on the filled primary |
 | `S4b-proof2-row` | click `Check answer`, wait for the verdict, wait for the evidence count to change, hold |
-| `S5a-proof3-close` | marker only; the close is a cut in the edit |
-| `S5b-proof3-resume` | re-attach to the reopened window, navigate to the same route, wait for the `Now` stamp and the pending check, hold |
+| `S5a-proof3-close` | marker only; the close is a cut in the edit. Act one ends here |
+| `S5b-proof3-resume` | re-attach to the reopened window's **new page target**, navigate to the same route, wait for the `Now` stamp and the pending check, hold |
 | `S8-end` | no window; the card is composited in the edit |
+
+**The answer must be the selection format.** The module renders three answer kinds — selection,
+checklist and text (`desktop/plugin.js:13446`). A click into the text area only focuses it, types
+nothing, and the primary stays disabled while the text is empty (`desktop/plugin.js:13628`), so a
+text-format check cannot produce S4a's filled primary. The step list therefore clicks
+`[data-cb-choice="1"]` and the next step asserts `[data-cb-answer-kind="selection"]`; on a text or
+checklist check the take stops instead of stamping an unreachable frame. The demo course is authored
+with `classroom.check.option` (see §1), so this is the same check the script is written around.
+
+**The close is a real window transition, not a marker.** The take is split into two acts. Act one
+ends at `S5a-proof3-close`; act two opens with a `reconnect` step that closes the take's own CDP
+socket and refuses to attach to the page id it just left, so `S5b-proof3-resume` can only be stamped
+on a window that was actually reopened. Either run the whole list in one command — the driver
+announces the close and waits for the new target — or run `--act 1`, close and reopen the window,
+then `--act 2`. Act two's log records the target ids it moved between.

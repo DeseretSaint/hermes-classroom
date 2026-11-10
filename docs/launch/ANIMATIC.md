@@ -119,8 +119,10 @@ ids above, so an editor cuts at the log rather than by eye.
 
 ```bash
 node scripts/cp-demo.mjs --dry-run     # validate the step list, print the timeline, touch nothing
-node scripts/cp-demo.mjs               # drive the accepted-commit window, write the marker log
-node scripts/cp-demo.mjs --selftest    # drive a local fixture: navigate/click/type/wait/marker
+node scripts/cp-demo.mjs               # drive both acts; announces the close, waits for the new target
+node scripts/cp-demo.mjs --act 1       # act one only, up to the close beat
+node scripts/cp-demo.mjs --act 2       # attach to the reopened window and drive the resume beat
+node scripts/cp-demo.mjs --selftest    # drive a local fixture, including the window transition
 ```
 
 Every selector in the step list is an attribute the shipped module actually renders — the test
@@ -133,10 +135,22 @@ carries no stable data attribute, so that one click falls back to the button's o
 both the v2 copy (`Submit answer`) and the v3 deck row (`Check answer`, `COPY.md`
 `classroom.check.primary`).
 
-Measured: `--selftest` ran 9 steps in 221 ms against the fixture and printed `selftest ok`, so the
-step executor (click by selector, click by label fallback, type, wait-for-selector, hover sweep,
-marker, assert) is verified to work. The live take is **not** run in this card: no window is
-listening on 9411, and driving the product is the recording card's job.
+Two limits are named in the step list rather than papered over. The driven check must be the
+**selection** format: the answer step clicks `[data-cb-choice="1"]` and the next step asserts
+`[data-cb-answer-kind="selection"]`, because a click into a text-format check types nothing and the
+primary stays disabled while it is empty, so S4a's filled primary would be unreachable. And the
+close is a real **window transition**: the steps carry an act number, act two opens with a
+`reconnect` step that drops the take's socket and refuses the page id it just left, and
+`test_no_act_holds_both_the_close_and_the_resume` plus
+`test_a_window_transition_sits_between_the_close_and_the_resume` fail if one act tries to both close
+the window and stamp the resume frame.
+
+Measured: `--selftest` drove 9 steps against the fixture in about 220 ms (`selftest ok`), then proved
+the transition live — act one target A, act two target B, with `A != B`, and a third leg that
+reconnected past a still-open page to a newer target with `fresh target: true`. The step executor
+(click by selector, click by label fallback, type, wait-for-selector, hover sweep, marker, assert,
+reconnect) is therefore verified against a real browser. The live take is **not** run in this card:
+no window is listening on 9411, and driving the product is the recording card's job.
 
 ## 7. Known gaps
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -29,7 +30,7 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 REFS = ROOT / "docs" / "concept-parity" / "refs" / "REFS.md"
 
 PLACEHOLDER_WORDS = ("PLACEHOLDER", "NOT THE BUILD")
-STEP_KINDS = {"navigate", "click", "type", "wait", "hover-sweep", "marker", "assert"}
+STEP_KINDS = {"navigate", "click", "type", "wait", "hover-sweep", "marker", "assert", "reconnect"}
 # Markers that are not shot boundaries.
 TAKE_MARKERS = {"take-start", "take-end"}
 # Shots whose picture is a live window state. The word cards and the end card are cut in the edit.
@@ -402,6 +403,105 @@ class DriverSteps(unittest.TestCase):
                 right - left, 1,
                 f"driven markers at steps {left} and {right} are consecutive; nothing establishes the second",
             )
+
+    # -- the window transition: a closed window cannot keep one socket, so the take is split in acts
+
+    def test_every_step_belongs_to_an_act_that_runs_in_order(self):
+        acts = [step.get("act") for step in self.spec["steps"]]
+        self.assertTrue(
+            all(isinstance(act, int) and act >= 1 for act in acts),
+            f"every step needs a positive integer act, got {acts}",
+        )
+        self.assertEqual(acts, sorted(acts), "acts must run in file order; a step may not drift back")
+        self.assertEqual(
+            sorted(set(acts)), list(range(1, max(acts) + 1)),
+            f"acts must be contiguous from 1, got {sorted(set(acts))}",
+        )
+
+    def test_no_act_holds_both_the_close_and_the_resume(self):
+        where = {
+            step["id"]: step.get("act") for step in self.spec["steps"]
+            if step.get("kind") == "marker" and step.get("id") in {"S5a-proof3-close", "S5b-proof3-resume"}
+        }
+        self.assertEqual(set(where), {"S5a-proof3-close", "S5b-proof3-resume"})
+        self.assertNotEqual(
+            where["S5a-proof3-close"], where["S5b-proof3-resume"],
+            "one act cannot both close the window and stamp the resume frame; the socket would be dead",
+        )
+
+    def test_a_window_transition_sits_between_the_close_and_the_resume(self):
+        steps = self.spec["steps"]
+        close = next(
+            index for index, step in enumerate(steps)
+            if step.get("kind") == "marker" and step.get("id") == "S5a-proof3-close"
+        )
+        resume = next(
+            index for index, step in enumerate(steps)
+            if step.get("kind") == "marker" and step.get("id") == "S5b-proof3-resume"
+        )
+        between = steps[close + 1:resume]
+        self.assertTrue(
+            any(step.get("kind") == "reconnect" for step in between),
+            "nothing between the close and the resume step re-attaches to a reopened window",
+        )
+        # Act two must open with the transition: run on its own with --act 2, it cannot inherit
+        # act one's socket, so the first thing it does is attach to the page that was reopened.
+        self.assertEqual(steps[close + 1].get("kind"), "reconnect", "act two must open with the transition")
+
+    # -- the answer format: a click into a textarea types nothing, so the take names the format
+
+    def test_the_driven_answer_names_the_selection_format(self):
+        steps = self.spec["steps"]
+        answer = next(
+            index for index, step in enumerate(steps)
+            if step.get("kind") == "click" and "data-cb-choice" in (step.get("selector") or "")
+        )
+        self.assertNotIn(
+            "textarea", steps[answer]["selector"],
+            "a click into the textarea only focuses it; the take must drive the selection format",
+        )
+        after = steps[answer + 1]
+        target = f"{after.get('selector') or ''} {after.get('for') or ''}"
+        self.assertIn(
+            '[data-cb-answer-kind="selection"]', target,
+            "the step after the answer click must assert the check is the selection format",
+        )
+        self.assertIn(after.get("kind"), {"assert", "wait"})
+
+    def test_no_document_claims_the_driver_fills_a_text_answer(self):
+        phrases = ("whatever its format", "fills a text answer", "types the answer")
+        for name in ("SCRIPT.md", "ANIMATIC.md"):
+            text = (LAUNCH / name).read_text(encoding="utf-8").lower()
+            for phrase in phrases:
+                self.assertNotIn(phrase, text, f"{name} claims a format the driver cannot fill: {phrase}")
+        for step in self.spec["steps"]:
+            note = (step.get("note") or "").lower()
+            for phrase in phrases:
+                self.assertNotIn(phrase, note, f"step note claims {phrase!r}")
+        script = (LAUNCH / "SCRIPT.md").read_text(encoding="utf-8")
+        row = next(line for line in script.splitlines() if line.startswith("| `S4a-proof2-answer` |"))
+        self.assertIn("selection", row.lower(), "SCRIPT.md §4 must name the selection format for S4a")
+
+
+class DriverTransitionSelfTest(unittest.TestCase):
+    """Execute the driver's own proof that act two lands on a page act one never held."""
+
+    def test_act_two_attaches_to_a_different_page_target(self):
+        if not shutil.which("node"):
+            self.skipTest("node not installed")
+        chromium = os.environ.get("CHROMIUM", "chromium")
+        if not shutil.which(chromium):
+            self.skipTest(f"{chromium} not installed; the driver's transition proof needs a browser")
+        result = subprocess.run(
+            ["node", "scripts/cp-demo.mjs", "--selftest"],
+            cwd=ROOT, capture_output=True, text=True, timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, f"{result.stdout}\n{result.stderr}")
+        self.assertIn("selftest ok:", result.stdout)
+        self.assertIn("transition ok:", result.stdout)
+        self.assertIn("(different)", result.stdout)
+        # The third leg reopens a page while the second is still open; the driver must skip it.
+        self.assertIn("fresh target: true", result.stdout)
 
 
 def _attributes(selector: str) -> list[str]:

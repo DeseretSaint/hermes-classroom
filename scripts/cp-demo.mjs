@@ -22,10 +22,19 @@
  *   hover-sweep { selector, ms }                        slow pointer travel across matched elements
  *   marker    { id, note? }                            write a marker line with elapsed ms + beat
  *   assert    { selector, note? }                      fail the take if the selector is missing
+ *   reconnect { timeout_ms? }                          window transition: close this take's socket,
+ *                                                      wait for a page target with a DIFFERENT id
+ *
+ * Every step carries an `act` (1, 2, …). The close beat ends act 1; act 2 begins with `reconnect`,
+ * so the take never pretends a window that was closed is still attached. Either run the whole list
+ * in one command (the driver announces when to close the window and waits for the reopened one) or
+ * run one act at a time with `--act N`, closing and reopening the window in between.
  *
  * Usage:
  *   node scripts/cp-demo.mjs                       # run docs/launch/cp-demo.steps.json on 9411
  *   node scripts/cp-demo.mjs --dry-run             # validate the step list, print the timeline
+ *   node scripts/cp-demo.mjs --act 1               # drive act one only, write its own log
+ *   node scripts/cp-demo.mjs --act 2               # attach to the reopened window and drive act two
  *   node scripts/cp-demo.mjs --port 9412 --log /tmp/take.jsonl
  *   node scripts/cp-demo.mjs --selftest            # drive a local fixture with headless chromium
  */
@@ -52,9 +61,18 @@ const beatMs = 500 // 120 BPM, the animatic's grid
 
 const spec = JSON.parse(readFileSync(stepsPath, 'utf8'))
 const port = Number(flag('port', spec.cdp_port || 9411))
-const logPath = resolve(repo, String(flag('log', `docs/launch/animatic/takes/${spec.id}.jsonl`)))
+const actArg = flag('act', null)
+const actNumber = actArg === null ? null : Number(actArg)
+if (actNumber !== null && (!Number.isInteger(actNumber) || actNumber < 1)) {
+  console.error(`--act needs a positive integer, got ${JSON.stringify(actArg)}`)
+  process.exit(2)
+}
+const logDefault = actNumber === null
+  ? `docs/launch/animatic/takes/${spec.id}.jsonl`
+  : `docs/launch/animatic/takes/${spec.id}-act${actNumber}.jsonl`
+const logPath = resolve(repo, String(flag('log', logDefault)))
 
-const KINDS = new Set(['navigate', 'click', 'type', 'wait', 'hover-sweep', 'marker', 'assert'])
+const KINDS = new Set(['navigate', 'click', 'type', 'wait', 'hover-sweep', 'marker', 'assert', 'reconnect'])
 
 function validate(list, where) {
   const problems = []
@@ -84,14 +102,58 @@ if (problems.length) {
   process.exit(2)
 }
 
+// Acts must be positive integers, run in file order, and be contiguous from 1. The close/reopen is
+// only real if act 2 begins after act 1 ends, so a step that drifts back into act 1 is an error.
+// The selftest builds its own step lists, so it skips the production step list's act rules.
+let acts = []
+let plan = []
+if (!selftest) {
+  const actProblems = []
+  let previousAct = 0
+  for (const [index, step] of spec.steps.entries()) {
+    if (!Number.isInteger(step.act) || step.act < 1) {
+      actProblems.push(`steps[${index}]: act must be a positive integer (${JSON.stringify(step.act)})`)
+      continue
+    }
+    if (step.act < previousAct) actProblems.push(`steps[${index}]: act ${step.act} follows act ${previousAct}`)
+    previousAct = Math.max(previousAct, step.act)
+  }
+  acts = [...new Set(spec.steps.map((step) => step.act))].sort((a, b) => a - b)
+  acts.forEach((value, index) => {
+    if (value !== index + 1) actProblems.push(`acts are not contiguous from 1: ${acts.join(', ')}`)
+  })
+  if (actNumber !== null && !acts.includes(actNumber)) {
+    actProblems.push(`--act ${actNumber} does not exist; the step list has acts ${acts.join(', ')}`)
+  }
+  if (actProblems.length) {
+    console.error(`step list acts invalid (${actProblems.length}):`)
+    for (const problem of actProblems) console.error(`  ${problem}`)
+    process.exit(2)
+  }
+
+  plan = actNumber === null ? spec.steps : spec.steps.filter((step) => step.act === actNumber)
+  if (!plan.length) {
+    console.error(`--act ${actNumber} selects no steps`)
+    process.exit(2)
+  }
+}
+
 if (dryRun) {
   let elapsed = 0
-  console.log(`step list ${stepsPath.replace(`${repo}/`, '')} · ${spec.steps.length} steps · port ${port}`)
-  for (const step of spec.steps) {
+  const actLabel = actNumber === null ? `acts ${acts.join('+')}` : `act ${actNumber}`
+  console.log(`step list ${stepsPath.replace(`${repo}/`, '')} · ${plan.length} steps · ${actLabel} · port ${port}`)
+  let seenAct = null
+  for (const step of plan) {
+    if (step.act !== seenAct) {
+      seenAct = step.act
+      console.log(`  --- act ${step.act} ---`)
+    }
     if (step.kind === 'wait' && step.ms) elapsed += step.ms
     if (step.kind === 'hover-sweep') elapsed += step.ms || 0
     if (step.kind === 'marker') {
       console.log(`  beat ${String(Math.round(elapsed / beatMs)).padStart(3)}  ~${(elapsed / 1000).toFixed(2)}s  marker ${step.id}`)
+    } else if (step.kind === 'reconnect') {
+      console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  reconnect  (closes this socket; waits for a DIFFERENT page target)`)
     } else {
       console.log(`  ·            ~${(elapsed / 1000).toFixed(2)}s  ${step.kind} ${step.selector || step.hash || step.for || step.id || ''}`)
     }
@@ -104,11 +166,7 @@ if (dryRun) {
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
 
-async function connect(targetPort) {
-  const list = await (await fetch(`http://127.0.0.1:${targetPort}/json/list`)).json()
-  const page = list.find((entry) => entry.type === 'page' && /Hermes/.test(entry.title || ''))
-    || list.find((entry) => entry.type === 'page')
-  if (!page) throw new Error(`no page target on port ${targetPort}`)
+async function connectTo(page) {
   const socket = new WebSocket(page.webSocketDebuggerUrl)
   await new Promise((done, fail) => {
     socket.addEventListener('open', done, { once: true })
@@ -139,7 +197,43 @@ async function connect(targetPort) {
   }
   await send('Runtime.enable')
   await send('Page.enable')
-  return { send, evaluate, close: () => socket.close(), title: page.title, url: page.url }
+  return { send, evaluate, close: () => socket.close(), title: page.title, url: page.url, targetId: page.id }
+}
+
+async function findPage(targetPort, exclude) {
+  const list = await (await fetch(`http://127.0.0.1:${targetPort}/json/list`)).json()
+  const pages = (Array.isArray(list) ? list : []).filter((entry) => entry.type === 'page' && !exclude.includes(entry.id))
+  return pages.find((entry) => /Hermes/.test(entry.title || '')) || pages[0] || null
+}
+
+async function connect(targetPort) {
+  const page = await findPage(targetPort, [])
+  if (!page) throw new Error(`no page target on port ${targetPort}`)
+  return connectTo(page)
+}
+
+/**
+ * The window transition. The take's own socket is closed first; the driver then refuses to attach
+ * to the target it just left, so act two can only continue on a page that appeared after the close.
+ * A reopened window is a new target id; reusing the old one would mean the window was never closed
+ * and proof 3 would be stamped on a frame that proves nothing.
+ */
+async function waitForNewPage(targetPort, exclude, timeoutMs) {
+  const deadline = Date.now() + (timeoutMs || 180000)
+  let lastError = null
+  while (Date.now() < deadline) {
+    try {
+      const page = await findPage(targetPort, exclude)
+      if (page) return await connectTo(page)
+    } catch (error) {
+      lastError = error
+    }
+    await sleep(250)
+  }
+  throw new Error(
+    `no new page target on port ${targetPort} within ${Math.round((timeoutMs || 180000) / 1000)} s` +
+    `${lastError ? ` (${lastError.message})` : ''}; act two never attaches to the page act one left`,
+  )
 }
 
 const q = (selector) => JSON.stringify(selector)
@@ -255,35 +349,64 @@ async function runStep(client, step) {
     }
     case 'marker':
       return 'marker'
+    case 'reconnect':
+      // Handled by the take loop: a reconnect replaces the client, so it cannot run inside a step.
+      throw new Error('reconnect must be executed by the take loop')
     default:
       throw new Error(`unknown step kind ${step.kind}`)
   }
 }
 
-async function runTake(client, list, log, label) {
+async function runTake(client, list, log, label, act = null, targetPort = port) {
   const started = Date.now()
   const lines = []
   const write = (entry) => {
     lines.push(entry)
     log(entry)
   }
-  write({ t_ms: 0, kind: 'start', take: spec.id, surface: spec.surface, label, url: client.url, title: client.title })
+  write({
+    t_ms: 0, kind: 'start', take: spec.id, act,
+    surface: spec.surface, label,
+    url: client ? client.url : null,
+    title: client ? client.title : null,
+    target_id: client ? client.targetId : null,
+  })
   for (const step of list) {
+    if (step.kind === 'reconnect') {
+      const from = client ? client.targetId : null
+      const timeoutMs = step.timeout_ms || 180000
+      if (client) client.close()
+      console.log(`  ${String(Date.now() - started).padStart(6)} ms  reconnect   close the window now; waiting up to ${Math.round(timeoutMs / 1000)} s for a fresh page target on port ${targetPort}`)
+      client = await waitForNewPage(targetPort, from ? [from] : [], timeoutMs)
+      const outcome = {
+        t_ms: Date.now() - started,
+        kind: 'reconnect',
+        detail: `target ${from || '(none)'} -> ${client.targetId}`,
+        from_target: from,
+        to_target: client.targetId,
+        // A reused target id would mean the window was never closed. Null when act two runs as its
+        // own invocation, where act one's id lives in the other act's log.
+        fresh_target: from === null ? null : client.targetId !== from,
+      }
+      if (step.note) outcome.note = step.note
+      write(outcome)
+      console.log(`  ${String(outcome.t_ms).padStart(6)} ms  ${'reconnect'.padEnd(11)} ${outcome.detail} (fresh target: ${outcome.fresh_target})`)
+      continue
+    }
     const detail = await runStep(client, step)
     const outcome = { t_ms: Date.now() - started, kind: step.kind, detail }
     if (step.kind === 'marker') {
       outcome.marker = step.id
       outcome.beat = Math.round((Date.now() - started) / beatMs)
-      outcome.note = step.note || null
+      if (step.note) outcome.note = step.note
     }
-    if (step.note) outcome.note = step.note
+    if (step.note && step.kind !== 'marker') outcome.note = step.note
     write(outcome)
     console.log(`  ${String(outcome.t_ms).padStart(6)} ms  ${step.kind.padEnd(11)} ${outcome.marker || detail}`)
-    if (step.kind === 'marker') continue
   }
   const total = Date.now() - started
-  write({ t_ms: total, kind: 'end', markers: lines.filter((line) => line.marker).length })
-  return { lines, total }
+  write({ t_ms: total, kind: 'end', act, markers: lines.filter((line) => line.marker).length })
+  return { lines, total, client }
 }
 
 function writeLog(lines) {
@@ -324,16 +447,75 @@ async function selftestRun() {
     ]
     const problems = validate(steps, 'selftest')
     if (problems.length) throw new Error(`selftest step list invalid: ${problems.join('; ')}`)
-    const { lines, total } = await runTake(client, steps, (entry) => { if (entry.kind === 'end') console.log(`  total ${entry.t_ms} ms`) }, 'selftest')
-    const markers = lines.filter((line) => line.marker).map((line) => line.marker)
+    const take = await runTake(client, steps, (entry) => { if (entry.kind === 'end') console.log(`  total ${entry.t_ms} ms`) }, 'selftest', null, cdpPort)
+    const markers = take.lines.filter((line) => line.marker).map((line) => line.marker)
     const expected = ['selftest-start', 'selftest-end']
     if (markers.join(',') !== expected.join(',')) throw new Error(`selftest markers ${markers.join(',')}`)
     const evidence = await client.evaluate(`document.querySelector('[data-test-evidence]')?.getAttribute('data-test-evidence')`)
     if (evidence !== '1') throw new Error(`selftest evidence count ${evidence}`)
     const answer = await client.evaluate(`document.querySelector('[data-test-field]')?.value`)
     if (answer !== 'sourdough') throw new Error(`selftest typed value ${answer}`)
+    console.log(`selftest ok: ${steps.length} steps, ${take.total} ms, navigate/click/type/wait/hover/marker/assert all executed`)
+
+    // --- window transition. Act two must attach to a page target act one never held, and a
+    // reconnect must skip the page it was told to leave even while that page is still open.
+    const actOneTarget = client.targetId
+    const closed = await fetch(`http://127.0.0.1:${cdpPort}/json/close/${actOneTarget}`, { method: 'PUT' })
+    if (!closed.ok) throw new Error(`selftest: could not close the act-one window (${closed.status})`)
     client.close()
-    console.log(`selftest ok: ${steps.length} steps, ${total} ms, navigate/click/type/wait/hover/marker/assert all executed`)
+    await sleep(400)
+    const openWindow = async (label) => {
+      // /json/new answers with a blank target on some Chromium builds, so navigate it explicitly
+      // rather than trusting the url query parameter.
+      const response = await fetch(`http://127.0.0.1:${cdpPort}/json/new?about:blank`, { method: 'PUT' })
+      if (!response.ok) throw new Error(`selftest: could not open the ${label} window (${response.status})`)
+      const page = await response.json()
+      let connected = null
+      for (let attempt = 0; attempt < 40 && !connected; attempt += 1) {
+        await sleep(150)
+        try {
+          const candidate = await connectTo(page)
+          await candidate.send('Page.navigate', { url: `file://${fixture}#${label}` })
+          for (let load = 0; load < 20; load += 1) {
+            await sleep(150)
+            if (await candidate.evaluate('Boolean(document.querySelector("[data-test-ready]"))')) break
+          }
+          if (await candidate.evaluate('Boolean(document.querySelector("[data-test-ready]"))')) connected = candidate
+          else candidate.close()
+        } catch { connected = null }
+      }
+      if (!connected) throw new Error(`selftest: the ${label} window never loaded the fixture`)
+      connected.close()
+      return page.id
+    }
+    const actTwoTarget = await openWindow('act2')
+    const actTwo = await runTake(null, [
+      { kind: 'reconnect', timeout_ms: 10000, note: 'selftest: act two attaches to the reopened window' },
+      { kind: 'wait', for: '[data-test-ready]', timeout_ms: 5000 },
+      { kind: 'marker', id: 'selftest-act2-end' },
+    ], (entry) => { if (entry.kind === 'end') console.log(`  act two total ${entry.t_ms} ms`) }, 'selftest-act2', 2, cdpPort)
+    const reconnected = actTwo.lines.find((line) => line.kind === 'reconnect')
+    if (!reconnected) throw new Error('selftest: act two logged no reconnect line')
+    if (actTwoTarget === actOneTarget) throw new Error('selftest: the reopened window reused the act-one target')
+    if (reconnected.to_target !== actTwoTarget) {
+      throw new Error(`selftest: act two attached to ${reconnected.to_target}, not the reopened ${actTwoTarget}`)
+    }
+    if (actTwo.lines.filter((line) => line.marker).map((line) => line.marker).join(',') !== 'selftest-act2-end') {
+      throw new Error('selftest: act two markers are wrong')
+    }
+
+    const actThreeTarget = await openWindow('act3')
+    const actThree = await runTake(actTwo.client, [
+      { kind: 'reconnect', timeout_ms: 10000, note: 'selftest: reconnect skips the page it left' },
+      { kind: 'marker', id: 'selftest-act3-end' },
+    ], () => {}, 'selftest-act3', 3, cdpPort)
+    const skipped = actThree.lines.find((line) => line.kind === 'reconnect')
+    if (!skipped || skipped.to_target !== actThreeTarget) {
+      throw new Error(`selftest: reconnect reused a stale target (${skipped && skipped.to_target})`)
+    }
+    if (skipped.fresh_target !== true) throw new Error('selftest: the reconnect did not report a fresh target')
+    actThree.client.close()
+    console.log(`transition ok: act 1 target ${actOneTarget} -> act 2 target ${actTwoTarget} (different) -> act 3 target ${actThreeTarget}; skipped the still-open act-two page`)
     return true
   } finally {
     child.kill('SIGINT')
@@ -354,19 +536,41 @@ if (selftest) {
   }
 }
 
-let client
-try {
-  client = await connect(port)
-} catch (error) {
-  console.error(`cannot attach to the window on port ${port}: ${error.message}`)
-  console.error('this driver never invents a take; start the accepted-commit rig first')
-  process.exit(1)
+let client = null
+const opensWithReconnect = plan[0].kind === 'reconnect'
+if (!opensWithReconnect) {
+  try {
+    client = await connect(port)
+  } catch (error) {
+    console.error(`cannot attach to the window on port ${port}: ${error.message}`)
+    console.error('this driver never invents a take; start the accepted-commit rig first')
+    process.exit(1)
+  }
+} else {
+  try {
+    await fetch(`http://127.0.0.1:${port}/json/list`)
+  } catch (error) {
+    console.error(`cannot reach the CDP port ${port}: ${error.message}`)
+    console.error('act two attaches to the reopened window; open it before running this act')
+    process.exit(1)
+  }
+  console.log(`act ${actNumber}: re-attaching to the reopened window on port ${port}`)
 }
 try {
-  const { lines, total } = await runTake(client, spec.steps, () => {}, 'live')
-  writeLog(lines)
-  console.log(`take complete in ${(total / 1000).toFixed(2)} s (${(total / beatMs).toFixed(1)} beats at 120 BPM)`)
-  client.close()
+  const take = await runTake(client, plan, () => {}, 'live', actNumber)
+  if (actNumber === null) {
+    const transitions = take.lines.filter((line) => line.kind === 'reconnect')
+    for (const transition of transitions) {
+      if (transition.fresh_target !== true) {
+        throw new Error(`the reconnect at ${transition.t_ms} ms did not attach to a fresh page target`)
+      }
+    }
+  } else if (client === null) {
+    console.log(`act ${actNumber} alone cannot compare target ids; act 1's log records its target_id`)
+  }
+  writeLog(take.lines)
+  console.log(`take complete in ${(take.total / 1000).toFixed(2)} s (${(take.total / beatMs).toFixed(1)} beats at 120 BPM)`)
+  take.client.close()
 } catch (error) {
   console.error(`take stopped: ${error.message}`)
   try { client.close() } catch { /* already closed */ }
