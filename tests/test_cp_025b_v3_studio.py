@@ -48,7 +48,7 @@ if (payload.kind === 'studio') {
   html = renderToStaticMarkup(
     React.createElement(WorldStudio, {
       courseId: 'crs_1', mode: payload.mode || 'game', world: payload.world,
-      worldStatus: 'ready', worldError: null,
+      worldStatus: payload.worldStatus || 'ready', worldError: payload.worldError || null,
       onReload: quiet, onClose: quiet, onChanged: quiet, autoStart: false
     })
   )
@@ -229,6 +229,19 @@ class WorldStudioRenderTest(RenderCase):
                 self.assertEqual(html.count("<h2"), 1)
                 self.assertIn("Use Textbook mode", html)
                 self.assertIn("Cancel", html)
+
+    def test_the_sheet_is_named_in_the_states_that_skip_the_body_head(self) -> None:
+        # aria-labelledby pointed at an id only the body head renders; the read-failure, unsupported
+        # and loading states rendered no such element, so the dialog had no accessible name.
+        for status in ("unsupported", "error", "loading"):
+            with self.subTest(status=status):
+                html = self.render({
+                    "kind": "studio", "world": None, "worldStatus": status,
+                    "worldError": {"code": "HOST_UNAVAILABLE", "message": "backend down"},
+                })
+                self.assertIn('aria-labelledby="cb-world-studio-title"', html)
+                self.assertIn('id="cb-world-studio-title"', html)
+                self.assertEqual(html.count("<h2"), 1, "one heading names the sheet")
 
     def test_concept_boards_are_paper_cards_with_one_named_direction(self) -> None:
         html = self.render({"kind": "studio", "world": _world_value(state="concepts_ready")})

@@ -575,8 +575,8 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'unsupported',
+      heading: 'This backend does not carry the world wire yet',
       children: jsx(PaperCard, {
-        title: 'This backend does not carry the world wire yet',
         meta: CB_WORLD_COPY.readUnsupported + ' Your course stays in Textbook mode and no art is generated.',
         footer: jsx(PillAction, { variant: 'primary', label: 'Keep Textbook', onClick: onClose })
       })
@@ -586,8 +586,8 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'error',
+      heading: 'The course world could not be read',
       children: jsx(PaperCard, {
-        title: 'The course world could not be read',
         meta: describeError(worldError),
         footer: jsxs('div', {
           style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
@@ -603,15 +603,13 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'loading',
-      children: jsxs('div', {
+      heading: 'Reading the course world',
+      children: jsx('p', {
         'data-cb-world-loading': '',
         role: 'status',
         'aria-live': 'polite',
-        style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '1.5rem 0' },
-        children: [
-          jsx('p', { style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('lead'), lineHeight: cb3Lead('lead'), color: 'var(--cb3-ink)' }, children: 'Reading the course world' }),
-          jsx('p', { style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' }, children: 'Nothing already saved is lost.' })
-        ]
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
+        children: 'Nothing already saved is lost.'
       })
     })
   }
@@ -966,7 +964,7 @@ function buildWorldPrimary({ state, busy, generating, providerUnavailable, hasSt
   return { id: 'concepts', label: 'Show me three directions' }
 }
 
-function WorldStudioFrame({ state, onClose, children }) {
+function WorldStudioFrame({ state, onClose, children, heading }) {
   return jsx('div', {
     'data-cb-world-studio-backdrop': '',
     style: {
@@ -1009,6 +1007,13 @@ function WorldStudioFrame({ state, onClose, children }) {
             onClick: onClose
           })
         }),
+        heading
+          ? jsx('h2', {
+              id: 'cb-world-studio-title',
+              style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
+              children: heading
+            }, 'heading')
+          : null,
         ...(Array.isArray(children) ? children : [children])
       ]
     })
