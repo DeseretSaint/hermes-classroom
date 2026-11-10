@@ -92,6 +92,45 @@ PINNED_TEXT_GATE_ROSTER = (
 # can appear anywhere; alert is the one that was missing in round 1.
 ROUTE_SURFACE_IDS = ("home.global", "discover", "classroom", "course.home", "parent.studio")
 
+# Every surface in this contract takes input, including the on-screen evidence tray. Pinned so the
+# interactive flag cannot be flipped to false to dodge the focus requirement without review.
+INTERACTIVE_SURFACE_IDS = (
+    "home.global",
+    "discover",
+    "classroom",
+    "course.home",
+    "parent.studio",
+    "evidence",
+    "component.lab",
+)
+
+# Round-2 D4: a graphic role that sits on a surface's own ground must have a non-text gate for that
+# exact pairing, or an object can merge into the paper it rests on. wood-edge is excluded because it
+# is gated against its parent object (wood), which is how it reads as thickness.
+GRAPHIC_ROLES_ON_GROUND = ("rule", "terracotta", "wood", "gold", "sage")
+
+# Pinned non-text roster with its floors, so a gate can neither vanish nor be quietly weakened.
+PINNED_NON_TEXT_GATE_ROSTER = (
+    ("rule", "canvas", 1.25),
+    ("rule", "card-stock", 1.25),
+    ("terracotta", "canvas", 3.0),
+    ("wood", "canvas", 3.0),
+    ("wood", "card-stock", 3.0),
+    ("wood-edge", "wood", 1.5),
+    ("gold", "canvas", 3.0),
+    ("sage", "canvas", 1.5),
+    ("sage", "card-stock", 1.5),
+)
+
+# Pinned focus roster: one gate per ground a ring can be drawn on.
+PINNED_FOCUS_GATE_ROSTER = (
+    ("focus", "canvas"),
+    ("focus", "card-stock"),
+    ("focus", "canvas-edge"),
+    ("focus", "forest"),
+    ("focus", "terracotta-quiet"),
+)
+
 HEX = re.compile(r"^#[0-9a-f]{6}$")
 
 
@@ -246,6 +285,52 @@ class SurfaceContractTest(unittest.TestCase):
         for surface in self.contract["surfaces"]:
             if "wood" in surface["allowed"]:
                 self.assertIn("wood-edge", surface["allowed"], surface["id"])
+
+    def test_every_surface_declares_machine_readable_grounds(self) -> None:
+        # Round-2 D4: the prose ground ("canvas + grain + vignette") is for the doc; the gates need
+        # a role list they can be computed against.
+        roles = set(self.contract["roles"])
+        for surface in self.contract["surfaces"]:
+            self.assertIsInstance(surface.get("interactive"), bool, surface["id"])
+            grounds = surface.get("grounds")
+            self.assertTrue(grounds, f"{surface['id']} has no grounds list")
+            self.assertLessEqual(set(grounds), roles, surface["id"])
+            self.assertEqual(len(grounds), len(set(grounds)), surface["id"])
+
+    def test_an_interactive_surface_can_always_show_focus(self) -> None:
+        # Round-2 D4b: a surface with a control and no permitted focus ring is a keyboard dead end.
+        self.assertEqual(
+            tuple(s["id"] for s in self.contract["surfaces"] if s["interactive"]),
+            INTERACTIVE_SURFACE_IDS,
+        )
+        focus_gates = {
+            gate["background"] for gate in self.contract["gates"] if gate["kind"] == "focus"
+        }
+        for surface in self.contract["surfaces"]:
+            if not surface["interactive"]:
+                continue
+            self.assertIn("focus", surface["allowed"], surface["id"])
+            for ground in surface["grounds"]:
+                self.assertIn(
+                    ground,
+                    focus_gates,
+                    f"{surface['id']} is interactive on {ground} but no focus ring is gated there",
+                )
+
+    def test_a_graphic_role_on_a_surface_ground_has_a_non_text_gate(self) -> None:
+        # Round-2 D4a: the evidence tray's wood sat on card-stock with no gate and merged into the
+        # night sheet. Every object painted on a surface's own paper must clear its non-text floor.
+        non_text = {
+            (gate["foreground"], gate["background"])
+            for gate in self.contract["gates"]
+            if gate["kind"] == "non-text"
+        }
+        for surface in self.contract["surfaces"]:
+            for role in set(surface["allowed"]) & set(GRAPHIC_ROLES_ON_GROUND):
+                self.assertTrue(
+                    any((role, ground) in non_text for ground in surface["grounds"]),
+                    f"{surface['id']} permits {role} on its own ground but has no non-text gate for it",
+                )
 
     def test_doc_section_nine_matches_the_contract(self) -> None:
         # The doc may not drift: a role permitted in prose but absent from the JSON (or the
@@ -404,6 +489,30 @@ class ContrastGateTest(unittest.TestCase):
         self.assertEqual(len(gates), len(set(gates)), "duplicate text gate")
         self.assertEqual(set(gates), set(PINNED_TEXT_GATE_ROSTER))
 
+    def test_the_non_text_gate_roster_and_floors_are_pinned(self) -> None:
+        # Round-2 D4a: a non-text gate could previously be added for one ground and silently omitted
+        # for another, leaving a real object below its floor in one theme.
+        gates = [
+            (gate["foreground"], gate["background"], gate["min"])
+            for gate in self.contract["gates"]
+            if gate["kind"] == "non-text"
+        ]
+        self.assertEqual(len(gates), len(set((fg, bg) for fg, bg, _ in gates)), "duplicate non-text gate")
+        self.assertEqual(set(gates), set(PINNED_NON_TEXT_GATE_ROSTER))
+
+    def test_the_focus_gate_roster_is_pinned(self) -> None:
+        gates = [
+            (gate["foreground"], gate["background"])
+            for gate in self.contract["gates"]
+            if gate["kind"] == "focus"
+        ]
+        self.assertEqual(len(gates), len(set(gates)), "duplicate focus gate")
+        self.assertEqual(set(gates), set(PINNED_FOCUS_GATE_ROSTER))
+
+    def test_every_gate_kind_is_exactly_one_of_three(self) -> None:
+        kinds = {gate["kind"] for gate in self.contract["gates"]}
+        self.assertEqual(kinds, {"text", "non-text", "focus"})
+
     def test_every_text_placement_has_a_gate_and_no_gate_is_unplaced(self) -> None:
         placements = self.contract["text_placements"]
         self.assertEqual(set(placements), set(TEXT_ROLES))
@@ -433,6 +542,7 @@ class ContrastGateTest(unittest.TestCase):
 
     def test_focus_ring_is_gated_on_every_ground_it_sits_on(self) -> None:
         focus_grounds = {g["background"] for g in self.contract["gates"] if g["kind"] == "focus"}
+        self.assertEqual(focus_grounds, {background for _, background in PINNED_FOCUS_GATE_ROSTER})
         self.assertEqual(focus_grounds, {"canvas", "card-stock", "canvas-edge", "forest", "terracotta-quiet"})
 
 

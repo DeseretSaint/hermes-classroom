@@ -62,7 +62,9 @@
       "id": "home.global",
       "name": "Global Home (`home.global`)",
       "route": true,
+      "interactive": true,
       "ground": "canvas + grain + vignette",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "wood", "wood-edge", "gold", "alert", "focus"],
       "note": "one primary pill; wood only on the shelf plank; the plank's lip is wood-edge; fox and tag are DOM-labelled"
     },
@@ -70,7 +72,9 @@
       "id": "discover",
       "name": "Discover / Workshop",
       "route": true,
+      "interactive": true,
       "ground": "canvas + grain",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "gold", "sage", "alert", "focus"],
       "note": "covers are media, not tokens; trust labels sit on card stock"
     },
@@ -78,7 +82,9 @@
       "id": "classroom",
       "name": "Classroom",
       "route": true,
+      "interactive": true,
       "ground": "canvas + section plate",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "sage", "gold", "alert", "focus"],
       "note": "one primary = choose the check answer; XP chip only in Game mode"
     },
@@ -86,7 +92,9 @@
       "id": "course.home",
       "name": "Course home",
       "route": true,
+      "interactive": true,
       "ground": "map plate + canvas",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "terracotta", "on-terracotta", "terracotta-quiet", "gold", "alert", "focus"],
       "note": "nodes are DOM buttons on a plate; the plate never carries labels"
     },
@@ -94,7 +102,9 @@
       "id": "parent.studio",
       "name": "Parent Studio",
       "route": true,
+      "interactive": true,
       "ground": "canvas",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "card-stock", "ink", "ink-soft", "rule", "plum", "alert", "focus"],
       "note": "plum only here; no game chrome; no terracotta primary competing with the learner's course"
     },
@@ -102,15 +112,19 @@
       "id": "evidence",
       "name": "Evidence tray / print sheet",
       "route": false,
+      "interactive": true,
       "ground": "card-stock",
-      "allowed": ["card-stock", "ink", "ink-soft", "rule", "sage", "wood", "wood-edge", "alert"],
-      "note": "print and take-home stay paper: no forest rail, no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill"
+      "grounds": ["card-stock"],
+      "allowed": ["card-stock", "ink", "ink-soft", "rule", "sage", "wood", "wood-edge", "alert", "focus"],
+      "note": "the on-screen tray is this surface and it has controls (a refused export, a record toggle), so focus is permitted and its ring sits on card-stock; the print rendering is static, with no forest rail and no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill"
     },
     {
       "id": "component.lab",
       "name": "Component lab",
       "route": false,
+      "interactive": true,
       "ground": "canvas",
+      "grounds": ["canvas"],
       "allowed": ["canvas", "canvas-edge", "card-stock", "ink", "ink-soft", "rule", "forest", "on-forest", "terracotta", "on-terracotta", "terracotta-quiet", "gold", "sage", "wood", "wood-edge", "plum", "alert", "focus"],
       "note": "a labelled preview of every primitive and state; never presented as a live screen"
     }
@@ -121,7 +135,9 @@
     "The evidence tray and print sheet are not routes but they are not exempt from alert: a refused export or an unrecorded observation reports on the sheet in alert text.",
     "A wood object's lip is wood-edge everywhere wood is allowed; wood without wood-edge has no thickness.",
     "The component lab allows every role because it must be able to show every state; it is never shipped as a screen.",
-    "plum is Parent Studio only; forest is never a fill on the evidence sheet or on Parent Studio."
+    "plum is Parent Studio only; forest is never a fill on the evidence sheet or on Parent Studio.",
+    "Every interactive surface permits focus and has a focus gate computed against each of its own grounds; a control with no ring is a keyboard dead end. The evidence tray is interactive because its on-screen form has an export control and a record toggle.",
+    "Every surface with a graphic role on its own ground has a non-text gate for that pairing, so an object can never merge into the paper it sits on in either theme."
   ],
   "text_placements": {
     "ink": ["canvas", "canvas-edge", "card-stock", "terracotta-quiet"],
@@ -167,8 +183,8 @@
       "terracotta-quiet": "#3a241a",
       "gold": "#d8a94e",
       "sage": "#8fae83",
-      "wood": "#825836",
-      "wood-edge": "#b07a46",
+      "wood": "#8f613c",
+      "wood-edge": "#c08856",
       "plum": "#cda0d8",
       "alert": "#f0a08c",
       "focus": "#f2c56a"
@@ -321,9 +337,11 @@
     { "foreground": "rule", "background": "card-stock", "min": 1.25, "kind": "non-text", "why": "hairline and card border visibility" },
     { "foreground": "terracotta", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "the primary fill separates from parchment as an object" },
     { "foreground": "wood", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "the shelf plank reads as a physical object on paper" },
+    { "foreground": "wood", "background": "card-stock", "min": 3.0, "kind": "non-text", "why": "the evidence tray reads as a physical object on the sheet it sits on" },
     { "foreground": "wood-edge", "background": "wood", "min": 1.5, "kind": "non-text", "why": "the plank's front lip reads as thickness" },
     { "foreground": "gold", "background": "canvas", "min": 3.0, "kind": "non-text", "why": "medallion and seal rims are meaningful graphics" },
     { "foreground": "sage", "background": "canvas", "min": 1.5, "kind": "non-text", "why": "the evidence tally fill separates from parchment" },
+    { "foreground": "sage", "background": "card-stock", "min": 1.5, "kind": "non-text", "why": "the recorded-check tally separates from the evidence sheet" },
     { "foreground": "focus", "background": "canvas", "min": 3.0, "kind": "focus", "why": "focus ring on the route ground" },
     { "foreground": "focus", "background": "card-stock", "min": 3.0, "kind": "focus", "why": "focus ring on a card" },
     { "foreground": "focus", "background": "canvas-edge", "min": 3.0, "kind": "focus", "why": "focus ring at the vignette edge" },

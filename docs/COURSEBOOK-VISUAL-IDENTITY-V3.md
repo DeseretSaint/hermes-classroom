@@ -119,8 +119,11 @@ carries the full rule for each; this is the readable version.
 ### Objects
 
 - **`wood`** — the shelf plank and the evidence tray. Wood is a *prop*. It never becomes a page, a
-  card, a panel, a header or a button, and a label never sits on it.
-- **`wood-edge`** — the front lip and grain edge that give a wood object thickness.
+  card, a panel, a header or a button, and a label never sits on it. It clears 3:1 against both
+  grounds it actually rests on: 3.17:1 on parchment and 3.39:1 on card stock in light, 3.54:1 and
+  3.25:1 in dark.
+- **`wood-edge`** — the front lip and grain edge that give a wood object thickness (1.64:1 light,
+  1.75:1 dark against `wood`).
 
 ### Identity and state
 
@@ -206,6 +209,10 @@ sheets, `999px` actions only. A pill is never a card; a card is never a pill.
   the control sits on, which is why every focus gate is measured against a ground: canvas,
   card-stock, canvas-edge, forest, terracotta-quiet. Light `#2a813f` and dark `#f2c56a` each clear
   3:1 on all five (lowest: 3.23 light, 8.96 dark).
+- Every surface that has a control permits `focus` and has a gate on each of its own grounds — that
+  includes the evidence tray, whose on-screen export control and record toggle ring on card stock
+  (4.14:1 light, 10.70:1 dark). A surface with a control and no permitted ring would be a keyboard
+  dead end, so the contract test refuses that shape.
 - Focus is the one place a cool hue appears in the light theme. That is the job: an indicator that
   is unmistakably not the brand.
 - **State is always a word plus a mark.** A selected row has `terracotta-quiet` *and* its label; an
@@ -226,6 +233,9 @@ Dark mode is the same desk under one lamp, not an inverted theme.
 - `terracotta` becomes a lit clay (`#e0794f`) with an `ink` label (5.97:1) — the primary glows on
   the dark page the way the light-mode button sits on parchment.
 - `gold` and `sage` stay marks; `plum` lightens to `#cda0d8`; `alert` softens to `#f0a08c`.
+- Wood lifts to `#8f613c` with a lamp-lit lip `#c08856`, because the night card stock is a lifted
+  paper brown (`#1e1a13`) and the plank would otherwise sink into it: the tray reads 3.25:1 against
+  the sheet and 3.54:1 against the canvas, with the lip at 1.75:1 against its own wood.
 - Paper textures switch to their night tiles at slightly higher opacity (grain 0.14).
 - Every dark gate is computed in the same test as its light twin; dark is not "close enough".
 
@@ -259,7 +269,7 @@ as disabled, or a dark mode that turns the fox and the plates into silhouettes.
 | Classroom | canvas + section plate | canvas, card-stock, ink, ink-soft, rule, forest, on-forest, terracotta, on-terracotta, terracotta-quiet, sage, gold, alert, focus | one primary = choose the check answer; XP chip only in Game mode |
 | Course home | map plate + canvas | canvas, card-stock, ink, ink-soft, rule, terracotta, on-terracotta, terracotta-quiet, gold, alert, focus | nodes are DOM buttons on a plate; the plate never carries labels |
 | Parent Studio | canvas | canvas, card-stock, ink, ink-soft, rule, plum, alert, focus | plum only here; no game chrome; no terracotta primary competing with the learner's course |
-| Evidence tray / print sheet | card-stock | card-stock, ink, ink-soft, rule, sage, wood, wood-edge, alert | print and take-home stay paper: no forest rail, no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill |
+| Evidence tray / print sheet | card-stock | card-stock, ink, ink-soft, rule, sage, wood, wood-edge, alert, focus | the on-screen tray is this surface and it has controls (a refused export, a record toggle), so focus is permitted and its ring sits on card-stock; the print rendering is static, with no forest rail and no primary fill; alert is text plus a sentence for a refused export or an unrecorded observation, never a fill |
 | Component lab | canvas | all roles | a labelled preview of every primitive and state; never presented as a live screen |
 
 A surface may use a subset; it may never use a colour that is not in this table. A screen with
@@ -273,7 +283,15 @@ screen, and an export that refuses or an observation that does not record has to
 a surface's only signal.
 
 **Objects keep their thickness.** Anywhere `wood` is permitted, `wood-edge` is permitted with it:
-a plank or a tray without its lip is a flat rectangle pretending to be an object.
+a plank or a tray without its lip is a flat rectangle pretending to be an object. And a wood object
+clears its 3:1 floor on the ground it actually sits on, which is why `wood` is gated on both
+`canvas` (the shelf) and `card-stock` (the evidence tray), not just on the one that was measured
+first.
+
+**Every surface here is interactive, so every surface can show focus.** Each surface declares the
+grounds it paints on, and a surface with a control must permit `focus` and carry a focus gate for
+each of those grounds. A surface that adds a control without that permission is a contract defect,
+not a styling choice.
 
 ---
 
@@ -315,9 +333,15 @@ These bans survive the move to v3. They are not softened by the new material lan
 - the seven surface rows in §9 match the contract's `surfaces` table role for role, and
   every role is permitted on at least one surface;
 - `alert` is permitted on all five route surfaces and on the evidence sheet;
-- `wood` is never permitted without `wood-edge`;
+- `wood` is never permitted without `wood-edge`, and any graphic role a surface permits on its own
+  ground has a non-text gate for that exact pairing (this is the gate the evidence tray's wood was
+  missing);
+- every surface declares machine-readable grounds and an interactive flag; an interactive surface
+  must permit `focus` and carry a focus gate on each of its grounds;
 - the text-gate roster equals a pinned literal list, so a deleted gate fails the suite rather
   than shrinking coverage;
+- the non-text roster and its floors, and the focus roster, are pinned the same way, so a weakened
+  floor fails as loudly as a deleted gate;
 - every text role's declared grounds have a gate, and no text gate exists for an undeclared pair;
 - **every gate is computed in both modes and must pass**, text gates at or above 4.5, and
   wood/gold/sage carry no text gate.
