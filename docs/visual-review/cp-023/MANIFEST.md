@@ -98,10 +98,12 @@ merge seam), which updates it when the mount actually lands. It is outside this 
 so it is reported, not changed. **This failure is the only red test on the branch; the M4 pin is
 green again** (regenerated at 1dff23a: 15 claims PASS, pin `2beaf778…2327`).
 
-## 5. Deferred to the merge — what the manager must do (do not read this as a pass)
+## 5. Deferred to the merge — now owned by CP-040 (card `t_5403e4a1`, branch `wt/cp-040-seam`)
 
-The partial-build ruling defers the last 10%: the surface is **not mounted**, so a capture would be
-a photograph of an unreachable component and would fail evidence rule 1 (from the running app).
+The manager created CP-040 as the merge seam and linked it behind this card; the items below are
+its scope, not this card's. The partial-build ruling defers this last 10%: the surface is **not
+mounted**, so a capture would be a photograph of an unreachable component and would fail evidence
+rule 1 (from the running app). This card therefore claims zero frames and no score.
 
 1. **Export seam.** `ClassroomV3` and `ClassroomV3Surface` are declared in the learning segment but
    the module's `export {}` lives in the last segment, which this card may not edit. Add both names
@@ -154,3 +156,19 @@ a photograph of an unreachable component and would fail evidence rule 1 (from th
   never falls back to *some other* section's plate; an unmatched kit yields the typographic field.
 - The fox is the host pet's pose primitive (`read`/`think`/`cheer`), hidden below 620 px; it is not
   a second mascot and carries no progress meaning.
+
+## 8. Handoff notes for CP-040
+
+- **CP-022 is not merged here, deliberately.** The card template names CP-022 as a branch to merge,
+  but CP-022 is this card's sibling (the card's real parent is CP-013) and the manager's later base
+  ruling pins the base to `wt/cp-020b-primitives` at `556a6fb`. A trial merge
+  (`git merge-tree --write-tree HEAD wt/cp-022-home`) conflicts only on the generated
+  `audit/visual/m4-visual/audit.json`; merging it here would produce a duplicate Home wave and a
+  re-pin this card cannot score. CP-040 is the six-branch union merge and owns that merge plus the
+  rebuild and re-pin.
+- **Build the union, do not take either side of a conflict.** `desktop/plugin.js` and the M4 audit
+  are generated: resolve by `python3 scripts/build_plugin.py` and `scripts/m4v-audit.py`, then
+  confirm `tests.test_plugin_build` and `tests.test_m4_visual_audit` on the merged tree.
+- **The one red test is the seam's to flip.** `tests/test_desktop_gm010_engagement_ui.py` expects 2
+  `engagement.read` mounts; this segment adds the Game-gated third. Update it in the same commit that
+  mounts the surface, so the record never shows a red it cannot explain.
