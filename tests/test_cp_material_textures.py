@@ -189,19 +189,23 @@ class DeterminismTests(unittest.TestCase):
 
 
 class ProofTests(unittest.TestCase):
-    def test_every_tile_has_a_composite_proof(self) -> None:
+    def test_every_tile_has_a_3x3_composite_proof(self) -> None:
         for row in rows():
             with self.subTest(tile=row["id"], mode=row["mode"]):
                 proof = PROOF_DIR / f"proof-3x3-{row['id']}-{row['mode']}.png"
                 self.assertTrue(proof.exists(), proof.name)
                 image = material.read_png(proof)
-                if row["tiling"] == "one-shot":
-                    # applied once at cover size, the way the route uses it
-                    self.assertEqual(image["width"], row["width"] * 3)
-                    self.assertEqual(image["height"], row["height"] * 3)
-                else:
-                    self.assertEqual(image["width"], row["width"] * 3)
-                    self.assertEqual(image["height"], row["height"] * 3)
+                self.assertEqual(image["width"], row["width"] * 3)
+                self.assertEqual(image["height"], row["height"] * 3)
+
+    def test_the_vignette_also_gets_its_actual_single_application(self) -> None:
+        for mode in MODES:
+            with self.subTest(mode=mode):
+                once = PROOF_DIR / f"proof-once-parchment-vignette-{mode}.png"
+                self.assertTrue(once.exists(), once.name)
+                image = material.read_png(once)
+                self.assertEqual(image["width"], 512 * 3)
+                self.assertEqual(image["height"], 512 * 3)
 
 
 class TextureSheetTests(unittest.TestCase):

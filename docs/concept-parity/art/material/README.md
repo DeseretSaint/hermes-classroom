@@ -84,7 +84,8 @@ by stamping `PACK` onto a copy of a tile and requiring a hit.
 
 | file | what it proves |
 |---|---|
-| `proof-3x3-<tile>-<mode>.png` | 3×3 composite of each tile on its own ground. The vignette's proof is one application across a 3× canvas, because that is how the route uses it (it wraps without a discontinuity but is never repeated). |
+| `proof-3x3-<tile>-<mode>.png` | 3×3 composite of each tile on its own ground, including the vignette: its wrap carries no discontinuity. |
+| `proof-once-parchment-vignette-<mode>.png` | the vignette as the route actually paints it — one application across a 3× canvas at cover size |
 | `texture-sheet-light.png`, `texture-sheet-dark.png` | every tile behind real body text at 16 px, each beside a flat control carrying the identical paragraph |
 | `texture-sheet-<mode>.stamp.json` | commit, branch, engine, tile hashes and sizes, seam and contrast rows, text source and hash, sheet hash |
 

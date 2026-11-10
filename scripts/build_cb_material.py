@@ -746,7 +746,13 @@ def verify() -> int:
 
 
 def prove() -> int:
-    """3x3 composites with ImageMagick: each tile repeated on its own ground, seam visible or not."""
+    """3x3 composites with ImageMagick: every tile repeated on its own ground.
+
+    The card asks for a 3x3 composite per tile, so every tile gets one — including the vignette,
+    where the 3x3 shows that the wrap carries no discontinuity. The vignette is *used* once at
+    cover size, so it also gets `proof-once-*`: one application across a 3x canvas, which is what
+    the route actually paints.
+    """
     if not MANIFEST.exists():
         print("manifest missing; run build")
         return 1
@@ -766,25 +772,24 @@ def prove() -> int:
             )
         else:
             single = tile
-        repeat = 3 if row["tiling"] == "repeat" else 1
-        if repeat == 3:
-            subprocess.run(
-                ["magick",
-                 "(", str(single), str(single), str(single), "+append", ")",
-                 "(", str(single), str(single), str(single), "+append", ")",
-                 "(", str(single), str(single), str(single), "+append", ")",
-                 "-append", f"{colour_type}:{out}"],
-                check=True,
-            )
-        else:
-            # a vignette is applied once: show it across a 3x canvas, the way the route uses it
+        subprocess.run(
+            ["magick",
+             "(", str(single), str(single), str(single), "+append", ")",
+             "(", str(single), str(single), str(single), "+append", ")",
+             "(", str(single), str(single), str(single), "+append", ")",
+             "-append", f"{colour_type}:{out}"],
+            check=True,
+        )
+        print(f"wrote {out.relative_to(ROOT)}")
+        if row["tiling"] == "one-shot":
+            once = PROOF_DIR / f"proof-once-{row['id']}-{row['mode']}.png"
             subprocess.run(
                 ["magick", "-size", f"{row['width'] * 3}x{row['height'] * 3}", f"xc:{ground}",
                  "(", str(single), "-resize", f"{row['width'] * 3}x{row['height'] * 3}!", ")",
-                 "-composite", f"{colour_type}:{out}"],
+                 "-composite", f"{colour_type}:{once}"],
                 check=True,
             )
-        print(f"wrote {out.relative_to(ROOT)}")
+            print(f"wrote {once.relative_to(ROOT)}")
     for stale in PROOF_DIR.glob(".single-*.png"):
         stale.unlink()
     return 0
