@@ -2866,6 +2866,66 @@ def _library_unit_label(
     return label[:300]
 
 
+def _library_shelf_facts(
+    connection,
+    *,
+    enrollment_id: str,
+    course_id: str,
+    pack_id: str | None,
+    evidence_summary: Any,
+    subject_domain: str | None,
+) -> dict[str, Any]:
+    """The v3 shelf facts, read once per enrolled course (CP-005, cb.rpc v25).
+
+    Every value here is a stored fact or the absence of one. The card renders these fields and
+    computes nothing: a section count is the current plan's objective count and its independent
+    evidence count (the same fact ``evidence_summary`` counts, named the way the shelf speaks); a
+    recorded check is one this enrollment holds a **committed** attempt for; ``is_new`` means no
+    attempt row at all; the subject is the course's declared domain, never a recipe rendered as a
+    subject; the cover is an approved world plate, else the pack's declared plate, else nothing;
+    and ``last_studied_at`` is the latest attempt this enrollment recorded, never an enrollment
+    bookkeeping revision or a lesson run a pack import merely prepared.
+    """
+    attempts = connection.execute(
+        "SELECT COUNT(*) AS attempts,"
+        " MAX(COALESCE(committed_at, created_at)) AS last_attempt_at,"
+        " COUNT(DISTINCT CASE WHEN state = 'committed' THEN check_id END) AS recorded"
+        " FROM attempts WHERE enrollment_id = ?",
+        (enrollment_id,),
+    ).fetchone()
+    cover_artifact_id = _approved_world_cover(connection, course_id)
+    if cover_artifact_id is None and pack_id:
+        from . import workshop  # local import: ``workshop`` imports this module's helpers
+
+        cover_artifact_id = workshop.pack_cover_artifact(connection, course_id, pack_id)
+    return {
+        "sections_done": int((evidence_summary["independent"] if evidence_summary else 0) or 0),
+        "sections_total": int((evidence_summary["total_objectives"] if evidence_summary else 0) or 0),
+        "checks_recorded": int(attempts["recorded"] or 0),
+        "is_new": int(attempts["attempts"] or 0) == 0,
+        "subject_label": str(subject_domain) if subject_domain else None,
+        "cover_artifact_id": cover_artifact_id,
+        "last_studied_at": str(attempts["last_attempt_at"]) if attempts["last_attempt_at"] else None,
+    }
+
+
+def _approved_world_cover(connection, course_id: str) -> str | None:
+    """The cover plate of the most recently approved world revision, else None.
+
+    Only an ``approved`` world supplies a cover: a rejected, failed, stale or partial world is a
+    real row with real assets, and showing its plate would present unapproved art as the course's
+    face. The role budget guarantees at most one ``cover`` per world.
+    """
+    row = connection.execute(
+        "SELECT wa.artifact_id AS artifact_id FROM course_worlds w"
+        " JOIN world_assets wa ON wa.world_id = w.id AND wa.role = 'cover'"
+        " WHERE w.course_id = ? AND w.state = 'approved'"
+        " ORDER BY w.revision DESC, w.approved_at DESC LIMIT 1",
+        (course_id,),
+    ).fetchone()
+    return str(row["artifact_id"]) if row is not None and row["artifact_id"] else None
+
+
 @_handler("library.list")
 def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
@@ -2918,6 +2978,7 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             "SELECT e.id AS enrollment_id, e.status AS enrollment_status, e.revision AS revision,"
             " e.updated_at AS updated_at, e.learner_label AS learner_label, c.id AS course_id,"
             " c.title AS title, c.recipe AS recipe, c.locale AS locale, c.status AS course_status,"
+            " c.subject_domain AS subject_domain,"
             " c.pack_id AS course_pack_id, p.pack_id AS pack_stable_id, p.version AS pack_version,"
             " p.source AS pack_source, p.state AS pack_state"
             " FROM enrollments e JOIN courses c ON c.id = e.course_id"
@@ -2954,6 +3015,22 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 course_id=row["course_id"],
                 current_objective_id=current["id"] if current else None,
             )
+            evidence_summary = {
+                "independent": int(summary["independent"] or 0),
+                "review_due": int(summary["review_due"] or 0),
+                "total_objectives": int(summary["total"] or 0),
+                "current_objective_id": current["id"] if current else None,
+            }
+            # CP-005: the seven v3 shelf facts come from this one read, beside the evidence summary
+            # they share a source with. The UI renders them and computes none of them.
+            shelf = _library_shelf_facts(
+                connection,
+                enrollment_id=row["enrollment_id"],
+                course_id=row["course_id"],
+                pack_id=row["pack_stable_id"],
+                evidence_summary=evidence_summary,
+                subject_domain=row["subject_domain"],
+            )
             items.append({
                 "enrollment_id": row["enrollment_id"],
                 "course_id": row["course_id"],
@@ -2974,15 +3051,11 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                     "pack_version": release[1] if release and re.match(r"^\d+\.\d+\.\d+", str(release[1])) else None,
                 },
                 "next_step": _library_next_step(connection, enrollment, course),
-                "evidence_summary": {
-                    "independent": int(summary["independent"] or 0),
-                    "review_due": int(summary["review_due"] or 0),
-                    "total_objectives": int(summary["total"] or 0),
-                    "current_objective_id": current["id"] if current else None,
-                },
+                "evidence_summary": evidence_summary,
                 "warning": _library_warning(connection, enrollment, course, pack_row),
                 "updated_at": row["updated_at"],
                 "revision": int(row["revision"]),
+                **shelf,
             })
         courses_any = connection.execute("SELECT COUNT(*) AS n FROM courses WHERE status != 'deleted'").fetchone()["n"]
         archived_any = connection.execute(
