@@ -28,6 +28,7 @@ BEAT = 60.0 / BPM  # 0.625 s
 
 # picture anchors from docs/launch/VIDEO-PLAN.md §3 and §8
 BUILD_START = 7.5
+DROP_FADE = (7.400, 7.500)   # fade-out ends ON the 7.5 s cut, not before it
 SILENCE_END = 8.125          # one beat of silence per §3 beat 3
 HIT = 11.0
 BUILD_2 = 64.0               # §3 beat 10 "music builds"
@@ -282,9 +283,14 @@ def build_bed() -> np.ndarray:
 
     # 7b. §3 beat 3: the bed drops out for exactly one beat, 7.500–8.125 s.
     #    Applied last so no decaying note tail bleeds into the silence.
-    d0, d1 = int(7.35 * SR), int(7.45 * SR)
-    buf[d0:d1] *= 0.5 * (1.0 + np.cos(np.linspace(0, np.pi, d1 - d0)))
-    buf[d1:int(SILENCE_END * SR)] = 0.0
+    #    The fade ENDS on the 7.500 picture cut, so the music is audible (decaying)
+    #    right up to the cut and the exact-zero run is the stated one beat —
+    #    a fade that ends at 7.450 silences the score 1.5 frames early.
+    d0, d1 = DROP_FADE[0], DROP_FADE[1]
+    i0, i1 = int(d0 * SR), int(d1 * SR)
+    buf[i0:i1] *= 0.5 * (1.0 + np.cos(np.linspace(0, np.pi, i1 - i0)))
+    buf[i1 - 1] = 0.0                      # fade's last sample is exactly zero
+    buf[i1:int(SILENCE_END * SR)] = 0.0
 
     # 8. tail fade 74.4 → 75.0 (plan §3: no hard cut at the end)
     i0 = int(FADE_START * SR)

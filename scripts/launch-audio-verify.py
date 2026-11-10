@@ -13,6 +13,8 @@ import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import sys
 import wave
 
@@ -21,10 +23,16 @@ import numpy as np
 SR = 48000
 DUR = 75.0
 BPM = 96.0
+DROP_FADE = (7.400, 7.500)   # fade-out lands ON the 7.5 s cut
 SILENCE = (7.500, 8.125)
 HIT = 11.0
 FINAL_HIT = 70.0
 FADE_START = 74.40
+# The exact chain mix-notes.md hands to CP-033d. `level=disabled` is mandatory:
+# alimiter's `level` option defaults to enabled, which re-normalises the output
+# to 0 dBFS (measured TP 0.00 dBTP) and fails plan §9 item 3.
+RECIPE = "volume=4.4dB,alimiter=limit=0.84:attack=5:release=50:level=disabled"
+
 SFX_FILES = [
     "01-paper-tap-1", "02-paper-tap-2", "03-paper-tap-3",
     "04-click-1", "05-click-2", "06-keyboard", "07-stamp",
@@ -102,18 +110,34 @@ def main() -> int:
     hit = rms_db(w(HIT, HIT + 0.5))
     fin = rms_db(w(FINAL_HIT, FINAL_HIT + 0.5))
     tail = rms_db(w(74.90, 75.00))
+    crest = db(peak) - rms_db(bed)
     print(f"\n== anchors")
     print(f"   drop-out {SILENCE[0]:.3f}-{SILENCE[1]:.3f}s  {sil:7.2f} dB   (must be <= -60)")
     print(f"   pre-hit {HIT-1.0:.2f}-{HIT-0.5:.2f}s   {pre:7.2f} dB")
     print(f"   hit     {HIT:.2f}-{HIT+0.5:.2f}s   {hit:7.2f} dB   (must exceed pre-hit by >= 5 dB)")
     print(f"   final   {FINAL_HIT:.2f}-{FINAL_HIT+0.5:.2f}s {fin:7.2f} dB   (must exceed pre-hit by >= 5 dB)")
     print(f"   tail    74.90-75.00s    {tail:7.2f} dB   (must be <= -40)")
+    print(f"   crest   peak-rms        {crest:7.2f} dB")
     check(sil <= -60, f"drop-out is not silent ({sil:.2f} dB)")
     check(hit - pre >= 5.0, f"hit is only {hit-pre:.2f} dB over pre-hit")
     check(fin - pre >= 5.0, f"final hit is only {fin-pre:.2f} dB over pre-hit")
     check(tail <= -40, f"tail does not fade ({tail:.2f} dB in last 100 ms)")
     # the fade must start at 74.4, not earlier: level at 74.2 should still be audible
     check(rms_db(w(74.0, 74.2)) > -35.0, "tail fades too early (before 74.4 s)")
+
+    # The exact-zero run must start ON the 7.500 cut, not before it. A fade that
+    # ends at 7.450 silences the score ~1.5 frames early and the doc would lie.
+    nz = np.nonzero(bed[:int(SILENCE[1] * SR)])[0]
+    zero_start = (int(nz[-1]) + 1) / SR if len(nz) else 0.0
+    zero_run = (int(SILENCE[1] * SR) - int(nz[-1]) - 1) / SR if len(nz) else SILENCE[1]
+    pre_cut = rms_db(w(SILENCE[0] - 0.033, SILENCE[0]))       # last frame before the cut
+    print(f"   zero run starts {zero_start:.6f} s ({zero_run:.4f} s)   "
+          f"last frame before cut {pre_cut:7.2f} dB")
+    check(SILENCE[0] - 0.001 <= zero_start <= SILENCE[0] + 1e-6,
+          f"exact-zero starts at {zero_start:.6f} s, not on the {SILENCE[0]:.3f} s cut")
+    check(abs(zero_run - (SILENCE[1] - SILENCE[0])) < 1e-3,
+          f"zero run is {zero_run:.4f} s, not one beat ({SILENCE[1]-SILENCE[0]:.3f} s)")
+    check(pre_cut > -40.0, f"score is already down {pre_cut:.1f} dB before the 7.500 cut")
 
     # the beat grid: 96 BPM = 0.625 s, 120 beats in 75 s
     check(abs(60.0 / BPM * 120 - DUR) < 1e-9, "96 BPM does not divide 75 s evenly")
@@ -160,12 +184,45 @@ def main() -> int:
     # every SFX file must appear in the cue list
     for name in SFX_FILES:
         check(name in mix, f"mix-notes has no cue for {name}")
-    # cue rows must carry a timecode and a trim
-    rows = [ln for ln in mix.splitlines()
-            if ln.startswith("|") and re.search(r"\d+\.\d{3}", ln) and "`" in ln]
-    check(len(rows) >= 14, f"only {len(rows)} timed cue rows in mix-notes (expect >= 14)")
-    print(f"   cue rows with a timecode: {len(rows)}")
+    # Cue rows are the numbered SFX placements. The pack-summary row above the
+    # table (| `bed-75s.wav` | ... 75.000 s ...) also has a timecode and a
+    # backtick, so count by cue id, not by "looks like a row".
+    cue_rows = [ln for ln in mix.splitlines()
+                if re.match(r"^\|\s*\d+\s*\|", ln) and "`" in ln
+                and re.search(r"\d+\.\d{3}", ln)]
+    bed_rows = [ln for ln in mix.splitlines() if re.match(r"^\|\s*B\d+\s*\|", ln)]
+    check(len(cue_rows) == 13, f"{len(cue_rows)} numbered SFX cue rows in mix-notes (expect 13)")
+    check(len(bed_rows) == 10, f"{len(bed_rows)} bed event rows in mix-notes (expect 10)")
+    for i, ln in enumerate(cue_rows, 1):
+        check(re.search(r"\|\s*[+\-]?\d+ dB\s*\|", ln) is not None,
+              f"cue row {i} has no trim/level cell: {ln[:60]}")
+    check(RECIPE in mix, "mix-notes does not publish the verified limiter chain")
+    check("level=disabled" in mix, "mix-notes does not say alimiter needs level=disabled")
+    print(f"   numbered cue rows: {len(cue_rows)}, bed event rows: {len(bed_rows)}")
     print(f"   licence URL present: {'yes' if 'creativecommons.org' in credits else 'no'}")
+
+    # Execute the published CP-033d chain rather than trusting the prose: the
+    # film's own gate (plan §9 item 3) is I -15..-13 LUFS, TP <= -1.0 dBTP.
+    print("\n== mix recipe (as published in mix-notes.md)")
+    if not shutil.which("ffmpeg"):
+        notes.append("ffmpeg not found — recipe executed by CP-033d, not checked here")
+        print("   ffmpeg not found, skipped")
+    else:
+        proc = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-nostats", "-i", bed_path,
+             "-af", RECIPE + ",loudnorm=print_format=json", "-f", "null", "-"],
+            capture_output=True, text=True)
+        mi = re.search(r'"input_i"\s*:\s*"(-?[\d.]+)"', proc.stderr)
+        mtp = re.search(r'"input_tp"\s*:\s*"(-?[\d.]+)"', proc.stderr)
+        if not (mi and mtp):
+            check(False, "could not read loudnorm from the recipe run")
+        else:
+            I, TP = float(mi.group(1)), float(mtp.group(1))
+            print(f"   {RECIPE}")
+            print(f"   -> I {I:.2f} LUFS (gate -15.0..-13.0), TP {TP:.2f} dBTP (gate <= -1.0)")
+            check(-15.0 <= I <= -13.0, f"recipe lands at {I:.2f} LUFS, outside -15..-13")
+            check(TP <= -1.0, f"recipe true peak is {TP:.2f} dBTP, above the -1.0 gate")
+
 
     print()
     if fails:
