@@ -95,17 +95,22 @@ What *is* machine-checked on this tree:
 - `tests.test_desktop_home_hub`, `tests.test_desktop_tokens_v3`, `tests.test_v3_primitives`,
   `tests.test_plugin_build`, `tests.test_m4_visual_audit` — green.
 - `python3 scripts/m4v-audit.py` — re-rendered on `8c304d34…`, 15 PASS.
-- Full suite on the round-2 tree: see the review-request comment for the run id and log path; the
-  same four stale v2 assertions in gap 1 are the only failures expected, and nothing in CP-022's
-  files fails.
+- Full suite on the round-2 tree (`python3 -m unittest discover -s tests -t .`, log
+  `/home/deseretsaint/.hermes/profiles/sable/cache/scratch/cp-022-r2-suite.log`): **Ran 3371 tests
+  in 850 s — 5 failures, 11 skipped**. All five are the stale v2 gate assertions in gap 1; nothing
+  in CP-022's own modules fails.
 
 ## Known gaps (all recorded, none hidden)
 
-1. **Four v2 gate assertions are stale** and this card says the composition tests are superseded.
-   They are outside CP-022's ownership list (`tests/test_desktop_gm002_home.py`,
+1. **Five v2 gate assertions are now stale** and this card says the composition tests are
+   superseded. They are outside CP-022's ownership list (`tests/test_desktop_gm002_home.py`,
    `tests/test_desktop_h151_action_type.py`) and tracked on follow-up card `t_847e5b1b`. The
    follow-up card also records that CP-003's `GATE-MIGRATION.md` never covered
    `test_desktop_gm002_home` — the packet's earlier "superseded per CP-003's table" was imprecise.
+   The fifth arrived in round 2: `test_offline_says_so_without_inventing_courses` asserts the v2
+   literal `"Offline"`; the v3 banner now speaks the deck's own `home.offline.title`
+   ("You are offline"). Full-suite log: `…/cache/scratch/cp-022-r2-suite.log`
+   (`Ran 3371 tests in 850 s — 5 failures, 11 skipped`; the four round-1 failures plus this one).
 2. **No stamped frames and no live walk** (no operator gateway restart), so A3 (material surface) and
    A4 (subject mark) stay **unverified**, and paint/type/contrast scores are provisional. This is an
    environment capability gap, not a maker dodge.
