@@ -985,3 +985,27 @@ copied into all ten worker profiles at one sha (`2bdc72af...`, `a9e2a858...`).
 Blocking issue handed to the manager: GM-010 is `blocked` (needs_input) because its tip is red
 through the GM-008 ancestor. Decision taken: merge `wt/gm-020-fix-invariants` into
 `wt/gm-010-engagement-ui` once GM-020 passes review, then unblock GM-010 for quill to re-review.
+
+## 16. Parallel execution ruling (2026-11-10 09:10 MST)
+
+The owner asked for the widest safe parallelism: the race is time, not work. The plan's screen
+cards were a serial chain; they are now a five-wide wave with disjoint segment ownership, which
+`desktop/src/README.md` rule 1 already permits ("one writer per segment").
+
+| Card | Owner | Reviewer | Segments it may edit | Parents now |
+|---|---|---|---|---|
+| CP-021 | vellum | quill | `96-workshop.js`, `40-courses.js` (LibraryView) | CP-020b, CP-014 |
+| CP-022 | sable | quill | `30-home.js`, `32-desk.js` | CP-020b, CP-012, CP-005, CP-015 |
+| CP-023 | cinder | cbqa | `70-learning.js` | CP-020b, CP-013 |
+| CP-024 | lattice | cbqa | `90-course.js` | CP-020b |
+| CP-025b | harbor | quill | `97-world.js`, `95-studio.js` (Parent Studio) | CP-020b |
+| CP-025a | vellum | quill | `30-home.js`, `70-learning.js`, `95-studio.js` | CP-020b, CP-022, CP-023, CP-025b |
+
+CP-025a is the only serial survivor: it re-touches three segments the wave above owns, so it runs
+after all three merge. CP-027 was unlinked from GM-015 and ran immediately, because every live
+capture depends on registration and it has no v3 dependency. Host ceiling is 8 concurrent workers
+(`kanban.max_in_progress` derived from 60 GiB at 512 MiB/worker, ceiling 8); at peak the wave plus
+CP-020b and the two remaining independent cards reaches that ceiling.
+
+Every card body now states its owned segments, the files it must not touch, its parallel siblings,
+and that `desktop/plugin.js` is regenerated at merge, never hand-edited.
