@@ -50,7 +50,10 @@ Three plates were generated again for round 2, one per bundled pack; the first r
 used for two of the three packs and the technical plate was regenerated once for a tighter
 composition. All three are textless, sit on the same measured paper, share one saturation temper and
 one line family, and each carries subject motifs whose `mark` sets are pairwise disjoint. The machine
-half is `python3 scripts/cp012-cover-accept.py` (**88 checks, exit 0**). The human half is the contact
+half is `python3 scripts/cp012-cover-accept.py` (**80 checks, exit 0**; the script prints its own
+total as its last line, `80 checks: 80 pass, 0 fail`, and
+`tests/test_cp012_covers.py::test_the_declared_check_count_matches_the_script` fails if this sentence
+and that line disagree). The human half is the contact
 sheet, which is **submitted for owner approval and is not yet signed**.
 
 The four demo course covers are out of scope by the card and are absent from this kit.

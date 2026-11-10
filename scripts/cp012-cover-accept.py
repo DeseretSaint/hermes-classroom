@@ -46,6 +46,14 @@ Across the kit it proves:
 * every provenance hash in `audit/cp012-covers/provenance.json` equals the file.
 
 Exit code 1 on any failure, and every failure is named.
+
+The script counts its own checks and prints the total as its final line,
+`<N> checks: <N> pass, <F> fail`. That line is the only authoritative total: a
+witness document that states a different number is wrong, and
+`tests/test_cp012_covers.py::test_the_declared_check_count_matches_the_script`
+fails when `docs/concept-parity/COVERS.md` and this line disagree. Round 2
+shipped a document claiming 88 checks against a script that ran 80, because no
+artefact owned the number.
 """
 
 from __future__ import annotations
@@ -77,6 +85,7 @@ PLATE_PIGMENTS = {"paper": "#f7f1e4", "ink": "#3a2318", "cuff": "#2b1d14",
                   "cream": "#efe0c2", "field": "#2f6047", "lamp": "#e8a93a"}
 PAPER_TOL = 60             # max channel distance that still counts as paper
 FAILURES: list[str] = []
+PASSES = 0
 
 
 def magick(*args: str) -> str:
@@ -87,8 +96,11 @@ def magick(*args: str) -> str:
 
 
 def check(ok: bool, name: str, detail: str) -> None:
+    global PASSES
     print(f"  {'PASS' if ok else 'FAIL'}  {name}: {detail}")
-    if not ok:
+    if ok:
+        PASSES += 1
+    else:
         FAILURES.append(f"{name}: {detail}")
 
 
@@ -235,6 +247,9 @@ def near_black(path: Path) -> float:
 
 
 def main() -> int:
+    global PASSES
+    PASSES = 0
+    FAILURES.clear()
     prompts = json.loads((AUDIT / "prompts.json").read_text())
     swap = json.loads((AUDIT / "swap-check.json").read_text())
     prov = json.loads((AUDIT / "provenance.json").read_text())
@@ -352,11 +367,14 @@ def main() -> int:
                   f"{i}-{j} shared={sorted(shared) if shared else 'none'}")
 
     print()
+    total = PASSES + len(FAILURES)
     if FAILURES:
         print(f"{len(FAILURES)} failure(s):")
         for f in FAILURES:
             print(f"  - {f}")
+        print(f"{total} checks: {PASSES} pass, {len(FAILURES)} fail")
         return 1
+    print(f"{total} checks: {PASSES} pass, 0 fail")
     print("A3 cover kit accepted by the machine checks.")
     return 0
 

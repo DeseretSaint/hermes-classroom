@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import unittest
@@ -343,11 +344,50 @@ class Evidence(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("magick") and shutil.which("tesseract"), "needs magick + tesseract")
 class AcceptanceScript(unittest.TestCase):
+    """The accept script owns its own total; the witness doc must match it.
+
+    Round 2 shipped `COVERS.md` claiming 88 checks against a script that ran 80,
+    because nothing owned the number. The script now prints
+    `<N> checks: <N> pass, <F> fail` as its last line and these tests read that
+    line instead of trusting the document.
+    """
+
+    SUMMARY = re.compile(r"^(\d+) checks: (\d+) pass, (\d+) fail$", re.M)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = subprocess.run(
+            ("python3", str(ROOT / "scripts" / "cp012-cover-accept.py")),
+            capture_output=True, text=True, cwd=ROOT)
+        found = cls.SUMMARY.findall(cls.result.stdout)
+        cls.summary = found[-1] if found else None
+
     def test_the_machine_acceptance_passes(self):
-        r = subprocess.run(("python3", str(ROOT / "scripts" / "cp012-cover-accept.py")),
-                           capture_output=True, text=True, cwd=ROOT)
+        r = self.result
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("A3 cover kit accepted", r.stdout)
+
+    def test_the_script_reports_its_own_total(self):
+        self.assertIsNotNone(
+            self.summary,
+            "the accept script must print a final '<N> checks: <N> pass, <F> fail' line")
+        assert self.summary is not None
+        total, passed, failed = (int(v) for v in self.summary)
+        self.assertEqual(failed, 0, "a shipped packet must have no failing check")
+        self.assertEqual(total, passed, "every reported check must be a counted pass")
+        self.assertGreater(total, 50, "the machine half must not shrink silently")
+
+    def test_the_declared_check_count_matches_the_script(self):
+        self.assertIsNotNone(self.summary, "no total line in the accept script's output")
+        assert self.summary is not None
+        total = int(self.summary[0])
+        declared = re.search(r"\*\*(\d+) checks, exit 0\*\*", DOC.read_text())
+        self.assertIsNotNone(
+            declared, "COVERS.md must declare the accept total as '**<N> checks, exit 0**'")
+        assert declared is not None
+        self.assertEqual(
+            int(declared.group(1)), total,
+            "COVERS.md's declared check total must equal the accept script's reported total")
 
 
 if __name__ == "__main__":
