@@ -17,7 +17,7 @@ world media served by `/media/{artifact_id}` and `/artifacts/{handle}`.
 | `fonts/` | `CBDisplay-VF.woff2`, `CBUI-VF.woff2`, their OFL texts, `manifest.json` | yes | `OFL-1.1` |
 | `material/` | six seamless tiles named by `contracts/cb.tokens.v3.json` | yes | `CC0-1.0` |
 | `fox/` | seven poses at 128 and 64 px (+ AVIF where the encoder is present) | yes | `CC0-1.0` |
-| `objects/` | the seven-piece kit: clock, tag, stamp rim, medallion rim, passport tray, ticket, shelf plank | yes | `CC0-1.0` |
+| `objects/` | the seven-piece kit: clock, tag, stamp rim, medallion rim, passport tray, ticket, shelf plank; painted masters live in `art/objects/` | yes | `CC0-1.0` |
 | `masters/` | the inputs: upstream font masters, SVG fox/object masters, PNG material masters, `manifest.json` | no — build inputs | `OFL-1.1` / `CC0-1.0` |
 
 Each shipped directory's `manifest.json` carries one row per file: `role`, `source`, `licence`
@@ -54,7 +54,14 @@ shipped files, largest asset ~110 KB.
 
 ## Art status
 
-The fox and object masters are **provisional** first-party geometry drawn by the build script so
-this card could prove the pipeline and the budget. CP-010 replaces the fox masters with the
-approved model-sheet poses, and CP-013 replaces the object kit; rerunning the build is the whole
-migration. The material tiles are procedural and are also provisional until CP-011's proof lands.
+The fox masters are the approved A1 pose set (CP-010) and the object masters are the painted A5
+blanks (CP-013): `assets/art/objects/*.png` is the object kit's single source, and
+`scripts/build_cb_assets.py` encodes it into `assets/objects/*.webp` (+ AVIF past 8 KB). The
+procedural SVG kit under `assets/masters/objects/` is kept only as the fallback for an object with no
+painted master; `--write-masters` never overwrites a painted blank. The material tiles are CP-011's
+and are still provisional until its proof lands. The fox WebPs under `assets/fox/` are still drawn
+from the procedural SVG masters, not from `assets/art/fox/`; wiring the painted fox into the segment
+is CP-020a's card, not this pipeline's.
+
+The scene plates (`assets/art/scenes/`) are **not** part of this tree's shipped files: they are pack
+or world media and travel on the media route.

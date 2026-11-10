@@ -361,6 +361,8 @@ class Determinism(unittest.TestCase):
             (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / rel, tmp / rel)
         shutil.copytree(ROOT / "assets" / "masters", tmp / "assets" / "masters")
+        # CP-013's painted object masters are pipeline inputs too (assets/art/objects/*.png).
+        shutil.copytree(ROOT / "assets" / "art" / "objects", tmp / "assets" / "art" / "objects")
         (tmp / "contracts").mkdir()
         shutil.copy2(CONTRACT, tmp / "contracts" / "cb.tokens.v3.json")
         (tmp / "desktop").mkdir()
