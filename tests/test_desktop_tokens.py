@@ -154,10 +154,22 @@ class TokenContractTest(unittest.TestCase):
         stray = re.findall(r"#[0-9a-fA-F]{3,8}\b", source)
         self.assertEqual(stray, [], f"raw colours outside the token table: {stray}")
 
+    def _without_the_shelf_edge_mask(self, source: str) -> str:
+        # GM-VISUAL-SPEC §2.5 requires a shelf that overflows to fade the edge with a
+        # `paper`→transparent mask, and a mask is authored with a gradient function. Remove only
+        # that one declaration so every surface fill is still scanned for decoration.
+        return re.sub(r"\n\s*const maskImage = `[^`]*`\n", "\n", source, count=1)
+
     def test_no_decorative_gradients(self) -> None:
-        source = PLUGIN_JS.read_text(encoding="utf-8").lower()
+        source = self._without_the_shelf_edge_mask(PLUGIN_JS.read_text(encoding="utf-8")).lower()
         self.assertNotIn("gradient(", source)
         self.assertNotIn("linear-gradient", source)
+
+    def test_the_gradient_ban_still_covers_surface_fills(self) -> None:
+        # The exemption is one marked declaration, not a hole in the rule: a decorative fill is
+        # still caught.
+        sample = "style: { backgroundImage: 'linear-gradient(to right, red, blue)' }"
+        self.assertIn("linear-gradient", self._without_the_shelf_edge_mask(sample))
 
     def test_contrast_gates_hold_for_the_values_that_ship(self) -> None:
         for gate in self.contract["gates"]:

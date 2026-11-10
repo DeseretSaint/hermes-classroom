@@ -2519,6 +2519,504 @@ function mainlineObjective(row, objectives) {
 }
 
 const HUB_SLOT_LIMIT = 4
+// GM-002 — the library shelf is a first viewport, not the catalog: six authored cards at wide,
+// then `See all` opens Courses. The rail limit above stays the desk's own classroom switcher.
+const HUB_SHELF_LIMIT = 6
+
+const CB_HOME_COPY = Object.freeze({
+  question: 'What will you learn next?',
+  subline: 'Pick a course, or chart a new one.',
+  create: 'Start a new course',
+  browse: 'Browse the library',
+  shelf: 'Your courses',
+  seeAll: 'See all',
+  emptyTitle: 'No courses yet.',
+  emptyBody: 'Start with a goal, or browse a ready-made course.',
+  loading: 'Reading your courses…',
+  errorTitle: 'Your courses could not be read',
+  modeUnavailable: 'This backend does not report course mode yet.',
+  modeUnreadable: 'Course mode could not be read.'
+})
+
+/**
+ * The durable course mode a `world.read` answer reports.
+ *
+ * GM-CONTRACT §2: a stored NULL or an unrecognised value reads as Textbook, and the read never
+ * writes the fallback back. The helper exists so the shelf and the course home agree on one rule;
+ * the caller must still have a real answer before calling it.
+ */
+function readCoursePresentationMode(value) {
+  return value === 'game' ? 'game' : 'textbook'
+}
+
+/**
+ * GM-002 — the mode badge on a shelf card, from a real `world.read` per visible course.
+ *
+ * The badge is never derived from the device preference (`homePrefs.defaultMode`) and never
+ * guessed when the read is absent: an unsupported or failed read leaves `state` out of `ready`,
+ * and the shelf names that instead of printing a mode nobody answered.
+ */
+function useCourseModes(courseIds) {
+  const [modes, setModes] = useState({})
+  const ids = (Array.isArray(courseIds) ? courseIds : []).filter(Boolean).slice(0, HUB_SHELF_LIMIT)
+  const key = ids.join('|')
+  useEffect(() => {
+    if (!key || !backendSupports('world.read')) {
+      setModes({})
+      return undefined
+    }
+    let cancelled = false
+    setModes((previous) => {
+      const next = {}
+      ids.forEach((id) => {
+        next[id] = previous[id] && previous[id].state === 'ready' ? previous[id] : { state: 'loading' }
+      })
+      return next
+    })
+    ids.forEach((courseId) => {
+      rpc('world.read', { course_id: courseId })
+        .then((response) => {
+          if (cancelled) return
+          if (response && response.ok && response.result) {
+            setModes((previous) => ({
+              ...previous,
+              [courseId]: { state: 'ready', mode: readCoursePresentationMode(response.result.presentation_mode) }
+            }))
+          } else {
+            setModes((previous) => ({ ...previous, [courseId]: { state: 'error' } }))
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setModes((previous) => ({ ...previous, [courseId]: { state: 'error' } }))
+        })
+    })
+    return () => {
+      cancelled = true
+    }
+    // `key` is the ordered id list; the array identity is not a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return modes
+}
+
+/**
+ * One course on the global shelf. The whole card is the target: one real RowButton paints over
+ * the card and takes Enter/Space, so there is no second "Open" control inside a card that is
+ * already an object. The cover is the existing cover field (real artifact when the row carries
+ * one, a paper cover with the subject monogram otherwise) — never an invented share image.
+ */
+function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
+  const row = (slot && slot.row) || {}
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  const title = row.title || (slot && slot.name) || 'Untitled course'
+  const next = learnerNextLabel(row.next_step && row.next_step.label)
+  // The goal paragraph carries a stored goal or the course's own subtitle. It must not repeat
+  // the card title or the next-step sentence the meta row already prints, or every card repeats
+  // itself: real authored rows often store `subtitle` identical to `title`.
+  const goalCandidate = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
+  const sameText = (a, b) => String(a).trim().toLowerCase().replace(/\s+/g, ' ') === String(b).trim().toLowerCase().replace(/\s+/g, ' ')
+  const goal = goalCandidate && !sameText(goalCandidate, title) && !sameText(goalCandidate, next) ? goalCandidate : ''
+  const open = () => {
+    if (onOpen) onOpen(slot)
+  }
+  // Authored asymmetry: the first card leads, one in three is a short card. The shelf is a row of
+  // objects, not six equal admin tiles; the widths come from the card's place, not from chance.
+  const basis = narrow ? '100%' : index === 0 ? '17rem' : index % 3 === 1 ? '13rem' : '15rem'
+  const compactCover = !narrow && index % 3 === 1
+  const modeState = mode ? mode.state : 'absent'
+  return jsxs('article', {
+    'data-cb-home-card': '',
+    'data-cb-home-card-index': String(index),
+    'data-cb-course-id': row.course_id || '',
+    'data-cb-home-card-basis': narrow ? 'full' : basis,
+    role: 'listitem',
+    style: {
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.4rem',
+      flex: narrow ? '1 1 auto' : `0 0 ${basis}`,
+      width: narrow ? '100%' : basis,
+      minWidth: 0,
+      paddingTop: '0.45rem',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsx(sdk.RowButton, {
+        'aria-label': `Open ${title}`,
+        'data-cb-home-card-action': row.enrollment_id || row.course_id || '',
+        'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
+        className: 'absolute inset-0',
+        onBlur: () => setKeyboardFocus(false),
+        onFocus: (event) => setKeyboardFocus(shelfRingVisible(event && event.currentTarget)),
+        style: {
+          outline: keyboardFocus ? '2px solid var(--cb-accent)' : 'none',
+          outlineOffset: '-2px',
+          borderRadius: '2px'
+        },
+        onKeyDown: (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            open()
+          }
+        },
+        onClick: open
+      }, 'target'),
+      jsxs('div', {
+        className: 'pointer-events-none flex flex-col gap-2',
+        style: { minWidth: 0 },
+        children: [
+          jsx('div', {
+            'data-cb-home-cover': '',
+            style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+            children: jsx(ClassroomCover, { slot, compact: compactCover, hideTitle: true }, 'cover')
+          }, 'cover'),
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minWidth: 0 },
+            children: [
+              modeState === 'ready'
+                ? jsx(sdk.Badge, { variant: 'muted', children: readCoursePresentationMode(mode.mode) === 'game' ? 'Game' : 'Textbook' }, 'mode')
+                : null,
+              jsx('span', {
+                'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                children: next || 'No next step recorded'
+              }, 'next')
+            ]
+          }, 'meta'),
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.lead,
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: 'var(--cb-ink)',
+              overflowWrap: 'anywhere'
+            },
+            children: title
+          }, 'title'),
+          goal
+            ? jsx('p', {
+                'data-cb-home-card-goal': '',
+                style: {
+                  margin: 0,
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink-soft)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                },
+                children: goal
+              }, 'goal')
+            : null
+        ]
+      }, 'body')
+    ]
+  })
+}
+
+/**
+ * GM-VISUAL-SPEC §2.5 — the shelf's edge affordance. A shelf that overflows fades the last 24px
+ * at each edge that still has cards behind it, drawn as a `paper`→transparent mask on the scroll
+ * container (a mask, not a gradient fill painted on a surface). Without it a clipped card is a
+ * hard cut and nothing tells the learner the shelf scrolls.
+ *
+ * `state` is the measured edge (`data-cb-shelf-mask`) the live capture asserts on; `style` is the
+ * mask itself.
+ */
+function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
+  const left = Number(scrollLeft) || 0
+  const client = Number(clientWidth) || 0
+  const total = Number(scrollWidth) || 0
+  if (total - client <= 1) return { state: 'none', style: {} }
+  const fadeStart = left > 1
+  const fadeEnd = left < total - client - 1
+  if (!fadeStart && !fadeEnd) return { state: 'none', style: {} }
+  const stops = fadeStart ? ['transparent 0', 'black 24px'] : ['black 0']
+  if (fadeEnd) stops.push('black calc(100% - 24px)', 'transparent 100%')
+  else stops.push('black 100%')
+  const maskImage = `linear-gradient(to right, ${stops.join(', ')})`
+  return {
+    state: fadeStart && fadeEnd ? 'both' : fadeEnd ? 'right' : 'left',
+    style: {
+      maskImage,
+      WebkitMaskImage: maskImage,
+      maskRepeat: 'no-repeat',
+      WebkitMaskRepeat: 'no-repeat',
+      maskSize: '100% 100%',
+      WebkitMaskSize: '100% 100%'
+    }
+  }
+}
+
+/**
+ * GM-002 — the global Home, a field library and a threshold.
+ *
+ * It answers "what do I want to learn now?" with one question, one filled create action, one
+ * secondary path and a shelf of real courses. It is not a course page: there is no Continue, no
+ * trailhead, no course world hero and no course-bound scene. Selecting a card asks the route for
+ * that course's own home, which is where the trailhead lives.
+ */
+function CoursebookHome({
+  library,
+  modes,
+  modesSupported,
+  online,
+  canCreate,
+  onStartCreate,
+  onBrowseLibrary,
+  onOpenCourse,
+  onShowAll,
+  onOpenStudio,
+  onRetry
+}) {
+  const width = useCbViewportWidth()
+  const narrow = width > 0 && width < 620
+  const status = library ? library.status : 'loading'
+  const data = library ? library.data : null
+  const rows = data && Array.isArray(data.items) ? data.items : []
+  const parentPlans = rows.filter((entry) => entry && entry.recipe === 'parent').length
+  // `hubSlots` is the same honest one-object-per-course rule the desk uses; the shelf caps at six
+  // and `See all` is the catalog, not a second create door.
+  const hub = hubSlots(rows)
+  const slots = hub.all.slice(0, HUB_SHELF_LIMIT)
+  const total = Math.max(Number(data && data.total) || 0, hub.total)
+  const modeMap = modes && typeof modes === 'object' ? modes : {}
+  const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
+  // The shelf fades the edge that still has cards behind it (GM-VISUAL-SPEC §2.5). Measured from
+  // the live row: jsdom/SSR report zeroes and honestly stay `none`.
+  const shelfRowRef = useRef(null)
+  const [shelfMask, setShelfMask] = useState({ state: 'none', style: {} })
+  const shelfSlotCount = slots.length
+  useEffect(() => {
+    const row = shelfRowRef.current
+    if (!row) return undefined
+    const measure = () => setShelfMask(cbShelfEdgeMask(row.scrollLeft, row.clientWidth, row.scrollWidth))
+    measure()
+    row.addEventListener('scroll', measure, { passive: true })
+    window.addEventListener('resize', measure)
+    return () => {
+      row.removeEventListener('scroll', measure)
+      window.removeEventListener('resize', measure)
+    }
+  }, [status, narrow, shelfSlotCount])
+
+  const invitation = jsxs('div', {
+    'data-cb-home-invitation': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      gap: '0.55rem',
+      width: '100%',
+      maxWidth: '42rem',
+      paddingTop: narrow ? '0.35rem' : '0.9rem',
+      paddingBottom: narrow ? '0.6rem' : '1.1rem'
+    },
+    children: [
+      jsx('h2', {
+        'data-cb-home-question': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.heading,
+          fontWeight: 600,
+          lineHeight: 1.2,
+          letterSpacing: '-0.01em',
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: CB_HOME_COPY.question
+      }, 'question'),
+      jsx('p', {
+        'data-cb-home-subline': '',
+        style: { ...quiet, color: 'var(--cb-ink)', fontSize: CB_TYPE.body },
+        children: CB_HOME_COPY.subline
+      }, 'subline'),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', paddingTop: '0.2rem' },
+        children: [
+          canCreate
+            ? jsx(CbAction, { variant: 'primary', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
+            : null,
+          jsx(CbAction, { variant: 'tertiary', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
+        ]
+      }, 'actions')
+    ]
+  }, 'invitation')
+
+  let shelf
+  if (status === 'loading' || status === 'idle') {
+    shelf = jsxs('div', {
+      'data-cb-home-shelf': 'loading',
+      'data-cb-home-shelf-state': status,
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '9rem', paddingTop: '0.4rem' },
+      children: [
+        jsx(sdk.Loader, { label: CB_HOME_COPY.loading }),
+        jsx('p', { style: quiet, children: 'Nothing already saved is lost while this read is in flight.' })
+      ]
+    }, 'shelf')
+  } else if (status === 'error' && rows.length === 0) {
+    shelf = jsx('div', {
+      'data-cb-home-shelf': 'error',
+      'data-cb-home-shelf-state': 'error',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
+      children: jsxs(sdk.ErrorState, {
+        title: CB_HOME_COPY.errorTitle,
+        description: `${library && library.error && library.error.code ? library.error.code + ': ' : ''}${describeError(library && library.error)} This is a failed read, not an empty library.`,
+        children: jsx(CbAction, { variant: 'secondary', onClick: onRetry, children: 'Try again' })
+      })
+    }, 'shelf')
+  } else if (hub.total === 0) {
+    const reason = data && data.empty_reason
+    const parentOnly = parentPlans > 0
+    shelf = jsx('div', {
+      'data-cb-home-shelf': parentOnly ? 'parent-only' : 'empty',
+      'data-cb-home-shelf-state': 'empty',
+      'data-cb-home-empty-reason': parentOnly ? 'parent_only' : reason || 'no_courses',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
+      children: parentOnly
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' },
+            children: [
+              jsx(sdk.EmptyState, {
+                title: 'Parent Studio holds your lesson plans.',
+                description: 'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.'
+              }, 'state'),
+              jsx(CbAction, { variant: 'secondary', onClick: onOpenStudio, children: 'Open Parent Studio' }, 'studio')
+            ]
+          })
+        : jsxs(sdk.EmptyState, {
+            title: CB_HOME_COPY.emptyTitle,
+            description:
+              reason === 'all_archived'
+                ? 'Every course here is archived. Unarchive one in Courses to continue it.'
+                : CB_HOME_COPY.emptyBody
+          })
+    }, 'shelf')
+  } else {
+    shelf = jsxs('div', {
+      'data-cb-home-shelf': 'ready',
+      'data-cb-home-shelf-state': 'ready',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0 },
+      children: [
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+          children: [
+            jsx('h2', {
+              'data-cb-home-shelf-label': '',
+              style: {
+                margin: 0,
+                fontFamily: CB_SERIF,
+                fontSize: CB_TYPE.lead,
+                fontWeight: 600,
+                color: 'var(--cb-ink)'
+              },
+              children: CB_HOME_COPY.shelf
+            }, 'label'),
+            onShowAll
+              ? jsx(CbAction, { variant: 'tertiary', onClick: onShowAll, children: CB_HOME_COPY.seeAll }, 'seeAll')
+              : null
+          ]
+        }, 'head'),
+        jsx('div', {
+          'data-cb-home-shelf-row': '',
+          'data-cb-shelf-mask': shelfMask.state,
+          ref: shelfRowRef,
+          role: 'list',
+          'aria-label': CB_HOME_COPY.shelf,
+          style: {
+            display: 'flex',
+            flexDirection: narrow ? 'column' : 'row',
+            alignItems: 'stretch',
+            gap: narrow ? '0.9rem' : '1.1rem',
+            overflowX: narrow ? 'visible' : 'auto',
+            paddingBottom: '0.7rem',
+            borderBottom: '2px solid var(--cb-rule)',
+            minWidth: 0,
+            ...shelfMask.style
+          },
+          children: slots.map((slot, index) =>
+            jsx(HomeCourseCard, {
+              slot,
+              index,
+              narrow,
+              mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
+              onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
+            }, (slot && slot.course_id) || `slot-${index}`)
+          )
+        }, 'row'),
+        hub.hidden > 0
+          ? jsx('p', {
+              'data-cb-home-shelf-hidden': String(hub.hidden),
+              style: quiet,
+              children: `${plural(hub.hidden, 'more course', 'more courses')} behind See all.`
+            }, 'hidden')
+          : null,
+        modesSupported === false
+          ? jsx('p', { 'data-cb-home-mode-read': 'unavailable', style: quiet, children: CB_HOME_COPY.modeUnavailable }, 'mode')
+          : null
+      ]
+    }, 'shelf')
+  }
+
+  return jsxs('div', {
+    'data-cb-home': status === 'ready' && hub.total === 0 ? 'empty' : status,
+    'data-cb-home-layout': narrow ? 'stacked' : 'wide',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.8rem', minWidth: 0 },
+    children: [
+      online === false
+        ? jsx('div', {
+            'data-cb-home-offline': '',
+            className: 'text-xs text-(--ui-text-secondary)',
+            children:
+              'Offline. Showing the courses that were last read; starting a course or writing a brief is paused until the connection returns.'
+          }, 'offline')
+        : null,
+      library && library.stale
+        ? jsxs('div', {
+            'data-cb-home-stale': '',
+            className: 'flex flex-wrap items-center justify-between gap-2 text-xs text-(--ui-text-secondary)',
+            children: [
+              jsx('span', { children: 'Reconnecting. Showing the courses that were last read.' }),
+              jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Retry now' })
+            ]
+          }, 'stale')
+        : null,
+      invitation,
+      shelf
+    ]
+  })
+}
+
+/**
+ * The route's Home surface: one `library.list` read feeds the shelf, and the mode map is a real
+ * `world.read` per visible card. It never mounts the desk's transcript, the trailhead or Continue.
+ */
+function HomeLibraryPanel({ canCreate, online, onStartCreate, onBrowseLibrary, onOpenCourse, onShowAll, onOpenStudio }) {
+  const payload = { filter: 'all', limit: 50, sort: 'recent' }
+  const library = useRpcQuery('library.list', payload, JSON.stringify(payload), backendSupports('library.list'))
+  const rows = library.data && Array.isArray(library.data.items) ? library.data.items : []
+  const hub = hubSlots(rows)
+  const modes = useCourseModes(hub.slots.slice(0, HUB_SHELF_LIMIT).map((slot) => slot.course_id))
+  return jsx(CoursebookHome, {
+    library,
+    modes,
+    modesSupported: backendSupports('world.read'),
+    online,
+    canCreate,
+    onStartCreate,
+    onBrowseLibrary,
+    onOpenCourse,
+    onShowAll,
+    onOpenStudio,
+    onRetry: library.reload
+  })
+}
 
 /** Numeric clock for `updated_at`; an unparseable stamp sorts last, never first. */
 function hubTime(value) {
@@ -3282,7 +3780,7 @@ function cbCoverSubject(row) {
   return null
 }
 
-function ClassroomCover({ slot, compact }) {
+function ClassroomCover({ slot, compact, hideTitle }) {
   const row = slot.row || {}
   const media = cbCoverMedia(row)
   // One hook, called every render: an absent artifact is a synchronous text state, not a request.
@@ -3347,20 +3845,24 @@ function ClassroomCover({ slot, compact }) {
             },
             children: courseStampText(slot.name || (row && row.title) || 'Coursebook')
           }, 'monogram'),
-          jsx('span', {
-            'data-cb-slot-cover-title': '',
-            style: {
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
-              fontWeight: 600,
-              lineHeight: 1.25,
-              color: 'var(--cb-ink)',
-              whiteSpace: 'normal',
-              overflowWrap: 'anywhere'
-            },
-            children: slot.name || (row && row.title) || 'Classroom'
-          }, 'title')
+          // When the card owns the heading (`hideTitle`), the cover carries the monogram and the
+          // subject only. Painting the title here too made every shelf card read title → title.
+          hideTitle
+            ? null
+            : jsx('span', {
+                'data-cb-slot-cover-title': '',
+                style: {
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
+                  fontWeight: 600,
+                  lineHeight: 1.25,
+                  color: 'var(--cb-ink)',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere'
+                },
+                children: slot.name || (row && row.title) || 'Classroom'
+              }, 'title')
         ]
       }),
       subject
@@ -13982,6 +14484,12 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
   delete rest.size
   const motion = useCbMotion()
   const [pressed, setPressed] = useState(false)
+  // README §1 rule 6: a keyboard focus target paints the 2px accent ring. The SDK's own ring is
+  // reset by the host, so the plugin authors it; a pointer click does not raise it.
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  // A pointer press focuses the control without meaning "keyboard focus". Set here so the ring is
+  // authored from intent, not from a `:focus-visible` selector the test DOM cannot resolve.
+  const pointerFocus = useRef(false)
   const kind = Object.prototype.hasOwnProperty.call(CB_ACTION_STYLES, variant) ? variant : 'secondary'
   const spec = CB_ACTION_STYLES[kind]
   const isDisabled = Boolean(disabled)
@@ -14005,10 +14513,12 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
     ...rest,
     'data-cb-action': kind,
     'data-cb-state': cbState,
+    'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
     disabled: isDisabled,
     variant: spec.variant,
     className: [spec.className, className].filter(Boolean).join(' ') || undefined,
     onPointerDown: (event) => {
+      pointerFocus.current = true
       if (!isDisabled) setPressed(true)
       call('onPointerDown', event)
     },
@@ -14024,7 +14534,13 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
       release()
       call('onPointerCancel', event)
     },
+    onFocus: (event) => {
+      setKeyboardFocus(!pointerFocus.current || shelfRingVisible(event && event.currentTarget))
+      call('onFocus', event)
+    },
     onBlur: (event) => {
+      pointerFocus.current = false
+      setKeyboardFocus(false)
       release()
       call('onBlur', event)
     },
@@ -14034,7 +14550,16 @@ function CbAction({ variant, state, className, style, disabled, pending, childre
       ...(palette || {}),
       ...(pressStyle || {}),
       minHeight: spec.minHeight,
-      fontSize: spec.fontSize
+      fontSize: spec.fontSize,
+      // Longhands rather than the `outline` shorthand: a computed-style reader (and the host's
+      // own reset) sees the authored ring either way, and jsdom only exposes the longhands. At
+      // rest the style is omitted, so a host UA ring is never suppressed by an inline `none`.
+      ...(keyboardFocus ? {
+        outlineStyle: 'solid',
+        outlineWidth: '2px',
+        outlineColor: 'var(--cb-accent)',
+        outlineOffset: '2px'
+      } : {})
     },
     children
   })
@@ -27722,6 +28247,10 @@ function CoursebookPage() {
   // survives Course Detail because it lives here, beside `openCourse`, and it is never written to
   // progress. A slot switch changes this value only.
   const [selectedCourseId, setSelectedCourseId] = useState(null)
+  // GM-002: global Home is the library. Opening a card asks for that course's own home; this id is
+  // the only thing that turns Home into a course home, so a fresh mount never silently does it.
+  // Leaving Home (or pressing Home again) clears it.
+  const [homeCourseId, setHomeCourseId] = useState(null)
   // H-103: "Change the goal" carries the rejected plan's own choices into the create form instead
   // of asking the learner to retype them. It is a seed, not an automatic submit.
   const [createSeed, setCreateSeed] = useState(null)
@@ -27743,7 +28272,23 @@ function CoursebookPage() {
     setOpenCourse(null)
     setStudioCourse(null)
     setStudioSeed(null)
+    // A destination is not a course: leaving Home (or any move) drops the opened course home.
+    setHomeCourseId(null)
     setDestination(next)
+  }, [])
+
+  // GM-002: selecting a shelf card is the one act that opens a course home. It is a local
+  // selection beside the route, never a URL guess, and it does not open Course Detail.
+  const openCourseHome = useCallback((row) => {
+    if (!row) return
+    if (row.recipe !== 'parent' && row.course_id) {
+      setSelectedCourseId(row.course_id)
+      setHomeCourseId(row.course_id)
+    }
+  }, [])
+
+  const closeCourseHome = useCallback(() => {
+    setHomeCourseId(null)
   }, [])
 
   // H-147: the sheet closes back onto the control that opened it — Escape, Close and a backdrop
@@ -28004,16 +28549,23 @@ function CoursebookPage() {
       },
       onShowDesk: () => changeDestination('home')
     })
-  } else {
-    // H-145/H-146: Home is the launcher. It carries the classroom rail and exactly one Continue
-    // surface for the selected classroom; the all-courses catalog lives behind Courses, not here.
-    body = jsx(FieldDesk, {
+  } else if (destination === 'home' && homeCourseId) {
+    // GM-002: the selected course's home. It keeps the trailhead, the current objective, Continue
+    // and the path, and it is reachable only by opening that course on the library Home. It is a
+    // distinct surface (`data-cb-course-home`), not the global Home wearing a course.
+    body = jsx('div', {
+      'data-cb-course-home': homeCourseId,
+      style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+      children: jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
       online,
       prefs: homePrefs,
-      selectedCourseId,
-      onSelectCourse: setSelectedCourseId,
+      selectedCourseId: homeCourseId,
+      onSelectCourse: (courseId) => {
+        setSelectedCourseId(courseId)
+        setHomeCourseId(courseId)
+      },
       onSelectedClassroom: setHomeClassroom,
       onOpenStudio: () => changeDestination('studio'),
       onEmptyChange: setCoursesEmpty,
@@ -28022,9 +28574,23 @@ function CoursebookPage() {
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null })
       },
       onShowAll: () => changeDestination('courses'),
+      // A course home is not a create surface: the one create action lives on global Home.
+      onStartCreate: null,
+      onStartSyllabus: null,
+        onBrowseLibrary: () => changeDestination('workshop')
+      })
+    })
+  } else {
+    // GM-002: global Home is the field library. It launches courses; it is not the selected
+    // course's page and never carries Continue, the trailhead or a Japanese lesson scene.
+    body = jsx(HomeLibraryPanel, {
+      online,
+      canCreate,
       onStartCreate: () => beginCreate(),
-      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
-      onBrowseLibrary: () => changeDestination('workshop')
+      onBrowseLibrary: () => changeDestination('workshop'),
+      onOpenCourse: openCourseHome,
+      onShowAll: () => changeDestination('courses'),
+      onOpenStudio: () => changeDestination('studio')
     })
   }
 
@@ -28033,8 +28599,9 @@ function CoursebookPage() {
   // One stable page title per surface. It is the route's only `h1` in every health and flow
   // state, so the first heading is the page title and never a card's objective; every surface
   // below it is an `h2` region. An open course is its own page ("Course"), not a second "Home"
-  // or a second course title (CourseDetail already prints the course name at h2).
-  const pageTitle = openCourse
+  // or a second course title (CourseDetail already prints the course name at h2). GM-002: the
+  // opened course home under Home is "Course" too — it is not the library.
+  const pageTitle = openCourse || (destination === 'home' && homeCourseId)
     ? 'Course'
     : ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
@@ -28096,6 +28663,16 @@ function CoursebookPage() {
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
+                  // GM-002: the course home is one step in from the library Home. This is the way
+                  // back; it never relies on the nav's current-item click being re-armed.
+                  destination === 'home' && homeCourseId && !openCourse
+                    ? jsx(CbAction, {
+                        variant: 'tertiary',
+                        'data-cb-home-back': '',
+                        onClick: closeCourseHome,
+                        children: 'Back to Home'
+                      }, 'home-back')
+                    : null,
                   // H-176 — Settings is a small labelled control in the top-right of the
                   // trailhead, outside the action row. It is not a second primary.
                   destination === 'home' && !openCourse
@@ -28140,7 +28717,7 @@ function CoursebookPage() {
                   'Creating a course, writing a brief and grading open answers are paused until the connection returns.'
               }),
           showDestinationNav
-            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination })
+            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination, onHome: closeCourseHome })
             : null
         ]
       }),
@@ -28164,7 +28741,7 @@ function CoursebookPage() {
  * weight and a lamp underline, plus `aria-current="page"`. It replaces a segmented control whose
  * active state was a fill only.
  */
-function CbDestinationNav({ value, onChange }) {
+function CbDestinationNav({ value, onChange, onHome }) {
   return jsx('nav', {
     'data-cb-destination-nav': '',
     'aria-label': 'Coursebook sections',
@@ -28178,7 +28755,13 @@ function CbDestinationNav({ value, onChange }) {
           'data-cb-nav-item': item.id,
           'aria-current': current ? 'page' : undefined,
           onClick: () => {
-            if (!current) onChange(item.id)
+            // GM-002: on the course home the Home destination is still current (it is a step
+            // inside Home). Pressing it returns to the library instead of doing nothing.
+            if (current) {
+              if (item.id === 'home' && onHome) onHome()
+              return
+            }
+            onChange(item.id)
           },
           style: {
             background: 'none',
@@ -28624,6 +29207,11 @@ export {
   enrollmentStatusLabel,
   FieldRail,
   FieldDeskHome,
+  CoursebookHome,
+  cbShelfEdgeMask,
+  HomeLibraryPanel,
+  HomeCourseCard,
+  readCoursePresentationMode,
   FieldNotesStrip,
   DeskFacts,
   FieldQuestView,

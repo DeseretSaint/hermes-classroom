@@ -294,6 +294,14 @@ await act(async () => {
 })
 await flush(220)
 
+// GM-002: the classroom override is a course-home setting now; the harness opens the first
+// library card so the route is on a course home before its steps run.
+const shelfCard = document.querySelector('[data-cb-home-card] button')
+if (shelfCard) {
+  await act(async () => { shelfCard.click() })
+  await flush(220)
+}
+
 const steps = []
 steps.push({ step: 'initial', ...snapshot() })
 

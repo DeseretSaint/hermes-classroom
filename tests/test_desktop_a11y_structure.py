@@ -198,11 +198,23 @@ if (payload.kind === 'prose') {
   }))
   process.stdout.write(JSON.stringify({ prose, proseH1Count: prose.length, routeH1Count: document.querySelectorAll('h1[data-cb-page-title]').length }))
 } else {
-surfaces.push(await snapshot('home-desk'))
+surfaces.push(await snapshot('home-library'))
 
 if (payload.firstRun) {
+  // On a profile with no courses the library Home is the first-run surface itself.
+  surfaces.push(await snapshot('home-desk'))
   process.stdout.write(JSON.stringify({ surfaces }))
 } else {
+
+// GM-002: the desk is the selected course's home now, one step in from the library Home.
+const openCourseHome = async () => {
+  const opener = document.querySelector('[data-cb-home-card] button')
+  if (!opener) throw new Error('global Home rendered no course card to open')
+  await act(async () => { opener.click() })
+  await flush(200)
+}
+await openCourseHome()
+surfaces.push(await snapshot('home-desk'))
 
 const navTo = async (destination) => {
   const button = document.querySelector(`[data-cb-nav-item="${destination}"]`)
@@ -216,6 +228,9 @@ surfaces.push(await snapshot('workshop'))
 await navTo('studio')
 surfaces.push(await snapshot('studio'))
 await navTo('home')
+
+// Leaving Home cleared the opened course; the desk path starts by opening a card again.
+await openCourseHome()
 
 // The desk path is the same route a learner takes into a section: path row -> course -> textbook
 // open section -> WorkspaceShell reading column.
@@ -439,10 +454,18 @@ class A11yStructureTest(unittest.TestCase):
             previous = level
 
     def test_the_desks_first_heading_is_the_page_title(self) -> None:
+        # GM-002: the desk is the selected course's home, so its page title is "Course". The
+        # library Home is titled "Home" (see the next test) and never silently borrows a course.
         surface = self.surface("home-desk")
+        self.assertEqual(surface["title"], "Course")
+        self.assertEqual(surface["headings"][0]["text"], "Course")
+        self.assertNotEqual(surface["headings"][0]["text"], "Register and affection")
+
+    def test_the_library_home_is_titled_home(self) -> None:
+        surface = self.surface("home-library")
         self.assertEqual(surface["title"], "Home")
         self.assertEqual(surface["headings"][0]["text"], "Home")
-        self.assertNotEqual(surface["headings"][0]["text"], "Register and affection")
+        self.assertEqual(surface["continued"], 0, "global Home carries no Continue plate")
 
     def test_landmarks_are_named(self) -> None:
         for name in ("home-desk", "workshop", "studio", "section"):

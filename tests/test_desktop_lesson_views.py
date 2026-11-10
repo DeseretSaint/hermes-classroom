@@ -102,6 +102,10 @@ export const useTheme = () => ({
 })
 
 export const Button = (props) => {
+  // Keep the SDK's variant hook, then forward every other prop the caller passes (style, focus
+  // handlers, aria-/data- hooks) like the real SDK Button. Both shapes are pinned elsewhere:
+  // tests.test_desktop_h201_course_member_open wants the `children` guard, and the H-94/H-149
+  // suites count `data-variant`.
   const attrs = {
     type: 'button',
     disabled: Boolean(props.disabled),
@@ -111,9 +115,8 @@ export const Button = (props) => {
   if (props.className) attrs.className = props.className
   if (props.title) attrs.title = props.title
   for (const [name, value] of Object.entries(props)) {
-    if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {
-      attrs[name] = value
-    }
+    if (name === 'children' || value === undefined || name in attrs) continue
+    attrs[name] = value
   }
   return el('button', attrs, textOf(props))
 }

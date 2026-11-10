@@ -206,6 +206,13 @@ const text = (node) => ((node && node.textContent) || '').replace(/\s+/g, ' ').t
 const exists = (selector) => Boolean(document.querySelector(selector))
 
 const snapshot = () => ({
+  home: (document.querySelector('[data-cb-home]') || {}).getAttribute
+    ? document.querySelector('[data-cb-home]').getAttribute('data-cb-home')
+    : null,
+  homeShelf: (document.querySelector('[data-cb-home-shelf]') || {}).getAttribute
+    ? document.querySelector('[data-cb-home-shelf]').getAttribute('data-cb-home-shelf')
+    : null,
+  homeError: text(document.querySelector('[data-cb-home-shelf-state="error"]')),
   deskState: (document.querySelector('[data-cb-desk]') || {}).getAttribute
     ? document.querySelector('[data-cb-desk]').getAttribute('data-cb-desk')
     : null,
@@ -251,6 +258,14 @@ const snapshot = () => ({
 
 await act(async () => { root.render(route.render()) })
 await flush(140)
+
+// GM-002: the desk is the selected course's home, one step in from the library Home. A profile
+// with no learner course has no card to open and stays on the library surface.
+const opener = document.querySelector('[data-cb-home-card] button')
+if (opener) {
+  await act(async () => { opener.click() })
+  await flush(220)
+}
 
 const steps = []
 steps.push({ step: 'initial', ...snapshot() })
@@ -302,6 +317,10 @@ if (payload.script === 'focus') {
   // jsdom moves activeElement on focus() but React listens for focusin on the root, so both the
   // real event and its bubbling companion are dispatched the way a browser would.
   await act(async () => {
+    // GM-002: the walkthrough clicks a library card before it reaches this tab, and jsdom reads
+    // that pointer interaction as the modality — a plain focus() then reports :focus-visible as
+    // false. A Tab keydown restores keyboard modality the way a real keyboard user arrives.
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
     target.focus()
     target.dispatchEvent(new window.FocusEvent('focusin', { bubbles: true }))
   })
@@ -589,17 +608,16 @@ class HubRouteTest(Harness):
         responses["library.list"] = {"__refuse": {"code": "HOST_UNAVAILABLE", "category": "transport", "message": "the backend did not answer", "retryable": True}}
         steps = self.page(responses)["steps"]
         first = steps[0]
-        self.assertEqual(first["deskState"], "error")
-        self.assertIn("HOST_UNAVAILABLE", first["error"])
-        self.assertIn("will not show an empty course in place of a failed read", first["error"])
-        self.assertIsNone(first["emptyTitle"])
-        self.assertEqual(first["rail"], None)
+        self.assertEqual(first["homeShelf"], "error")
+        self.assertIn("HOST_UNAVAILABLE", first["homeError"])
+        self.assertIn("This is a failed read, not an empty library", first["homeError"])
+        self.assertIsNone(first["deskState"])
 
     def test_all_archived_is_its_own_state_not_first_run(self) -> None:
         steps = self.page({"library.list": {"result": library(empty_reason="all_archived", total=0)}})["steps"]
         first = steps[0]
-        self.assertEqual(first["deskState"], "archived")
-        self.assertIn("Every classroom here is archived.", first["whole"])
+        self.assertEqual(first["homeShelf"], "empty")
+        self.assertIn("Every course here is archived.", first["whole"])
         self.assertIn("Unarchive one in Courses", first["whole"])
         self.assertNotIn("Start with a goal", first["whole"])
 
@@ -612,15 +630,18 @@ class HubRouteTest(Harness):
         )
         steps = self.page({"library.list": {"result": library(parent)}})["steps"]
         first = steps[0]
-        self.assertEqual(first["deskState"], "parent-only")
+        self.assertEqual(first["homeShelf"], "parent-only")
         self.assertIn("Parent Studio holds your lesson plans.", first["whole"])
         self.assertIn("Open Parent Studio", first["whole"])
-        self.assertEqual(first["rail"], None)
+        self.assertIsNone(first["deskState"])
 
     def test_a_genuinely_empty_profile_renders_the_start_plate(self) -> None:
         steps = self.page({"library.list": {"result": library(empty_reason="no_courses", total=0)}})["steps"]
         first = steps[0]
-        self.assertEqual(first["deskState"], "empty")
+        self.assertEqual(first["home"], "empty")
+        self.assertEqual(first["homeShelf"], "empty")
+        self.assertIn("No courses yet.", first["whole"])
+        self.assertIn("Start a new course", first["whole"])
         self.assertNotIn("Parent Studio holds your lesson plans.", first["whole"])
         self.assertNotIn("Every classroom here is archived.", first["whole"])
 
