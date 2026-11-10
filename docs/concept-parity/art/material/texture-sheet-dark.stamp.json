@@ -9,7 +9,7 @@
     "width": 1120,
     "height": 1477
   },
-  "commit": "94f658e88d267edc27a8b0836a9ffde292e0388a",
+  "commit": "4603dbf32894b9ff55aa23f216e45b1423fb6f8a",
   "branch": "wt/cp-011-material",
   "engine": "Chromium 155.0.8059.84 Arch Linux",
   "device_scale": 1,
@@ -89,5 +89,5 @@
   "wood_has_no_text": true,
   "contrast_note": "ink_worst_contrast is the minimum over the committed tile pixels against the row's ink; the 4.5:1 gate is applied only where text_bearing is true. wood-plank carries no text, so its figure is informational and legibility_passes is null.",
   "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
-  "captured_at": "2026-11-10T11:13:19+00:00"
+  "captured_at": "2026-11-10T11:14:50+00:00"
 }
