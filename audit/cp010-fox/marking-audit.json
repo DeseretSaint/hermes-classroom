@@ -1,0 +1,96 @@
+{
+  "method": "opaque-alpha figure box + solid-dark fill. The ink contour shares the marking's warm brown, so the dark mask is eroded by 9 px (half the 3-4 px master contour at this size) before components are measured; what remains is paint area, not line. Band height and edges are reported as percentages of the front view's figure height.",
+  "why": "ART-BIBLE.md \u00a73 previously required dark socks to the elbow. No plate carries that; the longest dark band on the authority is the one measured here.",
+  "sheet": {
+    "file": "assets/art/fox/fox-model-sheet.png",
+    "front_view": {
+      "bbox": [
+        16,
+        310,
+        294,
+        916
+      ],
+      "width_px": 279,
+      "height_px": 607,
+      "column_blocks": [
+        [
+          16,
+          294
+        ],
+        [
+          338,
+          936
+        ],
+        [
+          938,
+          1211
+        ]
+      ]
+    },
+    "neck_pinch_head_percent": null,
+    "neck_pinch_note": "the front view's widest row is its feet, so the neck-pinch estimate is not meaningful on the sheet",
+    "arm_bands": [
+      {
+        "height_px": 60,
+        "height_percent_figure": 9.9,
+        "top_percent_figure": 65.1,
+        "bottom_percent_figure": 74.8,
+        "bbox": [
+          258,
+          705,
+          290,
+          764
+        ]
+      },
+      {
+        "height_px": 61,
+        "height_percent_figure": 10.0,
+        "top_percent_figure": 65.7,
+        "bottom_percent_figure": 75.6,
+        "bbox": [
+          21,
+          709,
+          54,
+          769
+        ]
+      }
+    ],
+    "foot_bands": [
+      {
+        "height_px": 70,
+        "height_percent_figure": 11.5,
+        "top_percent_figure": 87.8,
+        "bottom_percent_figure": 99.2,
+        "bbox": [
+          185,
+          843,
+          254,
+          912
+        ]
+      },
+      {
+        "height_px": 68,
+        "height_percent_figure": 11.2,
+        "top_percent_figure": 88.1,
+        "bottom_percent_figure": 99.2,
+        "bbox": [
+          67,
+          845,
+          132,
+          912
+        ]
+      }
+    ]
+  },
+  "wave": {
+    "file": "assets/art/fox/fox-wave.png",
+    "bbox": [
+      94,
+      16,
+      581,
+      660
+    ],
+    "neck_pinch_head_percent": 53.3
+  },
+  "not_claimed": "No wrist, elbow or ankle joint is detected. The arm merges with the torso on every plate in this set, so no wrist-to-elbow ratio is claimed from a silhouette."
+}

@@ -95,15 +95,19 @@ tall, which is the signature of a four-legged figure standing on a ground line. 
    `fox-contact-sheet.png` carry unsigned approval lines, and the poses were generated before the
    sheet was approved — which `ART-BIBLE.md` §7.3 and the card body forbid. The reviewer can verify
    the evidence; the *art* is accepted only when the owner signs the sheet and then the pose sheet.
-3. **The bible's sock rule is met by nobody, including the sheet.** §3 and the M1 prompt ask for
-   dark socks "to the elbow". The sheet's four views show the paw plus at most a short cuff, six of
-   seven poses match the sheet, and `clock` reaches the lower forearm but stops short of the elbow.
-   This is one family-level finding, not a per-pose defect: owner decision `D-CP010-A`
-   (`audit/cp010-fox/vision.json` §`open_items`). The working band recorded in the bible until then
-   is paw-to-mid-forearm, measured from the sheet.
-4. **Point gesture.** Round 3 points down-right at roughly 30°, matching the pose sentence, but the
-   pointing hand's fingers separate where the sheet's paws are mittens. Visible at 256 px, not at
-   64 px. Rounds used: 3 of 3.
+3. **The sock rule is resolved, and the bible moved to the art, not the reverse.** §3 required dark
+   socks "to the elbow" and the M1 prompt asked for them. No plate carries that, including the
+   sheet. Measured on the sheet's front view with `scripts/cp010-marking-audit.py` (`marking-audit`
+   json beside `vision.json`), the solid dark band is 60–61 px on the arms and 68–70 px on the feet
+   against a 607 px figure — 9.9–10.0 % and 11.2–11.5 % of figure height — with the arm band's top
+   edge at 65.1–65.7 % of the figure and fur above it. §3 now states that cuff as the rule, per the
+   supervisor ruling of 2026-11-10, as reversible amendment `D-CP010-A`. This is a document repair:
+   no plate was regenerated and the recorded M1 prompt is untouched.
+4. **Point gesture.** Round 3 points down-right at roughly 30°, matching the pose sentence. An
+   earlier draft of this document and of `vision.json` said the pointing hand's fingers separate. A
+   500 % nearest-neighbour crop of the shipped master refutes that: the paw is a mitten with a
+   thumb and a single internal line, which is what the sheet's paws are. The earlier claim was a
+   vision read written down as fact; it is corrected in both places. Rounds used: 3 of 3.
 5. **Think gesture matches the gesture, not the angle.** The plate raises one paw to the chin with
    the other arm bent across the chest, which is the bible's gesture; the head tilt is slight and
    was never measured against the stated 15°. Recorded as `OI-4` / `D-CP010-B`. Corrected here after
@@ -115,9 +119,11 @@ tall, which is the signature of a four-legged figure standing on a ground line. 
    the geometry claims are cross-checked against. Vision reported a "thin magenta fringe on dark"
    during review; a pixel count refuted it (zero magenta-signature pixels, binary alpha). A vision
    read is evidence, never a verification.
-7. **The 45 % head is a target, not a measurement.** The only plate where a silhouette neck pinch is
-   meaningful (`wave`, arms down) measures 53.3 %. `OI-3` / `D-CP010-B` asks the owner to confirm
-   which number is the rule.
+7. **The 45 % head is now a target with a stated band.** §3 gives 45–55 % of standing height, with
+   45 % as the design target. The only plate where a silhouette neck pinch is meaningful (`wave`,
+   arms down) measures 53.3 % and is inside the band; the other six are not measurable by that
+   method and are accepted as-is for this submission. Resolved as reversible amendment `D-CP010-B`
+   by the supervisor ruling of 2026-11-10.
 
 ## What this document does not claim
 
