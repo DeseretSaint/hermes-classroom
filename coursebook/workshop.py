@@ -161,6 +161,27 @@ def _course_visual_rows(connection, course_id: str):
     ).fetchall()
 
 
+def _pack_provenance_artifact(connection, course_id: str, pack_file: str) -> str | None:
+    """The artifact adopted from one pack file for this course's pack, regardless of lesson order.
+
+    A cover is adopted at import but deliberately not written as a lesson segment, so it is not
+    reachable through ``_course_visual_rows``. Its provenance still names the pack file it came
+    from; that is the durable link the storefront reads. Pack identity comes from the course's own
+    pack row, so a shared artifact row (keyed by content hash) cannot leak another pack's cover.
+    """
+    row = connection.execute(
+        "SELECT a.id AS artifact_id FROM artifacts a"
+        " JOIN courses c ON c.id = ?"
+        " JOIN packs p ON p.id = c.pack_id"
+        " WHERE a.kind = 'visual'"
+        " AND json_extract(a.provenance_json, '$.pack_file') = ?"
+        " AND json_extract(a.provenance_json, '$.pack_id') = p.pack_id"
+        " ORDER BY a.created_at ASC, a.rowid ASC LIMIT 1",
+        (course_id, pack_file),
+    ).fetchone()
+    return str(row["artifact_id"]) if row is not None else None
+
+
 def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -> str | None:
     """The course's cover artifact, read through the media route the app already has.
 
@@ -174,6 +195,9 @@ def _cover_artifact(connection, course_id: str, cover_path: str | None = None) -
     """
     rows = _course_visual_rows(connection, course_id)
     if cover_path:
+        adopted = _pack_provenance_artifact(connection, course_id, cover_path)
+        if adopted:
+            return adopted
         for row in rows:
             try:
                 provenance = json.loads(row["provenance_json"] or "{}")
@@ -232,7 +256,7 @@ def pack_cover_artifact(connection, course_id: str, pack_id: str | None) -> str 
             continue
         if isinstance(provenance, Mapping) and str(provenance.get("pack_file")) == path:
             return str(row["artifact_id"])
-    return None
+    return _pack_provenance_artifact(connection, course_id, path)
 
 
 
@@ -277,6 +301,30 @@ def _cover_problems(entry: Mapping[str, Any], manifest: Mapping[str, Any]) -> li
         for item in manifest.get("files") or []
         if isinstance(item, Mapping)
     }
+    linked_covers = [
+        str(link.get("path"))
+        for link in media
+        if roles.get(str(link.get("path"))) == "cover"
+    ]
+    if roles.get(path) == "cover":
+        if len(linked_covers) > 1:
+            return [
+                f"catalogue cover {path!r} is one of {len(linked_covers)} media-linked covers; "
+                "exactly one cover may be served"
+            ]
+        if linked_covers != [path]:
+            return [
+                f"catalogue cover {path!r} is not the pack's one media-linked cover "
+                f"({linked_covers!r} is); the storefront would show a different plate"
+            ]
+        if str(media[0].get("path")) != path:
+            return [
+                f"catalogue cover {path!r} is not the first media[] link "
+                f"({media[0].get('path')!r} is); the storefront would show a different figure"
+            ]
+        return []
+    # Legacy v2 packs from before the ``cover`` role: the catalogue cover is the first linked
+    # visual. Kept so an older pack still validates; the bundled packs now use ``cover``.
     first_visual = next(
         (str(link.get("path")) for link in media if roles.get(str(link.get("path"))) == "visual"),
         None,

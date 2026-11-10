@@ -46,7 +46,9 @@ MAX_MEDIA_PER_SECTION = 8
 #: ``purpose`` is filled from the segment text, so the two must not drift).
 MAX_MEDIA_CAPTION = 200
 #: Roles a ``media[]`` link may name, and the artifact kind each one materializes as.
-MEDIA_LINK_ROLES: dict[str, str] = {"narration": "audio", "visual": "visual"}
+#: ``cover`` is adopted like a visual: the import records a visual artifact whose ``pack_file``
+#: provenance names the cover, so ``workshop.pack_cover_artifact`` can serve exactly that file.
+MEDIA_LINK_ROLES: dict[str, str] = {"narration": "audio", "visual": "visual", "cover": "visual"}
 
 #: Fields that must never appear in an exported or imported pack, by construction.
 EXCLUDED_BY_CONSTRUCTION: tuple[str, ...] = tuple(contract(CONTRACT_ID)["excluded_by_construction"])
@@ -54,12 +56,16 @@ EXCLUDED_BY_CONSTRUCTION: tuple[str, ...] = tuple(contract(CONTRACT_ID)["exclude
 #: Roles read by a learner. A reference answer must never be rendered in one of these.
 LEARNER_FACING_ROLES: frozenset[str] = frozenset({"section", "learner_page", "visual", "narration"})
 
-#: Roles a pack may hold. Read from the contract so a future revision is a data change here.
-FILE_ROLES: tuple[str, ...] = tuple(contract(CONTRACT_ID)["properties"]["files"]["items"]["properties"]["role"]["enum"])
+#: Roles a pack may hold. Read from the newest accepted contract version, so an additive role
+#: (v2's ``cover``) is exportable without a second hand-maintained list. A v1 document is still
+#: validated against v1's own enum, where ``cover`` does not exist.
+FILE_ROLES: tuple[str, ...] = tuple(
+    contract_as(CONTRACT_ID, max(version_files(CONTRACT_ID)))["properties"]["files"]["items"]["properties"]["role"]["enum"]
+)
 
-#: MIME types a pack may declare, from the contract.
+#: MIME types a pack may declare, from the newest accepted contract version.
 FILE_MIME_TYPES: tuple[str, ...] = tuple(
-    contract(CONTRACT_ID)["properties"]["files"]["items"]["properties"]["mime"]["enum"]
+    contract_as(CONTRACT_ID, max(version_files(CONTRACT_ID)))["properties"]["files"]["items"]["properties"]["mime"]["enum"]
 )
 
 #: Media MIME types that always require a per-artifact license record and a text equivalent.
@@ -531,6 +537,30 @@ def _media_link_problems(manifest: Mapping[str, Any], declared: Mapping[str, Any
                 f"media[{index}]: section {section_path!r} links more than "
                 f"{MAX_MEDIA_PER_SECTION} media files"
             )
+    # Cover lane: a cover file is adopted only through a media[] link, and exactly one cover is
+    # the served plate. It must be the first link, so no lesson figure can become the storefront
+    # cover by landing ahead of it. Any further ``cover`` files (the 4:5 crop) stay declared and
+    # unlinked; they are alternates, never a second served cover.
+    cover_paths = [path for path, entry in declared.items() if str(entry.get("role")) == "cover"]
+    linked_covers = [
+        str(entry.get("path") or "")
+        for entry in media or []
+        if isinstance(entry, Mapping) and declared.get(str(entry.get("path") or ""), {}).get("role") == "cover"
+    ]
+    if cover_paths and not linked_covers:
+        problems.append(
+            "a file with role 'cover' must be linked through media[] as the first link; "
+            "an unlinked cover can never be adopted or served"
+        )
+    if len(linked_covers) > 1:
+        problems.append(f"more than one cover is linked through media[]: {linked_covers!r}")
+    if linked_covers:
+        first = media[0] if media and isinstance(media[0], Mapping) else {}
+        if str(first.get("path") or "") != linked_covers[0]:
+            problems.append(
+                f"the cover {linked_covers[0]!r} must be the first media[] link; "
+                f"{first.get('path')!r} is first"
+            )
     return problems
 
 
@@ -541,7 +571,7 @@ def _role_mime_mismatch(role: str, mime: str) -> bool:
         if role == "source_note":
             allowed.add("application/pdf")
         return mime not in allowed
-    if role == "visual":
+    if role in {"visual", "cover"}:
         return mime not in {"image/png", "image/jpeg", "image/webp"}
     if role == "narration":
         return mime not in {"audio/mpeg", "audio/wav", "audio/ogg"}
