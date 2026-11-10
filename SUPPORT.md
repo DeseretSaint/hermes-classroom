@@ -38,6 +38,7 @@ Do not open a public issue. Follow `SECURITY.md`.
 
 - Older commits and unmerged branches.
 - Installing from the public catalog: the entry is withheld and no pull request is open.
-- Redistribution: the repository has no license.
+- Redistribution of anything older than `0d17824`: the MIT `LICENSE` was added on 2026-11-10, so
+  earlier commits carry no outbound licence. From that commit on the terms are in `LICENSE`.
 - Requests for efficacy, mastery, child-safety or COPPA claims. Coursebook makes none of them and
   will not add one without evidence.

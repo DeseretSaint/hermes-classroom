@@ -49,10 +49,10 @@ Each is asserted by a test in the 2,724-test suite or by a state matrix run on t
 The source repository is private today; `catalog/coursebook.yaml` is committed but **not
 submitted**, and no release tag exists. **No demo video is recorded yet**: the demo gate
 `t_6a32ffe9` is open because this host runs one gateway and no profile can yet drive chat and the
-pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is no
-`LICENSE` file (owner decision `t_6f2d2080`): do not redistribute. Publication stays closed under
-`docs/SUBMISSION.md` §0. Everything below is the measured record, limitations included — the
-current candidate still has open gates 7, 9, 12, 13, 14 and 15.
+pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is a
+`LICENSE` file since 2026-11-10 (owner decision on `t_6f2d2080`, recorded as MIT in `LICENSE`).
+Publication stays closed under `docs/SUBMISSION.md` §0. Everything below is the measured record,
+limitations included — the current candidate still has open gates 7, 12, 13, 14 and 15.
 
 ## Release record (0.1.0 and the product line)
 
@@ -362,6 +362,8 @@ Desktop runtime loader refuses everything else. It is a single-writer file; see
 
 ## License
 
-No license file is present yet. Do not redistribute this repository until one is added. The choice
-of license is DeseretSaint's, not a maintainer default, so this repository ships without one rather
-than asserting terms nobody approved.
+MIT. The terms are in `LICENSE` at the repository root, copyright 2026 DeseretSaint. The owner chose
+MIT on 2026-11-10 in board card `t_6f2d2080`; that card's docs follow-through (this section, gate 9
+in `docs/SUBMISSION.md`, `CHANGELOG.md` and the catalog's `known_issues`) lands in the same commit.
+Publication, tagging and the catalog pull request remain closed under `docs/SUBMISSION.md` §0: a
+license makes redistribution lawful, it does not authorise announcing the release.
