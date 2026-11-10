@@ -31,6 +31,18 @@ The script refuses to compose sheets from cells whose plugin sha differs from th
 
 `tests/test_v3_primitives.py` asserts the same claims on the module: one filled control per surface
 (and none on the lab), four real-button stamp states, a fox that is `aria-hidden` and absent below a
-620 px route, a card with no ratings or invented progress, ruby plus romaji on the lesson line, and
-`var(--cb3-*)` as the only paint. The frames show what those assertions cannot: that the shipped
-stylesheet, the embedded faces and the painted objects actually render.
+620 px route, a card with no ratings or invented progress, ruby plus romaji on the lesson line with a
+named speaker control, every medallion glyph matching the ratified A5 table, and `var(--cb3-*)` as
+the only paint. Each primitive's own `Tokens:` line must name roles it actually reads.
+
+Every visible string on the sheet comes from `COPY.md`: `test_lab_copy_is_the_deck` fails on any
+caption authored beside the deck. The six SPEC-V3 §5.5 sections carry the sheet; the stepper, the
+dialogue, the challenge and the evidence tray sit in one unheaded specimen band (group name:
+`lab.sub`) because the deck has no id for a seventh section.
+
+Specimen *data* (`Language`, `2 of 5 sections done`) fills the deck's own field templates
+(`home.card.subject`, `home.card.meta`); the lab has no backend, so those slots carry sample state
+rather than a live `library_item`. No label is authored for the sheet.
+
+The frames show what those assertions cannot: that the shipped stylesheet, the embedded faces and
+the painted objects actually render.
