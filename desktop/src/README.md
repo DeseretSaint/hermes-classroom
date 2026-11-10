@@ -58,3 +58,7 @@ the module keeps one flat top-level scope.
    only; the named test seam `export {}` stays at the end of `99-tutor.js`.
 5. **No behaviour change in a mechanical move.** When moving code between segments, the
    concatenation must stay byte-identical; a behaviour change is its own commit with its own test.
+6. **A segment is a fragment, not a module.** Individual segments do not parse on their own
+   (`node --check desktop/src/99-tutor.js` fails by design: it exports names that are bound in
+   earlier segments). `node --check` and the plugin validator run against the built
+   `desktop/plugin.js`; that is the only artifact the runtime loads.

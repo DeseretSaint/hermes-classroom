@@ -1419,6 +1419,10 @@ function TutorRailPane({ binding }) {
     (next) => {
       if (next !== 'ask' && next !== 'practice') return
       if (next === 'practice' && !practiceAvailable) return
+      // A learner who has already chosen a mode owns the rail. Arming the auto-open guard here is
+      // what keeps a practice check that lands after this click from moving them: the effect below
+      // opens practice once, and only for a learner who has not chosen.
+      autoPractice.current = true
       setMode(next)
       setFailure(null)
       setNotice(null)
