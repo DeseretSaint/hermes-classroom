@@ -44,14 +44,14 @@ class ShippedAssets(unittest.TestCase):
         for name, path in masters():
             with self.subTest(name=name):
                 self.assertTrue(path.exists(), f"{name} missing")
-                im = Image.open(path)
-                self.assertEqual(im.mode, "RGBA")
-                self.assertEqual(im.width, im.height, f"{name} is not padded square")
-                alpha = im.getchannel("A")
-                bbox = alpha.getbbox()
-                self.assertIsNotNone(bbox, f"{name} has no opaque pixels")
-                # A cutout must actually be cut out: the padded corner is transparent.
-                self.assertEqual(alpha.getpixel((0, 0)), 0, f"{name} corner is not transparent")
+                with Image.open(path) as im:
+                    self.assertEqual(im.mode, "RGBA")
+                    self.assertEqual(im.width, im.height, f"{name} is not padded square")
+                    alpha = im.getchannel("A")
+                    bbox = alpha.getbbox()
+                    self.assertIsNotNone(bbox, f"{name} has no opaque pixels")
+                    # A cutout must actually be cut out: the padded corner is transparent.
+                    self.assertEqual(alpha.getpixel((0, 0)), 0, f"{name} corner is not transparent")
 
     def test_every_pose_ships_all_four_export_sizes(self):
         from PIL import Image
@@ -165,9 +165,9 @@ class Documents(unittest.TestCase):
         for path, min_width in ((CONTACT, 1200), (MODEL_CONTACT, 800)):
             with self.subTest(path=path.name):
                 self.assertTrue(path.exists(), f"{path.name} missing")
-                im = Image.open(path)
-                self.assertGreaterEqual(im.width, min_width)
-                self.assertGreaterEqual(im.height, 800)
+                with Image.open(path) as im:
+                    self.assertGreaterEqual(im.width, min_width)
+                    self.assertGreaterEqual(im.height, 800)
 
 
 if __name__ == "__main__":
