@@ -60,10 +60,25 @@ drawn line. A contour that measures within 8 units of neutral black is a defect.
 
 ## 2. Palette, tied to v3 roles
 
-v3 (`contracts/cb.tokens.v3.json`, CP-002) is not landed at the time of writing. These are the
-pigments, each bound to the role it must remain compatible with. When CP-002 lands, the mapping
-below is re-checked against the v3 table and this table is amended in place; a pigment may not
-change role silently.
+v3 is landed (`contracts/cb.tokens.v3.json`, CP-002). The mapping below was re-checked against the
+v3 table in CP-013 and is stated here in place; a pigment may not change role silently.
+
+| Pigment | v3 role it stands in for | Note |
+|---|---|---|
+| Paper ground `#f7f1e4` | `canvas` (`#f5e3c8`) | the plate ground is warmer than the route parchment on purpose: a plate is a separate object on the desk |
+| Drawn line `#3a2318` | `ink` (`#1a1713`) | a drawn contour is warmer and softer than body text ink; it is never the text colour |
+| Fox fur / fur shade | identity (no token role) | art identity, never a fill behind a word |
+| Fox cream | `card-stock` family | highlight and bib |
+| Fox dark cuff | `ink` | the darkest pigment in a cutout, never black. The marking is a wrist and ankle **cuff**, never a sock up the limb (`D-CP010-A`, §3) |
+| Field green `#2f6047` | `forest` / `sage` | foliage and cloth; `sage` is the soft evidence role, not a paint licence |
+| Ochre `#7b4b0a` | `wood` / `wood-edge` | brass, wood and paper-stock props |
+| Lamp `#e8a93a` | `gold` | the single lit accent on a prop, never on the fox |
+| Coral `#9c2e1c` | `terracotta` / `alert` | attention marks on a prop; never a mode hue, never on the fox |
+| Noren indigo `#2b2a61` | **no token role — art only** | the one ratified cool pigment: indigo-dyed noren cloth and nothing else. One cloth per plate, inside the named noren region of §9, never behind type. Ruling `D-CP013-A`, reversible; see §9 rule 5 |
+
+The plate is art, not a surface: it carries no text role and no contrast gate. What the contract
+does bind is the **quiet field** — a plate that reserves space for DOM type must leave the contract's
+`ink` at or above 4.5:1 on the darkest 5 % of that field, measured by `scripts/cp013-art-audit.py`.
 
 | Pigment | Value | Role binding | Use |
 |---|---|---|---|
@@ -81,7 +96,7 @@ change role silently.
 
 Rules:
 
-- At most **five** pigments in one plate, plus the line. A cutout uses fur, fur shade, cream, sock
+- At most **five** pigments in one plate, plus the line. A cutout uses fur, fur shade, cream, cuff
   and line.
 - Fur `#b7643d` and coral `#9c2e1c` are different jobs. The fox body is identity, not attention;
   a coral mark on the fox is forbidden.
@@ -101,7 +116,7 @@ and what A2–A5 must match:
 | Fur | approx. `#b14d1e` |
 | Fur shade | approx. `#983d1e` |
 | Cream | approx. `#e3cb9c` |
-| Sock / ear back | approx. `#412218` at the keyed plate's dark end |
+| Cuff / ear back | approx. `#412218` at the keyed plate's dark end |
 | Drawn contour | warm brown, no measurable pure black |
 
 A plate whose fur and cream are not within a few units of these after the temper is a different
@@ -146,7 +161,7 @@ Markings, all four mandatory, each recorded per plate in `audit/cp010-fox/vision
 
 Face: two dot eyes, `#241812`, with one cream catchlight each, placed at 0.45 head height, no
 lashes, no eyebrows, no mouth line except a single soft curve; closed-eye poses draw one
-downward-curved line each side. Nose is a small rounded triangle, sock-dark, with the ink outline.
+downward-curved line each side. Nose is a small rounded triangle, cuff-dark, with the ink outline.
 
 The fox is never rendered as a robot, never with human hands with fingers, never with clothing
 covering a marking, never in a different colour, never with a different tail count.
@@ -268,7 +283,7 @@ frown, angry expression
   and key on that value, not on the literal hex, with `-fuzz 30%` and `-transparent`.
 - **`-fuzz 30%` is the executed value, not a guess.** The provider returns a sampled magenta
   (`#d30592`–`#c4089c` in A1), not `#ff00ff`, and it sits close to the fox's deep shade in RGB, so
-  a narrower key leaves a magenta rim on the fur and a wider one starts eating the dark sock. The
+  a narrower key leaves a magenta rim on the fur and a wider one starts eating the dark cuff. The
   A1 masters are reproduced from their recorded raw only at 30: at 28 the difference is 89 px and at
   32 it is 160 px against the shipped master, and at 12 it is 763 px. An earlier draft of this
   section prescribed a 12 % key, which under-keys every plate; the value and
@@ -286,3 +301,111 @@ frown, angry expression
   a semi-transparent sock on either ground is a defect.
 - Exports: the master is the keyed plate at its own natural size (A1 masters are 654–837 px tall,
   not 512), then 512, 256, 128 and 64 px are downscaled from it. Alpha preserved; no matte baked in.
+
+---
+
+## 9. A4 scene plates
+
+Three plates, one each: the Discover feature banner ground, the classroom cafe interior and the
+course-home expedition ground. They are **painted plates**, not Press Plates, and they are never
+embedded in the module — they stay pack or world media (`assets/README.md`).
+
+| Plate | Shipping aspect | Reserved quiet field | Carries |
+|---|---|---|---|
+| `discover-banner` | 4.4:1 (1024×233) | left 40 %, SPEC-V3 D5 | the DOM title, the one band of body copy and the one primary |
+| `lesson-cafe` | 16:9 (1024×576), cropped to 3:1 at render | none | the lesson's real line stays in the DOM bubble below, never in the art |
+| `course-map` | 16:9 (1024×576) | upper-left third of the 16:9 master, SPEC-V3 §5.4 M4 | the course title and subject; M4 renders the plate as the 3:1 hero and M5's route nodes are DOM buttons over it |
+
+Rules, all binding:
+
+1. **A quiet field is a measurement, not a hope.** A plate that reserves space for type must leave
+   the contract `ink` at ≥ 4.5:1 on the darkest 5 % of that field, and its detail energy (mean
+   gradient magnitude of the field) must stay low enough that the type does not fight texture.
+   `scripts/cp013-art-audit.py` writes both numbers; the test refuses a plate below the floor.
+2. **No marker is painted.** No pin, dot, node, flag, stamp, compass rose, scale bar, arrow, dotted
+   route line, number or glyph. The path may be painted as a track of packed earth — that is
+   terrain — but the route is DOM.
+3. **No lettering, in any script**, including shop signs, lantern inscriptions, menus, chalkboards
+   and noren lettering. A blank board is allowed; a board with marks that read as text is not.
+4. **Flat paint only.** No bloom, no halo, no radial glow around a light source, no vertical sky
+   gradient. A lit lantern is a hard-edged lamp-yellow mass.
+5. **Warm pigments, with one ratified exception.** No blue, blue-grey or neutral black anywhere,
+   except the single noren indigo defined below. Outside the named noren region the darkest 5 % of
+   every shipped plate is a warm umber — measured on the shipped bytes: `discover-banner` `#29150f`,
+   `lesson-cafe` `#321e13`, `course-map` `#2a2b1f`. Inside the region the noren's own shade is
+   allowed to read cool, and that is what the whole-plate darkest 5 % of the cafe (`#221a1f`) is
+   sampling. The shipping step applies one deterministic print-safety lift (`+level 4%,100%`) so no
+   pixel in a shipped plate is pure black.
+6. **Crop, never stretch.** The banner is cropped from the 16:9 raw at the vertical offset the
+   quiet-field probe chose; the lesson frame is a mechanical crop of the 16:9 master.
+
+### The noren exception — ruling `D-CP013-A` (reversible)
+
+Indigo-dyed noren cloth is the one cool pigment a plate may carry. It is ratified here because the
+painted cloth is the culturally load-bearing object in both scenes, the identity document allows a
+cool hue at the point of focus, and the mass is measurably confined: it sits on the right of each
+plate, outside every reserved quiet field, and no DOM type is laid over it. This ruling is the same
+class of reversible amendment as `D-CP010-A` / `D-CP010-B`.
+
+| Plate | Named region (px on the shipped master) | Share of plate | Measured cool share (`b − max(r,g) > 10`) | Cool share outside the region |
+|---|---|---|---|---|
+| `discover-banner` | x 700–961, y 0–160 | 17.5 % | 3.73 % | **0.000 %** |
+| `lesson-cafe` | x 760–1024, y 20–310 | 13.0 % | 8.09 % | **0.000 %** |
+| `course-map` | none — no noren | — | 0.004 % | 0.004 % (scattered antialiasing, no mass) |
+
+Binding conditions, all enforced by `test_cp013_scene_objects.py::test_no_scene_carries_a_pigment_outside_the_bible_palette`:
+
+- The pigment is **cloth only**. It never fills a sky, a ground, a water, a shadow, a prop body or a
+  cutout. Every object blank measures 0.000 % cool.
+- The cloth stays inside the named region. Outside it, the cool share of a scene is **≤ 0.5 %**.
+- The region is **≤ 25 %** of the plate and lies in the right-hand side of the frame; it never
+  overlaps a quiet field, so no label is ever set on indigo.
+- The region box is a fact of the shipped plate, not a licence: a new plate that puts the cloth
+  elsewhere re-measures and gets a new row here.
+
+**Reversal.** To revoke the ruling, repaint both plates with the noren in field green `#2f6047` or
+deep umber, record the new prompts as new ids (§6 forbids editing a recorded prompt), re-run
+`scripts/cp013-art-audit.py`, and the same test closes the door: it then requires ≤ 0.5 % cool on
+every scene, and the region rows are deleted with the ruling.
+
+The executed A4 prompts for the banner and the cafe ask for a "plain indigo noren" while the
+banner's colour paragraph also says NO blue. That contradiction is left standing in the prompt
+record because §6 forbids rewriting a recorded prompt; this ruling is what resolves it for the
+plates that shipped.
+
+**Scene prompt (template).** `<subject and composition>`. Painted in opaque gouache on warm paper,
+dark warm-brown ink contour drawn last, one soft key light from the upper left, flat brush-shaped
+marks, crisp brush-stopped edges, one shade plane down-right from a darker tint of the same pigment.
+`<quiet-field sentence>` — reserved for type typeset later, flat and detail-free. Warm pigments only
+(no blue, no grey, no black), with the single ratified exception: one plain indigo-dyed noren cloth
+(`#2b2a61`) if the composition calls for one, placed inside the region named in "The noren
+exception" above and nowhere else. No gradient, no glow, no bloom, no cast shadow, no frame, no
+border. No lettering of any kind; no pins, dots, numbers or markers. `<negatives from §6>`
+
+## 10. A5 object kit
+
+Seven blanks at 256 px RGBA: `stamp-rim`, `medallion-rim`, `passport-tray`, `ticket`, `clock`,
+`tag`, `shelf-plank`. Every label, every count and every icon is runtime DOM or `sdk.Codicon`; the
+blank carries none of it.
+
+- **The cutout recipe is A1's**, unchanged: chroma key at the sampled corner colour with `-fuzz 30%`,
+  trim, square pad, one colour temper (`-modulate 92,72,100`) so the kit sits in the fox's family,
+  then a 256 px export. See §8; the key value is not re-invented per family.
+- **A rim carries a blank, not a glyph.** The centre of `stamp-rim` and `medallion-rim` is a flat
+  field with no mark, so a 20 px `sdk.Codicon` can sit on it. `cp013-art-audit.py` measures the
+  centre's detail energy; a rim with a painted symbol is a defect.
+- **A blank is one object, not one per event.** The medallion is a single painted rim used for every
+  recorded event; what changes is the Codicon glyph and the DOM label. Five different painted
+  medallions would be decoration a learner cannot name, which the identity document forbids.
+- **Props keep their props.** The clock's hands are painted at 10:10 as a prop and the element is
+  `aria-hidden` — it is never a time claim. The ticket has no barcode and no number. The tag is
+  blank. The tray is empty.
+- **No shadow on a cutout**: no ground, no drop shadow, no border. Contact is the UI's job
+  (`elev-1` on the surface the object sits on), not the plate's.
+
+**Object prompt (template).** Single object, centred and filling the frame: `<object>`.
+Painted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, one soft key light
+from the upper left, one shade plane down-right from a darker tint of the same pigment, flat
+brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no
+border, flat pure magenta `#ff00ff` background. Textless: no letters, no numbers, no symbols, no
+watermark, no logo, no UI. `<negatives from §6>`
