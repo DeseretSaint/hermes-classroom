@@ -1,84 +1,138 @@
 # CP-024 evidence manifest — the v3 course home (R-MAP)
 
-Branch: `wt/cp-024-course-home`   Commit: `57f0fea` (rebased onto master `b09b65f`, which carries
-CP-020b `131ec86`; this evidence packet is the commit that follows it)
+Branch: `wt/cp-024-course-home`   Base: master `b09b65f` (carries CP-020b `131ec86`)
 Maker: `lattice`   Reviewer: `cbqa` (must not be the maker)
-Module: `desktop/plugin.js` sha256 `314e62e4659ec013e0c86858ab7b478c6ff351d2db79440d7796d71fc525fd6a`
-(built with `python3 scripts/build_plugin.py` from 20 segments; `tests.test_plugin_build` green)
+Module: `desktop/plugin.js` sha256 `bb424a9d7b5346d047820e1efc09708de54da959f8619888789ec214686940f3`
+(built by `python3 scripts/build_plugin.py` from 20 segments; `--check` reports the same bytes)
 
-**Status: the live frame matrix is NOT captured yet.** This manifest is the packet skeleton and the
-exact capture plan. It is committed under the supervisor's partial-build ruling of 2026-11-10, which
-defers *the capture matrix and the review* to CP-040 (`t_5403e4a1`), the merge seam that owns the
-six-branch union and the full seven-destination matrix. This branch is now rebased onto the merged
-CP-020b primitives (master `b09b65f`), so the module sha below is the post-rebase module. No PNG in
-this directory is a placeholder and no cell claims a pass: a frame
-without a `cp-capture.mjs` stamp is not evidence, and a stamp whose `plugin_sha256` differs from the
-commit under review is invalid.
+**Status: the code, tests and the M4 audit are green; the live frame matrix is BLOCKED by the
+capture door's React-key gate, which fails on `ShelfDisclosure` in `desktop/src/30-home.js` — a file
+this card does not own (CP-043 fixes it; it is uncommitted to master at the time of this packet).**
+The one refusal kept in this directory is real and pins the final module:
+
+`course-home--1049--light--100--default.refused.json`
+> `the route render logged a React key warning: … Check the render method of `ShelfDiscl…``
+> (`plugin.window_sha256` = `bb424a9d…40f3`)
+
+A course home is shell state, not a URL: after the door's hard reload the window lands on Home, and
+the only path to the course home is through Home → Courses → row, both of which render
+`ShelfDisclosure`. No frame is claimed that a stamp does not back, and no stale-module frame from an
+earlier build is kept here (the 13 frames produced on `d2a31549…1033` were deleted, not relabelled).
 
 ## What the code proves without a window
 
 `tests/test_cp_024_course_home_v3.py` renders the shipped module (`desktop/plugin.js`, not the
-segment) in a component preview and asserts the card's three named contracts:
+segment) in a component preview and asserts the card's contracts:
 
 | Test | Contract |
 |---|---|
-| `test_course_home_v3_nodes_are_dom_buttons` | every section is a `<button>` on its declared normalised anchor, `aria-current="step"` on the current one, disabled on a gated one |
-| `test_course_home_v3_anchor_fallback` | absent, malformed, partial (< all sections placed) and sub-900 px routes all fall back to the complete vertical `StampNode` route |
+| `test_course_home_v3_nodes_are_dom_buttons` | every section is a `<button>` on its declared normalised anchor, `aria-current="step"` on the current one, disabled on a gated one, its title and state word as DOM text |
+| `test_course_home_v3_anchor_fallback` | absent, malformed, partial (< all sections placed) and sub-900 px routes all fall back to the complete vertical `StampNode` route; 900 is the boundary |
 | `test_course_home_v3_one_primary` | exactly one filled control per surface, labelled with the backend's own `next_step.label`, including the plan-review and course-complete steps |
+| `test_course_home_v3_world_and_read_states` | world `running` says `Painting the scene.` and keeps the plate; `failed` shows the typographic field, `This scene was not approved` and the quiet `Open World Studio`; loading and a failed read each print their deck line and keep the recorded route |
+| `test_course_home_v3_copy_and_facts_only` | every string is a `course.*` deck row or a backend field; no hex, viewport unit, inline shadow, banned metric or invented count |
+| `test_course_home_v3_segment_carries_the_card_contract` | the segment names the decisions the tests measure |
 
 A component preview loads neither the host shell nor the Tailwind utility CSS. It proves the DOM
-contract, not the painted result; the journey below is still owed.
+contract, not the painted result.
 
-## Cells owed (eight baseline + named states)
+## What landed in this round (on top of `060f5c9`)
 
-Screen row: `course-home.v3` (`docs/visual-review/MATRIX.md`), card CP-024, concept reference
-`docs/concept-parity/refs/map.png` (crop to be chosen against the mounted plate, then recorded here).
+- **World states on the plate.** `cb3CourseWorldPosture` maps the backend's own world state to
+  `ready` / `running` / `rejected` / `none`. `world-running` keeps the last plate and prints
+  `Painting the scene.`; `world-rejected` drops the refused art, prints `This scene was not
+  approved`, and its one quiet action opens the shipped `WorldStudio` sheet from `97-world.js`
+  (rendered from this segment, never a second editor). `data-cb-course-world-state` records the
+  posture for reviewers and tests.
+- **Read loading / error on the head.** `Opening this course.` while the outline is in flight; a
+  failed read prints `This course could not be read` + `The route shows what was saved last. Try
+  again.` with one quiet `Try again` that reloads outline, world and page — and never renders an
+  empty course.
+- **Anchor carriers.** `cb3CoursePlateAnchors` accepts the plate manifest, the asset row, the
+  world brief's `plate.route_anchors`, the brief itself, and the world row — one shape, the same
+  normalisation, the same refusal of a malformed entry. The brief is a forward-compatible carrier
+  only; see the contract gap below.
 
-Baseline — 1049 / 900 / 460 × light / dark = six cells, plus the 1349 wide cell and one forced-colors
-cell = **eight**:
+## The map mode is NOT live in this tree — a contract gap, not a render bug
 
-| # | File | Viewport | Mode | Scale | Notes |
-|---|---|---|---|---|---|
-| 1 | `course-home--1049--light--100--default.png` | 1049 | light | 100 | map mode expected (`data-cb-course-home-v3="map"`) |
-| 2 | `course-home--1049--dark--100--default.png` | 1049 | dark | 100 | same composition on the dark token table |
-| 3 | `course-home--900--light--100--default.png` | 900 | light | 100 | boundary: still map, aside measure 268 px |
-| 4 | `course-home--900--dark--100--default.png` | 900 | dark | 100 | |
-| 5 | `course-home--460--light--100--default.png` | 460 | light | 100 | list mode: no node sits on the art; fox hidden (< 620) |
-| 6 | `course-home--460--dark--100--default.png` | 460 | dark | 100 | |
-| 7 | `course-home--1349--light--100--default.png` | 1349 | light | 100 | wide cell |
-| 8 | `course-home--1049--light--100--forced-colors.png` | 1049 | light | 100 | `--forced-colors`, one ring must survive |
+The card asks for nodes on anchors "stored as normalised coordinates in the plate manifest". No
+field in `cb.rpc` v25 can carry them:
 
-Named states (each also owed as a stamp, at 1049 light unless the state changes the layout):
+- `world.read` → `course_world.assets[]` is a closed projection (`role`, `section_id`,
+  `section_key`, `artifact_id`, `style_hash`, `prompt_hash`, `textless`) — no manifest, no anchors;
+- `course_world.brief` is the closed `world_brief` schema — adding `route_anchors` makes the
+  handler's own result fail contract validation, which I reproduced live:
+  `world.read` returned `INTERNAL_ERROR: … is not valid under any of the given schemas` for a row
+  whose `brief_json` carried `route_anchors`;
+- `artifact.get` → `provenance` is a closed five-field projection (`generator`, `model`,
+  `prompt_hash`, `source_ids`, `notes`) — no anchors either.
 
-- `plan-in-review` — a real draft course whose recorded next step is plan review; one filled control,
-  its label the backend's, heading `The plan is waiting for you`
-- `no-world` — a course whose plate carries no usable anchors: complete vertical route, `No scene yet`
-- `world-running` — a plate with a full anchor set: every section placed, none clipped by the plate
-- `world-rejected` — a malformed anchor entry: the offending section still appears in the list route
-- `course-end` — every section has evidence: `Course complete`, evidence line reads `n of n`
-- `loading` — real in-flight `library.list`/`course.outline`, never a fabricated spinner
-- `error` — a real `ok:false` envelope from the backend, with its one next action
-- `text-200` — 200 % text at 460: no clipped label, no page-level horizontal scroll
+So every shipped course renders the **vertical `StampNode` route** today; the map mode is proved by
+the module test and the `world-running`/fixture cases, not by a live anchored plate. The fix is a
+contract change (`course_world_asset` gains a `manifest` with `route_anchors`) owned by the
+backend/generation lane, plus a real anchored plate in a world kit. Reported, not faked, and not
+patched into a segment this card does not own.
+
+## Cells and their status
+
+Named reference: `docs/concept-parity/refs/map.png` (1344×768), crop to be taken from the mounted
+plate when frames exist. Screen row `course-home.v3` in `docs/visual-review/MATRIX.md`.
+
+| # | Cell | Status |
+|---|---|---|
+| 1 | `course-home--1049--light--100--default` | **REFUSED** — key warning, `ShelfDisclosure`; refusal JSON kept |
+| 2 | `course-home--1049--dark--100--default` | not captured — same gate; appearance set through the app (`set-appearance.mjs`), not `--color-scheme` |
+| 3 | `course-home--900--light--100--default` | not captured — same gate |
+| 4 | `course-home--900--dark--100--default` | not captured — same gate |
+| 5 | `course-home--460--light--100--default` | not captured — same gate |
+| 6 | `course-home--460--dark--100--default` | not captured — same gate |
+| 7 | `course-home--1349--light--100--default` | not captured — same gate |
+| 8 | `course-home--1049--light--100--forced-colors` | not captured — same gate |
+| — | `plan-in-review` | not captured — same gate (`drive-course-plan.js` opens the rig's real `review_plan` course) |
+| — | `no-world` | not captured — same gate |
+| — | `world-running` | not captured — same gate; rig row is a real `course_worlds` row in state `kit_generating`, contract-valid brief |
+| — | `world-rejected` | not captured — same gate; rig row is state `failed` + `error.missing_roles` |
+| — | `text-200` (460) | not captured — same gate |
+| — | `course-end` | not captured — no rig course has full independent evidence; a seeded completion would fabricate learner evidence |
+| — | `loading` / `error` | component-proven only: a deep-screen in-flight/failed read cannot survive the door's reload, and `--no-reload` cannot start from a course home that the caller has not already driven |
+
+## Capture tooling delivered (needed by every v3 deep screen)
+
+`scripts/cp-capture.mjs` gained four **opt-in** flags; with none of them the door behaves exactly as
+before, and every stamp records what was used:
+
+| Flag | Why |
+|---|---|
+| `--after-reload <file>` | runs a real-click driver after the reload and before measurement (a course home is shell state; the reload lands on Home) |
+| `--after-reload-wait <selector>` | holds the probe until the driven surface is on screen; a driver that never arrives refuses the frame |
+| `--no-reload` | captures the live window as driven (stamp records `capture.reloaded: false`); the module-sha gate still reads the source the window evaluates |
+| `--root-font 32px` | the 200 % text cell is a root font size, not page zoom; `route.text_scale_root_px` records it |
+
+Also in `docs/visual-review/cp-024/`: `drive-course-home.js`, `drive-course-plan.js`,
+`set-appearance.mjs` (the v3 route follows the host appearance attribute, not
+`prefers-color-scheme`, so `--color-scheme` alone is refused by the door's own gate), and
+`capture.sh` — the whole matrix in one command, with the world-state fixtures and their cleanup.
 
 ## Command shape (one cell)
 
 ```bash
+docs/visual-review/cp-024/capture.sh default-1049-light        # or no argument = every cell
+# equivalent to:
 node scripts/cp-capture.mjs --name course-home--1049--light--100--default \
-  --out docs/visual-review/cp-024 --cdp-port "$CB015_CDP_PORT" \
+  --out docs/visual-review/cp-024 --cdp-port "$CB013_CDP_PORT" \
   --state "$COURSEBOOK_TEST_STATE" --plugin desktop/plugin.js \
   --backend-url "$CB013_BACKEND_URL" --token "$CB013_TOKEN" \
-  --route-width 1049 --color-scheme light --require-v3
-# forced colors: add --forced-colors
-# reduced motion: add --reduced-motion
+  --route-width 1049 --require-v3 --no-reload \
+  --after-reload docs/visual-review/cp-024/drive-course-home.js \
+  --after-reload-wait '[data-cb-course-home-v3]'
 ```
 
-Every cell must pass the script's own refusals: module sha equal to the checkout, `[data-cb-route]`
-present with no render-error marker, fonts loaded, every route `img` decoded, no host element painted
-above the route box, the pixel veto, 100 % zoom, `[data-cb-v3-ready]` with textures `ready`, and no
-React duplicate/missing-`key` console error. A refused capture writes `<name>.refused.json` and is
-reported as a renderer fault, not as a pass.
+Every cell must pass the door's own refusals: module sha equal to the checkout, `[data-cb-route]`
+with no render-error marker, fonts loaded, every route `img` decoded, no host element over the
+route, the pixel veto, 100 % zoom, `[data-cb-v3-ready]` with textures `ready`, and no React
+duplicate/missing-`key` console error.
 
-## Side-by-side boards
+## Side-by-side boards (to produce once frames exist)
 
 ```bash
 python3 scripts/cp-sbs.py --concept docs/concept-parity/refs/map.png --crop X,Y,W,H \
@@ -89,41 +143,27 @@ python3 scripts/cp-sbs.py --concept docs/concept-parity/refs/map.png --crop X,Y,
 The concept is an AI still with garbled labels and invented data; the board compares material, type
 and density only, and claims no parity of text.
 
-## Known gaps to record in the review, not to paper over
+## Known gaps to record in the review
 
-1. `world.read` asset rows in this tree declare no `route_anchors`, so the shipped default course
-   renders the vertical route. The map mode is proved by the module-level test and by the
-   `world-running` fixture; a real course with declared anchors is still needed for a live map frame.
-2. The aside's other-course rows read the existing `library.list` shelf with a client-side filter
-   (`course_id !== row.course_id`, `recipe !== 'parent'`). If the shipped library page is capped below
-   20 items a sibling course can be missing; a `library.list` narrowing is a backend change and is
-   reported, not made here.
-3. On the `world-rejected` path the section stays reachable in the list route but its plate position is
-   lost; whether the plate should show a visible "route not placed" mark is a design call for the
-   reviewer.
+1. **Map mode is not live** (contract gap above). Every course renders the vertical route; a
+   contract change and an anchored plate are needed. The renderer already accepts the anchors.
+2. **Capture matrix is blocked by CP-043** (`ShelfDisclosure` key warnings in `30-home.js`). The
+   refusal is recorded with the final module sha; re-running `capture.sh` after CP-043 merges should
+   fill every cell without a code change here.
+3. **`loading` / `error` live frames** need shell-state persistence or an in-flight/failed read the
+   door can freeze; both are component-proven and the surfaces exist.
+4. **`course-end`** has no honest rig course (no full independent evidence). Seeding evidence rows
+   would fabricate learner progress on a frame that claims completion.
+5. The aside's other-course rows read `library.list` (`limit: 20`) with a client-side filter; a
+   sibling course can be missing on a very large library. Narrowing that read is a backend change.
+6. `world.read` cannot carry anchors without a contract change (see 1).
 
-## Post-rebase verification (the unblock condition on the card)
+## Verification run on the final tree
 
-The branch was rebased onto master `b09b65f` (which carries CP-020b `131ec86`) on 2026-11-10 after
-the supervisor's partial-build ruling lifted. What was re-run on the rebased tree:
-
-- `python3 scripts/build_plugin.py` → `desktop/plugin.js` sha256 `314e62e4…fd6a` from 20 segments,
-  and a second run is byte-identical (`git status` empty afterwards).
-- `tests.test_plugin_build` — 11 tests, OK.
-- `tests.test_cp_024_course_home_v3` — 5 tests, OK (the three card-named contracts plus the
-  copy/facts sweep and the segment-contract guard).
-- `tests.test_desktop_tokens_v3`, `test_v3_primitives`, `test_desktop_a11y_structure`,
-  `test_desktop_home_hub`, `test_desktop_gate_scope`, `test_cp_shelf_facts`,
-  `test_desktop_lesson_views` — 121 tests, OK (2 skipped).
-- The segment binds only primitives that exist in the merged `85-v3-primitives.js`; its new code
-  reads `cb3Type`/`cb3Lead`/`cb3Role` and no raw hex, no viewport unit, no inline shadow.
-
-Ownership note: the module export seam in `desktop/src/99-tutor.js` is CP-040's step 2, so this card
-does not edit that file. The test reaches `CourseHomeV3` and its helpers through a test-only export
-block appended to the *staged copy* of `desktop/plugin.js`; the repo module exports none of them,
-so the shim cannot mask a missing symbol (an unknown name throws at import).
-
-Still red, deliberately: `tests.test_m4_visual_audit.test_evidence_is_not_stale_against_the_shipped_module`
-pin (`audit.json` still records master's `1aa11577…aed2`). Regenerating it on this branch would fight
-the parallel CP-021/022/023 branches that rewrite the same file; CP-040 replays the matrix and re-pins
-on the union. The capture matrix and the `cbqa` scorecard remain CP-040's, per the ruling.
+- `python3 scripts/build_plugin.py --check` → `desktop/plugin.js` matches `desktop/src`
+  (`bb424a9d…40f3`).
+- `tests.test_plugin_build` + `tests.test_cp_024_course_home_v3` → 17 tests OK.
+- `tests.test_m4_visual_audit` → 14 tests OK; `scripts/m4v-audit.py` regenerated on this module
+  (15/15 claims PASS, `plugin_sha256` pinned to `bb424a9d…40f3`).
+- Targeted regression group and `scripts/validate-plugin.sh` are run on the final commit and their
+  numbers are in the review summary.

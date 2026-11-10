@@ -538,8 +538,14 @@ const liveCapture = async () => {
   const consoleReader = collectConsole(cdp)
 
   // Hard reload with an empty cache so a repointed rig cannot answer from a pre-swap module.
-  await cdp.send('Page.reload', { ignoreCache: true })
-  await sleep(400)
+  // `--no-reload` is for a deep screen that the host cannot re-enter after a reload: the caller
+  // has already driven the window there and restarted it on the installed module, and the stamp
+  // records `capture.reloaded: false` so the frame can never be confused with a fresh-boot frame.
+  const reloaded = !flag('no-reload', false)
+  if (reloaded) {
+    await cdp.send('Page.reload', { ignoreCache: true })
+    await sleep(400)
+  }
   await evaluate(cdp, `location.hash = '#/coursebook'`)
   let state = await waitForRoute(cdp, timeoutMs)
   if (!state) {
@@ -572,6 +578,14 @@ const liveCapture = async () => {
         throw new Error(`after-reload driver finished but ${String(waitSelector)} never appeared`)
       }
     }
+  }
+
+  // Optional root text scale, for the 200 % cell: the matrix's text scale is the root font size,
+  // not page zoom, and the probe already records the computed value (`route.text_scale_root_px`).
+  const rootFont = flag('root-font', null)
+  if (rootFont && rootFont !== true) {
+    await evaluate(cdp, `document.documentElement.style.fontSize = ${JSON.stringify(String(rootFont))}`)
+    await sleep(450)
   }
 
   // Neutralise the rig's page zoom. Under a non-100% zoom, `Emulation.setDeviceMetricsOverride`
@@ -699,7 +713,7 @@ const liveCapture = async () => {
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, driver: afterReload && afterReload !== true ? String(afterReload) : null })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -796,7 +810,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, driver = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, driver = null, reloaded = true }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -867,7 +881,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       crop_mode: cropMode,
       clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height },
       pixel_check: pixelCheck,
-      driver
+      driver,
+      reloaded
     },
     page_url: pageUrl
   }

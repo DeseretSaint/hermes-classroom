@@ -3393,6 +3393,10 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const [targetBlockId, setTargetBlockId] = useState(focusBlockId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  // CP-024: a rejected world's one quiet next action opens the studio that owns the world. It is
+  // the shipped surface from 97-world.js, rendered as a sheet over this page — the course home
+  // never grows a second world editor of its own, and a failed read never opens it silently.
+  const [studioOpen, setStudioOpen] = useState(false)
   // `plan.approve` fences on the enrolment revision, so the page tracks the revision the last
   // mutation returned instead of trusting the row it was opened with.
   const [revision, setRevision] = useState(Number(row.revision || 0))
@@ -3805,6 +3809,7 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
             startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
           onOpenPlan: () => selectView('plan'),
           onOpenSection: openSection,
+          onOpenStudio: () => setStudioOpen(true),
           onRetry: () => {
             if (outline) outline.reload()
             if (world) world.reload()
@@ -3819,6 +3824,27 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     children: [
       // CP-024: the course home carries its own back path and its one Continue plate.
       courseHome,
+
+      // The rejected world's quiet action opens the studio that owns the world; it is a sheet over
+      // this page, never a second copy of the studio and never opened on its own.
+      studioOpen && view === 'overview'
+        ? jsx(WorldStudio, {
+            courseId: row.course_id,
+            mode: courseMode || 'textbook',
+            world: world.data && world.data.world ? world.data.world : null,
+            worldStatus: world.status,
+            worldError: world.error,
+            autoStart: false,
+            onReload: () => {
+              if (world) world.reload()
+            },
+            onChanged: () => {
+              refresh()
+              if (onChanged) onChanged()
+            },
+            onClose: () => setStudioOpen(false)
+          }, 'world-studio')
+        : null,
 
       courseHome
         ? null
