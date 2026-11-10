@@ -117,6 +117,90 @@ class WorldPolicyTest(unittest.TestCase):
             2,
         )
 
+    def test_plate_fence_covers_non_frozen_and_passive_shapes(self) -> None:
+        # GM-019: the GM-003 fence was a token scan over a frozen verb list, so an imperative
+        # verb outside that list ("Scrub the head", "Swap the gasket") and a passive
+        # construction ("The head is removed", "The manifold was drained") survived at the
+        # predicate and reached every plate prompt through the handler. The fix is by shape:
+        # an object-taking clause (first content token + determiner/possessive + noun) and a
+        # passive be-auxiliary + past participle, neither of which reads the frozen list.
+        imperative_hostile = (
+            "Scrub the head",
+            "Swap the gasket",
+            "Scrape the block",
+            "Degrease the block",
+            "Rebuild the head",
+            "Then scrub the head",
+            "Probably scrub the head",
+            "Scrub his hands",
+            "Scrubbing the head",
+        )
+        # The imperative shape is scoped to the procedure grammar: on a non-procedure grammar
+        # the same shape is a lesson title ("Cook a simple meal at home", "Ordering a drink").
+        for value in imperative_hostile:
+            with self.subTest(value=value):
+                self.assertIn(
+                    "presentation_names_procedure_or_value",
+                    world._plate_text_problems(value, "workshop_manual"),
+                )
+
+        # A passive names a completed action in any grammar, and no authored scene or lesson
+        # title is a be-auxiliary + participle.
+        passive_hostile = (
+            "The head is removed",
+            "The intake manifold was drained",
+            "The block has been degreased",
+            "The head was removed carefully",
+            "The head is now removed",
+            "The block was just degreased",
+        )
+        for value in passive_hostile:
+            for grammar in world.GRAMMARS:
+                with self.subTest(value=value, grammar=grammar):
+                    self.assertIn(
+                        "presentation_names_procedure_or_value",
+                        world._plate_text_problems(value, grammar),
+                    )
+
+        # F4: a listed gerund is still refused in every grammar, so the round-12 fence has not
+        # been loosened by the scoping above.
+        self.assertIn(
+            "presentation_names_procedure_or_value",
+            world._plate_text_problems("Removing the head", "field_atlas"),
+        )
+
+        # Grammar-owned scenes stay legal, including a scene that happens to start with a
+        # determiner-only procedure verb and a native place cue with a preposition.
+        legal = {
+            "workshop_manual": (
+                "clean service bay",
+                "a clean service bay",
+                "car on a lift",
+                "four-cylinder block",
+                "engine block cutaway",
+                "the break room",
+                "bench under the lamp",
+            ),
+            "field_atlas": (
+                "clean cafe counter",
+                "pocket map",
+                "lantern district",
+                "Ordering a drink",
+            ),
+            "kitchen_table": (
+                "recipe card stand",
+                "work surface",
+                "Cook a simple meal at home",
+            ),
+        }
+        for grammar, values in legal.items():
+            for value in values:
+                with self.subTest(value=value, grammar=grammar):
+                    self.assertNotIn(
+                        "presentation_names_procedure_or_value",
+                        world._plate_text_problems(value, grammar),
+                    )
+
 
 class WorldPromptTest(unittest.TestCase):
     def test_world_prompts_are_textless(self) -> None:
@@ -1922,6 +2006,110 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         self.assertEqual(
             read["world"]["brief"]["title"], "First, remove the intake manifold"
         )
+        self.assertEqual(read["world"]["state"], "concepts_ready")
+
+    def test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive(self) -> None:
+        # GM-019: the N1/M1 fences walked a frozen verb list, so an imperative verb outside it
+        # ("Scrub the head") and a passive construction ("The head is removed") were stored and
+        # written into every plate prompt — sentinel reproduced 'scrub the head' in 3/3 prompts
+        # through this handler. Concepts and the approved-style kit path must refuse before
+        # spend, and the prompt fence must fall back for a derived title.
+        hostile = (
+            "Scrub the head",
+            "Swap the gasket",
+            "Scrape the block",
+            "Degrease the block",
+            "Rebuild the head",
+            "Probably scrub the head",
+            "The head is removed",
+            "The intake manifold was drained",
+        )
+        for index, motif in enumerate(hostile):
+            with self.subTest(motif=motif):
+                course_id = self._new_technical_course(f"Non-frozen motif {index}")
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": course_id,
+                        "stage": "concepts",
+                        "brief_patch": {"motifs": [motif]},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"gm019-hostile-{index}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertEqual(
+                    error["details"]["reason"],
+                    "presentation_names_procedure_or_value",
+                )
+                self.assertEqual(error["details"]["field"], "motifs")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Kit path after an approved style: same refusal, no extra spend.
+        read, _style = self._concepts_then_style()
+        self.assertEqual(len(self.fake.calls), 3)
+        board = read["world"]["concepts"][0]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": {"motifs": ["Scrub the head"]},
+            },
+            expected_revision=read["revision"],
+            idempotency_key="gm019-hostile-kit",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+        # A grammar-owned scene is still a legal World Studio field and still spends.
+        course_id = self._new_technical_course("Native scene after GM-019")
+        self.ok(
+            "world.generate",
+            {
+                "course_id": course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["clean service bay", "car on a lift"]},
+            },
+            expected_revision=0,
+            idempotency_key="gm019-native",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 6)
+
+        # Derived text: a course titled with a passive construction reaches every plate without
+        # any brief_patch. The prompt fence falls back to the grammar label; the stored brief
+        # stays verbatim.
+        self.fake.calls.clear()
+        created = self.ok(
+            "course.create",
+            {
+                "title": "The head is removed",
+                "recipe": "committed",
+                "goal": "Replace a head gasket on a four-cylinder engine",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="gm019-passive-title",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("removed", lowered)
+            self.assertNotIn("the head is", lowered)
+            self.assertIn("workshop manual", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(read["world"]["brief"]["title"], "The head is removed")
         self.assertEqual(read["world"]["state"], "concepts_ready")
 
     def test_presentation_text_allows_function_words(self) -> None:

@@ -1,0 +1,1061 @@
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Scrub the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Swap the gasket')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Scrape the block')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Degrease the block')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Rebuild the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Then scrub the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Probably scrub the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Scrub his hands')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='Scrubbing the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 142, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, "workshop_manual"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is removed', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The intake manifold was drained', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block has been degreased', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head was removed carefully', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The head is now removed', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='field_atlas')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='workshop_manual')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ()
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='observatory')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='archive_desk')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='kitchen_table')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='instrument_board')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='studio_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_plate_fence_covers_non_frozen_and_passive_shapes (tests.test_world.WorldPolicyTest.test_plate_fence_covers_non_frozen_and_passive_shapes) (value='The block was just degreased', grammar='lab_bench')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 160, in test_plate_fence_covers_non_frozen_and_passive_shapes
+    self.assertIn(
+    ~~~~~~~~~~~~~^
+        "presentation_names_procedure_or_value",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world._plate_text_problems(value, grammar),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'presentation_names_procedure_or_value' not found in ('presentation_names_foreign_grammar',)
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Scrub the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Swap the gasket')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Scrape the block')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Degrease the block')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Rebuild the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='Probably scrub the head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='The head is removed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive) (motif='The intake manifold was drained')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2030, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"gm019-hostile-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 354, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 332, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_cc8e02ba/tests/test_world.py", line 2046, in test_presentation_motifs_cannot_name_a_non_frozen_imperative_or_passive
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 8 != 0
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.657s
+
+FAILED (failures=66)

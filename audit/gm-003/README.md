@@ -457,3 +457,19 @@ at token level; the workshop hard negatives remain the second line of defence. `
 absent from the published `rpc.v23.json` (additive integration bump); the media seam is a
 deterministic fake; the `world_assets` role vocabulary follows the frozen 0013 CHECK; create-time
 auto-queue is owned by GM-002.
+
+## Known gap closed by GM-019 — non-frozen imperative verbs and passive voice
+
+The frozen verb list was a lexical tail, recorded here as the accepted GM-003 residual and owned
+by follow-up GM-019 (`t_cc8e02ba`). Two shapes escaped: an imperative verb outside the list
+(`Scrub the head`, `Swap the gasket`, `Scrape the block`, `Degrease the block`, `Rebuild the
+head`) and passive voice (`The head is removed`, `The intake manifold was drained`). Sentinel
+reproduced `Scrub the head` through the real handler at 3 calls in 3/3 prompts.
+
+GM-019 closes both by shape, not by extending the verb list: `_object_taking_clause()`
+(content word + determiner/possessive + noun) and `_passive_construction()` (be-auxiliary +
+`-ed`/closed irregular participle). Frozen verbs and gerunds remain refused; the grammar-owned
+scene carve-outs (`clean service bay`, `car on a lift`, `four-cylinder block`) remain legal. The
+residuals that remain after GM-019 — a non-frozen bare-object imperative (`Scrub head`), a
+non-frozen gerund on a non-procedure grammar, and passive over-refusal of stative scene text —
+are named explicitly in `audit/gm-019/README.md`.

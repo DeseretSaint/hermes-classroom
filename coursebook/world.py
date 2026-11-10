@@ -1422,6 +1422,138 @@ _PROCEDURE_OBJECT_DETERMINERS: frozenset[str] = frozenset(
     }
 )
 
+#: Be-auxiliaries that open a passive construction. A plate is orientation, never a completed
+#: action on the equipment, so "the head is removed" is a procedure outcome even though it
+#: carries no imperative verb (GM-019). ``get``/``got`` are included because "the head gets
+#: removed" names the same procedure.
+_PASSIVE_AUXILIARY_TOKENS: frozenset[str] = frozenset(
+    {"am", "are", "be", "been", "being", "get", "gets", "got", "is", "was", "were"}
+)
+
+#: Irregular past participles a passive auxiliary can take. Regular participles are recognised
+#: by their ``-ed`` shape, so this is only the closed set morphology cannot derive from the
+#: present stem ("the head is taken off"). It is a closed form class, not a synonym list a
+#: caller can outgrow by choosing a different verb (GM-019).
+_IRREGULAR_PAST_PARTICIPLES: frozenset[str] = frozenset(
+    {
+        "beaten",
+        "bent",
+        "bled",
+        "bound",
+        "brought",
+        "built",
+        "burnt",
+        "caught",
+        "chosen",
+        "done",
+        "drawn",
+        "driven",
+        "fed",
+        "felt",
+        "found",
+        "frozen",
+        "given",
+        "held",
+        "hidden",
+        "hung",
+        "kept",
+        "laid",
+        "led",
+        "left",
+        "lit",
+        "lost",
+        "made",
+        "paid",
+        "put",
+        "sent",
+        "set",
+        "shaken",
+        "shown",
+        "spun",
+        "struck",
+        "swept",
+        "taken",
+        "thrown",
+        "torn",
+        "worn",
+        "wound",
+    }
+)
+
+#: Closed-class words that may stand between a passive auxiliary and its participle
+#: ("was not drained", "was carefully drained"). They carry no procedure of their own.
+_PASSIVE_INTERVENING_TOKENS: frozenset[str] = frozenset(
+    {
+        "already",
+        "also",
+        "carefully",
+        "completely",
+        "fully",
+        "gently",
+        "immediately",
+        "just",
+        "never",
+        "not",
+        "now",
+        "partially",
+        "quickly",
+        "recently",
+        "slowly",
+        "still",
+        "then",
+    }
+)
+
+#: Closed-class prepositions/adverbs that may follow a scene noun. They are skipped before the
+#: object-taking-clause test so "bench under the lamp" is a place, not a verb with an object
+#: (GM-019).
+_SCENE_RELATION_TOKENS: frozenset[str] = frozenset(
+    {
+        "above",
+        "across",
+        "against",
+        "along",
+        "among",
+        "around",
+        "at",
+        "behind",
+        "below",
+        "beneath",
+        "beside",
+        "between",
+        "beyond",
+        "by",
+        "down",
+        "during",
+        "for",
+        "from",
+        "in",
+        "inside",
+        "into",
+        "near",
+        "of",
+        "off",
+        "on",
+        "onto",
+        "outside",
+        "over",
+        "past",
+        "through",
+        "under",
+        "until",
+        "up",
+        "upon",
+        "with",
+        "within",
+        "without",
+    }
+)
+
+
+#: Grammars whose subject *is* a procedure, so the plate bar is "never a procedure" rather than
+#: "never a number or answer" (GM-019). ``technical_procedure``/``trades`` select this grammar.
+_PROCEDURE_GRAMMARS: frozenset[str] = frozenset({"workshop_manual"})
+
 
 def _grammar_vocabulary_tokens(grammar: str) -> frozenset[str]:
     return frozenset(
@@ -1740,6 +1872,22 @@ def _names_grammar_owned_scene(value: Any, grammar: str) -> bool:
     return False
 
 
+def _leading_content_index(tokens: tuple[str, ...]) -> int:
+    """Index of the first content word, skipping discourse words and leading adverbs.
+
+    A leading adverb never cancels an imperative ("Then scrub the head", "Probably scrub the
+    head"), and ``-ly`` is a closed English adverb shape, so it is skipped structurally rather
+    than by adding each adverb to a list (GM-019).
+    """
+    index = 0
+    while index < len(tokens) and (
+        tokens[index] in _LEADING_DISCOURSE_TOKENS
+        or (len(tokens[index]) > 4 and tokens[index].endswith("ly"))
+    ):
+        index += 1
+    return index
+
+
 def _verb_initial_bare_object(value: Any) -> bool:
     """A determiner-only scene verb opens the phrase and takes a bare object ("Clean head").
 
@@ -1747,12 +1895,73 @@ def _verb_initial_bare_object(value: Any) -> bool:
     every unambiguous imperative verb is already refused verb-initial anywhere in the phrase.
     """
     tokens = _phrase_tokens(value)
-    index = 0
-    while index < len(tokens) and tokens[index] in _LEADING_DISCOURSE_TOKENS:
-        index += 1
+    index = _leading_content_index(tokens)
     return index < len(tokens) and (
         _procedure_verb_base(tokens[index], _DETERMINER_ONLY_PROCEDURE_VERBS) is not None
     )
+
+
+def _object_taking_clause(value: Any, grammar: str) -> bool:
+    """An opening word takes a determiner/possessive object ("Scrub the head", "Scrub his hands").
+
+    This is the shape of an imperative procedure sentence, independent of any verb list: a
+    content word followed by a determiner and a noun. Closed-class function words are never the
+    opening content word, so a place cue ("bench under the lamp", "the break room", "a clean
+    service bay") cannot match: its second word is a relation word, a determiner or a bare noun,
+    not a determiner followed by a noun (GM-019).
+
+    The shape is scoped to the procedure grammar (:data:`_PROCEDURE_GRAMMARS`). Elsewhere the
+    same shape is how a course names its lesson ("Cook a simple meal at home", "Ordering a
+    drink"), and a plate may carry that title; the frozen verb vocabulary still refuses a
+    procedure verb in every grammar. The passive shape below is not scoped, because no authored
+    scene or lesson title is a be-auxiliary + participle and a passive always names a completed
+    action.
+    """
+    if grammar not in _PROCEDURE_GRAMMARS:
+        return False
+    tokens = _phrase_tokens(value)
+    index = _leading_content_index(tokens)
+    if index + 2 >= len(tokens):
+        return False
+    head, middle, tail = tokens[index], tokens[index + 1], tokens[index + 2]
+    if head in _PROCEDURE_OBJECT_DETERMINERS or head in _SCENE_RELATION_TOKENS:
+        return False
+    if middle not in _PROCEDURE_OBJECT_DETERMINERS:
+        return False
+    if tail in _PROCEDURE_OBJECT_DETERMINERS or tail in _SCENE_RELATION_TOKENS:
+        return False
+    return True
+
+
+def _past_participle_shape(token: str) -> bool:
+    """A token shaped like a past participle: regular ``-ed`` or a closed irregular form."""
+    if token in _IRREGULAR_PAST_PARTICIPLES:
+        return True
+    return len(token) >= 4 and token.endswith("ed")
+
+
+def _passive_construction(value: Any) -> bool:
+    """A be-auxiliary followed by a past participle ("the head is removed", "was drained").
+
+    A passive names a completed action on the equipment, so it is a procedure outcome even
+    when no imperative verb is present. Closed-class adverbs may stand between the auxiliary and
+    the participle ("was not drained", "The head is now removed"); the participle test is
+    morphological, so a verb outside the frozen list is caught the same way a listed one is
+    (GM-019).
+    """
+    tokens = _phrase_tokens(value)
+    for position, token in enumerate(tokens[:-1]):
+        if token not in _PASSIVE_AUXILIARY_TOKENS:
+            continue
+        following = position + 1
+        while (
+            following < len(tokens)
+            and tokens[following] in _PASSIVE_INTERVENING_TOKENS
+        ):
+            following += 1
+        if following < len(tokens) and _past_participle_shape(tokens[following]):
+            return True
+    return False
 
 
 def _plate_text_problems(value: Any, grammar: str) -> tuple[str, ...]:
@@ -1769,6 +1978,15 @@ def _plate_text_problems(value: Any, grammar: str) -> tuple[str, ...]:
     if _names_numbers_or_answer_content(text):
         problems.append("presentation_names_number_or_answer_content")
     elif _names_procedure_or_spelled_value(text):
+        problems.append("presentation_names_procedure_or_value")
+    elif _object_taking_clause(text, grammar) or _passive_construction(text):
+        # GM-019: the frozen verb list was a lexical tail — "Scrub the head" and "the head is
+        # removed" are the same procedure with a verb the list never named. The object-clause
+        # shape is scoped to the procedure grammar and the passive shape is not; both are
+        # vocabulary-independent. Authored motifs and native place cues do not match either
+        # shape (their opening word is a determiner/relation word, or no determiner follows the
+        # noun), so the grammar-owned-scene carve-outs stay legal without a carve-out branch
+        # here that a procedure-bearing motif could also claim.
         problems.append("presentation_names_procedure_or_value")
     elif _verb_initial_bare_object(text) and not _names_grammar_owned_scene(text, grammar):
         # N1: a determiner-only scene verb with a bare object is an instruction
