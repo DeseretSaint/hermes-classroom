@@ -119,15 +119,16 @@ What *is* machine-checked on this tree:
     Chromium** at 1049 / 900 / 460: every `[data-cb-home-card]` border box lies inside
     `[data-cb-home-shelf-row]`'s clip box, 4 / 3 / 1 cards show, the row direction is row/column as
     specified, page overflow is 0, and the fox is not a child of the card row;
-  - `test_home_v3_mask_remeasures_on_a_route_change` — a jsdom mount with stubbed row geometry:
-    a fitting row paints `none`, and narrowing the route (four cards no longer fitting three
-    columns) makes the mask `right`.
+  - `test_home_v3_mask_remeasures_on_a_route_change` — a jsdom mount with a stubbed
+    `ResizeObserver` and stubbed row geometry: a fitting row paints `none`; firing the observer
+    callback (no window resize) makes the mask `right`, a refit clears it to `none`, and the
+    route-width path makes it `right` again.
 - `tests.test_desktop_home_hub`, `tests.test_desktop_tokens_v3`, `tests.test_v3_primitives`,
-  `tests.test_plugin_build`, `tests.test_m4_visual_audit` — green.
+  `tests.test_plugin_build`, `tests.test_m4_visual_audit` — green (88 targeted tests in total).
 - `python3 scripts/m4v-audit.py` — re-rendered on `8c304d34…`, 15 PASS.
-- Full suite on the round-2 tree (`python3 -m unittest discover -s tests -t .`, log
-  `/home/deseretsaint/.hermes/profiles/sable/cache/scratch/cp-022-r2-suite.log`): **Ran 3371 tests
-  in 850 s — 5 failures, 11 skipped**. All five are the stale v2 gate assertions in gap 1; nothing
+- Full suite on the round-3 tree (`python3 -m unittest discover -s tests -t .`, log
+  `/home/deseretsaint/.hermes/profiles/sable/cache/scratch/cp-022-r3-suite.log`): **Ran 3371 tests
+  in 1202 s — 5 failures, 11 skipped**. All five are the stale v2 gate assertions in gap 1; nothing
   in CP-022's own modules fails.
 
 ## Known gaps (all recorded, none hidden)
@@ -197,6 +198,17 @@ What *is* machine-checked on this tree:
 6. **The tag's age uses `updated_at`**, not a creation stamp: CP-005 exposes no `created_at`, so
    "less than fourteen days" is measured from the newest recorded write. The rule itself (`is_new` +
    window + newest row only) is exact and tested; the field is the gap.
+7. **Open seam with CP-043 (merge-time, not fixed here).** `wt/cp-022-home` predates CP-043's
+   React-19 key sweep. `desktop/src/30-home.js` still contains unkeyed element arrays outside the
+   Home surface this card owns — `ShelfDisclosure` (~L1367), `PathStop` (~L2948) and
+   `CheckpointDetailRow` (~L3146) — so the CP-038 capture door refuses every **course-home** frame
+   until CP-043 lands. CP-043 is branch-only (`b790464`/`6ac4410`/`96d19e3`) and not an ancestor of
+   `origin/master` at this commit, so this card did not import a sibling card's branch. The Home
+   surface itself is clean: every `Base.home()` render asserts `Warning:` is absent from React's
+   stderr (16 cases). At merge, **keep CP-043's keys** (`key` is the third argument to
+   `jsx`/`jsxs`, never inside props) rather than taking either side of a conflict; then
+   `tests.test_plugin_console_clean` (from CP-043) and `scripts/cp-capture.mjs --require-v3` are the
+   gates.
 
 ## Reviewer instructions
 
