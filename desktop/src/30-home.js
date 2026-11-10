@@ -181,12 +181,16 @@ const CB_HOME_V3_COPY = Object.freeze({
   cardNew: 'New',
   emptyShippedTitle: 'No courses yet.',
   emptyArchivedBody: 'Every course here is archived. Unarchive one in Courses to continue it.',
+  // CP-031 — these strings still carry no `COPY.md` §2 id. They are enumerated in
+  // `docs/visual-review/cp-022/MANIFEST.md` gap 3 and frozen by `test_home_v3_copy_has_an_id`;
+  // the deck adopts or replaces them, this card may not invent a deck row. `failedReadWord` is
+  // also pinned by the existing behavioural `tests.test_desktop_home_hub`, which this card does
+  // not own.
   failedReadWord: 'This is a failed read, not an empty library.',
   parentTitle: 'Parent Studio holds your lesson plans.',
   parentBody:
     'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.',
-  parentAction: 'Open Parent Studio',
-  modeUnavailable: 'This backend does not report course mode yet.'
+  parentAction: 'Open Parent Studio'
 })
 
 /** The shelf holds four real courses; a fifth scrolls behind `See all` (SPEC-V3 §3.3, §5.1 H5). */
@@ -252,21 +256,50 @@ function homeNewTagSlot(slots, nowMs) {
   return newest
 }
 
-/** Route-relative column count and card width (SPEC-V3 §3.1, §3.3). Never a viewport unit. */
+/**
+ * Route-relative shelf geometry (SPEC-V3 §3.1, §3.3, §5.1 H5). The number comes from the route
+ * box `useCbViewportWidth` measures, never from a viewport unit, and it follows the shipped
+ * `.cb3-gutter` rule — `clamp(1.25rem, 3.05cqi, 4rem)` above 760, `0.7rem` below — so a card row
+ * can never be wider than the paper it sits on. The fox has its own lower ledge (H6) and never
+ * takes a lane away from the cards.
+ */
+function homeGutter(width) {
+  if (!(width > 0)) return 32
+  if (!(width > 760)) return 0.7 * 16
+  return Math.min(64, Math.max(20, width * 0.0305))
+}
+
+function homeContentWidth(width) {
+  if (!(width > 0)) return 0
+  return Math.max(0, width - 2 * homeGutter(width))
+}
+
 function homeShelfColumns(width) {
   if (!(width > 0)) return 4
-  if (width >= 1000) return 4
-  if (width >= 920) return 3
+  const content = homeContentWidth(width)
+  if (content >= 880) return 4
+  if (content >= 560) return 3
   return 1
 }
 
 function homeCardWidth(width) {
   if (!(width > 0)) return null
-  const gutter = width >= 1000 ? 32 : width >= 920 ? 24 : 16
+  const content = homeContentWidth(width)
   const gap = width >= 620 ? 16 : 12
-  const content = Math.max(0, width - 2 * gutter)
   const columns = homeShelfColumns(width)
   return Math.max(140, Math.floor((content - (columns - 1) * gap) / columns))
+}
+
+/**
+ * The shelf's own capacity: four cards at wide, three at mid (SPEC-V3 §5.1 overflow — five at
+ * wide, four at mid), and the stacked column keeps four rows at compact. `home.gutter` above is
+ * the same box the CSS draws, so the cards always fit the lane.
+ */
+function homeShelfLayout(width) {
+  const compact = width > 0 && width < 620
+  const columns = compact ? 1 : homeShelfColumns(width)
+  const capacity = compact ? CB_HOME_V3_LIMIT : Math.min(CB_HOME_V3_LIMIT, columns)
+  return { compact, columns, capacity }
 }
 
 /** A 3:2 paper cover: the real artifact when the media answer arrives, else the typographic plate. */
@@ -328,35 +361,39 @@ function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
         },
         onClick: open
       }, 'target'),
-      jsxs('div', {
-        className: 'pointer-events-none',
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.6rem', minWidth: 0 },
-        children: [
-          modeWord
-            ? jsx('span', {
-                'data-cb3-chip': 'mode',
-                style: {
-                  fontFamily: 'var(--cb3-font-ui)',
-                  fontSize: cb3Type('caption'),
-                  lineHeight: cb3Lead('caption'),
-                  color: cb3Role('ink-soft')
-                },
-                children: modeWord
-              }, 'mode')
-            : null,
-          jsx('span', {
-            'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
-            style: {
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('caption'),
-              lineHeight: cb3Lead('caption'),
-              color: cb3Role('ink-soft'),
-              overflowWrap: 'anywhere'
-            },
-            children: facts.next || 'No next step recorded'
-          }, 'next')
-        ]
-      }, 'meta')
+      modeWord || facts.next
+        ? jsxs('div', {
+            className: 'pointer-events-none',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.6rem', minWidth: 0 },
+            children: [
+              modeWord
+                ? jsx('span', {
+                    'data-cb3-chip': 'mode',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft')
+                    },
+                    children: modeWord
+                  }, 'mode')
+                : null,
+              facts.next
+                ? jsx('span', {
+                    'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: facts.next
+                  }, 'next')
+                : null
+            ]
+          }, 'meta')
+        : null
     ]
   }, 'action')
   return jsx(PaperCard, {
@@ -368,6 +405,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
     role: 'listitem',
     style: {
       position: 'relative',
+      boxSizing: 'border-box',
       width: cardWidth ? `${cardWidth}px` : '17rem',
       flex: cardWidth ? `0 0 ${cardWidth}px` : '0 0 17rem',
       gap: '0.45rem'
@@ -527,7 +565,8 @@ function CoursebookHome({
   }
 
   // The shelf fades the edge that still has cards behind it. Measured from the live row; jsdom and
-  // a static render report zeroes and honestly stay `none`.
+  // a static render report zeroes and honestly stay `none`. The route width is a dependency: the
+  // card basis changes with it, so a stale measure would leave a clipped shelf with no fade.
   const shelfRowRef = useRef(null)
   const [shelfMask, setShelfMask] = useState({ state: 'none', style: {} })
   const shelfSlotCount = slots.length
@@ -538,11 +577,17 @@ function CoursebookHome({
     measure()
     row.addEventListener('scroll', measure, { passive: true })
     window.addEventListener('resize', measure)
+    let observer = null
+    if (typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver(measure)
+      observer.observe(row)
+    }
     return () => {
       row.removeEventListener('scroll', measure)
       window.removeEventListener('resize', measure)
+      if (observer) observer.disconnect()
     }
-  }, [status, compact, shelfSlotCount])
+  }, [status, compact, width, shelfSlotCount])
 
   const invitation = jsxs('section', {
     'data-cb-home-invitation': '',
@@ -702,11 +747,12 @@ function CoursebookHome({
         shelfHead,
         jsx(ShelfPlank, {
           style: { overflow: 'visible' },
-          children: [0, 1, 2, 3].map((index) =>
+          children: [0, 1, 2, 3].slice(0, compact ? 4 : Math.min(4, homeShelfColumns(width))).map((index) =>
             jsx('div', {
               'data-cb-home-skeleton': String(index),
               'aria-hidden': 'true',
               style: {
+                boxSizing: 'border-box',
                 width: homeCardWidth(width) ? `${homeCardWidth(width)}px` : '17rem',
                 height: '9.5rem',
                 flex: homeCardWidth(width) ? `0 0 ${homeCardWidth(width)}px` : '0 0 17rem',
@@ -775,105 +821,137 @@ function CoursebookHome({
       style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
         shelfHead,
-        jsx(ShelfPlank, {
-          style: { overflow: 'visible' },
+        jsxs('div', {
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
           children: [
-            jsxs('div', {
-              'data-cb-home-start-plate': '',
-              style: {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: '0.6rem',
-                maxWidth: '42ch',
-                padding: '1.1rem 1.25rem',
-                backgroundColor: cb3Role('card-stock'),
-                border: `1px solid ${cb3Role('rule')}`,
-                borderRadius: cb3Radius('round')
-              },
-              children: [
-                jsx('h3', { 'data-cb-home-plate-title': '', style: stateTitle, children: plateTitle }, 'title'),
-                jsx('p', { style: body, children: plateBody }, 'body'),
-                archived && onShowAll
-                  ? jsx(PillAction, {
-                      variant: 'quiet',
-                      label: CB_HOME_V3_COPY.emptyAction,
-                      'data-cb-home-archived': '',
-                      onClick: onShowAll
-                    }, 'archived')
-                  : null
-              ]
-            }, 'plate'),
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsxs('div', {
+                'data-cb-home-start-plate': '',
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '0.6rem',
+                  maxWidth: '42ch',
+                  padding: '1.1rem 1.25rem',
+                  backgroundColor: cb3Role('card-stock'),
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('round')
+                },
+                children: [
+                  jsx('h3', { 'data-cb-home-plate-title': '', style: stateTitle, children: plateTitle }, 'title'),
+                  jsx('p', { style: body, children: plateBody }, 'body'),
+                  archived && onShowAll
+                    ? jsx(PillAction, {
+                        variant: 'quiet',
+                        label: CB_HOME_V3_COPY.emptyAction,
+                        'data-cb-home-archived': '',
+                        onClick: onShowAll
+                      }, 'archived')
+                    : null
+                ]
+              }, 'plate')
+            }, 'plank'),
             compact
               ? null
-              : jsx(FoxPose, {
-                  pose: 'wave',
-                  size: width >= 920 || width === 0 ? 128 : 112,
-                  style: { alignSelf: 'flex-end' }
-                }, 'fox')
+              : jsx('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: jsx(FoxPose, {
+                    pose: 'wave',
+                    size: width >= 900 || width === 0 ? 128 : 112,
+                    style: { alignSelf: 'flex-end' }
+                  }, 'fox')
+                }, 'ledge')
           ]
-        }, 'plank')
+        }, 'shelf-frame')
       ]
     }, 'shelf')
   } else {
+    const shelfLayout = homeShelfLayout(width)
+    // SPEC-V3 §5.1 overflow: a fifth course at wide or a fourth at mid. The row scrolls inside its
+    // frame with the edge mask; the cards never shrink and the fox never takes their lane.
+    const shelfOverflow = hub.total > shelfLayout.capacity
     shelf = jsxs('section', {
       'data-cb-home-shelf': 'ready',
       'data-cb-home-shelf-state': 'ready',
+      'data-cb-home-shelf-overflow': shelfOverflow ? 'true' : 'false',
       style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
         shelfHead,
-        jsx(ShelfPlank, {
-          style: { overflow: 'visible' },
+        jsxs('div', {
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
           children: [
-            jsx('div', {
-              'data-cb-home-shelf-row': '',
-              'data-cb-shelf-mask': shelfMask.state,
-              ref: shelfRowRef,
-              role: 'list',
-              'aria-label': CB_HOME_V3_COPY.shelfLabel,
-              style: {
-                display: 'flex',
-                flexDirection: compact ? 'column' : 'row',
-                alignItems: compact ? 'stretch' : 'flex-end',
-                gap: compact ? '0.75rem' : '1rem',
-                overflowX: compact ? 'visible' : 'auto',
-                minWidth: 0,
-                flex: '1 1 auto',
-                ...shelfMask.style
-              },
-              children: slots.map((slot, index) =>
-                jsx(HomeV3Card, {
-                  slot,
-                  mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
-                  index,
-                  width,
-                  isNew: homeCardFacts(slot && slot.row).isNew,
-                  onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
-                }, (slot && slot.course_id) || `slot-${index}`)
-              )
-            }, 'frame'),
-            compact ? null : tag,
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsx('div', {
+                'data-cb-home-shelf-row': '',
+                'data-cb-shelf-mask': shelfMask.state,
+                ref: shelfRowRef,
+                role: 'list',
+                'aria-label': CB_HOME_V3_COPY.shelfLabel,
+                style: {
+                  display: 'flex',
+                  flexDirection: compact ? 'column' : 'row',
+                  alignItems: compact ? 'stretch' : 'flex-end',
+                  gap: compact ? '0.75rem' : '1rem',
+                  overflowX: compact ? 'visible' : 'auto',
+                  minWidth: 0,
+                  flex: '1 1 auto',
+                  ...shelfMask.style
+                },
+                children: slots.map((slot, index) =>
+                  jsx(HomeV3Card, {
+                    slot,
+                    mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
+                    index,
+                    width,
+                    isNew: homeCardFacts(slot && slot.row).isNew,
+                    onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
+                  }, (slot && slot.course_id) || `slot-${index}`)
+                )
+              }, 'frame')
+            }, 'plank'),
+            // H6 — the lower ledge. The fox box and the kraft tag stand here, on their own paper,
+            // so the shelf's full width belongs to the cards at every route width.
             compact
               ? null
-              : jsx(FoxPose, {
-                  pose: 'clock',
-                  size: width >= 920 || width === 0 ? 128 : 112,
-                  style: { alignSelf: 'flex-end' }
-                }, 'fox')
+              : jsxs('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    gap: '0.9rem',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: [
+                    tag,
+                    jsx(FoxPose, {
+                      pose: 'clock',
+                      size: width >= 900 || width === 0 ? 128 : 112,
+                      style: { alignSelf: 'flex-end' }
+                    }, 'fox')
+                  ]
+                }, 'ledge')
           ]
-        }, 'plank'),
-        overflow
+        }, 'shelf-frame'),
+        shelfOverflow && !compact
           ? jsx('p', { 'data-cb-home-overflow-hint': '', style: caption, children: CB_HOME_V3_COPY.overflowHint }, 'overflow')
-          : null,
-        hub.hidden > 0
-          ? jsx('p', {
-              'data-cb-home-shelf-hidden': String(hub.hidden),
-              style: caption,
-              children: `${plural(hub.hidden, 'more course', 'more courses')} behind See all.`
-            }, 'hidden')
-          : null,
-        modesSupported === false
-          ? jsx('p', { 'data-cb-home-mode-read': 'unavailable', style: caption, children: CB_HOME_V3_COPY.modeUnavailable }, 'mode')
           : null
       ]
     }, 'shelf')
@@ -905,7 +983,7 @@ function CoursebookHome({
                   jsx('span', {
                     'data-cb-home-offline-word': '',
                     style: { fontWeight: 600, marginInlineEnd: '0.4rem' },
-                    children: 'Offline'
+                    children: CB_HOME_V3_COPY.offlineTitle
                   }, 'word'),
                   jsx('span', { children: CB_HOME_V3_COPY.offlineBody }, 'text')
                 ]
@@ -924,8 +1002,8 @@ function CoursebookHome({
             'data-cb-home-stale': '',
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem 0.75rem' },
             children: [
-              jsx('p', { style: caption, children: 'Reconnecting. Showing the courses that were last read.' }, 'text'),
-              jsx(PillAction, { variant: 'quiet', label: 'Retry now', 'data-cb-home-stale-retry': '', onClick: onRetry }, 'retry')
+              jsx('p', { style: caption, children: CB_HOME_V3_COPY.errorBody }, 'text'),
+              jsx(PillAction, { variant: 'quiet', label: CB_HOME_V3_COPY.errorAction, 'data-cb-home-stale-retry': '', onClick: onRetry }, 'retry')
             ]
           }, 'stale')
         : null,

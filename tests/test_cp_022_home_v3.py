@@ -313,14 +313,86 @@ class HomeV3StatesTest(Base):
     def test_offline_names_the_connection_and_keeps_the_shelf(self) -> None:
         html = self.home(online=False, rows=[row(1)])
         self.assertIn("data-cb-home-offline", html)
-        self.assertIn("Offline", painted(html))
+        self.assertIn("You are offline", painted(html), "the banner speaks the deck's own sentence")
         self.assertIn('data-cb-home-shelf="ready"', html, "an offline shelf keeps the courses already read")
 
     def test_overflow_marks_the_scroll_and_keeps_the_measure(self) -> None:
         html = self.home(rows=[row(index) for index in range(1, 7)])
         self.assertIn("More courses to the right", painted(html))
         self.assertIn('data-cb-home-see-all=""', html)
-        self.assertIn("2 more courses behind See all.", painted(html))
+        self.assertIn('data-cb-home-shelf-overflow="true"', html)
+        self.assertNotIn("behind See all", painted(html), "the invented hidden-count sentence is gone")
+
+    def test_home_v3_copy_has_an_id(self) -> None:
+        """SPEC-V3 §4 — a screen may not render a string with no `COPY.md` id.
+
+        Every visible Home string must be a `home.*` deck row, a value carried by backend state,
+        or one of the enumerated CP-031 pendings below. The pendings are frozen here so a new
+        invented sentence fails the test instead of shipping; `docs/visual-review/cp-022/
+        MANIFEST.md` gap 3 names each one and the card body/COPY conflict it carries.
+        """
+        deck = self._deck_patterns()
+        pending = {
+            "This is a failed read, not an empty library",
+            "Parent Studio holds your lesson plans",
+            "This profile has parent-led lesson plans, not a learner course",
+            "Start a learner course here, or open Parent Studio",
+            "Open Parent Studio",
+            "No courses yet",
+            "Every course here is archived",
+            "Unarchive one in Courses to continue it",
+            "Untitled course",
+        }
+        derived = {"Course number 1", "Course number 2", "Small engines", "Resume this lesson",
+                   "HOST_UNAVAILABLE: backend is down"}
+        templates = [r"\d+ of \d+ sections done"]
+
+        def allowed(text: str) -> bool:
+            value = text.strip().rstrip(".")
+            if not value:
+                return True
+            if value in pending or value in derived:
+                return True
+            if any(re.fullmatch(pattern, value) for pattern in templates):
+                return True
+            return any(re.fullmatch(pattern, value) for pattern in deck)
+
+        payloads = [
+            dict(rows=[row(1), row(2)]),
+            dict(rows=[row(1, title="Harbour navigation", is_new=True, updated_at=stamp(1))]),
+            dict(rows=[row(1, sections_done=None, sections_total=None, next_step=None)]),
+            dict(status="ready", rows=[]),
+            dict(status="ready", rows=[], libraryOverrides={"empty_reason": "all_archived"}),
+            dict(status="loading", rows=[]),
+            dict(status="error", rows=[], error={"code": "HOST_UNAVAILABLE", "message": "backend is down"}),
+            dict(status="error", rows=[row(1)], error={"code": "HOST_UNAVAILABLE", "message": "backend is down"}),
+            dict(online=False, rows=[row(1)]),
+            dict(rows=[row(1, recipe="parent")]),
+            dict(rows=[row(1, title=None, learner_label=None)]),
+        ]
+        for payload in payloads:
+            html = self.home(**payload)
+            for segment in re.findall(r">([^<>]+)<", html):
+                # A composed sentence (cause + deck body) is allowed when each part is.
+                for part in re.split(r"(?<=[.!?])\s+", segment.strip()):
+                    if not part.strip():
+                        continue
+                    self.assertTrue(
+                        allowed(part),
+                        f"Home rendered a string with no COPY.md id or state source: {part!r} in {payload}",
+                    )
+
+    @staticmethod
+    def _deck_patterns() -> list[str]:
+        """The `home.*` copy deck's own strings, from `docs/concept-parity/COPY.md` §2."""
+        path = ROOT / "docs" / "concept-parity" / "COPY.md"
+        patterns: list[str] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            match = re.match(r"^\|\s*`(home\.[a-z0-9.]+)`\s*\|\s*([^|]+?)\s*\|", line)
+            if match:
+                cell = match.group(2).strip().rstrip(".")
+                patterns.append(re.sub(r"\\\{[^}]*\\\}", ".+", re.escape(cell)))
+        return patterns
 
     def test_parent_only_profile_points_at_parent_studio(self) -> None:
         html = self.home(rows=[row(1, recipe="parent")])
