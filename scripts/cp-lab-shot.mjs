@@ -205,6 +205,7 @@ await cdp.send('Runtime.enable', {})
 const htmlDir = join(tmpdir(), `cb-lab-html-${process.pid}`)
 mkdirSync(htmlDir, { recursive: true })
 const index = []
+const gutterProbe = {}
 try {
   for (const cell of CELLS) {
     const file = join(htmlDir, `lab-${cell.id}.html`)
@@ -261,6 +262,50 @@ try {
     })
     process.stdout.write(`lab ${cell.id}: ${Math.round(content.width)}x${Math.round(content.height)} @2x\n`)
   }
+
+  // R1 probe: does the gutter rule actually paint, and does it measure the route? A container query
+  // is the one part of CB_V3_CSS that no static assertion can prove — the unit has to resolve
+  // against the route box, and the 760 px branch has to switch. Two route widths are enough.
+  const gutterProbeFile = join(htmlDir, 'gutter-probe.html')
+  writeFileSync(gutterProbeFile, page(
+    renderToStaticMarkup(
+      h(CbV3Scope, {
+        mode: 'light',
+        className: 'relative flex min-h-full flex-col',
+        contentClassName: 'cb3-gutter',
+        attributes: { 'data-cb-route': '/coursebook-probe', 'data-cb-scope': 'light' },
+        children: h('div', { style: { minHeight: '40px' } }, 'gutter probe')
+      })
+    ),
+    { id: 'light-100', scale: 1, mode: 'light' }
+  ))
+  for (const width of [1049, 460]) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', {
+      width, height: 800, deviceScaleFactor: 1, mobile: false
+    })
+    await cdp.send('Page.navigate', { url: pathToFileURL(gutterProbeFile).href })
+    // A navigation cancels an in-flight evaluation and can hand back `undefined`, which would be
+    // dropped from the JSON entirely — a silently empty probe is worse than a failed one.
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const ready = await evaluate(cdp, 'document.readyState').catch(() => null)
+      if (ready === 'complete') break
+      await sleep(100)
+    }
+    await evaluate(cdp, `(async () => { if (document.fonts && document.fonts.ready) await document.fonts.ready; return true })()`)
+    await sleep(150)
+    const probed = await evaluate(cdp, `(() => {
+      const node = document.querySelector('[data-cb-route] .cb3-gutter')
+      if (!node) return null
+      const style = getComputedStyle(node)
+      return {
+        route_width: Math.round(document.querySelector('[data-cb-route]').getBoundingClientRect().width),
+        padding_left: style.paddingLeft,
+        padding_right: style.paddingRight
+      }
+    })()`)
+    if (!probed) throw new Error(`the gutter probe found no .cb3-gutter at ${width}px`)
+    gutterProbe[String(width)] = probed
+  }
 } finally {
   cdp.close()
   chromium.kill()
@@ -273,6 +318,7 @@ const stamp = {
   plugin_sha256: pluginSha,
   contract: 'contracts/cb.tokens.v3.json',
   reference: 'docs/concept-parity/refs/REF-SYS',
+  gutter_probe: gutterProbe,
   cells: index
 }
 writeFileSync(join(out, 'lab.json'), `${JSON.stringify(stamp, null, 2)}\n`)

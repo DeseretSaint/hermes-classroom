@@ -4,6 +4,18 @@
   "plugin_sha256": "3a8c3eff8b9269e305e1a2ebb1ab4f02d153bfccb99c52ff2b42dc7af7a26b2d",
   "contract": "contracts/cb.tokens.v3.json",
   "reference": "docs/concept-parity/refs/REF-SYS",
+  "gutter_probe": {
+    "460": {
+      "route_width": 460,
+      "padding_left": "11.2px",
+      "padding_right": "11.2px"
+    },
+    "1049": {
+      "route_width": 1049,
+      "padding_left": "31.9945px",
+      "padding_right": "31.9945px"
+    }
+  },
   "cells": [
     {
       "cell": "light-100",
