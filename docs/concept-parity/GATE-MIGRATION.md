@@ -390,12 +390,12 @@ first RED on the flip. Gated (each reads the plugin and fails on the flip for th
 | 1 | `CB_TOKENS_V3_JSON` equals the contract byte for byte | parses the literal, requires `modes`/`elevation`/`radii`/`type`/`motion`, every carried key equal, and the literal equal to the canonical serialization of the contract projection |
 | 2 | hex appears only in the two token literals | masks both literal spans, then scans the rest for `#hex` |
 | 3 | every mode carries every role | set equality against `roles` |
-| 4 | no `backdrop-filter`, no `blur(` | whole-file scan |
-| 5 | `box-shadow` only inside `CB_V3_CSS`, only as `var(--cb3-elev-*)` | declaration parse; outside-span scan |
+| 4 | no `backdrop-filter`, no `blur(` | whole-file scan, normalised: `backdrop-filter` / `backdropFilter` / `blur(` at any casing (shared `GLASS` pattern) |
+| 5 | `box-shadow` only inside `CB_V3_CSS`, only as `var(--cb3-elev-*)` | declaration parse, normalised: any vendor-prefixed (`-webkit-`/`-moz-`/`-ms-`/`-o-`), case-varied or camel `boxShadow` property is a shadow declaration; value must be exactly `var(--cb3-elev-*)`. Outside-span scan uses the same normalisation |
 | 6 | the only gradient is the named vignette | every gradient declaration must be a `--cb3-vignette*` custom property; none outside the stylesheet |
 | 7 | every selector starts with `[data-cb-v3]` | selector list parse; at-rules excepted |
 | 8 | every `@font-face` family and every literal `font-family` leads with `CB ` | `@font-face` bodies and first-family rule (contract fallbacks stay legal) |
-| 9 | motion durations only from the motion table | every duration must be a `--cb3-dur-*` entry equal to the contract beat; no keyframes/animation/infinite |
+| 9 | motion durations only from the motion table | every duration must be a `--cb3-dur-*` entry equal to the contract beat (units case-insensitive, so `900MS` is seen); no `@keyframes`/`animation:`/`animation-name`/`infinite` at any casing |
 | 10 | the stylesheet is not a stub | ≥3 style rules and ≥400 characters, so "must not contain" rules cannot pass vacuously |
 | 11 | no `vw` on a v3 surface | SPEC-V3 §3.1: route-relative measurement |
 
@@ -411,12 +411,12 @@ v3 claims:
 | V-03 | every text role paints only on a ground gated for it |
 | V-04 | `CB_TOKENS_V3_JSON` equals the contract byte for byte |
 | V-05 | raw hex only in the two token literals |
-| V-06 | no backdrop-filter, blur or glass |
-| V-07 | `box-shadow` only in `CB_V3_CSS`, only `var(--cb3-elev-*)` |
+| V-06 | no backdrop-filter, blur or glass (any casing; `GLASS`) |
+| V-07 | `box-shadow` — any vendor prefix, any casing — only in `CB_V3_CSS`, only `var(--cb3-elev-*)` |
 | V-08 | the only gradient is the named vignette |
 | V-09 | every selector scoped to `[data-cb-v3]` |
 | V-10 | `CB ` font families only |
-| V-11 | motion durations only from the v3 table; no keyframe/loop |
+| V-11 | motion durations only from the v3 table (units case-insensitive); no keyframe/loop/animation token at any casing |
 | V-12 | no `vw` on a v3 surface |
 
 Three properties make it evidence rather than a document:
@@ -479,6 +479,19 @@ because the exact trace is a property of CP-020a's first commit, not of this bra
 | Defect | Correction | Test that closes it |
 |---|---|---|
 | **D4** `NoProtectionDeletedTest` counted test methods, so "delete the assertion, keep the method" left both the pin and the migrated module green | per-file `assert*` call floors recomputed from the AST (`ASSERT_BASELINE`, `SEAM_ASSERT_BASELINE`), asserted `>=`; method counts kept as a second, coarser floor | `NoProtectionDeletedTest.test_the_assertion_calls_never_drop_below_the_cp_003_baseline`, `test_the_seam_proof_itself_never_loses_an_assertion` |
+
+## 6.3 Round 3 review correction (cbqa, D5)
+
+| Defect | Correction | Test that closes it |
+|---|---|---|
+| **D5** the banned-token scans were case-sensitive and matched `box-shadow` exactly, so `-webkit-box-shadow`, `Backdrop-Filter: Blur(8px)` and `900MS` all reported PASS in the gate **and** the audit; an `ANIMATION: spin INFINITE` with no duration also passed | one set of normalised patterns in `tests/cb_source_scope.py` (`GLASS`, `SHADOW`, `SHADOW_PROPERTY`, `ANIMATION`, `DURATION` with `re.I`) imported by both gates, so a fix cannot land in one and leave the other green; shadow declarations are matched by property regex (vendor prefix + casing) and still require the `var(--cb3-elev-*)` value | gate: `V3GateBitesTest.test_each_defect_class_trips_the_named_claim` (4 new case/vendor variants); audit: `tests/test_v3_visual_audit.py::V3AuditNormalisationTest.test_the_banned_token_scans_are_case_and_vendor_normalised` replays `static_claims` on the same mutated stylesheets |
+
+RED proven against the pre-D5 scans (temporarily reverting `GLASS`/`SHADOW`/`ANIMATION`/`DURATION` to
+their case-sensitive forms): **2 tests, FAILED (failures=8)** — the four gate controls report
+`AssertionError not raised` and the four audit controls report `'PASS' != 'FAIL'`; restored, 50
+focused tests OK (skipped=14). The font rule is unchanged: the contract's `type.families.cjk` stack
+(`"Noto Serif JP", …`) legitimately does not start with `CB `, so requiring every declaration to
+lead with a `CB ` family would ban the contract.
 
 ## 7. Known gaps and rulings needed
 

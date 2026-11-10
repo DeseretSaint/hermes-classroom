@@ -40,15 +40,19 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from tests.cb_source_scope import (  # noqa: E402
+    ANIMATION,
     DURATION,
+    GLASS,
     GRADIENT,
     HEX,
     PLUGIN_JS,
+    SHADOW,
     TOKEN_LITERAL_CONSTS,
     V3_CSS_CONST,
     V3_TOKEN_CONST,
     css_blocks,
     declarations,
+    is_shadow_property,
     literal_span,
     literal_text,
     split_selectors,
@@ -204,11 +208,11 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
     style = style_rules(css) if css is not None else []
     pairs = [(prop, value) for _, body in rules for prop, value in declarations(body)]
 
-    # V-06 glass
-    bans = [word for word in ("backdrop-filter", "backdropFilter", "blur(") if word in source]
+    # V-06 glass (D5: normalised — property names and functions are case-insensitive)
+    bans = sorted({match.group(0) for match in GLASS.finditer(source)})
     claims.append(claim(
         "V-06",
-        "No backdrop-filter, no blur and no glass anywhere in the module.",
+        "No backdrop-filter, no blur and no glass anywhere in the module (any casing).",
         status(not bans), {"found": bans, **({} if built else {"reason": not_built})},
     ))
 
@@ -218,17 +222,21 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
     # must not become a second, ungated home for paint declarations.
     for start, end in reversed(stylesheet_spans(source)):
         outside = outside[:start] + outside[end:]
-    shadow_values = [value for prop, value in pairs if prop == "box-shadow"]
+    # D5: any vendor prefix and any casing is a shadow declaration that paints.
+    shadow_values = [value for prop, value in pairs if is_shadow_property(prop)]
+    escaped_shadows = sorted({match.group(0) for match in SHADOW.finditer(outside)})
     shadow_ok = (
-        "box-shadow" not in outside.lower()
-        and "boxShadow" not in outside
-        and all(value.startswith("var(--cb3-elev-") and value.endswith(")") for value in shadow_values)
+        not escaped_shadows
+        and all(value.strip().startswith("var(--cb3-elev-") and value.strip().endswith(")")
+                for value in shadow_values)
     )
     claims.append(claim(
         "V-07",
-        "`box-shadow` appears only inside `CB_V3_CSS` and only as a `var(--cb3-elev-*)` token.",
+        "`box-shadow` (any vendor prefix or casing) appears only inside `CB_V3_CSS` and only as a "
+        "`var(--cb3-elev-*)` token.",
         status(shadow_ok),
-        {"declarations": len(shadow_values), "values": sorted(set(shadow_values)),
+        {"declarations": len(shadow_values), "values": sorted({v.strip() for v in shadow_values}),
+         "outside_stylesheet": escaped_shadows,
          **({} if built else {"reason": not_built})},
     ))
 
@@ -272,7 +280,7 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
          **({} if built else {"reason": not_built})},
     ))
 
-    # V-11 motion
+    # V-11 motion (D5: duration units and animation tokens are case-insensitive)
     motion = contract.get("motion") or {}
     expected = {name: f"{motion[name]}ms" for name in ("press", "lift", "route", "verdict", "complete")}
     table: dict[str, str] = {}
@@ -281,11 +289,10 @@ def static_claims(contract: dict, source: str) -> tuple[list[dict], dict]:
         if not DURATION.search(value):
             continue
         if prop.startswith("--cb3-dur-"):
-            table[prop[len("--cb3-dur-"):]] = value
+            table[prop[len("--cb3-dur-"):]] = value.strip()
         else:
-            escaped.append((prop, value))
-    animation = [word for word in ("@keyframes", "animation:", "animation-name", "infinite")
-                 if css is not None and word in css]
+            escaped.append((prop, value.strip()))
+    animation = sorted({match.group(0) for match in ANIMATION.finditer(css or "")})
     motion_ok = table == expected and not escaped and not animation
     claims.append(claim(
         "V-11",

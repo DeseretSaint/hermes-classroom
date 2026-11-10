@@ -271,8 +271,40 @@ def split_selectors(prelude: str) -> list[str]:
 
 
 GRADIENT = re.compile(r"[a-z-]*gradient\(", re.I)
-DURATION = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)\b")
+#: A duration with an ASCII case-insensitive unit: CSS units are case-insensitive, so ``900MS`` and
+#: ``0.9S`` must be seen exactly like ``900ms``.
+DURATION = re.compile(r"(?<![\w.-])(\d+(?:\.\d+)?)(ms|s)\b", re.I)
 HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+
+# --------------------------------------------------------------------------------------------
+# Normalised banned-token scans, shared by the v3 gate and the v3 audit.
+#
+# Reviewer round 3, D5: CSS property names, function names and units are ASCII case-insensitive,
+# and vendor prefixes are valid and paint. A case-sensitive string search for exactly
+# ``backdrop-filter`` / ``box-shadow`` / ``900ms`` therefore reports PASS on stylesheets that do
+# render a glass blur, a raw shadow or an out-of-table duration. Both gates import these patterns
+# so the two cannot drift apart.
+# --------------------------------------------------------------------------------------------
+
+#: Glass: ``backdrop-filter``, ``backdropFilter`` (the camel form), any casing, and ``blur(``.
+GLASS = re.compile(r"backdrop-?filter|blur\(", re.I)
+#: Any shadow property, optional vendor prefix, any casing; also the camel ``boxShadow`` form.
+SHADOW = re.compile(r"(?:-(?:webkit|moz|ms|o)-)?box-?shadow", re.I)
+#: A single declaration's property is a shadow declaration (``-webkit-box-shadow`` included).
+SHADOW_PROPERTY = re.compile(r"^(?:-(?:webkit|moz|ms|o)-)?box-shadow$", re.I)
+#: Animation / loop tokens, any casing (``@KEYFRAMES``, ``ANIMATION: spin INFINITE``).
+ANIMATION = re.compile(r"@keyframes|animation-name|animation\s*:|infinite", re.I)
+
+
+def is_shadow_property(prop: str) -> bool:
+    """True for ``box-shadow`` and every vendor-prefixed/case-varied spelling of it."""
+    return SHADOW_PROPERTY.match(prop.strip()) is not None
+
+
+def shadow_declaration_count(text: str) -> int:
+    """How many shadow declarations (any prefix, any casing) the text carries."""
+    return len(SHADOW.findall(text))
+
 
 #: GM-VISUAL-SPEC §2.5's shelf edge fade: a mask declaration, not a gradient surface. The v2 gate
 #: exempts exactly this one declaration, and a v3 gradient scan must not read it as a v3 gradient

@@ -428,6 +428,19 @@ class V3GateBitesTest(unittest.TestCase):
              lambda css: css + "\n@keyframes cb3-spin { from { transform: rotate(0); } }\n"),
             ("V3StylesheetTest", "test_no_viewport_unit_on_the_v3_surface",
              lambda css: css.replace("container-type: inline-size;", "padding: 4vw;")),
+            # D5: the same defect classes, spelled the way CSS actually allows. Property/function
+            # names and units are ASCII case-insensitive and vendor prefixes paint, so a
+            # case-sensitive string scan reported PASS on every one of these.
+            ("V3StylesheetTest", "test_box_shadow_only_inside_the_stylesheet_and_only_as_elevation_tokens",
+             lambda css: css.replace("box-shadow: var(--cb3-elev-1);",
+                                     "-webkit-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);")),
+            ("V3StylesheetTest", "test_no_backdrop_filter_and_no_blur",
+             lambda css: css.replace("container-type: inline-size;", "Backdrop-Filter: Blur(8px);")),
+            ("V3StylesheetTest", "test_motion_durations_come_only_from_the_motion_table",
+             lambda css: css.replace("transition: opacity var(--cb3-dur-route);",
+                                     "transition: opacity 900MS;")),
+            ("V3StylesheetTest", "test_no_looping_animation_or_keyframes",
+             lambda css: css.replace("container-type: inline-size;", "ANIMATION: spin INFINITE;")),
         ]
         for class_name, method, mutate in cases:
             with self.subTest(claim=f"{class_name}.{method}"):

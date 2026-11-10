@@ -40,16 +40,20 @@ import unittest
 from pathlib import Path
 
 from tests.cb_source_scope import (
+    ANIMATION,
     DURATION,
+    GLASS,
     GRADIENT,
     HEX,
     PLUGIN_JS,
     ROOT,
+    SHADOW,
     TOKEN_LITERAL_CONSTS,
     V3_CSS_CONST,
     V3_TOKEN_CONST,
     css_blocks,
     declarations,
+    is_shadow_property,
     literal_span,
     literal_text,
     split_selectors,
@@ -188,9 +192,10 @@ class V3StylesheetTest(unittest.TestCase):
         self.rules = css_blocks(self.css)
 
     def test_no_backdrop_filter_and_no_blur(self) -> None:
-        for banned in ("backdrop-filter", "backdropFilter", "blur("):
-            with self.subTest(banned=banned):
-                self.assertNotIn(banned, self.source)
+        # D5: property names and functions are case-insensitive, so a case-sensitive string search
+        # for `backdrop-filter` misses `Backdrop-Filter` and `Blur(`. GLASS is normalised.
+        found = GLASS.findall(self.source)
+        self.assertEqual(found, [], f"glass paint found in the module: {found[:8]}")
 
     def test_the_stylesheet_is_not_a_stub(self) -> None:
         # An empty CB_V3_CSS would satisfy every "must not contain" rule below vacuously.
@@ -204,15 +209,15 @@ class V3StylesheetTest(unittest.TestCase):
         # the v2 region, so exempting it here too would leave its content in no gate at all.
         for start, end in reversed(stylesheet_spans(self.source)):
             outside = outside[:start] + outside[end:]
-        self.assertNotIn("box-shadow", outside.lower())
-        self.assertNotIn("boxShadow", outside)
+        self.assertEqual(SHADOW.findall(outside), [],
+                         "a shadow escaped the v3 stylesheet (any vendor prefix, any casing)")
         shadows = [(prop, value) for _, body in self.rules for prop, value in declarations(body)
-                   if prop == "box-shadow"]
-        for _, value in shadows:
+                   if is_shadow_property(prop)]
+        for prop, value in shadows:
             self.assertRegex(
-                value,
+                value.strip(),
                 r"^var\(--cb3-elev-[a-z0-9-]+\)$",
-                "a v3 shadow must be an elevation token, never a raw recipe or a glow",
+                f"a v3 shadow ({prop}) must be an elevation token, never a raw recipe or a glow",
             )
 
     def test_the_only_gradient_is_the_named_vignette(self) -> None:
@@ -283,9 +288,10 @@ class V3StylesheetTest(unittest.TestCase):
             self.assertEqual(value, expected[beat], f"--cb3-dur-{beat}")
 
     def test_no_looping_animation_or_keyframes(self) -> None:
-        for banned in ("@keyframes", "animation:", "animation-name", "infinite"):
-            with self.subTest(banned=banned):
-                self.assertNotIn(banned, self.css)
+        # D5: at-rule names, property names and the `infinite` keyword are case-insensitive, so an
+        # `ANIMATION: spin INFINITE` with no duration used to pass every scan. ANIMATION is normalised.
+        found = ANIMATION.findall(self.css)
+        self.assertEqual(found, [], f"animation or loop token in the v3 stylesheet: {found[:8]}")
 
     def test_no_viewport_unit_on_the_v3_surface(self) -> None:
         # SPEC-V3 §3.1: v3 measures against the route container, never the window.

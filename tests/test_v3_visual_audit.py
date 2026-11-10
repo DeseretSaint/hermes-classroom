@@ -136,5 +136,64 @@ class V3AuditBuiltTest(unittest.TestCase):
         self.assertEqual(self.result.returncode, 0, self.result.stderr[-3000:])
 
 
+def load_audit_module():
+    """Import ``scripts/v3-audit.py`` by path so a control can replay ``static_claims``."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("coursebook_v3_audit", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class V3AuditNormalisationTest(unittest.TestCase):
+    """D5: the audit's banned-token scans must see the CSS a browser sees.
+
+    The gate and the audit are separate implementations of the same claims (§3 promises they agree),
+    so a fix in only one of them would pass its own tests and leave the other reporting green on a
+    glass blur, a raw shadow or a 900 ms transition. This control replays the audit's own
+    ``static_claims`` on the same compliant/mutated stylesheets ``V3GateBitesTest`` uses.
+    """
+
+    def setUp(self) -> None:
+        from tests.test_desktop_gate_scope import V3GateBitesTest
+
+        self.audit = load_audit_module()
+        self.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        self.builder = V3GateBitesTest("test_a_compliant_v3_block_passes_every_gated_claim")
+
+    def statuses(self, css: str) -> dict[str, str]:
+        _, summary = self.audit.static_claims(self.contract, self.builder.module_text(css=css))
+        return summary["claims"]
+
+    def test_the_compliant_block_passes_every_static_v3_claim(self) -> None:
+        statuses = self.statuses(self.builder.good_css())
+        for index in range(4, 13):
+            ident = f"V-{index:02d}"
+            self.assertEqual(statuses[ident], "PASS", f"{ident} on the compliant block")
+
+    def test_the_banned_token_scans_are_case_and_vendor_normalised(self) -> None:
+        good = self.builder.good_css()
+        cases = (
+            ("V-06", "Backdrop-Filter: Blur(8px);",
+             good.replace("container-type: inline-size;", "Backdrop-Filter: Blur(8px);")),
+            ("V-07", "-webkit-box-shadow",
+             good.replace("box-shadow: var(--cb3-elev-1);",
+                          "-webkit-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);")),
+            ("V-11", "900MS",
+             good.replace("transition: opacity var(--cb3-dur-route);", "transition: opacity 900MS;")),
+            ("V-11", "ANIMATION: spin INFINITE",
+             good.replace("container-type: inline-size;", "ANIMATION: spin INFINITE;")),
+        )
+        for ident, mutation, css in cases:
+            with self.subTest(claim=ident, mutation=mutation):
+                self.assertNotEqual(css, good, "the mutation did not apply")
+                self.assertEqual(
+                    self.statuses(css)[ident], "FAIL",
+                    f"{ident} reported PASS on {mutation!r}: the audit does not normalise the scan",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
