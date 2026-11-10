@@ -208,6 +208,14 @@ class V3AuditNormalisationTest(unittest.TestCase):
              good.replace("transition: opacity var(--cb3-dur-route);", "transition-duration: .4s;")),
             ("V-12", "padding: .5vw",
              good.replace("container-type: inline-size;", "padding: .5vw;")),
+            # CP-003c (R1): units are ASCII case-insensitive, so the audit's V-12 must see
+            # `100VW` / `1E3VW` exactly like `100vw`. Without the flag it reported PASS.
+            ("V-12", "padding: 100VW",
+             good.replace("container-type: inline-size;", "padding: 100VW;")),
+            ("V-12", "padding: 100Vw",
+             good.replace("container-type: inline-size;", "padding: 100Vw;")),
+            ("V-12", "padding: 1E3VW",
+             good.replace("container-type: inline-size;", "padding: 1E3VW;")),
         )
         for ident, mutation, css in cases:
             with self.subTest(claim=ident, mutation=mutation):

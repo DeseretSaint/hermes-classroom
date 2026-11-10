@@ -152,7 +152,7 @@ def v2_hex_scan(source: str) -> list[str]:
 class SeamDirectionTest(unittest.TestCase):
     def test_without_v3_material_the_v2_region_is_the_whole_file(self) -> None:
         # Superseded the moment the gate is armed: CP-020a's compliant build *has* v3 material, and
-        # this claim must not red it. The hand-off is a skip, not an edit — §6.4 forbids CP-020a
+        # this claim must not red it. The hand-off is a skip, not an edit — §6.1 (D1) forbids CP-020a
         # editing an assertion, and the converse test below keeps the skip from being a hole.
         if gate_is_armed():
             self.skipTest("V3_REQUIRED is True: v3 material is expected; the v3 gate owns this state")
@@ -470,6 +470,16 @@ class V3GateBitesTest(unittest.TestCase):
                                      "transition-duration: .4s;")),
             ("test_no_viewport_unit_on_the_v3_surface",
              lambda css: css.replace("container-type: inline-size;", "padding: .5vw;")),
+            # CP-003c (R1): a CSS unit is ASCII case-insensitive, so `100VW` is the same legal
+            # viewport measurement as `100vw`. The numeric grammar was shared after D6 but `VW` had
+            # no `re.I`, so every uppercase spelling was invisible to the scan and this claim
+            # reported PASS on a declaration a browser paints.
+            ("test_no_viewport_unit_on_the_v3_surface",
+             lambda css: css.replace("container-type: inline-size;", "padding: 100VW;")),
+            ("test_no_viewport_unit_on_the_v3_surface",
+             lambda css: css.replace("container-type: inline-size;", "padding: 100Vw;")),
+            ("test_no_viewport_unit_on_the_v3_surface",
+             lambda css: css.replace("container-type: inline-size;", "padding: 1E3VW;")),
         )
         good = self.good_css()
         for method, mutate in cases:
