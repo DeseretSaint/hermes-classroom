@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""H-197 — the Press Plate acceptance block, run over the committed cover files.
+"""H-197 — the Press Plate acceptance block, run over the generator's fallback bytes.
+
+CP-014 moved the bundled packs to the CP-012 painted plates, so the Press Plate is no longer a
+shipped file; it remains the composed typographic fallback for a pack that declares no cover.
+This script therefore materialises the builder's Press Plate output into a temporary tree and runs
+the same acceptance block over it, so the fallback lane stays provable without a shipped file.
 
 The art direction measured the host image pipeline and wrote a hard acceptance list for a cover
 plate. The plates in this repository are printed by `bundled/packs/build_demo_packs.py` instead of
@@ -211,18 +216,38 @@ def check_plate(kind: str, slug: str, palette: set[tuple[int, int, int]], failur
 
 
 def main() -> int:
+    import importlib.util
+    import tempfile
+
+    spec = importlib.util.spec_from_file_location(
+        "h197_fallback_builder", ROOT / "bundled" / "packs" / "build_demo_packs.py"
+    )
+    if spec is None or spec.loader is None:
+        print("cannot load the demo pack builder")
+        return 1
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    scratch = Path(tempfile.mkdtemp(prefix="coursebook-press-plate-"))
+    global PACKS
+    PACKS = scratch
+    for kind, _slug, _palette in PLATES:
+        folder = scratch / kind / "content"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "cover-16x9.png").write_bytes(builder.cover_plate_png(kind))
+        (folder / "cover-3x2.png").write_bytes(builder.cover_crop_png(kind))
+
     failures: list[str] = []
-    for kind, slug, palette in PLATES:
-        check_plate(kind, slug, palette, failures)
+    for kind, _slug, palette in PLATES:
+        check_plate(kind, kind, palette, failures)
     if failures:
         for failure in failures:
             print(f"FAIL  {failure}")
         print(f"\n{len(failures)} acceptance failure(s)")
         return 1
     print("Press Plate acceptance: PASS")
-    for kind, slug, palette in PLATES:
-        master = PACKS / slug / "content" / "cover-16x9.png"
-        crop = PACKS / slug / "content" / "cover-3x2.png"
+    for kind, _slug, palette in PLATES:
+        master = PACKS / kind / "content" / "cover-16x9.png"
+        crop = PACKS / kind / "content" / "cover-3x2.png"
         print(
             f"  {kind:9s} {COVER_W}x{COVER_H} master {master.stat().st_size:>5d} B · "
             f"{CROP_W}x{COVER_H} crop {crop.stat().st_size:>5d} B · 5 inks "

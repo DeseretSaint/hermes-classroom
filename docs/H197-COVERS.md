@@ -1,5 +1,12 @@
 # H-197 — the illustration lane: Press Plate covers
 
+> **Superseded as a shipped lane by CP-014, kept as the fallback.** This document is the H-197
+> point-in-time record. CP-014 (`wt/cp-014-pack-media`) now ships the approved CP-012 painted plates
+> as role `cover` in all three bundled packs (3:2 master 1200x800 plus a 4:5 crop), and the parent
+> pack moves to cb.pack v2. The Press Plate builder and the composed typographic cover remain the
+> fallback for a pack that declares no cover. See `docs/concept-parity/COVERS.md` and
+> `docs/ASSET-PROVENANCE.md` for the current shipped state.
+
 Branch `wt/h197-illustration`, based on master `179880d` plus a `--no-ff` merge of the completed
 Workshop branch `wt/t_5ef6be7f` (H-196a, tip `e3d01f7`). This pass is additive: no H-196/H-196a
 commit, frame or audit file was rewritten.

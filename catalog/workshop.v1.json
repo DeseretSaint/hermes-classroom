@@ -1,16 +1,20 @@
 {
   "contract": "cb.workshop",
   "contract_version": 1,
-  "generated": "2026-11-08",
+  "generated": "2026-11-10",
   "note": "Editorial catalogue for the local Workshop. Identity, hash, structure and trust facts are read from each pack's own manifest and re-verified at read time; this file adds only the editorial fields a manifest does not carry (categories, one-sentence outcome, creator note, what the course will not teach, changelog, cover choice). It is not a marketplace index: no ratings, no learner counts, no prices, no publication state.",
   "packs": [
     {
       "pack_id": "japanese-affection-context-l0",
-      "pack_version": "2.1.0",
+      "pack_version": "2.2.0",
       "directory": "japanese-affection-context-l0",
-      "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
+      "content_hash": "sha256:e5dc96b86688fc17523a1f5cf4ad23688ae575151d1c695adf5b4f7f5243c2c5",
       "featured": true,
-      "categories": ["Languages", "Japanese", "Register"],
+      "categories": [
+        "Languages",
+        "Japanese",
+        "Register"
+      ],
       "outcome": "Choose the Japanese expression that fits the person you are speaking to, and say why it fits.",
       "creator_note": "Written as the sample L0 classroom: four lines, three addressees, one decision. Original teaching text; the only bundled media are a synthetic narration clip and a deterministic relationship map.",
       "will_not_teach": [
@@ -19,12 +23,17 @@
         "Listening or speaking assessment: no listening or pronunciation evidence is graded here."
       ],
       "cover": {
-        "path": "content/cover-16x9.png",
-        "crop": "content/cover-3x2.png",
-        "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
-        "caption": "Pack visual — generated plate; not a diagram of the course."
+        "path": "content/cover-3x2.png",
+        "crop": "content/cover-4x5.png",
+        "alt": "Painted cover plate: a cafe counter and stool across a paper ground, with a paper-cream lantern and a noren curtain above. Illustration only; not a diagram of the course, and it carries no text or register fact.",
+        "caption": "Cover plate — painted illustration, not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.2.0",
+          "date": "2026-11-10",
+          "note": "2.2.0 replaces the Press Plate cover with the approved CP-012 painted plate (3:2 master plus its exact 4:5 centre crop) as role 'cover'. Model output, textless, decorative; no register fact. The relationship map remains the schematic. No wording, check or source changed."
+        },
         {
           "version": "2.1.0",
           "date": "2026-11-08",
@@ -44,11 +53,15 @@
     },
     {
       "pack_id": "parent-measurement-practice",
-      "pack_version": "1.0.0",
+      "pack_version": "2.0.0",
       "directory": "parent-measurement-practice",
-      "content_hash": "sha256:92ee4a79c2ea469c6567ccadbe9fc55290fdd576f28091546372aa87ac36db3d",
+      "content_hash": "sha256:fdbdfcb30a52b290dd52e44f46d7598c552573f505b27146062a16086e681782",
       "featured": false,
-      "categories": ["For parents", "Measurement", "Primary maths"],
+      "categories": [
+        "For parents",
+        "Measurement",
+        "Primary maths"
+      ],
       "outcome": "Read a measuring jug and double a quantity, with a parent guiding and the answers kept off the learner page.",
       "creator_note": "Prepared for a parent to run, not for a child talking to a tutor. The learner page carries the two tasks; the answer guide is a separate file the manifest declares by role.",
       "will_not_teach": [
@@ -56,8 +69,18 @@
         "Any hazard: the pack uses water and a jug, with no heat, sharp tools or chemicals.",
         "A child-facing chat: this recipe is parent-led, and the parent records what happened."
       ],
-      "cover": null,
+      "cover": {
+        "path": "content/cover-3x2.png",
+        "crop": "content/cover-4x5.png",
+        "alt": "Painted cover plate: a blank measuring jug, a bowl and oranges on a table with field-green linen. Illustration only; the jug has no graduations or numbers, and it states no quantity.",
+        "caption": "Cover plate — painted illustration, not a diagram of the course."
+      },
       "changelog": [
+        {
+          "version": "2.0.0",
+          "date": "2026-11-10",
+          "note": "2.0.0 moves the parent fixture to cb.pack v2 and adds the approved CP-012 painted plate as role 'cover' (3:2 master plus its exact 4:5 centre crop). The jug is drawn blank and the plate states no quantity; the learner page still carries no answer key."
+        },
         {
           "version": "1.0.0",
           "date": "2026-11-06",
@@ -67,11 +90,15 @@
     },
     {
       "pack_id": "technical-demo-pack",
-      "pack_version": "2.0.0",
+      "pack_version": "2.1.0",
       "directory": "technical-demo-pack",
-      "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
+      "content_hash": "sha256:6201280f803060a6f66c6ad50cebdd3c467e34f3474ba483d3236777864f8b36",
       "featured": false,
-      "categories": ["Technical", "Pack format", "For authors"],
+      "categories": [
+        "Technical",
+        "Pack format",
+        "For authors"
+      ],
       "outcome": "Read what a pack manifest declares and what its trust labels can and cannot prove.",
       "creator_note": "A technical demo about this repository's own pack contract. Its claims are the manifest schema, the vocabulary and the import reading order. It bundles no media and cites no external work.",
       "will_not_teach": [
@@ -80,12 +107,17 @@
         "A human review claim: its two checks are recorded as unreviewed, which the second section explains."
       ],
       "cover": {
-        "path": "content/cover-16x9.png",
-        "crop": "content/cover-3x2.png",
-        "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
-        "caption": "Pack visual — generated plate; not a diagram of the course."
+        "path": "content/cover-3x2.png",
+        "crop": "content/cover-4x5.png",
+        "alt": "Painted cover plate: an open blank manual on a bench edge with a stack of loose sheets beside it. Illustration only; its pages are blank, and it is not a diagram of the pack format.",
+        "caption": "Cover plate — painted illustration, not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.1.0",
+          "date": "2026-11-10",
+          "note": "2.1.0 replaces the Press Plate cover with the approved CP-012 painted plate (3:2 master plus its exact 4:5 centre crop) as role 'cover'. Model output with blank pages; it states no field, count or schema rule."
+        },
         {
           "version": "2.0.0",
           "date": "2026-11-08",

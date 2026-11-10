@@ -1,0 +1,139 @@
+{
+  "card": "CP-012",
+  "crop_window": [
+    280,
+    920
+  ],
+  "min_ink": 150,
+  "min_retained": 0.6,
+  "covers": [
+    {
+      "pack": "japanese-affection-context-l0",
+      "accent": "none",
+      "motifs": [
+        {
+          "mark": "lantern",
+          "bbox": [
+            300,
+            50,
+            430,
+            425
+          ],
+          "painted_px": 23041,
+          "retained": 1.0
+        },
+        {
+          "mark": "noren",
+          "bbox": [
+            640,
+            0,
+            900,
+            410
+          ],
+          "painted_px": 66509,
+          "retained": 1.0
+        },
+        {
+          "mark": "counter",
+          "bbox": [
+            297,
+            530,
+            903,
+            800
+          ],
+          "painted_px": 142452,
+          "retained": 1.0
+        }
+      ]
+    },
+    {
+      "pack": "parent-measurement-practice",
+      "accent": "field",
+      "motifs": [
+        {
+          "mark": "jug",
+          "bbox": [
+            298,
+            345,
+            482,
+            578
+          ],
+          "painted_px": 29316,
+          "retained": 1.0
+        },
+        {
+          "mark": "bowl",
+          "bbox": [
+            498,
+            300,
+            712,
+            578
+          ],
+          "painted_px": 48801,
+          "retained": 1.0
+        },
+        {
+          "mark": "oranges",
+          "bbox": [
+            698,
+            370,
+            952,
+            620
+          ],
+          "painted_px": 43475,
+          "retained": 1.0
+        },
+        {
+          "mark": "table",
+          "bbox": [
+            298,
+            515,
+            905,
+            585
+          ],
+          "painted_px": 38843,
+          "retained": 1.0
+        }
+      ]
+    },
+    {
+      "pack": "technical-demo-pack",
+      "accent": "none",
+      "motifs": [
+        {
+          "mark": "manual",
+          "bbox": [
+            598,
+            295,
+            905,
+            578
+          ],
+          "painted_px": 66263,
+          "retained": 1.0
+        },
+        {
+          "mark": "sheets",
+          "bbox": [
+            296,
+            340,
+            440,
+            578
+          ],
+          "painted_px": 20608,
+          "retained": 1.0
+        },
+        {
+          "mark": "bench",
+          "bbox": [
+            296,
+            568,
+            904,
+            634
+          ],
+          "painted_px": 32231,
+          "retained": 1.0
+        }
+      ]
+    }
+  ]
+}
