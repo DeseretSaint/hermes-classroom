@@ -3575,6 +3575,15 @@ def artifact_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(timespec="microseconds")
     handle = f"{artifact['id']}_{int(datetime.now(timezone.utc).timestamp()) + 300}"
     source_ids = provenance.get("source_ids")
+    # A take-home export binds its artifact to `<lesson_id>:v<n>`. The contract types
+    # `provenance.source_ids` as identifiers, so the version suffix cannot travel there; a row
+    # written before that rule (or deduped onto one) must still answer. Keep the identifier part
+    # and drop anything that is not one, rather than failing the whole read.
+    normalized_sources: list[str] = []
+    for item in source_ids or []:
+        candidate = re.split(r"[:\s]", str(item), maxsplit=1)[0]
+        if 8 <= len(candidate) <= 128 and re.match(r"^[A-Za-z0-9][A-Za-z0-9_-]*$", candidate):
+            normalized_sources.append(candidate)
     result = {
         "artifact_id": artifact["id"],
         "course_id": artifact["course_id"],
@@ -3586,7 +3595,7 @@ def artifact_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             "generator": provenance.get("generator"),
             "model": provenance.get("model"),
             "prompt_hash": provenance.get("prompt_hash"),
-            "source_ids": [str(item) for item in (source_ids or [])][:50],
+            "source_ids": normalized_sources[:50],
             "notes": provenance.get("notes"),
         },
         "download": {
