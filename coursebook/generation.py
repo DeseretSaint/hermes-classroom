@@ -4417,6 +4417,18 @@ def _plan_schema_for_document(
     return PLAN_SCHEMA_V2 if v2 else PLAN_SCHEMA_V1
 
 
+def _vocabulary_rule_applies(subject_domain: str | None, locale: str | None) -> bool:
+    """Whether the H-89/H-187 vocabulary-sequence rule governs this plan.
+
+    The authority is ``policy.normalise_subject_domain``: a declared domain always wins, so a
+    Japanese-language cooking course is ``cooking`` and a Spanish brake procedure is
+    ``technical_procedure``. Only a brief that declares no domain at all falls back to the
+    locale (the pre-v10 shape), where the historical behaviour — a locale meant a language
+    course — is kept, because there is no other declaration to consult.
+    """
+    return capability_policy.normalise_subject_domain(subject_domain, locale) == "language"
+
+
 def enforce_plan_rules(
     plan: dict[str, Any],
     *,
@@ -4428,6 +4440,7 @@ def enforce_plan_rules(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """Dispatch on the document's own schema marker, never on a caller's guess.
 
@@ -4438,6 +4451,10 @@ def enforce_plan_rules(
 
     Truncation is judged first and merged into whatever structural reasons the rule set found: a
     clipped prose value is a regeneration trigger on either schema, never a stored artifact.
+
+    ``subject_domain`` is the declared domain the brief carried. The language-only rules
+    (H-187 vocabulary sequencing) resolve against it, not against ``locale``: every course
+    carries a locale, so a locale test is true for a cooking or repair course too.
     """
     truncated = _prose_cap_reasons(plan, _plan_schema_for_document(plan, parent_brief))
     try:
@@ -4454,6 +4471,7 @@ def enforce_plan_rules(
                 # H-195: the goal is what the drift check compares against. Dropping it here made
                 # the rule unreachable on the real path, so it is threaded through explicitly.
                 goal=goal,
+                subject_domain=subject_domain,
             )
         else:
             _enforce_plan_rules_v1(
@@ -4466,6 +4484,7 @@ def enforce_plan_rules(
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
                 goal=goal,
+                subject_domain=subject_domain,
             )
     except _RuleViolation as exc:
         if truncated:
@@ -4486,6 +4505,7 @@ def _enforce_plan_rules_v1(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it.
 
@@ -4579,8 +4599,14 @@ def _enforce_plan_rules_v1(
     # language: a non-language brief is never asked for them (the prompt carries no vocabulary
     # block at all), so a non-language plan that happens to set the field cannot satisfy an
     # inventory rule and used to be refused twice with no path forward. The field is inert there;
-    # the rule stays exactly as strict whenever a locale declares a language.
-    if locale:
+    # the rule stays exactly as strict whenever a course declares a language.
+    #
+    # CP-015: "declares a language" is the declared DOMAIN, not the presence of a locale. Every
+    # course carries a locale (en-US on a repair or cooking course), so the earlier `if locale:`
+    # gate applied a language-only rule to every non-language course and refused it twice. The
+    # domain authority is `policy.normalise_subject_domain`, which consults the locale only when
+    # no domain was declared — the pre-v10 shape, which stays conservative.
+    if _vocabulary_rule_applies(subject_domain, locale):
         reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
@@ -4843,6 +4869,7 @@ def _enforce_plan_rules_v2(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """The §5 blueprint rules. Structure first, then the shared tail.
 
@@ -5008,9 +5035,9 @@ def _enforce_plan_rules_v2(
         goal=goal,
     )
 
-    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187: gated on
-    # a declared language for the same reason as the v1 path above.
-    if locale:
+    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187 gated
+    # them on a declared language; CP-015 resolves "declared" from the domain, not the locale.
+    if _vocabulary_rule_applies(subject_domain, locale):
         reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
@@ -7951,6 +7978,7 @@ def run_plan_job(
                     parent_brief=parent_brief,
                     frequency_selection=frequency_selection,
                     goal=planning_goal,
+                    subject_domain=subject_domain,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
