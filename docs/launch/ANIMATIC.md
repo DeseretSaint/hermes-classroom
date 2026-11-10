@@ -24,7 +24,12 @@ Rebuild, from a clean checkout:
 ```bash
 node scripts/cp-animatic.mjs            # frames + animatic.mp4 + manifest.json
 node scripts/cp-animatic.mjs --no-video # frames only
+node scripts/cp-animatic.mjs --out /tmp/animatic-check   # rebuild somewhere else and compare
 ```
+
+Measured on 2026-11-10: a rebuild into a second output directory produced **byte-identical** frames
+and MP4 (`cmp` clean on all 12 PNGs and on `animatic.mp4`, same 2,036,868 bytes, same sha256), so the
+artefact in this commit is reproducible from the spec, the plates and the two OFL font files.
 
 The renderer reads `contracts/cb.tokens.v3.json` `modes.light` at build time and the product's own
 typefaces (`assets/fonts/CBDisplay-VF.woff2`, `assets/fonts/CBUI-VF.woff2`). It draws no product UI:
