@@ -41,15 +41,17 @@ over `origin/master` `3fb3779` and the measured commit `b9f4a19`.
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 12, 13, 14, 15. Partial: 5, 6, 10. Gate 9 (license) closed on
-2026-11-10: MIT, `LICENSE` at `0d17824`.
+in §0 is closed. Open gates: 7, 12, 13, 14, 15. Partial: 5, 6. Gate 9 (license) closed on
+2026-11-10: MIT, `LICENSE` at `0d17824`. Gate 10 (public repository) is met by measurement on
+2026-11-10: the repository is public and an anonymous clone of `master` resolves.
 
 ## 0. Hard operator gate
 
 **Do not submit to the plugin catalog or store, publish a release, create a public release tag,
 open a catalog pull request, or announce Coursebook as installable until DeseretSaint gives
-explicit final sign-off in chat.** GitHub commits and pushes to the private source repository are
-the authorized backup path; they are not publication. Release verification and evidence collection
+explicit final sign-off in chat.** GitHub commits and pushes to the source repository are
+the authorized backup path; they are not publication, and they do not authorise a catalog merge, a
+tag, an announcement or the contest form. Release verification and evidence collection
 may continue, but every publication gate below stays closed until that sign-off.
 
 Status of this section after the H-111 truth pass (2026-11-08): **unchanged and closed.** No gate
@@ -58,6 +60,12 @@ This pass reconciled documents with measurements on the release candidate and re
 branch-only evidence. The earlier harness evidence (`docs/HARNESS-E2E.md`, branch
 `wt/harness-e2e-proof` at `111c7e9`) remains unmerged engineering evidence and does not satisfy gates
 7 or 13.
+
+**What changed since that pass, all of it measured:** `LICENSE` exists (MIT, 2026-11-10, gate 9), the
+repository is public and clones anonymously (gate 10, measured 2026-11-10), and the catalog entry is
+submitted as a draft pull request (`NousResearch/hermes-agent#152920`, opened 2026-11-10, unmerged,
+gate 12 still open). Section §0 itself is unchanged: merging that pull request, tagging, announcing
+and submitting the contest form still need DeseretSaint's explicit sign-off.
 
 ## 1. Gates in order
 
@@ -75,14 +83,15 @@ invalidates the earlier evidence.
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b9f4a19` and no video exists. Gate 5 and the recording path must close first | [ ] |
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `b9f4a19` | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
-| 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
-| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The pull request stays closed until gates 5, 7, 9 and 10 close | [x] |
+| 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
+| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The draft pull request exists: `NousResearch/hermes-agent#152920`, opened 2026-11-10, pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading, and it stays draft until gates 5 and 7 close | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
 
-Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10.
+Open gates: 7, 12, 13, 14, 15. Partial: 5, 6. Gate 9 (MIT license) and gate 10 (repository measured
+public, anonymous clone of `master` resolves) are closed as of 2026-11-10.
 
 Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
 fixed: H-85's gate failed `7d0f9cf` on a P0 null-runtime crash in the course → section path and on
@@ -274,7 +283,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
 | ~~License absent~~ (closed 2026-11-10) | MIT `LICENSE` at `0d17824`; redistribution is lawful now, publication stays closed under §0 | DeseretSaint |
-| Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
+| Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified on this candidate, so they are not blockers: 83/83 `cb.rpc` v23 methods mounted with no
@@ -289,20 +298,21 @@ resolved for the recording.
 
 | Item | Value |
 | --- | --- |
-| Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
+| Repository | `https://github.com/DeseretSaint/hermes-classroom` (public; `master` is pushed and clones anonymously) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
 | Release candidate commit | `b9f4a197e42e4f033298d94608fcb5b63640b094` — frozen master: the H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture); the diff from `df052ea` is `docs/` and `audit/` only, and `desktop/plugin.js` is still `cd862140…c516` |
 | Measured on that commit | suite `Ran 2747 tests in 410.301s … OK (skipped=1)`; `cb.rpc` v20 / 73 methods / 73 handlers; `cb.db` v12; `desktop/plugin.js` sha256 `cd862140…c516`; M4 62 frames, 15/15 claims PASS (audit measured on `ab6dc7e`, plugin pin unchanged, not regenerated) |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
-| Catalog draft | `catalog/coursebook.yaml` pins this documents commit, validator `OK: 1 file(s) valid`; not submitted |
-| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
+| Catalog entry | Submitted as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` (open draft, unmerged), pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading; the in-repo review copy `catalog/coursebook.yaml` pins `61cdb03`, validator `OK: 1 file(s) valid` |
+| Checklist | sections 1-7 of this file: five gates open (`[ ]`: 7, 12, 13, 14, 15) and two partial (`[~]`: 5, 6) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
 code commit `b9f4a19` one below it, because an entry cannot carry its own hash. The numbers above are
 measurements of `b9f4a19`, and the catalog pin was moved to the matching documents commit on the same
-branch. That documents commit is not on the remote yet, so its `docs_url` and the six screenshot URLs
-resolve only after the release branch is pushed — re-check all seven for 200 at that point, as H-181
-did. The catalog pull request moves `sha`, `docs_url` and the docs record together once gates 5, 7, 9
-and 10 close. The tree at `b9f4a19` is the one the gates ran on.
+branch. That documents commit `61cdb03` is on `origin/master`, so its `docs_url` and the six
+screenshot URLs resolve; they were fetched for 200 and hash-matched on 2026-11-09, as H-181 requires.
+The catalog pull request was opened as a draft on 2026-11-10 (`NousResearch/hermes-agent#152920`)
+and moves `sha`, `docs_url` and the docs record together; merging it, tagging and announcing stay
+gated by §0 and by gates 5 and 7. The tree at `b9f4a19` is the one the gates ran on.

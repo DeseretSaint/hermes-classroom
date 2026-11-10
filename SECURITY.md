@@ -3,17 +3,18 @@
 ## Supported versions
 
 Coursebook ships as a Hermes Desktop plugin from this repository. There is no published release
-yet: the catalog entry is withheld and no tag exists, so only the commit currently pinned by
-`catalog/coursebook.yaml` is supported for security reports. Older commits are not maintained.
+yet: the catalog entry is an unmerged draft pull request and no tag exists, so only the commit this
+repository's `README.md` names as the current candidate is supported for security reports. Older
+commits are not maintained.
 
 ## Reporting a vulnerability
 
 Do not open a public issue for a security problem. Use GitHub's private vulnerability reporting on
 `https://github.com/DeseretSaint/hermes-classroom` (Security → Report a vulnerability), or contact
-the maintainer through the repository owner account. This repository is private during the contest
-period, so the advisory path is the only one that stays confidential; if it is unavailable to you,
-say so in a plain issue that contains no exploit detail and the maintainer will open a private
-channel.
+the maintainer through the repository owner account. The repository is public, so a plain issue is
+readable by anyone; the private advisory path is the only confidential route. If it is unavailable
+to you, say so in a plain issue that contains no exploit detail and the maintainer will open a
+private channel.
 
 Please include: the commit you tested, the Hermes Agent version, the exact command or UI path, what
 you expected, what happened, and the smallest reproduction you have. Do not include real learner

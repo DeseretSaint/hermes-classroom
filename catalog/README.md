@@ -1,9 +1,11 @@
 # Catalog draft
 
-`coursebook.yaml` is a draft entry for the Hermes plugin catalog. It is not submitted. The
-catalog lives in the `hermes-agent` repository and is merged by a Nous maintainer through a pull
-request; this directory keeps the entry under review in the plugin repository so the fields are
-tested before the PR.
+`coursebook.yaml` is the draft entry this repository keeps under review. The catalog lives in the
+`hermes-agent` repository and is merged by a Nous maintainer through a pull request. The submitted
+entry is `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open draft pull
+request; until that merges, the catalog `hermes-agent` ships does not resolve `coursebook`. That
+pull request is authoritative where the two differ: it pins a later commit on `master` and points
+`docs_url` at the README's `#install-locally` heading, while this review copy still pins `61cdb03`.
 
 ## Pin policy
 
