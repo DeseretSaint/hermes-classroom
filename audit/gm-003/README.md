@@ -380,8 +380,12 @@ unfenced.
 - `disconnect` joins `_PROCEDURE_VERB_TOKENS` (unambiguous imperative).
 - `_DETERMINER_ONLY_PROCEDURE_VERBS = {break, clean, polish, refill}` is the second half of the
   vocabulary: these are ordinary scene words (`clean service bay`, `break room`, `polish rag`,
-  `refill station`), so they are refused only when they take an object (`clean **the** head`),
-  never by the verb-initial test.
+  `refill station`), so they are not refused by the unambiguous verb-initial test. They are
+  refused when they take an object: verb-initial with a bare object (`Clean head`, `Refill
+  coolant`, `Polish lens`, `Break seal`) or anywhere with a determiner (`clean the head`). A
+  verb-initial use stays legal only when the phrase names a selected-grammar scene cue
+  (`clean service bay`). (Round 12 corrected this: the round-11 implementation required a
+  determiner, so bare-object imperatives passed — see the round-12 section below.)
 - `_procedure_verb_base(token, verbs=...)` now accepts the vocabulary to resolve against; the
   verb-initial test passes `_PROCEDURE_VERB_TOKENS` and the anywhere-in-phrase determiner test
   uses the default (both sets). Gerund resolution (`cleaning`, `disconnecting`) inherits the same
@@ -412,3 +416,44 @@ of defence. `world.*` is still absent from the published `rpc.v23.json`, so regi
 fenced and non-dispatchable (additive integration bump); the media seam is a deterministic fake;
 the `world_assets` role vocabulary follows the frozen 0013 CHECK; create-time auto-queue is owned
 by GM-002.
+
+## Review round 12 — sentinel N1: a bare object sheltered the ambiguous verbs
+
+Round 11 fenced `clean`/`break`/`polish`/`refill` only when a determiner followed the verb, so the
+imperative shape without an article — `Clean head`, `Refill coolant`, `Polish lens`, `Break seal`,
+`Then clean head` — was accepted on concepts (3 provider calls, stored, in 3/3 prompts) and on the
+approved-style kit path (2 new calls, 2/2 kit prompts). A course titled `Clean head` with no patch
+leaked verbatim into 3/3 prompts.
+
+**Fix (tests first), closing the shape rather than the string**
+
+- `_verb_initial_bare_object(value)` — the phrase opens (after leading discourse words) with a
+  verb from `_DETERMINER_ONLY_PROCEDURE_VERBS`.
+- `_names_grammar_owned_scene(value, grammar)` — the phrase contains a selected grammar's authored
+  motif as a contiguous token run.
+- `_plate_text_problems(value, grammar)` refuses `presentation_names_procedure_or_value` for a
+  verb-initial bare object **unless** the grammar owns a scene phrase in it, so `clean service bay`
+  stays legal while `Clean head` is refused. Both the patch refusal
+  (`presentation_motif_problems`) and every `_plate_safe()` prompt site share this predicate.
+- The class-closing table now walks the **whole** frozen verb list × {determiner form
+  (`<verb> the component`), bare-object form (`<verb> component`), leading-adverb form (`Then
+  <verb> component`)} for every grammar, field and prompt role, so a future omission cannot pass.
+
+**Tests** — `test_presentation_motifs_cannot_name_a_bare_object_procedure` (five bare-object
+motifs refused on concepts and the approved-style kit, 0 rows / 0 jobs / 0 calls, `clean service
+bay` still spends 3) and `test_title_or_goal_cannot_name_a_bare_object_procedure` (title-only
+`Clean head` and goal-only `Refill coolant` fall back / omit in 3/3 prompts, stored brief
+verbatim). Red: `audit/gm-003/red-attempt12.txt` (3 tests, 15 intended failures). Green:
+`audit/gm-003/green-attempt12.txt` (3 OK), `test_world-attempt12.txt` (44 OK), regression set
+319 OK (`regression-attempt12.txt`), predicate probe `predicate-attempt12.txt`, full suite in
+`full-attempt12.log`.
+
+**Residual paths (unchanged, token-level heuristics, not a semantic classifier):** a procedure
+phrased as a bare noun phrase with no digit, unit, spelled quantity, fraction or procedure verb
+(`valve clearance table`) is not detected; a bare-object imperative whose object happens to
+contain a selected-grammar motif (e.g. `Clean service bay` used as an instruction rather than a
+place cue) is accepted by design, since the carve-out cannot distinguish place from instruction
+at token level; the workshop hard negatives remain the second line of defence. `world.*` is still
+absent from the published `rpc.v23.json` (additive integration bump); the media seam is a
+deterministic fake; the `world_assets` role vocabulary follows the frozen 0013 CHECK; create-time
+auto-queue is owned by GM-002.

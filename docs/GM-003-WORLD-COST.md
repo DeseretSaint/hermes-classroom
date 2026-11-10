@@ -118,9 +118,22 @@ fence remains prompt-local.
 ## Round-11 frozen-verb fence cost
 
 Round 11 completes the procedure vocabulary: `disconnect` joins the unambiguous set and
-`clean`/`break`/`polish`/`refill` are refused only when they take an object, so a caller motif such
-as `Clean the head` is refused before any world row, job or provider call (**0** image calls) while
-the native scene `clean service bay` still succeeds at exactly the 3 boards + kit cost. A course
-titled `Clean the head` is not refused: the prompt falls back to the grammar label and omits the
-unsafe capability clause, so it costs the same 3 boards + kit with **0** extra model calls. No
-cache-key or `prompt_hash` change.
+`clean`/`break`/`polish`/`refill` are refused when they take an object — verb-initial with a bare
+object or anywhere with a determiner (round 12 corrected the round-11 implementation, which
+required a determiner) — so a caller motif such as `Clean the head` or `Clean head` is refused
+before any world row, job or provider call (**0** image calls) while the native scene
+`clean service bay` still succeeds at exactly the 3 boards + kit cost. A course titled `Clean
+head` is not refused: the prompt falls back to the grammar label and omits the unsafe capability
+clause, so it costs the same 3 boards + kit with **0** extra model calls. No cache-key or
+`prompt_hash` change.
+
+## Round-12 bare-object fence cost
+
+Round 12 closes the imperative *shape*: a determiner-only scene verb that opens the phrase takes a
+bare object (`Clean head`, `Refill coolant`, `Polish lens`, `Break seal`, `Then clean head`) and is
+refused before any world row, job or provider call (**0** image calls), unless the phrase names a
+selected-grammar scene cue (`clean service bay`). The check is the same local predicate — no extra
+model call on the accept path — and it is shared by the patch refusal and every prompt
+interpolation site, so a title-only or goal-only leak costs 3 boards with **0** extra model calls
+(the prompt falls back / omits; the stored brief stays verbatim). No cache-key or `prompt_hash`
+change: the fence remains prompt-local.
