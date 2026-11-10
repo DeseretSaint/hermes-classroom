@@ -13,6 +13,8 @@ bundled Japanese L0 pack, whose narration MP3 already ships real bytes (H-72).
 from __future__ import annotations
 
 import copy
+import hashlib
+import importlib.util
 import json
 import shutil
 import tempfile
@@ -20,11 +22,12 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from coursebook import __version__, archive, media, pack_flow, packs
+from coursebook import __version__, archive, db, media, pack_flow, packs, workshop
 from tests.kernel_support import KernelCase
 
 ROOT = Path(__file__).resolve().parent.parent
 JAPANESE = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
+TECHNICAL = ROOT / "bundled" / "packs" / "technical-demo-pack"
 
 NARRATION = "content/narration-polite-confession.mp3"
 VISUAL = "content/relationship-map.png"
@@ -395,6 +398,106 @@ class ShippedPackMediaResolutionTest(PackMediaCase):
             self.assertEqual(mime, rows[0]["mime"])
             self.assertEqual(size, len(files[stored["pack_file"]]))
         self.assertEqual(len(resolved), 3, "all three linked media artifacts must be fetchable")
+
+
+class CoverArtifactScopeTest(PackMediaCase):
+    """CP-014 review round 1: a cover is resolved by *this course's pack bytes*, never by luck.
+
+    ``artifacts`` is unique on ``(content_hash, kind)``, so a row is shared by every course whose
+    import adopted the same bytes, and its provenance names only the first pack that adopted them.
+    The cover seam therefore cannot key on the row's ``pack_id`` (D1: a second pack with identical
+    cover bytes would fall through to ``rows[0]``, painting a figure as the cover) and cannot order
+    by ``created_at`` (D2: a 2.1.0 course would be served the 2.0.0 plate over the same path).
+    It resolves the file digest the course's own pack version declares.
+    """
+
+    COVER = "content/cover-3x2.png"
+    MAP = "content/relationship-map.png"
+
+    def test_shared_cover_bytes_do_not_promote_a_figure_to_the_cover(self) -> None:
+        manifest, files = archive.read_directory(JAPANESE)
+        self.import_pack(self.grant(manifest, files, "jp-orig.zip"))
+
+        twin = copy.deepcopy(manifest)
+        twin["pack_id"] = "japanese-l0-twin"
+        twin["title"] = manifest["title"] + " (twin)"
+        twin.pop("content_hash", None)
+        twin = packs.with_content_hash(twin)
+        second = self.import_pack(self.grant(twin, files, "jp-twin.zip"))
+
+        cover_ids, map_ids = [], []
+        for row in self.rows("SELECT id, provenance_json FROM artifacts WHERE kind='visual'"):
+            provenance = json.loads(row["provenance_json"])
+            if provenance.get("pack_file") == self.COVER:
+                cover_ids.append(str(row["id"]))
+            if provenance.get("pack_file") == self.MAP:
+                map_ids.append(str(row["id"]))
+        self.assertEqual(len(cover_ids), 1, "identical bytes are one shared artifacts row")
+        with db.read() as connection:
+            served = workshop._cover_artifact(connection, second["course_id"], self.COVER)
+        self.assertNotIn(served, map_ids, "a figure must never be painted as the cover")
+        self.assertEqual(served, cover_ids[0])
+
+    def test_an_unresolved_declared_cover_returns_no_artifact(self) -> None:
+        """The H-197 rule at the seam: absent means absent, not 'the first picture will do'."""
+        manifest, files = archive.read_directory(JAPANESE)
+        imported = self.import_pack(self.grant(manifest, files, "jp-missing.zip"))
+        self.assertGreater(
+            len(self.rows("SELECT id FROM lesson_segments WHERE kind = 'media'")), 0,
+            "the fixture must actually carry first-lesson visuals for this to bite",
+        )
+        with db.read() as connection:
+            served = workshop._cover_artifact(
+                connection, imported["course_id"], "content/cover-missing.png"
+            )
+        self.assertIsNone(served, "an unresolvable declared cover is absent, never a figure")
+
+    def test_cover_resolution_is_scoped_to_the_course_pack_version(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "cp014_build_demo_packs", ROOT / "bundled" / "packs" / "build_demo_packs.py"
+        )
+        assert spec is not None and spec.loader is not None
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        old_plate = builder.cover_crop_png("technical")  # the H-197 Press Plate bytes
+        manifest_new, files_new = archive.read_directory(TECHNICAL)
+
+        manifest_old = copy.deepcopy(manifest_new)
+        manifest_old["pack_version"] = "2.0.0"
+        for entry in manifest_old["files"]:
+            if entry["path"] == self.COVER:
+                entry["role"] = "visual"
+                entry["bytes"] = len(old_plate)
+                entry["sha256"] = "sha256:" + hashlib.sha256(old_plate).hexdigest()
+        manifest_old["files"] = [
+            entry for entry in manifest_old["files"] if entry["path"] != "content/cover-4x5.png"
+        ]
+        manifest_old["license"]["per_artifact"] = [
+            item for item in manifest_old["license"]["per_artifact"]
+            if item["path"] != "content/cover-4x5.png"
+        ]
+        for item in manifest_old["license"]["per_artifact"]:
+            if item["path"] == self.COVER:
+                item["license_id"] = "CC0-1.0"
+                item["attribution"] = "Host-composed Press Plate, deterministic, no model call."
+        manifest_old.pop("content_hash", None)
+        manifest_old = packs.with_content_hash(manifest_old)
+        files_old = dict(files_new)
+        files_old[self.COVER] = old_plate
+        files_old.pop("content/cover-4x5.png")
+
+        self.import_pack(self.grant(manifest_old, files_old, "tech-2.0.0.zip"))
+        new = self.import_pack(self.grant(manifest_new, files_new, "tech-2.1.0.zip"))
+
+        by_version = {}
+        for row in self.rows("SELECT id, provenance_json FROM artifacts WHERE kind='visual'"):
+            provenance = json.loads(row["provenance_json"])
+            if provenance.get("pack_file") == self.COVER:
+                by_version[str(provenance["pack_version"])] = str(row["id"])
+        self.assertEqual(sorted(by_version), ["2.0.0", "2.1.0"])
+        with db.read() as connection:
+            served = workshop.pack_cover_artifact(connection, new["course_id"], "technical-demo-pack")
+        self.assertEqual(served, by_version["2.1.0"], "the course's own version supplies its plate")
 
 
 def manifest_file_hash(manifest: dict, path: str) -> str:
