@@ -20,3 +20,7 @@ audit/visual/**/.chromium/
 # Audit-harness dependencies are installed locally, never committed. The old tracked
 # symlinks pointed into the author's home and escaped the repo boundary.
 audit/visual/*/site/node_modules/
+visual/node_modules/
+visual/baselines/
+visual/diffs/
+visual/frames/
