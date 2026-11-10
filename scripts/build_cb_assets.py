@@ -823,17 +823,19 @@ def size_report(manifests: dict, entries: dict, js: str) -> dict:
     ok = True
     total = 0
     for group, rows in manifests.items():
-        group_total = sum(r["bytes"] for r in rows)
+        group_total = sum(r["bytes"] + r.get("avif_bytes", 0) for r in rows)
         total += group_total
-        largest = max(rows, key=lambda r: r["bytes"])
+        largest = max(rows, key=lambda r: max(r["bytes"], r.get("avif_bytes", 0)))
         lines.append(
-            "%-10s %2d files  %8d B  largest %s (%d B)"
-            % (group, len(rows), group_total, largest["path"], largest["bytes"])
+            "%-10s %2d assets %8d B  largest %s (%d B)"
+            % (group, len(rows), group_total, largest["path"], max(largest["bytes"], largest.get("avif_bytes", 0)))
         )
         for row in rows:
-            if row["bytes"] > ASSET_BUDGET:
-                ok = False
-                lines.append("  OVER 300 KB: %s (%d B)" % (row["path"], row["bytes"]))
+            for field, label in (("bytes", row["path"]), ("avif_bytes", row.get("avif", ""))):
+                size = row.get(field, 0)
+                if size > ASSET_BUDGET:
+                    ok = False
+                    lines.append("  OVER 300 KB: %s (%d B)" % (label or row["path"], size))
     segment = len(js.encode("utf-8"))
     plugin = (ROOT / "desktop" / "plugin.js").stat().st_size
     lines += [

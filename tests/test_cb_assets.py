@@ -149,6 +149,33 @@ class ManifestShape(unittest.TestCase):
         ids = [row["provenance_id"] for _, row in _all_rows()]
         self.assertEqual(len(ids), len(set(ids)), "duplicate provenance id")
 
+    def test_provenance_id_prefix_matches_its_group(self):
+        prefix = {
+            "fonts": "cb.asset.font.",
+            "material": "cb.asset.material.",
+            "fox": "cb.asset.fox.",
+            "objects": "cb.asset.object.",
+        }
+        for group, row in _all_rows():
+            self.assertTrue(
+                row["provenance_id"].startswith(prefix[group]),
+                "%s row carries %s" % (group, row["provenance_id"]),
+            )
+
+    def test_source_and_role_are_not_empty(self):
+        for group, row in _all_rows():
+            self.assertTrue(row["source"].strip(), row["path"])
+            self.assertTrue(row["role"].strip(), row["path"])
+
+    def test_declared_dimensions_match_the_image(self):
+        from PIL import Image
+
+        for group, row in _all_rows():
+            if row["kind"] == "font":
+                continue
+            with Image.open(ROOT / row["path"]) as img:
+                self.assertEqual(img.size, (row["width"], row["height"]), row["path"])
+
 
 class Budgets(unittest.TestCase):
     def test_every_single_shipped_file_is_under_300kb(self):
@@ -177,6 +204,14 @@ class GeneratedObject(unittest.TestCase):
     def test_it_is_frozen(self):
         self.assertIn("const CB_ASSETS = Object.freeze(", GENERATED.read_text())
         self.assertIn("globalThis.CB_ASSETS = CB_ASSETS", GENERATED.read_text())
+
+    def test_it_carries_only_the_four_brand_groups(self):
+        self.assertEqual(
+            set(self.doc), {"schema", "generated_by", "note", "fonts", "assets"}
+        )
+        groups = {row["group"] for row in self.doc["assets"].values()}
+        self.assertEqual(groups, {"fonts", "material", "fox", "objects"})
+        self.assertEqual(self.doc["schema"], 1)
 
     def test_every_manifest_row_is_embedded_exactly_once(self):
         embedded = set(self.doc["assets"])
