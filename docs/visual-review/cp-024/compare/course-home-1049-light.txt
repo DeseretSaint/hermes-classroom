@@ -1,0 +1,6 @@
+render:   .worktrees/t_41d66170/docs/visual-review/cp-024/course-home--1049--light--100--default.png (810x900)
+reference: docs/concept-parity/refs/map.png (1575x900)
+rmse:     0.317132
+similarity: 0.6829
+sheet:    .worktrees/t_41d66170/docs/visual-review/cp-024/compare/course-home-1049-light-sheet.png
+diff:     .worktrees/t_41d66170/docs/visual-review/cp-024/compare/course-home-1049-light-diff.png

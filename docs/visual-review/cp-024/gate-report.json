@@ -1,0 +1,194 @@
+{
+  "generated": "2026-11-10T23:45:27.817Z",
+  "port": 9357,
+  "width": 1440,
+  "frames": [
+    {
+      "route": "home",
+      "label": "Home",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/home.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": true,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "What will you learn next?",
+        "Your courses",
+        "Technical demo: reading a pack before you install it",
+        "Japanese affection and register — a Sample L0 classroom",
+        "Japanese affection and register — an L0 demonstration classroom",
+        "Order coffee and ask for the bill in Kyoto, politely",
+        "Order coffee and ask for the bill in Kyoto, politely",
+        "Order coffee and ask for the bill in Kyoto, politely"
+      ],
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-allowed-role",
+            "impact": "minor",
+            "nodes": 6,
+            "help": "ARIA role should be appropriate for the element"
+          }
+        ]
+      },
+      "diff": {
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 1517x1891"
+      }
+    },
+    {
+      "route": "courses",
+      "label": "Courses",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/courses.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": true,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "All courses",
+        "Technical demo: reading a pack before you install it",
+        "Japanese affection and register — a Sample L0 classroom",
+        "Order coffee and ask for the bill in Kyoto, politely",
+        "Counting to ten in Japanese",
+        "Half and quarter cups",
+        "Parent demo: measuring ingredients together",
+        "H103 live reject check",
+        "H103 live failure check"
+      ],
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "help": "Elements must meet minimum color contrast ratio thresholds"
+          },
+          {
+            "id": "label-content-name-mismatch",
+            "impact": "serious",
+            "nodes": 2,
+            "help": "Elements must have their visible text as part of their accessible name"
+          }
+        ]
+      },
+      "diff": {
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 1517x1891"
+      }
+    },
+    {
+      "route": "workshop",
+      "label": "Workshop",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/workshop.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": true,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Find a pack",
+        "Languages",
+        "Japanese affection and register — a Sample L0 classroom",
+        "For parents",
+        "Parent demo: measuring ingredients together",
+        "Technical",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "axe": {
+        "violations": [
+          {
+            "id": "label-content-name-mismatch",
+            "impact": "serious",
+            "nodes": 5,
+            "help": "Elements must have their visible text as part of their accessible name"
+          }
+        ]
+      },
+      "diff": {
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 1517x1891"
+      }
+    },
+    {
+      "route": "studio",
+      "label": "Parent Studio",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/studio.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": true,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "Plans for your child",
+        "Counting to ten in Japanese",
+        "Half and quarter cups",
+        "Parent demo: measuring ingredients together",
+        "H103 live reject check"
+      ],
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 2,
+            "help": "Elements must meet minimum color contrast ratio thresholds"
+          },
+          {
+            "id": "label-content-name-mismatch",
+            "impact": "serious",
+            "nodes": 1,
+            "help": "Elements must have their visible text as part of their accessible name"
+          }
+        ]
+      },
+      "diff": {
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 1517x1891"
+      }
+    }
+  ],
+  "failures": [
+    "home: frame size changed",
+    "courses: axe color-contrast,label-content-name-mismatch",
+    "courses: frame size changed",
+    "workshop: axe label-content-name-mismatch",
+    "workshop: frame size changed",
+    "studio: axe color-contrast,label-content-name-mismatch",
+    "studio: frame size changed"
+  ]
+}

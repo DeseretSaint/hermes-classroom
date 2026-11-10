@@ -604,6 +604,21 @@ const settlePage = async (cdp) => {
   })`).catch(() => null)
 }
 
+/**
+ * CP-024: `Emulation.setDeviceMetricsOverride` resizes the layout viewport but does not deliver a
+ * ResizeObserver frame in this host, so a v3 surface that measures its own route (the Coursebook
+ * route width hook) kept the width it was mounted at. The route geometry recorded by the probe was
+ * right while the composition on screen was still the old breakpoint's — a frame that would have
+ * been stamped as a 1049 cell and painted the 460 layout. Dispatching `resize` makes the route's
+ * own measurement run again, and two frames let React commit it before anything is measured.
+ */
+const settleLayout = async (cdp) => {
+  await evaluate(cdp, `(() => { window.dispatchEvent(new Event('resize')); return true })()`).catch(() => null)
+  await evaluate(cdp, `new Promise((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 120)))
+  })`).catch(() => null)
+}
+
 const waitForSelector = async (cdp, selector, ms) => {
   const deadline = Date.now() + ms
   while (Date.now() < deadline) {
@@ -1089,6 +1104,7 @@ const liveCapture = async () => {
       mobile: false
     })
     await sleep(250)
+    await settleLayout(cdp)
     const measured = await evaluate(cdp, `(() => {
       const root = document.querySelector('[data-cb-route]')
       const rect = root.getBoundingClientRect()
@@ -1121,6 +1137,7 @@ const liveCapture = async () => {
       mobile: false
     })
     await sleep(300)
+    await settleLayout(cdp)
   }
 
   // Ask the page for the scroll offset only after the viewport is sized: the sizing pass resets
