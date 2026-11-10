@@ -15,11 +15,13 @@ lantern (18 % of its ink survived in round 1).
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import re
 import shutil
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -342,6 +344,14 @@ class Evidence(unittest.TestCase):
         self.assertIn("CP-014", text, "the document must say this kit does not touch the packs")
 
 
+@functools.lru_cache(maxsize=1)
+def accept_run() -> subprocess.CompletedProcess:
+    """Run the machine acceptance once per process; both guards read its output."""
+    return subprocess.run(
+        ("python3", str(ROOT / "scripts" / "cp012-cover-accept.py")),
+        capture_output=True, text=True, cwd=ROOT)
+
+
 @unittest.skipUnless(shutil.which("magick") and shutil.which("tesseract"), "needs magick + tesseract")
 class AcceptanceScript(unittest.TestCase):
     """The accept script owns its own total; the witness doc must match it.
@@ -356,9 +366,7 @@ class AcceptanceScript(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.result = subprocess.run(
-            ("python3", str(ROOT / "scripts" / "cp012-cover-accept.py")),
-            capture_output=True, text=True, cwd=ROOT)
+        cls.result = accept_run()
         found = cls.SUMMARY.findall(cls.result.stdout)
         cls.summary = found[-1] if found else None
 
@@ -388,6 +396,59 @@ class AcceptanceScript(unittest.TestCase):
         self.assertEqual(
             int(declared.group(1)), total,
             "COVERS.md's declared check total must equal the accept script's reported total")
+
+
+class DeclaredTestCount(unittest.TestCase):
+    """COVERS.md's statement about this module's size is derived, never typed.
+
+    Round 3 shipped `COVERS.md` saying "(19 tests)" against a module that ran
+    21: the commit that added the check-count guards left the sentence alone.
+    The document is what the owner signs, so the sentence that describes this
+    test module is read back from the module itself.
+    """
+
+    DECLARED = re.compile(r"\((\d+) tests\b")
+
+    def test_the_declared_test_count_matches_the_module(self):
+        total = unittest.TestLoader().loadTestsFromModule(
+            sys.modules[__name__]).countTestCases()
+        declared = self.DECLARED.search(DOC.read_text())
+        self.assertIsNotNone(
+            declared, "COVERS.md must state this module's size as '(<N> tests'")
+        assert declared is not None
+        self.assertEqual(
+            int(declared.group(1)), total,
+            "COVERS.md's declared test count must equal this module's actual test count")
+        self.assertGreater(total, 20, "the test module must not shrink silently")
+
+
+@unittest.skipUnless(shutil.which("magick") and shutil.which("tesseract"), "needs magick + tesseract")
+class DeclaredQuietField(unittest.TestCase):
+    """The three quiet-field percentages in the doc are the script's own output.
+
+    Same truth class as the 88/80 check total and the 19/21 test count: a
+    measured number the owner is asked to sign against must be re-derivable,
+    not typed into the sentence once and left to drift.
+    """
+
+    QUIET = re.compile(r"quiet field upper right: paper share=(\d+(?:\.\d+)?)%")
+    DECLARED = re.compile(
+        r"\*\*(\d+(?:\.\d+)?) % / (\d+(?:\.\d+)?) % / (\d+(?:\.\d+)?) %\*\*")
+
+    def test_the_declared_quiet_field_matches_the_script(self):
+        run = accept_run()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        shares = [float(v) for v in self.QUIET.findall(run.stdout)]
+        self.assertEqual(
+            len(shares), 3,
+            "the accept script must report one quiet-field share per shipped plate")
+        declared = self.DECLARED.search(DOC.read_text())
+        self.assertIsNotNone(
+            declared, "COVERS.md must state the quiet field as '**A % / B % / C %**'")
+        assert declared is not None
+        self.assertEqual(
+            [float(v) for v in declared.groups()], shares,
+            "COVERS.md's quiet-field percentages must equal the accept script's measurements")
 
 
 if __name__ == "__main__":

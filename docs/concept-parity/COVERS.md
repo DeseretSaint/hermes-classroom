@@ -44,6 +44,28 @@ regenerated rather than re-labelled.
    H-197 Press Plate clearance), so the claim is removed from the docstring and from `vision.json`
    V6 rather than implemented.
 
+## Round 3 — the declared numbers
+
+Round 2 was rejected on one declared number and round 3 on another: the same class both times, a
+total typed into the document the owner is asked to sign, with nothing deriving it. Both are now
+read back from the thing that owns them, and each guard was proved to bite by restoring the old
+value.
+
+- **Check total.** The accept script prints its own summary line last; the sentence in *Verdict up
+  front* is checked against it by `test_the_declared_check_count_matches_the_script` (restoring the
+  old 88 gives `AssertionError: 88 != 80`).
+- **Test count.** This module's size comes from
+  `TestLoader().loadTestsFromModule(...).countTestCases()` inside
+  `test_the_declared_test_count_matches_the_module`, which is compared with the sentence in *How
+  each plate was made* (restoring the old nineteen gives `AssertionError: 19 != 23`).
+- **Quiet field.** The three percentages under *The kit* are read from the accept script's own
+  `paper share=` detail lines by `test_the_declared_quiet_field_matches_the_script`.
+- **Still printed only, not gated:** the plate footprints (800 / 630 / 686 px) come from
+  `scripts/cp012-cover-prep.py`, which cannot be re-run without repainting the kit. They are quoted
+  as that pipeline's printed output and are listed in *Known gaps* 6.
+
+No art was touched in round 3: all nine shipped files are byte-identical to `provenance.json`.
+
 ## Verdict up front
 
 Three plates were generated again for round 2, one per bundled pack; the first round-2 attempts were
@@ -90,7 +112,9 @@ to none, and the technical plate measures warm paper/brown only.
 Composition, all three: a square painted plate centred on the contract paper, the mass on a
 table/counter/bench plane across the lower part, and the upper-right quadrant quiet — measured
 **57.8 % / 92.4 % / 89.5 %** paper, against the 35 % floor `GM-SUBJECT-WORLDS.md` §1 sets for the type
-field. The plates are textless; the cover window's title and subject are DOM text.
+field (these three are read back from the accept script by
+`test_the_declared_quiet_field_matches_the_script`). The plates are textless; the cover window's title
+and subject are DOM text.
 
 Why each motif is the course's own and not a stock scene:
 
@@ -158,7 +182,9 @@ marks. The judgement part (does the plate still read as the other subject?) is t
    master byte for byte.
 5. Checks: `scripts/cp012-cover-accept.py` — size, mode, crop identity, paper, palette family, no
    black contour, **no state hue**, **per-motif 4:5 retention**, quiet field, tesseract textless,
-   provenance hashes, kit motif disjointness. Plus `tests/test_cp012_covers.py` (19 tests), which
+   provenance hashes, kit motif disjointness. Plus `tests/test_cp012_covers.py` (23 tests; the
+   module's own size is asserted by `test_the_declared_test_count_matches_the_module`, so this
+   sentence cannot drift from the file), which
    re-derives the state-hue and retention results from the shipped bytes rather than importing the
    acceptance script's verdict, and includes two negative controls that run the real script on a
    temporary copy of the tree — a painted plum patch must fail, and a motif zone moved outside the
