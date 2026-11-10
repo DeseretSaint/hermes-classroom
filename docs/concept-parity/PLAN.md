@@ -940,3 +940,48 @@ product. No mockup is ever presented as the product.
 - O6. Discover has three real packs today against eight cards in the concept. Recommended: lay out
   honestly for 1, 3, 7 and 8 items, and add the four demo courses to the Workshop only if a general
   course export exists by then.
+
+## 15. Execution record
+
+Approved 2026-11-10 02:50 MST and started the same night. Plan and card bodies are committed on
+master (`de2d234`), reference pack under `docs/concept-parity/refs/`; the board carries every card
+with its body, owner, reviewer, branch and parents.
+
+| Card | Id | Owner | Status at creation | Branch |
+|---|---|---|---|---|
+| CP-000 | `t_f0be3189` | sentinel | running | `wt/cp-000-render` |
+| CP-001 | `t_e4faed02` | quill | running | `wt/cp-001-spec` |
+| CP-002 | `t_04aa5eb1` | quill | running | `wt/cp-002-tokens` |
+| CP-003 | `t_8682d52f` | sentinel | todo | `wt/cp-003-gates` |
+| CP-004 | `t_a2f39669` | sable | todo | `wt/cp-004-assets` |
+| CP-005 | `t_4948bedf` | cinder | todo | `wt/cp-005-shelf-facts` |
+| CP-006 | `t_02cb9495` | sable | todo | `wt/cp-006-split` |
+| CP-010 | `t_ea64d10f` | easel | running | `wt/cp-010-fox` |
+| CP-011 | `t_744b5a9d` | easel | running | `wt/cp-011-material` |
+| CP-012 | `t_dbe44921` | easel | todo | `wt/cp-012-covers` |
+| CP-013 | `t_ee2f8e3c` | easel | todo | `wt/cp-013-scenes` |
+| CP-014 | `t_9438c09c` | lattice | todo | `wt/cp-014-pack-media` |
+| CP-015 | `t_849e52d2` | lattice | todo | `wt/cp-015-demo-courses` |
+| CP-016 | `t_483a0af4` | sable | todo | `wt/cp-016-world-v3` |
+| CP-020a | `t_3793dc3d` | vellum | todo | `wt/cp-020a-scope` |
+| CP-020b | `t_af9a7522` | vellum | todo | `wt/cp-020b-primitives` |
+| CP-021 | `t_2a558085` | vellum | todo | `wt/cp-021-discover` |
+| CP-022 | `t_ce7a8931` | vellum | todo | `wt/cp-022-home` |
+| CP-023 | `t_047f8993` | vellum | todo | `wt/cp-023-classroom` |
+| CP-024 | `t_41d66170` | vellum | todo | `wt/cp-024-course-home` |
+| CP-025a | `t_1668762b` | vellum | todo | `wt/cp-025a-adopt` |
+| CP-025b | `t_8337be56` | vellum | todo | `wt/cp-025b-adopt` |
+| CP-026 | `t_a066bf25` | harbor | todo | `wt/cp-026-readme` |
+
+Board edits made before dispatch (step 0): GM-020 linked as a parent of GM-012, GM-015 parked as
+`scheduled` so the QA gate cannot open on a v2-only build. Gates extended: CP-015 and CP-021 to
+CP-025b feed GM-015, CP-026 feeds GM-017, then GM-015 was released back to `todo`.
+
+First wave dispatched at 02:54 MST: CP-000 (sentinel), CP-001 and CP-002 (quill), CP-010 and
+CP-011 (easel), beside GM-020's review. Toolchain: `impeccable` installed in default, quill, cbqa,
+vellum and the new `easel` profile; `coursebook-desktop-rig` and `coursebook-course-generation`
+copied into all ten worker profiles at one sha (`2bdc72af...`, `a9e2a858...`).
+
+Blocking issue handed to the manager: GM-010 is `blocked` (needs_input) because its tip is red
+through the GM-008 ancestor. Decision taken: merge `wt/gm-020-fix-invariants` into
+`wt/gm-010-engagement-ui` once GM-020 passes review, then unblock GM-010 for quill to re-review.
