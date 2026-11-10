@@ -1,0 +1,261 @@
+{
+  "html_dir": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_35652a2f/docs/visual-review/gm-012",
+  "frames": [
+    {
+      "id": "rail-ask--1049--light",
+      "render": "rail-ask-1049-light",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--900--light",
+      "render": "rail-ask-900-light",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--460--light",
+      "render": "rail-ask-460-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--460--200--light",
+      "render": "rail-ask-460-200-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--1049--dark",
+      "render": "rail-ask-1049-dark",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--900--dark",
+      "render": "rail-ask-900-dark",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--460--dark",
+      "render": "rail-ask-460-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-ask--460--200--dark",
+      "render": "rail-ask-460-200-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--1049--light",
+      "render": "rail-quote-1049-light",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--900--light",
+      "render": "rail-quote-900-light",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--460--light",
+      "render": "rail-quote-460-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--460--200--light",
+      "render": "rail-quote-460-200-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--1049--dark",
+      "render": "rail-quote-1049-dark",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--900--dark",
+      "render": "rail-quote-900-dark",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--460--dark",
+      "render": "rail-quote-460-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-quote--460--200--dark",
+      "render": "rail-quote-460-200-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--1049--light",
+      "render": "rail-practice-1049-light",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--900--light",
+      "render": "rail-practice-900-light",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--460--light",
+      "render": "rail-practice-460-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--460--200--light",
+      "render": "rail-practice-460-200-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--1049--dark",
+      "render": "rail-practice-1049-dark",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--900--dark",
+      "render": "rail-practice-900-dark",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--460--dark",
+      "render": "rail-practice-460-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-practice--460--200--dark",
+      "render": "rail-practice-460-200-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--1049--light",
+      "render": "rail-no-lesson-1049-light",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--900--light",
+      "render": "rail-no-lesson-900-light",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--460--light",
+      "render": "rail-no-lesson-460-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--460--200--light",
+      "render": "rail-no-lesson-460-200-light",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--1049--dark",
+      "render": "rail-no-lesson-1049-dark",
+      "width": 1049,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--900--dark",
+      "render": "rail-no-lesson-900-dark",
+      "width": 900,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--460--dark",
+      "render": "rail-no-lesson-460-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 16,
+      "forced_colors": "none"
+    },
+    {
+      "id": "rail-no-lesson--460--200--dark",
+      "render": "rail-no-lesson-460-200-dark",
+      "width": 460,
+      "height": 1000,
+      "font_px": 32,
+      "forced_colors": "none"
+    }
+  ]
+}
