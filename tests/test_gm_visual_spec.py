@@ -188,7 +188,12 @@ class TestMatrix(unittest.TestCase):
     def test_screens_have_frames_and_states(self):
         matrix = json.loads(MATRIX_JSON.read_text(encoding="utf-8"))
         self.assertEqual(len(matrix["required_cells"]), 8)
-        self.assertEqual(len(matrix["screens"]), 16)
+        # CP-001 added the five v3 screens additively. The v2 screen set is unchanged; v3 entries
+        # must never replace or rename one (their per-screen `cells` list is where forced-colors
+        # lives, so `required_cells` stays at the v2 baseline of 8).
+        v3_ids = {s["id"] for s in matrix["screens"] if s["id"].endswith(".v3")}
+        self.assertEqual(len(v3_ids), 5, f"v3 screens: {sorted(v3_ids)}")
+        self.assertEqual(len(matrix["screens"]) - len(v3_ids), 16)
         cards = set()
         seen = set()
         for screen in matrix["screens"]:
