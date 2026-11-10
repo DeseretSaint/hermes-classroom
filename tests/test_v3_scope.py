@@ -39,7 +39,7 @@ from tests.cb_source_scope import (
 from tests.test_desktop_lesson_views import _desktop_node_modules, SDK_STUB
 
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
-V3_SECTIONS = ("modes", "elevation", "radii", "type", "motion")
+V3_SECTIONS = ("modes", "elevation", "radii", "type", "motion", "materials")
 
 HARNESS = r"""
 import React, { act } from 'react'
@@ -211,15 +211,18 @@ class V3ScopeSourceTest(unittest.TestCase):
         # fonts settle and would make the flag meaningless.
         route = self.source[self.source.index("'data-cb-route': ROUTE_PATH"):]
         route = route[: route.index("PageBody")]
-        self.assertNotIn("data-cb-v3-ready", route,
-                         "the route root ships data-cb-v3-ready on its first paint")
-        self.assertIn("data-cb-v3-ready", self.source)
-        self.assertIn("document.fonts.ready", self.source)
+        self.assertFalse(
+            "data-cb-v3-ready" in route,
+            "the route root ships data-cb-v3-ready on its first paint",
+        )
+        self.assertTrue("data-cb-v3-ready" in self.source)
+        self.assertTrue("document.fonts.ready" in self.source)
 
     def test_materials_are_aria_hidden_and_pointer_transparent(self) -> None:
         for needle in ("cb3-material-grain", "cb3-material-vignette"):
-            self.assertIn(needle, self.source, f"{needle} layer is not rendered")
-        self.assertIn("aria-hidden: 'true'", self.source)
+            self.assertTrue(needle in self.source, f"{needle} layer is not rendered")
+        self.assertTrue("'aria-hidden': 'true'" in self.source,
+                        "a material layer is not hidden from assistive tech")
 
 
 class V3ScopeRenderTest(unittest.TestCase):

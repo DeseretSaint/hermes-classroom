@@ -446,12 +446,15 @@ function CoursebookPage() {
     ? 'Course'
     : ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
-  return jsxs('div', {
+  return jsx(CbV3Scope, {
+    mode: cbMode,
     className: 'relative flex h-full min-h-0 flex-col',
-    'data-cb-destination': destination,
-    'data-cb-route': ROUTE_PATH,
-    'data-cb-scope': cbMode,
-    'data-cb-motion': cbMotion.preference,
+    attributes: {
+      'data-cb-destination': destination,
+      'data-cb-route': ROUTE_PATH,
+      'data-cb-scope': cbMode,
+      'data-cb-motion': cbMotion.preference
+    },
     style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
