@@ -18887,13 +18887,10 @@ function SectionPage({
               maxWidth: CB_MEASURE
             },
             children: [
-              jsx(
-                'div',
-                {
-                  key: 'homework',
-                  style: { display: 'flex', flexDirection: 'column', minWidth: 0 }
-                },
-                jsx(TakeThisWithYou, {
+              jsx('div', {
+                key: 'homework',
+                style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+                children: jsx(TakeThisWithYou, {
                   enrollmentId: row.enrollment_id,
                   courseId: row.course_id,
                   objectiveId,
@@ -18901,7 +18898,7 @@ function SectionPage({
                   implemented,
                   onChanged
                 })
-              ),
+              }),
               playerSurface
                 ? null
                 : jsx(sdk.Button, {
@@ -24501,8 +24498,8 @@ function TakeThisWithYou({
       cbRememberHomework(response.result.task)
       setNotice(
         actor === 'parent'
-          ? 'Recorded: a parent reported this done. It is a report, never a pass.'
-          : 'Recorded: you reported this done. It is a report, never a pass.'
+          ? 'Recorded: a parent reported this done. A report, not a mark.'
+          : 'Recorded: you reported this done. A report, not a mark.'
       )
       if (onChanged) onChanged()
     },
@@ -24717,7 +24714,7 @@ function TakeThisWithYou({
                           }),
                           jsx('span', {
                             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-                            children: 'A report, not a grade. Nothing is scored.'
+                            children: 'Only you record it. Nothing here is marked.'
                           })
                         ]
                       })
@@ -24823,8 +24820,8 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       if (method === 'homework.complete') {
         setNotice(
           actor === 'parent'
-            ? 'Recorded: a parent reported this done. A report, never a pass.'
-            : 'Recorded: the learner reported this done. A report, never a pass.'
+            ? 'Recorded: a parent reported this done. A report, not a mark.'
+            : 'Recorded: the learner reported this done. A report, not a mark.'
         )
       } else {
         setNotice('Skipped. Nothing is owed and nothing is lost.')
