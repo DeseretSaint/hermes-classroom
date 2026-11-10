@@ -178,8 +178,8 @@ class CatalogViewTests(KernelCase):
         entry = next(e for e in document["packs"] if e["pack_id"] == "japanese-affection-context-l0")
         manifest, files = archive.read_directory(PACKS / "japanese-affection-context-l0")
         declared = next(f for f in manifest["files"] if f["path"] == entry["cover"]["path"])
-        self.assertEqual(declared["role"], "visual")
-        self.assertIn("generated plate", (item["cover"]["alt"] or "").lower())
+        self.assertEqual(declared["role"], "cover")
+        self.assertIn("painted", (item["cover"]["alt"] or "").lower())
         # The artifact must resolve through the same media route the lesson uses.
         from coursebook import media
 
