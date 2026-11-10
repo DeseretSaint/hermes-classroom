@@ -273,6 +273,13 @@ class HomeworkActionTest(HomeworkUiCase):
         window = module[anchor - 400 : anchor + 1800]
         self.assertIn("page && pageReadable", window)
         self.assertIn("jsx(TakeThisWithYou", window)
+        # ...and the player, which owns the screen's one footer, carries the same action inside its
+        # own footer row (H-149). Without this, the name would overstate the player case: the
+        # section footer is gated off whenever the player is mounted.
+        self.assertIn("page && pageReadable && !playerOnScreen", window)
+        player_anchor = module.index("'data-cb-player-footer': ''")
+        player_window = module[player_anchor : player_anchor + 1200]
+        self.assertIn("jsx(TakeThisWithYou", player_window)
         for view in ("textbook", "guided", "field_quest", "player"):
             self.assertIn(f"id: '{view}'", module)
         self.assertIsNone(
