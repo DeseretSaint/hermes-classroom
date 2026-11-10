@@ -1,0 +1,208 @@
+{
+  "ink": "#1a1713",
+  "plates": [
+    {
+      "file": "assets/art/scenes/course-map.png",
+      "kind": "scene",
+      "width": 1024,
+      "height": 576,
+      "aspect": 1.778,
+      "pure_black_fraction": 0.0,
+      "dark_tint": {
+        "rgb": [
+          42,
+          43,
+          31
+        ],
+        "hex": "#2a2b1f",
+        "warm": true
+      },
+      "quiet_field": {
+        "box_px": [
+          0,
+          0,
+          338,
+          259
+        ],
+        "share_of_plate": 0.148,
+        "detail_energy": 8.68,
+        "luminance_median": 230,
+        "luminance_p05": 222,
+        "luminance_p95": 236,
+        "ink_contrast_median": 14.31,
+        "ink_contrast_p05": 13.27
+      }
+    },
+    {
+      "file": "assets/art/scenes/discover-banner.png",
+      "kind": "scene",
+      "width": 1024,
+      "height": 233,
+      "aspect": 4.395,
+      "pure_black_fraction": 0.0,
+      "dark_tint": {
+        "rgb": [
+          32,
+          14,
+          13
+        ],
+        "hex": "#200e0d",
+        "warm": true
+      },
+      "quiet_field": {
+        "box_px": [
+          0,
+          0,
+          410,
+          233
+        ],
+        "share_of_plate": 0.4,
+        "detail_energy": 5.93,
+        "luminance_median": 247,
+        "luminance_p05": 193,
+        "luminance_p95": 249,
+        "ink_contrast_median": 16.67,
+        "ink_contrast_p05": 9.92
+      }
+    },
+    {
+      "file": "assets/art/scenes/lesson-cafe.png",
+      "kind": "scene",
+      "width": 1024,
+      "height": 576,
+      "aspect": 1.778,
+      "pure_black_fraction": 0.0,
+      "dark_tint": {
+        "rgb": [
+          34,
+          26,
+          31
+        ],
+        "hex": "#221a1f",
+        "warm": true
+      }
+    },
+    {
+      "file": "assets/art/objects/clock.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.457,
+      "semi_transparent_pixels": 509,
+      "bbox": [
+        38,
+        5,
+        218,
+        251
+      ],
+      "pure_black_fraction_of_opaque": 3e-05,
+      "footer_bytes": 88280
+    },
+    {
+      "file": "assets/art/objects/medallion-rim.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.573,
+      "semi_transparent_pixels": 82,
+      "bbox": [
+        19,
+        4,
+        237,
+        252
+      ],
+      "pure_black_fraction_of_opaque": 0.0,
+      "footer_bytes": 78693,
+      "centre_probe": {
+        "mode": "flat",
+        "radius_fraction": 0.22,
+        "detail_energy": 11.22
+      }
+    },
+    {
+      "file": "assets/art/objects/passport-tray.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.43,
+      "semi_transparent_pixels": 42,
+      "bbox": [
+        4,
+        33,
+        252,
+        223
+      ],
+      "pure_black_fraction_of_opaque": 0.0,
+      "footer_bytes": 64517
+    },
+    {
+      "file": "assets/art/objects/shelf-plank.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.337,
+      "semi_transparent_pixels": 40,
+      "bbox": [
+        4,
+        36,
+        252,
+        220
+      ],
+      "pure_black_fraction_of_opaque": 0.0,
+      "footer_bytes": 66048
+    },
+    {
+      "file": "assets/art/objects/stamp-rim.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.622,
+      "semi_transparent_pixels": 315,
+      "bbox": [
+        6,
+        4,
+        251,
+        252
+      ],
+      "pure_black_fraction_of_opaque": 0.0001,
+      "footer_bytes": 94090,
+      "centre_probe": {
+        "mode": "flat",
+        "radius_fraction": 0.18,
+        "detail_energy": 11.67
+      }
+    },
+    {
+      "file": "assets/art/objects/tag.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.355,
+      "semi_transparent_pixels": 337,
+      "bbox": [
+        4,
+        32,
+        252,
+        224
+      ],
+      "pure_black_fraction_of_opaque": 0.0,
+      "footer_bytes": 66938
+    },
+    {
+      "file": "assets/art/objects/ticket.png",
+      "kind": "object",
+      "width": 256,
+      "height": 256,
+      "opaque_fraction": 0.404,
+      "semi_transparent_pixels": 63,
+      "bbox": [
+        4,
+        46,
+        252,
+        209
+      ],
+      "pure_black_fraction_of_opaque": 0.0,
+      "footer_bytes": 52202
+    }
+  ]
+}

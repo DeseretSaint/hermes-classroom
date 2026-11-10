@@ -60,10 +60,24 @@ drawn line. A contour that measures within 8 units of neutral black is a defect.
 
 ## 2. Palette, tied to v3 roles
 
-v3 (`contracts/cb.tokens.v3.json`, CP-002) is not landed at the time of writing. These are the
-pigments, each bound to the role it must remain compatible with. When CP-002 lands, the mapping
-below is re-checked against the v3 table and this table is amended in place; a pigment may not
-change role silently.
+v3 is landed (`contracts/cb.tokens.v3.json`, CP-002). The mapping below was re-checked against the
+v3 table in CP-013 and is stated here in place; a pigment may not change role silently.
+
+| Pigment | v3 role it stands in for | Note |
+|---|---|---|
+| Paper ground `#f7f1e4` | `canvas` (`#f5e3c8`) | the plate ground is warmer than the route parchment on purpose: a plate is a separate object on the desk |
+| Drawn line `#3a2318` | `ink` (`#1a1713`) | a drawn contour is warmer and softer than body text ink; it is never the text colour |
+| Fox fur / fur shade | identity (no token role) | art identity, never a fill behind a word |
+| Fox cream | `card-stock` family | highlight and bib |
+| Fox dark sock | `ink` | the darkest pigment in a cutout, never black |
+| Field green `#2f6047` | `forest` / `sage` | foliage and cloth; `sage` is the soft evidence role, not a paint licence |
+| Ochre `#7b4b0a` | `wood` / `wood-edge` | brass, wood and paper-stock props |
+| Lamp `#e8a93a` | `gold` | the single lit accent on a prop, never on the fox |
+| Coral `#9c2e1c` | `terracotta` / `alert` | attention marks on a prop; never a mode hue, never on the fox |
+
+The plate is art, not a surface: it carries no text role and no contrast gate. What the contract
+does bind is the **quiet field** — a plate that reserves space for DOM type must leave the contract's
+`ink` at or above 4.5:1 on the darkest 5 % of that field, measured by `scripts/cp013-art-audit.py`.
 
 | Pigment | Value | Role binding | Use |
 |---|---|---|---|
@@ -286,3 +300,71 @@ frown, angry expression
   a semi-transparent sock on either ground is a defect.
 - Exports: the master is the keyed plate at its own natural size (A1 masters are 654–837 px tall,
   not 512), then 512, 256, 128 and 64 px are downscaled from it. Alpha preserved; no matte baked in.
+
+---
+
+## 9. A4 scene plates
+
+Three plates, one each: the Discover feature banner ground, the classroom cafe interior and the
+course-home expedition ground. They are **painted plates**, not Press Plates, and they are never
+embedded in the module — they stay pack or world media (`assets/README.md`).
+
+| Plate | Shipping aspect | Reserved quiet field | Carries |
+|---|---|---|---|
+| `discover-banner` | 4.4:1 (1024×233) | left 40 %, SPEC-V3 D5 | the DOM title, the one band of body copy and the one primary |
+| `lesson-cafe` | 16:9 (1024×576), cropped to 3:1 at render | none | the lesson's real line stays in the DOM bubble below, never in the art |
+| `course-map` | 16:9 (1024×576) | upper-left third, SPEC-V3 M4 | the course title and subject; route nodes are DOM buttons drawn over the plate |
+
+Rules, all binding:
+
+1. **A quiet field is a measurement, not a hope.** A plate that reserves space for type must leave
+   the contract `ink` at ≥ 4.5:1 on the darkest 5 % of that field, and its detail energy (mean
+   gradient magnitude of the field) must stay low enough that the type does not fight texture.
+   `scripts/cp013-art-audit.py` writes both numbers; the test refuses a plate below the floor.
+2. **No marker is painted.** No pin, dot, node, flag, stamp, compass rose, scale bar, arrow, dotted
+   route line, number or glyph. The path may be painted as a track of packed earth — that is
+   terrain — but the route is DOM.
+3. **No lettering, in any script**, including shop signs, lantern inscriptions, menus, chalkboards
+   and noren lettering. A blank board is allowed; a board with marks that read as text is not.
+4. **Flat paint only.** No bloom, no halo, no radial glow around a light source, no vertical sky
+   gradient. A lit lantern is a hard-edged lamp-yellow mass.
+5. **Warm pigments only.** No blue, blue-grey or neutral black anywhere; the darkest value is a warm
+   umber. The shipping step applies one deterministic print-safety lift (`+level 4%,100%`) so no
+   pixel in a shipped plate is pure black.
+6. **Crop, never stretch.** The banner is cropped from the 16:9 raw at the vertical offset the
+   quiet-field probe chose; the lesson frame is a mechanical crop of the 16:9 master.
+
+**Scene prompt (template).** `<subject and composition>`. Painted in opaque gouache on warm paper,
+dark warm-brown ink contour drawn last, one soft key light from the upper left, flat brush-shaped
+marks, crisp brush-stopped edges, one shade plane down-right from a darker tint of the same pigment.
+`<quiet-field sentence>` — reserved for type typeset later, flat and detail-free. Warm pigments only
+(no blue, no grey, no black). No gradient, no glow, no bloom, no cast shadow, no frame, no border.
+No lettering of any kind; no pins, dots, numbers or markers. `<negatives from §6>`
+
+## 10. A5 object kit
+
+Seven blanks at 256 px RGBA: `stamp-rim`, `medallion-rim`, `passport-tray`, `ticket`, `clock`,
+`tag`, `shelf-plank`. Every label, every count and every icon is runtime DOM or `sdk.Codicon`; the
+blank carries none of it.
+
+- **The cutout recipe is A1's**, unchanged: chroma key at the sampled corner colour with `-fuzz 30%`,
+  trim, square pad, one colour temper (`-modulate 92,72,100`) so the kit sits in the fox's family,
+  then a 256 px export. See §8; the key value is not re-invented per family.
+- **A rim carries a blank, not a glyph.** The centre of `stamp-rim` and `medallion-rim` is a flat
+  field with no mark, so a 20 px `sdk.Codicon` can sit on it. `cp013-art-audit.py` measures the
+  centre's detail energy; a rim with a painted symbol is a defect.
+- **A blank is one object, not one per event.** The medallion is a single painted rim used for every
+  recorded event; what changes is the Codicon glyph and the DOM label. Five different painted
+  medallions would be decoration a learner cannot name, which the identity document forbids.
+- **Props keep their props.** The clock's hands are painted at 10:10 as a prop and the element is
+  `aria-hidden` — it is never a time claim. The ticket has no barcode and no number. The tag is
+  blank. The tray is empty.
+- **No shadow on a cutout**: no ground, no drop shadow, no border. Contact is the UI's job
+  (`elev-1` on the surface the object sits on), not the plate's.
+
+**Object prompt (template).** Single object, centred and filling the frame: `<object>`.
+Painted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, one soft key light
+from the upper left, one shade plane down-right from a darker tint of the same pigment, flat
+brush-shaped marks, crisp brush-stopped edges, no gradient, no glow, no cast shadow, no ground, no
+border, flat pure magenta `#ff00ff` background. Textless: no letters, no numbers, no symbols, no
+watermark, no logo, no UI. `<negatives from §6>`
