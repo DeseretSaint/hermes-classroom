@@ -18875,19 +18875,40 @@ function SectionPage({
       : null,
     children: [
       body,
-      page && document && !playerSurface
+      page && pageReadable
         ? jsx('div', {
             'data-cb-section-footer': '',
             style: {
               display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
+              flexDirection: 'column',
               gap: '0.5rem',
               paddingTop: '0.9rem',
               borderTop: '1px solid var(--cb-rule)',
               maxWidth: CB_MEASURE
             },
-            children: jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'Back to the section index' })
+            children: [
+              jsx('div', {
+                key: 'homework',
+                style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+                children: jsx(TakeThisWithYou, {
+                  enrollmentId: row.enrollment_id,
+                  courseId: row.course_id,
+                  objectiveId,
+                  sectionTitle: section ? section.title : null,
+                  implemented,
+                  onChanged
+                })
+              }),
+              playerSurface
+                ? null
+                : jsx(sdk.Button, {
+                    key: 'back',
+                    variant: 'text',
+                    size: 'sm',
+                    onClick: onBack,
+                    children: 'Back to the section index'
+                  })
+            ]
           })
         : null,
       jsx(NotebookSaveDialog, {
@@ -19682,6 +19703,29 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
         : String(left.created_at || '').localeCompare(String(right.created_at || ''))
     )
 
+  // GM-008 — homework taken with you. A homework task is not a notebook entry: the notebook is
+  // where the learner finds it again. The ids come from a save whose `source_ref` names the task
+  // and from this device's index; every row is then read through `homework.read`, so a state
+  // shown here is the backend's, never a cached copy.
+  const homeworkIds = []
+  const addHomework = (taskId, objectiveId, createdAt) => {
+    if (!taskId || homeworkIds.some((row) => row.task_id === taskId)) return
+    homeworkIds.push({ task_id: taskId, objective_id: objectiveId || null, created_at: createdAt || '' })
+  }
+  entries.forEach((entry) => {
+    const taskId = cbHomeworkRefTaskId(entry.source_ref)
+    if (taskId) addHomework(taskId, entry.objective_id, entry.created_at)
+  })
+  cbHomeworkIndexRows(row.enrollment_id).forEach((item) =>
+    addHomework(item.task_id, item.objective_id, item.created_at)
+  )
+  homeworkIds.sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))
+  const homeworkRows = homeworkIds.map((item) => ({
+    task_id: item.task_id,
+    lesson_title: sectionTitles[item.objective_id] || '',
+    course_title: row.title || ''
+  }))
+
   const saveEdit = useCallback(async () => {
     if (!editing) return
     const payload = { entry_id: editing.entry_id }
@@ -19800,6 +19844,24 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                 children: 'Removed from the notebook. The lesson and any media it referenced are untouched.'
               }),
               jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: undoRemove, children: 'Undo (restores as a new entry)' })
+            ]
+          })
+        : null,
+
+      homeworkRows.length > 0
+        ? jsxs('div', {
+            'data-cb-notebook-homework': String(homeworkRows.length),
+            className: 'flex flex-col gap-2',
+            children: [
+              jsx(CbLabel, { children: 'Taken with you' }),
+              jsx(HomeworkRecordList, {
+                rows: homeworkRows,
+                actor: 'learner',
+                canSave: false,
+                onChange: onChanged,
+                emptyTitle: 'No homework yet',
+                emptyDescription: 'A task you take with you from a lesson is listed here.'
+              })
             ]
           })
         : null,
@@ -22661,7 +22723,9 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
 
 const CB_STUDIO_ENTRANCES = [
   { id: 'plans', label: 'My lesson plans' },
-  { id: 'takehome', label: 'Take-home from a lesson' }
+  { id: 'takehome', label: 'Take-home from a lesson' },
+  // GM-008: the parent's door to the tasks a learner took with them. It is a record, not a chat.
+  { id: 'homework', label: 'Homework' }
 ]
 
 /** The three things a parent can make from one source lesson. */
@@ -23757,6 +23821,1334 @@ function TakeHomeStudio({ implemented, onOpenSettings, sessionMinutes, triggerRe
     sessionMinutes,
     onOpenSettings,
     triggerRef
+  })
+}
+
+/* ── GM-008 · homework the learner takes with them ─────────────────────────────────────────
+ * One small task, taken out of the lesson and into the learner's day. The plan (§10A.4-§10A.7)
+ * fixes the shape: one target, one context, at most three steps, one observable success
+ * criterion, 3-10 minutes, and a completion that is *reported* by the learner or the parent and
+ * never graded.
+ *
+ * Honesty rules this surface is built on:
+ *   - every task on screen is a `homework.read` answer; the sheet is the backend's own rendered
+ *     field card (`task.sheet.html`), not a second template that could drift from the print;
+ *   - the index in `pluginContext.storage` holds task *ids* only. It is a door to `homework.read`,
+ *     never a copy of the task, so a state shown here is always the backend's;
+ *   - there is no `homework.list` in cb.rpc v24. A task is enumerable because the learner saved it
+ *     to the notebook (`notebook.save`, kind `personal_note`, `source_ref.homework_task_id`) or
+ *     because this device proposed it. Nothing is invented for a task neither source knows;
+ *   - print and download are local. No file is sent, no photo is asked for, and no XP, score,
+ *     grade or mastery word exists anywhere in this block.
+ */
+
+const CB_HOMEWORK_STATE_WORD = Object.freeze({
+  proposed: 'Planned',
+  self_reported_done: 'Done — you recorded it',
+  parent_reported_done: 'Done — a parent recorded it',
+  skipped: 'Skipped',
+  expired: 'Expired'
+})
+
+const CB_HOMEWORK_KIND_WORD = Object.freeze({
+  real_world_use: 'Use it for real',
+  observe: 'Notice it',
+  label: 'Label it',
+  practice: 'Say it aloud',
+  make: 'Make it',
+  teach_back: 'Tell someone'
+})
+
+/** A task that still accepts a report. `skipped`/`expired` are closed, a report is final. */
+const CB_HOMEWORK_OPEN_STATES = Object.freeze(['proposed'])
+
+/** Words a learner-visible sheet must never carry (mirrors coursebook/homework.py). */
+const CB_HOMEWORK_FORBIDDEN = Object.freeze([
+  'xp',
+  'grade',
+  'graded',
+  'score',
+  'scored',
+  'mastery',
+  'streak',
+  'answer',
+  'photo'
+])
+
+const CB_HOMEWORK_INDEX_KEY = 'homework-index.v1'
+const _CB_JP_RUN = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/
+
+/** True when the copy carries Japanese, so the node can be marked `lang="ja"` for a reader. */
+function cbHasJapanese(value) {
+  return _CB_JP_RUN.test(String(value || ''))
+}
+
+/**
+ * The device index of homework task ids: `{enrollments: {id: {course_id, tasks: {task_id}}}}`.
+ * Only ids and their lesson anchors live here. A hand-edited or older document reads as empty.
+ */
+function cbHomeworkIndex() {
+  const storage = cbPrefsStorage()
+  let raw = null
+  try {
+    raw = storage ? storage.get(CB_HOMEWORK_INDEX_KEY, null) : null
+  } catch (error) {
+    raw = null
+  }
+  const source = raw && typeof raw === 'object' ? raw : {}
+  const sourceEnrollments =
+    source.enrollments && typeof source.enrollments === 'object' ? source.enrollments : {}
+  const enrollments = {}
+  for (const enrollmentId of Object.keys(sourceEnrollments)) {
+    const entry = sourceEnrollments[enrollmentId]
+    if (!entry || typeof entry !== 'object' || !entry.tasks || typeof entry.tasks !== 'object') continue
+    const tasks = {}
+    for (const taskId of Object.keys(entry.tasks)) {
+      const row = entry.tasks[taskId]
+      if (!row || typeof row !== 'object' || !row.objective_id) continue
+      tasks[taskId] = {
+        objective_id: String(row.objective_id),
+        course_id: String(row.course_id || entry.course_id || ''),
+        created_at: String(row.created_at || '')
+      }
+    }
+    if (Object.keys(tasks).length === 0) continue
+    enrollments[enrollmentId] = {
+      course_id: String(entry.course_id || ''),
+      tasks
+    }
+  }
+  return { enrollments }
+}
+
+/** Remember one proposed task so a later visit can read it again. Ids only; never the task. */
+function cbRememberHomework(task) {
+  if (!task || !task.task_id || !task.enrollment_id || !task.objective_id) return
+  const storage = cbPrefsStorage()
+  if (!storage) return
+  const index = cbHomeworkIndex()
+  const enrollment =
+    index.enrollments[task.enrollment_id] || { course_id: task.course_id || '', tasks: {} }
+  enrollment.course_id = task.course_id || enrollment.course_id
+  enrollment.tasks[task.task_id] = {
+    objective_id: task.objective_id,
+    course_id: task.course_id || enrollment.course_id,
+    created_at: task.created_at || ''
+  }
+  index.enrollments[task.enrollment_id] = enrollment
+  try {
+    storage.set(CB_HOMEWORK_INDEX_KEY, index)
+  } catch (error) {
+    // The index is a convenience door; failing to write it never hides a task the backend holds.
+  }
+}
+
+/** Indexed task ids, newest first, optionally narrowed to one enrollment. */
+function cbHomeworkIndexRows(enrollmentId) {
+  const index = cbHomeworkIndex()
+  const rows = []
+  for (const id of Object.keys(index.enrollments)) {
+    if (enrollmentId && id !== enrollmentId) continue
+    const enrollment = index.enrollments[id]
+    for (const taskId of Object.keys(enrollment.tasks)) {
+      rows.push({
+        task_id: taskId,
+        enrollment_id: id,
+        course_id: enrollment.tasks[taskId].course_id || enrollment.course_id,
+        objective_id: enrollment.tasks[taskId].objective_id,
+        created_at: enrollment.tasks[taskId].created_at
+      })
+    }
+  }
+  return rows.sort((left, right) => String(right.created_at).localeCompare(String(left.created_at)))
+}
+
+/** The task id a notebook entry was saved from, or null. */
+function cbHomeworkRefTaskId(value) {
+  if (!value) return null
+  const text = String(value)
+  if (text.charAt(0) !== '{') return null
+  try {
+    const parsed = JSON.parse(text)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    if (typeof parsed.homework_task_id === 'string' && parsed.homework_task_id) {
+      return parsed.homework_task_id
+    }
+    return null
+  } catch (error) {
+    return null
+  }
+}
+
+/** The `source_ref` a notebook save carries, so the notebook can find this task again. */
+function cbHomeworkSourceRef(task) {
+  return JSON.stringify({ homework_task_id: task.task_id, objective_id: task.objective_id })
+}
+
+/** The notebook excerpt for a saved task: the task's own words, one line. */
+function cbHomeworkExcerpt(task) {
+  const target = task && task.target ? task.target : {}
+  const head = `Take this with you: ${task.title || 'one task'}`
+  const where = task.context ? ` — ${task.context}` : ''
+  const what = target.display ? ` (${target.display})` : ''
+  return `${head}${what}${where}`.slice(0, 8000)
+}
+
+/** A sheet's own copy, flattened for the guard below. */
+function cbHomeworkSheetCopy(task) {
+  const target = (task && task.target) || {}
+  return [
+    task && task.title,
+    task && task.context,
+    (task && task.steps ? task.steps : []).join(' '),
+    task && task.success_criterion,
+    target.display,
+    target.reading,
+    target.meaning,
+    (target.completion_record || []).join(' ')
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+/** Reasons a sheet cannot be shown, in the learner's words. Rendering refuses a banned word. */
+function cbHomeworkSheetGuard(task) {
+  const copy = cbHomeworkSheetCopy(task)
+  const found = CB_HOMEWORK_FORBIDDEN.filter((word) => {
+    const pattern = new RegExp(`(?<![a-z0-9])${word}(?![a-z0-9])`)
+    return pattern.test(copy)
+  })
+  if (found.length > 0) {
+    return 'This task would print a word a take-home sheet must not carry, so it is not shown.'
+  }
+  if (task && Array.isArray(task.steps) && task.steps.length > 3) {
+    return 'A field card carries at most three steps, so this task is not shown.'
+  }
+  return null
+}
+
+/**
+ * Print one sheet. The backend's rendered HTML is loaded into a same-origin frame that is not on
+ * screen; Chromium's print dialog then prints that document alone, never the app around it.
+ */
+function cbPrintHomeworkSheet(html) {
+  if (!html || typeof document === 'undefined' || !document.body) return false
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.setAttribute('title', 'Homework sheet for printing')
+  frame.style.position = 'fixed'
+  frame.style.right = '0'
+  frame.style.bottom = '0'
+  frame.style.width = '0'
+  frame.style.height = '0'
+  frame.style.border = '0'
+  let printed = false
+  const run = () => {
+    if (printed) return
+    printed = true
+    try {
+      const win = frame.contentWindow
+      if (win) {
+        win.focus()
+        win.print()
+      }
+    } finally {
+      setTimeout(() => {
+        if (frame.parentNode) frame.parentNode.removeChild(frame)
+      }, 60000)
+    }
+  }
+  frame.addEventListener('load', run)
+  frame.srcdoc = html
+  document.body.appendChild(frame)
+  return true
+}
+
+/** Download one sheet as a local file. No upload, no share sheet. */
+function cbDownloadHomeworkSheet(html, filename) {
+  if (!html || typeof document === 'undefined' || typeof URL === 'undefined') return false
+  if (typeof URL.createObjectURL !== 'function') return false
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || 'homework-sheet.html'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => {
+    try {
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      // A revoked or already-collected URL is not a failure the learner can act on.
+    }
+  }, 4000)
+  return true
+}
+
+function cbHomeworkFilename(task) {
+  const title = String((task && task.title) || 'homework-sheet')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${title || 'homework-sheet'}-field-card.html`
+}
+
+/**
+ * The one-page field card, as the learner sees it on screen.
+ *
+ * It renders the same facts the backend prints — target, where and when, at most three steps,
+ * done-when, minutes, the completion line — from the `homework.read` task. The print and download
+ * actions hand over the backend's own `sheet.html`, so the paper cannot drift from the screen.
+ */
+function HomeworkSheetCard({ task, compact = false }) {
+  if (!task) return null
+  const target = task.target || {}
+  const steps = Array.isArray(task.steps) ? task.steps.slice(0, 3) : []
+  const record = Array.isArray(target.completion_record) ? target.completion_record : []
+  const state = task.state || 'proposed'
+  const done = state === 'self_reported_done' || state === 'parent_reported_done'
+  const reading = target.reading && target.reading !== target.display ? target.reading : null
+  const eyebrow = {
+    margin: 0,
+    fontFamily: CB_SANS,
+    fontSize: CB_TYPE.caption,
+    fontWeight: 600,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--cb-ink-soft)'
+  }
+  const label = {
+    margin: 0,
+    fontFamily: CB_SANS,
+    fontSize: CB_TYPE.caption,
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+    color: 'var(--cb-ink-soft)'
+  }
+  const rule = { border: 0, borderTop: '1px solid var(--cb-rule)', margin: '0.15rem 0', width: '100%' }
+  const completion =
+    state === 'skipped'
+      ? 'Skipped. Nothing is owed and nothing is lost.'
+      : state === 'expired'
+        ? 'This task closed without a report.'
+        : state === 'parent_reported_done'
+          ? `A parent recorded this as done${task.completion && task.completion.completed_at ? ` on ${whenLabel(task.completion.completed_at)}` : ''}. A report, not a verdict.`
+          : state === 'self_reported_done'
+            ? `You recorded this as done${task.completion && task.completion.completed_at ? ` on ${whenLabel(task.completion.completed_at)}` : ''}. A report, not a verdict.`
+            : 'Done — I will record this myself.'
+  return jsxs('article', {
+    'data-cb-homework-sheet': task.task_id,
+    'data-cb-homework-state': state,
+    'aria-label': `Take-home task: ${task.title || ''}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: compact ? '0.35rem' : '0.45rem',
+      minWidth: 0,
+      maxWidth: CB_MEASURE,
+      boxSizing: 'border-box',
+      padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
+      background: 'var(--cb-paper-raised)',
+      border: '1px solid var(--cb-rule)',
+      borderRadius: '2px'
+    },
+    children: [
+      jsx('p', { key: 'eyebrow', style: eyebrow, children: 'Coursebook field card' }),
+      jsx('h3', {
+        key: 'title',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontWeight: 600,
+          lineHeight: 1.2,
+          color: 'var(--cb-ink)'
+        },
+        children: task.title || 'One task'
+      }),
+      target.display
+        ? jsx('p', {
+            key: 'target',
+            'data-cb-homework-target': '',
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: compact ? CB_TYPE.body : CB_TYPE.heading,
+              lineHeight: 1.2,
+              color: 'var(--cb-ink)',
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(target.display) ? 'ja' : undefined,
+            children: target.display
+          })
+        : null,
+      reading
+        ? jsx('p', {
+            key: 'reading',
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.body,
+              color: 'var(--cb-ink-soft)',
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(reading) ? 'ja' : undefined,
+            children: reading
+          })
+        : null,
+      target.romaji
+        ? jsx('p', {
+            key: 'romaji',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: target.romaji
+          })
+        : null,
+      target.meaning
+        ? jsx('p', {
+            key: 'meaning',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            children: target.meaning
+          })
+        : null,
+      jsx('hr', { key: 'rule-a', style: rule }),
+      jsx('p', { key: 'where-label', style: label, children: 'Where and when' }),
+      jsx('p', {
+        key: 'context',
+        'data-cb-homework-context': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: task.context || ''
+      }),
+      jsx('p', { key: 'steps-label', style: label, children: 'Do this' }),
+      jsx('ol', {
+        key: 'steps',
+        style: {
+          margin: 0,
+          paddingLeft: '1.2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem',
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)'
+        },
+        children: steps.map((step, index) =>
+          jsx('li', { key: `${task.task_id}-step-${index}`, style: { overflowWrap: 'anywhere' }, children: step })
+        )
+      }),
+      record.length > 0
+        ? jsx('p', {
+            key: 'record',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: `Ticks for this card: ${record.join(' · ')}`
+          })
+        : null,
+      jsx('hr', { key: 'rule-b', style: rule }),
+      jsx('p', { key: 'done-label', style: label, children: 'Done when' }),
+      jsx('p', {
+        key: 'criterion',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: task.success_criterion || ''
+      }),
+      jsx('p', {
+        key: 'minutes',
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
+      }),
+      jsx('p', {
+        key: 'completion',
+        'data-cb-homework-completion': done ? 'reported' : state,
+        style: {
+          margin: 0,
+          paddingTop: '0.35rem',
+          borderTop: '1px solid var(--cb-rule)',
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.meta,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink)'
+        },
+        children: completion
+      }),
+      Array.isArray(task.sources) && task.sources.length > 0
+        ? jsxs('p', {
+            key: 'sources',
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)',
+              overflowWrap: 'anywhere'
+            },
+            children: [
+              jsx('span', { key: 'word', children: task.sources.length === 1 ? 'Source · ' : 'Sources · ' }),
+              ...task.sources.map((source, index) =>
+                jsxs(
+                  'span',
+                  {
+                    key: `src-${index}`,
+                    children: [
+                      index > 0 ? jsx('span', { key: 'sep', children: '; ' }) : null,
+                      jsx('a', {
+                        key: 'link',
+                        href: source.url,
+                        style: { color: 'inherit', textDecoration: 'underline' },
+                        children: source.title || source.source_id
+                      }),
+                      source.accessed ? jsx('span', { key: 'date', children: ` (accessed ${source.accessed})` }) : null
+                    ]
+                  },
+                  source.source_id || `src-${index}`
+                )
+              )
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/** The sheet's actions: print, download, save to the notebook. Local, never an external send. */
+function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownloaded, saved }) {
+  return jsxs('div', {
+    'data-cb-homework-actions': '',
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
+    children: [
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'secondary',
+        disabled: Boolean(busy),
+        onClick: () => {
+          const ok = cbPrintHomeworkSheet(task && task.sheet ? task.sheet.html : '')
+          if (onPrinted) onPrinted(ok)
+        },
+        children: 'Print the sheet'
+      }),
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'text',
+        disabled: Boolean(busy),
+        onClick: () => {
+          const ok = cbDownloadHomeworkSheet(
+            task && task.sheet ? task.sheet.html : '',
+            cbHomeworkFilename(task)
+          )
+          if (onDownloaded) onDownloaded(ok)
+        },
+        children: 'Download'
+      }),
+      canSave
+        ? jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'text',
+            disabled: Boolean(busy) || saved,
+            onClick: onSave,
+            children: saved ? 'Saved to the notebook' : 'Save to notebook'
+          })
+        : null,
+      jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Local only. Nothing is sent.'
+      })
+    ]
+  })
+}
+
+/**
+ * The quiet `Take this with you` action on a lesson.
+ *
+ * It is a text button in the reading column, not a modal: pressing it opens a small inline panel
+ * beside the lesson, so the lesson stays where it is. The learner writes the one sentence that
+ * says where and when; `homework.create` proposes the task from that context; then the card, the
+ * print/download/save actions and the two honest endings — `I did it` and `Not this one` — are
+ * all in place.
+ */
+function TakeThisWithYou({
+  enrollmentId,
+  courseId,
+  objectiveId,
+  sectionTitle,
+  implemented,
+  onChanged
+}) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const wired =
+    supports('homework.create') &&
+    supports('homework.read') &&
+    supports('homework.complete') &&
+    supports('homework.skip')
+  const [open, setOpen] = useState(false)
+  const [task, setTask] = useState(null)
+  const [status, setStatus] = useState('idle')
+  const [source, setSource] = useState({ status: 'idle', objective: null, error: null })
+  const [contextText, setContextText] = useState('')
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  const readTask = useCallback(async (taskId) => {
+    setStatus('reading')
+    setError(null)
+    const response = await rpc('homework.read', { task_id: taskId })
+    if (!response.ok) {
+      setStatus('error')
+      setError(response.error)
+      return null
+    }
+    setTask(response.result.task)
+    setStatus('ready')
+    return response.result.task
+  }, [])
+
+  // Opening reads the task the device already knows for this objective, else the source lesson.
+  const prepare = useCallback(async () => {
+    setError(null)
+    setNotice(null)
+    const known = cbHomeworkIndexRows(enrollmentId).find((row) => row.objective_id === objectiveId)
+    if (known) {
+      await readTask(known.task_id)
+      return
+    }
+    setStatus('reading')
+    const response = await rpc('takehome.sources', { course_id: courseId })
+    if (!response.ok) {
+      setSource({ status: 'error', objective: null, error: response.error })
+      setStatus('error')
+      setError(response.error)
+      return
+    }
+    const rows = response.result && Array.isArray(response.result.objectives) ? response.result.objectives : []
+    const entry = rows.find((row) => row.objective_id === objectiveId) || null
+    setSource({ status: 'ready', objective: entry, error: null })
+    setStatus('ready')
+  }, [courseId, enrollmentId, objectiveId, readTask])
+
+  const propose = useCallback(async () => {
+    const sentence = contextText.trim()
+    if (!sentence) return
+    const entry = source.objective
+    if (!entry || !entry.lesson_version) {
+      setError({
+        code: 'NO_SOURCE_LESSON',
+        message: 'The lesson for this section is not written yet, so there is no task to take with you.'
+      })
+      return
+    }
+    setBusy('propose')
+    setError(null)
+    const response = await rpc(
+      'homework.create',
+      {
+        course_id: courseId,
+        enrollment_id: enrollmentId,
+        objective_id: objectiveId,
+        audience: 'learner',
+        source_lesson_version: entry.lesson_version,
+        context: sentence
+      },
+      { expectedRevision: 0, idempotencyKey: newOperationId('homework-create') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    cbRememberHomework(response.result.task)
+    setStatus('ready')
+    setNotice('This is the whole task. It stays in your notebook and on paper; it is not a chat.')
+    if (onChanged) onChanged()
+  }, [contextText, courseId, enrollmentId, objectiveId, onChanged, source.objective])
+
+  const report = useCallback(
+    async (actor) => {
+      if (!task) return
+      setBusy(actor)
+      setError(null)
+      const method = 'homework.complete'
+      const response = await rpc(
+        method,
+        { task_id: task.task_id, actor, note: '' },
+        { expectedRevision: task.revision, idempotencyKey: newOperationId('homework-complete') }
+      )
+      setBusy(null)
+      if (!response.ok) {
+        setError(response.error)
+        return
+      }
+      setTask(response.result.task)
+      cbRememberHomework(response.result.task)
+      setNotice(
+        actor === 'parent'
+          ? 'Recorded: a parent reported this done. A report, not a mark.'
+          : 'Recorded: you reported this done. A report, not a mark.'
+      )
+      if (onChanged) onChanged()
+    },
+    [onChanged, task]
+  )
+
+  const skipTask = useCallback(async () => {
+    if (!task) return
+    setBusy('skip')
+    setError(null)
+    const response = await rpc(
+      'homework.skip',
+      { task_id: task.task_id, actor: 'learner' },
+      { expectedRevision: task.revision, idempotencyKey: newOperationId('homework-skip') }
+    )
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    setNotice('Skipped. Nothing is owed, nothing is lost, and no streak breaks.')
+    if (onChanged) onChanged()
+  }, [onChanged, task])
+
+  const saveToNotebook = useCallback(async () => {
+    if (!task) return
+    setBusy('save')
+    setError(null)
+    const response = await rpc('notebook.save', {
+      enrollment_id: enrollmentId,
+      objective_id: objectiveId,
+      lesson_run_id: null,
+      kind: 'personal_note',
+      excerpt: cbHomeworkExcerpt(task),
+      note: null,
+      tags: ['homework'],
+      source_ref: cbHomeworkSourceRef(task)
+    })
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setSaved(true)
+    setNotice('Saved to the notebook. The task itself stays a homework task, not a note.')
+    if (onChanged) onChanged()
+  }, [enrollmentId, objectiveId, onChanged, task])
+
+  if (!wired) return null
+
+  const blocked =
+    source.status === 'ready' && source.objective && source.objective.available === false
+      ? source.objective.blocked_reason || 'The lesson for this section is not written yet.'
+      : null
+  const sheetGuard = task ? cbHomeworkSheetGuard(task) : null
+  const openState = task && CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
+
+  const panel = !open
+    ? null
+    : jsxs('section', {
+        'data-cb-homework-panel': status,
+        'aria-label': 'Take this with you',
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.55rem',
+          minWidth: 0,
+          maxWidth: CB_MEASURE,
+          marginTop: '0.6rem',
+          paddingTop: '0.6rem',
+          borderTop: '1px solid var(--cb-rule)'
+        },
+        children: [
+          jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: sectionTitle ? `Take this with you · ${sectionTitle}` : 'Take this with you'
+          }),
+          status === 'reading'
+            ? jsx(sdk.Loader, { label: 'Reading this lesson’s task' })
+            : null,
+          error
+            ? jsxs('div', {
+                'data-cb-homework-error': error.code || 'ERROR',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.meta,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-coral)',
+                      overflowWrap: 'anywhere'
+                    },
+                    children: error.message || 'The task could not be read.'
+                  }),
+                  error.code ? jsx(QuietNote, { children: `Reason · ${error.code}` }) : null,
+                  jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'text',
+                    onClick: prepare,
+                    children: 'Try again'
+                  })
+                ]
+              })
+            : null,
+          blocked && !task
+            ? jsx('div', {
+                'data-cb-homework-blocked': 'lesson-not-ready',
+                children: jsx(QuietNote, {
+                  children: `${blocked} There is nothing to take with you from this section yet, and nothing is lost.`
+                })
+              })
+            : null,
+          status === 'ready' && !task && !blocked
+            ? jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.body,
+                      lineHeight: 1.5,
+                      color: 'var(--cb-ink)'
+                    },
+                    children:
+                      'Coursebook can write one small task from this lesson — one thing to use where you actually are. Say where and when, in one sentence.'
+                  }),
+                  jsx('label', {
+                    htmlFor: 'cb-homework-context',
+                    style: {
+                      fontFamily: CB_SANS,
+                      fontSize: CB_TYPE.caption,
+                      fontWeight: 600,
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: 'Where and when'
+                  }),
+                  jsx(sdk.Input, {
+                    id: 'cb-homework-context',
+                    value: contextText,
+                    placeholder: 'Before dinner at our own table',
+                    onChange: (event) => setContextText(event.target.value)
+                  }),
+                  jsxs('div', {
+                    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+                    children: [
+                      jsx(sdk.Button, {
+                        size: 'sm',
+                        variant: 'secondary',
+                        disabled: Boolean(busy) || contextText.trim().length === 0,
+                        onClick: propose,
+                        children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
+                      }),
+                      jsx('span', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children: 'One task, at most three steps, three to ten minutes.'
+                      })
+                    ]
+                  }),
+                  jsx(QuietNote, {
+                    children:
+                      'It opens no chat and sends nothing anywhere. Printing and downloading are local.'
+                  })
+                ]
+              })
+            : null,
+          task && !sheetGuard
+            ? jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 },
+                children: [
+                  jsx(HomeworkSheetCard, { task }),
+                  jsx(HomeworkSheetActions, {
+                    task,
+                    canSave: supports('notebook.save'),
+                    busy,
+                    saved,
+                    onSave: saveToNotebook,
+                    onPrinted: (ok) =>
+                      setNotice(ok ? 'The sheet is open in the print dialog.' : 'This build cannot open a print dialog.'),
+                    onDownloaded: (ok) =>
+                      setNotice(ok ? 'The sheet was saved as a file on this device.' : 'This build cannot save a file.')
+                  }),
+                  openState
+                    ? jsxs('div', {
+                        'data-cb-homework-report': 'open',
+                        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
+                        children: [
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'default',
+                            disabled: Boolean(busy),
+                            onClick: () => report('learner'),
+                            children: busy === 'learner' ? 'Recording' : 'I did it'
+                          }),
+                          jsx(sdk.Button, {
+                            size: 'sm',
+                            variant: 'text',
+                            disabled: Boolean(busy),
+                            onClick: skipTask,
+                            children: busy === 'skip' ? 'Skipping' : 'Not this one'
+                          }),
+                          jsx('span', {
+                            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                            children: 'Only you record it. Nothing here is marked.'
+                          })
+                        ]
+                      })
+                    : jsx('div', {
+                        'data-cb-homework-report': task.state,
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children:
+                          task.state === 'skipped'
+                            ? 'This one is closed as skipped. A fresh task can be taken with you from another lesson.'
+                            : 'This task already carries a report; it cannot be reported twice.'
+                      })
+                ]
+              })
+            : null,
+          task && sheetGuard
+            ? jsx('div', { 'data-cb-homework-refused': 'sheet', children: jsx(QuietNote, { children: sheetGuard }) })
+            : null,
+          notice
+            ? jsx('p', {
+                'data-cb-homework-notice': '',
+                style: {
+                  margin: 0,
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink)'
+                },
+                children: notice
+              })
+            : null
+        ]
+      })
+
+  return jsxs('div', {
+    'data-cb-homework': open ? 'open' : 'closed',
+    style: { display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: CB_MEASURE },
+    children: [
+      jsx(sdk.Button, {
+        size: 'sm',
+        variant: 'text',
+        'data-cb-homework-action': 'take-this-with-you',
+        'aria-expanded': open ? 'true' : 'false',
+        onClick: () => {
+          const next = !open
+          setOpen(next)
+          setNotice(null)
+          if (next && !task) prepare()
+        },
+        children: 'Take this with you'
+      }),
+      panel
+    ]
+  })
+}
+
+/**
+ * One homework record, read from the backend by id.
+ *
+ * Used by the notebook and by Parent Studio: both surfaces hold ids (this device's index, or a
+ * notebook save), never a task snapshot, so the state and the sheet are always the live answer.
+ */
+function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, onChange, canSave }) {
+  const [task, setTask] = useState(null)
+  const [status, setStatus] = useState('loading')
+  const [error, setError] = useState(null)
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  const load = useCallback(async () => {
+    setStatus('loading')
+    setError(null)
+    const response = await rpc('homework.read', { task_id: taskId })
+    if (!response.ok) {
+      setStatus('error')
+      setError(response.error)
+      return
+    }
+    setTask(response.result.task)
+    setStatus('ready')
+  }, [taskId])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const settle = useCallback(
+    async (method, payload, label) => {
+      if (!task) return
+      setBusy(label)
+      setError(null)
+      const response = await rpc(method, { task_id: task.task_id, ...payload }, {
+        expectedRevision: task.revision,
+        idempotencyKey: newOperationId(method)
+      })
+      setBusy(null)
+      if (!response.ok) {
+        setError(response.error)
+        return
+      }
+      setTask(response.result.task)
+      if (method === 'homework.complete') {
+        setNotice(
+          actor === 'parent'
+            ? 'Recorded: a parent reported this done. A report, not a mark.'
+            : 'Recorded: the learner reported this done. A report, not a mark.'
+        )
+      } else {
+        setNotice('Skipped. Nothing is owed and nothing is lost.')
+      }
+      if (onChange) onChange()
+    },
+    [actor, onChange, task]
+  )
+
+  const save = useCallback(async () => {
+    if (!task) return
+    setBusy('save')
+    const response = await rpc('notebook.save', {
+      enrollment_id: task.enrollment_id,
+      objective_id: task.objective_id,
+      lesson_run_id: null,
+      kind: 'personal_note',
+      excerpt: cbHomeworkExcerpt(task),
+      note: null,
+      tags: ['homework'],
+      source_ref: cbHomeworkSourceRef(task)
+    })
+    setBusy(null)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setSaved(true)
+    if (onChange) onChange()
+  }, [onChange, task])
+
+  if (status === 'loading') {
+    return jsx('div', { 'data-cb-homework-record': 'loading', children: jsx(sdk.Loader, { label: 'Reading this task' }) })
+  }
+  if (status === 'error' || !task) {
+    return jsxs('div', {
+      'data-cb-homework-record': 'error',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: CB_MEASURE, minWidth: 0 },
+      children: [
+        jsx('p', {
+          style: {
+            margin: 0,
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.meta,
+            lineHeight: 1.5,
+            color: 'var(--cb-coral)',
+            overflowWrap: 'anywhere'
+          },
+          children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
+        }),
+        jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: load, children: 'Try again' })
+      ]
+    })
+  }
+  const openState = CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
+  return jsxs('div', {
+    'data-cb-homework-record': task.state,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.25rem',
+      minWidth: 0,
+      maxWidth: CB_MEASURE,
+      padding: '0.5rem 0',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem', minWidth: 0 },
+        children: [
+          jsx('span', {
+            'data-cb-homework-record-target': '',
+            style: {
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.lead,
+              color: 'var(--cb-ink)',
+              minWidth: 0,
+              overflowWrap: 'anywhere'
+            },
+            lang: cbHasJapanese(task.target && task.target.display) ? 'ja' : undefined,
+            children: (task.target && task.target.display) || task.title
+          }),
+          jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'outline',
+            'data-cb-homework-record-state': task.state,
+            children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: `${Number(task.estimated_minutes) || 5} min`
+          })
+        ]
+      }),
+      jsx('span', {
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: [lessonTitle || null, courseTitle || null].filter(Boolean).join(' · ') || 'This course',
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
+        children: [
+          jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'text',
+            'aria-expanded': open ? 'true' : 'false',
+            onClick: () => setOpen(!open),
+            children: open ? 'Hide the sheet' : 'Show the sheet'
+          }),
+          openState
+            ? jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'secondary',
+                disabled: Boolean(busy),
+                onClick: () => settle('homework.complete', { actor, note: '' }, 'report'),
+                children: busy === 'report'
+                  ? 'Recording'
+                  : actor === 'parent'
+                    ? 'A parent recorded this'
+                    : 'I did it'
+              })
+            : null,
+          openState
+            ? jsx(sdk.Button, {
+                size: 'sm',
+                variant: 'text',
+                disabled: Boolean(busy),
+                onClick: () => settle('homework.skip', { actor }, 'skip'),
+                children: busy === 'skip' ? 'Skipping' : 'Skip'
+              })
+            : null
+        ]
+      }),
+      open
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingTop: '0.35rem', minWidth: 0 },
+            children: [
+              jsx(HomeworkSheetCard, { task, compact: true }),
+              jsx(HomeworkSheetActions, {
+                task,
+                canSave: Boolean(canSave) && !saved,
+                busy,
+                saved,
+                onSave: save,
+                onPrinted: (ok) =>
+                  setNotice(ok ? 'The sheet is open in the print dialog.' : 'This build cannot open a print dialog.'),
+                onDownloaded: (ok) =>
+                  setNotice(ok ? 'The sheet was saved as a file on this device.' : 'This build cannot save a file.')
+              })
+            ]
+          })
+        : null,
+      notice
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink)' },
+            children: notice
+          })
+        : null,
+      error
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              color: 'var(--cb-coral)',
+              overflowWrap: 'anywhere'
+            },
+            children: `${error.code}: ${error.message}`
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * The homework list. One row per task, in the order the learner met them, with the four states the
+ * plan names: planned, done (self or parent reported), skipped.
+ */
+function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChange, canSave, title }) {
+  if (!rows || rows.length === 0) {
+    return jsx('div', {
+      'data-cb-homework-list': 'empty',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
+      children: jsx(EmptyState, { title: emptyTitle, description: emptyDescription })
+    })
+  }
+  return jsx('div', {
+    'data-cb-homework-list': String(rows.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
+    children: [
+      title
+        ? jsx('div', { key: 'title', style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) })
+        : null,
+      ...rows.map((row) =>
+        jsx(
+          HomeworkRecord,
+          {
+            taskId: row.task_id,
+            actor,
+            courseTitle: row.course_title,
+            lessonTitle: row.lesson_title,
+            canSave,
+            onChange
+          },
+          row.task_id
+        )
+      )
+    ]
+  })
+}
+
+/**
+ * Parent Studio → Homework. The parent's door to the tasks a learner took with them.
+ *
+ * It reads the same records the learner does, through `homework.read`, and can record a
+ * `parent_reported_done`. It never opens a chat between the parent and the child, and it never
+ * turns a report into evidence.
+ */
+function HomeworkStudio({ implemented, onOpenSource }) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const wired = supports('homework.read')
+  const [rows, setRows] = useState(() => cbHomeworkIndexRows())
+  const [library, setLibrary] = useState({ status: 'idle', titles: {} })
+  const [sources, setSources] = useState({ status: 'idle', lessons: {} })
+
+  useEffect(() => {
+    if (!wired) return
+    setRows(cbHomeworkIndexRows())
+  }, [wired])
+
+  const courseIds = Array.from(new Set(rows.map((row) => row.course_id).filter(Boolean)))
+
+  useEffect(() => {
+    if (!supports('library.list')) return
+    let cancelled = false
+    ;(async () => {
+      setLibrary((previous) => ({ ...previous, status: 'loading' }))
+      const response = await rpc('library.list', { filter: 'all', limit: 50, sort: 'recent' })
+      if (cancelled) return
+      if (!response.ok) {
+        setLibrary({ status: 'error', titles: {} })
+        return
+      }
+      const titles = {}
+      for (const item of (response.result && response.result.items) || []) {
+        if (item && item.course_id) titles[item.course_id] = item.title || ''
+      }
+      setLibrary({ status: 'ready', titles })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [implemented])
+
+  useEffect(() => {
+    if (!supports('takehome.sources') || courseIds.length === 0) return undefined
+    let cancelled = false
+    ;(async () => {
+      const lessons = {}
+      let failed = false
+      for (const courseId of courseIds) {
+        const response = await rpc('takehome.sources', { course_id: courseId })
+        if (cancelled) return
+        if (!response.ok) {
+          failed = true
+          continue
+        }
+        for (const objective of (response.result && response.result.objectives) || []) {
+          if (objective && objective.objective_id) lessons[objective.objective_id] = objective.title || ''
+        }
+      }
+      setSources({ status: failed ? 'error' : 'ready', lessons })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [courseIds.join('|'), implemented])
+
+  const refresh = useCallback(() => setRows(cbHomeworkIndexRows()), [])
+
+  if (!wired) {
+    return jsx(EmptyState, {
+      title: 'Homework needs the homework methods',
+      description:
+        'This backend does not implement homework.read, so no task can be read here. Update the plugin instead of showing a placeholder.',
+      children: null
+    })
+  }
+
+  const outgoing = rows.map((row) => ({
+    task_id: row.task_id,
+    course_title: row.course_id ? (library.titles[row.course_id] || row.course_id) : '',
+    lesson_title: sources.lessons[row.objective_id] || ''
+  }))
+
+  return jsxs('div', {
+    'data-cb-homework-studio': String(rows.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.9rem 1rem 1.2rem', minWidth: 0 },
+    children: [
+      jsx('p', {
+        style: {
+          margin: 0,
+          maxWidth: CB_MEASURE,
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.meta,
+          lineHeight: 1.5,
+          color: 'var(--cb-ink-soft)'
+        },
+        children:
+          'Tasks a learner took with them from a lesson on this device. A parent can record one as done; it is a report, never a mark, and it opens no chat.'
+      }),
+      library.status === 'error'
+        ? jsx(QuietNote, { children: 'The course names could not be read. The tasks below are unchanged.' })
+        : null,
+      sources.status === 'error'
+        ? jsx(QuietNote, { children: 'A lesson title could not be read. The task itself is unchanged.' })
+        : null,
+      jsx(HomeworkRecordList, {
+        rows: outgoing,
+        actor: 'parent',
+        canSave: supports('notebook.save'),
+        onChange: refresh,
+        title: 'Homework taken with you',
+        emptyTitle: 'No homework yet',
+        emptyDescription:
+          'When a learner takes a task with them from a lesson, it appears here. A task starts on a lesson page, never from this screen.'
+      })
+    ]
   })
 }
 
@@ -30970,7 +32362,9 @@ function CoursebookPage() {
                 onOpenSettings: openSettings,
                 triggerRef: settingsTriggerRef
               })
-            : jsx(StudioList, {
+            : studioTab === 'homework'
+              ? jsx(HomeworkStudio, { implemented })
+              : jsx(StudioList, {
                 implemented,
                 reloadSignal: studioReload,
                 sessionMinutes: homePrefs.sessionMinutes,
@@ -31626,6 +33020,23 @@ export {
   TakeHomeSourcePanel,
   TakeHomeProof,
   TakeHomePackPanel,
+  TakeThisWithYou,
+  HomeworkSheetCard,
+  HomeworkRecord,
+  HomeworkRecordList,
+  HomeworkStudio,
+  CB_HOMEWORK_STATE_WORD,
+  CB_HOMEWORK_KIND_WORD,
+  CB_HOMEWORK_FORBIDDEN,
+  cbHasJapanese,
+  cbHomeworkIndexRows,
+  cbHomeworkRefTaskId,
+  cbHomeworkSourceRef,
+  cbHomeworkExcerpt,
+  cbHomeworkFilename,
+  cbHomeworkSheetGuard,
+  cbPrintHomeworkSheet,
+  cbDownloadHomeworkSheet,
   StudioEntranceTabs,
   CB_STUDIO_ENTRANCES,
   CB_TAKEHOME_KINDS,
