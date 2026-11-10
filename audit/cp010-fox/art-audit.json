@@ -1,0 +1,245 @@
+{
+  "tolerance": 26,
+  "poses": [
+    {
+      "file": "assets/art/fox/fox-model-sheet.png",
+      "size": [
+        1228,
+        1228
+      ],
+      "bytes": 793363,
+      "sha256": "cfb21ca10a260a8209ccb8f857f7cdb5adedc33f84a53ad604b22c829b987f55",
+      "alpha_bbox": [
+        16,
+        310,
+        1212,
+        917
+      ],
+      "opaque_px": 439107,
+      "pure_black_px": 154,
+      "pure_black_share": 0.00035,
+      "pigment_px": {
+        "fur": 6881,
+        "cream": 2161,
+        "sock": 80121,
+        "line": 14607
+      },
+      "pigment_share": {
+        "fur": 0.01567,
+        "cream": 0.00492,
+        "sock": 0.18246,
+        "line": 0.03327
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-wave.png",
+      "size": [
+        677,
+        677
+      ],
+      "bytes": 309372,
+      "sha256": "ac90df33a0eb77363e3fa30c78df2ace449817b97002d65d9177420958044e9b",
+      "alpha_bbox": [
+        94,
+        16,
+        582,
+        661
+      ],
+      "opaque_px": 163318,
+      "pure_black_px": 14,
+      "pure_black_share": 9e-05,
+      "pigment_px": {
+        "fur": 2050,
+        "cream": 21659,
+        "sock": 25848,
+        "line": 5744
+      },
+      "pigment_share": {
+        "fur": 0.01255,
+        "cream": 0.13262,
+        "sock": 0.15827,
+        "line": 0.03517
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-point.png",
+      "size": [
+        701,
+        701
+      ],
+      "bytes": 349646,
+      "sha256": "e0e24d6833f50904fa1288124b9fc9491afe43d704070c6d5d8a7691146d458b",
+      "alpha_bbox": [
+        16,
+        39,
+        685,
+        661
+      ],
+      "opaque_px": 175672,
+      "pure_black_px": 3,
+      "pure_black_share": 2e-05,
+      "pigment_px": {
+        "fur": 2584,
+        "cream": 1467,
+        "sock": 28340,
+        "line": 8163
+      },
+      "pigment_share": {
+        "fur": 0.01471,
+        "cream": 0.00835,
+        "sock": 0.16132,
+        "line": 0.04647
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-clock.png",
+      "size": [
+        660,
+        660
+      ],
+      "bytes": 271453,
+      "sha256": "716215b41e25d4be7cbb381624b46a9f50e04511ab4e0d6f12a73621503c8aa9",
+      "alpha_bbox": [
+        141,
+        16,
+        518,
+        644
+      ],
+      "opaque_px": 141676,
+      "pure_black_px": 6,
+      "pure_black_share": 4e-05,
+      "pigment_px": {
+        "fur": 2563,
+        "cream": 3723,
+        "sock": 23364,
+        "line": 5210
+      },
+      "pigment_share": {
+        "fur": 0.01809,
+        "cream": 0.02628,
+        "sock": 0.16491,
+        "line": 0.03677
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-read.png",
+      "size": [
+        654,
+        654
+      ],
+      "bytes": 367317,
+      "sha256": "b17e9c1662dd9e0181433dc37edfce04731280dd7ad43e0c8826d4e0469802a4",
+      "alpha_bbox": [
+        78,
+        16,
+        575,
+        638
+      ],
+      "opaque_px": 175568,
+      "pure_black_px": 0,
+      "pure_black_share": 0.0,
+      "pigment_px": {
+        "fur": 16340,
+        "cream": 4334,
+        "sock": 30004,
+        "line": 4897
+      },
+      "pigment_share": {
+        "fur": 0.09307,
+        "cream": 0.02469,
+        "sock": 0.1709,
+        "line": 0.02789
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-cheer.png",
+      "size": [
+        661,
+        661
+      ],
+      "bytes": 298043,
+      "sha256": "267c5a069848f57b23a73465e02cccc91e1e7bd15739e62a3a45a0f0a28a2643",
+      "alpha_bbox": [
+        87,
+        16,
+        574,
+        645
+      ],
+      "opaque_px": 154493,
+      "pure_black_px": 0,
+      "pure_black_share": 0.0,
+      "pigment_px": {
+        "fur": 2588,
+        "cream": 3717,
+        "sock": 19801,
+        "line": 5796
+      },
+      "pigment_share": {
+        "fur": 0.01675,
+        "cream": 0.02406,
+        "sock": 0.12817,
+        "line": 0.03752
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-think.png",
+      "size": [
+        670,
+        670
+      ],
+      "bytes": 247249,
+      "sha256": "e30dff2a7c7e837a153209c440f958a2e197ee11e6f41ea12c52fb40c5c27c24",
+      "alpha_bbox": [
+        148,
+        16,
+        522,
+        654
+      ],
+      "opaque_px": 131119,
+      "pure_black_px": 99,
+      "pure_black_share": 0.00076,
+      "pigment_px": {
+        "fur": 2002,
+        "cream": 668,
+        "sock": 18560,
+        "line": 3852
+      },
+      "pigment_share": {
+        "fur": 0.01527,
+        "cream": 0.00509,
+        "sock": 0.14155,
+        "line": 0.02938
+      }
+    },
+    {
+      "file": "assets/art/fox/fox-sleep.png",
+      "size": [
+        837,
+        837
+      ],
+      "bytes": 529928,
+      "sha256": "41688208a0013eca3d62cc0f7885668982d79944b2c3d06483f70a1613d0d134",
+      "alpha_bbox": [
+        16,
+        126,
+        821,
+        710
+      ],
+      "opaque_px": 313916,
+      "pure_black_px": 19,
+      "pure_black_share": 6e-05,
+      "pigment_px": {
+        "fur": 14388,
+        "cream": 7332,
+        "sock": 34154,
+        "line": 3795
+      },
+      "pigment_share": {
+        "fur": 0.04583,
+        "cream": 0.02336,
+        "sock": 0.1088,
+        "line": 0.01209
+      }
+    }
+  ]
+}
