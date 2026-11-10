@@ -38,11 +38,28 @@ reported, not made:
 
 | check | result |
 | --- | --- |
-| `python3 scripts/build_plugin.py` | wrote `desktop/plugin.js` from 20 segments; sha in the card summary |
-| `python3 -m unittest tests.test_cp_025b_v3_studio` | 17 tests, OK |
+| `python3 scripts/build_plugin.py` | wrote `desktop/plugin.js` from 20 segments; module sha256 `fd05777522d27f6869dd0a5f5a95a8d21996b6a44a90f1e6e73057e583cb309c` |
+| `python3 -m unittest tests.test_cp_025b_v3_studio` | 18 tests, OK |
 | `python3 -m unittest tests.test_plugin_build tests.test_desktop_tokens tests.test_desktop_tokens_v3 tests.test_v3_primitives tests.test_v3_scope` | OK |
 | `python3 -m unittest tests.test_desktop_gm004_world tests.test_desktop_h94_single_primary tests.test_desktop_gm006_parent_takehome tests.test_desktop_h156_parent_child tests.test_desktop_contracts tests.test_desktop_h194_fine_tune_ui` | OK — every GM-004 world marker, the H-94 one-primary count and the H-156 adult-only copy still hold |
-| `python3 scripts/m4v-audit.py` | regenerated `audit/visual/m4-visual/audit.json` against the new module sha |
+| `bash scripts/validate-plugin.sh` | release gate 4/4 on the branch tip |
+| `python3 scripts/m4v-audit.py` | regenerated `audit/visual/m4-visual/audit.json`, 15 claims PASS, pinned to the module sha above |
+
+Commits on `wt/cp-025b-adopt`:
+
+| commit | content |
+| --- | --- |
+| `9f7260f` | the two segments, the rebuilt module, the 17-test file |
+| `706d62b` | M4 audit re-pinned on the first rebuild |
+| `197eec5` | this packet |
+| `1ca0576` | the sheet-name fix (see below) and the audit re-pinned again |
+
+One defect found and fixed while reviewing the diff: `aria-labelledby="cb-world-studio-title"`
+pointed at an `h2` that only the body head rendered, so the read-failure, unsupported and loading
+states opened a modal dialog with no accessible name. `WorldStudioFrame` now renders that one `h2`
+when the body does not, and `test_the_sheet_is_named_in_the_states_that_skip_the_body_head` asserts
+it in all three states.
+
 
 ## The cells this card still owes (deferred)
 
