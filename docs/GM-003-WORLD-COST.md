@@ -105,3 +105,12 @@ on the accept path and refuses a hostile caller patch before any world row, job 
 (**0** image calls). Function words in `tone`/`audience` (`calm and precise`) are now neutral, so a
 legal mood patch still costs exactly the 3 boards + kit from the table above. No cache-key or
 `prompt_hash` change: the fence remains prompt-local.
+
+## Round-10 leading-word / fraction fence cost
+
+Round 10 skips leading discourse words before the procedure-verb test, extends the imperative verb
+set, and singularises hyphenated fraction tails. The check is the same local predicate, so it adds
+**0** model calls on the accept path and refuses a hostile caller patch before any world row, job
+or provider call (**0** image calls). Legal patches (`four-cylinder block`, `car on a lift`) still
+cost exactly the 3 boards + kit from the table above. No cache-key or `prompt_hash` change: the
+fence remains prompt-local.

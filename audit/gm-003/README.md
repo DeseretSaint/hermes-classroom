@@ -305,9 +305,61 @@ rebased base `7553925` (`full-attempt9.log`).
 
 Residual paths are unchanged from round 8: token-level heuristics are not a semantic classifier,
 and a procedure phrased as a bare noun phrase with no digit, unit, spelled quantity, hyphenated
-value or verb-initial imperative is not detected. The workshop hard negatives remain the second
-line of defence. The token-heuristic boundary is the supervisor's freeze; a semantic classifier
-would be a follow-up card.
+value or procedure verb is not detected. The workshop hard negatives remain the second line of
+defence. **Correction (round 10):** this paragraph previously implied only bare-noun procedures
+escaped; in fact round 9 still accepted verb-initial imperatives with a frozen verb when a
+leading discourse word preceded it (`First, remove the intake manifold`). That is fixed in
+round 10 below.
 
 
 
+## Review round 10 — sentinel L1/L2: leading word and fraction
+
+Round 9 fixed the hyphen carve-out but two paths still reached the plate through the same
+predicate, both reachable **with no `brief_patch` at all**.
+
+**L1 — one leading word restored a frozen imperative.** `_names_procedure_or_spelled_value()`
+ended with `tokens[0] in _PROCEDURE_VERB_TOKENS`, so `First, remove the intake manifold`,
+`Then drain the coolant`, `Open the hood`, `Release the fuel pressure`, `Raise the vehicle on the
+hoist` and `Seat the gasket on the block` were accepted on concepts (3 calls) and the
+approved-style kit path (4 calls); a course titled `First, remove the intake manifold` leaked into
+3/3 prompts.
+
+Fix, inside the shared predicate so every call site inherits it:
+
+- leading discourse words (`first`, `then`, `next`, `now`, `finally`, `also`, `carefully`,
+  `before`, `after`, …) are skipped before the verb-initial test;
+- the procedure verb set gains the missing imperatives (`open`, `close`, `release`, `raise`,
+  `lower`, `seat`, `place`, `position`, `route`, `mark`, `tag`, `hold`, `support`, `clamp`, `pry`,
+  `jack`, `spray`, `soak`, `check`, `verify`, `ensure`);
+- a procedure verb followed by a determiner (`remove **the** manifold`) is refused wherever it
+  sits, and gerund forms (`removing`, `installing`) resolve to the same verb set. The native
+  place cue `car on a lift` stays legal because its noun is not followed by a determiner, and
+  `four-cylinder block` / `two-stroke engine` remain legal.
+
+**L2 — `two-thirds` survived the carve-out.** `_descriptive_number_compound()` compared the raw
+tail, and `thirds` is not the singular `third`, so a fraction read as a number+noun compound.
+`_singular_compound_tail()` now singularises the tail (with `halves`→`half`) and
+`_QUANTITY_COMPOUND_TOKENS` lists the ordinals (`third`, `fifth`, …, `twelfth`, `percent`), so
+`two-thirds`, `two-fifths`, `three-quarters` and `two-percent` are refused.
+
+**Tests** — `test_presentation_motifs_with_a_leading_word_still_name_a_procedure` (concepts and
+approved-style kit, 0 spend), `test_presentation_motifs_cannot_hyphenate_a_fraction` (concepts and
+kit, 0 spend, `four-cylinder block` still legal), and
+`test_course_title_with_a_leading_word_cannot_carry_a_procedure` (title-only repro: 3 calls, no
+`intake manifold` in any prompt, `Workshop manual` fallback, stored brief verbatim). The
+class-closing table gains `leading` and `fraction` categories.
+
+Red evidence: `audit/gm-003/red-attempt10.txt` (4 tests, 28 subtest failures — every bypass
+accepted or hostile text present, the intended reasons). Green:
+`audit/gm-003/green-attempt10.txt` (4 OK), `test_world-attempt10.txt` (40 OK), regression set
+304 OK (`regression-attempt10.txt`), predicate probe `predicate-attempt10.txt` (every L1/L2 string
+refused, the native carve-outs allowed), full suite in `full-attempt10.log`.
+
+**Residual paths (unchanged):** token-level heuristics, not a semantic classifier. A procedure
+phrased as a bare noun phrase with no digit, unit, spelled quantity, fraction or procedure verb
+(`valve clearance table`) is not detected; the workshop hard negatives remain the second line of
+defence. `world.*` is still absent from the published `rpc.v22.json`, so registration stays fenced
+and non-dispatchable (additive integration bump); the media seam is a deterministic fake; the
+`world_assets` role vocabulary follows the frozen 0013 CHECK; create-time auto-queue is owned by
+GM-002.
