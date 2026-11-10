@@ -104,6 +104,26 @@ def provider_generate(prompt: str, aspect_ratio: str, model: str | None = None) 
     return str(payload["image"])
 
 
+def provider_edit(prompt: str, aspect_ratio: str, source: Path, model: str | None = None) -> str:
+    """Edit an existing plate (the model's own edit endpoint) instead of re-rolling it.
+
+    Used when a plate is compositionally right but carries one printed mark: an edit keeps the
+    approved scene and removes the mark, where a fresh generation re-rolls every other detail.
+    """
+    from tools.image_generation_tool import image_generate_tool
+
+    raw = image_generate_tool(
+        prompt,
+        aspect_ratio=HOST_ASPECT[aspect_ratio],
+        fal_model=model or PROOF_MODEL,
+        image_url=str(source.resolve()),
+    )
+    payload = json.loads(raw)
+    if not payload.get("success") or not payload.get("image"):
+        raise RuntimeError(payload.get("error") or "image edit failed")
+    return str(payload["image"])
+
+
 def download(url: str, path: Path) -> bytes:
     if url.startswith("data:"):
         header, _, payload = url.partition(",")
@@ -141,6 +161,87 @@ def ocr(path: Path) -> dict:
             words.append(token)
     text = " ".join(words)
     return {"text": text, "letters": len(text), "words": words}
+
+
+def _last_json_object(text: str) -> dict | None:
+    """The last JSON object in a model answer that carries a ``notation`` key."""
+    import re
+
+    decoder = json.JSONDecoder()
+    for match in reversed(list(re.finditer(r"\{", text))):
+        try:
+            value, _ = decoder.raw_decode(text[match.start():])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict) and "notation" in value:
+            return value
+    return None
+
+
+#: The notation/diagram gate question. One vision read per plate: the OCR gate in :func:`ocr`
+#: only sees a >=2-character word at >=70 confidence, so staves, chord boxes, tick boxes and
+#: single glyphs pass it by construction. A "clean" here is a measured result, not a claim.
+NOTATION_QUESTION = (
+    "Audit this illustration for printed marks. Answer with JSON only: "
+    '{"notation": true|false, "kind": "what you saw", "evidence": "where"}. '
+    "notation=true if the image contains any musical notation, staves, noteheads, clefs, chord "
+    "boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, "
+    "letters, numerals, brand names or any symbol that resembles writing, or if it shows hands "
+    "performing a technique or an instruction step. Ignore brush marks, paper grain, paint "
+    "texture and the silhouette of ordinary objects."
+)
+
+
+def notation_check(path: Path) -> dict:
+    """Vision read for the printed-mark class, recorded beside the OCR result. Fail-closed."""
+    import asyncio
+
+    sys.path.insert(0, str(HERMES))
+    try:
+        from tools.vision_tools import _handle_vision_analyze
+    except Exception as error:  # noqa: BLE001 - recorded, never hidden
+        return {"verdict": "unchecked", "notation": None, "error": str(error)[:400], "read": ""}
+    try:
+        raw = asyncio.run(
+            _handle_vision_analyze(
+                {"image_url": str(path.resolve()), "question": NOTATION_QUESTION}
+            )
+        )
+    except Exception as error:  # noqa: BLE001
+        return {"verdict": "unchecked", "notation": None, "error": str(error)[:400], "read": ""}
+    payload = json.loads(raw) if isinstance(raw, str) else raw
+    if not isinstance(payload, dict) or not payload.get("success"):
+        return {"verdict": "unchecked", "notation": None, "error": str(payload)[:400], "read": ""}
+    analysis = str(payload.get("analysis") or "")
+    parsed = _last_json_object(analysis)
+    if parsed is None:
+        return {"verdict": "unparsed", "notation": None, "read": analysis[-1500:]}
+    flag = bool(parsed.get("notation"))
+    return {
+        "verdict": "suspect" if flag else "clean",
+        "notation": flag,
+        "kind": str(parsed.get("kind") or "")[:200],
+        "evidence": str(parsed.get("evidence") or "")[:400],
+        "read": analysis[-1500:],
+    }
+
+
+def summary_entry(slug: str, grammar: str, plates: list[dict], sheet: Path) -> dict:
+    """The per-topic summary: counts a reader can re-derive from ``provenance.json``."""
+    return {
+        "topic": slug,
+        "grammar": grammar,
+        "plates": len(plates),
+        "sheet": str(sheet),
+        "prompt_versions": sorted({str(row.get("prompt_version") or "") for row in plates}),
+        "lettering_gate_clean": sum(1 for row in plates if not row["ocr"].get("words")),
+        "notation_gate_clean": sum(
+            1 for row in plates if (row.get("notation") or {}).get("verdict") == "clean"
+        ),
+        "notation_gate_suspect": sum(
+            1 for row in plates if (row.get("notation") or {}).get("verdict") == "suspect"
+        ),
+    }
 
 
 def plan_for(slug: str) -> tuple[world.WorldBrief, str, list[world.WorldPrompt]]:
@@ -218,11 +319,53 @@ def contact_sheet(slug: str, rows: list[dict]) -> Path:
 def main() -> int:
     dry = "--dry-run" in sys.argv
     probe = "--probe" in sys.argv
+    notation_only = "--notation-only" in sys.argv
     OUT.mkdir(parents=True, exist_ok=True)
+    slug_filter = None
+    if "--slug" in sys.argv:
+        slug_filter = sys.argv[sys.argv.index("--slug") + 1]
+    if notation_only:
+        # Re-read the final plates only. No generation, no re-crop: this is the gate's second
+        # lens over art that already exists, recorded beside the OCR result in provenance.
+        for slug in TOPICS:
+            if slug_filter and slug != slug_filter:
+                continue
+            folder = OUT / slug
+            provenance = json.loads((folder / "provenance.json").read_text(encoding="utf-8"))
+            for row in provenance["plates"]:
+                check = notation_check(Path(row["file"]))
+                row["notation"] = check
+                print(
+                    f"{slug}/{Path(row['file']).name}: notation={check['verdict']}"
+                    f" ocr_words={len(row['ocr'].get('words') or [])}"
+                )
+            (folder / "provenance.json").write_text(
+                json.dumps(provenance, indent=2), encoding="utf-8"
+            )
+        print("notation check complete")
+        return 0
+    if "--summary-only" in sys.argv:
+        # Rebuild SUMMARY.json from the provenances already on disk. No provider call.
+        manifest = []
+        for slug in TOPICS:
+            provenance = json.loads(
+                (OUT / slug / "provenance.json").read_text(encoding="utf-8")
+            )
+            manifest.append(
+                summary_entry(
+                    slug,
+                    provenance["grammar"],
+                    provenance["plates"],
+                    Path(provenance["contact_sheet"]),
+                )
+            )
+        (OUT / "SUMMARY.json").write_text(
+            json.dumps({"card": "CP-016", "topics": manifest}, indent=2), encoding="utf-8"
+        )
+        print(json.dumps(manifest, indent=2))
+        return 0
     if probe:
-        slug = "technical-brake-bleed"
-        if "--slug" in sys.argv:
-            slug = sys.argv[sys.argv.index("--slug") + 1]
+        slug = slug_filter or "technical-brake-bleed"
         brief, grammar, prompts = plan_for(slug)
         hero = next(item for item in prompts if item.role == "hero")
         folder = OUT / "probe"
@@ -245,9 +388,22 @@ def main() -> int:
             "strictly from the upper left; every shadow falls to the lower right. Paint every "
             "swatch, card and sign blank, with no codes, labels or lettering on any object."
         )
-        only = None
-        if "--only" in sys.argv:
-            only = sys.argv[sys.argv.index("--only") + 1]
+        if "--harden-file" in sys.argv:
+            harden = Path(sys.argv[sys.argv.index("--harden-file") + 1]).read_text(
+                encoding="utf-8"
+            ).strip()
+            if harden:
+                hard = f"{hard} {harden}"
+        # ``--only`` may repeat: one pass regenerates every plate whose prompt or pictured
+        # content failed a gate, and nothing else.
+        only: list[str] = [
+            sys.argv[index + 1]
+            for index, token in enumerate(sys.argv)
+            if token == "--only" and index + 1 < len(sys.argv)
+        ]
+        repair_round = 2
+        if "--round" in sys.argv:
+            repair_round = int(sys.argv[sys.argv.index("--round") + 1])
         manifest = []
         for slug in TOPICS:
             brief, grammar, prompts = plan_for(slug)
@@ -255,12 +411,24 @@ def main() -> int:
             provenance = json.loads((folder / "provenance.json").read_text(encoding="utf-8"))
             lookup = {(item.role, item.section_id): item for item in prompts}
             for row in provenance["plates"]:
-                forced = only is not None and only in row["file"]
-                if not forced and not row["ocr"]["words"]:
+                forced = bool(only) and any(token in row["file"] for token in only)
+                # With an explicit --only list, nothing else is re-rendered — the spend guard:
+                # only the frames whose prompt or pictured content failed a gate.
+                if only and not forced:
+                    continue
+                if not only and not row["ocr"]["words"]:
                     continue
                 prompt = lookup[(row["role"], row["section_id"])]
-                url = provider_generate(prompt.prompt + hard, prompt.aspect_ratio, PROOF_MODEL)
                 path = Path(row["file"])
+                edit = "--edit" in sys.argv
+                if edit:
+                    url = provider_edit(
+                        prompt.prompt + hard, prompt.aspect_ratio, path, PROOF_MODEL
+                    )
+                else:
+                    url = provider_generate(
+                        prompt.prompt + hard, prompt.aspect_ratio, PROOF_MODEL
+                    )
                 data = download(url, path)
                 if url.startswith("data:"):
                     source = {
@@ -272,6 +440,7 @@ def main() -> int:
                 row.update(
                     {
                         "prompt_hash": prompt.prompt_hash,
+                        "prompt_version": prompt.prompt_version,
                         "prompt": prompt.prompt,
                         "negative_prompt": prompt.negative_prompt,
                         "medium": prompt.medium,
@@ -281,24 +450,22 @@ def main() -> int:
                         "sha256": hashlib.sha256(data).hexdigest(),
                         "bytes": len(data),
                         "ocr": ocr(path),
+                        "notation": notation_check(path),
                         "generated_at": datetime.now(timezone.utc).isoformat(),
-                        "repair_round": 1,
+                        "repair_round": repair_round,
+                        "repair_method": "edit" if edit else "regenerate",
                     }
                 )
-                print(f"repaired {slug}/{row['role']} words={row['ocr']['words']}")
+                print(
+                    f"repaired {slug}/{path.name} words={row['ocr']['words']}"
+                    f" notation={row['notation']['verdict']}"
+                )
             sheet = contact_sheet(slug, provenance["plates"])
             provenance["contact_sheet"] = str(sheet)
             (folder / "provenance.json").write_text(
                 json.dumps(provenance, indent=2), encoding="utf-8"
             )
-            manifest.append(
-                {
-                    "topic": slug,
-                    "grammar": grammar,
-                    "plates": len(provenance["plates"]),
-                    "sheet": str(sheet),
-                }
-            )
+            manifest.append(summary_entry(slug, grammar, provenance["plates"], sheet))
         (OUT / "SUMMARY.json").write_text(
             json.dumps({"card": "CP-016", "topics": manifest}, indent=2), encoding="utf-8"
         )
@@ -351,6 +518,7 @@ def main() -> int:
                 "sha256": hashlib.sha256(data).hexdigest(),
                 "bytes": len(data),
                 "ocr": ocr(folder / name),
+                "notation": notation_check(folder / name),
                 "generated_at": datetime.now(timezone.utc).isoformat(),
             }
             rows.append(row)
@@ -375,7 +543,9 @@ def main() -> int:
             "contact_sheet": str(sheet),
         }
         (folder / "provenance.json").write_text(json.dumps(provenance, indent=2), encoding="utf-8")
-        summary.append({"topic": slug, "grammar": grammar, "plates": len(rows), "sheet": str(sheet)})
+        summary.append(
+            summary_entry(slug, grammar, rows, sheet)
+        )
 
     if not dry:
         (OUT / "SUMMARY.json").write_text(
