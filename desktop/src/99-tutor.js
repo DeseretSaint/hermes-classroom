@@ -2173,7 +2173,34 @@ export {
   courseExportRepair,
   COURSE_EXPORT_BLOCKED_COPY,
   COURSE_EXPORT_PRIVATE_ROWS,
-  COURSE_EXPORT_REPAIR
+  COURSE_EXPORT_REPAIR,
+  // CP-020b — the Field Atlas v3 primitives and the component-lab sheet. Exported so the render
+  // tests and scripts/cp-lab-shot.mjs can mount every primitive in every state without a backend.
+  CbV3Scope,
+  PillAction,
+  ForestRail,
+  ForestBand,
+  PaperCard,
+  CollectibleCard,
+  CoverPlate3,
+  ShelfPlank,
+  StampNode,
+  Medallion,
+  FoxPose,
+  DialogueBubble,
+  ChallengeCard,
+  EvidenceTray,
+  CbV3LabSheet,
+  CbV3LabSection,
+  CbV3PaletteChip,
+  CB3_POSES,
+  CB3_DESTINATIONS,
+  CB3_STAMP_STATES,
+  CB3_MEDALS,
+  CB3_LAB_COPY,
+  cb3Contrast,
+  cb3StepRendering,
+  cb3FoxSource
 }
 
 export default {

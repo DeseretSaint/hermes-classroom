@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regenerate the two contract-derived constants in ``desktop/src/76-v3-scope.js``.
 
-``CB_TOKENS_V3_JSON`` must be the contract's canonical bytes for the five build-critical sections,
+``CB_TOKENS_V3_JSON`` must be the contract's canonical bytes for the six build-critical sections,
 and ``CB3_V3_ROLES`` must be the contract's own role list. Both are generated rather than typed so
 a contract edit cannot leave the shipped module describing an older palette:
 
