@@ -321,7 +321,23 @@ class NoHotlinkAndIconFamilyTests(unittest.TestCase):
         # name a local font file. The v2 module had no font files at all, so this "no font asset
         # reference" clause binds the v2 region; the v3 font rule is "every family starts with
         # `CB `" in tests/test_desktop_tokens_v3.py.
-        self.assertNotRegex(v2_source(), r"\.(?:png|jpg|jpeg|woff2?|svg)\b[\"']")
+        # CP-020a concatenates the generated CB_ASSETS object into the module. Its provenance
+        # rows name the source files (`...woff2`) but embed the bytes as data URLs, so it is an
+        # opaque generated block for this scan; the block itself must carry no network URL.
+        v2 = re.sub(
+            r"const CB_ASSETS = Object\.freeze\(\{.*?\n\}\)\n",
+            "",
+            v2_source(),
+            flags=re.S,
+        )
+        self.assertNotRegex(v2, r"\.(?:png|jpg|jpeg|woff2?|svg)\b[\"']")
+        assets = PLUGIN.read_text(encoding="utf-8")
+        start = assets.index("const CB_ASSETS = Object.freeze(")
+        end = assets.index("globalThis.CB_ASSETS = CB_ASSETS")
+        block = assets[start:end]
+        self.assertNotIn("http://", block)
+        self.assertNotIn("https://", block)
+        self.assertIn("data:font/woff2;base64,", block)
 
     def test_the_icon_family_is_unchanged(self) -> None:
         self.assertIn("sdk.Codicon", self.source)
