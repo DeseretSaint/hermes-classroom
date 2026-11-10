@@ -1,0 +1,256 @@
+{
+  "card": "CP-012",
+  "branch": "wt/cp-012-covers",
+  "art_authority": "docs/concept-parity/ART-BIBLE.md (painted plate medium) + docs/GM-SUBJECT-WORLDS.md (subject worlds)",
+  "provider": {
+    "tool": "host image_generate",
+    "route": "nous image gateway -> v3b.fal.media",
+    "model_id": "not reported by the host tool",
+    "note": "The host tool returns the media URL only; neither its response nor hermes config names the image model. Recorded as unknown rather than guessed, as A1 did."
+  },
+  "generated_on": "2026-11-10",
+  "target_paper": [
+    247,
+    241,
+    228
+  ],
+  "rows": [
+    {
+      "id": "C-japanese-r1",
+      "pack": "japanese-affection-context-l0",
+      "prompt_sha256": "94dba9083ad60b166f5770b0e3cb8c0537793c400357f9d0a8f6c4967353ca0e",
+      "prompt_chars": 1421,
+      "round": 1,
+      "provider": {
+        "tool": "host image_generate",
+        "route": "nous image gateway -> v3b.fal.media",
+        "model_id": "not reported by the host tool",
+        "note": "The host tool returns the media URL only; neither its response nor hermes config names the image model. Recorded as unknown rather than guessed, as A1 did."
+      },
+      "media_url": "https://v3b.fal.media/files/b/0ab1eced/gBNvs9EFPBcdqpEfkidv5_uBaT3VC1.png",
+      "generated_on": "2026-11-10",
+      "raw": {
+        "path": "audit/cp012-covers/raw/japanese-r1.png",
+        "sha256": "4bfd3793945421fa85a148f6d4caac2d957e0ed5c11b340252eae67d14ea2f73",
+        "bytes": 891768,
+        "width": 1024,
+        "height": 576,
+        "channels": "srgb",
+        "paper_corner": [
+          249,
+          248,
+          241
+        ]
+      },
+      "shipped": [
+        {
+          "path": "assets/art/covers/japanese-master-1200x800.png",
+          "sha256": "4ba7531f0aa26033d754d6e7eb48554b8d40dfe99e5e0eccad232b9b4ada4d44",
+          "bytes": 1016619,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            247,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/japanese-crop-3x2-1200x800.png",
+          "sha256": "4ba7531f0aa26033d754d6e7eb48554b8d40dfe99e5e0eccad232b9b4ada4d44",
+          "bytes": 1016619,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            247,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/japanese-crop-4x5-640x800.png",
+          "sha256": "5dd7476cb83d798b7265be5ec93525d9bc0070a227d73cc827cb78606ef1d160",
+          "bytes": 572506,
+          "width": 640,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            246,
+            240,
+            228
+          ]
+        }
+      ],
+      "pipeline": {
+        "prep": "scripts/cp012-cover-prep.py",
+        "temper": "-modulate 97,78,100",
+        "paper_match": "corner scaled onto #f7f1e4, gain clamp 0.90-1.10",
+        "master": "16:9 raw centre-cropped to 864x576, Lanczos to 1200x800 (1.389x)",
+        "crop_4x5": "640x800 centre crop of the master, no resampling"
+      },
+      "owner_approval": "unsigned"
+    },
+    {
+      "id": "C-parent-r1",
+      "pack": "parent-measurement-practice",
+      "prompt_sha256": "c16c84276b1ac403d176ced8ebe588da36446c210bf0e24f89c53474e000d286",
+      "prompt_chars": 1415,
+      "round": 1,
+      "provider": {
+        "tool": "host image_generate",
+        "route": "nous image gateway -> v3b.fal.media",
+        "model_id": "not reported by the host tool",
+        "note": "The host tool returns the media URL only; neither its response nor hermes config names the image model. Recorded as unknown rather than guessed, as A1 did."
+      },
+      "media_url": "https://v3b.fal.media/files/b/0ab1eced/nX5JgSP7f5d2m8sTxmdmm_AebGU7QI.png",
+      "generated_on": "2026-11-10",
+      "raw": {
+        "path": "audit/cp012-covers/raw/parent-r1.png",
+        "sha256": "06c5d528c70eaf98e0b62bc3242bf16562ab5d16d07a4fd9210d0fa8566f7f2f",
+        "bytes": 541890,
+        "width": 1024,
+        "height": 576,
+        "channels": "srgb",
+        "paper_corner": [
+          252,
+          248,
+          234
+        ]
+      },
+      "shipped": [
+        {
+          "path": "assets/art/covers/parent-master-1200x800.png",
+          "sha256": "fd309a4367392f3d27d580be83f51168e54700481b51456bfef0cfa0df02346b",
+          "bytes": 626641,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            246,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/parent-crop-3x2-1200x800.png",
+          "sha256": "fd309a4367392f3d27d580be83f51168e54700481b51456bfef0cfa0df02346b",
+          "bytes": 626641,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            246,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/parent-crop-4x5-640x800.png",
+          "sha256": "8371a5892b3b7eb88bf31300e926a38f0bca847234bd12ed4d70786bf9ad9089",
+          "bytes": 379700,
+          "width": 640,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            246,
+            241,
+            228
+          ]
+        }
+      ],
+      "pipeline": {
+        "prep": "scripts/cp012-cover-prep.py",
+        "temper": "-modulate 97,78,100",
+        "paper_match": "corner scaled onto #f7f1e4, gain clamp 0.90-1.10",
+        "master": "16:9 raw centre-cropped to 864x576, Lanczos to 1200x800 (1.389x)",
+        "crop_4x5": "640x800 centre crop of the master, no resampling"
+      },
+      "owner_approval": "unsigned"
+    },
+    {
+      "id": "C-technical-r1",
+      "pack": "technical-demo-pack",
+      "prompt_sha256": "64dbe0be0717c1d9a2b5af77b5a03c44a8f563ce4a9d4f32af67198f66b78d64",
+      "prompt_chars": 1466,
+      "round": 1,
+      "provider": {
+        "tool": "host image_generate",
+        "route": "nous image gateway -> v3b.fal.media",
+        "model_id": "not reported by the host tool",
+        "note": "The host tool returns the media URL only; neither its response nor hermes config names the image model. Recorded as unknown rather than guessed, as A1 did."
+      },
+      "media_url": "https://v3b.fal.media/files/b/0ab1eced/pMB756g4VFjeTuQMakG2m_eEHY880b.png",
+      "generated_on": "2026-11-10",
+      "raw": {
+        "path": "audit/cp012-covers/raw/technical-r1.png",
+        "sha256": "4de1ec9bd65342a0ebaa385c4b45d8c0883ddc1cd7a7ed0d0a8a502b2e5d50e6",
+        "bytes": 813364,
+        "width": 1024,
+        "height": 576,
+        "channels": "srgb",
+        "paper_corner": [
+          250,
+          248,
+          236
+        ]
+      },
+      "shipped": [
+        {
+          "path": "assets/art/covers/technical-master-1200x800.png",
+          "sha256": "3f89e666ed9ec1c969a9eab8ad33a09286d2c5e8f8c5df90de1c50e6679d2d07",
+          "bytes": 921824,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            247,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/technical-crop-3x2-1200x800.png",
+          "sha256": "3f89e666ed9ec1c969a9eab8ad33a09286d2c5e8f8c5df90de1c50e6679d2d07",
+          "bytes": 921824,
+          "width": 1200,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            247,
+            241,
+            228
+          ]
+        },
+        {
+          "path": "assets/art/covers/technical-crop-4x5-640x800.png",
+          "sha256": "e59c74b4f9b4b182b1933ea4186a229f0aaddefa0ab73d725c788cff2b9e5a96",
+          "bytes": 490931,
+          "width": 640,
+          "height": 800,
+          "channels": "srgb",
+          "paper_corner": [
+            246,
+            241,
+            228
+          ]
+        }
+      ],
+      "pipeline": {
+        "prep": "scripts/cp012-cover-prep.py",
+        "temper": "-modulate 97,78,100",
+        "paper_match": "corner scaled onto #f7f1e4, gain clamp 0.90-1.10",
+        "master": "16:9 raw centre-cropped to 864x576, Lanczos to 1200x800 (1.389x)",
+        "crop_4x5": "640x800 centre crop of the master, no resampling"
+      },
+      "owner_approval": "unsigned"
+    }
+  ],
+  "claims_not_made": [
+    "no model id, because the host tool does not report one",
+    "no human illustrator, native-speaker or colour-professional review",
+    "no claim that the fallback press plates were replaced by this kit in the packs (CP-014 integrates)",
+    "no owner signature: the contact sheet is submitted for approval, not approved"
+  ]
+}
