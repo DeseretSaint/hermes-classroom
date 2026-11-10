@@ -70,8 +70,10 @@ is sparse piano, so:
    `alimiter=limit=0.84:attack=5:release=50:level=disabled` (0.84 ≈ −1.5 dBTP).
    **`level=disabled` is mandatory.** `alimiter`'s `level` option defaults to *enabled*, which re-normalises
    the output back to 0 dBFS: without the flag this chain measures **−12.65 LUFS / 0.00 dBTP** (and
-   **−13.10 LUFS / 0.00 dBTP** with the older `limit=0.891`) — 4.4 dB louder than intended and at full scale,
-   a fail of the §9 item 3 true-peak gate with no headroom for anything summed later. Do not "clean up" the
+   **−13.10 LUFS / 0.00 dBTP** with the older `limit=0.891`) — **1.5 dB louder than intended** at the
+   published limit (1.0 dB at the older one: −13.10 vs −14.11) and at full scale, a fail of the §9 item 3
+   true-peak gate with no headroom for anything summed later. The +4.4 dB above is the bed gain stage; it is
+   not the size of the error. Do not "clean up" the
    chain by dropping the flag. (The `−14.11 LUFS / −1.00 dBTP` pair sometimes quoted for this chain belongs to
    `limit=0.891` **with** `level=disabled` — the round-1 setting — not to the no-flag case.)
 3. Place the SFX after the limiter so their transients are not squashed; they are already 15 dB down.
