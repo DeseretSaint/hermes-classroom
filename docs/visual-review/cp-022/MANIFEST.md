@@ -1,4 +1,4 @@
-# CP-022 — Home v3 (R-HOME): review packet (round 2)
+# CP-022 — Home v3 (R-HOME): review packet (round 3)
 
 Card: **CP-022**. Owner `sable`, reviewer `quill`. Branch `wt/cp-022-home`.
 Contract: `desktop/src/30-home.js` (the only product file edited) + the two `tests/test_cp_022_*`
@@ -41,6 +41,36 @@ modules.
    the row with a `ResizeObserver`; a narrowed route (chat rail opens) recomputes `data-cb-shelf-mask`
    instead of leaving a clipped shelf unfaded (`test_home_v3_mask_remeasures_on_a_route_change`).
 4. **Copy record completed** — see gap 3 below; every visible string is now enumerated and ruled.
+
+## Round-3 changes (the non-discriminating closing tests)
+
+The round-2 product geometry was accepted; round 3 fixes three oracles that passed regardless of the
+code, and proves each one bites:
+
+1. **`test_home_v3_copy_has_an_id` is no longer vacuous.** `_deck_patterns()` no longer maps text
+   placeholders (`{subject label}`, `{next step}`) to `. +`: a text placeholder is a field value, so
+   the oracle matches it against the payload's **own state string**, and only numeric placeholders
+   keep a shape (`\d+`). Additions: a compositional acceptor (the error state concatenates the
+   backend read, the failed-read word and the deck body into one paragraph, so every character must
+   be consumable from a frozen unit), an overflowing payload so `See all` is actually rendered, an
+   assertion that each frozen pending really appears, and negative controls that assert an invented
+   sentence is rejected by both the exact and the compositional path. `Start a new course` and
+   `See all` are enumerated in the frozen CP-031 pendings.
+   *Negative control reproduced:* removing `Start a new course` from the pendings makes the test
+   fail with `Home rendered a string with no COPY.md id or state source: 'Start a new course'`.
+2. **The fox assertion runs.** `MEASURE` queried `[data-cb-fox]` while the primitive renders
+   `data-cb3-fox`, so `foxOnShelfRow` was always false. It now queries `[data-cb3-fox]` and asserts
+   the fox **exists** and is contained by `[data-cb-home-ledge]` at 1049/900, and is absent at 460.
+   *Negative control reproduced:* restoring the old selector reports `fox: None`, so the new
+   existence assertion fails.
+3. **The mask probe exercises the `ResizeObserver`.** jsdom has no `ResizeObserver`, so the round-2
+   test only re-exercised the pre-existing window `'resize'` listener. `MASK` now installs a
+   `ResizeObserver` stub **before** importing the plugin, changes the stubbed row geometry, fires
+   the observer callback with **no** window resize, and asserts the mask goes `none → right → none`.
+   The window-resize/route-width path stays as a second assertion.
+   *Negative control reproduced:* disabling the component's observer branch yields `observers: 0`,
+   `afterObserver: none`; the shipped module yields `observers: 1`, `none → right → none → right`.
+
 
 ## What this commit builds
 
@@ -128,10 +158,12 @@ What *is* machine-checked on this tree:
    - `This backend does not report course mode yet.` → the whole notice is **removed**; with no
      `world.read` the card simply omits the mode chip, which is the honest omission.
 
-   **Still no `COPY.md` §2 id — frozen by `test_home_v3_copy_has_an_id`, routed to CP-031:**
+   **Still no `COPY.md` §2 id — frozen by `test_home_v3_copy_has_an_id`, routed to CP-031 (nine):**
 
    | String | Where | Why it is not a deck row yet |
    |---|---|---|
+   | `Start a new course` | primary action label (`CB_HOME_V3_COPY.primary`) | the card body's own label; the deck ships `home.primary` = `Start a course` and `home.firstuse.primary` = `Start your first course`. Also the GM-002 behavioural anchor — routed to CP-031 with the primary |
+   | `See all` | H4 shelf action (`seeAll`) | COPY.md §2 has no see-all / overflow-action row at all |
    | `Parent Studio holds your lesson plans.` | parent-only plate title | COPY has no parent-profile state copy at all |
    | `This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.` | parent-only plate body | same |
    | `Open Parent Studio` | parent-only plate action | same; only `nav.parent` names the destination |

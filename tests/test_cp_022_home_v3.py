@@ -326,13 +326,24 @@ class HomeV3StatesTest(Base):
     def test_home_v3_copy_has_an_id(self) -> None:
         """SPEC-V3 §4 — a screen may not render a string with no `COPY.md` id.
 
-        Every visible Home string must be a `home.*` deck row, a value carried by backend state,
-        or one of the enumerated CP-031 pendings below. The pendings are frozen here so a new
-        invented sentence fails the test instead of shipping; `docs/visual-review/cp-022/
-        MANIFEST.md` gap 3 names each one and the card body/COPY conflict it carries.
+        Every visible Home string must be a `home.*` deck row, a value the backend state actually
+        carries, or one of the enumerated CP-031 pendings below. The pendings are frozen here so a
+        new invented sentence fails instead of shipping; `docs/visual-review/cp-022/MANIFEST.md`
+        gap 3 names each one and the card body/COPY conflict it carries.
+
+        The oracle is deliberately narrow: deck rows with a text placeholder (`{subject label}`,
+        `{next step}`) are field values, not deck copy, so they are matched against the payload's
+        own state string rather than a `. +` wildcard, and a negative control asserts an invented
+        sentence is rejected.
         """
         deck = self._deck_patterns()
+        deck_strings = self._deck_strings()
         pending = {
+            # CP-031 — learner-visible with no `COPY.md` §2 id. Frozen so a new string fails here.
+            # `Start a new course` is the card body's own label (the deck ships `Start a course` /
+            # `Start your first course`); `See all` has no COPY.md §2 row at all.
+            "Start a new course",
+            "See all",
             "This is a failed read, not an empty library",
             "Parent Studio holds your lesson plans",
             "This profile has parent-led lesson plans, not a learner course",
@@ -343,19 +354,81 @@ class HomeV3StatesTest(Base):
             "Unarchive one in Courses to continue it",
             "Untitled course",
         }
-        derived = {"Course number 1", "Course number 2", "Small engines", "Resume this lesson",
-                   "HOST_UNAVAILABLE: backend is down"}
-        templates = [r"\d+ of \d+ sections done"]
 
-        def allowed(text: str) -> bool:
+        def state_values(payload: dict) -> set[str]:
+            """Every string the test itself put into backend state, plus the fact pairs it composes."""
+            values: set[str] = set()
+
+            def walk(node) -> None:
+                if isinstance(node, dict):
+                    for item in node.values():
+                        walk(item)
+                elif isinstance(node, (list, tuple)):
+                    for item in node:
+                        walk(item)
+                elif isinstance(node, str):
+                    values.add(node.strip().rstrip("."))
+                elif isinstance(node, (int, float)) and not isinstance(node, bool):
+                    values.add(str(node))
+
+            walk(payload)
+            error = payload.get("error") or {}
+            if isinstance(error.get("code"), str) and isinstance(error.get("message"), str):
+                values.add(f"{error['code']}: {error['message']}")
+            for item in payload.get("rows") or []:
+                evidence = item.get("evidence_summary") or {}
+                for done, total in (
+                    (item.get("sections_done"), item.get("sections_total")),
+                    (evidence.get("independent"), evidence.get("total_objectives")),
+                ):
+                    if isinstance(done, int) and isinstance(total, int):
+                        values.add(f"{done} of {total} sections done")
+            return values
+
+        def allowed(text: str, values: set[str]) -> bool:
             value = text.strip().rstrip(".")
             if not value:
                 return True
-            if value in pending or value in derived:
-                return True
-            if any(re.fullmatch(pattern, value) for pattern in templates):
+            if value in pending or value in values or value in deck_strings:
                 return True
             return any(re.fullmatch(pattern, value) for pattern in deck)
+
+        def composable(text: str, values: set[str]) -> bool:
+            """True when the whole segment is a concatenation of frozen units and punctuation.
+
+            The error state composes the backend read, the failed-read word and the deck's body into
+            one paragraph, so the oracle cannot simply split on sentence stops: it must consume every
+            character from a unit it already accepts. An invented sentence cannot be consumed.
+            """
+            units = sorted(
+                {unit.strip().rstrip(".") for unit in (*deck_strings, *pending, *values)} - {""},
+                key=len,
+                reverse=True,
+            )
+            rest = text.strip()
+            while rest:
+                for unit in units:
+                    if rest.startswith(unit):
+                        tail = rest[len(unit):]
+                        if not tail or tail[0] in " .!?…":
+                            rest = tail.lstrip(" .!?…")
+                            break
+                else:
+                    return False
+            return True
+
+        invented = "A sentence nobody wrote in COPY.md"
+        self.assertFalse(allowed(invented, set()), "the oracle accepted an invented sentence")
+        self.assertFalse(composable(invented, set()), "the oracle composed an invented sentence")
+        sample = state_values(dict(rows=[row(1)]))
+        self.assertFalse(
+            allowed("You have 7 unfinished lessons", sample),
+            "the oracle accepted a sentence built outside the deck and the state",
+        )
+        self.assertFalse(
+            composable("You have 7 unfinished lessons", sample),
+            "the oracle composed a sentence built outside the deck and the state",
+        )
 
         payloads = [
             dict(rows=[row(1), row(2)]),
@@ -369,30 +442,76 @@ class HomeV3StatesTest(Base):
             dict(online=False, rows=[row(1)]),
             dict(rows=[row(1, recipe="parent")]),
             dict(rows=[row(1, title=None, learner_label=None)]),
+            # An overflowing shelf: `See all` is only visible with a fifth course, so the matrix
+            # must render it or the string is never checked.
+            dict(rows=[row(index) for index in range(1, 7)]),
         ]
+        rendered: list[str] = []
         for payload in payloads:
             html = self.home(**payload)
+            rendered.append(painted(html))
+            values = state_values(payload)
             for segment in re.findall(r">([^<>]+)<", html):
-                # A composed sentence (cause + deck body) is allowed when each part is.
-                for part in re.split(r"(?<=[.!?])\s+", segment.strip()):
+                text = segment.strip()
+                if not text:
+                    continue
+                # A composed paragraph is allowed when every unit it is built from is.
+                if allowed(text, values) or composable(text, values):
+                    continue
+                if ": " in text and all(part.strip() in values for part in text.split(": ")):
+                    continue
+                for part in re.split(r"(?<=[.!?])\s+", text):
                     if not part.strip():
                         continue
                     self.assertTrue(
-                        allowed(part),
+                        allowed(part, values) or composable(part, values),
                         f"Home rendered a string with no COPY.md id or state source: {part!r} in {payload}",
                     )
+        # A frozen pending that never renders is dead weight: prove the matrix exercises both.
+        painted_text = " ".join(rendered)
+        for required in ("Start a new course", "See all"):
+            self.assertIn(required, painted_text, f"{required!r} is frozen pending but never rendered")
 
     @staticmethod
-    def _deck_patterns() -> list[str]:
-        """The `home.*` copy deck's own strings, from `docs/concept-parity/COPY.md` §2."""
+    def _deck_cells() -> list[str]:
         path = ROOT / "docs" / "concept-parity" / "COPY.md"
-        patterns: list[str] = []
+        cells: list[str] = []
         for line in path.read_text(encoding="utf-8").splitlines():
             match = re.match(r"^\|\s*`(home\.[a-z0-9.]+)`\s*\|\s*([^|]+?)\s*\|", line)
             if match:
-                cell = match.group(2).strip().rstrip(".")
-                patterns.append(re.sub(r"\\\{[^}]*\\\}", ".+", re.escape(cell)))
+                cells.append(match.group(2).strip().rstrip("."))
+        return cells
+
+    @classmethod
+    def _deck_strings(cls) -> list[str]:
+        """The deck rows without a placeholder — real copy lines, usable as composition units."""
+        return [cell for cell in cls._deck_cells() if "{" not in cell]
+
+    @staticmethod
+    def _deck_patterns() -> list[str]:
+        """The `home.*` copy deck's own strings, from `docs/concept-parity/COPY.md` §2.
+
+        A text placeholder (`{subject label}`, `{next step}`) is a field value, not deck copy: those
+        rows are skipped so the oracle tests the payload state instead of accepting any sentence
+        with `. +`. Only numeric placeholders keep a shape (`\\d+`).
+        """
+        numeric = {"done", "total", "independent"}
+        patterns: list[str] = []
+        for cell in HomeV3StatesTest._deck_cells():
+            pieces = re.split(r"\{([^}]*)\}", cell)
+            pattern: list[str] = []
+            for index, piece in enumerate(pieces):
+                if index % 2 == 0:
+                    pattern.append(re.escape(piece))
+                elif piece.strip() in numeric:
+                    pattern.append(r"\d+")
+                else:
+                    pattern = []
+                    break
+            if pattern:
+                patterns.append("".join(pattern))
         return patterns
+
 
     def test_parent_only_profile_points_at_parent_studio(self) -> None:
         html = self.home(rows=[row(1, recipe="parent")])

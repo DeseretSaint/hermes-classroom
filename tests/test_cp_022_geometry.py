@@ -11,8 +11,9 @@ Three layers, each with a distinct oracle:
   * `test_home_v3_shelf_cards_sit_inside_the_row` — the shipped markup painted in Chromium at those
     widths: every `[data-cb-home-card]` border box lies inside `[data-cb-home-shelf-row]`'s clip
     box, and 4 / 3 / 1 full cards show;
-  * `test_home_v3_mask_remeasures_on_a_route_change` — a jsdom mount with stubbed row geometry:
-    changing the route width re-measures the edge mask instead of leaving a clipped shelf unfaded.
+  * `test_home_v3_mask_remeasures_on_a_route_change` — a jsdom mount with a stubbed
+    `ResizeObserver` and stubbed row geometry: firing the observer callback (with no window resize)
+    must re-measure the edge mask, and the route-width path is covered as a second assertion.
 """
 
 from __future__ import annotations
@@ -120,8 +121,9 @@ const expression = `(() => {
       basis: card.getAttribute('data-cb-home-card-basis')
     }
   })
-  const fox = document.querySelector('[data-cb-fox]')
+  const fox = document.querySelector('[data-cb3-fox]')
   const foxRect = fox ? fox.getBoundingClientRect() : null
+  const ledge = document.querySelector('[data-cb-home-ledge]')
   return {
     missing: false,
     row: {
@@ -132,6 +134,7 @@ const expression = `(() => {
     },
     cards,
     foxOnShelfRow: Boolean(fox && row.contains(fox)),
+    foxOnLedge: Boolean(fox && ledge && ledge.contains(fox)),
     fox: foxRect ? { left: foxRect.left, right: foxRect.right, width: foxRect.width } : null,
     hint: Boolean(document.querySelector('[data-cb-home-overflow-hint]')),
     pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -154,6 +157,17 @@ MASK = r"""
 const React = (await import('react')).default
 const { createRoot } = await import('react-dom/client')
 const { JSDOM } = await import('jsdom')
+
+// jsdom has no ResizeObserver. Stub it *before* the plugin is imported so the component's observer
+// branch is the one under test: firing this callback must re-measure with no window resize.
+const observers = []
+class StubResizeObserver {
+  constructor(callback) { this.callback = callback; this.targets = []; observers.push(this) }
+  observe(target) { this.targets.push(target) }
+  unobserve(target) { this.targets = this.targets.filter((entry) => entry !== target) }
+  disconnect() { this.targets = [] }
+}
+globalThis.ResizeObserver = StubResizeObserver
 
 const payload = JSON.parse(process.env.CB_TEST_PAYLOAD)
 const dom = new JSDOM(
@@ -192,16 +206,40 @@ let scroll = 984
 Object.defineProperty(row, 'clientWidth', { configurable: true, get: () => client })
 Object.defineProperty(row, 'scrollWidth', { configurable: true, get: () => scroll })
 const before = row.getAttribute('data-cb-shelf-mask')
-// The route narrows (chat rail opens): four cards no longer fit three columns. The measured row
-// now overflows; only a width dependency in the effect re-measures it.
+const observedRow = observers.some((observer) => observer.targets.includes(row))
+const fire = () => {
+  for (const observer of observers) {
+    const targets = observer.targets.slice()
+    if (targets.length) observer.callback(targets.map((target) => ({ target })), observer)
+  }
+}
+// The row itself narrows (the chat rail opens) with no window resize event at all: only the
+// observer can notice, so this probe fails if the component stops observing its shelf.
+client = 700
+scroll = 780
+fire()
+await tick()
+await tick()
+const afterObserver = row.getAttribute('data-cb-shelf-mask')
+// Back to a fitting row: the same observer path must clear the mask.
+client = 985
+scroll = 984
+fire()
+await tick()
+await tick()
+const refit = row.getAttribute('data-cb-shelf-mask')
+// And the route-width path stays covered as a second assertion.
 client = 700
 scroll = 780
 routeWidth = 800
 dom.window.dispatchEvent(new dom.window.Event('resize'))
 await tick()
 await tick()
-const after = row.getAttribute('data-cb-shelf-mask')
-process.stdout.write(JSON.stringify({ missing: false, before, after }))
+const afterResize = row.getAttribute('data-cb-shelf-mask')
+process.stdout.write(JSON.stringify({
+  missing: false, before, afterObserver, refit, afterResize,
+  observers: observers.length, observedRow
+}))
 """
 
 ROW_TEMPLATE = {
@@ -389,7 +427,15 @@ class ShelfGeometryTest(GeometryBase):
                     cell["pageOverflow"], 0,
                     f"route {width}: the Home painted {cell['pageOverflow']}px of page overflow",
                 )
-                self.assertFalse(cell["foxOnShelfRow"], "the fox must not share the cards' flex row")
+                if width == 460:
+                    self.assertIsNone(cell["fox"], "compact hides the fox (H6)")
+                else:
+                    self.assertIsNotNone(cell["fox"], f"route {width}: the fox must stand on the ledge")
+                    self.assertTrue(
+                        cell["foxOnLedge"],
+                        f"route {width}: the fox must be contained by the H6 ledge",
+                    )
+                    self.assertFalse(cell["foxOnShelfRow"], "the fox must not share the cards' flex row")
 
     def test_home_v3_mask_remeasures_on_a_route_change(self) -> None:
         import os
@@ -408,8 +454,18 @@ class ShelfGeometryTest(GeometryBase):
         answer = json.loads(result.stdout)
         self.assertFalse(answer.get("missing"), "the client mount painted no shelf row")
         self.assertEqual(answer["before"], "none", "a row that fits must paint no edge mask")
+        self.assertGreaterEqual(answer["observers"], 1, "the shelf did not construct a ResizeObserver")
+        self.assertTrue(answer["observedRow"], "the ResizeObserver never observed the shelf row")
+        # The observer path: the row geometry changes with no window resize at all.
         self.assertEqual(
-            answer["after"],
+            answer["afterObserver"],
+            "right",
+            "a row that narrows must re-measure to 'right' through its ResizeObserver alone",
+        )
+        self.assertEqual(answer["refit"], "none", "a fitting row must clear the mask again")
+        # The route-width path stays covered as a second assertion.
+        self.assertEqual(
+            answer["afterResize"],
             "right",
             "a narrowed route leaves a scrollable shelf, so the mask must re-measure to 'right'",
         )
