@@ -240,6 +240,24 @@ round-2 fixes were verified by measurement first. The single round-2 exploratory
 was refuted by pixels (it reported a painted border and a paper step that do not exist), and that
 refutation is recorded in `vision.json` so the next reader does not inherit it.
 
+## CP-014 integration and the 1200x800 ruling
+
+CP-014 (`wt/cp-014-pack-media`) integrates one approved plate into each of the three bundled packs.
+For every pack the 3:2 master (1200x800) is copied byte for byte to `content/cover-3x2.png`, the
+4:5 crop (640x800) to `content/cover-4x5.png`, and both are declared in `files[]` with role `cover`.
+Only the 3:2 master is linked in `media[]`, as the first link; import adopts it as a visual artifact
+for the Workshop but writes no lesson media block, so the cover is not a lesson figure. The catalogue
+names `content/cover-3x2.png` as `cover.path` and `content/cover-4x5.png` as `cover.crop`.
+
+**Size ruling.** `docs/GM-SUBJECT-WORLDS.md` §0 still records the H-197 Press Plate size
+(1024x576 master, 864x576 3:2 crop). That line describes the Press Plate lane, which CP-014 keeps as
+the composed typographic fallback. It does not govern this painted lane: PLAN §6 row A3 specifies
+**3:2 master 1200x800, 4:5 crop** for the CP-012 kit, and the shipped files are 1200x800 and
+640x800. The manifest and catalogue carry those measured sizes, not the older Press Plate size.
+
+The H-197 Press Plate builder functions and the composed typographic cover remain for any pack that
+declares no cover; they are no longer the files these three packs ship.
+
 ## Known gaps
 
 1. **No model id.** The host tool does not return one. Closing this needs the host to name the model
@@ -247,8 +265,9 @@ refutation is recorded in `vision.json` so the next reader does not inherit it.
 2. **No owner signature.** The contact sheet is submitted for approval. The plates were generated
    before that approval, which is the order the A1 gate already records as a deviation
    (`OI-2` / `D-CP010-A`); if the owner rejects a plate it is regenerated (3-round budget), not kept.
-3. **Not integrated into the packs.** CP-014 owns `bundled/packs/*` and the catalogue re-hash. This
-   card ships files plus rows; it does not edit a pack.
+3. **Integrated by CP-014.** The pack integration lives in `wt/cp-014-pack-media`: the plates are
+   copied into each pack as role `cover` and the catalogue is re-hashed there. This document remains
+   the source of the kit's provenance and measurements.
 4. **Shopped at 240 px only.** The card window cell was inspected at 240 px; no claim is made about
    64 px legibility, which no surface in v3 uses for a cover.
 5. **The 4:5 crop is 640x800.** It is the master's exact centre crop at 1:1, not a larger portrait
@@ -262,8 +281,9 @@ refutation is recorded in `vision.json` so the next reader does not inherit it.
 8. **Motif zones are declared regions, not segmentation.** Each zone is a rectangle measured against
    the painted ink density map; the retention check is real, but a zone is a reviewable claim, not a
    per-object segmentation. `motif-map.png` is the artifact to audit it.
-9. **Old lane still shipped.** `bundled/packs/*/content/cover-*.png` are still the H-197 press
-   plates. Until CP-014, the shelf shows those, and this kit is not what the learner sees.
+9. **Old lane still exists as a fallback.** The H-197 Press Plate builder and the composed
+   typographic cover remain for any pack that declares no cover. The three bundled packs no longer
+   ship a Press Plate image; they ship the painted plate as role `cover`.
 
 ## What this document does not claim
 
