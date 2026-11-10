@@ -300,7 +300,8 @@ prompt while the stored brief stays verbatim. The class-closing table gains a `h
 Red evidence: `audit/gm-003/red-attempt9.txt` (12 failures + 1 error against pre-round-9
 `coursebook/world.py`, every case hostile text present or the tone conjunction refused). Green:
 `audit/gm-003/green-attempt9.txt` (3 OK), `audit/gm-003/test_world-attempt9.txt` (37 OK),
-regression set 296 OK (`regression-attempt9.txt`), full suite in `full-attempt9.log`.
+regression set 301 OK (`regression-attempt9.txt`), full suite 2898 OK (skipped=1), exit 0, on the
+rebased base `7553925` (`full-attempt9.log`).
 
 Residual paths are unchanged from round 8: token-level heuristics are not a semantic classifier,
 and a procedure phrased as a bare noun phrase with no digit, unit, spelled quantity, hyphenated
