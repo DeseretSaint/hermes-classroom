@@ -36,10 +36,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v21** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
-`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
-`rpc.v18.json`, `rpc.v19.json`, `rpc.v20.json` and `rpc.v21.json`), the
-v1 **to v22** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+The v1 **to v22** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
 `rpc.v18.json`, `rpc.v19.json`, `rpc.v20.json`, `rpc.v21.json` and `rpc.v22.json`), the
 v1 **to v13** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
