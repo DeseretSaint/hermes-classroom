@@ -80,7 +80,7 @@ class V3AuditStaticTest(unittest.TestCase):
         for ident in ("V-01", "V-02", "V-03"):
             self.assertEqual(statuses[ident], "PASS", f"{ident} is {statuses[ident]}")
         gate_claim = next(item for item in self.audit["claims"] if item["id"] == "V-02")
-        self.assertEqual(gate_claim["evidence"]["gates"], 60, "18 gates in two modes")
+        self.assertEqual(gate_claim["evidence"]["gates"], 60, "30 gates in two modes")
         self.assertEqual(gate_claim["evidence"]["failures"], [])
         self.assertIsNotNone(gate_claim["evidence"]["tightest"])
 

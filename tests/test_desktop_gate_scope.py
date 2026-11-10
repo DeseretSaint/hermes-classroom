@@ -10,8 +10,9 @@ module text (never touching ``desktop/plugin.js``) and run the *real* v2 scans a
   v3 stylesheet present, so scoping did not become a hole;
 * the v3 gates can still read the v3 region the v2 gates ignore;
 * the marker form is cut as well as the two literals, and an unterminated marker fails safe;
-* the assertion count of the eight migrated v2 modules never drops below the CP-003 baseline, so a
-  later card cannot quietly delete a protection and call it a migration.
+* the assertion count of the eight migrated v2 modules never drops below the CP-003 baseline, and
+  neither does the count of ``assert*`` calls, so a later card cannot quietly delete a protection
+  (or its assertion, keeping the method) and call it a migration.
 
 This module is not a substitute for running the migrated suites; it is the proof that the seam they
 now depend on is load-bearing.
@@ -56,6 +57,44 @@ BASELINE = {
 #: the migrated-module BASELINE does not cover it, and deleting a seam claim would otherwise be
 #: invisible. Additions are fine; a drop means a proof was removed.
 SEAM_BASELINE = 24
+
+#: CP-003 round 2 review defect D4: a *method* count cannot see a deleted assertion, so
+#: ``test_no_colour_literal_outside_the_token_table`` could lose its ``assertEqual`` and stay green.
+#: These are the ``assert*`` **call** counts per file, recomputed over the AST at base ``7a0841f``
+#: (the eight migrated modules) and at ``d63b65d`` (this module, which had 38 at review time).
+#: Additions are legal; a drop means a v2 protection was weakened even though its method survived.
+ASSERT_BASELINE = {
+    "test_desktop_tokens.py": 63,
+    "test_desktop_type_scale.py": 16,
+    "test_desktop_h152_motion.py": 96,
+    "test_desktop_field_desk.py": 170,
+    "test_desktop_h150_library_shelf.py": 99,
+    "test_h197_covers.py": 81,
+    "test_gm_visual_spec.py": 56,
+    "test_desktop_home_hub.py": 103,
+}
+SEAM_ASSERT_BASELINE = 38
+
+
+def assertion_calls(path: Path) -> int:
+    """Count ``assert*`` call nodes anywhere in a module (``self.assertEqual``, ``assertRaises``...).
+
+    Whole-module, not per-method: a protection may live in a helper a test calls, and the point of
+    the pin is that bytes of checking cannot disappear while the module still imports.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    count = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        name = func.attr if isinstance(func, ast.Attribute) else (
+            func.id if isinstance(func, ast.Name) else None
+        )
+        if name is not None and name.startswith("assert"):
+            count += 1
+    return count
+
 
 
 def gate_is_armed() -> bool:
@@ -448,7 +487,19 @@ class NoProtectionDeletedTest(unittest.TestCase):
             f"{SEAM_BASELINE}. Restore the deleted seam proof or record an owner-approved reason.",
         )
 
-    def test_the_assertion_count_never_drops_below_the_cp_003_baseline(self) -> None:
+    def test_the_seam_proof_itself_never_loses_an_assertion(self) -> None:
+        # D4 for this module: a claim can survive while its assertion is deleted, so the proof
+        # module needs the same assertion-call floor the eight migrated modules get. 38 at d63b65d.
+        path = ROOT / "tests" / "test_desktop_gate_scope.py"
+        count = assertion_calls(path)
+        self.assertGreaterEqual(
+            count, SEAM_ASSERT_BASELINE,
+            f"test_desktop_gate_scope.py has {count} assert* calls, below the CP-003 seam "
+            f"baseline of {SEAM_ASSERT_BASELINE}. A seam proof was weakened without deleting a "
+            "method: restore the assertion or record an owner-approved reason.",
+        )
+
+    def test_the_claim_count_never_drops_below_the_cp_003_baseline(self) -> None:
         for name, expected in BASELINE.items():
             path = ROOT / "tests" / name
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -461,9 +512,23 @@ class NoProtectionDeletedTest(unittest.TestCase):
             )
             self.assertGreaterEqual(
                 count, expected,
-                f"{name} has {count} assertions, below the CP-003 baseline of {expected}. A v2 "
+                f"{name} has {count} test claims, below the CP-003 baseline of {expected}. A v2 "
                 "protection was removed: restore it, move it to the v3 gate, or record the "
                 "owner-approved supersession in docs/concept-parity/GATE-MIGRATION.md.",
+            )
+
+    def test_the_assertion_calls_never_drop_below_the_cp_003_baseline(self) -> None:
+        # D4 (cbqa round 2): the method count above cannot see "delete the assert, keep the
+        # method". The cheapest way to weaken a v2 gate must fail here, on this pin, not pass.
+        for name, expected in ASSERT_BASELINE.items():
+            path = ROOT / "tests" / name
+            count = assertion_calls(path)
+            self.assertGreaterEqual(
+                count, expected,
+                f"{name} has {count} assert* calls, below the CP-003 baseline of {expected}. An "
+                "assertion was deleted while its test method survived: restore it, move it to the "
+                "v3 gate, or record the owner-approved supersession in "
+                "docs/concept-parity/GATE-MIGRATION.md §4.",
             )
 
 

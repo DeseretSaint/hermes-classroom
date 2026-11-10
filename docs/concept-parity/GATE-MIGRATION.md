@@ -139,6 +139,24 @@ Columns: **class** (§2); **where it reads now**; **v3 counterpart / note** — 
 dimension that covers the same claim for v3 surfaces. An empty counterpart would mean a claim was
 dropped, which the count gate forbids.
 
+The count gate is enforced twice, because a method count alone cannot see a deleted assertion
+(cbqa round 2, D4): `NoProtectionDeletedTest` pins the **test-method** count per module *and* the
+**`assert*` call** count per module over the AST. Both are floors (`>=`), so additions stay legal.
+The assertion-call floors, recomputed at base `7a0841f` (`test_desktop_gate_scope.py` at `d63b65d`):
+
+| module | test methods | `assert*` calls |
+|---|---|---|
+| `test_desktop_tokens.py` | 17 | 63 |
+| `test_desktop_type_scale.py` | 8 | 16 |
+| `test_desktop_h152_motion.py` | 22 | 96 |
+| `test_desktop_field_desk.py` | 44 | 170 |
+| `test_desktop_h150_library_shelf.py` | 21 | 99 |
+| `test_h197_covers.py` | 28 | 81 |
+| `test_gm_visual_spec.py` | 17 | 56 |
+| `test_desktop_home_hub.py` | 20 | 103 |
+| `test_desktop_gate_scope.py` (the proof itself) | 24 | 38 |
+
+
 ### `tests/test_desktop_tokens.py`
 
 | # | assertion | class | where it reads now | v3 counterpart / note |
@@ -456,6 +474,12 @@ because the exact trace is a property of CP-020a's first commit, not of this bra
 | **D2** `--full` exited 0 having read no frame or stamp | `full_phase()` refuses unconditionally with the unimplemented-paint message while no painted claim exists (exit 3, both material states) | `test_v3_visual_audit.py::V3AuditStaticTest.test_full_phase_refuses_instead_of_inventing_frames` (no longer skips) |
 | **D3** a `CB-V3-BEGIN…END` region was exempt from the shadow and gradient claims | `stylesheet_spans()` exempts only the shipped `CB_V3_CSS` literal; gate and audit share it | `V3GateBitesTest.test_a_marker_region_cannot_smuggle_a_shadow_or_a_gradient` |
 
+## 6.2 Round 2 review correction (cbqa, D4)
+
+| Defect | Correction | Test that closes it |
+|---|---|---|
+| **D4** `NoProtectionDeletedTest` counted test methods, so "delete the assertion, keep the method" left both the pin and the migrated module green | per-file `assert*` call floors recomputed from the AST (`ASSERT_BASELINE`, `SEAM_ASSERT_BASELINE`), asserted `>=`; method counts kept as a second, coarser floor | `NoProtectionDeletedTest.test_the_assertion_calls_never_drop_below_the_cp_003_baseline`, `test_the_seam_proof_itself_never_loses_an_assertion` |
+
 ## 7. Known gaps and rulings needed
 
 - **V3 surfaces do not exist yet**, by design. Every v3 paint claim is armed and unproven; only the
@@ -471,3 +495,10 @@ because the exact trace is a property of CP-020a's first commit, not of this bra
   floors are already expressed with that precision tolerance.
 - **Rubric §7 vs SPEC-V3 conflicts** (type names/sizes, measure, card radius) are routed in
   `t_3788bb37`; this card gates the contract values, which the owner amendment makes authoritative.
+- **"Byte for byte" is enforced as canonical equality with the projection the literal carries.**
+  The claim requires `modes`/`elevation`/`radii`/`type`/`motion`, requires every carried key to be
+  equal to the contract, and requires the literal to equal the canonical serialization of that
+  projection. `roles`/`version` may be omitted from the literal (the audit's V-01 covers the roles
+  contract); §5.1 documents this reading so CP-020a is not misled. It is a deliberate interpretation
+  of the card's "equals the contract byte for byte" wording, not an accidental weakening.
+
