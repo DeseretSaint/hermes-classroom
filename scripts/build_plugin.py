@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Build the shipped Desktop module from its ordered source segments.
+
+`desktop/plugin.js` is the ONE module the Hermes Desktop runtime loads; it cannot import
+relative files (see the banner at the top of `desktop/src/00-header.js`). To let several
+cards edit the plugin at once, the source lives in `desktop/src/NN-<name>.js` and this
+script concatenates those files, in filename order, into `desktop/plugin.js`.
+
+The concatenation is byte-for-byte mechanical: no header, no separator, no trailing
+newline is added or removed. Every byte of the shipped module therefore belongs to exactly
+one segment, and `tests/test_plugin_build.py` fails if the committed `plugin.js` is not the
+exact concatenation of the committed segments. That is the whole point: a hand edit of the
+generated file is a test failure, and two cards can work in two segments without touching
+the same file.
+
+Merging two segment branches is resolved by REGENERATION, never by hand:
+
+    git merge --no-edit other-branch
+    python3 scripts/build_plugin.py          # rewrite desktop/plugin.js from desktop/src
+    python3 -m unittest tests.test_plugin_build
+
+Usage:
+    python3 scripts/build_plugin.py                 # rewrite desktop/plugin.js
+    python3 scripts/build_plugin.py --check         # verify only; exit 1 on drift
+    python3 scripts/build_plugin.py --root <dir>    # build another checkout (tests)
+    python3 scripts/build_plugin.py --stdout        # print the module, write nothing
+
+Exit codes:
+    0  the module was written, or --check found it byte-identical
+    1  --check found drift (the generated file is not the concatenation)
+    2  the segment set is missing, misnamed or out of order
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import os
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC_DIR = "desktop/src"
+TARGET = "desktop/plugin.js"
+
+#: `NN-name.js`. The numeric prefix is the order; it must be unique and strictly increasing
+#: when the files are sorted, and the rest is lower-case words. Anything else is a mistake
+#: (a scratch file, an editor backup, a segment added without a position) and stops the build.
+NAME_RE = re.compile(r"^(?P<order>\d{2})-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)\.js$")
+
+
+class SegmentError(Exception):
+    """The segment directory cannot be built as an ordered set."""
+
+
+def segment_paths(root: Path) -> list[Path]:
+    src = root / SRC_DIR
+    if not src.is_dir():
+        raise SegmentError(f"{SRC_DIR} is missing under {root}")
+    files = sorted(p for p in src.glob("*.js") if p.is_file())
+    if not files:
+        raise SegmentError(f"{SRC_DIR} has no .js segments")
+
+    parsed = []
+    for path in files:
+        match = NAME_RE.match(path.name)
+        if match is None:
+            raise SegmentError(
+                f"{path.name}: segments must be named NN-<name>.js (two digits, lower-case words)"
+            )
+        parsed.append((int(match.group("order")), path))
+
+    orders = [order for order, _ in parsed]
+    if len(set(orders)) != len(orders):
+        duplicated = sorted({order for order in orders if orders.count(order) > 1})
+        raise SegmentError(f"duplicate segment positions: {duplicated}")
+    if orders != sorted(orders):
+        raise SegmentError("segment positions are not strictly increasing after sorting")
+    return [path for _, path in parsed]
+
+
+def build_bytes(root: Path) -> bytes:
+    """The exact bytes of `desktop/plugin.js` for the segments under `root`."""
+    return b"".join(path.read_bytes() for path in segment_paths(root))
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def write_atomic(path: Path, data: bytes) -> None:
+    temporary = path.with_name(path.name + ".tmp-build")
+    try:
+        temporary.write_bytes(data)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--root", default=str(ROOT), help="checkout to build (default: this repo)")
+    parser.add_argument("--check", action="store_true", help="verify desktop/plugin.js; never write")
+    parser.add_argument("--stdout", action="store_true", help="print the built module; never write")
+    parser.add_argument("--quiet", action="store_true", help="print nothing when the build is clean")
+    args = parser.parse_args(argv)
+
+    root = Path(args.root).resolve()
+    target = root / TARGET
+    try:
+        data = build_bytes(root)
+    except SegmentError as error:
+        print(f"build_plugin: {error}", file=sys.stderr)
+        return 2
+
+    try:
+        current = target.read_bytes()
+    except FileNotFoundError:
+        current = None
+
+    if args.stdout:
+        sys.stdout.buffer.write(data)
+        return 0
+
+    if args.check:
+        if current == data:
+            if not args.quiet:
+                print(f"build_plugin: {TARGET} matches {SRC_DIR} ({sha256(data)})")
+            return 0
+        print(
+            f"build_plugin: {TARGET} is not the concatenation of {SRC_DIR}; "
+            "run `python3 scripts/build_plugin.py` and commit the result",
+            file=sys.stderr,
+        )
+        return 1
+
+    if current != data:
+        write_atomic(target, data)
+    if not args.quiet:
+        print(f"build_plugin: wrote {TARGET} from {len(segment_paths(root))} segments ({sha256(data)})")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

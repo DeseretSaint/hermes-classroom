@@ -438,5 +438,216 @@ class TutorRailStatesTest(unittest.TestCase):
         )
 
 
+class TutorRailModeChoiceTest(unittest.TestCase):
+    """The rail never moves a learner who has already chosen a mode.
+
+    quill's GM-012a nit: the auto-open effect depends on `check.open`/`check.get` landing, and it
+    only records its own one-shot flag. If the learner picks Ask while that read is still in
+    flight, the late practice declaration used to flip the rail to Practice anyway. The guard is
+    armed by `modeChange`, so this mounts the real pane against a fake backend whose check reads
+    are released on demand and asserts the chosen Ask mode survives them.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to render a runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-tutor-mode-choice-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "mode-choice.mjs").write_text(MODE_CHOICE_HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}), encoding="utf-8"
+        )
+        (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
+        cls.root = root
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def test_ask_chosen_before_the_practice_check_arrives_stays_ask(self) -> None:
+        result = subprocess.run(
+            ["node", str(self.root / "mode-choice.mjs")],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        case = json.loads(result.stdout)
+        self.assertEqual(case["error"], None, case)
+        # The practice tabs were on screen and the practice mode was genuinely reachable: this is
+        # not a pass because the auto-open never had a chance to fire.
+        self.assertTrue(case["practiceTab"], "the practice tab was missing; the race was not set up")
+        self.assertTrue(case["modeControls"], "the Ask control was missing; the choice was never made")
+        self.assertEqual(case["chosenMode"], "ask")
+        self.assertEqual(
+            case["finalMode"],
+            "ask",
+            "the rail flipped to Practice after the learner had already chosen Ask",
+        )
+
+
+MODE_CHOICE_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+const mod = await import('./plugin.js')
+
+const IMPLEMENTED = [
+  'library.list',
+  'lesson.page',
+  'check.open',
+  'check.get',
+  'practice.state',
+  'practice.start',
+  'practice.end',
+  'tutor.history'
+]
+
+const deferred = () => {
+  let release = null
+  const promise = new Promise((resolve) => {
+    release = resolve
+  })
+  return { promise, release }
+}
+
+const checkOpen = deferred()
+const checkGet = deferred()
+
+const fakeRest = (path, options) => {
+  const base = String(path).split('?')[0]
+  if (base === '/runtime') {
+    return Promise.resolve({ wire_version: 25, implemented_methods: IMPLEMENTED, single_home_host: false })
+  }
+  if (base === '/rpc') {
+    const method = options && options.body ? options.body.method : null
+    if (method === 'check.open') return checkOpen.promise
+    if (method === 'check.get') return checkGet.promise
+    if (method === 'library.list') {
+      return Promise.resolve({
+        ok: true,
+        result: {
+          items: [
+            {
+              enrollment_id: 'enr_1',
+              course_id: 'crs_1',
+              title: 'Japanese, first steps',
+              revision: 3,
+              evidence_summary: { current_objective_id: 'obj_1' }
+            }
+          ]
+        }
+      })
+    }
+    if (method === 'lesson.page') {
+      return Promise.resolve({
+        ok: true,
+        result: {
+          revision: 3,
+          course: { title: 'Japanese, first steps' },
+          section: { title: 'Affection and register', ordinal: 2 },
+          sources: []
+        }
+      })
+    }
+    if (method === 'practice.state') return Promise.resolve({ ok: true, result: { state: 'none' } })
+    if (method === 'tutor.history') return Promise.resolve({ ok: true, result: { turns: [] } })
+    return Promise.resolve({ ok: true, result: {} })
+  }
+  return Promise.resolve({})
+}
+
+mod.default.register({ rest: fakeRest, register: () => {}, onDispose: () => {} })
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const binding = (runId) => ({
+  enrollment_id: 'enr_1',
+  objective_id: 'obj_1',
+  lesson_run_id: runId,
+  profile: 'default',
+  status: 'active',
+  stored_session_id: 'sess_1'
+})
+const settle = async (ms = 60) => {
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, ms))
+  })
+}
+const modeNow = () => {
+  const nav = document.querySelector('[data-cb-learning-tabs]')
+  return nav ? nav.getAttribute('data-cb-learning-tabs') : null
+}
+const practiceDeclaration = { prompt: 'Say the line to the shopkeeper.', sentences: [] }
+
+const out = { error: null, initialMode: null, chosenMode: null, finalMode: null, practiceTab: false, modeControls: false }
+try {
+  // 1. Mount on a bound run. The check reads are held, so no practice control can have opened yet.
+  await act(async () => {
+    root.render(React.createElement(mod.TutorRailPane, { binding: binding('run_1') }))
+  })
+  await settle()
+  out.initialMode = modeNow()
+
+  // 2. `check.open` lands with the practice declaration. A bound run suppresses the auto-open, so
+  //    the learner sees the Ask/Practice tabs while `check.get` is still in flight.
+  await act(async () => {
+    checkOpen.release({ ok: true, result: { check_id: 'chk_1', stimulus: { practice: practiceDeclaration } } })
+    await new Promise((done) => setTimeout(done, 30))
+  })
+  await settle()
+  const askTab = document.querySelector('[data-cb-tab="ask"]')
+  out.practiceTab = Boolean(document.querySelector('[data-cb-tab="practice"]'))
+  out.modeControls = Boolean(askTab)
+
+  // 3. The learner picks Ask before the check detail resolves.
+  await act(async () => {
+    if (askTab) askTab.click()
+  })
+  out.chosenMode = modeNow()
+
+  // 4. The run ends and the check detail lands after the choice. The rail must stay on Ask.
+  await act(async () => {
+    root.render(React.createElement(mod.TutorRailPane, { binding: binding(null) }))
+  })
+  await act(async () => {
+    checkGet.release({ ok: true, result: { check_id: 'chk_1', state: 'open', stimulus: { practice: practiceDeclaration } } })
+    await new Promise((done) => setTimeout(done, 60))
+  })
+  await settle()
+  out.finalMode = modeNow()
+} catch (error) {
+  out.error = { name: error.name, message: String(error.message || error), stack: String(error.stack || '').split('\n').slice(0, 5) }
+}
+process.stdout.write(JSON.stringify(out))
+"""
+
+
 if __name__ == "__main__":
     unittest.main()

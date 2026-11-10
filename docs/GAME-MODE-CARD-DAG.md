@@ -53,9 +53,19 @@ is serialized.
   GM-014 print/content proof (harbor).
 - **Backend parallel wave:** GM-003, GM-005, GM-009, GM-014 and GM-007 (after GM-005) own
   different modules. They may run together; they must not edit each other's files.
-- **Single writer:** every card that changes `desktop/plugin.js` is Vellum-only and runs in the
-  serial chain Home -> World Studio -> Parent Studio -> Homework -> Engagement -> Tutor rail.
-  Two UI cards never run concurrently, even if their product areas are independent.
+- **One writer per segment (D9):** `desktop/plugin.js` is generated from ordered segments in
+  `desktop/src/NN-<name>.js` by `scripts/build_plugin.py`; the segment map and the rules live in
+  `desktop/src/README.md`. Never two writers on the same segment: a card edits only the segments
+  named in its card, and a card whose segments are disjoint from another card's may run in
+  parallel worktrees. Nobody edits the generated `desktop/plugin.js`: `tests/test_plugin_build.py`
+  requires it to be the byte-exact concatenation of the committed segments, and the generated file
+  is resolved at merge by regeneration (`python3 scripts/build_plugin.py`), never by hand. A needed
+  change to a shared segment that belongs to another card is a small follow-up card for that
+  segment's owner, not an edit from the side.
+- **Before D9 this was a single-writer chain:** Home -> World Studio -> Parent Studio -> Homework
+  -> Engagement -> Tutor rail. That chain is superseded by the segment rule above; the dependency
+  edges that remain are the ones the segment map does not remove (cards that share a segment or a
+  backend contract).
 - **Migration and contract:** only GM-001 owns migration 0013 and the frozen contract manifest.
   A later card that needs a schema change must return to a contract card; it must not edit the
   migration concurrently.
@@ -82,8 +92,11 @@ is serialized.
 - The contract card freezes additive names before six backend cards and five UI cards collide.
 - Visual direction is a parent of Home because the approved Home concept, palette, type and
   textless-art rules must exist before the first screen is judged.
-- The UI cards share `desktop/plugin.js`; they are serialized by their parent chain:
-  Home -> World Studio -> Parent Studio -> Homework -> Game engagement -> Tutor rail.
+- The UI cards shared `desktop/plugin.js`, so they used to be serialized by their parent chain:
+  Home -> World Studio -> Parent Studio -> Homework -> Game engagement -> Tutor rail. With D9 the
+  module is built from ordered segments (`desktop/src/README.md`), so screen cards whose segments
+  are disjoint run in parallel worktrees and merge by regeneration. Cards that share a segment
+  (Home with course-home, or any pair touching `30-home.js`) stay serial.
 - Parent, homework, engagement and tutor backends are independent after the contract, so they can
   run in parallel, but each has one named reviewer.
 - The visual reviewer is separate from every maker. The final visual card is not written by the
