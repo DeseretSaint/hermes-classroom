@@ -1,0 +1,48 @@
+{
+  "tool": "cp-cold-paint.mjs x2 (one window, one emulated geometry, one module swap + relaunch per phase)",
+  "ok": true,
+  "like_for_like": true,
+  "method": "Round 1 compared a 266 px route in a 512x735 window against an 809 px route in a 1045x735 window. Both phases here run in the same window under --emulate {'width': 1045, 'height': 735, 'device_scale_factor': 1}, and each phase's route width is recorded. The module under test is swapped in the linked package (home/plugins/coursebook) AND the desktop copy, then the window is relaunched, because the renderer reads the linked package's desktop/plugin.js rather than the desktop-plugins copy (proved by a DOM marker check: the pre-v3 module paints no [data-cb-v3]).",
+  "emulation": {
+    "width": 1045,
+    "height": 735,
+    "device_scale_factor": 1
+  },
+  "route_widths": {
+    "baseline": 887.14,
+    "candidate": 887.14
+  },
+  "module_marker": {
+    "[data-cb-v3] on baseline": false,
+    "[data-cb-v3] on candidate": true
+  },
+  "budget_ms": 150,
+  "baseline": {
+    "window_sha256": "7802e3ca3dd15cc7a19b61dff632666a14a6b14b23f8a1cf858dc246dbe01f52",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp020a-r2/home/desktop-plugins/coursebook/plugin.js",
+    "samples_ms": [
+      1488,
+      1259,
+      1324
+    ],
+    "median_ms": 1324,
+    "window_width": 1161,
+    "window_height": 816,
+    "zoom_percent": 90
+  },
+  "candidate": {
+    "window_sha256": "3b5b5ab2674326a24baa0144b7f79962a6328ad6c3a3bdb66a791d9dc386b08c",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp020a-r2/home/desktop-plugins/coursebook/plugin.js",
+    "samples_ms": [
+      1607,
+      1271,
+      1343
+    ],
+    "median_ms": 1343,
+    "window_width": 1161,
+    "window_height": 816,
+    "zoom_percent": 90
+  },
+  "delta_ms": 19,
+  "verdict": "candidate median 1343 ms vs baseline 1324 ms at the same 887.14 px route (delta +19 ms, budget +150 ms)"
+}

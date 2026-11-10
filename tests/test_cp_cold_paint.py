@@ -75,5 +75,25 @@ class ColdPaintProvenanceTests(unittest.TestCase):
         self.assertIn("REFUSED", completed.stderr)
 
 
+    def test_geometry_is_recorded_and_a_mismatch_refuses_the_timing(self) -> None:
+        # A timing is only a comparison at the baseline's route width. The script records the
+        # geometry and refuses a run whose route box does not match what the comparison expects.
+        completed = run_cold_paint(self.tmp, "--runs", "1", "--expect-sha", GOOD_SHA,
+                                   "--expect-route-width", "400")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        record = json.loads((self.tmp / "cold.json").read_text())
+        self.assertTrue(record["geometry"]["matches"])
+        self.assertEqual(record["geometry"]["expect_route_width"], 400)
+        self.assertEqual(record["geometry"]["route_width"], 400)
+
+        completed = run_cold_paint(self.tmp, "--runs", "1", "--expect-sha", GOOD_SHA,
+                                   "--expect-route-width", "809")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        record = json.loads((self.tmp / "cold.json").read_text())
+        self.assertFalse(record["ok"])
+        self.assertFalse(record["geometry"]["matches"])
+        self.assertIn("not comparable", completed.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

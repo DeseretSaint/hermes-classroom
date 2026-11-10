@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>CP-000 fixture: route renders with a React key warning</title></head>
+<body>
+  <!-- Recorded fixture page: the route paints and every visual gate passes, but the renderer logged
+       React's duplicate/missing `key` warning. A frame whose own render is warning-noisy is not
+       parity evidence; the capture door must refuse it. Test fixture, never evidence. -->
+  <div data-cb-route="/coursebook" data-cb-scope="light" data-cb-v3="" data-cb-v3-ready="true"
+       data-cb-v3-textures="ready" style="width:400px;height:300px;background:#f5e3c8">
+    <h1>Fixture surface</h1>
+  </div>
+  <script>
+    window.__CP000_FIXTURE__ = {
+      plugin: { window_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', loaded_path: '/tmp/fixture/plugin.js', bytes: 42, error: null },
+      route: {
+        selector: '[data-cb-route]', present: true, marker: '/coursebook', destination: 'home',
+        width: 400, height: 300, top: 0, left: 0, window_width: 400, window_height: 900,
+        theme: 'light', motion: 'full', text_scale_root_px: '16px',
+        reduced_motion: false, forced_colors: false, fonts_status: 'loaded', font_faces: [],
+        images_total: 0, images_decoded: 0, images_broken: [], render_error_markers: [],
+        v3_ready: true, v3_textures: 'ready',
+        style_sheet_count: 1, css_rule_count: 4, host_slots: 0, host_shell: false,
+        heading_font_family: 'Georgia', body_font_family: 'system-ui',
+        route_ancestors: ['div.cb-fixture']
+      },
+      console: {
+        errors: ['Each child in a list should have a unique "key" prop. Check the render method of `CbV3Scope`.'],
+        warnings: 0
+      }
+    }
+  </script>
+</body>
+</html>

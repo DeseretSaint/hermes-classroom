@@ -126,7 +126,10 @@ PNG has neither a manifest row nor an explicit unverifiable entry.
 6. **the captured pixels contain no significant share of the document background** when the route
    paints a different colour (`>2 %` of sampled pixels vetoes the frame);
 7. the page zoom during capture is 100 % (`zoom_neutral`), so the emulated viewport is fully painted;
-8. with `--require-v3`, `[data-cb-v3-ready]` is set (inert until v3 lands; it fails today, by design).
+8. with `--require-v3`, `[data-cb-v3-ready]` is set **and** `[data-cb-v3-textures="ready"]` — a
+   ground whose material tiles settled as `fallback` is flat paper, not v3 evidence;
+9. the renderer logged no React duplicate/missing `key` warning; a warning-noisy tree is refused
+   even when every visual gate passes, because the console is the only place React says so.
 
 It hard-reloads with `ignoreCache` before probing, normalises and then restores the page zoom,
 calibrates the emulated width until the **route** is the requested width, grows the viewport to the

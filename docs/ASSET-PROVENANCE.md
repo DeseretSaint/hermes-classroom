@@ -16,7 +16,8 @@ declared media, read at run time through `artifact.get`, or type — the typogra
 its rule and station from the identity's own tokens.
 
 CP-004 adds a separate, non-Workshop lane: the v3 brand assets (two OFL typefaces, material tiles,
-fox poses, object kit) are embedded as data URLs in `desktop/cb-assets.generated.js`. They are
+fox poses, object kit) are embedded as data URLs in `desktop/cb-assets.generated.js`, which
+`scripts/build_plugin.py` concatenates into `desktop/plugin.js` after the module header. They are
 first-party or openly licensed, they are not fetched from a host, and they are recorded in
 [THIRD-PARTY.md](THIRD-PARTY.md). Course covers, scene headers and world plates stay outside that
 segment and keep using the media route.

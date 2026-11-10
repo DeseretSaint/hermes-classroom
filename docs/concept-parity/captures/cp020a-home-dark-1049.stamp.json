@@ -1,0 +1,151 @@
+{
+  "stamp_version": 1,
+  "tool": "scripts/cp-capture.mjs",
+  "mode": "live",
+  "name": "cp020a-home-dark-1049",
+  "captured_at": "2026-11-10T15:32:37.846Z",
+  "ok": true,
+  "gates": {
+    "plugin_sha_match": true,
+    "route_present": true,
+    "no_render_error": true,
+    "fonts_loaded": true,
+    "images_decoded": true,
+    "no_host_overlay": true,
+    "no_unpainted_region": true,
+    "zoom_neutral": true,
+    "v3_ready": true
+  },
+  "plugin": {
+    "expected_sha256": "fe87c916cc18fc4fe1da1e331e987af3aa39ebc4af255dddbbfbffe95e1ff4d7",
+    "window_sha256": "fe87c916cc18fc4fe1da1e331e987af3aa39ebc4af255dddbbfbffe95e1ff4d7",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test/home/desktop-plugins/coursebook/plugin.js",
+    "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3793dc3d/desktop/plugin.js",
+    "bytes": 1955235
+  },
+  "backend": {
+    "url": "http://127.0.0.1:44219",
+    "wire_contract": "cb.rpc",
+    "wire_version": 24,
+    "contract_methods": 93,
+    "implemented_count": 93,
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom",
+    "backend_package": "coursebook_plugin_backend"
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "marker": "/coursebook",
+    "destination": null,
+    "width": 1049,
+    "height": 1166,
+    "window_width": 1323,
+    "window_height": 1220,
+    "theme": "dark",
+    "text_scale_root_px": "16px",
+    "motion": "full",
+    "reduced_motion": false,
+    "forced_colors": false,
+    "fonts_status": "loaded",
+    "font_faces": [
+      "KaTeX_AMS 400 unloaded",
+      "KaTeX_Caligraphic 700 unloaded",
+      "KaTeX_Caligraphic 400 unloaded",
+      "KaTeX_Fraktur 700 unloaded",
+      "KaTeX_Fraktur 400 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Math 700 unloaded",
+      "KaTeX_Math 400 unloaded",
+      "KaTeX_SansSerif 700 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_Script 400 unloaded",
+      "KaTeX_Size1 400 unloaded",
+      "KaTeX_Size2 400 unloaded",
+      "KaTeX_Size3 400 unloaded",
+      "KaTeX_Size4 400 unloaded",
+      "KaTeX_Typewriter 400 unloaded",
+      "codicon normal loaded",
+      "Collapse 700 unloaded",
+      "JetBrains Mono 400 unloaded",
+      "JetBrains Mono 700 loaded",
+      "JetBrains Mono 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 700 unloaded",
+      "Courier Prime 700 unloaded",
+      "CB Display 100 900 unloaded",
+      "CB UI 100 900 loaded"
+    ],
+    "images_total": 0,
+    "images_decoded": 0,
+    "style_sheet_count": 19,
+    "css_rule_count": 1619,
+    "host_slots": 38,
+    "host_shell": true,
+    "heading_font_family": "ui-serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+    "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
+    "route_ancestors": [
+      "div.contents",
+      "div.absolute.inset-0.overflow-auto",
+      "div.relative.min-h-0.min-w-0",
+      "div."
+    ],
+    "html_background": "rgb(254, 254, 254)",
+    "background_color": "rgb(20, 17, 12)",
+    "host_overlays": [],
+    "host_overlay_points": 0,
+    "host_overlay_sampled": 384,
+    "host_overlay_fraction": 0,
+    "host_overlay_trims": {
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "content_width": 1049,
+    "content_height": 1166,
+    "content_rect": {
+      "x": 28,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    }
+  },
+  "zoom": {
+    "original_percent": 90,
+    "capture_percent": 100,
+    "bridge_available": true,
+    "restored_percent": 90
+  },
+  "console": {
+    "errors": [
+      "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `CbV3Scope`.  It was passed a child from CoursebookPage."
+    ],
+    "warnings": 1
+  },
+  "capture": {
+    "file": "cp020a-home-dark-1049.png",
+    "sha256": "5e95a96698e2e8df2b1e61c0d0e0641eac4ee160154bc7d8370de6d904f304c3",
+    "bytes": 234576,
+    "crop_mode": "route",
+    "clip": {
+      "x": 28,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    },
+    "pixel_check": {
+      "ok": true,
+      "sampled": 116900,
+      "host_bg_pixels": 0,
+      "host_bg_fraction": 0,
+      "html_bg": "254, 254, 254, 1",
+      "route_bg": "20, 17, 12, 1",
+      "distinct_backgrounds": true
+    }
+  },
+  "page_url": "http://127.0.0.1:5174/"
+}
