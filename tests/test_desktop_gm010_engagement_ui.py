@@ -289,6 +289,15 @@ class GameEngagementUiTests(unittest.TestCase):
         off = self.rig.render({"kind": "settings", "prefs": {"gameFeedback": False}})
         self.assertIn('data-cb-settings-toggle-row="off"', off)
 
+        # The SDK switch is a black box that paints only its on/off colour, and the host reset
+        # clears the UA ring. The wrapper therefore owns the keyboard ring: assert the row tracks
+        # focus, paints the identity ring from that state, and is unpainted at rest.
+        self.assertIn("'data-cb-settings-focus'", self.source)
+        self.assertIn("outline: gameFeedbackFocused ? CB_FOCUS_RING : 'none'", self.source)
+        self.assertIn("setGameFeedbackFocused(focusRingVisible(event.target))", self.source)
+        self.assertIn("outline:none", on.replace(" ", ""))
+        self.assertNotIn("outline:2px", on.replace(" ", ""))
+
     def test_game_progress_not_mastery_label(self) -> None:
         html = self.header(engagement=engagement())
         self.assertIn("Game progress", html)

@@ -5636,6 +5636,11 @@ function CbSettingsSection({ id, title, description, resetLabel, atDefault, onRe
  */
 function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose }) {
   const panelRef = useRef(null)
+  // GM-010: the SDK switch paints its own on/off colour but the host reset clears the UA focus
+  // ring, so a keyboard reader cannot see which switch they are on. React's focus events bubble
+  // from the SDK button, so the plugin-owned wrapper paints the identity ring while the inner
+  // control matches `:focus-visible` — the same rule every other keyboard stop in this plugin uses.
+  const [gameFeedbackFocused, setGameFeedbackFocused] = useState(false)
   const courseId = classroom && classroom.courseId ? classroom.courseId : null
   const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
 
@@ -6030,6 +6035,14 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               onReset: () => onReset('gameFeedback'),
               children: jsx('div', {
                 'data-cb-settings-toggle': 'game-feedback',
+                'data-cb-settings-focus': gameFeedbackFocused ? 'ring' : null,
+                onFocus: (event) => setGameFeedbackFocused(focusRingVisible(event.target)),
+                onBlur: () => setGameFeedbackFocused(false),
+                style: {
+                  borderRadius: '0.5rem',
+                  outline: gameFeedbackFocused ? CB_FOCUS_RING : 'none',
+                  outlineOffset: '2px'
+                },
                 children: jsx(sdk.ToggleRow, {
                   checked: prefs.gameFeedback !== false,
                   label: 'Show Game feedback',
