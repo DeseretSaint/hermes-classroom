@@ -7,18 +7,18 @@
   "measured_by": "H-212 (t_48394407)",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2842,
+    "ran": 2880,
     "skipped": 1,
-    "seconds": 583.764,
+    "seconds": 540.226,
     "verdict": "OK (skipped=1)",
-    "note": "re-measured on the GM-005 branch (origin/master 5721389 plus the GM-005 take-home work, cb.rpc v22 / cb.db v14): Ran 2842 tests, OK (skipped=1). The measured_commit, plugin pin and M4 block below remain the b9f4a19 measurement they describe; the suite count tracks the tree the release gate reads."
+    "note": "re-measured on the merged GM-005 tree (origin/master 3fb3779, which carries GM-009's engagement methods, GM-011's tutor and GM-014's homework-print tests, plus the GM-005 take-home work, cb.rpc v23 / cb.db v14): Ran 2880 tests, OK (skipped=1). The measured_commit, plugin pin and M4 block below remain the b9f4a19 measurement they describe; the suite count tracks the tree the release gate reads."
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 22,
-    "declared_methods": 81,
-    "handlers": 81,
-    "note": "re-asserted on the GM-005 tree (stacked on origin/master 5721389): contracts/rpc.v22.json declares 81 methods (75 v21 methods including GM-009's engagement.read/engagement.award, plus the six takehome.* methods); coursebook/contracts.py WIRE_CONTRACT_VERSION = 22; coursebook/api.py METHOD_HANDLERS holds 81 after importing every registering module (domain, pack_flow, pronunciation, syllabus, takehome), with no declared method lacking a handler and no handler outside the contract. contracts/rpc.v21.json is byte-identical to origin/master (sha256 eb17550859d4bbc42541837d32ee17e4594901d4065a17a1f75b6488c2d17282) and x-supersedes names it."
+    "version": 23,
+    "declared_methods": 83,
+    "handlers": 83,
+    "note": "re-asserted on the merged GM-005 tree (origin/master 3fb3779 carrying GM-009's engagement pair in v21, GM-011's tutor pair in v22, plus the GM-005 take-home work): contracts/rpc.v23.json declares 83 methods (the 77 of published v22 including engagement.read/engagement.award and tutor.ask/tutor.history, plus the six takehome.* methods); coursebook/contracts.py WIRE_CONTRACT_VERSION = 23; coursebook/api.py METHOD_HANDLERS holds 83 after importing every registering module (domain, pack_flow, pronunciation, syllabus, takehome), with no declared method lacking a handler and no handler outside the contract. contracts/rpc.v22.json is byte-identical to origin/master (sha256 c187728add6c508d5643e42225a64766d4b887cfce58250fb45d04707b6eb956) and x-supersedes names it."
   },
   "db": {
     "contract": "cb.db",

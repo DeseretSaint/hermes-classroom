@@ -61,6 +61,9 @@ from . import syllabus  # noqa: E402,F401  (registration side effect)
 # The game engagement commands register themselves too: `cb.rpc` v21 carries them, and a build
 # without those names (or outside a game course) stays a typed refusal, never an invented award.
 from . import engagement  # noqa: E402,F401  (registration side effect)
+# The lesson-bound tutor registers itself too: `cb.rpc` v22 carries `tutor.ask`/`tutor.history`,
+# and a build without those names stays NOT_IMPLEMENTED rather than inventing a chat surface.
+from . import tutor  # noqa: E402,F401  (registration side effect)
 
 #: ``method -> handler(payload, envelope) -> (revision, result)``
 HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[str, Any]]]] = {}
