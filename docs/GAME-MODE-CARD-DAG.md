@@ -64,6 +64,19 @@ is serialized.
 - If two cards unexpectedly need the same file, the second one stops and asks the manager to
   split or serialize; it does not merge into a moving branch.
 
+## Review loop guard
+
+- A review request must name a **class** of defect and a test that closes the class, not just the
+  string that failed this round.
+- A new card gets at most three change-request rounds. On the fourth, the reviewer stops and the
+  manager either splits the residual into a follow-up card or explicitly freezes the scope.
+- GM-003 is the current terminal-round exception: the manager froze its scope at round 13 and
+  required one class-closing table test. It must not become round 14 on a new surface.
+- A worker may not "fix" a review by moving the check into the renderer or by taking the
+  reviewer's branch wholesale; the class test must stay in the owning module.
+- Every merge gets a full-suite gate; that gate is not a reason to run a ninth exploratory
+  review. The independent review happens before merge, not repeatedly after it.
+
 ## Why this order
 
 - The contract card freezes additive names before six backend cards and five UI cards collide.
