@@ -26,10 +26,10 @@ because nothing was taken.
 Coursebook now ships its own brand assets in the plugin package: two typefaces, six material
 tiles, seven fox poses at two exports and a seven-piece object kit. They are embedded as data URLs
 by `scripts/build_cb_assets.py` into `desktop/cb-assets.generated.js`; nothing is fetched from a
-host at run time and no course cover, scene header or world plate is in that segment. At this
-commit `desktop/plugin.js` does not reference `CB_ASSETS`, so the package carries two
-`desktop/*.js` files and the segment is inert in an export. CP-020a (child of CP-004) owns the
-inlining step; until it lands the segment is a build input, not shipped runtime code.
+host at run time and no course cover, scene header or world plate is in that segment. The
+generated object is concatenated into `desktop/plugin.js` by `scripts/build_plugin.py`
+immediately after the module header, so the runtime's single module carries `CB_ASSETS` while
+the package still keeps the generated file as its build input.
 
 | asset group | upstream / authorship | licence | shipped as |
 | --- | --- | --- | --- |

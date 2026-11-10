@@ -14,9 +14,10 @@ and refuses the build when any of the card's gates fails:
   128 and at 64;
 * course covers, scene headers and world plates are absent — they stay on the media route.
 
-What this does NOT prove: that ``desktop/plugin.js`` imports the segment yet (CP-020a owns that
-wiring), that a browser decodes the WebP, or that the art reads well. CP-010/CP-013 own the art
-review; this card owns the pipeline and the budget.
+What this does NOT prove: that a browser decodes the WebP, or that the art reads well. The
+generated object is concatenated into ``desktop/plugin.js`` by ``scripts/build_plugin.py`` (CP-020a);
+this module proves the bytes it carries, not their paint. CP-010/CP-013 own the art review; this
+card owns the pipeline and the budget.
 """
 
 from __future__ import annotations

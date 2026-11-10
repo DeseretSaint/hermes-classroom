@@ -136,9 +136,25 @@ const CB_V3_CSS = `
 """
 
 
+def v3_free_module() -> str:
+    """The shipped module with CP-020a's two v3 literals and their declarations removed.
+
+    The seam controls append their *own* v3 appendix. Starting from the shipped module would
+    append a second literal, and ``literal_span`` reads only the first: the shipped one. The
+    controls would then inspect the real stylesheet instead of the appendix and silently stop
+    testing the seam (CP-020a's landing made that exact hole). The empty declarations are removed
+    too, or the extractor stops at a declaration with no literal and reports ``None``.
+    """
+    stripped = v2_source(PLUGIN_JS.read_text(encoding="utf-8"))
+    return re.sub(
+        r"const (?:CB_TOKENS_V3_JSON|CB_V3_CSS)\s*=\s*(?=const|/\*)",
+        "",
+        stripped,
+    )
+
+
 def synthetic(extra_v2: str = "") -> str:
-    base = PLUGIN_JS.read_text(encoding="utf-8")
-    return base + extra_v2 + V3_APPENDIX
+    return v3_free_module() + extra_v2 + V3_APPENDIX
 
 
 def v2_hex_scan(source: str) -> list[str]:
@@ -173,7 +189,10 @@ class SeamDirectionTest(unittest.TestCase):
         )
 
     def test_the_v3_literals_are_cut_from_the_v2_region(self) -> None:
-        source = synthetic()
+        # The seam cuts literal *bodies* from the shipped module; everything before an appended
+        # appendix must survive untouched.
+        base = v3_free_module()
+        source = base + V3_APPENDIX
         stripped = v2_source(source)
         # The seam cuts literal *bodies*, not identifiers: the constant names stay as inert text.
         self.assertNotIn("#f5e3c8", stripped)
@@ -181,7 +200,7 @@ class SeamDirectionTest(unittest.TestCase):
         self.assertNotIn("[data-cb-v3]", stripped)
         self.assertNotIn("url(data:font", stripped)
         # Everything before the v3 appendix is untouched: the seam cuts, it does not rewrite.
-        self.assertTrue(stripped.startswith(PLUGIN_JS.read_text(encoding="utf-8")))
+        self.assertTrue(stripped.startswith(base))
 
     def test_the_v3_gates_can_still_read_the_v3_region(self) -> None:
         source = synthetic()
@@ -357,6 +376,8 @@ class V3GateBitesTest(unittest.TestCase):
     def module_text(self, css: str | None = None, literal: str | None = None) -> str:
         import json
 
+        from tests.cb_source_scope import v2_source
+
         contract = json.loads(
             (ROOT / "contracts" / "cb.tokens.v3.json").read_text(encoding="utf-8")
         )
@@ -367,8 +388,18 @@ class V3GateBitesTest(unittest.TestCase):
         )
         # A JS single-quoted literal must escape its backslashes; the extractor undoes exactly that.
         body = literal if literal is not None else body.replace("\\", "\\\\")
+        # CP-020a ships the two v3 literals in the real module. Cut their declarations and values
+        # before appending this control's own pair, or `literal_span` finds the shipped stylesheet
+        # and the mutation is never seen (a control that silently stopped testing anything).
+        import re
+
+        stripped = re.sub(
+            r"const (?:CB_TOKENS_V3_JSON|CB_V3_CSS)\s*=\s*(?=const|/\*)",
+            "",
+            v2_source(PLUGIN_JS.read_text(encoding="utf-8")),
+        )
         return (
-            PLUGIN_JS.read_text(encoding="utf-8")
+            stripped
             + "\nconst CB_TOKENS_V3_JSON =\n  '" + body + "'\n"
             + "const CB_V3_CSS = `\n" + (self.good_css() if css is None else css) + "\n`\n"
         )

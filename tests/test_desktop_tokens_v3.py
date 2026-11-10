@@ -64,7 +64,7 @@ from tests.cb_source_scope import (
 
 #: CP-020a flips this to True as its first commit, watches the gate go red, then builds until it
 #: is green. Nothing else in this file changes on the flip.
-V3_REQUIRED = False
+V3_REQUIRED = True
 
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 REQUIRED_TOP_LEVEL = ("modes", "elevation", "radii", "type", "motion")

@@ -16,7 +16,10 @@
  *      --crop-to-content, which records the overlay geometry and crops the unoccluded content rect;
  *   6. the captured pixels are not a significant share of the document background (pixel veto);
  *   7. the page zoom is 100% during capture (normalised through the host zoom bridge, restored after);
- *   8. with --require-v3, `[data-cb-v3-ready]` is present.
+ *   8. with --require-v3, `[data-cb-v3-ready]` is present AND `[data-cb-v3-textures]` is `ready`
+ *      (a ground whose tiles fell back to flat paper is not v3 evidence);
+ *   9. the renderer logged no React duplicate/missing `key` warning (console.errors is read, not
+ *      inferred from a clean DOM).
  *
  * Why the sha is read through the window: `window.hermesDesktop.readPluginSource(path)` is the same
  * IPC door the host's runtime loader uses to fetch `plugin.js` before evaluating it. Hashing that
@@ -200,6 +203,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       images_broken: imgs.filter((img) => !img.complete || img.naturalWidth === 0).map((img) => (img.currentSrc || img.src || '').slice(0, 160)),
       render_error_markers: ${JSON.stringify(RENDER_ERROR_SELECTORS)}.filter((sel) => document.querySelector(sel)),
       v3_ready: Boolean(document.querySelector('[data-cb-v3-ready]')),
+      v3_textures: root ? root.getAttribute('data-cb-v3-textures') : null,
       style_sheet_count: styleSheets.length,
       css_rule_count: cssRuleCount,
       host_slots: document.querySelectorAll('[data-slot]').length,
@@ -239,7 +243,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
   return out
 })()`
 
-const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode }) => {
+const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null }) => {
   const gates = {}
   const reasons = []
   const pluginSha = probe.plugin && probe.plugin.window_sha256 ? probe.plugin.window_sha256 : null
@@ -297,8 +301,32 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode })
   if (!gates.zoom_neutral) reasons.push(`page zoom was ${String(zoom && zoom.capture_percent)}% during capture; the capture door requires 100% so the emulated viewport is fully painted`)
 
   if (requireV3) {
-    gates.v3_ready = route.v3_ready === true
-    if (!gates.v3_ready) reasons.push('--require-v3 set but [data-cb-v3-ready] is absent')
+    // "Ready" must mean the ground actually painted. `data-cb-v3-textures` says which state the
+    // material tiles settled in; a fallback ground is flat paper and is not v3 evidence.
+    gates.v3_ready = route.v3_ready === true && route.v3_textures === 'ready'
+    if (route.v3_textures !== 'ready') {
+      reasons.push(`--require-v3 set but the ground textures settled as ${String(route.v3_textures)}`)
+    } else if (route.v3_ready !== true) {
+      reasons.push('--require-v3 set but [data-cb-v3-ready] is absent')
+    }
+  }
+
+  // A mode frame is only a mode frame if the emulated scheme actually reached the host theme.
+  if (colorScheme) {
+    gates.theme_matches_emulation = route.theme === colorScheme
+    if (!gates.theme_matches_emulation) {
+      reasons.push(`--color-scheme ${String(colorScheme)} was emulated but the route painted ` +
+        `${String(route.theme)}; the host theme did not follow prefers-color-scheme`)
+    }
+  }
+
+  // A renderer that logs React's duplicate/missing `key` warning renders a tree the other gates
+  // cannot see. The frame is not evidence of a clean surface, so the door refuses it.
+  const keyWarnings = ((probe.console && probe.console.errors) || [])
+    .filter((line) => /unique "key"/.test(String(line)))
+  gates.no_react_key_warning = keyWarnings.length === 0
+  if (!gates.no_react_key_warning) {
+    reasons.push(`the route render logged a React key warning: ${keyWarnings[0].slice(0, 160)}`)
   }
   return { gates, reasons, ok: reasons.length === 0 }
 }
@@ -575,14 +603,17 @@ const liveCapture = async () => {
     await sleep(300)
   }
 
-  // Apply reduced-motion / forced-colors emulation only when asked; never silently.
-  if (flag('reduced-motion', false)) {
-    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
-    await sleep(120)
-  }
-  if (flag('forced-colors', false)) {
-    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] })
-    await sleep(120)
+  // Apply reduced-motion / forced-colors / colour-scheme emulation only when asked; never silently.
+  // `--color-scheme` is how a mode frame is produced: the host theme follows
+  // `prefers-color-scheme`, so the stamp has to record that the mode was emulated, not inferred.
+  const colorScheme = flag('color-scheme', null)
+  const emulatedMedia = []
+  if (colorScheme) emulatedMedia.push({ name: 'prefers-color-scheme', value: String(colorScheme) })
+  if (flag('reduced-motion', false)) emulatedMedia.push({ name: 'prefers-reduced-motion', value: 'reduce' })
+  if (flag('forced-colors', false)) emulatedMedia.push({ name: 'forced-colors', value: 'active' })
+  if (emulatedMedia.length) {
+    await cdp.send('Emulation.setEmulatedMedia', { features: emulatedMedia })
+    await sleep(350)
   }
 
   const loadedPlugin = loadedPluginArg
@@ -629,11 +660,11 @@ const liveCapture = async () => {
   if (captureError) throw new Error(`screenshot failed: ${captureError}`)
 
   const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode })
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme })
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -730,7 +761,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -765,6 +796,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       font_faces: probe.route.font_faces,
       images_total: probe.route.images_total,
       images_decoded: probe.route.images_decoded,
+      v3_ready: probe.route.v3_ready,
+      v3_textures: probe.route.v3_textures,
       style_sheet_count: probe.route.style_sheet_count,
       css_rule_count: probe.route.css_rule_count,
       host_slots: probe.route.host_slots,
@@ -784,7 +817,14 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       content_rect: probe.route.content_rect
     },
     zoom: zoom,
-    console: probe.console || { errors: [], warnings: 0 },
+    emulated_media: emulatedMedia && emulatedMedia.length ? emulatedMedia : null,
+    console: probe.console
+      ? {
+          errors: probe.console.errors || [],
+          warnings: probe.console.warnings || 0,
+          key_warnings: (probe.console.errors || []).filter((line) => /unique "key"/.test(String(line))).length
+        }
+      : { errors: [], warnings: 0, key_warnings: 0 },
     capture: {
       file: pngPath.split('/').pop(),
       sha256: createHash('sha256').update(png).digest('hex'),

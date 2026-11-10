@@ -100,6 +100,16 @@ class PluginBuildTest(unittest.TestCase):
             "run `python3 scripts/build_plugin.py` and commit the result",
         )
 
+    def test_generated_assets_are_concatenated_after_the_header(self) -> None:
+        # CP-020a: CB_ASSETS must be bound before any component body can read it, and the
+        # generated segment must reach the one module the runtime loads.
+        built = self.build.build_bytes(ROOT).decode("utf-8")
+        header = (SRC / "00-header.js").read_text(encoding="utf-8")
+        assets = built.index("const CB_ASSETS = Object.freeze(") if "const CB_ASSETS = Object.freeze(" in built else -1
+        self.assertIn("const CB_ASSETS = Object.freeze(", built)
+        self.assertGreaterEqual(assets, len(header), "CB_ASSETS is not concatenated after the header")
+        self.assertLess(assets, built.index("const CB_TOKENS_JSON"), "CB_ASSETS is after the module body")
+
     def test_module_has_one_trailing_newline_and_the_export_block_is_last(self) -> None:
         committed = PLUGIN.read_bytes()
         self.assertTrue(committed.endswith(b"\n"))
@@ -174,6 +184,9 @@ class PluginBuildTest(unittest.TestCase):
         (destination / "scripts").mkdir(parents=True)
         shutil.copy2(PLUGIN, destination / "desktop" / "plugin.js")
         shutil.copytree(SRC, destination / "desktop" / "src")
+        # CP-020a: the generated CB_ASSETS segment is a build input concatenated after the header.
+        shutil.copy2(ROOT / "desktop" / "cb-assets.generated.js",
+                     destination / "desktop" / "cb-assets.generated.js")
         shutil.copy2(BUILD, destination / "scripts" / "build_plugin.py")
         return destination
 

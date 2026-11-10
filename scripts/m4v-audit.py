@@ -38,6 +38,12 @@ from tests.test_desktop_lesson_views import (  # noqa: E402
     _desktop_node_modules,
     document,
 )
+from tests.cb_source_scope import (  # noqa: E402
+    V2_TOKEN_CONST,
+    V3_TOKEN_CONST,
+    literal_span,
+    literal_text,
+)
 from tests.test_desktop_procedure import SOURCES as PROCEDURE_SOURCES  # noqa: E402
 from tests.test_procedure_document import head_gasket_document  # noqa: E402
 from tests.test_desktop_field_desk import OUTLINE, library, library_row  # noqa: E402
@@ -441,17 +447,31 @@ def contract_gates(contract: dict | None) -> dict:
 
 def source_scan() -> dict:
     text = (ROOT / "desktop" / "plugin.js").read_text(encoding="utf-8")
-    table_match = re.search(r"const CB_TOKENS_JSON\s*=\s*'(\{.*?\})'", text, re.S)
-    token_table = table_match.group(1) if table_match else ""
-    outside = [match.group(0) for match in COLOUR_LITERAL.finditer(text) if match.group(0) not in token_table]
-    hex_outside = [match.group(0) for match in re.finditer(r"#[0-9a-fA-F]{3,8}\b", text) if match.group(0) not in token_table]
+    # CP-020a adds a second token literal (`CB_TOKENS_V3_JSON`) beside the v2 `CB_TOKENS_JSON`.
+    # Both are the token layer, so both literal bodies are masked out of the module before the
+    # scan; a colour literal anywhere else is still a raw colour and still fails C-01. The v3
+    # token values themselves are gated byte-for-byte by `scripts/v3-audit.py` (claims V-04/V-05).
+    literal_names = (V2_TOKEN_CONST, V3_TOKEN_CONST)
+    spans = sorted(
+        span for span in (literal_span(text, name) for name in literal_names) if span is not None
+    )
+    chunks: list[str] = []
+    cursor = 0
+    for start, end in spans:
+        chunks.append(text[cursor:start])
+        cursor = end
+    chunks.append(text[cursor:])
+    scan_text = "".join(chunks)
+    outside = [match.group(0) for match in COLOUR_LITERAL.finditer(scan_text)]
+    hex_outside = [match.group(0) for match in re.finditer(r"#[0-9a-fA-F]{3,8}\b", scan_text)]
     # The shipped table is v2 (Atlas Lamp). Prefer the newest contract on disk so the claim compares
     # the module against the contract it actually implements, and keep v1 as history.
     contract = ROOT / "contracts" / "cb.tokens.v2.json"
     if not contract.is_file():
         contract = ROOT / "contracts" / "cb.tokens.v1.json"
     contract_tokens = json.loads(contract.read_text(encoding="utf-8")) if contract.is_file() else None
-    shipped_palette = json.loads(token_table) if token_table else None
+    v2_table = literal_text(text, V2_TOKEN_CONST)
+    shipped_palette = json.loads(v2_table) if v2_table else None
     return {
         "file": "desktop/plugin.js",
         "colour_literals_outside_token_table": len(outside),
