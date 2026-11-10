@@ -13,6 +13,8 @@ card role ever changes one of the four shipped aspect ratios.
 
 from __future__ import annotations
 
+import json
+import pathlib
 import re
 import unittest
 
@@ -413,6 +415,97 @@ class AspectRoleContractTest(unittest.TestCase):
         self.assertEqual(roles.count("cover"), 1)
         self.assertEqual(roles.count("section"), len(BRIEF["sections"]))
         self.assertNotIn("card", {role.value for role in gm_contract.WorldRole})
+
+
+class ProofPacketIntegrityTest(unittest.TestCase):
+    """The live proof packet must agree with the code that built it.
+
+    A repair pass is the one place where a proof can quietly stop proving anything: the render
+    path looks a prompt up by role, and every style board shares ``role="style_board"``, so a
+    lookup keyed by role alone hands the last direction's prompt to any board it re-renders.
+    The packet then records a prompt the plate was never made from. These tests read the
+    committed ``provenance.json`` files and rebuild every prompt from the recorded brief with
+    the shipping builders, so a mislabelled or duplicated plate fails here rather than in
+    review.
+    """
+
+    OUT = pathlib.Path(__file__).resolve().parents[1] / "docs/concept-parity/art/cp016"
+    TOPICS = ("technical-brake-bleed", "creative-fingerpicking")
+
+    def _provenance(self, topic: str) -> dict:
+        path = self.OUT / topic / "provenance.json"
+        self.assertTrue(path.is_file(), f"missing proof provenance: {path}")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def _rebuilt(self, provenance: dict) -> dict[tuple, world.WorldPrompt]:
+        brief = world.WorldBrief.from_mapping(provenance["brief"])
+        boards = world.build_style_boards(brief)
+        chosen = boards[0]
+        kit = world.build_kit_prompts(
+            brief, provenance["grammar"], style_id=chosen.style_id, style=chosen
+        )
+        return {(item.style_id, item.role, item.section_id): item for item in boards + kit}
+
+    def test_each_topic_proves_three_distinct_directions(self) -> None:
+        for topic in self.TOPICS:
+            with self.subTest(topic=topic):
+                boards = [
+                    row
+                    for row in self._provenance(topic)["plates"]
+                    if row["role"] == "style_board"
+                ]
+                self.assertEqual(3, len(boards), f"{topic}: expected three style boards")
+                hashes = [row["prompt_hash"] for row in boards]
+                self.assertEqual(
+                    3,
+                    len(set(hashes)),
+                    f"{topic}: style boards share a prompt_hash {hashes}; the render lookup "
+                    "keyed by (role, section_id) handed one direction's prompt to another",
+                )
+                self.assertEqual(
+                    3,
+                    len({row["style_id"] for row in boards}),
+                    f"{topic}: style boards are not three distinct directions",
+                )
+
+    def test_current_version_plates_rebuild_to_their_recorded_prompt(self) -> None:
+        checked = 0
+        for topic in self.TOPICS:
+            provenance = self._provenance(topic)
+            rebuilt = self._rebuilt(provenance)
+            for row in provenance["plates"]:
+                if row.get("prompt_version") != world.PROMPT_VERSION:
+                    continue  # documented mixed-version packet; identity is pinned by hash
+                key = (row["style_id"], row["role"], row["section_id"])
+                with self.subTest(topic=topic, plate=row["file"]):
+                    self.assertIn(key, rebuilt, f"no prompt in code for {key}")
+                    prompt = rebuilt[key]
+                    self.assertEqual(
+                        row["style_id"],
+                        prompt.style_id,
+                        "the row's style_id is not the direction its prompt was built for",
+                    )
+                    self.assertEqual(prompt.prompt_hash, row["prompt_hash"])
+                    self.assertEqual(prompt.prompt, row["prompt"])
+                    self.assertEqual(prompt.negative_prompt, row["negative_prompt"])
+                    checked += 1
+        self.assertGreaterEqual(
+            checked, 4, "the packet no longer carries current-version plates to check"
+        )
+
+    def test_a_clean_notation_verdict_carries_its_evidence(self) -> None:
+        for topic in self.TOPICS:
+            for row in self._provenance(topic)["plates"]:
+                notation = row.get("notation") or {}
+                if notation.get("verdict") != "clean":
+                    continue
+                with self.subTest(topic=topic, plate=row["file"]):
+                    evidence = str(notation.get("evidence") or "").strip()
+                    self.assertTrue(
+                        evidence and evidence.lower() != "none",
+                        "a 'clean' notation verdict with no evidence is an unchecked read; "
+                        "it must be recorded as unchecked, not counted as clean",
+                    )
 
 
 if __name__ == "__main__":
