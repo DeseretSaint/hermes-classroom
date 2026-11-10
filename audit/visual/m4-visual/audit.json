@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T20:46:46.384Z",
+  "generated_at": "2026-11-10T22:36:36.622Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
