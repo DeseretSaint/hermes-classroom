@@ -1,6 +1,6 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v23** (GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
+Status: **frozen at v24** (GM-004: `cb.rpc` v24 appends the four `world.*` methods the World Studio drives — `world.read`, `world.style.preview`, `world.generate`, `world.approve` — plus the documented extra `course.mode.set`, and gives `course.create` one optional `presentation_mode` creation intent; see the v24 delta below. GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
 v19 = H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
 commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
 and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v23.json` | 23 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor), Sable (transport), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v24.json` | 24 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
@@ -2385,6 +2385,50 @@ Regression guard: `tests/test_gm_contract.py::GmTakeHomeRevisionScopeTest` pins 
 append-only migration plan, and a real v13-to-v14 round trip on a disposable database proving
 three existing pack rows survive byte-identical and a second draft at revision 0 can be inserted
 for the same source slot.
+
+## v24 delta (GM-004) — the four `world.*` methods and the durable mode switch reach the wire
+
+`cb.rpc` v24 is v23 with **one family appended** and one optional creation field. It appends
+exactly `world.read`, `world.style.preview`, `world.generate`, `world.approve` and
+`course.mode.set`, the names and field tuples frozen in `coursebook/gm_contract.py::GM_RPC_METHODS`
+(GM-001). No v1-v23 method, request shape, required key, error code, job kind, answer kind,
+verdict, evidence class or vocabulary value moves; `cb.errors`, `cb.jobs`, `cb.pack`, `cb.projection`
+and `cb.db` are untouched.
+
+- **`world.read`** is GET-shaped: it returns `presentation_mode`, the latest `world` (or null), the
+  Textbook `fallback` (or null) and the `revision`. It never generates art and never writes
+  `presentation_mode`; a stored NULL reads as Textbook. `revision` is the world revision the
+  Studio fences on.
+- **`world.style.preview`** reads the stored concept boards and the deterministic recommended
+  grammar. It spends no provider call: concept generation is `world.generate(stage=concepts)`.
+- **`world.generate`** queues one existing `kind=media` job with `brief.stage`
+  `world_concepts` or `world_kit`. `brief_patch` may change presentation only — mood (`tone`),
+  `audience`, `motifs` to include and `forbidden` motifs to avoid; reclassification is a course
+  mutation, never a world request. A retry reuses the cache key and never double-spends.
+- **`world.approve`** is hash-fenced at two separate stages: `stage=style` records the chosen
+  concept board as the selected style; `stage=final` accepts the actual kit and freezes the
+  approved hash. A partial kit is refused with its `missing_roles` named — never approved and
+  never filled with a fabricated plate.
+- **`course.mode.set`** is the durable Textbook/Game switch. `game` without an approved world
+  returns `requires_world=true` and changes nothing; `textbook` is immediate and hides the world
+  without deleting it. The fence is the world revision the caller last read, so a concurrent
+  world change is refused with `STALE_REVISION` rather than overwritten. A switch never rewrites
+  an objective, check, attempt, evidence row or lesson document hash.
+- **`course.create`** gains one optional `presentation_mode` (`game` / `textbook` / null). It is
+  creation intent, not an approved world: a `game` course reads as Game but stays in Textbook
+  fallback and builds no lesson until both the plan and the world are approved. Omitted or null
+  stores NULL, which reads as Textbook.
+
+World art is orientation only: textless plates plus a style specification, composed by the
+renderer with real DOM type and controls. The prompt builder never receives an answer key, check,
+rubric or attempt, and no world schema carries an evidence, verdict or score field.
+
+`rpc.v23.json` stays byte-identical on disk and `x-supersedes` names `.../rpc/v24` → `.../rpc/v23`.
+v23 remains the GM-005 take-home delta, unchanged.
+
+Regression guard: `tests/test_contracts.py::V24AmendmentTest` pins the append-only enum and the
+closed, bounded request/response schemas; `tests/test_world.py` proves every handler is registered
+on this wire and that a mode switch never changes attempts or evidence.
 
 ## v23 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
 

@@ -279,19 +279,27 @@ class WorldHandlerMixin:
         names = set(world.HANDLERS)
         self.assertEqual(
             names,
-            {"world.read", "world.style.preview", "world.generate", "world.approve"},
+            {
+                "world.read",
+                "world.style.preview",
+                "world.generate",
+                "world.approve",
+                "course.mode.set",
+            },
         )
         self.assertTrue(names.issubset(set(gm_contract.manifest_methods())))
         read = self.read_world()
         self.assertEqual(
             tuple(read), tuple(gm_contract.method_manifest("world.read")["response"])
         )
-        # Under cb.rpc v20 the four names are still fenced: registration binds nothing and
-        # dispatch would answer NOT_IMPLEMENTED rather than inventing a method.
-        self.assertEqual(world.ensure_registered(), ())
+        # Under cb.rpc v24 every one of these names is declared, so registration binds all five;
+        # a name the wire does not declare is still fenced instead of answering behind its back.
+        registered = world.ensure_registered()
+        self.assertEqual(set(registered), names)
         for method in names:
             with self.subTest(method=method):
-                self.assertNotIn(method, api.method_names())
+                self.assertIn(method, api.method_names())
+                self.assertIn(method, api.METHOD_HANDLERS)
 
 
 class FakeWorldMedia:

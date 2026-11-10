@@ -2453,6 +2453,67 @@ def world_read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
     }
 
 
+@_handler("course.mode.set")
+def course_mode_set(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The durable Textbook/Game switch. Game needs an approved world; Textbook is immediate.
+
+    The fence is the world revision the caller last read (`world.read.revision`), because the
+    precondition this command protects is the world's state, not a lesson hash. A refused switch
+    changes nothing: no objective, check, attempt, evidence row or lesson document is touched, and
+    the stored mode stays where it was. Switching to Textbook keeps the world and its assets; the
+    UI hides them, and switching back reuses the approved world when it is still valid.
+    """
+    from .api import RpcError
+    from . import db
+    from .gm_contract import read_presentation_mode
+
+    db.ensure_schema()
+    method = "course.mode.set"
+    mode = str(payload["mode"])
+    if mode not in ("game", "textbook"):
+        raise RpcError.of(
+            "VALIDATION_FAILED", "mode must be 'game' or 'textbook'.", field="mode", mode=mode
+        )
+    expected = _require_revision(envelope)
+    key = envelope.get("idempotency_key")
+    payload_hash = _payload_hash(method, payload)
+    course_id = str(payload["course_id"])
+    with db.transaction() as connection:
+        replay = _replay(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        course = _course_row(connection, course_id)
+        row = _latest_world(connection, course_id)
+        current = _world_revision(row)
+        if expected != current:
+            raise _stale(current)
+        world_state = str(row["state"]) if row is not None else "not_requested"
+        approved = world_state == "approved"
+        if mode == "game" and not approved:
+            # The course remains Textbook until final visual approval: this is a refusal with a
+            # reason, never a silent mode change and never a fabricated world.
+            result = {
+                "mode": read_presentation_mode(course["presentation_mode"]),
+                "world_state": world_state,
+                "requires_world": True,
+            }
+            _remember_world(
+                connection, key, method, payload_hash,
+                str(envelope.get("operation_id") or ""), current, result,
+            )
+            return current, result
+        connection.execute(
+            "UPDATE courses SET presentation_mode = ?, updated_at = ? WHERE id = ?",
+            (mode, _now(), course_id),
+        )
+        result = {"mode": mode, "world_state": world_state, "requires_world": False}
+        _remember_world(
+            connection, key, method, payload_hash,
+            str(envelope.get("operation_id") or ""), current, result,
+        )
+    return current, result
+
+
 @_handler("world.style.preview")
 def world_style_preview(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     from .api import RpcError

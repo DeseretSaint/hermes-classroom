@@ -30,7 +30,7 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
-    "cb.rpc": "rpc.v23.json",
+    "cb.rpc": "rpc.v24.json",
     "cb.db": "db.v14.json",
     "cb.jobs": "jobs.v5.json",
     # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
@@ -48,7 +48,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 23
+WIRE_CONTRACT_VERSION = 24
 
 
 #: Version -> file name for every contract that accepts more than one document version.
@@ -59,8 +59,9 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json"},
     # GM-005: v23 appends the take-home family to GM-011's v22. v22 stays readable so a client
     # that pinned the tutor wire can still validate; v21 and older remain on disk as history but
-    # are not offered by the loader.
-    "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json"},
+    # are not offered by the loader. GM-004: v24 appends the four `world.*` methods plus the
+    # documented `course.mode.set` extra, and one optional `presentation_mode` on `course.create`.
+    "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"},
 }
 
 
