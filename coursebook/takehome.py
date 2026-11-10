@@ -41,7 +41,9 @@ Rules this module keeps:
 from __future__ import annotations
 
 import hashlib
+import html as html_module
 import json
+import re
 import uuid
 from typing import Any, Mapping, Sequence
 
@@ -86,6 +88,42 @@ PLATE_BUDGET = MAX_PACK_PAGES - len(BASE_PAGE_ROLES)
 
 
 # ── small helpers ───────────────────────────────────────────────────────────
+
+#: A leading ``Take-home:`` (or ``Takehome:``) label a caller may already have typed. It is
+#: peeled off once so the printed document carries the prefix exactly once.
+_TAKEHOME_PREFIX = re.compile(r"^\s*take[\s\-_]*home\s*[:\-–—]\s*", re.IGNORECASE)
+#: A redundant ``- take-home pack`` suffix a caller may have typed.
+_TAKEHOME_SUFFIX = re.compile(r"\s*[\-–—]\s*take[\s\-_]*home\s+pack\s*$", re.IGNORECASE)
+
+#: Markdown heading marker, converted to a typographic heading in HTML the same way the PDF
+#: template converts it, so both outputs share one composition.
+_HTML_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
+
+
+def display_title(value: Any) -> str:
+    """One clean title line: collapse space, peel a repeated ``Take-home:`` and pack suffix.
+
+    The document title and the cover heading both derive from authored titles, and a caller may
+    already have typed the label. Peeling it once is what stops the cover printing
+    ``Take-home: Take-home: ...`` or the run footer doubling into ``- take-home pack - take-home
+    pack``. Nothing else about the title is rewritten.
+    """
+    text = " ".join(str(value or "").split())
+    while _TAKEHOME_PREFIX.match(text):
+        text = _TAKEHOME_PREFIX.sub("", text, count=1).strip()
+    text = _TAKEHOME_SUFFIX.sub("", text).strip(" -:–—")
+    return text or "Lesson"
+
+
+def document_title(pack: Mapping[str, Any]) -> str:
+    """The printed document's one title line, prefixed exactly once."""
+    return f"Take-home: {display_title(pack.get('title'))}"
+
+
+def _language(pack: Mapping[str, Any]) -> str:
+    """A BCP-47 language tag for the document, from the authored course locale."""
+    tag = " ".join(str(pack.get("language") or "").split())
+    return tag[:35] or "en"
 
 
 def _now() -> str:
@@ -340,7 +378,7 @@ def source_content(connection, course_id: str, objective_id: str, version: str) 
 
 def _cover_text(*, course, objective, title: str, audience: str) -> str:
     lines = [
-        f"# Take-home: {title}",
+        f"# {display_title(title)}",
         "",
         "A lesson pack prepared from a Coursebook lesson.",
         "",
@@ -703,6 +741,7 @@ def compose(connection, bundle: Mapping[str, Any], *, audience: str) -> dict[str
         "plates": plates,
         "diagrams": diagrams,
         "print_profile": dict(PRINT_PROFILE),
+        "language": str(course["locale"] or "en")[:35],
     }
 
 
@@ -764,13 +803,14 @@ def approval_hash(preview: str, pages: Sequence[Mapping[str, Any]]) -> str:
 # ── PDF rendering ───────────────────────────────────────────────────────────
 
 
-def pdf_pages(pack: Mapping[str, Any]) -> list[list[str]]:
-    """The printed document, filtered to the audience the pack was created for.
+def page_sections(pack: Mapping[str, Any]) -> list[tuple[Mapping[str, Any], list[str]]]:
+    """The printed document as (page object, lines) pairs, filtered to the pack's audience.
 
-    A parent copy prints the cover, the parent guide, the learner page, any captioned
-    plate/diagram pages and then the separate parent-only answer guide. A learner copy prints
-    the cover, the learner page and the captioned orientation/diagram pages — never the parent
-    guide and never the answer guide. Each part starts on a fresh page.
+    This is the **one composition** every renderer shares. A parent copy prints the cover, the
+    parent guide, the learner page, any captioned plate/diagram pages and then the separate
+    parent-only answer guide. A learner copy prints the cover, the learner page and the captioned
+    orientation/diagram pages — never the parent guide and never the answer guide. Each part
+    starts on a fresh page.
     """
     pages = pack["pages"]
     audience = str(pack.get("audience") or "parent")
@@ -782,7 +822,6 @@ def pdf_pages(pack: Mapping[str, Any]) -> list[list[str]]:
         allowed = {"cover", "learner_page", "plate"}
     else:
         allowed = {"cover", "parent_guide", "learner_page", "answer_guide", "plate"}
-    sections: list[list[str]] = []
     order = {"cover": 0, "parent_guide": 1, "learner_page": 2, "plate": 3, "answer_guide": 4}
     selected = []
     for page in ordered:
@@ -792,9 +831,15 @@ def pdf_pages(pack: Mapping[str, Any]) -> list[list[str]]:
         if role == "plate" and audience == "learner" and str(page.get("audience")) != "learner":
             continue
         selected.append((order[role], page))
+    sections: list[tuple[Mapping[str, Any], list[str]]] = []
     for _rank, page in sorted(selected, key=lambda item: item[0]):
-        sections.append(str(page["text"]).splitlines() or [""])
+        sections.append((page, str(page["text"]).splitlines() or [""]))
     return sections
+
+
+def pdf_pages(pack: Mapping[str, Any]) -> list[list[str]]:
+    """The printed PDF document, filtered to the audience the pack was created for."""
+    return [lines for _page, lines in page_sections(pack)]
 
 
 def render_pdf(pack: Mapping[str, Any], *, paper: str = "letter") -> bytes:
@@ -810,9 +855,151 @@ def render_pdf(pack: Mapping[str, Any], *, paper: str = "letter") -> bytes:
         if index:
             lines.append(artifacts.PAGE_BREAK)
         lines.extend(section)
-    title = f"{pack['title']} - take-home pack"
-    return artifacts.make_pdf(title, lines, page_width=width, page_height=height,
-                              max_chars=max_chars, headings=True, strict_font=True)
+    return artifacts.make_pdf(
+        document_title(pack), lines, page_width=width, page_height=height,
+        max_chars=max_chars, headings=True, strict_font=True,
+        tagged=True, language=_language(pack),
+    )
+
+
+# ── HTML rendering ──────────────────────────────────────────────────────────
+
+#: No active content ever leaves this module in an HTML document. The renderer escapes every
+#: authored string, so these checks should always pass; they are a defence in depth, not a
+#: sanitizer that rewrites meaning.
+HTML_FORBIDDEN = (
+    "<script", "<iframe", "<object", "<embed", "<link", "<base",
+    " src=", " href=", "@import", "url(", "javascript:", "data:text/html",
+)
+
+#: A low-ink print stylesheet with no external fetch. Paper margins mirror the PDF template.
+HTML_STYLE = """
+@page { size: letter; margin: 56pt; }
+:root { color: #111; background: #fff; }
+body { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 12pt; line-height: 1.5; }
+main { max-width: 46em; margin: 0 auto; padding: 1.5em; }
+section.page { break-after: page; page-break-after: always; border-top: 0.5pt solid #999; padding-top: 1em; }
+section.page:first-of-type { border-top: 0; }
+h1 { font-size: 1.6em; line-height: 1.2; margin: 0 0 0.6em; }
+h2 { font-size: 1.15em; margin: 1.1em 0 0.4em; }
+p { margin: 0 0 0.7em; }
+ul, ol { margin: 0 0 0.8em 1.4em; padding: 0; }
+li { margin: 0 0 0.25em; }
+section[data-role="cover"] p { margin-bottom: 0.35em; }
+section[data-role="answer_guide"] { border-top-style: dashed; }
+""".strip()
+
+
+def _html_blocks(lines: Sequence[str]) -> list[str]:
+    """Convert the composed text lines into escaped heading/paragraph/list markup."""
+    blocks: list[str] = []
+    paragraph: list[str] = []
+    items: list[str] = []
+    list_kind: str | None = None
+
+    def flush() -> None:
+        nonlocal paragraph, items, list_kind
+        if paragraph:
+            blocks.append(f"<p>{html_module.escape(' '.join(paragraph), quote=True)}</p>")
+            paragraph = []
+        if items:
+            tag = "ol" if list_kind == "ol" else "ul"
+            blocks.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
+            items = []
+            list_kind = None
+
+    for raw in lines:
+        text = str(raw)
+        if not text.strip():
+            flush()
+            continue
+        heading = _HTML_HEADING.match(text)
+        if heading:
+            flush()
+            level = 1 if len(heading.group(1)) == 1 else 2
+            blocks.append(
+                f"<h{level}>{html_module.escape(heading.group(2).strip(), quote=True)}</h{level}>"
+            )
+            continue
+        if text.startswith("- "):
+            if paragraph or list_kind == "ol":
+                flush()
+            list_kind = "ul"
+            items.append(f"<li>{html_module.escape(text[2:].strip(), quote=True)}</li>")
+            continue
+        ordered = re.match(r"^(\d+)\.\s+(.*)$", text)
+        if ordered:
+            if paragraph or list_kind == "ul":
+                flush()
+            list_kind = "ol"
+            items.append(f"<li>{html_module.escape(ordered.group(2).strip(), quote=True)}</li>")
+            continue
+        if items:
+            flush()
+        paragraph.append(text.strip())
+    flush()
+    return blocks
+
+
+def render_html(pack: Mapping[str, Any]) -> str:
+    """One self-contained, selectable-text HTML document for the pack's audience.
+
+    It shares :func:`page_sections` with the PDF, so page order, audience filtering and the
+    answer-guide separation cannot drift between the two renderings. Every authored string is
+    HTML-escaped; the document carries no scripts, no images, no external stylesheet and no
+    remote fetch (URLs from the source ledger are printed as text, never as a link). A page with
+    a text alternative names its region with ``aria-label`` so the alternative survives without
+    an image.
+    """
+    language = _language(pack)
+    title = document_title(pack)
+    _assert_html_template(
+        "<!doctype html>\n<html lang=\"\">\n<head>\n<meta charset=\"utf-8\">\n"
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        "<title></title>\n<style>\n" + HTML_STYLE + "\n</style>\n</head>\n"
+        '<body>\n<main class="pack" data-audience="">\n</main>\n</body>\n</html>\n'
+    )
+    parts: list[str] = []
+    for page, lines in page_sections(pack):
+        role = str(page.get("role") or "page")
+        audience = str(page.get("audience") or "parent")
+        attributes = (
+            f'class="page" data-role="{html_module.escape(role, quote=True)}"'
+            f' data-audience="{html_module.escape(audience, quote=True)}"'
+        )
+        alt_text = " ".join(str(page.get("alt_text") or "").split())
+        if alt_text:
+            label = " ".join(str(page.get("title") or alt_text).split())
+            attributes += f' aria-label="{html_module.escape(label, quote=True)}"'
+            attributes += f' data-alt-text="{html_module.escape(alt_text, quote=True)}"'
+        parts.append(f"<section {attributes}>\n" + "\n".join(_html_blocks(lines)) + "\n</section>")
+    document = (
+        "<!doctype html>\n"
+        f'<html lang="{html_module.escape(language, quote=True)}">\n'
+        "<head>\n"
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        f"<title>{html_module.escape(title, quote=True)}</title>\n"
+        f"<style>\n{HTML_STYLE}\n</style>\n"
+        "</head>\n"
+        f'<body>\n<main class="pack" data-audience="{html_module.escape(str(pack.get("audience") or "parent"), quote=True)}">\n'
+        + "\n".join(parts)
+        + "\n</main>\n</body>\n</html>\n"
+    )
+    return document
+
+
+def _assert_html_template(markup: str) -> None:
+    """Refuse to emit a template that could execute or fetch anything.
+
+    The check runs over this module's own markup, not over authored text: every authored string
+    is escaped before it reaches the document, so a lesson that *talks about* ``<script>`` or
+    ``url(...)`` prints those characters as text and must not be mistaken for live markup.
+    """
+    lowered = markup.lower()
+    for forbidden in HTML_FORBIDDEN:
+        if forbidden in lowered:
+            raise ValueError(f"HTML template carries forbidden construct {forbidden!r}")
 
 
 # ── commands ────────────────────────────────────────────────────────────────
@@ -978,6 +1165,7 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
             "plates": composed["plates"],
             "diagrams": composed["diagrams"],
             "print_profile": composed["print_profile"],
+            "language": composed["language"],
         }
         connection.execute(
             "INSERT INTO takehome_packs (id, source_course_id, source_objective_id,"
@@ -1089,6 +1277,10 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
             "audience": str(pack_row["audience"]),
             "kind": str(pack_row["kind"]),
             "pages": pages,
+            # The authored course locale is part of the bound content, not a renderer default:
+            # export renders the exact pack that was previewed and approved, so its Tagged-PDF
+            # catalog /Lang must be the same language the HTML document reports.
+            "language": str(content.get("language") or ""),
         }
         try:
             data = render_pdf(pack)
@@ -1213,6 +1405,49 @@ def read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[s
     return 0, result
 
 
+def html_document(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Return the pack's self-contained HTML document, sharing the PDF page composition.
+
+    The document is **returned as content**, not minted as a downloadable artifact: the artifact
+    store remains the only download handle (``artifact.get``), and HTML — which the media policy
+    deliberately refuses to store as renderable media — never becomes a stored object. The bound
+    pages are read exactly as ``takehome.read`` reads them, so no live lesson, private row or
+    tutor turn can enter the document.
+    """
+    db.ensure_schema()
+    with db.read() as connection:
+        pack_row = _pack_row(connection, str(payload["pack_id"]))
+        content = _load(pack_row["content_json"], {})
+        pages = content.get("pages") or []
+        missing = {"learner_page", "parent_guide", "answer_guide"} - {
+            str(page.get("role")) for page in pages if isinstance(page, Mapping)
+        }
+        if missing:
+            raise _policy(
+                "pack_pages_missing",
+                "the stored pack is missing a required page; it cannot be printed as HTML.",
+                missing=sorted(missing),
+            )
+        view = {
+            "title": str(pack_row["title"]),
+            "audience": str(pack_row["audience"]),
+            "kind": str(pack_row["kind"]),
+            "pages": pages,
+            "language": str(content.get("language") or ""),
+        }
+        document = render_html(view)
+        printed = len(page_sections(view))
+    return 0, {
+        "pack_id": str(pack_row["id"]),
+        "title": document_title(view),
+        "language": _language(view),
+        "mime": "text/html",
+        "pages": printed,
+        "html": document,
+        "document_hash": "sha256:" + hashlib.sha256(document.encode("utf-8")).hexdigest(),
+    }
+
+
 HANDLERS = {
     "takehome.sources": sources,
     "takehome.preview": preview,
@@ -1220,4 +1455,5 @@ HANDLERS = {
     "takehome.approve": approve,
     "takehome.export": export,
     "takehome.read": read,
+    "takehome.html": html_document,
 }

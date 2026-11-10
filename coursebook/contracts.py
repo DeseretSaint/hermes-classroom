@@ -62,6 +62,7 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # are not offered by the loader.
     # GM-007: v24 appends the four away-from-screen homework methods to GM-005's v23. v23 stays
     # readable so a client that pinned the take-home wire can still validate.
+    # GM-018: v24 also appends `takehome.html` (the pack's self-contained HTML document).
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json"},
 }
 

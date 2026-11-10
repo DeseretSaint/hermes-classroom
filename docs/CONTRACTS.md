@@ -2433,6 +2433,17 @@ Regression guard: `tests/test_contracts.py::V24AmendmentTest` pins v23 as byte-i
 the exact four appended names, the closed/bounded payloads, and a `homework_task` definition that
 cannot carry `grade`, `score`, `mastery`, `verdict`, `xp`, `points` or `streak`.
 
+## v24 delta (GM-018) — the take-home pack as a self-contained HTML document
+
+`takehome.html` returns the stored take-home pack as a self-contained, selectable-text HTML
+document rendered from the same page composition as `takehome.export`: a learner pack returns the
+cover, learner page and plates; a parent pack adds the parent guide and the separate parent-only
+answer guide. It carries the document title, its language, escaped text, no scripts, images or
+external fetch, and the document hash. HTML is content, not a stored artifact: `artifact.get`
+stays the only download handle, and the media policy refuses HTML as renderable media. The method
+adds no table, migration, error code, job kind or vocabulary value; `cb.db` stays v14 and
+`rpc.v23.json` stays byte-identical history.
+
 ## v23 delta (GM-005) — six take-home pack methods, a print artifact bound to the source lesson
 
 `cb.rpc` v23 is v22 (GM-011's tutor) with **one family appended**: `takehome.sources`, `takehome.preview`,

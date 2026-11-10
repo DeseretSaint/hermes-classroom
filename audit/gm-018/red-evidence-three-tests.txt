@@ -1,0 +1,51 @@
+FFF
+======================================================================
+FAIL: test_takehome_exports_standalone_html (tests.test_gm_takehome.TakeHomePrintFollowUpTest.test_takehome_exports_standalone_html)
+The pack has a self-contained HTML document sharing the PDF page composition.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/gm018-red-rgpjOl/tree/tests/test_gm_takehome.py", line 988, in test_takehome_exports_standalone_html
+    result = self.ok("takehome.html", {"pack_id": exported["pack_id"]})["result"]
+             ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/gm018-red-rgpjOl/tree/tests/kernel_support.py", line 85, in ok
+    self.assertTrue(response["ok"], f"{method} failed: {response.get('error')}")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : takehome.html failed: {'code': 'VALIDATION_FAILED', 'category': 'validation', 'message': "RPC request violates cb.rpc at method: 'takehome.html' is not one of ['health.get', 'schema.get', 'course.create', 'course.get', 'enrollment.create', 'plan.approve', 'plan.replan', 'check.open', 'attempt.submit', 'attempt.override', 'attempt.dispute', 'progression.challenge_out', 'notebook.save', 'notebook.list', 'notebook.delete', 'quiz.history', 'binding.get', 'jobs.create', 'jobs.get', 'jobs.cancel', 'pack.preview', 'pack.import', 'pack.export', 'usage.summary', 'library.list', 'lesson.page', 'lesson.begin', 'enrollment.update', 'enrollment.delete', 'pack.delete', 'artifact.get', 'jobs.list', 'notebook.update', 'binding.abandon', 'review.queue', 'review.action', 'evidence.inspect', 'evidence.disputes', 'pack.inspect', 'pack.list', 'course.outline', 'check.get', 'lesson.assist', 'parent.brief.create', 'parent.brief.get', 'parent.plan.edit', 'parent.final.approve', 'parent.blueprint.read', 'parent.export', 'parent.reflection.record', 'parent.reflection.list', 'source.revalidate', 'pronunciation.attempt', 'pronunciation.dispute', 'syllabus.intake.create', 'syllabus.get', 'syllabus.parse', 'syllabus.align', 'syllabus.alignment.get', 'syllabus.alignment.review', 'syllabus.delete', 'course.export.read', 'course.export', 'observation.record', 'practice.start', 'practice.state', 'practice.end', 'practice.cancel', 'plan.edit', 'plan.undo', 'lesson.revise', 'lesson.regenerate', 'parent.review.read', 'engagement.read', 'engagement.award', 'tutor.ask', 'tutor.history', 'takehome.sources', 'takehome.preview', 'takehome.create', 'takehome.approve', 'takehome.export', 'takehome.read']", 'retryable': False, 'details': {'path': 'method'}}
+
+======================================================================
+FAIL: test_takehome_pdf_is_tagged (tests.test_gm_takehome.TakeHomePrintFollowUpTest.test_takehome_pdf_is_tagged)
+The exported PDF carries the pack's authored locale, title and structure tree.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/gm018-red-rgpjOl/tree/tests/test_gm_takehome.py", line 1069, in test_takehome_pdf_is_tagged
+    self.assertIn(b"/MarkInfo << /Marked true >>", data)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: b'/MarkInfo << /Marked true >>' not found in b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R] /Count 4 >>\nendobj\n3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n5 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>\nendobj\n6 0 obj\n<< /Length 591 >>\nstream\nBT\n16 TL\n56 736 Td\n/F2 16 Tf\n(Take-home: searing - take-home pack) Tj\nT*\n/F2 16 Tf\n(Take-home: Section 1: the sear) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(A lesson pack prepared from a Coursebook lesson.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(Course: Braising at home) Tj\nT*\n/F1 12 Tf\n(Lesson: Section 1: the sear) Tj\nT*\n/F1 12 Tf\n(Objective: Objective 1: sear and braise) Tj\nT*\n/F1 12 Tf\n(Target: production) Tj\nT*\n/F1 12 Tf\n(Edition: parent) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(The source course is unchanged; this pack prints the lesson exactly as) Tj\nT*\n/F1 12 Tf\n(it was validated.) Tj\nT*\nET\nendstream\nendobj\n7 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>\nendobj\n8 0 obj\n<< /Length 1406 >>\nstream\nBT\n16 TL\n56 736 Td\n/F2 16 Tf\n(Parent guide - Section 1: the sear) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(Objective: Objective 1: sear and braise) Tj\nT*\n/F1 12 Tf\n(Evidence target: production) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(Course goal: Braise short ribs at home without a pressure cooker.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Lesson intent) Tj\nT*\n/F1 12 Tf\n(Sear first, then braise.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(What the learner will do) Tj\nT*\n/F1 12 Tf\n(Choose the moment that actually sears the meat.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Worked example) Tj\nT*\n/F1 12 Tf\n(The pan is only warm.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(1. Wait until the oil shimmers) Tj\nT*\n/F1 12 Tf\n(2. Lay the ribs away from you) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Parent note) Tj\nT*\n/F1 12 Tf\n(No authored parent note for this lesson.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Narration script) Tj\nT*\n/F1 12 Tf\n(Browning builds the flavour the braise carries for two hours.) Tj\nT*\n/F1 12 Tf\n(Watch the oil, then lay the ribs away from you.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Success criterion) Tj\nT*\n/F1 12 Tf\n(Criterion 1a: browns the meat on every face) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Provenance) Tj\nT*\n/F1 12 Tf\n(Source lesson: lsn_1_pln_3da9b8f04f3a47e4bf7c2f5fda67e824:v1) Tj\nT*\n/F1 12 Tf\n(Source content:) Tj\nT*\n/F1 12 Tf\n(sha256:2aef3faf97712f2d2c0b5fa4201a5e4dec8e094e05672be11a667d6a7cace55a) Tj\nT*\nET\nendstream\nendobj\n9 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>\nendobj\n10 0 obj\n<< /Length 937 >>\nstream\nBT\n16 TL\n56 736 Td\n/F2 16 Tf\n(Section 1: the sear) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Why the sear matters) Tj\nT*\n/F1 12 Tf\n(Browning builds the flavour the braise carries for two hours.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Do this next) Tj\nT*\n/F1 12 Tf\n(Watch the oil, then lay the ribs away from you.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Worked example) Tj\nT*\n/F1 12 Tf\n(The pan is only warm.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(1. Wait until the oil shimmers) Tj\nT*\n/F1 12 Tf\n(2. Lay the ribs away from you) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(What to notice) Tj\nT*\n/F1 12 Tf\n(Choose the moment that actually sears the meat.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Your turn) Tj\nT*\n/F1 12 Tf\n(In one sentence, describe the moment the ribs go in.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(Write one sentence.) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(What success looks like) Tj\nT*\n/F1 12 Tf\n(Criterion 1a: browns the meat on every face) Tj\nT*\nET\nendstream\nendobj\n11 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>\nendobj\n12 0 obj\n<< /Length 615 >>\nstream\nBT\n16 TL\n56 736 Td\n/F2 16 Tf\n(Answer guide - parent only) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Section 1: the sear) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F1 12 Tf\n(Objective: Objective 1: sear and braise) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Reference answer) Tj\nT*\n/F1 12 Tf\n(REFERENCE-ONLY: shimmers before the meat goes in) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Rubric) Tj\nT*\n/F1 12 Tf\n(1. Browns every face) Tj\nT*\n/F1 12 Tf\n(2. RUBRIC-ONLY: browns every face without crowding) Tj\nT*\n/F1 12 Tf\n(3. Does not crowd the pan) Tj\nT*\n/F1 12 Tf\n() Tj\nT*\n/F2 12 Tf\n(Worked example answer) Tj\nT*\n/F1 12 Tf\n(Wait for the shimmer) Tj\nT*\nET\nendstream\nendobj\nxref\n0 13\n0000000000 65535 f \n0000000015 00000 n \n0000000064 00000 n \n0000000140 00000 n \n0000000237 00000 n \n0000000339 00000 n \n0000000475 00000 n \n0000001117 00000 n \n0000001253 00000 n \n0000002711 00000 n \n0000002848 00000 n \n0000003837 00000 n \n0000003975 00000 n \ntrailer\n<< /Size 13 /Root 1 0 R >>\nstartxref\n4642\n%%EOF\n'
+
+======================================================================
+FAIL: test_takehome_cover_is_single_line (tests.test_gm_takehome.TakeHomePrintFollowUpTest.test_takehome_cover_is_single_line)
+The cover prints one clean 'Take-home:' line, never a doubled prefix or suffix.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/gm018-red-rgpjOl/tree/tests/test_gm_takehome.py", line 1125, in test_takehome_cover_is_single_line
+    self.assertEqual(first_page.count("Take-home:"), 1, first_page)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1 : Take-home: searing - take-home pack
+Take-home: Section 1: the sear
+
+A lesson pack prepared from a Coursebook lesson.
+
+Course: Braising at home
+Lesson: Section 1: the sear
+Objective: Objective 1: sear and braise
+Target: production
+Edition: parent
+
+The source course is unchanged; this pack prints the lesson exactly as
+it was validated.
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.394s
+
+FAILED (failures=3)

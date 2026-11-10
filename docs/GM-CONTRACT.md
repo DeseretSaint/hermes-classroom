@@ -22,7 +22,7 @@ vocabulary value moves.
 | Layer | Frozen here | Deliberately unchanged |
 |---|---|---|
 | Storage | `cb.db` v13: `courses.presentation_mode` (nullable) and eight new tables via `0013_game_mode_contracts.sql` | Every v12 table, column, index and unique key; every lesson, attempt, transition and evidence row |
-| Wire | 18 Game Mode method names plus `course.mode.set`, frozen in `GM_RPC_METHODS` | `cb.rpc` v20 itself: no method is added to the wire contract in GM-001. GM-009 adds two at v21, GM-011 adds the tutor pair at v22, GM-005 adds the six take-home methods at v23 and GM-007 adds the four homework methods (`homework.create`, `homework.read`, `homework.complete`, `homework.skip`) at v24 |
+| Wire | 18 Game Mode method names plus `course.mode.set`, frozen in `GM_RPC_METHODS` | `cb.rpc` v20 itself: no method is added to the wire contract in GM-001. GM-009 adds two at v21, GM-011 adds the tutor pair at v22, GM-005 adds the six take-home methods at v23, GM-007 adds the four homework methods (`homework.create`, `homework.read`, `homework.complete`, `homework.skip`) at v24, and GM-018 appends `takehome.html` at v24 |
 | Errors | The set of existing `cb.errors` v4 codes each method may return | `cb.errors` v4: no new code |
 | Jobs | `world.generate` is `kind=media` with `brief.stage` `world_concepts` / `world_kit` | `cb.jobs` v5: no new kind, no new job field |
 | Evidence | Nothing | The evidence store is not extended. There is no second evidence store. |

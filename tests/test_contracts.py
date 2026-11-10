@@ -4408,11 +4408,13 @@ class V23AmendmentTest(unittest.TestCase):
 
 
 class V24AmendmentTest(unittest.TestCase):
-    """GM-007: cb.rpc v24 appends the four away-from-screen homework methods to GM-005's v23.
+    """GM-007 + GM-018: cb.rpc v24 appends the away-from-screen homework family and
+    the take-home HTML document to GM-005's v23.
 
     A homework task is one target, one context, one observable criterion and 3-10 minutes. The
     frozen response cannot express a grade, a score, a mastery claim or an XP award: completion is
-    ``self_reported_done`` or ``parent_reported_done``.
+    ``self_reported_done`` or ``parent_reported_done``. ``takehome.html`` returns the stored pack as
+    self-contained content; ``artifact.get`` remains the only download handle.
     """
 
     NEW_METHODS = (
@@ -4421,18 +4423,19 @@ class V24AmendmentTest(unittest.TestCase):
         "homework.complete",
         "homework.skip",
     )
+    HTML_METHOD = "takehome.html"
 
-    def test_v24_is_v23_plus_the_homework_family(self) -> None:
+    def test_v24_is_v23_plus_the_homework_family_and_html(self) -> None:
         v23 = _document("rpc.v23.json")
         v24 = contracts.contract("cb.rpc")
         old = list(v23["$defs"]["method"]["enum"])
         new = list(v24["$defs"]["method"]["enum"])
         self.assertEqual(new[: len(old)], old)
-        self.assertEqual(tuple(new[len(old):]), self.NEW_METHODS)
+        self.assertEqual(tuple(new[len(old):]), self.NEW_METHODS + (self.HTML_METHOD,))
         self.assertEqual(v24["x-supersedes"], v23["$id"])
         self.assertEqual(contracts.contract_version("cb.rpc"), 24)
         self.assertEqual(v24["x-contract-version"], 24)
-        self.assertEqual(len(new), 87)
+        self.assertEqual(len(new), 88)
 
     def test_v23_snapshot_stays_byte_identical_history(self) -> None:
         digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v23.json").read_bytes()).hexdigest()
@@ -4448,7 +4451,7 @@ class V24AmendmentTest(unittest.TestCase):
         v24 = contracts.contract("cb.rpc")
         before = v23["$defs"]["methods"]["properties"]
         after = v24["$defs"]["methods"]["properties"]
-        self.assertEqual(set(after) - set(before), set(self.NEW_METHODS))
+        self.assertEqual(set(after) - set(before), set(self.NEW_METHODS) | {self.HTML_METHOD})
         self.assertEqual(set(before) - set(after), set(), "v24 removed a method")
         self.assertEqual(set(before), set(v23["$defs"]["method"]["enum"]))
 
@@ -4490,15 +4493,33 @@ class V24AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
+    def test_the_html_method_is_closed_and_bounded(self) -> None:
+        schema = contracts.method_schema(self.HTML_METHOD)
+        self.assertIs(schema["request"].get("additionalProperties"), False)
+        self.assertEqual(set(schema["request"]["required"]), {"pack_id"})
+        self.assertIs(schema["response"].get("additionalProperties"), False)
+        self.assertEqual(
+            set(schema["response"]["required"]),
+            {"pack_id", "title", "language", "mime", "pages", "html", "document_hash"},
+        )
+        self.assertEqual(schema["response"]["properties"]["mime"]["const"], "text/html")
+        self.assertEqual(schema["response"]["properties"]["html"]["maxLength"], 400000)
+        self.assertEqual(_schema_problems(schema["request"], "request"), [])
+        self.assertEqual(_schema_problems(schema["response"], "response"), [])
+
     def test_docs_publish_the_v24_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
         for needle in (
             "v24 delta (GM-007)",
+            "v24 delta (GM-018)",
             "rpc.v24.json",
             "homework.create",
             "homework.complete",
             "self_reported_done",
             "parent_reported_done",
+            "takehome.html",
+            "self-contained",
+            "artifact.get",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 

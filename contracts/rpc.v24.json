@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.coursebook.hermes/rpc/v24",
   "title": "Coursebook backend RPC v24",
-  "description": "v24 is v23 with one additive amendment (GM-007, away-from-screen homework): four methods are appended, `homework.create`, `homework.read`, `homework.complete` and `homework.skip`. `homework.create` proposes one task with one target, one context, one observable success criterion and 3-10 minutes, sourced from the lesson's authored away-from-screen block; it refuses a generic duration card, multiple targets, surveillance and graded completion with `POLICY_VIOLATION` and a named `details.reason`. `homework.read` returns the task, its append-only event trail and a one-page sheet with its cited sources. `homework.complete` records `self_reported_done` or `parent_reported_done` and `homework.skip` records an honest skip; neither writes an attempt, transition, evidence, engagement or mastery row, and a parent-reported task is never independent verification. Homework is not a course, not a chat thread and never an external send. No v1-v23 method, request shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; `rpc.v23.json` stays byte-identical history and `x-supersedes` names it. v23 is v22 with GM-005's take-home family. v23 is v22 with one additive amendment (GM-005, Parent Studio take-home packs): six methods are appended, `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`. `takehome.sources` lists the learner courses and imported packs a parent may draw from, with section/objective/lesson preview and parent-only authoring courses excluded unless explicitly shared. `takehome.preview` composes the proposed pages. `takehome.create` mints a draft bound to the source course, objective, lesson version and content hash; `takehome.approve` approves the actual pages; `takehome.export` renders the A4/Letter print artifact; `takehome.read` returns the pack with the learner page and the answer guide as separate page objects. The source course, lesson, evidence and attempts are never written, and a pack edit invalidates only the pack. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v22 is v21 with one additive Game Mode implementation amendment (GM-011, the lesson-bound tutor): `tutor.ask` and `tutor.history` are appended. Wire contract for the Coursebook backend. v22 is v21 with one additive Game Mode implementation amendment (GM-011, the lesson-bound tutor): two methods are appended, `tutor.ask` and `tutor.history`. `tutor.ask` answers one learner question inside a thread bound to a lesson run, with a bounded context envelope that excludes answer keys, checks, rubric and attempts, no tools, and citations that must resolve to a lesson block id or a course source id. While a check is open the final answer is withheld and the response names the assist policy; the command never writes an attempt, transition or evidence row, and a provider failure is a named state (`provider_failure`) rather than an empty answer. `tutor.history` reads the persisted thread for one lesson run. Tutor turns are excluded from pack and course export and are never graded. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v21 is v20 with the first additive Game Mode implementation amendment (GM-009, the game-only engagement layer): two methods are appended, `engagement.read` and `engagement.award`. `engagement.read` is the Game header read model (xp total, cosmetic level, `Game progress` labelled play progress, bounded recent events) and is refused outside a `game` course; `engagement.award` appends one XP event idempotently per `(enrollment_id, action_kind, action_id)` and refuses any action id that is not a real recorded action. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves, and engagement is never joined by an evidence, parent, pack or export read. The remaining Game Mode method names stay frozen in `coursebook/gm_contract.py` and land with their own handlers. v20 is v19 with one additive amendment (H-194b, the read seam the H-194 UI needs): `parent.blueprint.read` gains one required response array, `sections`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`. `page_hash` is the exact digest `lesson.revise` fences on, so the desktop can call `lesson.revise`/`lesson.regenerate` for a section that has never been revised. No method is added or moved, no request shape changes, no error code, job kind, answer kind, verdict, evidence class or vocabulary value moves, and no existing required key is retyped. v19 is v18 with one additive amendment (H-194 fine-tuning a generated course): five methods are appended and no existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. `plan.edit` changes an already-approved plan in place (reorder objectives and/or edit objective title/evidence target/criteria) and records a reviewable `plan_revisions` row; `plan.undo` reverts the last un-reverted structural revision; `lesson.revise` stores one immutable authored revision of one generated section (a new `gen_lessons` row) and marks only that section's validation stale; `lesson.regenerate` queues a single-section lessons job with a one-section cost preflight and never a plan-wide replan; `parent.review.read` returns the pending review diff (plan revisions + lesson revisions) the author approves with the existing `parent.final.approve`. Every mutating method carries `expected_revision` and an `idempotency_key`; `plan.edit` and `lesson.revise` also require the hash the author read, so a stale read is refused rather than applied. The v1-v21 files stay on disk as immutable history. docs/CONTRACTS.md is the authority.",
+  "description": "v24 appends one additive method (GM-018, take-home print follow-ups): `takehome.html` returns the stored take-home pack as a self-contained, selectable-text HTML document that shares the PDF page composition — the learner page for a learner pack, plus the parent guide and the separate parent-only answer guide for a parent pack. The document carries the document title, its language, escaped text, no scripts, no images and no external fetch; a captioned plate keeps its text alternative as an accessible region label. It is returned as content, not as a second download handle: `artifact.get` remains the only download handle, and HTML is never adopted into the artifact store. No method, request shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; `rpc.v23.json` stays byte-identical history and `x-supersedes` names it. v24 is v23 with one additive amendment (GM-007, away-from-screen homework): four methods are appended, `homework.create`, `homework.read`, `homework.complete` and `homework.skip`. `homework.create` proposes one task with one target, one context, one observable success criterion and 3-10 minutes, sourced from the lesson's authored away-from-screen block; it refuses a generic duration card, multiple targets, surveillance and graded completion with `POLICY_VIOLATION` and a named `details.reason`. `homework.read` returns the task, its append-only event trail and a one-page sheet with its cited sources. `homework.complete` records `self_reported_done` or `parent_reported_done` and `homework.skip` records an honest skip; neither writes an attempt, transition, evidence, engagement or mastery row, and a parent-reported task is never independent verification. Homework is not a course, not a chat thread and never an external send. No v1-v23 method, request shape, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves; `rpc.v23.json` stays byte-identical history and `x-supersedes` names it. v23 is v22 with GM-005's take-home family. v23 is v22 with one additive amendment (GM-005, Parent Studio take-home packs): six methods are appended, `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export` and `takehome.read`. `takehome.sources` lists the learner courses and imported packs a parent may draw from, with section/objective/lesson preview and parent-only authoring courses excluded unless explicitly shared. `takehome.preview` composes the proposed pages. `takehome.create` mints a draft bound to the source course, objective, lesson version and content hash; `takehome.approve` approves the actual pages; `takehome.export` renders the A4/Letter print artifact; `takehome.read` returns the pack with the learner page and the answer guide as separate page objects. The source course, lesson, evidence and attempts are never written, and a pack edit invalidates only the pack. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v22 is v21 with one additive Game Mode implementation amendment (GM-011, the lesson-bound tutor): `tutor.ask` and `tutor.history` are appended. Wire contract for the Coursebook backend. v22 is v21 with one additive Game Mode implementation amendment (GM-011, the lesson-bound tutor): two methods are appended, `tutor.ask` and `tutor.history`. `tutor.ask` answers one learner question inside a thread bound to a lesson run, with a bounded context envelope that excludes answer keys, checks, rubric and attempts, no tools, and citations that must resolve to a lesson block id or a course source id. While a check is open the final answer is withheld and the response names the assist policy; the command never writes an attempt, transition or evidence row, and a provider failure is a named state (`provider_failure`) rather than an empty answer. `tutor.history` reads the persisted thread for one lesson run. Tutor turns are excluded from pack and course export and are never graded. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. v21 is v20 with the first additive Game Mode implementation amendment (GM-009, the game-only engagement layer): two methods are appended, `engagement.read` and `engagement.award`. `engagement.read` is the Game header read model (xp total, cosmetic level, `Game progress` labelled play progress, bounded recent events) and is refused outside a `game` course; `engagement.award` appends one XP event idempotently per `(enrollment_id, action_kind, action_id)` and refuses any action id that is not a real recorded action. No existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves, and engagement is never joined by an evidence, parent, pack or export read. The remaining Game Mode method names stay frozen in `coursebook/gm_contract.py` and land with their own handlers. v20 is v19 with one additive amendment (H-194b, the read seam the H-194 UI needs): `parent.blueprint.read` gains one required response array, `sections`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`. `page_hash` is the exact digest `lesson.revise` fences on, so the desktop can call `lesson.revise`/`lesson.regenerate` for a section that has never been revised. No method is added or moved, no request shape changes, no error code, job kind, answer kind, verdict, evidence class or vocabulary value moves, and no existing required key is retyped. v19 is v18 with one additive amendment (H-194 fine-tuning a generated course): five methods are appended and no existing method, required key, error code, job kind, answer kind, verdict, evidence class or vocabulary value moves. `plan.edit` changes an already-approved plan in place (reorder objectives and/or edit objective title/evidence target/criteria) and records a reviewable `plan_revisions` row; `plan.undo` reverts the last un-reverted structural revision; `lesson.revise` stores one immutable authored revision of one generated section (a new `gen_lessons` row) and marks only that section's validation stale; `lesson.regenerate` queues a single-section lessons job with a one-section cost preflight and never a plan-wide replan; `parent.review.read` returns the pending review diff (plan revisions + lesson revisions) the author approves with the existing `parent.final.approve`. Every mutating method carries `expected_revision` and an `idempotency_key`; `plan.edit` and `lesson.revise` also require the hash the author read, so a stale read is refused rather than applied. The v1-v21 files stay on disk as immutable history. docs/CONTRACTS.md is the authority.",
   "x-contract-id": "cb.rpc",
   "x-contract-version": 24,
   "x-owner": "atlas",
@@ -99,7 +99,8 @@
         "homework.create",
         "homework.read",
         "homework.complete",
-        "homework.skip"
+        "homework.skip",
+        "takehome.html"
       ]
     },
     "envelope_request": {
@@ -8317,6 +8318,65 @@
               },
               "state": {
                 "const": "skipped"
+              }
+            }
+          }
+        },
+        "takehome.html": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pack_id"
+            ],
+            "properties": {
+              "pack_id": {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+              }
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "pack_id",
+              "title",
+              "language",
+              "mime",
+              "pages",
+              "html",
+              "document_hash"
+            ],
+            "properties": {
+              "pack_id": {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "language": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 35
+              },
+              "mime": {
+                "const": "text/html"
+              },
+              "pages": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "html": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400000
+              },
+              "document_hash": {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"
               }
             }
           }
