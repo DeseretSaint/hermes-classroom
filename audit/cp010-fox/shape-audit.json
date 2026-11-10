@@ -1,0 +1,109 @@
+{
+  "method": "opaque-alpha silhouette. Head height = distance from the top of the figure to the narrowest row below the widest row of its upper 70 % (the neck pinch). Reported to 0.1 %; a silhouette estimate, not a line-following measurement.",
+  "note": "Aspect > 1 means a wider-than-tall (horizontal) silhouette.",
+  "plates": {
+    "fox-model-sheet": {
+      "file": "assets/art/fox/fox-model-sheet.png",
+      "canvas": "1228x1228",
+      "bbox": [
+        16,
+        310,
+        1196,
+        607
+      ],
+      "aspect": 1.97
+    },
+    "fox-wave": {
+      "file": "assets/art/fox/fox-wave.png",
+      "canvas": "677x677",
+      "bbox": [
+        94,
+        16,
+        488,
+        645
+      ],
+      "aspect": 0.757,
+      "head_fraction_percent": 53.3,
+      "head_peak_row_width": 369,
+      "neck_row_width": 226
+    },
+    "fox-point": {
+      "file": "assets/art/fox/fox-point.png",
+      "canvas": "671x671",
+      "bbox": [
+        150,
+        16,
+        370,
+        639
+      ],
+      "aspect": 0.579,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    },
+    "fox-clock": {
+      "file": "assets/art/fox/fox-clock.png",
+      "canvas": "660x660",
+      "bbox": [
+        141,
+        16,
+        377,
+        628
+      ],
+      "aspect": 0.6,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    },
+    "fox-read": {
+      "file": "assets/art/fox/fox-read.png",
+      "canvas": "654x654",
+      "bbox": [
+        78,
+        16,
+        497,
+        622
+      ],
+      "aspect": 0.799,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    },
+    "fox-cheer": {
+      "file": "assets/art/fox/fox-cheer.png",
+      "canvas": "661x661",
+      "bbox": [
+        87,
+        16,
+        487,
+        629
+      ],
+      "aspect": 0.774,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    },
+    "fox-think": {
+      "file": "assets/art/fox/fox-think.png",
+      "canvas": "670x670",
+      "bbox": [
+        148,
+        16,
+        374,
+        638
+      ],
+      "aspect": 0.586,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    },
+    "fox-sleep": {
+      "file": "assets/art/fox/fox-sleep.png",
+      "canvas": "837x837",
+      "bbox": [
+        16,
+        126,
+        805,
+        584
+      ],
+      "aspect": 1.378,
+      "head_fraction_percent": null,
+      "head_fraction_note": "not measurable: arms or props make a wider row than the head"
+    }
+  }
+}

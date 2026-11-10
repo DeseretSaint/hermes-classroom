@@ -1,0 +1,212 @@
+{
+  "card": "CP-010",
+  "what_this_is": "The recorded vision-consistency check the card requires: one row per shipped plate, each compared against the model sheet, which ART-BIBLE.md §7.4 makes the only style reference for a pose. Every row records what a vision pass actually reported plus the silhouette numbers measured by scripts/cp010-shape-audit.py. A check without a record is not a check.",
+  "method": {
+    "vision_pass": "host image-understanding model, one call per plate; for the model sheet one call over the whole four-view plate plus a 150 % crop of the front view; for point a second call on a 250 % mid-body crop. Vision reads are treated as weak evidence, so every claim they make about geometry is cross-checked against the silhouette audit.",
+    "silhouette": "audit/cp010-fox/shape-audit.json — opaque-alpha bbox and aspect, re-derived from the shipped PNGs.",
+    "lettering": "tesseract 5, default psm 3, on each master; the TSV is kept beside it and no word of two or more characters reaches 70 confidence.",
+    "palette": "audit/cp010-fox/art-audit.json — per-plate pigment share and pure-black share."
+  },
+  "reference": {
+    "plate": "fox-model-sheet",
+    "media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+    "shipped_sha256": "cfb21ca10a260a8209ccb8f857f7cdb5adedc33f84a53ad604b22c829b987f55",
+    "owner_approved": false
+  },
+  "marking_band": {
+    "definition": "Dark limb marking counted as a match when it covers the paw and extends no further than the mid-forearm or mid-shin, and never stops before the paw. The model sheet's own four views show the paw plus a short cuff, so this band is measured from the authority, not chosen to flatter the poses.",
+    "measured_on_the_sheet": "paw only in all four views"
+  },
+  "rows": [
+    {
+      "plate_id": "fox-model-sheet",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43b/vO4WyK_w3W7Dn2lgjj3ww_jOxW3DT9.png",
+      "aspect": 1.97,
+      "stance": "four views (front, three-quarter left, side, back), upright and bipedal in all four",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw only, arms and legs, no cuff above the wrist or ankle"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "warm rust fur, cream bib and tail tip, dark brown limb ends and line — inside the post-temper family recorded in the art bible",
+      "lettering": "none",
+      "verdict": "pass",
+      "notes": "The sheet is the authority and is internally consistent across the four views."
+    },
+    {
+      "plate_id": "fox-wave",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/CTNaUZb4lKDRjdBUYWMiW_451cFOdV.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.757,
+      "stance": "upright, bipedal, two feet down, one paw raised to ear height",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw only on the arms; the legs are dark up to the knee"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family; fur and cream inside a few units of the recorded post-temper values",
+      "lettering": "none",
+      "verdict": "pass",
+      "notes": "Neutral arms-down plate and the only one where the neck-pinch head estimate is meaningful: 53.3 % of figure height."
+    },
+    {
+      "plate_id": "fox-point",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e5c3/Y6GjyR4O5N1rY42dz1gRq_OxDrbQpK.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.579,
+      "stance": "upright, bipedal, two feet down, one front paw extended down-right in a pointing gesture",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw only on the arms and feet"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none",
+      "verdict": "pass",
+      "notes": "Round 3. Round 1 was a quadruped (aspect 1.076) and is recorded as rejected in prompts.json; round 2 was bipedal but both arms hung at the side, so it had no gesture. The pointing paw's fingers separate, where the sheet's paws are mittens — a small detail visible at 256 px, not at 64 px."
+    },
+    {
+      "plate_id": "fox-clock",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e481/El3tQxJOOY2rYSioqiHzK_wdXAuU5A.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.6,
+      "stance": "upright, bipedal, holding a small alarm clock at chest height",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw plus a short cuff to the lower forearm — the longest cuff in the set, still short of the elbow"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none; the clock face carries tick marks only, no numerals",
+      "verdict": "pass",
+      "notes": "Round 2, regenerated because round 1's cuff stopped short of the wrist."
+    },
+    {
+      "plate_id": "fox-read",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/t_6ok0vA-5TXAi5aevYuS_jYsTN8xz.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.799,
+      "stance": "seated upright with an open book in both paws; the one non-standing pose besides sleep",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw only"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none; the book pages carry ruled lines, no glyphs",
+      "verdict": "pass",
+      "notes": "Seated, so the aspect guard is asserted at the standing-pose limit and passes at 0.799."
+    },
+    {
+      "plate_id": "fox-cheer",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/yW1WLeVmvSFdCJ8E_0kRA_ZCBZ8rPM.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.774,
+      "stance": "upright, bipedal, both paws raised, head tilted up",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw plus a short cuff just past the wrist and ankle"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none",
+      "verdict": "pass",
+      "notes": "Raised arms make the widest row the arms, so no head-fraction estimate is reported."
+    },
+    {
+      "plate_id": "fox-think",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/q4rdEPvlgq0csyXkK28rq_QVuAf320.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 0.586,
+      "stance": "upright, bipedal, front paws raised to the chin",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "paw with a short cuff to the wrist and ankle"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none; no question mark",
+      "verdict": "pass",
+      "notes": "One paw at the chin with the other arm bent and its paw resting near the chest — the bible's one-paw description, not two. The head tilt is slight and was not measured against the bible's 15°."
+    },
+    {
+      "plate_id": "fox-sleep",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/JeH-8nGbJk0iu86TLgtLe_2V267dCJ.png",
+      "reference_media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png",
+      "aspect": 1.378,
+      "stance": "curled asleep, lying; the deliberate exception to the upright stance guard",
+      "markings": {
+        "cream_bib": true,
+        "cream_tail_tip": true,
+        "dark_ear_backs": true,
+        "limb_marking": "dark paw at the pad; no cuff visible in the curled pose"
+      },
+      "markings_match_sheet": true,
+      "colour_family": "same family",
+      "lettering": "none; no letter Z",
+      "verdict": "pass",
+      "notes": "Only plate whose aspect is above 1.0; the stance guard asserts that exception explicitly rather than exempting the file."
+    }
+  ],
+  "open_items": [
+    {
+      "id": "OI-1",
+      "owner_decision": "D-CP010-A",
+      "class": "binding-document",
+      "finding": "ART-BIBLE.md §3 and the card body require dark socks from the paw to the elbow. No shipped plate implements that, including the model sheet the rule describes: all four sheet views show the paw plus at most a short cuff, and six of seven poses match the sheet. The rule is therefore a target that the authority itself does not meet.",
+      "why_it_matters": "CP-011, CP-012 and CP-013 inherit this bible. A rule the authority violates propagates as an unmeetable instruction.",
+      "options": [
+        "Amend §3 to the marking the family and the sheet actually share: dark paw plus at most a short cuff, lower leg dark to the ankle.",
+        "Hold the rule and regenerate the model sheet (one round left) and then all seven poses from the new sheet; the poses would exceed their per-pose round budget."
+      ]
+    },
+    {
+      "id": "OI-2",
+      "owner_decision": "D-CP010-A",
+      "class": "owner-gate",
+      "finding": "Neither contact sheet is signed, and the poses were generated before the sheet was approved — the order ART-BIBLE.md §7.3 and the card body require.",
+      "why_it_matters": "Acceptance for this card is the owner's signature on both sheets; the art cannot be accepted by a reviewer on the owner's behalf.",
+      "options": [
+        "Sign the sheet, then the pose sheet.",
+        "Reject the sheet; the seven poses are then regenerated from the replacement."
+      ]
+    },
+    {
+      "id": "OI-3",
+      "owner_decision": "D-CP010-B",
+      "class": "wording",
+      "finding": "§3 gives the head as 45 % of standing figure height. The only plate where the silhouette permits a neck-pinch estimate (wave, arms down) measures 53.3 %, and the model sheet itself cannot be measured per view by silhouette slicing.",
+      "why_it_matters": "A proportion table that a new plate cannot meet produces either an off-model plate or a re-litigated rule.",
+      "options": [
+        "Keep 45 % as the design target and record 53.3 % as the measured family value with its method.",
+        "Adopt 53 % as the rule and re-state the tolerance."
+      ]
+    },
+    {
+      "id": "OI-4",
+      "owner_decision": "D-CP010-B",
+      "class": "wording",
+      "finding": "The think plate matches the bible's one-paw-at-the-chin description, but the head tilt is slight and was never measured against the stated 15°, and the free arm is bent across the chest rather than hanging at the side.",
+      "why_it_matters": "Pose descriptions in the bible are inherited by later scene cards, and an unmeasured angle reads as a rule that a new plate can fail without anyone being able to check it.",
+      "options": [
+        "Drop the exact angle from the description and keep the gesture.",
+        "Measure the tilt on the shipped plate and state the observed value."
+      ]
+    }
+  ]
+}

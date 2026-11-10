@@ -1,0 +1,110 @@
+{
+  "note": "Exact prompts sent to the host image tool. The hash of each string is the prompt_hash recorded in docs/concept-parity/ART-PROVENANCE.md. Never edit a string here; a new prompt gets a new id.",
+  "prompts": [
+    {
+      "id": "M1-r1",
+      "role": "model sheet, round 1 (rejected: dark sock only covered the paw)",
+      "text": "Single character model sheet, four views left to right: front, three-quarter left, side, back. A small anthropomorphic red fox, opaque gouache illustration on warm paper, dark brown ink contour #3a2318 drawn last, never black. Head is 45 percent of the standing figure height, large round head, short cream muzzle, two dot eyes with one cream catchlight each, small dark nose. Pear-shaped body, short arms and legs. Cream bib under the chin, cream tail tip on the last 20 percent of the tail, dark brown socks from the paw to the elbow, dark ear backs. Light from the upper left, one shade plane down-right in a darker tint of the same pigment, one narrow cream highlight on the top-left of head and shoulder. Flat pure magenta background #ff00ff, no gradient, no shadow, no ground, no border. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e43b/vO4WyK_w3W7Dn2lgjj3ww_jOxW3DT9.png"
+    },
+    {
+      "id": "M1",
+      "role": "model sheet, round 2 (approved for pose reference)",
+      "text": "Single character model sheet, four views left to right: front, three-quarter left, side, back. A small anthropomorphic red fox, opaque gouache illustration on warm paper, dark brown ink contour #3a2318 drawn last, never black. Head is 45 percent of the standing figure height, large round head, short cream muzzle, two dot eyes with one cream catchlight each, small dark nose. Pear-shaped body. CREAM BIB under the chin, CREAM TAIL TIP on the last 20 percent of the tail, DARK BROWN SOCKS: the forearms from the wrist up to the elbow are dark brown, and the lower legs from the foot up to the knee are dark brown, so each limb is dark for its lower half; DARK EAR BACKS. Light from the upper left, one shade plane down-right in a darker tint of the same pigment, one narrow cream highlight on the top-left of head and shoulder. Flat pure magenta background #ff00ff, no gradient, no shadow, no ground, no border. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43b/vO4WyK_w3W7Dn2lgjj3ww_jOxW3DT9.png"
+      ],
+      "media_url": "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+    },
+    {
+      "id": "P-wave",
+      "role": "pose",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. One front paw raised to ear height in a friendly wave, other paw at the side, friendly open mouth curve. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/CTNaUZb4lKDRjdBUYWMiW_451cFOdV.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-point",
+      "role": "pose, round 1 (rejected: quadruped — four legs down, horizontal torso)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. One paw extended toward the lower right at thirty degrees, head turned toward the viewer. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/4JMuyVANjyWdwElO1Njf9_LbkEqGQJ.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-point-r2",
+      "role": "pose, round 2 (not shipped: bipedal but both arms hang at the side, so the plate has no gesture at all)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. BIPEDAL UPRIGHT STANCE: the fox stands vertically on its two hind legs, both hind feet flat on the ground line, body upright and pear-shaped, shoulders above the hips, head on top of the body facing the viewer. Never on all fours, never standing on four legs, no horizontal torso. One FRONT PAW extended forward and down toward the lower right at thirty degrees as if pointing at something on the floor, the other front paw relaxed at the side. Head turned toward the viewer. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, cream bib, cream tail tip, dark brown socks from the wrist to the elbow joint, dark ear backs, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e5be/OJSbslzruxtRQ886UqXGo_Op4bOcU0.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-point-r3",
+      "role": "pose, round 3 (shipped)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. BIPEDAL UPRIGHT STANCE: the fox stands vertically on its two hind legs, both hind feet flat on the ground line, torso upright and pear-shaped, shoulders above hips, head on top of the body facing the viewer. Never on all fours, never on four legs, no horizontal torso. One FRONT PAW extended forward and down toward the lower right at thirty degrees as if pointing at something on the floor, the other front paw relaxed at the side. Head turned toward the viewer. MARKINGS, exactly as on the reference model sheet: cream bib on the chest, cream tail tip on the last 20 percent of the tail, dark ear backs, and DARK BROWN SOCKS that cover each FOREARM from the wrist all the way up to the elbow joint, exactly half of the arm's full length, so only the upper arm above the elbow stays russet red; the lower legs are dark brown from the foot up to the knee. Not mitten paws, not gloves: half of each limb is dark. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e5c3/Y6GjyR4O5N1rY42dz1gRq_OxDrbQpK.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-clock-r1",
+      "role": "pose, round 1 (rejected: sock stopped short of the elbow)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. Holding a small brass alarm clock with both paws at chest height. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers on the clock face, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/Lmim7wE_wmopUXruO4zBH_v6FyCnJo.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-clock",
+      "role": "pose, round 2",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. Holding a small brass alarm clock with both paws at chest height. The dark brown sock on each forearm covers the arm from the wrist all the way up to the elbow joint, that is half of the arm's full length, exactly as on the reference model sheet. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. The clock face is blank with simple tick marks only, no numerals, no text, no letters, no numbers anywhere, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e481/El3tQxJOOY2rYSioqiHzK_wdXAuU5A.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-read",
+      "role": "pose",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. Seated with an open book in both paws, head tilted slightly down. Full body, centred, on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, blank pages, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e459/t_6ok0vA-5TXAi5aevYuS_jYsTN8xz.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-cheer",
+      "role": "pose",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. Both paws raised high in a cheer, head tilted up, tail lifted. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/yW1WLeVmvSFdCJ8E_0kRA_ZCBZ8rPM.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-think",
+      "role": "pose",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. One paw at the chin, head tilted to one side, calm thoughtful eyes, no frown. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no question mark, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/q4rdEPvlgq0csyXkK28rq_QVuAf320.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-sleep",
+      "role": "pose",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. Curled up asleep, eyes closed, tail wrapped around to the chin. Full body, centred, lying on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no letter Z, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e45a/JeH-8nGbJk0iu86TLgtLe_2V267dCJ.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    }
+  ]
+}
