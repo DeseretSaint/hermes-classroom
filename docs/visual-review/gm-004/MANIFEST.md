@@ -41,9 +41,10 @@ approved world is reported and left alone). It does not create courses: the thre
 themselves were created earlier in this rig through the Desktop create flow and the demo seed.
 **`course-world--*`, `course-world-headgasket--*` and `studio-concepts--*` therefore require the
 preserved state dir** above; on a fresh state dir the staging script exits with
-`no course titled … in … — the rig state dir is required`. Every other surface (`home--*`,
-`course-textbook--*`, `mode-dialog--*`, `create-mode--*`) only needs a course list and is
-reproducible from an empty state dir once at least one course exists.
+`no course titled … in … — the rig state dir is required`. The other surfaces (`home--*`,
+`course-textbook--*`, `mode-dialog--*`, `create-mode--*`) only need a library with courses; the
+rig's `coursebook-demo-seed.json` provides them, but those frames are not claimed to be
+regenerable from a bare state dir either.
 
 The window is the dev Electron app on the Vite renderer (`npm run dev:renderer`, port 5174).
 `spawn` order matters: backend, Vite, then the window, or Electron fails to load the dev URL.
