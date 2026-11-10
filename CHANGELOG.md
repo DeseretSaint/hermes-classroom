@@ -26,6 +26,10 @@ artifact.
   recorded as `unavailable` rather than invented.
 - Source revalidation (`source.revalidate`) with a nullable `sources.content_hash` baseline, so a
   changed source returns `CHECK_STALE` without touching learner evidence.
+- License: MIT, in `LICENSE` at the root (copyright 2026 DeseretSaint). The owner chose it on
+  2026-11-10 in board card `t_6f2d2080`. The licence makes redistribution lawful; it does not
+  authorise publication, a tag or the catalog pull request, which stay closed under
+  `docs/SUBMISSION.md` §0.
 
 ### Fixed during the candidate
 
@@ -114,7 +118,8 @@ Also at 0.1.0:
 - Image and speech generation were absent at `29bede7`; this tree implements them on `master` since
   `3cead45` (M0) through the host's configured image/TTS providers, with text equivalents and honest
   degraded states. Reminders remain absent.
-- No license file. The repository may not be redistributed until DeseretSaint adds one.
+- ~~No license file~~ — closed 2026-11-10: MIT, `LICENSE` at the root (owner decision
+  `t_6f2d2080`). Redistribution is lawful from that commit on; publication stays closed.
 
 ### Verification at the release commit `29bede7`
 

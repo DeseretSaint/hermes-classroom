@@ -40,8 +40,9 @@ over `origin/master` `3fb3779` and the measured commit `b9f4a19`.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
-license exists, no live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 9, 12, 13, 14, 15. Partial: 5, 6, 10.
+live Desktop window has driven this exact tree, and the operator publication gate
+in §0 is closed. Open gates: 7, 12, 13, 14, 15. Partial: 5, 6, 10. Gate 9 (license) closed on
+2026-11-10: MIT, `LICENSE` at `0d17824`.
 
 ## 0. Hard operator gate
 
@@ -73,7 +74,7 @@ invalidates the earlier evidence.
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b9f4a19` and no video exists. Gate 5 and the recording path must close first | [ ] |
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `b9f4a19` | [x] |
-| 9 | License present | DeseretSaint | No `LICENSE` at repository root; the decision is `t_6f2d2080`, blocked on DeseretSaint | [ ] owner decision |
+| 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The pull request stays closed until gates 5, 7, 9 and 10 close | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
@@ -272,7 +273,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | `evidence.inspect` returned an open check's reference answer (CB-QA-10, **fixed**) | The answer key crossed the client boundary while the check was open. Re-derived on `master` at `498b1da`: the S07 probe passes (`open_check_reference_leaks=[]`, `secret_present=False`) and `coursebook/evidence.py` projects only `PUBLIC_CRITERION_FIELDS` (`docs/HARNESS-STATUS.md` §4). The historical review at `f4a42f3` is unchanged | Cinder — no card claims this fix |
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
-| License absent | Redistribution and catalog listing are unsafe without one | DeseretSaint |
+| ~~License absent~~ (closed 2026-11-10) | MIT `LICENSE` at `0d17824`; redistribution is lawful now, publication stays closed under §0 | DeseretSaint |
 | Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
