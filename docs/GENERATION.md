@@ -16,19 +16,21 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v12` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v12` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v11` otherwise. The v11/v12 bump
+adds the ledger-grounding, single-answer-check and evidence-target-fit rules to both plan authors;
+the validator prompt text is unchanged, so `validation-prompt.v5` stands.
 
-The prompt labels above are the ones **H-192b** ships: on top of H-195's labels the two plan
-prompts now also state the graded-check rule the kernel enforces for a `committed` course (at
-least one `quiz` entry in `check_plan`), so they advance `v8` → `v10` and `v9` → `v11`.
+The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
+prompts now state the ledger-grounding, single-defensible-answer and evidence-target-fit rules, so
+they advance `v10` → `v11` and `v11` → `v12`.
 `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
 fingerprint, so a plan or lesson authored under an older label is never silently reused under the
 current rules.

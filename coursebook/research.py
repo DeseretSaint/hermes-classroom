@@ -139,7 +139,14 @@ CONTRACT_SUPPORT_STATUS: dict[str, str] = {
 #: Hard caps on the shape of a snippet/excerpt we keep. Content is never stored in full.
 _MAX_TITLE = 300
 _MAX_PUBLISHER = 120
-_MAX_EXCERPT = 600
+#: A pipeline excerpt is the text a plan/lesson validator judges a claim against, so it must carry
+#: real prose, not the first few hundred characters of site chrome. 600 characters was measured to
+#: end inside a navigation menu (``Search ## Suggested Searches - [Artemis]…``) and left every
+#: objective unsupportable. The worker still bounds the request by ``REQUEST_BYTES_BOUNDS``; this
+#: value is the per-source window, chosen so eight sources fit a 24 kB ``short`` request.
+_MAX_EXCERPT = 1600
+#: Search-result descriptions are not judged evidence; keep them small and stable.
+_MAX_DESCRIPTION = 600
 _MAX_SOURCE_TYPE = 40
 _MAX_QUERY = 220
 _MAX_REASON = 300
@@ -457,7 +464,7 @@ class HermesToolSearch:
                 {
                     "url": url,
                     "title": _bound(str(row.get("title") or url), _MAX_TITLE),
-                    "description": _bound(str(row.get("description") or ""), _MAX_EXCERPT),
+                    "description": _bound(str(row.get("description") or ""), _MAX_DESCRIPTION),
                 }
             )
         return results[:limit]
@@ -1008,7 +1015,36 @@ def _bound(text: str, limit: int) -> str:
 
 
 def _excerpt(text: str, limit: int) -> str:
-    collapsed = " ".join(text.split())
+    """A content-first slice of the fetched page, whitespace-collapsed and bounded.
+
+    Extraction returns the whole page; the first characters are frequently a site header or a
+    navigation menu (NASA's starts ``Search ## Suggested Searches - [Artemis](…)``). An excerpt
+    that stops inside that menu cannot carry a claim, so the leading chrome lines are skipped
+    before the window is taken. The skip is deliberately narrow — blank lines, an explicit
+    search/nav banner, and link-list lines — so real prose is never discarded.
+    """
+    lines = text.splitlines()
+    start = 0
+    while start < len(lines):
+        stripped = lines[start].strip()
+        if not stripped:
+            start += 1
+            continue
+        low = stripped.casefold()
+        is_chrome = (
+            low.startswith("search")
+            or "suggested searches" in low
+            or "an official website of the united states government" in low
+            or low.startswith("ask ")  # "Ask DOI Anything - How Can We Help?"
+            or stripped.startswith(("- [", "* [", "* * *"))
+            or (stripped.startswith("[") and "](" in stripped)
+        )
+        if is_chrome:
+            start += 1
+            continue
+        break
+    body = "\n".join(lines[start:])
+    collapsed = " ".join(body.split())
     return collapsed[:limit]
 
 

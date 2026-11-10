@@ -181,7 +181,7 @@ logger = logging.getLogger("coursebook.generation")
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
 #: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
 #: blueprint prompt, so this advances to v10.
-PLAN_PROMPT_VERSION = "plan-prompt.v10"
+PLAN_PROMPT_VERSION = "plan-prompt.v11"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -192,7 +192,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v10"
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v11"
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v12"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -3603,6 +3603,33 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     return lines
 
 
+def _plan_sourcing_rules() -> list[str]:
+    """Authoring rules a validator measures and a plan can fail without.
+
+    A plan objective is only as good as the ledger text behind it, and a graded check with no
+    accepted answer cannot be scored. Both were measured live failures: every objective after the
+    first was stored ``support: unverified`` with no ``source_ids`` while the ledger held only
+    navigation-chrome excerpts, and every quiz was an open ``explain`` prompt the validator refused
+    as non-unique. The rules are stated so the author can satisfy them; the validator still judges
+    the result, and neither rule weakens a verdict.
+    """
+    return [
+        "Ground every objective in the source ledger: each objective must list in source_ids the "
+        "source(s) whose excerpt states what the objective claims, and set support to 'sourced'. "
+        "Do not write an objective whose claim no fetched excerpt carries — narrow or drop it "
+        "instead of inventing a citation. An objective with no ledger source must say support "
+        "'unverified'; that is a gap to close, not a finished plan.",
+        "Make every graded check answerable with one defensible answer: a quiz check's notes must "
+        "name the fixed stimulus (the exact items, chart, case or options the learner responds to) "
+        "and the single accepted answer or a closed list of accepted answers. Never write an open "
+        "'explain why' prompt that several correct answers would satisfy. The answer key stays in "
+        "the check record, never on the learner-facing page.",
+        "The check kind and evidence_target must match what the learner is asked to do: asking a "
+        "learner to label, trace or perform is an application or procedure check, not "
+        "comprehension, and the objective's evidence target must be the same class.",
+    ]
+
+
 def _plan_length_rule() -> str:
     """The hard-cap rule every plan prompt states (H-63 D-H63-2).
 
@@ -3663,8 +3690,13 @@ def _plan_instructions(
         "generic heading or a generic intent that would fit any course.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
-        "State explicit exclusions: what this course will not cover or claim.",
     ]
+    lines.extend(_plan_sourcing_rules())
+    lines.extend(
+        [
+        "State explicit exclusions: what this course will not cover or claim.",
+        ]
+    )
     # The declared inputs are stated as themselves. ``locale`` is the language of delivery and
     # ``subject_domain`` is what the course is about; the plan may not collapse one into the other.
     if level:
@@ -3867,18 +3899,23 @@ def _plan_instructions_v2(
         "Produce exactly one check plan entry per objective with objective_ref, kind and "
         "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
         "owner lesson writes exactly one check, and independence is an evidence class.",
-        # H-195: the arc the units build and the standing the learner starts from.
-        "State the course 'through_line': one paragraph naming the single arc every unit and "
-        "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
-        "learner must already have before unit 1. Never invent prior mastery the goal does not "
-        "state.",
-        "Every unit and objective must serve the goal in the input. Do not add generic "
-        "study-skills units or objectives (time management, note-taking, motivation, 'learning "
-        "how to learn'); those are not this course unless the goal itself names them.",
-        "Each unit goal and objective title must name the specific capability this course "
-        "teaches, never a generic template phrase that would fit any course.",
-        "State explicit exclusions: what this course will not cover or claim.",
     ]
+    lines.extend(_plan_sourcing_rules())
+    lines.extend(
+        [
+            # H-195: the arc the units build and the standing the learner starts from.
+            "State the course 'through_line': one paragraph naming the single arc every unit and "
+            "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
+            "learner must already have before unit 1. Never invent prior mastery the goal does not "
+            "state.",
+            "Every unit and objective must serve the goal in the input. Do not add generic "
+            "study-skills units or objectives (time management, note-taking, motivation, 'learning "
+            "how to learn'); those are not this course unless the goal itself names them.",
+            "Each unit goal and objective title must name the specific capability this course "
+            "teaches, never a generic template phrase that would fit any course.",
+            "State explicit exclusions: what this course will not cover or claim.",
+        ]
+    )
     if level:
         lines.append(
             f"Learner level: {level}. It is declared by the brief; never infer a level from the "
