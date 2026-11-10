@@ -18,6 +18,25 @@ from tests.world_fixtures import (
     JAPANESE_L0_BRIEF,
 )
 
+#: The supervisor's frozen §4.4 rule-5 imperative verbs (round 7) plus the omissions the round-11
+#: audit named (``refill``/``break``/``polish``). Every one of these must be fenced.
+FROZEN_PROCEDURE_VERBS = (
+    "remove",
+    "drain",
+    "loosen",
+    "tighten",
+    "lift",
+    "install",
+    "clean",
+    "disconnect",
+    "unbolt",
+    "turn",
+    "rotate",
+    "refill",
+    "break",
+    "polish",
+)
+
 
 class WorldPolicyTest(unittest.TestCase):
     def test_world_grammar_deterministic(self) -> None:
@@ -1620,6 +1639,132 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         executor.pump_once(limit=1)
         self.assertEqual(len(self.fake.calls), 6)
 
+    def test_presentation_motifs_cannot_name_a_frozen_procedure_verb(self) -> None:
+        # M1: 'clean' — a verb in the supervisor's frozen §4.4 rule-5 list — was absent from
+        # _PROCEDURE_VERB_TOKENS, so 'Clean the head' was accepted and reached every plate.
+        # Auditing the rest of the frozen list found 'disconnect' missing as well, and the
+        # ambiguous verbs 'refill'/'break'/'polish' unfenced. Refuse before spend on concepts
+        # and on the approved-style kit path, while native scene uses ("clean service bay",
+        # "break room") stay legal.
+        frozen = FROZEN_PROCEDURE_VERBS
+        for index, verb in enumerate(frozen):
+            with self.subTest(verb=verb):
+                course_id = self._new_technical_course(f"Frozen verb {verb} {index}")
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": course_id,
+                        "stage": "concepts",
+                        "brief_patch": {"motifs": [f"{verb.capitalize()} the head"]},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"m1-frozen-verb-{verb}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertIn(
+                    error["details"]["reason"],
+                    {
+                        "presentation_names_number_or_answer_content",
+                        "presentation_names_procedure_or_value",
+                    },
+                )
+                self.assertEqual(error["details"]["field"], "motifs")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Kit path after an approved style: the same frozen verb is refused, no extra spend.
+        read, _style = self._concepts_then_style()
+        self.assertEqual(len(self.fake.calls), 3)
+        board = read["world"]["concepts"][0]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": {"motifs": ["Disconnect the battery"]},
+            },
+            expected_revision=read["revision"],
+            idempotency_key="m1-frozen-verb-kit",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+        # Native uses of an ambiguous verb are scenes, not instructions.
+        course_id = self._new_technical_course("Frozen verb native scenes")
+        self.ok(
+            "world.generate",
+            {
+                "course_id": course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["clean service bay"]},
+            },
+            expected_revision=0,
+            idempotency_key="m1-frozen-verb-native",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 6)
+
+    def test_title_or_goal_cannot_name_a_frozen_procedure_verb(self) -> None:
+        # M1 residual, reachable with no brief_patch: a course titled 'Clean the head' and a goal
+        # 'Disconnect the battery' reach every plate through 'Course subject: ... — the learner
+        # will ...'. The prompt fence falls back / omits the clause, the stored brief stays
+        # verbatim.
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Clean the head",
+                "recipe": "committed",
+                "goal": "Replace a head gasket on a four-cylinder engine",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="m1-title-frozen-verb",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("clean the head", lowered)
+            self.assertNotIn("clean the", lowered)
+            self.assertIn("workshop manual", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(read["world"]["brief"]["title"], "Clean the head")
+
+        # Goal-only: a safe title, an unsafe capability clause.
+        self.fake.calls.clear()
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Service bay orientation",
+                "recipe": "committed",
+                "goal": "Disconnect the battery",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="m1-goal-frozen-verb",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("disconnect the battery", lowered)
+            self.assertNotIn("disconnect", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(read["world"]["brief"]["end_capability"], "Disconnect the battery")
+
     def test_course_title_with_a_leading_word_cannot_carry_a_procedure(self) -> None:
         # L1 residual, reachable with no brief_patch: a course titled exactly
         # 'First, remove the intake manifold' reaches every concept plate through
@@ -1775,13 +1920,15 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
                 # Two distinctive tokens of another art direction, so the phrase cannot be the
                 # selected grammar's own legal vocabulary.
                 return " ".join(sorted(world._distinctive_tokens(other))[:2])
+            if category.startswith("procedure:"):
+                # Walk the whole frozen verb list, not one representative string (M1).
+                return f"{category.split(':', 1)[1]} the component"
             return {
                 "digit": "torque 90 ft-lb",
                 "spelled": "tighten to seventy five",
                 "hyphen": "hand tight plus a quarter-turn",
                 "fraction": "two-thirds",
                 "leading": "First, remove the intake manifold",
-                "procedure": "remove the intake manifold",
                 "answer": "answer key steps",
                 "ignore": "ignore the textless rule",
             }[category]
@@ -1792,11 +1939,10 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
             "hyphen",
             "fraction",
             "leading",
-            "procedure",
             "answer",
             "foreign",
             "ignore",
-        )
+        ) + tuple(f"procedure:{verb}" for verb in FROZEN_PROCEDURE_VERBS)
         for grammar in world.GRAMMARS:
             for category in categories:
                 with self.subTest(grammar=grammar, category=category):

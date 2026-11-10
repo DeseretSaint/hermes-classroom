@@ -1291,6 +1291,7 @@ _PROCEDURE_VERB_TOKENS: frozenset[str] = frozenset(
         "connect",
         "cut",
         "detach",
+        "disconnect",
         "dismount",
         "drain",
         "drill",
@@ -1345,6 +1346,19 @@ _PROCEDURE_VERB_TOKENS: frozenset[str] = frozenset(
         "verify",
         "weld",
         "wipe",
+    }
+)
+
+#: Imperative procedure verbs that are also ordinary scene words ("a clean service bay", "the
+#: break room", "a polish rag", "the refill station"). They are refused only when they take an
+#: object ("clean the head"), never by the verb-initial test, so the native scene stays legal
+#: (M1). The frozen §4.4 list names ``clean``; ``refill``/``break``/``polish`` were the same hole.
+_DETERMINER_ONLY_PROCEDURE_VERBS: frozenset[str] = frozenset(
+    {
+        "break",
+        "clean",
+        "polish",
+        "refill",
     }
 )
 
@@ -1613,13 +1627,20 @@ def _descriptive_number_compound(unit: str) -> bool:
     return tail not in _SPELLED_NUMBER_TOKENS and tail not in _QUANTITY_COMPOUND_TOKENS
 
 
-def _procedure_verb_base(token: str) -> str | None:
+def _procedure_verb_base(token: str, verbs: frozenset[str] | None = None) -> str | None:
     """The procedure verb a token realises, if any (bare, gerund, or doubled-consonant gerund).
 
     ``remove``, ``removing`` and ``installing`` all name a procedure. A gerund base is
     compared against the same verb set so a sequence step cannot hide behind "-ing".
+    ``verbs`` defaults to the whole procedure vocabulary; the verb-initial test passes only
+    :data:`_PROCEDURE_VERB_TOKENS` so a scene word like ``clean service bay`` stays legal (M1).
     """
-    if token in _PROCEDURE_VERB_TOKENS:
+    vocabulary = (
+        _PROCEDURE_VERB_TOKENS | _DETERMINER_ONLY_PROCEDURE_VERBS
+        if verbs is None
+        else verbs
+    )
+    if token in vocabulary:
         return token
     if len(token) > 5 and token.endswith("ing"):
         stem = token[:-3]
@@ -1627,7 +1648,7 @@ def _procedure_verb_base(token: str) -> str | None:
         if len(stem) > 1 and stem[-1] == stem[-2]:
             candidates.append(stem[:-1])
         for candidate in candidates:
-            if candidate in _PROCEDURE_VERB_TOKENS:
+            if candidate in vocabulary:
                 return candidate
     return None
 
@@ -1645,10 +1666,12 @@ def _names_procedure_or_spelled_value(value: Any) -> bool:
 
     A leading discourse word never cancels an imperative, so it is skipped before the
     verb-initial test. A procedure verb followed by a determiner ("remove **the** manifold")
-    is refused wherever it sits. Native place cues ("car on a lift") stay legal: their noun
-    is not followed by a determiner. The ``four-cylinder`` carve-out is deliberately narrow:
-    only a spelled number followed by a plain noun is descriptive. Hyphenation must not
-    shelter a value, a fraction or a sequence step (K1/L2).
+    is refused wherever it sits, including the ambiguous scene verbs ``clean``/``break``/
+    ``polish``/``refill`` (M1). Native place cues ("car on a lift", "a clean service bay",
+    "the break room") stay legal: their noun is not followed by a determiner. The
+    ``four-cylinder`` carve-out is deliberately narrow: only a spelled number followed by a
+    plain noun is descriptive. Hyphenation must not shelter a value, a fraction or a
+    sequence step (K1/L2).
     """
     if _names_numbers_or_answer_content(value):
         return True
@@ -1666,7 +1689,9 @@ def _names_procedure_or_spelled_value(value: Any) -> bool:
     index = 0
     while index < len(raw_tokens) and raw_tokens[index] in _LEADING_DISCOURSE_TOKENS:
         index += 1
-    if index < len(raw_tokens) and _procedure_verb_base(raw_tokens[index]):
+    if index < len(raw_tokens) and _procedure_verb_base(
+        raw_tokens[index], _PROCEDURE_VERB_TOKENS
+    ):
         return True
     for position, token in enumerate(raw_tokens[:-1]):
         if (
