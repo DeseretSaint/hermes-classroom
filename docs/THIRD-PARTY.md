@@ -23,10 +23,13 @@ because nothing was taken.
 
 ## Bundled brand assets (CP-004)
 
-Coursebook now ships its own brand assets *inside the plugin module*: two typefaces, six material
+Coursebook now ships its own brand assets in the plugin package: two typefaces, six material
 tiles, seven fox poses at two exports and a seven-piece object kit. They are embedded as data URLs
 by `scripts/build_cb_assets.py` into `desktop/cb-assets.generated.js`; nothing is fetched from a
-host at run time and no course cover, scene header or world plate is in that segment.
+host at run time and no course cover, scene header or world plate is in that segment. At this
+commit `desktop/plugin.js` does not reference `CB_ASSETS`, so the package carries two
+`desktop/*.js` files and the segment is inert in an export. CP-020a (child of CP-004) owns the
+inlining step; until it lands the segment is a build input, not shipped runtime code.
 
 | asset group | upstream / authorship | licence | shipped as |
 | --- | --- | --- | --- |
@@ -58,8 +61,13 @@ offline and reproducible; they are inputs, not shipped assets, and are excluded 
 per-asset budget. `Pillow` and `rsvg-convert` are development tools: neither is imported by the
 plugin.
 
-`bash scripts/validate-plugin.sh` refuses an export that carries anything outside the declared
-allowlist; the allowlist gains `cb-assets.generated.js` with this card.
+The release gate carries **no file-admission rule**: `bash scripts/validate-plugin.sh` exports the
+commit and runs `hermes plugins validate`, `node --check desktop/plugin.js`, the desktop contract
+tests and `hermes plugins doctor`; `hermes plugins validate` does not police how many
+`desktop/*.js` files the package carries. What does police the desktop file set is
+`tests/test_desktop_surface.py::test_single_module_only`, widened by this card to admit exactly
+`plugin.js` plus the generated segment, with `test_generated_segment_is_inert` proving the segment
+is concatenation input rather than a second module.
 
 
 ## Model output used to produce a fixture (not code, not a runtime dependency)

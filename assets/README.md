@@ -1,8 +1,10 @@
 # Brand assets (CP-004)
 
-These are Coursebook's own brand assets, and they travel **inside the plugin module**: the build
-embeds every file below as a data URL in one frozen `CB_ASSETS` object in
-`desktop/cb-assets.generated.js`. Nothing here is fetched from a host at run time.
+These are Coursebook's own brand assets, and they travel in the plugin package as
+`desktop/cb-assets.generated.js`: the build embeds every file below as a data URL in one frozen
+`CB_ASSETS` object. At this commit `desktop/plugin.js` does not reference that object yet, so the
+segment is inert in an export and the package carries two `desktop/*.js` files; CP-020a owns
+inlining it into the module. Nothing here is fetched from a host at run time.
 
 Course covers, scene headers and world plates are **not** here and never will be. They are pack or
 world media served by `/media/{artifact_id}` and `/artifacts/{handle}`.
