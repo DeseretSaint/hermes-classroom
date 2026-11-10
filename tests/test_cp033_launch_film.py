@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import unittest
@@ -25,6 +26,7 @@ BEATS = ANIMATIC / "beats.json"
 MANIFEST = ANIMATIC / "manifest.json"
 STEPS = LAUNCH / "cp-demo.steps.json"
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
+REFS = ROOT / "docs" / "concept-parity" / "refs" / "REFS.md"
 
 PLACEHOLDER_WORDS = ("PLACEHOLDER", "NOT THE BUILD")
 STEP_KINDS = {"navigate", "click", "type", "wait", "hover-sweep", "marker", "assert"}
@@ -39,10 +41,33 @@ DRIVEN_FRAMES = {
     "S5a-proof3-close",
     "S5b-proof3-resume",
 }
+# The owner's own words in REFS.md; the Home plate is outside this scope.
+RATIFICATION_SCOPE = "outside of the home page, these images were ratified"
+NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
+}
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def refs_plate_status() -> dict[str, bool]:
+    """Map every image in ``REFS.md`` to whether the owner ratified it.
+
+    The pack states the scope in prose ("outside of the home page, these images were ratified") and
+    marks the approved rows with ``(ratified)`` in the role column. A row without that marker is not
+    ratified, whatever else its description says.
+    """
+    status: dict[str, bool] = {}
+    for line in REFS.read_text(encoding="utf-8").splitlines():
+        if not line.startswith("| R-"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        path = cells[1].strip("`")
+        status[path] = "(ratified)" in cells[4].lower()
+    return status
 
 
 class LaunchDocuments(unittest.TestCase):
@@ -134,6 +159,80 @@ class PlateProvenance(unittest.TestCase):
                 f"{frame['id']}: {frame['plate']} is {digest[:16]}, pinned {frame['plate_sha256_prefix']}",
             )
 
+    def test_ratification_status_is_read_from_the_reference_pack(self):
+        self.assertIn(RATIFICATION_SCOPE, REFS.read_text(encoding="utf-8"))
+        status = refs_plate_status()
+        self.assertFalse(status["docs/concept-parity/refs/home.png"], "REFS.md excludes the Home page")
+        self.assertTrue(status["docs/concept-parity/refs/classroom.png"])
+        for frame in self.spec["frames"]:
+            if frame.get("plate"):
+                self.assertIn(
+                    frame["plate"], status,
+                    f"{frame['id']} uses {frame['plate']}, which REFS.md does not list",
+                )
+
+    def test_no_launch_document_calls_a_non_ratified_plate_ratified(self):
+        unratified = {path for path, ratified in refs_plate_status().items() if not ratified}
+        negations = ("not ratified", "unratified", "excluded", "outside of the home page", "target")
+        for doc in sorted(LAUNCH.glob("*.md")):
+            for number, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+                low = line.lower()
+                if "ratified" not in low:
+                    continue
+                names = [path for path in unratified if Path(path).name in line]
+                if not names:
+                    continue
+                self.assertTrue(
+                    any(negation in low for negation in negations),
+                    f"{doc.name}:{number} calls a non-ratified plate ratified: {line.strip()}",
+                )
+
+    def test_no_launch_document_generalises_ratification_to_every_plate(self):
+        # The class-level overclaim that started this test: "the owner-ratified reference plates".
+        for doc in sorted(LAUNCH.glob("*.md")):
+            self.assertNotIn(
+                "owner-ratified reference plates",
+                doc.read_text(encoding="utf-8").lower(),
+                f"{doc.name} generalises ratification to plates the owner excluded",
+            )
+
+    def test_each_launch_document_states_the_status_of_the_plate_it_names(self):
+        for name in ("brief.md", "ANIMATIC.md"):
+            text = (LAUNCH / name).read_text(encoding="utf-8")
+            home = [line for line in text.splitlines() if "refs/home.png" in line]
+            self.assertTrue(home, f"{name} names no Home plate")
+            self.assertTrue(
+                any("not ratified" in line.lower() for line in home),
+                f"{name} must say the Home plate is not ratified",
+            )
+            classroom = [line for line in text.splitlines() if "refs/classroom.png" in line]
+            self.assertTrue(classroom, f"{name} names no Classroom plate")
+            self.assertTrue(
+                any("ratified" in line.lower() and "not ratified" not in line.lower() for line in classroom),
+                f"{name} must say the Classroom plate is ratified",
+            )
+
+    def test_stated_plate_count_equals_the_number_of_plate_frames(self):
+        plates = [frame for frame in self.spec["frames"] if frame.get("plate")]
+        text = (LAUNCH / "ANIMATIC.md").read_text(encoding="utf-8")
+        stated = re.findall(
+            r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+plate frames\b",
+            text, re.IGNORECASE,
+        )
+        self.assertTrue(stated, "ANIMATIC.md must state how many plate frames it holds")
+        for word in stated:
+            value = int(word) if word.isdigit() else NUMBER_WORDS.get(word.lower())
+            self.assertIsNotNone(value, f"unreadable plate count {word!r}")
+            self.assertEqual(
+                value, len(plates),
+                f"ANIMATIC.md says {word} plate frames; beats.json holds {len(plates)}",
+            )
+        yes_rows = [line for line in text.splitlines() if line.startswith("| ") and "| **yes**" in line]
+        self.assertEqual(
+            len(yes_rows), len(plates),
+            "§2 must mark exactly the plate frames 'yes'",
+        )
+
 
 class AnimaticArtifacts(unittest.TestCase):
     @classmethod
@@ -223,6 +322,86 @@ class DriverSteps(unittest.TestCase):
                 capture_output=True, text=True,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_driven_markers_fire_after_the_state_they_name(self):
+        """A marker stamped before its state names the wrong frame, and the log is what is cut to."""
+        steps = self.spec["steps"]
+
+        def first(predicate, label, after=-1):
+            for index in range(after + 1, len(steps)):
+                if predicate(steps[index]):
+                    return index
+            self.fail(f"no {label} after step {after}")
+
+        def marker(marker_id):
+            return first(
+                lambda step: step.get("kind") == "marker" and step.get("id") == marker_id,
+                f"marker {marker_id}",
+            )
+
+        shelf = first(
+            lambda step: step.get("kind") == "wait" and step.get("for") == '[data-cb-home-shelf="ready"]',
+            "shelf-settled wait",
+        )
+        s2 = marker("S2-reveal")
+        self.assertGreater(s2, shelf, "S2-reveal fires before the shelf has settled")
+
+        sweep = first(lambda step: step.get("kind") == "hover-sweep", "card-row hover sweep")
+        s3 = marker("S3-proof1-shelf")
+        self.assertGreater(s3, sweep, "S3-proof1-shelf fires before the card row has been travelled")
+
+        open_course = first(
+            lambda step: step.get("kind") == "click" and step.get("wait_for") == "[data-cb-block-check]",
+            "course-open click",
+        )
+        answer = first(
+            lambda step: step.get("kind") == "click" and "data-cb-choice" in (step.get("selector") or ""),
+            "served-answer click",
+            after=open_course,
+        )
+        s4a = marker("S4a-proof2-answer")
+        self.assertGreater(s4a, open_course, "S4a fires before the course has opened on the check")
+        self.assertGreater(s4a, answer, "S4a fires before the served answer is entered")
+
+        submit = first(
+            lambda step: step.get("kind") == "click" and step.get("wait_for") == "[data-cb-verdict]",
+            "submit click",
+            after=answer,
+        )
+        evidence = first(
+            lambda step: step.get("kind") == "assert" and "data-cb-evidence-chip" in (step.get("selector") or ""),
+            "evidence-chip assert",
+            after=submit,
+        )
+        s4b = marker("S4b-proof2-row")
+        self.assertGreater(s4b, submit, "S4b fires before the verdict is on screen")
+        self.assertGreater(s4b, evidence, "S4b fires before the recorded row is on screen")
+
+        s5a = marker("S5a-proof3-close")
+        self.assertGreater(s5a, s4b, "S5a fires before the verdict state it cuts from")
+
+        resume_nav = first(lambda step: step.get("kind") == "navigate", "resume navigate", after=s5a)
+        resume_wait = first(
+            lambda step: step.get("kind") == "wait" and "data-cb-block-check" in (step.get("for") or ""),
+            "resume wait",
+            after=resume_nav,
+        )
+        s5b = marker("S5b-proof3-resume")
+        self.assertGreater(s5b, resume_nav, "S5b fires before the reopened window is navigated")
+        self.assertGreater(s5b, resume_wait, "S5b fires before the same pending check is on screen")
+
+    def test_no_two_driven_markers_share_a_cut_point(self):
+        steps = self.spec["steps"]
+        indexes = [
+            index for index, step in enumerate(steps)
+            if step.get("kind") == "marker" and step.get("id") in DRIVEN_FRAMES
+        ]
+        self.assertEqual(len(indexes), len(DRIVEN_FRAMES), "every driven shot needs exactly one marker")
+        for left, right in zip(indexes, indexes[1:]):
+            self.assertGreater(
+                right - left, 1,
+                f"driven markers at steps {left} and {right} are consecutive; nothing establishes the second",
+            )
 
 
 def _attributes(selector: str) -> list[str]:

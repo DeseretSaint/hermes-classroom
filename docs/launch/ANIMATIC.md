@@ -53,7 +53,7 @@ reference PNG inside a mat.
 | 11 | 63.00 → 69.00 | 126–138 | `S7b-truth` | word | type only | no |
 | 12 | 69.00 → 75.00 | 138–150 | `S8-end` | end | type only, repo + MIT | no |
 
-Seven plate frames read `PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD` in a chip above the mat, on
+Five plate frames read `PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD` in a chip above the mat, on
 screen for the whole beat. A judge who sees this cut can tell from the picture alone that the
 product frames are the design target, not the shipped screens.
 
@@ -67,6 +67,20 @@ capture door run today would refuse (`--require-v3`) or return a v2 frame labell
 Two v3 branches exist elsewhere in the repository (`wt/cp-020a-scope`, `wt/cp-020b-primitives`, each
 with `data-cb-v3-ready` in the module) but they are not this card's base and this card does not
 merge them: the plan's rule is that a card merges the parents named in its own card, and none are.
+
+**Ratification status, per plate.** The reference pack's ratification is not blanket.
+`docs/concept-parity/refs/REFS.md:23` records the owner's words: *"outside of the home page, these
+images were ratified."* The Home plate is therefore the Home **target**, not a ratified image, and
+this document does not describe it as one:
+
+| Plate frames | Plate | Status |
+|---|---|---|
+| `S2-reveal`, `S3-proof1-shelf` | `refs/home.png` (`fd75bed3…`, R-HOME) | the Home **target** — **not ratified**; excluded by `REFS.md`'s scope |
+| `S4a-proof2-answer`, `S4b-proof2-row`, `S5b-proof3-resume` | `refs/classroom.png` (`ee0c1a66…`, R-CLASS) | ratified |
+
+So "reference plate" is the accurate class name for all five plate frames, but "owner-ratified" is
+only true of the three Classroom frames. Nothing in this animatic is a capture of the build either
+way.
 
 **What replaces each placeholder on the final take**, shot for shot:
 
@@ -111,9 +125,13 @@ node scripts/cp-demo.mjs --selftest    # drive a local fixture: navigate/click/t
 
 Every selector in the step list is an attribute the shipped module actually renders — the test
 `tests/test_cp033_launch_film.py::DriverSteps::test_every_selector_is_an_attribute_the_module_actually_renders`
-fails if one is renamed. The submit control carries no stable data attribute, so that one click falls
-back to the button's own label and accepts both the v2 copy (`Submit answer`) and the v3 deck row
-(`Check answer`, `COPY.md` `classroom.check.primary`).
+fails if one is renamed. Each shot marker follows the step (and its `wait_for` / `assert`) that puts
+the pictured state on screen: `test_driven_markers_fire_after_the_state_they_name` fails if a marker
+drifts ahead of its state, and `test_no_two_driven_markers_share_a_cut_point` fails if two driven
+markers are consecutive, which would leave the editor no step to cut between. The submit control
+carries no stable data attribute, so that one click falls back to the button's own label and accepts
+both the v2 copy (`Submit answer`) and the v3 deck row (`Check answer`, `COPY.md`
+`classroom.check.primary`).
 
 Measured: `--selftest` ran 9 steps in 221 ms against the fixture and printed `selftest ok`, so the
 step executor (click by selector, click by label fallback, type, wait-for-selector, hover sweep,

@@ -73,8 +73,17 @@ capture of a real state.
 ## 7. What this film will not do
 
 - **No parity claim.** The v3 screens it is built to (`SPEC-V3.md` §5) do not exist on this branch
-  yet. The animatic uses the owner-ratified reference plates, each one stamped
-  `PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD`.
+  yet. The animatic uses pinned plates from `docs/concept-parity/refs/REFS.md`, each stamped
+  `PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD`. Their status is **not uniform** — calling them
+  "the ratified plates" as a class would be a provenance claim the reference pack contradicts:
+
+  | Plate | Animatic frames | Status |
+  |---|---|---|
+  | `refs/home.png` (`fd75bed3…`) | `S2`, `S3` | the Home **target** — **not ratified** (`REFS.md`: "outside of the home page, these images were ratified") |
+  | `refs/classroom.png` (`ee0c1a66…`) | `S4a`, `S4b`, `S5b` | ratified |
+
+  The Home plate is the shape the Home screen has to take, not an approved image. `ANIMATIC.md` §3
+  repeats this per plate so the two documents cannot drift apart.
 - **No invented proof.** No user counts, ratings, prices, testimonials, logos, scores or learning
   outcomes. No XP outside Game mode. No leaderboard, ever.
 - **No generated UI.** No video model touches a product pixel; a diffusion model garbles on-screen

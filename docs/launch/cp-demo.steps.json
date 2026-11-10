@@ -7,7 +7,8 @@
     "Selectors are the ones the module actually renders today: [data-cb-home-shelf], [data-cb-home-card-action], [data-cb-block-check], [data-cb-choice], [data-cb-verdict], [data-cb-evidence-chip], [data-cb-tally-caption], [data-cb-path-current].",
     "The submit control carries no stable data attribute, so the click falls back to the button's own label and accepts both the v2 copy and the v3 deck row (classroom.check.primary).",
     "Run only against the accepted commit: the capture door refuses a window whose module sha is not the checkout's, and a take driven on a different module is not evidence.",
-    "A step that cannot find its target stops the take; no step is allowed to continue anyway."
+    "A step that cannot find its target stops the take; no step is allowed to continue anyway.",
+    "Ordering rule: a shot marker fires only after the step (and its wait_for / assert) that puts the pictured state on screen. The marker log is what the editor cuts to, so a marker stamped before its state names the wrong frame."
   ],
   "setup": [
     "the isolated window is up on the accepted commit and listening on the port in cdp_port",
@@ -19,25 +20,26 @@
     { "kind": "navigate", "hash": "#/coursebook", "wait_for": "[data-cb-route]", "timeout_ms": 20000 },
     { "kind": "wait", "for": "[data-cb-home-shelf=\"ready\"]", "timeout_ms": 20000, "note": "shelf read settled" },
     { "kind": "wait", "ms": 900, "note": "hold for the reveal" },
-    { "kind": "marker", "id": "S2-reveal" },
-    { "kind": "marker", "id": "S3-proof1-shelf" },
+    { "kind": "marker", "id": "S2-reveal", "note": "reveal is on screen: shelf read settled, wordmark landed" },
     { "kind": "hover-sweep", "selector": "[data-cb-home-card-action]", "ms": 2400, "note": "slow travel across the card row; no click" },
     { "kind": "wait", "ms": 600 },
-    { "kind": "marker", "id": "S4a-proof2-answer" },
+    { "kind": "marker", "id": "S3-proof1-shelf", "note": "card row travelled and settled; evidence lines readable" },
     { "kind": "click", "selector": "[data-cb-home-card-action]", "wait_for": "[data-cb-block-check]", "timeout_ms": 25000, "note": "open the course and land on the pending section" },
     { "kind": "wait", "ms": 1200 },
     { "kind": "click", "selector": "[data-cb-choice=\"1\"], [data-cb-block-check] textarea", "note": "the served answer, whatever its format" },
     { "kind": "wait", "ms": 900, "note": "read the question back before submitting" },
-    { "kind": "marker", "id": "S4b-proof2-row" },
+    { "kind": "marker", "id": "S4a-proof2-answer", "note": "check is on screen with the served answer entered, primary still unsubmitted" },
     { "kind": "click", "text_any": ["Submit answer", "Submit choice", "Submit confirmation", "Check answer"], "wait_for": "[data-cb-verdict]", "timeout_ms": 25000, "note": "one answer, one transition" },
     { "kind": "assert", "selector": "[data-cb-evidence-chip]", "note": "the recorded row is on screen" },
     { "kind": "wait", "ms": 1600, "note": "verdict and evidence count settle" },
+    { "kind": "marker", "id": "S4b-proof2-row", "note": "verdict line, moved evidence count and the recorded row are all on screen" },
+    { "kind": "wait", "ms": 600, "note": "hold on the verdict before the labelled close" },
     { "kind": "marker", "id": "S5a-proof3-close", "note": "close the window here; the close is a cut" },
-    { "kind": "marker", "id": "S5b-proof3-resume", "note": "re-opened window; attach again and continue from this marker" },
-    { "kind": "navigate", "hash": "#/coursebook", "wait_for": "[data-cb-route]", "timeout_ms": 20000 },
+    { "kind": "navigate", "hash": "#/coursebook", "wait_for": "[data-cb-route]", "timeout_ms": 20000, "note": "re-attach to the reopened window and return to the same route" },
     { "kind": "wait", "for": "[data-cb-block-check], [data-cb-path-current]", "timeout_ms": 25000, "note": "same pending check, same current node" },
     { "kind": "assert", "selector": "[data-cb-tally-caption], [data-cb-evidence-chip]", "note": "the evidence already recorded is still there" },
     { "kind": "wait", "ms": 2000, "note": "hold: same objective, same pending check" },
+    { "kind": "marker", "id": "S5b-proof3-resume", "note": "reopened window is on the same objective and the same pending check, nothing rebuilt" },
     { "kind": "marker", "id": "take-end" }
   ]
 }
