@@ -1,0 +1,232 @@
+test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) ... 
+  test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Clean head') ... FAIL
+  test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Refill coolant') ... FAIL
+  test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Polish lens') ... FAIL
+  test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Break seal') ... FAIL
+  test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Then clean head') ... FAIL
+test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) ... FAIL
+test_title_or_goal_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_title_or_goal_cannot_name_a_bare_object_procedure) ... FAIL
+test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) ... 
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:clean') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:clean') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:refill') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:refill') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:break') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:break') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:polish') ... FAIL
+  test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:polish') ... FAIL
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Clean head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1783, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"n1-bare-object-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Refill coolant')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1783, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"n1-bare-object-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Polish lens')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1783, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"n1-bare-object-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Break seal')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1783, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"n1-bare-object-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure) (motif='Then clean head')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1783, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    error = self.err(
+        "world.generate",
+    ...<6 lines>...
+        idempotency_key=f"n1-bare-object-{index}",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 270, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 248, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_presentation_motifs_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_name_a_bare_object_procedure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1799, in test_presentation_motifs_cannot_name_a_bare_object_procedure
+    self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 5 != 0
+
+======================================================================
+FAIL: test_title_or_goal_cannot_name_a_bare_object_procedure (tests.test_world.WorldFailureAndModeTest.test_title_or_goal_cannot_name_a_bare_object_procedure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 1861, in test_title_or_goal_cannot_name_a_bare_object_procedure
+    self.assertNotIn("clean head", lowered)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'clean head' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: clean head. audience: adult learner. tone: practical, calm, competent. subject-specific motifs: service bay, car on a lift, tool wall, bench light. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light; as authored. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art. direction: authored palette, a single soft daylight source.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:clean')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'clean component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: clean component — the learner will clean component. audience: clean component. tone: clean component. subject-specific motifs: clean component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no clean component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:clean')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'then clean component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: then clean component — the learner will then clean component. audience: then clean component. tone: then clean component. subject-specific motifs: then clean component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no then clean component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:refill')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'refill component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: refill component — the learner will refill component. audience: refill component. tone: refill component. subject-specific motifs: refill component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no refill component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:refill')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'then refill component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: then refill component — the learner will then refill component. audience: then refill component. tone: then refill component. subject-specific motifs: then refill component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no then refill component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:break')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'break component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: break component — the learner will break component. audience: break component. tone: break component. subject-specific motifs: break component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no break component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:break')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'then break component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: then break component — the learner will then break component. audience: then break component. tone: then break component. subject-specific motifs: then break component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no then break component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='bare:polish')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'polish component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: polish component — the learner will polish component. audience: polish component. tone: polish component. subject-specific motifs: polish component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no polish component.'
+
+======================================================================
+FAIL: test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) (grammar='workshop_manual', category='leading:polish')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 2116, in test_every_free_text_field_is_fenced_at_the_prompt
+    self.assertNotIn(hostile.lower(), body)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'then polish component' unexpectedly found in 'textless style board plate, workshop manual visual grammar. course subject: then polish component — the learner will then polish component. audience: then polish component. tone: then polish component. subject-specific motifs: then polish component. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light. light: one soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no then polish component.'
+
+----------------------------------------------------------------------
+Ran 3 tests in 18.701s
+
+FAILED (failures=15)

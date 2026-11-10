@@ -1,0 +1,18 @@
+F
+======================================================================
+FAIL: test_takehome_pdf_is_tagged (tests.test_gm_takehome.TakeHomePrintFollowUpTest.test_takehome_pdf_is_tagged)
+The exported PDF carries the pack's authored locale, title and structure tree.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_a7082dc0/tests/test_gm_takehome.py", line 1078, in test_takehome_pdf_is_tagged
+    self.assertEqual(str(root["/Lang"]), "fr-FR")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'en' != 'fr-FR'
+- en
++ fr-FR
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.708s
+
+FAILED (failures=1)

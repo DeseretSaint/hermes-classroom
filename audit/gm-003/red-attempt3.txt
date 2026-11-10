@@ -1,0 +1,102 @@
+test_brief_patch_cannot_reclassify_a_technical_course (tests.test_world.WorldFailureAndModeTest.test_brief_patch_cannot_reclassify_a_technical_course) ... ok
+test_concept_failure_leaves_named_terminal_state (tests.test_world.WorldFailureAndModeTest.test_concept_failure_leaves_named_terminal_state) ... ok
+test_kit_requires_an_approved_style (tests.test_world.WorldFailureAndModeTest.test_kit_requires_an_approved_style) ... ok
+test_partial_world_failure_names_missing_roles (tests.test_world.WorldFailureAndModeTest.test_partial_world_failure_names_missing_roles) ... ok
+test_technical_world_rejects_decorative_motif_patch (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_decorative_motif_patch) ... FAIL
+test_textbook_generates_no_world_job (tests.test_world.WorldFailureAndModeTest.test_textbook_generates_no_world_job) ... ok
+test_trades_course_derives_service_safety_from_grammar (tests.test_world.WorldFailureAndModeTest.test_trades_course_derives_service_safety_from_grammar) ... FAIL
+test_world_approval_hash_fence (tests.test_world.WorldFailureAndModeTest.test_world_approval_hash_fence) ... ok
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldFailureAndModeTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_presentation_fields_reach_the_prompt (tests.test_world.WorldMediaJobTest.test_presentation_fields_reach_the_prompt) ... FAIL
+test_world_cache_prevents_duplicate_spend (tests.test_world.WorldMediaJobTest.test_world_cache_prevents_duplicate_spend) ... ok
+test_world_forbidden_changes_cache_identity (tests.test_world.WorldMediaJobTest.test_world_forbidden_changes_cache_identity) ... FAIL
+test_world_methods_are_wired_to_the_frozen_manifest (tests.test_world.WorldMediaJobTest.test_world_methods_are_wired_to_the_frozen_manifest) ... ok
+test_head_gasket_never_field_atlas (tests.test_world.WorldPolicyTest.test_head_gasket_never_field_atlas) ... ok
+test_world_grammar_deterministic (tests.test_world.WorldPolicyTest.test_world_grammar_deterministic) ... ok
+test_world_style_swap_rejects_generic_art (tests.test_world.WorldPolicyTest.test_world_style_swap_rejects_generic_art) ... ok
+test_trades_world_keeps_workshop_negatives (tests.test_world.WorldPromptTest.test_trades_world_keeps_workshop_negatives) ... FAIL
+test_workshop_section_prompts_have_no_procedure_title (tests.test_world.WorldPromptTest.test_workshop_section_prompts_have_no_procedure_title) ... FAIL
+test_world_prompts_are_textless (tests.test_world.WorldPromptTest.test_world_prompts_are_textless) ... ok
+
+======================================================================
+FAIL: test_technical_world_rejects_decorative_motif_patch (tests.test_world.WorldFailureAndModeTest.test_technical_world_rejects_decorative_motif_patch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 614, in test_technical_world_rejects_decorative_motif_patch
+    error = self.err(
+        "world.generate",
+    ...<8 lines>...
+        idempotency_key="decorative-motif-1",
+    )
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 250, in err
+    return self.call_err(
+           ~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<2 lines>...
+        idempotency_key=kwargs.get("idempotency_key"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 228, in call_err
+    raise AssertionError(f"{method} unexpectedly succeeded")
+AssertionError: world.generate unexpectedly succeeded
+
+======================================================================
+FAIL: test_trades_course_derives_service_safety_from_grammar (tests.test_world.WorldFailureAndModeTest.test_trades_course_derives_service_safety_from_grammar)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 686, in test_trades_course_derives_service_safety_from_grammar
+    self.assertEqual(read["world"]["brief"]["safety_class"], "workshop")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'none' != 'workshop'
+- none
++ workshop
+
+
+======================================================================
+FAIL: test_presentation_fields_reach_the_prompt (tests.test_world.WorldMediaJobTest.test_presentation_fields_reach_the_prompt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 440, in test_presentation_fields_reach_the_prompt
+    self.assertNotEqual(
+    ~~~~~~~~~~~~~~~~~~~^
+        world.cache_key(brief_a, "field_atlas", "hero", "field_atlas--authored", None),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        world.cache_key(brief_b, "field_atlas", "hero", "field_atlas--authored", None),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'sha256:82a26ff9f3fb8e2d34b47a5b910a339fa426e6c3ef10677bf1623ba18bad188b' == 'sha256:82a26ff9f3fb8e2d34b47a5b910a339fa426e6c3ef10677bf1623ba18bad188b'
+
+======================================================================
+FAIL: test_world_forbidden_changes_cache_identity (tests.test_world.WorldMediaJobTest.test_world_forbidden_changes_cache_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 405, in test_world_forbidden_changes_cache_identity
+    self.assertEqual(len(self.fake.calls), 6)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 3 != 6
+
+======================================================================
+FAIL: test_trades_world_keeps_workshop_negatives (tests.test_world.WorldPromptTest.test_trades_world_keeps_workshop_negatives)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 195, in test_trades_world_keeps_workshop_negatives
+    self.assertIn("torque", negative)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'torque' not found in 'no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no ui chrome, buttons or frames, no answer content, check text or rubric, no mascot other than the fox, no robots, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure'
+
+======================================================================
+FAIL: test_workshop_section_prompts_have_no_procedure_title (tests.test_world.WorldPromptTest.test_workshop_section_prompts_have_no_procedure_title)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_8a98eff8/tests/test_world.py", line 170, in test_workshop_section_prompts_have_no_procedure_title
+    self.assertNotIn("before you lift the car", lowered)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'before you lift the car' unexpectedly found in 'textless section plate, workshop manual visual grammar. course subject: replace a head gasket — the learner will replace a head gasket on a four-cylinder engine. section scene s1 about before you lift the car. subject-specific motifs: service bay, car on a lift, tool wall, head gasket, torque wrench, component trays. composition: a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. palette: steel grey, oil-dark ink, safety ochre, parchment. medium: technical ink wash with precise line work, cold overhead light; as authored. light: a single soft daylight source. leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product ui, never by the image. illustration role: orientation only; never a torque value, clearance, part number or sequence. hard negatives: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no ui chrome, buttons or frames; no answer content, check text or rubric; no mascot other than the fox; no robots; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no brand logos; no text.'
+
+----------------------------------------------------------------------
+Ran 19 tests in 9.834s
+
+FAILED (failures=6)

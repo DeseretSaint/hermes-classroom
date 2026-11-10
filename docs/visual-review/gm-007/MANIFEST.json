@@ -1,0 +1,195 @@
+{
+  "contract": "cb.homework_proof",
+  "contract_version": 1,
+  "fixture": {
+    "lesson_fixture": "bundled/homework/japanese-l0-mealtime/fixture.json",
+    "lesson_hash": "sha256:349968476b95c2a750f302fb6b7dd7aa229868ab4cda22183c6c601947886f1a",
+    "proposals_fixture": "bundled/homework/japanese-l0-mealtime/proposals.v1.json",
+    "proposals_hash": "sha256:44452111e8c1259f508f66f8a2db9c78186312374d06a0aa7499c3e5941c64c9"
+  },
+  "proposals_hash": "sha256:44452111e8c1259f508f66f8a2db9c78186312374d06a0aa7499c3e5941c64c9",
+  "note": "Field cards rendered from the reviewed L0 lesson fixture through the GM-007 sheet template. Page sizes, page count, extracted text and ink coverage are measured here, not asserted. No answer key, no grade, no XP and no surveillance request appears on any card; completion is self- or parent-reported.",
+  "checks": {
+    "proposal_set_printable": "pass",
+    "one_page_per_card": "pass",
+    "page_size_matches_requested_paper": "pass",
+    "japanese_extractable": "pass",
+    "low_ink_band_measured": "pass",
+    "no_answer_key_no_grade_no_xp": "pass",
+    "sources_present": "pass",
+    "japanese_lang_marked": "pass"
+  },
+  "documents": [
+    {
+      "file": "hw_premeal-a4-sheet.pdf",
+      "proposal": "hw_premeal",
+      "paper": "A4",
+      "pages": 1,
+      "page_size_pt": [
+        594.96,
+        841.92
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:1148ba55317c317a75078fe9b8f69ec332830131c0cc63ca75e5b32093d6fd26",
+      "bytes": 65544,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0161
+    },
+    {
+      "file": "hw_premeal-letter-sheet.pdf",
+      "proposal": "hw_premeal",
+      "paper": "Letter",
+      "pages": 1,
+      "page_size_pt": [
+        612.0,
+        792.0
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:cfbd7797d90435b3ad8550a2b755ec1cc0758b26589fae73511630a2865b0d92",
+      "bytes": 65485,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0166
+    },
+    {
+      "file": "hw_postmeal-a4-sheet.pdf",
+      "proposal": "hw_postmeal",
+      "paper": "A4",
+      "pages": 1,
+      "page_size_pt": [
+        594.96,
+        841.92
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:7fae9844fc408c36ea878a0bc1c85ea93166bbfce147360dc79de4e14d34804c",
+      "bytes": 77784,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0167
+    },
+    {
+      "file": "hw_labels-a4-sheet.pdf",
+      "proposal": "hw_labels",
+      "paper": "A4",
+      "pages": 1,
+      "page_size_pt": [
+        594.96,
+        841.92
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:39de566d351c8b1912e9d81e7936e5b8b62132d644dc9e0afdde375cea0aa492",
+      "bytes": 70619,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0151
+    },
+    {
+      "file": "hw_labels-letter-sheet.pdf",
+      "proposal": "hw_labels",
+      "paper": "Letter",
+      "pages": 1,
+      "page_size_pt": [
+        612.0,
+        792.0
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:3faad0710f418d078549a92c66f7a770845e7553b805634a2ee29cd8993b519b",
+      "bytes": 70510,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0156
+    },
+    {
+      "file": "hw_cafe-a4-sheet.pdf",
+      "proposal": "hw_cafe",
+      "paper": "A4",
+      "pages": 1,
+      "page_size_pt": [
+        594.96,
+        841.92
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:b0597e8a5c9a745621cf4536144ebd36233016b783d9aa7289a039e01d9b3597",
+      "bytes": 68628,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0153
+    },
+    {
+      "file": "hw_cafe-letter-sheet.pdf",
+      "proposal": "hw_cafe",
+      "paper": "Letter",
+      "pages": 1,
+      "page_size_pt": [
+        612.0,
+        792.0
+      ],
+      "whitespace_ink_check": "pass",
+      "sha256": "sha256:5b78ac0f3f5cbe6db1341a8a8936e6ee193f34fe3f1bc36e431f5f6f2005271e",
+      "bytes": 68555,
+      "selectable_text": true,
+      "japanese_extractable": true,
+      "ink_fraction": 0.0159
+    }
+  ],
+  "png": [
+    {
+      "file": "hw_premeal-a4-sheet-1.png",
+      "proposal": "hw_premeal",
+      "paper": "A4"
+    },
+    {
+      "file": "hw_premeal-letter-sheet-1.png",
+      "proposal": "hw_premeal",
+      "paper": "Letter"
+    },
+    {
+      "file": "hw_postmeal-a4-sheet-1.png",
+      "proposal": "hw_postmeal",
+      "paper": "A4"
+    },
+    {
+      "file": "hw_labels-a4-sheet-1.png",
+      "proposal": "hw_labels",
+      "paper": "A4"
+    },
+    {
+      "file": "hw_labels-letter-sheet-1.png",
+      "proposal": "hw_labels",
+      "paper": "Letter"
+    },
+    {
+      "file": "hw_cafe-a4-sheet-1.png",
+      "proposal": "hw_cafe",
+      "paper": "A4"
+    },
+    {
+      "file": "hw_cafe-letter-sheet-1.png",
+      "proposal": "hw_cafe",
+      "paper": "Letter"
+    }
+  ],
+  "bw_proofs": [
+    {
+      "file": "hw_premeal-a4-sheet-bw.png",
+      "proposal": "hw_premeal",
+      "ink_fraction": 0.0161
+    },
+    {
+      "file": "hw_postmeal-a4-sheet-bw.png",
+      "proposal": "hw_postmeal",
+      "ink_fraction": 0.0167
+    },
+    {
+      "file": "hw_labels-a4-sheet-bw.png",
+      "proposal": "hw_labels",
+      "ink_fraction": 0.0151
+    },
+    {
+      "file": "hw_cafe-a4-sheet-bw.png",
+      "proposal": "hw_cafe",
+      "ink_fraction": 0.0153
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+frozen verbs fenced (verb + determiner):
+  remove ('presentation_names_procedure_or_value',)
+  drain ('presentation_names_procedure_or_value',)
+  loosen ('presentation_names_procedure_or_value',)
+  tighten ('presentation_names_procedure_or_value',)
+  lift ('presentation_names_procedure_or_value',)
+  install ('presentation_names_procedure_or_value',)
+  clean ('presentation_names_procedure_or_value',)
+  disconnect ('presentation_names_procedure_or_value',)
+  unbolt ('presentation_names_procedure_or_value',)
+  turn ('presentation_names_procedure_or_value',)
+  rotate ('presentation_names_procedure_or_value',)
+  refill ('presentation_names_procedure_or_value',)
+  break ('presentation_names_procedure_or_value',)
+  polish ('presentation_names_procedure_or_value',)
+refused verb-initial: ['remove', 'drain', 'loosen', 'tighten', 'lift', 'install', 'clean', 'disconnect', 'unbolt', 'turn', 'rotate', 'refill', 'break', 'polish']
+native scenes allowed:
+  clean service bay ()
+  break room ()
+  car on a lift ()
+  four-cylinder block ()
+  two-stroke engine ()
+  engine block cutaway ()
+  tool wall ()
+has clean: False
+has disconnect: True
+determiner-only: ['break', 'clean', 'polish', 'refill']
+exit=0

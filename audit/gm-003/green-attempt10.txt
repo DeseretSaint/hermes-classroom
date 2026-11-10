@@ -1,0 +1,9 @@
+test_presentation_motifs_with_a_leading_word_still_name_a_procedure (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_with_a_leading_word_still_name_a_procedure) ... ok
+test_presentation_motifs_cannot_hyphenate_a_fraction (tests.test_world.WorldFailureAndModeTest.test_presentation_motifs_cannot_hyphenate_a_fraction) ... ok
+test_course_title_with_a_leading_word_cannot_carry_a_procedure (tests.test_world.WorldFailureAndModeTest.test_course_title_with_a_leading_word_cannot_carry_a_procedure) ... ok
+test_every_free_text_field_is_fenced_at_the_prompt (tests.test_world.WorldFailureAndModeTest.test_every_free_text_field_is_fenced_at_the_prompt) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 5.801s
+
+OK

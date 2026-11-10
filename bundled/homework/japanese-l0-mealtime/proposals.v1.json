@@ -1,0 +1,63 @@
+{
+  "contract": "cb.homework_proposals",
+  "contract_version": 1,
+  "fixture_id": "jp-l0-mealtime-homework",
+  "fixture_note": "Demo away-from-screen proposals for the Japanese L0 mealtime lesson. Three proposals are derived from the reviewed lesson fixture (bundled/homework/japanese-l0-mealtime/fixture.json); one optional cafe question is authored here with its own cited sources. This file is content, not a course: it enrolls nobody, grades nothing and sends nothing.",
+  "derived_from": {
+    "fixture": "fixture.json",
+    "tasks": ["hw_premeal", "hw_postmeal", "hw_labels"]
+  },
+  "completion_records": {
+    "hw_premeal": ["breakfast", "lunch", "dinner"],
+    "hw_postmeal": ["breakfast", "lunch", "dinner"],
+    "hw_labels": ["Day 1", "Day 2"]
+  },
+  "extra_targets": [
+    {
+      "target_id": "tgt_cafe_question",
+      "display": "これはいくらですか",
+      "reading": "これはいくらですか",
+      "romaji": "kore wa ikura desu ka",
+      "meaning": "How much is this?",
+      "register": "polite (です/ます question form; author's analysis of the ending, not a dictionary label)",
+      "use": "asked once, at a counter or a cafe, about one item",
+      "source_ids": ["src_jisho_kore", "src_jisho_ikura"]
+    }
+  ],
+  "extra_tasks": [
+    {
+      "proposal_id": "hw_cafe",
+      "lesson_target_id": "tgt_cafe_question",
+      "task_kind": "real_world_use",
+      "audience": "learner",
+      "optional": true,
+      "title": "Ask the price at one counter",
+      "context": "At one shop or cafe counter, about one item you can point to.",
+      "steps": [
+        "Point at one item and say これはいくらですか (kore wa ikura desu ka).",
+        "Listen to the reply; you do not need to understand the number today.",
+        "If saying it out loud feels wrong today, skip this task. Skipping is honest."
+      ],
+      "success_criterion": "You said これはいくらですか once at a counter, about one item.",
+      "estimated_minutes": 3
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src_jisho_kore",
+      "title": "Jisho.org — これ / 此れ",
+      "url": "https://jisho.org/search/%E3%81%93%E3%82%8C",
+      "accessed": "2026-11-10",
+      "quote": "Pronoun · 1. this; this one · Usually written using kana alone, indicating an item near the speaker",
+      "supports": "the word これ (kore), glossed this / this one"
+    },
+    {
+      "source_id": "src_jisho_ikura",
+      "title": "Jisho.org — いくら / 幾ら",
+      "url": "https://jisho.org/search/%E3%81%84%E3%81%8F%E3%82%89",
+      "accessed": "2026-11-10",
+      "quote": "Noun, Adverb (fukushi) · 1. how much · Usually written using kana alone",
+      "supports": "the word いくら (ikura), glossed how much"
+    }
+  ]
+}
