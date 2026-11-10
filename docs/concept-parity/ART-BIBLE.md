@@ -73,7 +73,7 @@ change role silently.
 | Fox fur | `#b7643d` | identity, `lamp` family | body, head, tail, limbs |
 | Fox fur shade | `#8f4526` | identity, shade of fur | down-right plane of each mass |
 | Fox cream | `#efe0c2` | `paper` / `lamp-soft` family | bib, muzzle, tail tip, inner ears |
-| Fox dark sock | `#2b1d14` | `ink` | socks to the elbow, ear backs, paw pads |
+| Fox dark cuff | `#2b1d14` | `ink` | wrist and ankle cuffs, ear backs, paw pads |
 | Field green | `#2f6047` | `field` | cloth, strap, leaf motifs only |
 | Ochre | `#7b4b0a` | `ochre` | brass, wood, paper-stock props |
 | Lamp | `#e8a93a` | `lamp` | the single lit accent on a prop, never on the fox |
@@ -118,7 +118,7 @@ plates and recorded in `audit/cp010-fox/shape-audit.json`):
 
 | Rule | Target | Shipped / measured |
 |---|---|---|
-| Head height | **45 %** of standing figure height (head is large; the concept's ~40 % is corrected to 45 %) | **53.3 %** on `wave`, the only plate whose arms are down so a silhouette neck pinch is meaningful. The 45 % figure was never measured and is now labelled a target, not a measurement. Owner decision `D-CP010-B`. |
+| Head height | **45–55 %** of standing figure height. 45 % is the design target; the band is the tolerance a shipped plate is judged against | **53.3 %** on `wave`, the only plate whose arms are down so a silhouette neck pinch is meaningful. The other six poses cannot be measured this way (raised arms, a prop or a curl make a wider row than the head) and are accepted as-is for this submission. Reversible amendment `D-CP010-B`. |
 | Head width | 1.15× head height | not measured |
 | Ear height | 0.55× head height, triangular, rounded tip | matches on inspection |
 | Muzzle | short, 0.35× head width, cream, no tooth line | matches on inspection |
@@ -132,13 +132,16 @@ Markings, all four mandatory, each recorded per plate in `audit/cp010-fox/vision
 
 1. **Cream bib** — one mass from under the chin to the lower chest, symmetric, no scalloped edge.
 2. **Cream tail tip** — the last ~20 % of the tail, a single soft diagonal break, not a stripe.
-3. **Dark limb marking** — the printed rule is "from the paw **to the elbow**, a single rising edge,
-   both sides alike", and the model-sheet prompt (M1) asks for it. **No shipped plate implements it.**
-   The sheet's own four views show the paw plus at most a short cuff, and six of seven poses match
-   the sheet; `clock` reaches the lower forearm and stops short of the elbow. Until the owner
-   resolves `D-CP010-A`, the working band for a new plate is *dark from the paw to no further than
-   the mid-forearm / mid-shin* — measured from the sheet, not invented to excuse a pose — and the
-   "to the elbow" wording above is the unresolved target.
+3. **Dark wrist and ankle cuffs** — a short dark band at the end of every limb, the limb above it
+   in fur: the paw plus a cuff, not a sock up the limb. Measured on the model sheet's front view
+   (`scripts/cp010-marking-audit.py`, recorded in `audit/cp010-fox/marking-audit.json`): the band is
+   **60–61 px** on the arms and **68–70 px** on the feet, i.e. **9.9–10.0 %** and **11.2–11.5 %** of
+   the **607 px** figure height; the arm band's top edge sits at **65.1–65.7 %** of the figure and
+   the foot band's at **87.8–88.1 %**. No plate in the set carries solid dark further up a limb. The
+   cuff is a paint area, not a garment: the contour that closes it is the same warm brown as the
+   marking, so the edge reads as paint stopping, not as a sock seam. Earlier drafts specified socks
+   to the elbow; the built character has a cuff, and this section is the authority. Reversible
+   amendment `D-CP010-A`; `D-CP010-B` above is the same class of amendment.
 4. **Dark ear backs** — the back plane of both ears; from the front only the inner edge shows.
 
 Face: two dot eyes, `#241812`, with one cream catchlight each, placed at 0.45 head height, no
@@ -163,8 +166,8 @@ covering a marking, never in a different colour, never with a different tail cou
 | sleep | empty / offline | curled, eyes closed, tail wrapped to the chin, no Z letters |
 
 Every pose is generated with the approved model sheet as the reference image and must reproduce
-the four markings, the 45 % head, the palette and the line. A pose that changes a marking is
-rejected, not shipped as a fallback.
+the four markings, the head-height band stated in §3, the palette and the line. A pose that changes
+a marking is rejected, not shipped as a fallback.
 
 ---
 
@@ -187,6 +190,12 @@ rejected, not shipped as a fallback.
 All prompts are recorded verbatim with a sha256 in `docs/concept-parity/ART-PROVENANCE.md`.
 
 **Model sheet (M1)**
+
+The block below is the M1 call as executed for A1, kept verbatim because its sha256 is the record in
+`audit/cp010-fox/prompts.json` and `docs/concept-parity/ART-PROVENANCE.md`. Its "socks from the paw
+to the elbow" phrase is a historical instruction the provider did not follow; §3's cuff rule is the
+authority for any new plate and for every plate this bible binds. Do not edit a recorded prompt to
+match a later rule — record the new text as a new prompt id.
 
 ```
 Single character model sheet, four views left to right: front, three-quarter left, side, back.

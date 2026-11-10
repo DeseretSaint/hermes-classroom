@@ -159,6 +159,37 @@ class Documents(unittest.TestCase):
                 self.assertIn(row["plate_id"], text)
                 self.assertIn(row["asset_sha256"][:16], text)
 
+    def test_art_bible_states_the_measured_cuff_band(self):
+        """§3 must quote the band the art carries, not a number nobody measured."""
+        sheet = json.loads((AUDIT / "marking-audit.json").read_text())["sheet"]
+        text = BIBLE.read_text()
+        arms, feet = sheet["arm_bands"], sheet["foot_bands"]
+
+        def span(values, places: int | None = 1):
+            lo, hi = min(values), max(values)
+            fmt = (lambda v: f"{v}") if places is None else (lambda v: f"{v:.{places}f}")
+            return f"{fmt(lo)}–{fmt(hi)}"
+
+        for expected in (
+            span([b["height_px"] for b in arms], None) + " px",
+            span([b["height_px"] for b in feet], None) + " px",
+            span([b["height_percent_figure"] for b in arms]) + " %",
+            span([b["height_percent_figure"] for b in feet]) + " %",
+            span([b["top_percent_figure"] for b in arms]) + " %",
+            span([b["top_percent_figure"] for b in feet]) + " %",
+            f"{sheet['front_view']['height_px']} px",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, text,
+                              "the bible's cuff band is not the band marking-audit.json measured")
+
+    def test_pose_section_cites_the_head_band_instead_of_restating_a_number(self):
+        text = BIBLE.read_text()
+        section = text.split("## 4. Pose set", 1)[1].split("## 5.", 1)[0]
+        self.assertIn("§3", section)
+        self.assertNotIn("45", section,
+                         "§4 restates a head proportion; it must cite §3 so one number is the rule")
+
     def test_contact_sheets_exist_and_are_readable(self):
         from PIL import Image
 
