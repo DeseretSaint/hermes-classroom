@@ -1,7 +1,7 @@
 {
   "kind": "component-preview",
   "label": "Component preview \u2014 rendered from the shipped primitives; not a live Desktop capture.",
-  "plugin_sha256": "3a8c3eff8b9269e305e1a2ebb1ab4f02d153bfccb99c52ff2b42dc7af7a26b2d",
+  "plugin_sha256": "e7132fecf17c2ed9d9b23072136fd301c558db169aa384363494d57c0382cfd9",
   "contract": "contracts/cb.tokens.v3.json",
   "reference": "docs/concept-parity/refs/REF-SYS",
   "gutter_probe": {

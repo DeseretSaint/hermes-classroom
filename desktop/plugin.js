@@ -20340,7 +20340,7 @@ function PillAction({ variant, label, icon, onClick, disabled, busy, type, class
       ...(style || {})
     },
     children: [
-      icon ? jsx(sdk.Codicon, { name: icon, size: 16 }, 'icon') : null,
+      icon ? jsx(sdk.Codicon, { name: icon, size: CB_ICON_UI }, 'icon') : null,
       jsx('span', { children: label || children }, 'label')
     ]
   })
@@ -20374,7 +20374,6 @@ function ForestRail({ value, onChange, className, ...rest }) {
       const current = item.id === value
       return jsxs('button', {
         type: 'button',
-        key: item.id,
         'data-cb3-rail-item': item.id,
         'data-current': current ? 'true' : 'false',
         'aria-current': current ? 'page' : undefined,
@@ -20402,10 +20401,10 @@ function ForestRail({ value, onChange, className, ...rest }) {
           cursor: 'pointer'
         },
         children: [
-          jsx(sdk.Codicon, { name: item.icon, size: 16 }, 'glyph'),
+          jsx(sdk.Codicon, { name: item.icon, size: CB_ICON_UI }, 'glyph'),
           jsx('span', { children: item.label }, 'label')
         ]
-      })
+      }, item.id)
     })
   })
 }
@@ -20436,7 +20435,6 @@ function ForestBand({ value, onChange, className, ...rest }) {
       const current = item.id === value
       return jsxs('button', {
         type: 'button',
-        key: item.id,
         'data-cb3-band-item': item.id,
         'data-current': current ? 'true' : 'false',
         'aria-current': current ? 'page' : undefined,
@@ -20464,10 +20462,10 @@ function ForestBand({ value, onChange, className, ...rest }) {
           cursor: 'pointer'
         },
         children: [
-          jsx(sdk.Codicon, { name: item.icon, size: 16 }, 'glyph'),
+          jsx(sdk.Codicon, { name: item.icon, size: CB_ICON_UI }, 'glyph'),
           jsx('span', { children: item.label }, 'label')
         ]
-      })
+      }, item.id)
     })
   })
 }
@@ -20791,7 +20789,7 @@ function StampNode({ state, label, stateWord, index, onClick, className, style, 
           borderRadius: cb3Radius('square'),
           opacity: locked ? 0.5 : 1
         },
-        children: jsx(sdk.Codicon, { name: CB3_STAMP_ICON[tone], size: 20 }, 'glyph')
+        children: jsx(sdk.Codicon, { name: CB3_STAMP_ICON[tone], size: CB_ICON_PLATE }, 'glyph')
       }, 'blank'),
       jsx('span', { style: { maxWidth: '12ch', overflowWrap: 'anywhere' }, children: label }, 'label'),
       word ? jsx('span', { style: { fontWeight: 600 }, children: word }, 'word') : null
@@ -20844,7 +20842,7 @@ function Medallion({ event, label, size, className, style, ...rest }) {
           backgroundPosition: 'center',
           color: cb3Role('ink')
         },
-        children: jsx(sdk.Codicon, { name: spec.icon, size: 20 }, 'glyph')
+        children: jsx(sdk.Codicon, { name: spec.icon, size: CB_ICON_PLATE }, 'glyph')
       }, 'blank'),
       jsx('span', {
         style: {
@@ -20933,7 +20931,6 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
         children: parts.map((part, index) =>
           part && part.ruby
             ? jsxs('ruby', {
-                key: `seg-${index}`,
                 children: [
                   jsx('span', { children: part.text }, 'base'),
                   jsx('rt', {
@@ -20945,8 +20942,8 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
                     children: part.ruby
                   }, 'ruby')
                 ]
-              })
-            : jsx('span', { key: `seg-${index}`, children: part ? part.text : '' }, `t-${index}`)
+              }, `seg-${index}`)
+            : jsx('span', { children: part ? part.text : '' }, `seg-${index}`)
         )
       }, 'jp'),
       romaji
@@ -20994,7 +20991,7 @@ function DialogueBubble({ segments, romaji, en, onPlay, playLabel, className, st
               lineHeight: cb3Lead('meta'),
               cursor: 'pointer'
             },
-            children: jsx(sdk.Codicon, { name: 'unmute', size: 16 })
+            children: jsx(sdk.Codicon, { name: 'unmute', size: CB_ICON_UI })
           }, 'speak')
         : null
     ]
@@ -21113,7 +21110,6 @@ function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLa
         },
         children: Array.from({ length: marks }).map((_, index) =>
           jsx('span', {
-            key: `mark-${index}`,
             style: {
               display: 'block',
               width: '8px',
@@ -21121,7 +21117,7 @@ function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLa
               borderRadius: cb3Radius('square'),
               backgroundColor: cb3Role('sage')
             }
-          })
+          }, `mark-${index}`)
         )
       }, 'tray'),
       jsx('p', {
@@ -21144,7 +21140,7 @@ function EvidenceTray({ countLabel, recorded, emptyLabel, events, note, toggleLa
               lineHeight: cb3Lead('meta'),
               color: cb3Role('ink-soft')
             },
-            children: rows.map((row, index) => jsx('li', { key: `event-${index}`, children: row }, `event-${index}`))
+            children: rows.map((row, index) => jsx('li', { children: row }, `event-${index}`))
           }, 'events')
         : null,
       note
@@ -21388,7 +21384,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                   style: { display: 'flex', flexWrap: 'wrap', gap: '1rem' },
                   children: CB3_POSES.map((pose) =>
                     jsxs('figure', {
-                      key: pose,
                       'data-cb3-specimen': `fox-${pose}`,
                       style: { margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' },
                       children: [
@@ -21440,7 +21435,7 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                         CB3_LAB_COPY.anatomy.evidence,
                         CB3_LAB_COPY.anatomy.next,
                         CB3_LAB_COPY.anatomy.cover
-                      ].map((row, index) => jsx('li', { key: `callout-${index}`, children: row }, `callout-${index}`))
+                      ].map((row, index) => jsx('li', { children: row }, `callout-${index}`))
                     }, 'callouts'),
                     jsx(PaperCard, {
                       emphasis: 'elev-1',
@@ -21594,7 +21589,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                   style: { margin: 0, paddingInlineStart: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' },
                   children: rendering.map((row) =>
                     jsxs('li', {
-                      key: row.step,
                       'data-cb3-type-row': row.step,
                       style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
                       children: [
@@ -21632,7 +21626,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                   style: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
                   children: [
                     jsx('figure', {
-                      key: 'grain',
                       style: { margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' },
                       children: [
                         jsx('div', {
@@ -21653,7 +21646,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                       ]
                     }, 'grain'),
                     jsx('figure', {
-                      key: 'wood',
                       style: { margin: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' },
                       children: [
                         jsx('div', {
@@ -21681,7 +21673,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                           style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
                           children: ['elev-1', 'elev-2', 'inset-1'].map((level) =>
                             jsx('span', {
-                              key: level,
                               'data-cb3-elevation': level,
                               className: level === 'elev-1' ? 'cb3-card-elevated' : level === 'elev-2' ? 'cb3-elev-2' : 'cb3-elev-inset',
                               style: {
@@ -21713,7 +21704,6 @@ function CbV3LabSheet({ scale, mode, onBack, className, ...rest }) {
                           style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
                           children: ['square', 'soft', 'round', 'pill'].map((radius) =>
                             jsx('span', {
-                              key: radius,
                               'data-cb3-radius': radius,
                               style: {
                                 display: 'inline-flex',
