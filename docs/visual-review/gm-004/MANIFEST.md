@@ -150,9 +150,10 @@ the head-gasket world is proven at the RPC boundary only.
 ## Notes for the reviewer
 
 - The Japanese course moved from Textbook (earlier packet) to an approved Game world for this
-  packet, so `course-textbook--*` frames are now the *Order coffee* course. The German/Japanese
-  identity of every world frame is recorded in `live-evidence.json` (`course` field).
+  packet, so `course-textbook--*` frames are now the *Order coffee* course. The identity of every world frame is recorded in `live-evidence.json` (`course` field).
 - `overflow=false` and correct `rootFont` on all 34 rows; no frame is clipped horizontally.
+- At 460 / 200% the surfaces scroll vertically; those frames show the top of the surface at true
+  200% text, which is where reflow defects appear. Horizontal overflow is false on every row.
 - `create-mode--1049--*` and `--460--*` were captured from a fresh create flow (goal typed, then
   Continue); the mode control is the authored Game/Textbook choice, no world generation.
 - Frames were recaptured in one session against the final plugin pin; `live-evidence.json`
