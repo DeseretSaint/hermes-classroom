@@ -170,5 +170,152 @@ class Documents(unittest.TestCase):
                     self.assertGreaterEqual(im.height, 800)
 
 
+class Stance(unittest.TestCase):
+    """A pose that reads as a different character is the named defect class of this card.
+
+    Geometry is the check that does not depend on a vision read: a quadruped standing on a ground
+    line is wider than it is tall, an upright chibi is taller than it is wide. The round-1 point
+    plate measured 669x622 (1.076) — four legs down, horizontal torso — and this guard is what
+    would have caught it before it reached a contact sheet.
+    """
+
+    STANDING = ["wave", "point", "clock", "cheer", "think"]
+    SEATED_OR_UPRIGHT = ["read"]
+    LIMIT = 0.90
+
+    def aspect(self, pose):
+        from PIL import Image
+
+        with Image.open(ART / f"fox-{pose}.png") as im:
+            box = im.convert("RGBA").getchannel("A").getbbox()
+        self.assertIsNotNone(box, f"fox-{pose} has no opaque pixels")
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        return w / h, w, h
+
+    def test_every_standing_pose_is_taller_than_it_is_wide(self):
+        for pose in self.STANDING + self.SEATED_OR_UPRIGHT:
+            with self.subTest(pose=pose):
+                ratio, w, h = self.aspect(pose)
+                self.assertLessEqual(
+                    ratio, self.LIMIT,
+                    f"fox-{pose} silhouette is {w}x{h} (aspect {ratio:.3f}): wider than tall, which "
+                    "is a horizontal body on a ground line, not the model sheet's upright biped",
+                )
+
+    def test_point_is_asserted_by_name(self):
+        ratio, w, h = self.aspect("point")
+        self.assertLessEqual(
+            ratio, self.LIMIT,
+            f"fox-point is {w}x{h} (aspect {ratio:.3f}); ART-BIBLE.md §3 requires a bipedal stance",
+        )
+
+    def test_sleep_is_the_only_horizontal_plate_and_that_is_deliberate(self):
+        ratio, _, _ = self.aspect("sleep")
+        self.assertGreater(ratio, 1.0, "the curled sleep pose should read horizontal")
+
+
+class Pipeline(unittest.TestCase):
+    """The art bible binds CP-011..CP-013, so its cutout numbers must be the numbers that ran."""
+
+    def test_bible_fuzz_is_the_script_default(self):
+        import re
+
+        bible = BIBLE.read_text()
+        stated = re.findall(r"-fuzz (\d+)%", bible)
+        self.assertTrue(stated, "ART-BIBLE.md §8 states no -fuzz value")
+        source = (ROOT / "scripts" / "cp010-fox-prep.py").read_text()
+        default = re.search(r'else "(\d+)"', source)
+        self.assertIsNotNone(default, "cp010-fox-prep.py has no --fuzz default")
+        for value in set(stated):
+            with self.subTest(stated=value):
+                self.assertEqual(
+                    value, default.group(1),
+                    f"the bible says -fuzz {value}% and the script defaults to {default.group(1)}%; "
+                    "a binding document that disagrees with the pipeline regenerates nothing",
+                )
+
+    def test_the_shipped_masters_are_what_the_pipeline_produces(self):
+        """Re-key every recorded raw with the script's own default and compare pixels."""
+        import tempfile
+
+        from PIL import Image
+
+        provenance = json.loads((AUDIT / "provenance.json").read_text())["rows"]
+        for row in provenance:
+            with self.subTest(plate=row["plate_id"]):
+                raw = AUDIT / "raw" / Path(row["raw_asset"]).name
+                self.assertTrue(raw.exists(), f"{raw.name} missing; the raw must be kept")
+                out = Path(tempfile.mkdtemp(prefix="cp010-rekey-")) / "master.png"
+                subprocess.run(
+                    ["python3", "scripts/cp010-fox-prep.py", str(raw), str(out), "--master-only"],
+                    cwd=ROOT, check=True, capture_output=True,
+                )
+                with Image.open(out) as made, Image.open(ROOT / row["asset"]) as shipped:
+                    self.assertEqual(made.size, shipped.size)
+                    self.assertEqual(
+                        made.convert("RGBA").tobytes(), shipped.convert("RGBA").tobytes(),
+                        f"{row['asset']} is not reproducible from {raw.name} at the script default; "
+                        "either the master or the pipeline changed and the other was not updated",
+                    )
+
+
+class VisionRecord(unittest.TestCase):
+    """A check without a record is not a check.
+
+    ART-PROVENANCE.md §Known gaps claimed a recorded vision comparison per plate while no such file
+    existed. This asserts the record exists, covers every shipped plate, cites the model sheet, and
+    agrees with the independently measured silhouette numbers.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = json.loads((AUDIT / "vision.json").read_text())
+        cls.rows = {r["plate_id"]: r for r in cls.doc["rows"]}
+        cls.shape = json.loads((AUDIT / "shape-audit.json").read_text())["plates"]
+        cls.sheet_url = next(
+            p for p in json.loads((AUDIT / "prompts.json").read_text())["prompts"]
+            if p["id"] == "M1"
+        )["media_url"]
+
+    def test_one_row_per_shipped_plate(self):
+        self.assertEqual(set(self.rows), {name.removesuffix(".png") for name, _ in masters()})
+
+    def test_every_pose_cites_the_model_sheet(self):
+        for plate, row in self.rows.items():
+            with self.subTest(plate=plate):
+                if plate == "fox-model-sheet":
+                    # The sheet is the authority; it was generated from the round-1 sheet.
+                    self.assertNotEqual(row["reference_media_url"], self.sheet_url)
+                    continue
+                self.assertEqual(row["reference_media_url"], self.sheet_url,
+                                 f"{plate} does not name the model sheet as its comparison reference")
+                self.assertIn("fal.media", row["media_url"])
+
+    def test_no_row_is_a_silent_pass(self):
+        for plate, row in self.rows.items():
+            with self.subTest(plate=plate):
+                self.assertIn(row["verdict"], {"pass", "deviation"})
+                self.assertTrue(row["lettering"].startswith("none"),
+                                f"{plate} lettering is {row['lettering']!r}")
+                for field in ("cream_bib", "cream_tail_tip", "dark_ear_backs", "limb_marking"):
+                    self.assertIn(field, row["markings"])
+                self.assertTrue(row["stance"] and row["colour_family"] and row["notes"])
+
+    def test_rows_agree_with_the_measured_silhouette(self):
+        for plate, row in self.rows.items():
+            with self.subTest(plate=plate):
+                self.assertEqual(self.shape[plate]["aspect"], row["aspect"],
+                                 f"{plate} vision row and shape audit disagree on aspect")
+
+    def test_open_items_name_a_decision_and_its_options(self):
+        for item in self.doc["open_items"]:
+            with self.subTest(item=item["id"]):
+                self.assertTrue(item["owner_decision"])
+                self.assertGreaterEqual(len(item["options"]), 2,
+                                        "an open item with one option is a decision that was not made")
+                self.assertTrue(item["finding"] and item["why_it_matters"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 PROMPT_TO_ASSET = {
     "M1": "assets/art/fox/fox-model-sheet.png",
     "P-wave": "assets/art/fox/fox-wave.png",
-    "P-point": "assets/art/fox/fox-point.png",
+    "P-point-r3": "assets/art/fox/fox-point.png",
     "P-clock": "assets/art/fox/fox-clock.png",
     "P-read": "assets/art/fox/fox-read.png",
     "P-cheer": "assets/art/fox/fox-cheer.png",
@@ -23,10 +23,16 @@ PROMPT_TO_ASSET = {
     "P-sleep": "assets/art/fox/fox-sleep.png",
 }
 POSE_NAME = {k: k.split("-", 1)[1] for k in PROMPT_TO_ASSET if k != "M1"}
+
+
+def plate_of(pid):
+    """fox-point-r3 is the third attempt at the plate fox-point, not a new plate."""
+    name = POSE_NAME[pid]
+    return name[:-3] if name[-3:-1] == "-r" and name[-1].isdigit() else name
 RAW = {
     "M1": "audit/cp010-fox/raw/model-sheet-raw-r2.png",
     "P-wave": "audit/cp010-fox/raw/pose-wave-raw.png",
-    "P-point": "audit/cp010-fox/raw/pose-point-raw.png",
+    "P-point-r3": "audit/cp010-fox/raw/pose-point-raw-r3.png",
     "P-clock": "audit/cp010-fox/raw/pose-clock-raw-r2.png",
     "P-read": "audit/cp010-fox/raw/pose-read-raw.png",
     "P-cheer": "audit/cp010-fox/raw/pose-cheer-raw.png",
@@ -46,13 +52,29 @@ def main():
     with open("audit/cp010-fox/prompts.json") as fh:
         prompts = {p["id"]: p for p in json.load(fh)["prompts"]}
 
+    # Keep the first recorded generation timestamp for a plate that already has one: a re-run of
+    # this script must not restamp a plate with the time the script ran. Only a genuinely new or
+    # regenerated plate (new media URL) gets a new timestamp.
+    previous = {}
+    if os.path.exists("audit/cp010-fox/provenance.json"):
+        with open("audit/cp010-fox/provenance.json") as fh:
+            for row in json.load(fh)["rows"]:
+                previous[row["plate_id"]] = row
+
     rows = []
     for pid, asset in PROMPT_TO_ASSET.items():
         p = prompts[pid]
-        ocr_path = f"audit/cp010-fox/ocr-{'model-sheet' if pid == 'M1' else POSE_NAME[pid]}-final.txt"
+        ocr_path = f"audit/cp010-fox/ocr-{'model-sheet' if pid == 'M1' else plate_of(pid)}-final.txt"
         ocr = "no text (psm 3)" if os.path.exists(ocr_path) and not open(ocr_path).read().strip() else "TEXT FOUND"
+        plate_id = f"fox-{'model-sheet' if pid == 'M1' else plate_of(pid)}"
+        old = previous.get(plate_id)
+        generated_at = (
+            old["generated_at"]
+            if old and old.get("media_url") == p["media_url"]
+            else datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
         rows.append({
-            "plate_id": f"fox-{'model-sheet' if pid == 'M1' else POSE_NAME[pid]}",
+            "plate_id": plate_id,
             "prompt_id": pid,
             "role": "character model sheet" if pid == "M1" else "character pose",
             "provider": "nous image gateway (media served from v3b.fal.media)",
@@ -60,8 +82,9 @@ def main():
             "prompt_hash": hashlib.sha256(p["text"].encode()).hexdigest(),
             "reference_image_urls": p.get("reference_image_urls", []),
             "media_url": p["media_url"],
-            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "generated_at": generated_at,
             "raw_sha256": sha(RAW[pid]),
+            "raw_asset": RAW[pid],
             "asset": asset,
             "asset_sha256": sha(asset),
             "bytes": os.path.getsize(asset) if os.path.exists(asset) else 0,

@@ -27,9 +27,27 @@
     },
     {
       "id": "P-point",
-      "role": "pose",
+      "role": "pose, round 1 (rejected: quadruped — four legs down, horizontal torso)",
       "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. One paw extended toward the lower right at thirty degrees, head turned toward the viewer. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
       "media_url": "https://v3b.fal.media/files/b/0ab1e459/4JMuyVANjyWdwElO1Njf9_LbkEqGQJ.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-point-r2",
+      "role": "pose, round 2 (not shipped: bipedal but both arms hang at the side, so the plate has no gesture at all)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. BIPEDAL UPRIGHT STANCE: the fox stands vertically on its two hind legs, both hind feet flat on the ground line, body upright and pear-shaped, shoulders above the hips, head on top of the body facing the viewer. Never on all fours, never standing on four legs, no horizontal torso. One FRONT PAW extended forward and down toward the lower right at thirty degrees as if pointing at something on the floor, the other front paw relaxed at the side. Head turned toward the viewer. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, cream bib, cream tail tip, dark brown socks from the wrist to the elbow joint, dark ear backs, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e5be/OJSbslzruxtRQ886UqXGo_Op4bOcU0.png",
+      "reference_image_urls": [
+        "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
+      ]
+    },
+    {
+      "id": "P-point-r3",
+      "role": "pose, round 3 (shipped)",
+      "text": "Same fox as the reference model sheet: identical markings, proportions, palette and line. BIPEDAL UPRIGHT STANCE: the fox stands vertically on its two hind legs, both hind feet flat on the ground line, torso upright and pear-shaped, shoulders above hips, head on top of the body facing the viewer. Never on all fours, never on four legs, no horizontal torso. One FRONT PAW extended forward and down toward the lower right at thirty degrees as if pointing at something on the floor, the other front paw relaxed at the side. Head turned toward the viewer. MARKINGS, exactly as on the reference model sheet: cream bib on the chest, cream tail tip on the last 20 percent of the tail, dark ear backs, and DARK BROWN SOCKS that cover each FOREARM from the wrist all the way up to the elbow joint, exactly half of the arm's full length, so only the upper arm above the elbow stays russet red; the lower legs are dark brown from the foot up to the knee. Not mitten paws, not gloves: half of each limb is dark. Full body, centred, standing on a flat pure magenta background #ff00ff with no gradient, no cast shadow, no ground, no border. Opaque gouache on warm paper, dark brown ink contour #3a2318 drawn last, light from the upper left. No text, no letters, no numbers, no logo, no watermark, no UI.",
+      "media_url": "https://v3b.fal.media/files/b/0ab1e5c3/Y6GjyR4O5N1rY42dz1gRq_OxDrbQpK.png",
       "reference_image_urls": [
         "https://v3b.fal.media/files/b/0ab1e43f/xI8gdRiXDTbElHbufPIMq_VkEbNmYP.png"
       ]

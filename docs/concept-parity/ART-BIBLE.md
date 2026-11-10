@@ -47,7 +47,7 @@ mandatory:
 
 | Output size | Line weight | Rule |
 |---|---|---|
-| 512 px tall master | 3.0–3.5 px | drawn once at master size, never a thin line scaled up |
+| master (A1 masters are 654–837 px tall) | 3.0–3.5 px | drawn once at master size, never a thin line scaled up |
 | 256 px export | 2.0 px | downscale from master, then one unsharp pass; line must not vanish |
 | 128 px export | 1.5 px | downscale; check the eye and nose dots still read |
 | 64 px export | 1.0 px floor | if the line breaks up, thicken to 1.2 px before export; never ship a 64 px frame with a broken contour |
@@ -113,26 +113,32 @@ family and is regenerated, not shipped.
 
 One character, four views, one image. The model sheet is the **authority** for every pose.
 
-Proportions (measured on the model sheet, tolerance ±3 %):
+Proportions (the first column is the **design target**; the second is what shipped, measured on the
+plates and recorded in `audit/cp010-fox/shape-audit.json`):
 
-| Rule | Value |
-|---|---|
-| Head height | **45 %** of standing figure height (head is large; the concept's ~40 % is corrected to 45 %) |
-| Head width | 1.15× head height |
-| Ear height | 0.55× head height, triangular, rounded tip |
-| Muzzle | short, 0.35× head width, cream, no tooth line |
-| Body | pear-shaped, 1.4× head height tall, narrower at the shoulders |
-| Arms | short, 0.75× head height, ending at the hip line |
-| Legs | short, 0.55× head height, both feet flat, no visible ankle |
-| Tail | 1.5× body height, thick, one S-curve, tip cream |
-| Stance | bipedal, feet apart at 0.5× body width, weight even |
+| Rule | Target | Shipped / measured |
+|---|---|---|
+| Head height | **45 %** of standing figure height (head is large; the concept's ~40 % is corrected to 45 %) | **53.3 %** on `wave`, the only plate whose arms are down so a silhouette neck pinch is meaningful. The 45 % figure was never measured and is now labelled a target, not a measurement. Owner decision `D-CP010-B`. |
+| Head width | 1.15× head height | not measured |
+| Ear height | 0.55× head height, triangular, rounded tip | matches on inspection |
+| Muzzle | short, 0.35× head width, cream, no tooth line | matches on inspection |
+| Body | pear-shaped, 1.4× head height tall, narrower at the shoulders | matches on inspection |
+| Arms | short, 0.75× head height, ending at the hip line | matches on inspection |
+| Legs | short, 0.55× head height, both feet flat, no visible ankle | matches on inspection |
+| Tail | 1.5× body height, thick, one S-curve, tip cream | matches on inspection |
+| Stance | bipedal, feet apart at 0.5× body width, weight even | asserted by silhouette aspect: every standing plate is between 0.45 and 0.80 wide/tall, and `sleep` is the only plate above 1.0 |
 
-Markings, all four mandatory and all four visible from the front:
+Markings, all four mandatory, each recorded per plate in `audit/cp010-fox/vision.json`:
 
 1. **Cream bib** — one mass from under the chin to the lower chest, symmetric, no scalloped edge.
 2. **Cream tail tip** — the last ~20 % of the tail, a single soft diagonal break, not a stripe.
-3. **Dark socks** — front and hind limbs, from the paw **to the elbow**, a single rising edge, both
-   sides alike.
+3. **Dark limb marking** — the printed rule is "from the paw **to the elbow**, a single rising edge,
+   both sides alike", and the model-sheet prompt (M1) asks for it. **No shipped plate implements it.**
+   The sheet's own four views show the paw plus at most a short cuff, and six of seven poses match
+   the sheet; `clock` reaches the lower forearm and stops short of the elbow. Until the owner
+   resolves `D-CP010-A`, the working band for a new plate is *dark from the paw to no further than
+   the mid-forearm / mid-shin* — measured from the sheet, not invented to excuse a pose — and the
+   "to the elbow" wording above is the unresolved target.
 4. **Dark ear backs** — the back plane of both ears; from the front only the inner edge shows.
 
 Face: two dot eyes, `#241812`, with one cream catchlight each, placed at 0.45 head height, no
@@ -153,7 +159,7 @@ covering a marking, never in a different colour, never with a different tail cou
 | clock | Home "New course" shelf | both paws holding a brass alarm clock, chest height |
 | read | Classroom lesson | seated, book open in both paws, head tilted 10° down |
 | cheer | check correct | both paws up, head up 10°, tail lifted |
-| think | wrong answer, kind | one paw at chin, head tilted 15°, eyes open, never a frown |
+| think | wrong answer, kind | one paw at chin, head tilted 15°, eyes open, never a frown (shipped plate matches the gesture; the tilt is slight and unmeasured — see `D-CP010-B`) |
 | sleep | empty / offline | curled, eyes closed, tail wrapped to the chin, no Z letters |
 
 Every pose is generated with the approved model sheet as the reference image and must reproduce
@@ -232,6 +238,13 @@ frown, angry expression
 3. **Owner approval gate.** The owner approves the model sheet from the contact sheet. No pose is
    generated before that approval. A rejected sheet is regenerated (round budget 3) and the
    rejected bytes are deleted, never kept as a fallback.
+
+   **State of this gate (A1): OPEN and out of order.** The seven poses were generated from the
+   shipped sheet before it was signed, so the family could be reviewed in one pass. That is a
+   deviation from the order this section requires and is recorded as `OI-2` / `D-CP010-A` in
+   `audit/cp010-fox/vision.json`. If the owner rejects the sheet, every pose is regenerated from
+   the replacement; nothing here may be cited as approved art until the two contact sheets carry a
+   signature.
 4. Generate each pose with the **approved model sheet's provider media URL** in
    `reference_image_urls`. The model sheet is the only style reference; a pose is never generated
    from another pose, so drift cannot compound.
@@ -243,11 +256,24 @@ frown, angry expression
 ## 8. Cutout procedure
 
 - Generate on flat chroma magenta `#ff00ff`. Sample the true corner colour from the returned file
-  and key on that value, not on the literal hex, with `-fuzz 12%` and `-transparent`.
+  and key on that value, not on the literal hex, with `-fuzz 30%` and `-transparent`.
+- **`-fuzz 30%` is the executed value, not a guess.** The provider returns a sampled magenta
+  (`#d30592`–`#c4089c` in A1), not `#ff00ff`, and it sits close to the fox's deep shade in RGB, so
+  a narrower key leaves a magenta rim on the fur and a wider one starts eating the dark sock. The
+  A1 masters are reproduced from their recorded raw only at 30: at 28 the difference is 89 px and at
+  32 it is 160 px against the shipped master, and at 12 it is 763 px. An earlier draft of this
+  section prescribed a 12 % key, which under-keys every plate; the value and
+  `scripts/cp010-fox-prep.py`'s default now come from the same measurement, and
+  `tests/test_cp010_fox_assets.py` re-keys each recorded raw and compares it pixel for pixel so the
+  document and the pipeline cannot diverge again.
+- The executed invocation per plate, recorded in `audit/cp010-fox/provenance.json` via its
+  `raw_sha256`: `python3 scripts/cp010-fox-prep.py <raw> <master>` with no `--fuzz` argument, which
+  is the 30 % default.
 - Trim, then pad to a square canvas with transparent edge so every pose shares one export box.
-- Fringe: if a magenta line survives the key, despeckle one pass and re-key at `-fuzz 8%`; if fur
-  edges still fringe, remove the background with `rembg` (`u2net`) in a private `uv` venv, not a
-  global install.
+- Fringe: the fallback is not a re-key at a lower fuzz — a lower fuzz is what produces the fringe.
+  If fur edges still carry magenta, remove the background with `rembg` (`u2net`) in a private `uv`
+  venv, not a global install, and record that it was used.
 - Inspect every cutout at 200 % on `#f7f1e4` and on `#131210`. A magenta halo, a chewed contour or
   a semi-transparent sock on either ground is a defect.
-- Exports: 512 px tall master, then 256, 128 and 64 px. Alpha preserved; no matte baked in.
+- Exports: the master is the keyed plate at its own natural size (A1 masters are 654–837 px tall,
+  not 512), then 512, 256, 128 and 64 px are downscaled from it. Alpha preserved; no matte baked in.
