@@ -1,0 +1,93 @@
+{
+  "schema": "cb.material.sheet.v1",
+  "card": "CP-011",
+  "mode": "light",
+  "sheet": "docs/concept-parity/art/material/texture-sheet-light.png",
+  "sheet_sha256": "100891bcc4f9966666771db017aea9e37e2f61f821d8ac8625aef2ac4a5ed28c",
+  "sheet_bytes": 426328,
+  "sheet_size": {
+    "width": 1120,
+    "height": 1477
+  },
+  "commit": "4603dbf32894b9ff55aa23f216e45b1423fb6f8a",
+  "branch": "wt/cp-011-material",
+  "engine": "Chromium 155.0.8059.84 Arch Linux",
+  "device_scale": 1,
+  "body_px": 16,
+  "font_family": "Liberation Serif, Noto Serif, serif",
+  "text_source": {
+    "path": "bundled/packs/technical-demo-pack/content/section-01-anatomy.md",
+    "sha256": "5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c",
+    "note": "the bundled technical pack's own teaching prose; no copy invented for the sheet"
+  },
+  "tiles": [
+    {
+      "id": "paper-grain",
+      "sha256": "563b1e6cd7162c0feb3f43d399fb3db4cdb50a93dd12448ef2962bbeec270966",
+      "bytes": 40787,
+      "alpha_ceiling": 14,
+      "ground": "#f5e3c8",
+      "text_bearing": true,
+      "ink_worst_contrast": 12.84,
+      "text_gate": 4.5,
+      "legibility_passes": true,
+      "seam_ratio": [
+        0.946,
+        0.99
+      ]
+    },
+    {
+      "id": "card-stock-fibre",
+      "sha256": "2c2c4a144681b0cd8bea2414669f4e77619e4f18176fcd2df31a4d8b96050dbd",
+      "bytes": 9399,
+      "alpha_ceiling": 9,
+      "ground": "#f4ecd9",
+      "text_bearing": true,
+      "ink_worst_contrast": 14.37,
+      "text_gate": 4.5,
+      "legibility_passes": true,
+      "seam_ratio": [
+        0.215,
+        0.882
+      ]
+    },
+    {
+      "id": "parchment-vignette",
+      "sha256": "d7d8a3925fb21e3ae41ef361e7a1cb972912d14ead0d447e5b9c086b4fa68497",
+      "bytes": 25407,
+      "alpha_ceiling": 30,
+      "ground": "#f5e3c8",
+      "text_bearing": true,
+      "ink_worst_contrast": 12.01,
+      "text_gate": 4.5,
+      "legibility_passes": true,
+      "seam_ratio": [
+        0.95,
+        0.966
+      ]
+    },
+    {
+      "id": "wood-plank",
+      "sha256": "e3888665bf8327e10f9b25320313d0ce1e307e901033bb708412281bc558fd50",
+      "bytes": 27218,
+      "alpha_ceiling": 0,
+      "ground": [
+        173,
+        140,
+        107
+      ],
+      "text_bearing": false,
+      "ink_worst_contrast": 3.81,
+      "text_gate": null,
+      "legibility_passes": null,
+      "seam_ratio": [
+        0.765,
+        0.918
+      ]
+    }
+  ],
+  "wood_has_no_text": true,
+  "contrast_note": "ink_worst_contrast is the minimum over the committed tile pixels against the row's ink; the 4.5:1 gate is applied only where text_bearing is true. wood-plank carries no text, so its figure is informational and legibility_passes is null.",
+  "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
+  "captured_at": "2026-11-10T11:14:47+00:00"
+}
