@@ -1719,6 +1719,42 @@ def _names_foreign_scene(value: Any, grammar: str) -> bool:
     )
 
 
+def _names_grammar_owned_scene(value: Any, grammar: str) -> bool:
+    """True when the text contains a selected grammar's motif as a contiguous token run.
+
+    Only the ambiguous scene verbs consult this: ``clean service bay`` is a place cue for
+    ``workshop_manual``, while ``Clean head`` is an instruction with a bare object (N1).
+    Matching is token-level against the authored motif table, so it cannot invent ownership.
+    """
+    tokens = _phrase_tokens(value)
+    if not tokens:
+        return False
+    for motif in grammar_record(grammar).motifs:
+        cue = _phrase_tokens(motif)
+        width = len(cue)
+        if not width:
+            continue
+        for start in range(len(tokens) - width + 1):
+            if tokens[start : start + width] == cue:
+                return True
+    return False
+
+
+def _verb_initial_bare_object(value: Any) -> bool:
+    """A determiner-only scene verb opens the phrase and takes a bare object ("Clean head").
+
+    Leading discourse words do not cancel it (N1/L1). Only the ambiguous verbs are tested:
+    every unambiguous imperative verb is already refused verb-initial anywhere in the phrase.
+    """
+    tokens = _phrase_tokens(value)
+    index = 0
+    while index < len(tokens) and tokens[index] in _LEADING_DISCOURSE_TOKENS:
+        index += 1
+    return index < len(tokens) and (
+        _procedure_verb_base(tokens[index], _DETERMINER_ONLY_PROCEDURE_VERBS) is not None
+    )
+
+
 def _plate_text_problems(value: Any, grammar: str) -> tuple[str, ...]:
     """Every reason a free-text value must not be interpolated into a plate prompt.
 
@@ -1733,6 +1769,11 @@ def _plate_text_problems(value: Any, grammar: str) -> tuple[str, ...]:
     if _names_numbers_or_answer_content(text):
         problems.append("presentation_names_number_or_answer_content")
     elif _names_procedure_or_spelled_value(text):
+        problems.append("presentation_names_procedure_or_value")
+    elif _verb_initial_bare_object(text) and not _names_grammar_owned_scene(text, grammar):
+        # N1: a determiner-only scene verb with a bare object is an instruction
+        # ("Clean head"), unless the phrase names a selected-grammar place cue
+        # ("clean service bay"). The refusal and the prompt gate share this predicate.
         problems.append("presentation_names_procedure_or_value")
     if _names_foreign_scene(text, grammar):
         problems.append("presentation_names_foreign_grammar")

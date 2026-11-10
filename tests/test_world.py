@@ -1765,6 +1765,131 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
         read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
         self.assertEqual(read["world"]["brief"]["end_capability"], "Disconnect the battery")
 
+    def test_presentation_motifs_cannot_name_a_bare_object_procedure(self) -> None:
+        # N1: the ambiguous scene verbs (clean/break/polish/refill) were fenced only when the
+        # object followed a determiner, so 'Clean head' / 'Refill coolant' passed and reached
+        # every plate. The rule is verb-initial + determiner-only verb unless the remainder
+        # names a selected-grammar scene phrase ('clean service bay' stays legal).
+        hostile = (
+            "Clean head",
+            "Refill coolant",
+            "Polish lens",
+            "Break seal",
+            "Then clean head",
+        )
+        for index, motif in enumerate(hostile):
+            with self.subTest(motif=motif):
+                course_id = self._new_technical_course(f"Bare object {index}")
+                error = self.err(
+                    "world.generate",
+                    {
+                        "course_id": course_id,
+                        "stage": "concepts",
+                        "brief_patch": {"motifs": [motif]},
+                    },
+                    expected_revision=0,
+                    idempotency_key=f"n1-bare-object-{index}",
+                )
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+                self.assertEqual(
+                    error["details"]["reason"],
+                    "presentation_names_procedure_or_value",
+                )
+                self.assertEqual(error["details"]["field"], "motifs")
+        self.assertEqual(self.count("SELECT COUNT(*) FROM course_worlds"), 0)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 0)
+        self.assertEqual(len(self.fake.calls), 0)
+
+        # Kit path after an approved style: same refusal, no extra spend.
+        read, _style = self._concepts_then_style()
+        self.assertEqual(len(self.fake.calls), 3)
+        board = read["world"]["concepts"][0]
+        kit_error = self.err(
+            "world.generate",
+            {
+                "course_id": self.course_id,
+                "stage": "kit",
+                "style_id": board["style_id"],
+                "brief_patch": {"motifs": ["Clean head"]},
+            },
+            expected_revision=read["revision"],
+            idempotency_key="n1-bare-object-kit",
+        )
+        self.assertEqual(kit_error["code"], "POLICY_VIOLATION")
+        self.assertEqual(len(self.fake.calls), 3)
+        self.assertEqual(self.count("SELECT COUNT(*) FROM jobs"), 1)
+
+        # A determiner-only verb followed by a grammar-owned scene phrase is a native scene.
+        course_id = self._new_technical_course("Bare object native scene")
+        self.ok(
+            "world.generate",
+            {
+                "course_id": course_id,
+                "stage": "concepts",
+                "brief_patch": {"motifs": ["clean service bay"]},
+            },
+            expected_revision=0,
+            idempotency_key="n1-bare-object-native",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 6)
+
+    def test_title_or_goal_cannot_name_a_bare_object_procedure(self) -> None:
+        # N1 residual, reachable with no brief_patch: a course titled 'Clean head' and a goal
+        # 'Refill coolant' reach every plate through 'Course subject: ... — the learner will
+        # ...'. The prompt fence falls back / omits, the stored brief stays verbatim.
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Clean head",
+                "recipe": "committed",
+                "goal": "Replace a head gasket on a four-cylinder engine",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="n1-title-bare-object",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("clean head", lowered)
+            self.assertNotIn("clean", lowered)
+            self.assertIn("workshop manual", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(read["world"]["brief"]["title"], "Clean head")
+
+        # Goal-only: a safe title, an unsafe capability clause.
+        self.fake.calls.clear()
+        created = self.ok(
+            "course.create",
+            {
+                "title": "Service bay orientation",
+                "recipe": "committed",
+                "goal": "Refill coolant",
+                "subject_domain": "technical_procedure",
+                "level": "novice",
+            },
+        )["result"]
+        self.ok(
+            "world.generate",
+            {"course_id": created["course_id"], "stage": "concepts"},
+            expected_revision=0,
+            idempotency_key="n1-goal-bare-object",
+        )
+        executor.pump_once(limit=1)
+        self.assertEqual(len(self.fake.calls), 3)
+        for prompt in self.fake.calls:
+            lowered = prompt.lower()
+            self.assertNotIn("refill", lowered)
+        read = self.ok("world.read", {"course_id": created["course_id"]})["result"]
+        self.assertEqual(read["world"]["brief"]["end_capability"], "Refill coolant")
+
     def test_course_title_with_a_leading_word_cannot_carry_a_procedure(self) -> None:
         # L1 residual, reachable with no brief_patch: a course titled exactly
         # 'First, remove the intake manifold' reaches every concept plate through
@@ -1923,6 +2048,12 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
             if category.startswith("procedure:"):
                 # Walk the whole frozen verb list, not one representative string (M1).
                 return f"{category.split(':', 1)[1]} the component"
+            if category.startswith("bare:"):
+                # N1: a bare object with no determiner must not shelter the verb.
+                return f"{category.split(':', 1)[1]} component"
+            if category.startswith("leading:"):
+                # N1/L1: one leading discourse word must not shelter the same shape.
+                return f"Then {category.split(':', 1)[1]} component"
             return {
                 "digit": "torque 90 ft-lb",
                 "spelled": "tighten to seventy five",
@@ -1942,7 +2073,11 @@ class WorldFailureAndModeTest(WorldHandlerMixin, KernelCase):
             "answer",
             "foreign",
             "ignore",
-        ) + tuple(f"procedure:{verb}" for verb in FROZEN_PROCEDURE_VERBS)
+        ) + tuple(
+            f"{shape}:{verb}"
+            for verb in FROZEN_PROCEDURE_VERBS
+            for shape in ("procedure", "bare", "leading")
+        )
         for grammar in world.GRAMMARS:
             for category in categories:
                 with self.subTest(grammar=grammar, category=category):
