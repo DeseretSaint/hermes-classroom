@@ -184,52 +184,95 @@ def _last_json_object(text: str) -> dict | None:
     return None
 
 
-#: The notation/diagram gate question. One vision read per plate: the OCR gate in :func:`ocr`
-#: only sees a >=2-character word at >=70 confidence, so staves, chord boxes, tick boxes and
-#: single glyphs pass it by construction. A "clean" here is a measured result, not a claim.
-NOTATION_QUESTION = (
-    "Audit this illustration for printed marks. Answer with JSON only: "
+#: The two lens question. One vision read per plate reports both classes: the OCR gate in
+#: :func:`ocr` only sees a >=2-character word at >=70 confidence, so staves, chord boxes, tick
+#: boxes and single glyphs pass it by construction — and it cannot see light at all, which is how
+#: round three shipped seven plates lit by a glowing pendant. A "clean" here is a measured
+#: result, not a claim.
+GATE_QUESTION = (
+    "Audit this illustration for printed marks and for its light. Answer with JSON only: "
     '{"notation": true|false, "kind": "what you saw", "evidence": "where you looked and what '
-    'you found there"}. '
-    'The "evidence" field is required and must name the objects you inspected (paper surfaces, '
-    "booklets, cards, labels, hands, frame) and what covers them; an empty evidence or the word "
-    "none is not a reading and is recorded as unchecked. "
+    'you found there", "light": {"fixture_visible": true|false, "fixture_emits": true|false, '
+    '"glow": true|false, "key": "upper-left|upper-right|top|front|left|right|indeterminate", '
+    '"evidence": "where you looked and what you found there"}}. '
+    "Both \"evidence\" fields are required and must name the objects you inspected (paper "
+    "surfaces, booklets, cards, labels, hands, frame, ceiling, walls, shadows) and what covers "
+    "them; an empty evidence or the word none is not a reading and is recorded as unchecked. "
     "notation=true if the image contains any musical notation, staves, noteheads, clefs, chord "
     "boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, "
     "letters, numerals, brand names or any symbol that resembles writing, or if it shows hands "
     "performing a technique or an instruction step. Ignore brush marks, paper grain, paint "
-    "texture and the silhouette of ordinary objects."
+    "texture and the silhouette of ordinary objects. "
+    "For light: fixture_visible=true if a lamp, pendant, bulb, lantern, sconce or window is "
+    "pictured at all; fixture_emits=true if any fixture is the light source (a glowing bulb, a "
+    "bright cone or beam, a lamp brighter than the painted surface); glow=true if there is a "
+    "bloom, halo or radial glow at all; key is the direction the main light comes from, judged "
+    "by which side of every mass is lit and which way every shadow falls. A lamp painted as a "
+    "flat unlit prop is fixture_visible=true, fixture_emits=false."
 )
 
 #: A verdict is a claim about a reading. Without a described observation there is no reading,
 #: so the gate is fail-closed here rather than counting a bare "false" as clean.
 _EMPTY_EVIDENCE = {"", "none", "n/a", "nothing", "not applicable", "no evidence"}
 
+#: Keys that break ART-BIBLE §Light (one soft key from the upper left) or §4.4 (no bloom, no
+#: halo, no radial glow around a light source).
+_LIGHT_KEYS_OFF = {"upper-right", "upper right", "right", "top", "front", "bottom", "left"}
 
-def notation_check(path: Path) -> dict:
-    """Vision read for the printed-mark class, recorded beside the OCR result. Fail-closed."""
+
+def _light_key(value: str) -> str:
+    cleaned = value.strip().lower().replace("_", "-").replace(" ", "-")
+    for candidate in ("upper-left", "upper-right", "top", "front", "bottom", "left", "right"):
+        if candidate in cleaned:
+            return candidate
+    return "indeterminate"
+
+
+def gate_check(path: Path) -> dict:
+    """One vision read for both gate classes, recorded beside the OCR result. Fail-closed."""
     import asyncio
 
     sys.path.insert(0, str(HERMES))
+    unchecked = {
+        "verdict": "unchecked",
+        "error": "",
+        "read": "",
+    }
     try:
         from tools.vision_tools import _handle_vision_analyze
     except Exception as error:  # noqa: BLE001 - recorded, never hidden
-        return {"verdict": "unchecked", "notation": None, "error": str(error)[:400], "read": ""}
+        return {
+            "notation": dict(unchecked, notation=None, error=str(error)[:400]),
+            "light": dict(unchecked, light=None, error=str(error)[:400]),
+        }
     try:
         raw = asyncio.run(
-            _handle_vision_analyze(
-                {"image_url": str(path.resolve()), "question": NOTATION_QUESTION}
-            )
+            _handle_vision_analyze({"image_url": str(path.resolve()), "question": GATE_QUESTION})
         )
     except Exception as error:  # noqa: BLE001
-        return {"verdict": "unchecked", "notation": None, "error": str(error)[:400], "read": ""}
+        return {
+            "notation": dict(unchecked, notation=None, error=str(error)[:400]),
+            "light": dict(unchecked, light=None, error=str(error)[:400]),
+        }
     payload = json.loads(raw) if isinstance(raw, str) else raw
     if not isinstance(payload, dict) or not payload.get("success"):
-        return {"verdict": "unchecked", "notation": None, "error": str(payload)[:400], "read": ""}
+        return {
+            "notation": dict(unchecked, notation=None, error=str(payload)[:400]),
+            "light": dict(unchecked, light=None, error=str(payload)[:400]),
+        }
     analysis = str(payload.get("analysis") or "")
     parsed = _last_json_object(analysis)
     if parsed is None:
-        return {"verdict": "unparsed", "notation": None, "read": analysis[-1500:]}
+        return {
+            "notation": {"verdict": "unparsed", "notation": None, "read": analysis[-1500:]},
+            "light": {"verdict": "unparsed", "light": None, "read": analysis[-1500:]},
+        }
+    notation = _notation_verdict(parsed, analysis)
+    light = _light_verdict(parsed, analysis)
+    return {"notation": notation, "light": light}
+
+
+def _notation_verdict(parsed: dict, analysis: str) -> dict:
     flag = bool(parsed.get("notation"))
     evidence = str(parsed.get("evidence") or "").strip()
     if evidence.lower() in _EMPTY_EVIDENCE:
@@ -246,6 +289,52 @@ def notation_check(path: Path) -> dict:
         "notation": flag,
         "kind": str(parsed.get("kind") or "")[:200],
         "evidence": evidence[:400],
+        "read": analysis[-1500:],
+    }
+
+
+def _light_verdict(parsed: dict, analysis: str) -> dict:
+    payload = parsed.get("light")
+    if not isinstance(payload, dict):
+        return {
+            "verdict": "unparsed",
+            "light": None,
+            "reason": "no_light_object",
+            "read": analysis[-1500:],
+        }
+    evidence = str(payload.get("evidence") or "").strip()
+    key = _light_key(str(payload.get("key") or ""))
+    emits = bool(payload.get("fixture_emits"))
+    glow = bool(payload.get("glow"))
+    if evidence.lower() in _EMPTY_EVIDENCE:
+        return {
+            "verdict": "unchecked",
+            "light": None,
+            "key": key,
+            "fixture_visible": bool(payload.get("fixture_visible")),
+            "fixture_emits": emits,
+            "glow": glow,
+            "evidence": "",
+            "reason": "empty_evidence",
+            "read": analysis[-1500:],
+        }
+    fails = emits or glow or key in _LIGHT_KEYS_OFF
+    reasons = []
+    if emits:
+        reasons.append("fixture_emits")
+    if glow:
+        reasons.append("glow")
+    if key in _LIGHT_KEYS_OFF:
+        reasons.append(f"key_{key}")
+    return {
+        "verdict": "suspect" if fails else "clean",
+        "light": not fails,
+        "key": key,
+        "fixture_visible": bool(payload.get("fixture_visible")),
+        "fixture_emits": emits,
+        "glow": glow,
+        "evidence": evidence[:400],
+        "reasons": reasons,
         "read": analysis[-1500:],
     }
 
@@ -269,6 +358,24 @@ def summary_entry(slug: str, grammar: str, plates: list[dict], sheet: Path) -> d
             1
             for row in plates
             if (row.get("notation") or {}).get("verdict") not in ("clean", "suspect")
+        ),
+        "light_gate_clean": sum(
+            1 for row in plates if (row.get("light_gate") or {}).get("verdict") == "clean"
+        ),
+        "light_gate_suspect": sum(
+            1 for row in plates if (row.get("light_gate") or {}).get("verdict") == "suspect"
+        ),
+        "light_gate_unchecked": sum(
+            1
+            for row in plates
+            if (row.get("light_gate") or {}).get("verdict") not in ("clean", "suspect")
+        ),
+        "light_gate_off_key": sorted(
+            {
+                str((row.get("light_gate") or {}).get("key"))
+                for row in plates
+                if (row.get("light_gate") or {}).get("verdict") == "suspect"
+            }
         ),
     }
 
@@ -348,7 +455,7 @@ def contact_sheet(slug: str, rows: list[dict]) -> Path:
 def main() -> int:
     dry = "--dry-run" in sys.argv
     probe = "--probe" in sys.argv
-    notation_only = "--notation-only" in sys.argv
+    notation_only = "--notation-only" in sys.argv or "--light-only" in sys.argv
     OUT.mkdir(parents=True, exist_ok=True)
     slug_filter = None
     if "--slug" in sys.argv:
@@ -370,10 +477,12 @@ def main() -> int:
             for row in provenance["plates"]:
                 if only_tokens and not any(token in row["file"] for token in only_tokens):
                     continue
-                check = notation_check(Path(row["file"]))
-                row["notation"] = check
+                check = gate_check(Path(row["file"]))
+                row["notation"] = check["notation"]
+                row["light_gate"] = check["light"]
                 print(
-                    f"{slug}/{Path(row['file']).name}: notation={check['verdict']}"
+                    f"{slug}/{Path(row['file']).name}: notation={check['notation']['verdict']}"
+                    f" light={check['light']['verdict']} key={check['light'].get('key')}"
                     f" ocr_words={len(row['ocr'].get('words') or [])}"
                 )
             (folder / "provenance.json").write_text(
@@ -482,6 +591,7 @@ def main() -> int:
                     }
                 else:
                     source = {"kind": "url", "url": url}
+                gate = gate_check(path)
                 row.update(
                     {
                         "style_id": prompt.style_id,
@@ -496,7 +606,8 @@ def main() -> int:
                         "sha256": hashlib.sha256(data).hexdigest(),
                         "bytes": len(data),
                         "ocr": ocr(path),
-                        "notation": notation_check(path),
+                        "notation": gate["notation"],
+                        "light_gate": gate["light"],
                         "generated_at": datetime.now(timezone.utc).isoformat(),
                         "repair_round": repair_round,
                         "repair_method": "edit" if edit else "regenerate",
@@ -505,6 +616,7 @@ def main() -> int:
                 print(
                     f"repaired {slug}/{path.name} words={row['ocr']['words']}"
                     f" notation={row['notation']['verdict']}"
+                    f" light={row['light_gate']['verdict']} key={row['light_gate'].get('key')}"
                 )
             sheet = contact_sheet(slug, provenance["plates"])
             provenance["contact_sheet"] = str(sheet)
@@ -544,6 +656,7 @@ def main() -> int:
                 }
             else:
                 source = {"kind": "url", "url": url}
+            gate = gate_check(folder / name)
             row = {
                 "file": str(folder / name),
                 "role": prompt.role,
@@ -564,7 +677,8 @@ def main() -> int:
                 "sha256": hashlib.sha256(data).hexdigest(),
                 "bytes": len(data),
                 "ocr": ocr(folder / name),
-                "notation": notation_check(folder / name),
+                "notation": gate["notation"],
+                "light_gate": gate["light"],
                 "generated_at": datetime.now(timezone.utc).isoformat(),
             }
             rows.append(row)
