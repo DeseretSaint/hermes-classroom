@@ -34,9 +34,16 @@ engagement row. `game_engagement` is `engagement.award`'s business.
 
 Policy refusals are `POLICY_VIOLATION` with a discriminating `details.reason`:
 `generic_task`, `multiple_targets`, `no_transfer_target`, `no_homework_proposal`,
-`unsourced_target`, `surveillance`, `graded_completion`, `context_missing`,
-`multiple_contexts`, `too_many_steps`, `criterion_not_observable`, `minutes_out_of_range`,
-`task_closed`, `already_reported`.
+`unsourced_target`, `surveillance`, `graded_completion`, `sheet_forbidden_word`,
+`context_missing`, `multiple_contexts`, `too_many_steps`, `criterion_not_observable`,
+`minutes_out_of_range`, `completion_record_too_long`, `task_closed`, `already_reported`.
+
+The policy scans **every surface the sheet prints**, not only the headline fields: the target's
+reading and gloss, each completion tick and the rendered sheet text (which includes every cited
+source title) are checked inside `homework.create`'s transaction. A surveillance or grading word
+in an authored field is refused as `surveillance`/`graded_completion` naming the field; a banned
+word that only appears once the sheet is rendered is refused as `sheet_forbidden_word`, and the
+whole create rolls back leaving no task row.
 
 ## The Japanese demo fixtures
 

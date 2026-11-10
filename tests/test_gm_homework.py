@@ -377,6 +377,74 @@ class HomeworkPolicyTest(HomeworkCase):
         self.assertEqual(error["details"]["reason"], "multiple_targets")
 
 
+class HomeworkPrintedSurfaceTest(HomeworkCase):
+    """The policy checks every surface the one-page sheet prints, not only the headline fields."""
+
+    def _refuse(self, mutate) -> dict:
+        block = hw.demo_lesson_block("hw_premeal")
+        page = japanese_page("Printed surfaces")
+        mutate(block, page)
+        page["homework"] = block
+        seeded = self.seed(page_factory=lambda title: page, title="Printed surfaces")
+        error = self.err(
+            "homework.create",
+            {
+                "course_id": seeded["course_id"],
+                "enrollment_id": seeded["enrollment_id"],
+                "objective_id": seeded["objective_id"],
+                "audience": "learner",
+                "source_lesson_version": seeded["lesson_version"],
+                "context": "At your own table, just before you eat today.",
+            },
+            expected_revision=0,
+            idempotency_key="key-hw-surface",
+        )
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        with db.read() as connection:
+            tasks = connection.execute("SELECT COUNT(*) AS n FROM homework_tasks").fetchone()
+            events = connection.execute("SELECT COUNT(*) AS n FROM homework_events").fetchone()
+        self.assertEqual(int(tasks["n"]), 0, "a refused printed surface left a task row")
+        self.assertEqual(int(events["n"]), 0, "a refused printed surface left an event")
+        return error
+
+    def test_homework_scans_every_printed_surface(self) -> None:
+        """Table of surfaces the sheet prints: each must be refused, with no row or event left."""
+        cases = (
+            (
+                "target.reading",
+                lambda block, page: block["target"].__setitem__("reading", "take a photo of the table"),
+                "surveillance",
+                "target.reading",
+            ),
+            (
+                "target.meaning",
+                lambda block, page: block["target"].__setitem__(
+                    "meaning", "grade 5/5 when you have finished"),
+                "graded_completion",
+                "target.meaning",
+            ),
+            (
+                "completion_record",
+                lambda block, page: block.__setitem__(
+                    "completion_record", ["said it out loud", "grade 5/5"]),
+                "graded_completion",
+                "completion_record",
+            ),
+            (
+                "source.title",
+                lambda block, page: page["sources"][0].__setitem__(
+                    "title", "Take a photo of your plate; grade 5/5"),
+                "sheet_forbidden_word",
+                "sheet",
+            ),
+        )
+        for surface, mutate, reason, field in cases:
+            with self.subTest(surface=surface):
+                error = self._refuse(mutate)
+                self.assertEqual(error["details"]["reason"], reason, surface)
+                self.assertEqual(error["details"]["field"], field, surface)
+
+
 class HomeworkSheetTest(HomeworkCase):
     def sheet(self) -> tuple[dict, dict, str]:
         seeded = self.seed()

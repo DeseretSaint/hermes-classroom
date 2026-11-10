@@ -26,6 +26,10 @@ Rules this module keeps (plan §10A.4-§10A.7):
 * **Nothing private is invented or leaked.** No attempt, transition, evidence, notebook or
   engagement row is written or read here, and the sheet never carries the lesson's reference
   answer or rubric.
+* **The policy scans every printed surface.** Title, context, steps, criterion, target
+  display/reading/meaning, the completion ticks and the rendered sheet itself (including every
+  cited source title) are scanned, so a banned word cannot reach a learner's page through a
+  field the headline checks do not name.
 * **Print is local and low-ink.** :func:`sheet_html` is a one-page field card in grey values
   only; printing and downloading are local actions, never an external send.
 """
@@ -220,8 +224,19 @@ def _remember(connection, key: str | None, method: str, payload_hash: str,
 
 
 def _matches(patterns: Iterable[str], text: str) -> list[str]:
-    lowered = text.lower()
+    lowered = str(text).lower()
     return [pattern for pattern in patterns if re.search(pattern, lowered)]
+
+
+def _forbidden_sheet_words(text: str) -> list[str]:
+    """Words the learner-visible sheet must never carry, matched as whole words."""
+    lowered = str(text).lower()
+    found: list[str] = []
+    for word in SHEET_FORBIDDEN:
+        pattern = r"(?<![a-z0-9])" + re.escape(word.lower()) + r"(?![a-z0-9])"
+        if re.search(pattern, lowered):
+            found.append(word)
+    return found
 
 
 def _field(row: Any, key: str, default: Any = None) -> Any:
@@ -338,12 +353,23 @@ def check_proposal(proposal: Mapping[str, Any], *, context: str | None = None) -
             estimated_minutes=minutes,
         )
 
+    record = [str(item).strip() for item in (proposal.get("completion_record") or [])
+              if str(item).strip()]
+    if len(record) > 4:
+        raise _policy("completion_record_too_long",
+                      "a field card records at most four ticks.", completion_record=record)
+
+    # Every surface the one-page sheet prints is checked here, not only the headline fields: the
+    # reading, the gloss and the tick row are learner-visible copy too.
     surfaces = {
         "title": str(proposal.get("title") or ""),
         "context": task_context,
         "steps": " ".join(steps),
         "success_criterion": criterion,
         "target": target["display"],
+        "target.reading": target["reading"],
+        "target.meaning": target["meaning"],
+        "completion_record": " ".join(record),
     }
     for field, text in surfaces.items():
         if _matches(SURVEILLANCE_PATTERNS, text):
@@ -377,11 +403,6 @@ def check_proposal(proposal: Mapping[str, Any], *, context: str | None = None) -
         "audience": audience,
         "optional": bool(proposal.get("optional", False)),
     }
-    record = [str(item).strip() for item in (proposal.get("completion_record") or [])
-              if str(item).strip()]
-    if len(record) > 4:
-        raise _policy("completion_record_too_long",
-                      "a field card records at most four ticks.", completion_record=record)
     normalised["completion_record"] = record
     if proposal.get("proposal_id"):
         normalised["proposal_id"] = str(proposal["proposal_id"])
@@ -797,6 +818,24 @@ def sheet_text(html_text: str) -> str:
     return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
 
 
+def _assert_sheet_clean(task: Mapping[str, Any]) -> None:
+    """Refuse a task whose rendered sheet would carry a banned word.
+
+    ``check_proposal`` scans the authored fields; this scans the artifact those fields produce,
+    so a cited source title (or any surface added to the sheet later) cannot smuggle a grade, a
+    score or a surveillance request onto a learner's page.
+    """
+    text = (task.get("sheet") or {}).get("text") or ""
+    forbidden = _forbidden_sheet_words(text)
+    if forbidden:
+        raise _policy(
+            "sheet_forbidden_word",
+            "the printed sheet would carry a grade, a score or a surveillance request.",
+            field="sheet",
+            words=forbidden,
+        )
+
+
 def sheet_is_single_page(html_text: str) -> bool:
     """Structurally one sheet: exactly one article and no forced page break."""
     return html_text.count('<article class="sheet"') == 1 and "page-break-after" not in html_text
@@ -938,6 +977,7 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
                 "state": str(existing["state"]),
                 "revision": int(existing["revision"]),
             }
+            _assert_sheet_clean(result["task"])
             contracts.validate_response_payload(method, result)
             _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
                       int(existing["revision"]), result)
@@ -975,6 +1015,9 @@ def create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
             "state": "proposed",
             "revision": 0,
         }
+        # The rendered artifact is checked inside the transaction too: a source title that would
+        # print a banned word rolls the whole proposal back rather than failing after commit.
+        _assert_sheet_clean(result["task"])
         # Validate inside the transaction: a result the wire contract would reject raises here
         # and the whole proposal rolls back, so a failed create leaves no orphan task row.
         contracts.validate_response_payload(method, result)
