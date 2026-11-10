@@ -1040,6 +1040,20 @@ Each phase is independently reviewable. The owner authorized this build on 2026-
 card graph below is the execution plan. Nothing is published or submitted without explicit
 owner sign-off. The code goes in isolated worktrees; the operator checkout is not the build tree.
 
+### Parallel execution
+
+Run independent cards concurrently, up to the board's six-worker cap. Serialize only real
+overlap:
+
+- one writer for `desktop/plugin.js`: Home, World Studio, Parent Studio, Homework, engagement and
+  tutor rail run in that order;
+- one owner for migration 0013 and the frozen contract manifest;
+- QA and final visual acceptance wait for their parents;
+- backend cards in different modules (world, take-home, homework, engagement, tutor) run in
+  parallel after their contract seam exists.
+
+The current wave and the file-ownership map are in `docs/GAME-MODE-CARD-DAG.md`.
+
 ### Phase 0: freeze the contract and the home split
 
 Deliverables:
