@@ -375,10 +375,11 @@ UPPER_LEFT_KEY = "one soft key light from the upper left"
 #: model twice, so the emission class is named explicitly on every plate.
 EMISSION_NEGATIVES = (
     "no light cone or visible beam",
-    "no glowing bulb, lamp or lantern",
+    "no glowing bulb or lamp",
     "no bloom, halo or radial glow",
     "no second light source",
     "no key light from the right",
+    "no lit fixture acting as a light source",
 )
 
 #: Phrases that make a fixture the light source. A grammar may paint a lantern, a lamp or a

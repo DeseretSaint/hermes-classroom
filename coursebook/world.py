@@ -29,7 +29,9 @@ from .gm_contract import WORLD_PROMPT_FORBIDDEN
 #: contour, five-pigment ceiling) and adds the additive 3:2 ``card`` crop role.
 #: v3 adds the notation/diagram negatives for domains where those are the natural illustration
 #: and the "place and mood only" section fence for every grammar, not only service worlds.
-PROMPT_VERSION = "world-prompt-v3"
+#: v4 adds the emission class (§4.4) and rewrites the two grammars that made a lit fixture the
+#: light source, so every plate is lit by the single upper-left key and nothing else.
+PROMPT_VERSION = "world-prompt-v4"
 
 #: The house style. A starting point, never permission to use lanterns for a head gasket.
 DEFAULT_GRAMMAR = "field_atlas"
@@ -225,11 +227,12 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
             "travel desk",
         ),
         composition=(
-            "a wandering route through a lantern-lit street; the left third is a quiet parchment "
-            "field reserved for the real headline and controls"
+            "a wandering route through a street of unlit paper lanterns hung as flat hard-edged "
+            "props; the only light is the single upper-left key; the left third is a quiet "
+            "parchment field reserved for the real headline and controls"
         ),
         palette=_pigments("paper", "ink", "ochre", "lamp", "field"),
-        medium=ART_BIBLE_MEDIUM + "; street lanterns and café fittings painted as flat masses",
+        medium=ART_BIBLE_MEDIUM + "; street lanterns painted as unlit flat masses, café fittings as flat masses",
         illustration_role="place and mood only; a map is never geography evidence",
         subject_cues=("lantern district", "cafe counter", "notebook and pencil", "ticket stub"),
         cannot_do="pretend a map is a real geography lesson",
@@ -238,10 +241,11 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
         name="workshop_manual",
         label="Workshop manual",
         best_fit="auto repair, trades, engineering procedures",
-        motifs=("service bay", "car on a lift", "tool wall", "component trays", "bench light"),
+        motifs=("service bay", "car on a lift", "tool wall", "component trays", "bench vice"),
         composition=(
-            "a centered bench under one overhead lamp; a wide quiet band above carries the "
-            "headline, and the tool wall runs off the right edge"
+            "a centered bench and tool wall with no ceiling fixture; the only light is the "
+            "single upper-left key; a wide quiet band above carries the headline, and the tool "
+            "wall runs off the right edge"
         ),
         palette=_pigments("paper", "ink", "ochre", "coral", "sock"),
         medium=ART_BIBLE_MEDIUM + "; bench, tool wall and trays painted as flat masses",
@@ -270,7 +274,7 @@ GRAMMARS: dict[str, WorldGrammarRecord] = {
         name="archive_desk",
         label="Archive desk",
         best_fit="history, law, business, research",
-        motifs=("document tray", "stamp", "index cards", "map drawer", "reading lamp"),
+        motifs=("document tray", "stamp", "index cards", "map drawer", "reading chair"),
         composition=(
             "an overhead desk vignette with overlapping papers; a clean margin at the top left "
             "holds the headline"
@@ -592,6 +596,16 @@ _NEGATIVE = (
     "no off-palette colour",
     "no photorealism or photographic texture",
     "no star, rating, price or learner count",
+    # v4: the emission class (ART-BIBLE §4.4). "No gradient, glow or glass" above is about the
+    # paint; a lit fixture is a different failure — every technical plate in round three painted a
+    # glowing pendant with a warm cone because the composition named one as the light. Named
+    # explicitly here so the fence survives any composition a future grammar adds.
+    "no light cone or visible beam",
+    "no glowing bulb or lamp",
+    "no bloom, halo or radial glow",
+    "no second light source",
+    "no key light from the right",
+    "no lit fixture acting as a light source",
     # v3: the printed-surface class. A single glyph, a staff, a chord box or a tick box is not a
     # >=2-character word, so the OCR lettering gate cannot see it; the prompt is the only fence.
     "no diagrams, charts, tables or grids",
