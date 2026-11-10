@@ -22,15 +22,17 @@ vocabulary value moves.
 | Layer | Frozen here | Deliberately unchanged |
 |---|---|---|
 | Storage | `cb.db` v13: `courses.presentation_mode` (nullable) and eight new tables via `0013_game_mode_contracts.sql` | Every v12 table, column, index and unique key; every lesson, attempt, transition and evidence row |
-| Wire | 18 Game Mode method names plus `course.mode.set`, frozen in `GM_RPC_METHODS` | `cb.rpc` v20 itself: no method is added to the wire contract in this card |
+| Wire | 18 Game Mode method names plus `course.mode.set`, frozen in `GM_RPC_METHODS` | `cb.rpc` v20 itself: no method is added to the wire contract in GM-001. GM-009 adds two at v21, GM-011 adds the tutor pair at v22 and GM-005 adds the six take-home methods at v23 |
 | Errors | The set of existing `cb.errors` v4 codes each method may return | `cb.errors` v4: no new code |
 | Jobs | `world.generate` is `kind=media` with `brief.stage` `world_concepts` / `world_kit` | `cb.jobs` v5: no new kind, no new job field |
 | Evidence | Nothing | The evidence store is not extended. There is no second evidence store. |
 
-**Why `cb.rpc` is not bumped here.** The manifest is the freeze, not the wire. The first
-implementation card that registers one of these names bumps `cb.rpc` to v21 with exactly this
-manifest; until then a handler for these names cannot be registered (`api.register_handler`
-rejects a name that is not in `cb.rpc`), which is the intended fence.
+**Why `cb.rpc` is not bumped in GM-001.** The manifest is the freeze, not the wire. The first
+implementation card that registers one of these names bumps `cb.rpc` past v20 (GM-009 did so at
+v21, adding `engagement.read` and `engagement.award`; GM-011 did so at **v22**, adding `tutor.ask`
+and `tutor.history` — both documented in `docs/CONTRACTS.md`); until then a handler for these names
+cannot be registered (`api.register_handler` rejects a name that is not in `cb.rpc`), which is the
+intended fence. The remaining Game Mode names land with their own handlers.
 
 ## 2. Course modes
 
@@ -217,6 +219,14 @@ A turn is never an attempt, a transition or evidence; the grader never reads tut
 turns are excluded from pack and course export. The tutor has no shell, browser, file or authoring
 tools, and its context envelope excludes answer keys, checks, rubric and learner attempts. While a
 check is open it does not reveal the answer; a hint is recorded through the existing assist path.
+
+**Implementation (GM-011, `cb.rpc` v22).** `coursebook/tutor.py` registers `tutor.ask` and
+`tutor.history`; `tutor.ask` fences on the enrollment revision and its context is built from the
+served lesson document, the authored glossary, the objective and the learner's recent turns. A
+reference-answer match while a check is open returns `state: "answer_withheld"` and persists only a
+safe message; a provider failure returns `state: "provider_failure"` with `turn: null` and nothing
+written. `mode: "practice"` appends to the existing `practice_turns` log and never calls the
+grader — only learner turns can produce a verdict.
 
 ## 8. Method manifest
 

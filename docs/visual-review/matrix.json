@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "card": "GM-013",
+  "note": "Required screenshot matrix for every visual card. viewports are CSS px widths; scale is the root text scale; states name a screen state that must be captured at 1049 light.",
+  "required_cells": [
+    "default@1049/light/100",
+    "default@1049/dark/100",
+    "default@900/light/100",
+    "default@460/light/100",
+    "default@1049/light/200",
+    "default@460/light/200",
+    "focus@1049/light/100",
+    "reduced-motion@1049/light/100"
+  ],
+  "screens": [
+    {
+      "id": "home.global",
+      "card": "GM-002",
+      "concept_frame": "home-generic-first-open.png",
+      "concept_region": "invitation band + shelf",
+      "states": ["default", "empty", "loading", "error", "offline", "overflow"],
+      "notes": "offline banner under the header; overflow = shelf scrolled with the right-edge mask"
+    },
+    {
+      "id": "home.course",
+      "card": "GM-002",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "three-column body",
+      "states": ["default", "no-world", "world-running", "world-partial", "world-stale", "plan-in-review", "loading", "error", "course-end"],
+      "notes": "course home keeps Continue in every state that has a recorded next step"
+    },
+    {
+      "id": "world.studio.concept",
+      "card": "GM-004",
+      "concept_frame": "refined-system.png",
+      "concept_region": "card anatomy + palette sheet",
+      "states": ["default", "generating", "partial", "provider-unavailable", "rejected"],
+      "notes": "three real alternatives, not random noise; Textbook fallback visible"
+    },
+    {
+      "id": "world.studio.world",
+      "card": "GM-004",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "hero + card composition",
+      "states": ["default", "missing-roles", "approving", "approved"],
+      "notes": "assembled course home shown with real UI text over the art"
+    },
+    {
+      "id": "course.world",
+      "card": "GM-004",
+      "concept_frame": "japanese-classroom-reference.png",
+      "concept_region": "course-bound hero + route",
+      "states": ["default", "stale", "no-art"],
+      "notes": "F2 applies to the Japanese course only; any other world compares to F3"
+    },
+    {
+      "id": "parent.source-picker",
+      "card": "GM-006",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside + list column",
+      "states": ["default", "empty", "loading", "error", "no-eligible-lesson"],
+      "notes": "one list, one preview, one primary"
+    },
+    {
+      "id": "parent.takehome.preview",
+      "card": "GM-006",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "reading column",
+      "states": ["default", "editing", "stale-source", "error"],
+      "notes": "page roles readable at screen scale; no answer key on the learner page"
+    },
+    {
+      "id": "parent.export.approval",
+      "card": "GM-006",
+      "concept_frame": "refined-system.png",
+      "concept_region": "seal and stamp language",
+      "states": ["default", "not-approved", "exporting", "error"],
+      "notes": "one seal; approval is of the actual pages"
+    },
+    {
+      "id": "homework.sheet",
+      "card": "GM-008",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside affordance and sheet",
+      "states": ["default", "one-page", "self-reported", "parent-reported", "skipped", "expired"],
+      "notes": "one task, one target, one success criterion; no grade"
+    },
+    {
+      "id": "lesson.take-with-you",
+      "card": "GM-008",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside affordance",
+      "states": ["default", "generating", "unavailable"],
+      "notes": "quiet text action, never a second filled control"
+    },
+    {
+      "id": "game.header",
+      "card": "GM-010",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "header row",
+      "states": ["default", "feedback-off", "no-xp-yet", "textbook-hidden"],
+      "notes": "Continue, objective and check unmoved by the play layer"
+    },
+    {
+      "id": "game.lesson",
+      "card": "GM-010",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "lesson column",
+      "states": ["default", "award", "wrong-answer", "feedback-off"],
+      "notes": "a wrong answer is information, not a lost life"
+    },
+    {
+      "id": "game.completion",
+      "card": "GM-010",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside close",
+      "states": ["default", "recorded", "not-recorded"],
+      "notes": "one authored beat; evidence count from the backend"
+    },
+    {
+      "id": "tutor.rail",
+      "card": "GM-012",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside rail",
+      "states": ["collapsed", "open", "selection", "answer-pending", "error", "citation-missing"],
+      "notes": "the rail is a quiet second column, not a second chat"
+    },
+    {
+      "id": "tutor.practice",
+      "card": "GM-012",
+      "concept_frame": "refined-classroom.png",
+      "concept_region": "aside rail",
+      "states": ["default", "recording", "unavailable", "complete"],
+      "notes": "practice is a mode of the same rail"
+    },
+    {
+      "id": "print.pack",
+      "card": "GM-014",
+      "concept_frame": "refined-system.png",
+      "concept_region": "print page anatomy (docs/GM-PRINT-SPEC.md)",
+      "states": ["parent-guide", "learner-page", "answer-guide", "sources", "caption-sheet", "low-ink", "a4", "letter"],
+      "notes": "proof is a PDF page render, not a browser screenshot"
+    }
+  ]
+}

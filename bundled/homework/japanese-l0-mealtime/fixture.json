@@ -1,0 +1,235 @@
+{
+  "contract": "cb.homework_fixture",
+  "contract_version": 1,
+  "fixture_id": "jp-l0-mealtime",
+  "fixture_note": "Demo content fixture for the take-home print proof. It is not a course and does not enroll, grade or send anything.",
+  "lesson": {
+    "source_course_id": "demo-japanese-l0-mealtime",
+    "source_objective_id": "obj_mealtime_greetings",
+    "source_lesson_version": "2026-11-09.1",
+    "title": "Mealtime greetings and household labels",
+    "level": "L0",
+    "register_note": "ごちそうさまでした is labelled Polite (teineigo) by the cited Jisho entry. いただきます carries no register label in either cited entry; the fixture records 'polite (ます form)' as the author's analysis of the ます ending, not as a dictionary label. Informal family variants are outside this fixture.",
+    "targets": [
+      {
+        "target_id": "tgt_itadakimasu",
+        "display": "いただきます",
+        "reading": "いただきます",
+        "romaji": "itadakimasu",
+        "meaning": "thank you (for the meal just served); I receive (this meal)",
+        "register": "polite (ます form; author's analysis)",
+        "use": "said before eating a meal",
+        "source_ids": ["src_jisho_itadakimasu", "src_cambridge_itadakimasu"]
+      },
+      {
+        "target_id": "tgt_gochisousama",
+        "display": "ごちそうさまでした",
+        "reading": "ごちそうさまでした",
+        "romaji": "gochisōsamadeshita",
+        "meaning": "thank you for the meal; that was a delicious meal",
+        "register": "polite (teineigo; Jisho label)",
+        "use": "said after finishing a meal",
+        "source_ids": ["src_jisho_gochisousama"]
+      }
+    ],
+    "labels": [
+      {
+        "label_id": "lbl_doa",
+        "display": "ドア",
+        "reading": "ドア",
+        "romaji": "doa",
+        "meaning": "door",
+        "source_ids": ["src_jisho_doa"]
+      },
+      {
+        "label_id": "lbl_mado",
+        "display": "まど",
+        "reading": "まど",
+        "romaji": "mado",
+        "meaning": "window",
+        "source_ids": ["src_jisho_mado"]
+      },
+      {
+        "label_id": "lbl_isu",
+        "display": "いす",
+        "reading": "いす",
+        "romaji": "isu",
+        "meaning": "chair",
+        "source_ids": ["src_jisho_isu"]
+      },
+      {
+        "label_id": "lbl_teeburu",
+        "display": "テーブル",
+        "reading": "テーブル",
+        "romaji": "tēburu",
+        "meaning": "table",
+        "source_ids": ["src_jisho_teeburu"]
+      },
+      {
+        "label_id": "lbl_koppu",
+        "display": "コップ",
+        "reading": "コップ",
+        "romaji": "koppu",
+        "meaning": "glass (drinking vessel); tumbler",
+        "source_ids": ["src_jisho_koppu"]
+      },
+      {
+        "label_id": "lbl_hon",
+        "display": "ほん",
+        "reading": "ほん",
+        "romaji": "hon",
+        "meaning": "book",
+        "source_ids": ["src_jisho_hon"]
+      }
+    ],
+    "sources": [
+      {
+        "source_id": "src_jisho_itadakimasu",
+        "title": "Jisho.org — いただきます / 頂きます",
+        "url": "https://jisho.org/search/itadakimasu",
+        "accessed": "2026-11-09",
+        "quote": "thank you (for the meal just served); I receive (this meal) · Usually written using kana alone",
+        "supports": "spelling, reading and English gloss for いただきます"
+      },
+      {
+        "source_id": "src_cambridge_itadakimasu",
+        "title": "Cambridge Dictionary — いただきます",
+        "url": "https://dictionary.cambridge.org/us/dictionary/japanese-english/%E3%81%84%E3%81%9F%E3%81%A0%E3%81%8D%E3%81%BE%E3%81%99",
+        "accessed": "2026-11-09",
+        "quote": "a phrase said before eating expressing gratitude for the meal",
+        "supports": "the before-eating use of いただきます"
+      },
+      {
+        "source_id": "src_jisho_gochisousama",
+        "title": "Jisho.org — ごちそうさまでした / ご馳走様でした",
+        "url": "https://jisho.org/search/%E3%81%94%E3%81%A1%E3%81%9D%E3%81%86%E3%81%95%E3%81%BE%E3%81%A7%E3%81%97%E3%81%9F",
+        "accessed": "2026-11-09",
+        "quote": "thank you for the meal; that was a delicious meal; what a wonderful meal · Polite (teineigo) language",
+        "supports": "spelling, reading, English gloss and polite register for ごちそうさまでした"
+      },
+      {
+        "source_id": "src_jisho_doa",
+        "title": "Jisho.org — ドア",
+        "url": "https://jisho.org/search/%E3%83%89%E3%82%A2",
+        "accessed": "2026-11-09",
+        "quote": "ドア · Noun · door",
+        "supports": "the word ドア (doa), glossed door"
+      },
+      {
+        "source_id": "src_jisho_mado",
+        "title": "Jisho.org — まど / 窓",
+        "url": "https://jisho.org/search/%E3%81%BE%E3%81%A9",
+        "accessed": "2026-11-09",
+        "quote": "まど 窓 · Noun · window",
+        "supports": "the word まど (mado), glossed window"
+      },
+      {
+        "source_id": "src_jisho_isu",
+        "title": "Jisho.org — いす / 椅子",
+        "url": "https://jisho.org/search/%E3%81%84%E3%81%99",
+        "accessed": "2026-11-09",
+        "quote": "いす 椅子 · Noun · chair; seat; stool; bench",
+        "supports": "the word いす (isu), glossed chair"
+      },
+      {
+        "source_id": "src_jisho_teeburu",
+        "title": "Jisho.org — テーブル",
+        "url": "https://jisho.org/search/%E3%83%86%E3%83%BC%E3%83%96%E3%83%AB",
+        "accessed": "2026-11-09",
+        "quote": "テーブル · Noun · table",
+        "supports": "the word テーブル (tēburu), glossed table"
+      },
+      {
+        "source_id": "src_jisho_koppu",
+        "title": "Jisho.org — コップ",
+        "url": "https://jisho.org/search/%E3%82%B3%E3%83%83%E3%83%97",
+        "accessed": "2026-11-09",
+        "quote": "コップ · Noun · glass (drinking vessel); tumbler",
+        "supports": "the word コップ (koppu), glossed glass/cup"
+      },
+      {
+        "source_id": "src_jisho_hon",
+        "title": "Jisho.org — ほん / 本",
+        "url": "https://jisho.org/search/%E3%81%BB%E3%82%93",
+        "accessed": "2026-11-09",
+        "quote": "ほん 本 · Noun · book; volume; script",
+        "supports": "the word ほん (hon), glossed book"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "hw_premeal",
+      "task_kind": "real_world_use",
+      "audience": "learner",
+      "title": "Say the before-meal greeting at one meal",
+      "target_id": "tgt_itadakimasu",
+      "context": "At your own table, just before you start eating a meal today.",
+      "steps": [
+        "Before you start eating, say いただきます (itadakimasu) out loud.",
+        "Say it at one meal today: breakfast, lunch or dinner.",
+        "Tick the meal at the foot of this page."
+      ],
+      "success_criterion": "You said いただきます once, out loud, at the table, before eating one meal.",
+      "estimated_minutes": 3,
+      "completion": "self_reported"
+    },
+    {
+      "task_id": "hw_postmeal",
+      "task_kind": "real_world_use",
+      "audience": "learner",
+      "title": "Say the after-meal greeting when you finish",
+      "target_id": "tgt_gochisousama",
+      "context": "At your own table, when you have finished eating a meal today.",
+      "steps": [
+        "When you finish eating, say ごちそうさまでした (gochisōsamadeshita) out loud.",
+        "Say it at one meal today: breakfast, lunch or dinner.",
+        "Tick the meal at the foot of this page."
+      ],
+      "success_criterion": "You said ごちそうさまでした once, out loud, at the table, after finishing one meal.",
+      "estimated_minutes": 3,
+      "completion": "self_reported"
+    },
+    {
+      "task_id": "hw_labels",
+      "task_kind": "label",
+      "audience": "learner",
+      "title": "Label three household objects",
+      "target_id": "tgt_household_set",
+      "context": "At home, on three objects you pass every day.",
+      "steps": [
+        "Write one lesson word on a small label and stick it on the object.",
+        "Do this for three objects from the lesson list.",
+        "When you pass a label for the next two days, say the word aloud."
+      ],
+      "success_criterion": "Three objects carry the lesson's word, and you said each word aloud when you passed it on two days.",
+      "estimated_minutes": 8,
+      "completion": "self_reported"
+    }
+  ],
+  "target_sets": [
+    {
+      "target_id": "tgt_household_set",
+      "kind": "label_set",
+      "title": "Household labels from this lesson",
+      "label_ids": ["lbl_doa", "lbl_mado", "lbl_isu"],
+      "alternates": ["lbl_teeburu", "lbl_koppu", "lbl_hon"],
+      "note": "The learner chooses any three of the six lesson labels. All six are printed in every document of the pack; the three in label_ids are the suggested three."
+    }
+  ],
+  "checklist": {
+    "one_target": true,
+    "one_context": true,
+    "one_success_criterion": true,
+    "generic_task": false,
+    "surveillance": false,
+    "grade": false,
+    "xp": false,
+    "external_send": false,
+    "notes": [
+      "Each task names one target object, one place-and-time context and one observable success criterion.",
+      "No task asks for a photo, location, recording or proof of completion.",
+      "No task produces a grade, score, XP or mastery claim; completion is self-reported."
+    ]
+  }
+}

@@ -21,7 +21,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from .coursebook import __version__, executor, hooks, tools
+from .coursebook import __version__, engagement, executor, hooks, tools
 from .coursebook import media as media_mod
 from .coursebook import research
 from .coursebook.generation import bind_host_llm, bind_validator_llm, register_validation_output_bound
@@ -54,6 +54,9 @@ def register(ctx: Any) -> None:
     _register_bundled_skills(ctx)
     # A declared config_schema key is only honest when its reader is wired here, at register.
     tools.configure(getattr(ctx, "get_config", None))
+    # ``game_feedback`` is the one learner-facing play-layer preference: it hides XP/level
+    # animation without touching the ledger. Read by engagement, so the declared setting is wired.
+    engagement.configure_feedback(getattr(ctx, "get_config", None))
     # Generation jobs run in the agent process; bind the host-owned LLM once so the pipeline
     # never reaches for a raw provider key. Unbound calls fail loudly in generation.host_llm().
     bind_host_llm(getattr(ctx, "llm", None))

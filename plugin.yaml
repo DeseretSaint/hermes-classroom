@@ -43,6 +43,15 @@ python_dependencies:
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field
 # nothing reads would be a partially wired control, so the schema and the reader move together.
 config_schema:
+  game_feedback:
+    type: bool
+    default: true
+    description: >-
+      Game mode's learner-facing play-layer preference. When true the Game header may show the XP
+      chip, cosmetic level and recent play events; when false they are hidden and the backend read
+      marks progress.feedback_visible=false. XP ledger rows are never deleted by this toggle, and
+      Textbook, Guided, Parent Studio, evidence, packs and exports never read the play layer at
+      all. Read by coursebook.engagement.
   status_include_contracts:
     type: bool
     default: true

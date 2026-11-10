@@ -83,21 +83,23 @@ class PlanUnitsSchemaTest(KernelCase):
 
     # ── schema ──────────────────────────────────────────────────────────────
 
-    def test_target_schema_version_is_pinned_to_v13(self) -> None:
+    def test_target_schema_version_is_pinned_to_v14(self) -> None:
         # H-53 took cb.db to v9 for the nullable `evidence.note` column the v14
         # `observation.record` writes; H-124 took it to v10 for the `hook_errors` diagnostics
         # table a lost teaching snapshot is recorded in; H-120a took it to v11 for the
         # conversation-practice tables migration 0011 adds; H-194 took it to v12 for the
         # fine-tune ledgers migration 0012 adds (`plan_revisions`, `lesson_revisions`); GM-001
-        # took it to v13 for the Game Mode storage migration 0013 adds.
+        # took it to v13 for the Game Mode storage migration 0013 adds; GM-005 took it to v14
+        # for migration 0014, which rebuilds takehome_packs without the per-source-slot
+        # revision key so a re-opened lesson's second pack can be approved and exported.
         # Migrations 0007 (plan_units) and 0008 (syllabus) are unchanged.
-        self.assertEqual(db.DB_SCHEMA_VERSION, 13)
-        self.assertEqual(db.target_schema_version(), 13)
-        self.assertEqual(contract("cb.db")["schema_version"], 13)
-        self.assertEqual(db.applied_schema_version(), 13)
+        self.assertEqual(db.DB_SCHEMA_VERSION, 14)
+        self.assertEqual(db.target_schema_version(), 14)
+        self.assertEqual(contract("cb.db")["schema_version"], 14)
+        self.assertEqual(db.applied_schema_version(), 14)
         with db.read() as connection:
             recorded = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
-        self.assertEqual(recorded, 13)
+        self.assertEqual(recorded, 14)
 
     def test_unit_columns_match_the_contract_exactly(self) -> None:
         spec = contract("cb.db")["tables"]

@@ -22,6 +22,7 @@ import io
 import json
 import os
 import re
+import textwrap
 import unicodedata
 import xml.etree.ElementTree as ET
 import uuid
@@ -43,6 +44,10 @@ REFERENCE_LABEL = "Sourced reference — see the cited source and its permission
 
 #: Kinds the ``artifacts`` table accepts (``cb.db`` v2).
 ARTIFACT_KINDS = ("visual", "audio", "pdf", "pack", "export", "other")
+
+#: A caller-authored hard page break in :func:`make_pdf`. A line list carries it between
+#: sections so a printed pack starts the learner page and the answer guide on their own pages.
+PAGE_BREAK = "\x0c"
 
 #: ``artifacts.content_hash`` holds a sha256 of the object bytes. Rows written by
 #: :meth:`ArtifactStore.record` before H-210-R1 stored the bare 64-hex digest while
@@ -393,78 +398,193 @@ def _escape(value: str) -> str:
 # ── PDF: safe template with selectable text ────────────────────────────────
 
 
-def _pdf_text(value: str) -> str:
-    """ASCII-safe WinAnsi text for the built-in Helvetica font; no embedded scripts."""
-    normalized = unicodedata.normalize("NFKD", str(value))
-    ascii_text = normalized.encode("ascii", "replace").decode("ascii")
-    return ascii_text.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
+class UnprintableText(ValueError):
+    """Raised when a string cannot be represented in the built-in WinAnsi print font.
+
+    The print template embeds no font program, so it can only draw the WinAnsi character set.
+    Silently replacing other characters with ``?`` would corrupt the lesson; callers must handle
+    this and refuse by name instead.
+    """
+
+    def __init__(self, value: str) -> None:
+        self.value = str(value)
+        self.characters = "".join(sorted({char for char in self.value if not _is_winansi(char)}))
+        super().__init__(f"the print font cannot render {self.characters!r}")
 
 
-def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792) -> bytes:
+def _is_winansi(char: str) -> bool:
+    try:
+        char.encode("cp1252")
+    except UnicodeEncodeError:
+        return False
+    return True
+
+
+def _pdf_text(value: str, *, strict: bool = False) -> str:
+    """WinAnsi text for the built-in Helvetica font.
+
+    With ``strict`` the text is NFC-normalised and must encode through cp1252; anything outside
+    that repertoire raises :class:`UnprintableText` rather than being replaced by ``?``. The
+    take-home print path opts in to that refusal. Legacy callers keep the historical ASCII fold,
+    so their existing bytes and behaviour are unchanged.
+    """
+    text = str(value)
+    if strict:
+        text = unicodedata.normalize("NFC", text)
+        try:
+            text.encode("cp1252")
+        except UnicodeEncodeError as exc:
+            raise UnprintableText(text) from exc
+    else:
+        text = unicodedata.normalize("NFKD", text).encode("ascii", "replace").decode("ascii")
+    return text.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
+
+
+_MARKDOWN_HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
+
+
+def _styled_body(lines: Sequence[str], *, max_chars: int) -> list[tuple[str, str, int]]:
+    """Resolve Markdown heading markers to (text, font, size) print lines.
+
+    ``#``/``##`` markers never reach the page: a level-1 heading is set in Helvetica-Bold 16,
+    a deeper heading in Helvetica-Bold 12, and body copy in Helvetica 12. Wrapping accounts for
+    the narrower character width of a larger face.
+    """
+    body: list[tuple[str, str, int]] = []
+    for line in lines:
+        text = str(line)
+        if text == PAGE_BREAK:
+            body.append((PAGE_BREAK, "", 0))
+            continue
+        if not text:
+            body.append(("", "F1", 12))
+            continue
+        font, size = "F1", 12
+        match = _MARKDOWN_HEADING.match(text)
+        if match:
+            text = match.group(2)
+            font = "F2"
+            size = 16 if len(match.group(1)) == 1 else 12
+        width = max(8, int(max_chars * 12 / size))
+        for chunk in textwrap.wrap(text, width=width, break_long_words=True,
+                                   break_on_hyphens=False) or [""]:
+            body.append((chunk, font, size))
+    return body
+
+
+def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_height: int = 792,
+             max_chars: int = 88, headings: bool = False, strict_font: bool = False) -> bytes:
     """Build a minimal, valid PDF from a fixed template. Text is selectable/extractable.
 
-    This intentionally supports only what a lesson handout needs: a title and wrapped body
-    lines. No JavaScript, no attachments, no external references, no auto-open links.
+    ``max_chars`` bounds one drawn line so it fits inside the printable width for the chosen
+    page size; the default keeps the historical Letter handout behaviour, and a caller printing
+    a narrower page or a denser document passes a smaller value. This intentionally supports
+    only what a lesson handout needs: a title and wrapped body lines, plus an explicit
+    :data:`PAGE_BREAK` marker. No JavaScript, no attachments, no external references, no
+    auto-open links.
+
+    With ``headings=True`` a leading Markdown ``#``/``##`` marker is converted into a real
+    typographic heading (Helvetica-Bold, stepped size) instead of printing the marker literally.
+    ``strict_font=True`` makes unrepresentable characters raise :class:`UnprintableText` instead
+    of being folded to ``?``; the take-home print path opts in.
     """
     margin = 56
     leading = 16
-    max_chars = 88
-    body: list[str] = [title]
-    for line in lines:
-        text = str(line)
-        if not text:
-            body.append("")
-            continue
-        while text:
-            body.append(text[:max_chars])
-            text = text[max_chars:]
+    if headings:
+        # The title is a real H1: set in bold 16 pt and wrapped through the same width-aware path
+        # as the body so a long pack title never runs off the printable edge.
+        title_text = " ".join(str(title).split())
+        title_width = max(8, int(max_chars * 12 / 16))
+        body: list[tuple[str, str, int]] = [
+            (chunk, "F2", 16)
+            for chunk in textwrap.wrap(
+                title_text, width=title_width, break_long_words=True, break_on_hyphens=False
+            )
+            or [""]
+        ]
+        body.extend(_styled_body(lines, max_chars=max_chars))
+    else:
+        raw: list[str] = [title]
+        for line in lines:
+            text = str(line)
+            if text == PAGE_BREAK:
+                raw.append(PAGE_BREAK)
+                continue
+            if not text:
+                raw.append("")
+                continue
+            # Wrap on word boundaries so a printed handout never splits a word across lines. A
+            # word longer than the line is broken (there is no choice), but ordinary prose is not.
+            for chunk in textwrap.wrap(text, width=max_chars, break_long_words=True,
+                                       break_on_hyphens=False) or [""]:
+                raw.append(chunk)
+        body = [(line, "F1", 12) for line in raw]
 
-    pages: list[list[str]] = []
-    current: list[str] = []
+    pages: list[list[tuple[str, str, int]]] = []
+    current: list[tuple[str, str, int]] = []
     per_page = (page_height - 2 * margin) // leading
-    for line in body:
+    for item in body:
+        if item[0] == PAGE_BREAK:
+            if current:
+                pages.append(current)
+            current = []
+            continue
         if len(current) >= per_page:
             pages.append(current)
             current = []
-        current.append(line)
+        current.append(item)
     if current:
         pages.append(current)
     if not pages:
-        pages = [[""]]
+        pages = [[("", "F1", 12)]]
 
     objects: list[str] = []
-    # 1 catalog, 2 pages, 3 font, then each page + content pair.
+    # 1 catalog, 2 pages, 3 body font, optionally 4 bold font, then each page + content pair.
     page_ids = []
-    next_id = 4
+    next_id = 5 if headings else 4
     for _page in pages:
         page_ids.append(next_id)
         next_id += 2
     objects.append("<< /Type /Catalog /Pages 2 0 R >>")
     kids = " ".join(f"{pid} 0 R" for pid in page_ids)
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>")
-    objects.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    objects.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
+    if headings:
+        objects.append(
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"
+        )
+        resources = "/Font << /F1 3 0 R /F2 4 0 R >>"
+    else:
+        resources = "/Font << /F1 3 0 R >>"
     for index, page in enumerate(pages):
         page_id = page_ids[index]
         content_id = page_id + 1
         objects.append(
             f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {page_width} {page_height}] "
-            f"/Resources << /Font << /F1 3 0 R >> >> /Contents {content_id} 0 R >>"
+            f"/Resources << {resources} >> /Contents {content_id} 0 R >>"
         )
-        commands = ["BT", f"/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"]
-        for line in page:
-            commands.append(f"({_pdf_text(line)}) Tj")
-            commands.append("T*")
+        if headings:
+            commands = ["BT", f"{leading} TL", f"{margin} {page_height - margin} Td"]
+            for text, font, size in page:
+                commands.append(f"/{font} {size} Tf")
+                commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+                commands.append("T*")
+        else:
+            commands = ["BT", f"/F1 12 Tf", f"{leading} TL", f"{margin} {page_height - margin} Td"]
+            for text, _font, _size in page:
+                commands.append(f"({_pdf_text(text, strict=strict_font)}) Tj")
+                commands.append("T*")
         commands.append("ET")
         stream = "\n".join(commands)
-        objects.append(f"<< /Length {len(stream.encode('latin-1'))} >>\nstream\n{stream}\nendstream")
+        objects.append(f"<< /Length {len(stream.encode('cp1252'))} >>\nstream\n{stream}\nendstream")
 
     out = io.StringIO()
     out.write("%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
     offsets: list[int] = []
     for number, body_text in enumerate(objects, start=1):
-        offsets.append(len(out.getvalue().encode("latin-1")))
+        offsets.append(len(out.getvalue().encode("cp1252")))
         out.write(f"{number} 0 obj\n{body_text}\nendobj\n")
-    xref = len(out.getvalue().encode("latin-1"))
+    xref = len(out.getvalue().encode("cp1252"))
     out.write(f"xref\n0 {len(objects) + 1}\n")
     out.write("0000000000 65535 f \n")
     for offset in offsets:
@@ -472,7 +592,7 @@ def make_pdf(title: str, lines: Sequence[str], *, page_width: int = 612, page_he
     out.write(
         f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n"
     )
-    data = out.getvalue().encode("latin-1")
+    data = out.getvalue().encode("cp1252")
     if not data.startswith(b"%PDF-"):
         raise UnsafeMedia("PDF template produced invalid bytes")
     return data

@@ -254,7 +254,8 @@ class GmMigrationTest(unittest.TestCase):
         self.assertEqual(v13["x-contract-version"], 13)
         self.assertEqual(v13["$id"], "https://contracts.coursebook.hermes/db/v13")
         self.assertEqual(v13["x-supersedes"], "https://contracts.coursebook.hermes/db/v12")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json",
+                         "v13 stays on disk as immutable history; the inventory is v14")
 
         self.assertEqual(set(v13["tables"]) - set(v12["tables"]), set(gm.GM_TABLES))
         self.assertEqual(set(v12["tables"]) - set(v13["tables"]), set(), "v13 dropped a table")
@@ -338,7 +339,7 @@ class GmMigrationTest(unittest.TestCase):
                 columns = {row["name"] for row in connection.execute("PRAGMA table_info(courses)")}
                 self.assertNotIn("presentation_mode", columns,
                                  "the legacy shape must be a real pre-0013 table")
-            self.assertEqual(db.migrate(), 13)
+            self.assertEqual(db.migrate(), 14)
             with db.read() as connection:
                 row = connection.execute(
                     "SELECT presentation_mode FROM courses WHERE id = 'crs_legacygm01'"
@@ -369,14 +370,14 @@ class GmMigrationTest(unittest.TestCase):
             self.assertEqual(len(before_attempts), 1)
             self.assertEqual(len(before_evidence), 1)
 
-            self.assertEqual(db.migrate(), 13)
+            self.assertEqual(db.migrate(), 14)
 
             self.assertEqual(self._rows("SELECT * FROM attempts ORDER BY id"), before_attempts)
             self.assertEqual(self._rows("SELECT * FROM evidence ORDER BY id"), before_evidence)
             self.assertEqual(self._rows("SELECT * FROM checks ORDER BY id"), before_lessons)
 
             applied = [row[0] for row in self._rows("SELECT version FROM schema_migrations ORDER BY version")]
-            self.assertEqual(applied[-1], 13)
+            self.assertEqual(applied[-1], 14)
             self.assertIn(13, applied)
         finally:
             if previous is None:
@@ -466,6 +467,140 @@ class GmMigrationTest(unittest.TestCase):
     def _rows(sql: str) -> list[tuple]:
         with db.read() as connection:
             return [tuple(row) for row in connection.execute(sql)]
+
+
+class GmTakeHomeRevisionScopeTest(unittest.TestCase):
+    """cb.db v14 / migration 0014: a pack revision belongs to the pack, not the source slot."""
+
+    def test_gm_contract_v14_is_v13_minus_only_the_takehome_slot_revision_key(self) -> None:
+        v13 = _db_document("db.v13.json")
+        v14 = _db_document("db.v14.json")
+        self.assertEqual(v14["schema_version"], 14)
+        self.assertEqual(v14["x-contract-version"], 14)
+        self.assertEqual(v14["$id"], "https://contracts.coursebook.hermes/db/v14")
+        self.assertEqual(v14["x-supersedes"], "https://contracts.coursebook.hermes/db/v13")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v14.json")
+        self.assertEqual(set(v14["tables"]), set(v13["tables"]), "v14 added or dropped a table")
+        for table, spec in v13["tables"].items():
+            with self.subTest(table=table):
+                self.assertEqual(v14["tables"][table]["columns"], spec["columns"],
+                                 f"{table} columns changed in v14")
+                self.assertEqual(v14["tables"][table].get("indexes"), spec.get("indexes"),
+                                 f"{table} indexes changed in v14")
+        self.assertNotIn("unique", v14["tables"]["takehome_packs"])
+        # v13 stays on disk as the immutable history that carried the slot key.
+        self.assertEqual(
+            v13["tables"]["takehome_packs"]["unique"],
+            [["source_course_id", "source_objective_id", "source_lesson_version",
+              "audience", "kind", "revision"]],
+        )
+
+    def test_gm_contract_v14_migration_plan_is_append_only(self) -> None:
+        v13 = _db_document("db.v13.json")
+        v14 = _db_document("db.v14.json")
+        self.assertEqual(v14["migration_plan"][: len(v13["migration_plan"])], v13["migration_plan"])
+        entry = v14["migration_plan"][-1]
+        self.assertEqual((entry["version"], entry["from"]), (14, 13))
+        self.assertEqual(entry["migration"], "0014_takehome_pack_revision_scope.sql")
+        self.assertTrue(
+            any("No table leaves the schema" in line for line in entry["impact"]),
+            entry["impact"],
+        )
+        self.assertTrue(
+            any("DROP TABLE + RENAME" in line for line in entry["impact"]),
+            "the impact note must state the rebuild mechanism, not claim no table is dropped",
+        )
+
+    def test_gm_contract_migration_0014_preserves_pack_rows_and_frees_the_revision(self) -> None:
+        home = tempfile.mkdtemp(prefix="coursebook-gm14-")
+        previous = os.environ.get("HERMES_HOME")
+        os.environ["HERMES_HOME"] = home
+        try:
+            self._build_v13_with_pack_rows()
+            columns = ("id", "state", "revision", "source_course_id", "source_objective_id",
+                       "source_lesson_version", "audience", "kind", "content_hash", "title")
+            query = f"SELECT {', '.join(columns)} FROM takehome_packs ORDER BY id"
+            before = self._rows(query)
+            self.assertEqual(len(before), 3)
+
+            self.assertEqual(db.migrate(), 14)
+            self.assertEqual(self._rows(query), before, "0014 must not rewrite a pack row")
+
+            # The same source slot may now hold a second draft at revision 0; the old key made
+            # this legal INSERT the pack that could never be approved or exported.
+            now = "2026-11-09T00:00:00.000000+00:00"
+            with db.transaction() as connection:
+                connection.execute(
+                    "INSERT INTO takehome_packs (id, source_course_id, source_objective_id,"
+                    " source_lesson_version, content_hash, audience, kind, state, revision, title,"
+                    " created_at, updated_at)"
+                    " VALUES ('thp_gm14draft2', 'crs_legacygm01', 'obj_legacygm01',"
+                    " 'lsn_legacygm01:v1', 'sha256:" + ("a" * 64) + "', 'parent', 'print_pack',"
+                    " 'draft', 0, 'Re-opened lesson', ?, ?)",
+                    (now, now),
+                )
+            self.assertEqual(self.scalar("SELECT COUNT(*) FROM takehome_packs"), 4)
+            with db.read() as connection:
+                unique = {
+                    tuple(row["name"] for row in connection.execute(f"PRAGMA index_info({index['name']})"))
+                    for index in connection.execute("PRAGMA index_list(takehome_packs)")
+                    if index["unique"] and index["origin"] == "u"
+                }
+            self.assertEqual(unique, set(), "0014 must drop the slot-revision unique key")
+        finally:
+            if previous is None:
+                os.environ.pop("HERMES_HOME", None)
+            else:
+                os.environ["HERMES_HOME"] = previous
+            shutil.rmtree(home, ignore_errors=True)
+
+    # ── helpers ────────────────────────────────────────────────────────────
+    def _build_v13_with_pack_rows(self) -> None:
+        connection = db.connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                f"CREATE TABLE IF NOT EXISTS {db.migration_table()} ("
+                "version INTEGER NOT NULL PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)"
+            )
+            for path in db.migration_files():
+                if db.migration_version(path) > 13:
+                    continue
+                for statement in db._statements(path.read_text(encoding="utf-8")):
+                    connection.execute(statement)
+                connection.execute(
+                    f"INSERT INTO {db.migration_table()} (version, checksum, applied_at) VALUES (?, ?, ?)",
+                    (db.migration_version(path), db.file_checksum(path), db.utcnow()),
+                )
+            GmMigrationTest._seed(connection)
+            now = "2026-11-09T00:00:00.000000+00:00"
+            for pack_id, state, revision in (
+                ("thp_gm14draft", "draft", 0),
+                ("thp_gm14approved", "approved", 1),
+                ("thp_gm14exported", "exported", 2),
+            ):
+                connection.execute(
+                    "INSERT INTO takehome_packs (id, source_course_id, source_objective_id,"
+                    " source_lesson_version, content_hash, audience, kind, state, revision, title,"
+                    " created_at, updated_at)"
+                    " VALUES (?, 'crs_legacygm01', 'obj_legacygm01', 'lsn_legacygm01:v1', ?,"
+                    " 'parent', 'print_pack', ?, ?, 'Legacy pack', ?, ?)",
+                    (pack_id, "sha256:" + ("a" * 64), state, revision, now, now),
+                )
+            connection.execute("COMMIT")
+        except BaseException:
+            connection.execute("ROLLBACK")
+            raise
+        finally:
+            connection.close()
+
+    def _rows(self, sql: str) -> list[tuple]:
+        with db.read() as connection:
+            return [tuple(row) for row in connection.execute(sql)]
+
+    def scalar(self, sql: str):
+        with db.read() as connection:
+            return connection.execute(sql).fetchone()[0]
 
 
 if __name__ == "__main__":
