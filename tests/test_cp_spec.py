@@ -294,7 +294,7 @@ class TestSpecCompleteness(unittest.TestCase):
         self.assertGreaterEqual(len(rows) - 2, 24, "the honesty table lost rows")
         for concept in ("Star row", "`NEW`", "240 XP", "proofs collected", "leaderboard", "Padlock"):
             self.assertIn(concept, table, f"honesty table does not cover {concept}")
-        for source in ("`next_step.label`", "`evidence_summary", "`pack.inspect", "`check.get`", "`library_item.title`"):
+        for source in ("`library_item.next_step.label`", "`evidence_summary", "`pack.inspect", "`check.get`", "`library_item.title`"):
             self.assertIn(source, table, f"honesty table never names the source {source}")
 
     def test_the_fox_has_a_safe_area_rule_and_a_pose_per_screen(self):

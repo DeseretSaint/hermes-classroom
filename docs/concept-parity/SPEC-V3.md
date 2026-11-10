@@ -272,7 +272,7 @@ not move. Reduced motion strips movement and keeps the state change.
 | Home | `Start a course` — filled `terracotta`, 48 px tall, radius 999 | `Browse library` — 1 px `rule` outline, `ink` label, same height | two filled pills; a filled card that acts as a button |
 | Discover | `Preview this pack` — filled, in the banner's quiet field | tab strip, shelf scroll, trust label as text | a filled control on every card |
 | Classroom | `Check answer` — filled, in the check card | `Play the line` as a quiet text action; `Try again` after a wrong verdict | `Audio Play` as an answer option; a second filled action in the aside |
-| Course home | the backend's `next_step.label` rendered as the filled plate | route nodes; evidence tray | a second filled Continue |
+| Course home | the backend's `library_item.next_step.label` rendered as the filled plate | route nodes; evidence tray | a second filled Continue |
 | Lab | none; `Back` is the only navigation, quiet | none | inventing a primary to satisfy a gate |
 
 A read-only sheet is the one documented N/A for Q2; the reviewer accepts "no filled control" and
@@ -526,7 +526,7 @@ the deferred format must not render a half-built surface in the meantime.
 ### 5.4 R-MAP — Course home (card CP-024)
 
 **Question it answers:** where am I in this course, and what is the next section?
-**One primary:** the backend's `next_step.label` rendered as the filled plate.
+**One primary:** the backend's `library_item.next_step.label` rendered as the filled plate.
 **Pose:** `point`. **Frame:** `docs/concept-parity/refs/map.png` (F2 for the Japanese course).
 
 Measured concept composition to keep: a painted route field with a winding path and stamp nodes,
@@ -636,8 +636,8 @@ renders an element not listed here is not covered by this spec and must not ship
 | `215 proofs collected` / `2 of 5 proofs` | CLASS | `2 of 5 checks recorded` | counted from recorded checks (`evidence.inspect`) | `classroom.evidence.count` |
 | Gold seals and rosettes | CLASS, SYS | one medallion per recorded event: first check, first review, first take-home task, course complete | `engagement` recent events | `lab.medal.first_check`, `lab.medal.first_review`, `lab.medal.first_takehome`, `lab.medal.course_complete` |
 | Padlock on proofs | CLASS | `Opens after the check` only where the plan really gates it | course plan | `classroom.step.locked` |
-| User names and leaderboard in the aside | CLASS | nothing; the aside carries evidence and the next section | `next_step.label`, evidence counts | `classroom.aside.next` |
-| `Try it yourself` challenge card with invented reward | CLASS | Field Challenge in Game mode only, with a real check behind it | `lesson.page` check + `engagement.read` | `classroom.challenge.primary` |
+| User names and leaderboard in the aside | CLASS | nothing; the aside carries evidence and the next section | `library_item.next_step.label`, evidence counts | `classroom.aside.next` |
+| `Try it yourself` challenge card with invented reward | CLASS | Field Challenge in Game mode only, with a real check behind it | `check.get` stimulus + `engagement.read` | `classroom.challenge.primary` |
 | Japanese bubble text (garbled) | CLASS | the pack's real line: kana + romaji + meaning read from pack content, plus a deck-authored furigana ruby omitted when the pack has no reading | pack section content / `text_equivalent` for kana, romaji and meaning; `deck` for the ruby | `classroom.line.jp`, `classroom.line.furigana`, `classroom.line.romaji`, `classroom.line.en` |
 | `Audio Play` as an answer option | CLASS | speaker button on the dialogue only; answers are the check's own served choices or items | `check.get` `stimulus.choices[]` (`selection`) / `stimulus.items[].label` (`verification`) | `classroom.line.play` |
 | Ticket, passport tray, `LIGNE 14` | CLASS | evidence tray with real counts and event names | `engagement` events, evidence counts | `classroom.evidence.count` |
