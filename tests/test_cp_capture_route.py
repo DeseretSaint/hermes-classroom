@@ -12,6 +12,8 @@ Covered here:
   * A non-Home destination is reached through its product control and the stamp records that route.
   * A course destination opens that course's own surface.
   * A destination with no addressable control exits non-zero and writes no frame.
+  * A destination control that renders a different route exits non-zero and writes no frame.
+  * A lazy offscreen route image is forced to decode before the decoded-images gate.
   * `--click` and `--scroll` are applied, resolved and recorded in the stamp.
 """
 
@@ -113,6 +115,77 @@ class CaptureRouteTests(unittest.TestCase):
         self.assertFalse((self.tmp / "dest-home-only.png").exists())
         self.assertFalse((self.tmp / "dest-home-only.stamp.json").exists())
 
+    def test_click_that_renders_a_different_destination_is_refused(self) -> None:
+        # The CP-021 defect itself: the Workshop control exists and is clicked, but the surface
+        # stays on Home. This is the card's central guarantee — never save a Home frame under a
+        # Workshop name — so the refusal record must show the click and the mismatch.
+        completed = run_capture(self.tmp, "dest-mismatch.html", "--destination", "workshop")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        refused = json.loads((self.tmp / "dest-mismatch.refused.json").read_text())
+        self.assertFalse(refused["ok"])
+        self.assertEqual(refused["stage"], "destination")
+        self.assertTrue(any("was not rendered" in reason for reason in refused["reasons"]))
+        destination = refused["destination"]
+        self.assertEqual(destination["requested"], "workshop")
+        self.assertEqual(destination["normalized"], "workshop")
+        self.assertIs(destination["match"], False)
+        self.assertEqual(destination["rendered"]["route"], "home")
+        # The control was really clicked: the refusal proves the mismatch, not a missing control.
+        self.assertEqual(len(destination["controls"]), 1)
+        self.assertEqual(destination["controls"][0]["selector"], '[data-cb-nav-item="workshop"]')
+        self.assertTrue(destination["controls"][0]["found"])
+        self.assertFalse((self.tmp / "dest-mismatch.png").exists())
+        self.assertFalse((self.tmp / "dest-mismatch.stamp.json").exists())
+
+    def test_lazy_offscreen_image_is_forced_to_decode(self) -> None:
+        # The Workshop's non-hero covers are loading="lazy" and sit below the capture viewport, so a
+        # passive wait polls `{total:1,pending:1}` forever and the frame can never be captured.
+        # This fixture puts its cover ~20000px down the page, where Chromium will not load it on
+        # its own (the previous door refused this exact fixture); the door must force it.
+        completed = run_capture(self.tmp, "lazy-image.html", "--image-wait", "6000")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        stamp = self._stamp("lazy-image.html")
+        self.assertEqual(stamp["route"]["images_total"], 1)
+        self.assertEqual(stamp["route"]["images_decoded"], 1)
+        self.assertTrue(stamp["gates"]["images_decoded"])
+
+    def test_success_clears_a_stale_refusal_record(self) -> None:
+        # A refusal for the same name must not survive a later success: the packet would carry
+        # both "REFUSED" and "OK" for one still.
+        stale = self.tmp / "ok.refused.json"
+        stale.write_text('{"ok": false}\n')
+        completed = run_capture(self.tmp, "ok.html", "--require-v3")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertFalse(stale.exists())
+
+    def test_appearance_setting_produces_a_real_light_frame(self) -> None:
+        # B3: the palette is a product setting, not prefers-color-scheme. The door drives the
+        # settings sheet, the route repaints, and the stamp records both the request and the paint.
+        completed = run_capture(self.tmp, "appearance.html", "--appearance", "light")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        stamp = self._stamp("appearance.html")
+        self.assertEqual(stamp["route"]["theme"], "light")
+        self.assertEqual(stamp["appearance"]["requested"], "light")
+        self.assertEqual(stamp["appearance"]["before"], "system")
+        self.assertTrue(stamp["appearance"]["applied"])
+        self.assertEqual(stamp["appearance"]["rendered_scope"], "light")
+        self.assertTrue(stamp["gates"]["appearance_applied"])
+        self.assertIsNone(stamp["emulated_media"])  # nothing was emulated
+        self.assertEqual(
+            [click["purpose"] for click in stamp["appearance"]["clicks"]],
+            ["appearance-open", "appearance-light", "appearance-close"],
+        )
+        self.assertFalse((self.tmp / "appearance.refused.json").exists())
+
+    def test_unknown_appearance_refuses(self) -> None:
+        completed = run_capture(self.tmp, "appearance.html", "--appearance", "sepia")
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        refused = json.loads((self.tmp / "appearance.refused.json").read_text())
+        self.assertEqual(refused["stage"], "appearance")
+        self.assertTrue(any("unknown --appearance" in reason for reason in refused["reasons"]))
+        self.assertFalse((self.tmp / "appearance.png").exists())
+        self.assertFalse((self.tmp / "appearance.stamp.json").exists())
+
     def test_unknown_destination_refuses(self) -> None:
         completed = run_capture(self.tmp, "dest-nav.html", "--destination", "#/nowhere")
         self.assertEqual(completed.returncode, 2, completed.stderr)
@@ -134,7 +207,6 @@ class CaptureRouteTests(unittest.TestCase):
         self.assertEqual(len(stamp["clicks"]), 1)
         self.assertEqual(stamp["clicks"][0]["selector"], "[data-cb-open-check]")
         self.assertTrue(stamp["clicks"][0]["found"])
-        self.assertTrue(stamp["clicks"][0]["clicked"] if "clicked" in stamp["clicks"][0] else True)
         # The click-through state is observable in the route's own markers, not merely dispatched.
         self.assertIn("data-cb-check-open", stamp["route"]["marker_names"])
         self.assertEqual(stamp["scroll"]["kind"], "px")

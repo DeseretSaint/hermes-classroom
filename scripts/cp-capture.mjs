@@ -39,7 +39,7 @@
  *     --expect-sha <sha256>
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 
@@ -75,6 +75,21 @@ const clickSelectors = args.reduce((all, value, index) => {
 }, [])
 const scrollArg = flag('scroll', null)
 const clickWaitMs = Number(flag('click-wait', 800))
+// CP-038 B3: the Coursebook palette is a product setting stored per profile, not the media
+// feature. `--color-scheme` emulates `prefers-color-scheme` and is refused when the route keeps
+// painting the host's theme; `--appearance` drives the product's own settings sheet instead, so a
+// real light/dark frame is produced by the product, not by an emulation the host ignores.
+const appearanceArg = flag('appearance', null)
+const APPEARANCE_OPTIONS = ['system', 'light', 'dark']
+const appearance = appearanceArg == null
+  ? null
+  : (APPEARANCE_OPTIONS.includes(String(appearanceArg).trim().toLowerCase())
+      ? { requested: String(appearanceArg).trim().toLowerCase(), raw: String(appearanceArg) }
+      : {
+          invalid: true,
+          raw: String(appearanceArg),
+          reason: `unknown --appearance "${appearanceArg}" (known: ${APPEARANCE_OPTIONS.join(', ')})`
+        })
 
 /**
  * A destination is a hash-like route name, not a hash to write: the plugin's destinations are
@@ -304,7 +319,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
   return out
 })()`
 
-const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null }) => {
+const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null, appearance = null }) => {
   const gates = {}
   const reasons = []
   const pluginSha = probe.plugin && probe.plugin.window_sha256 ? probe.plugin.window_sha256 : null
@@ -378,6 +393,15 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, c
     if (!gates.theme_matches_emulation) {
       reasons.push(`--color-scheme ${String(colorScheme)} was emulated but the route painted ` +
         `${String(route.theme)}; the host theme did not follow prefers-color-scheme`)
+    }
+  }
+  // CP-038 B3: when the door drove the product's appearance setting, the still must prove the
+  // route painted it. This is what stops a dark frame being filed under a `-light` name.
+  if (appearance && appearance.applied && appearance.requested !== 'system') {
+    gates.appearance_applied = route.theme === appearance.requested
+    if (!gates.appearance_applied) {
+      reasons.push(`--appearance ${appearance.requested} was chosen in the settings sheet but the ` +
+        `route paints ${String(route.theme)}`)
     }
   }
 
@@ -595,7 +619,7 @@ const driveDestination = async (cdp, dest, ms) => {
   if (!(await waitForSelector(cdp, selector, Math.min(ms, 15000)))) {
     throw new CaptureRefusal('destination', [
       `requested destination ${dest.raw} has no addressable control on the current surface (${selector})`
-    ], record)
+    ], { destination: record })
   }
   const clicked = await evaluate(cdp, clickExpression(selector))
   record.controls.push({ purpose: 'destination', ...clicked })
@@ -614,7 +638,7 @@ const driveDestination = async (cdp, dest, ms) => {
       `requested destination ${dest.raw} was not rendered: route=${String(state && state.route)}, ` +
       `course_home=${String(state && state.course_home)}, lesson_view=${String(state && state.lesson_view)}; ` +
       'refusing to save a frame that is not the requested destination'
-    ], record)
+    ], { destination: record })
   }
   return record
 }
@@ -636,20 +660,147 @@ const driveClicks = async (cdp, selectors, ms) => {
   return record
 }
 
+/**
+ * CP-038: a route image must be loaded, not merely present. A `loading="lazy"` image below the
+ * capture viewport never starts loading on its own, so a route taller than the frame (the
+ * Workshop shelf's non-hero covers) could never pass the decoded-images gate: the door polled
+ * `{total:3,pending:1}` until it refused. Force every pending route image to eager and decode it,
+ * then poll. Two early-return traps are closed here too: a transient `null` (route not mounted
+ * yet) and a zero-image route are not success. Zero is accepted only after it has been stable for
+ * three polls, so an image that mounts on a later paint is still waited for.
+ */
 const waitForImages = async (cdp, ms) => {
   const deadline = Date.now() + ms
   let state = null
+  let zeroPolls = 0
   while (Date.now() < deadline) {
-    state = await evaluate(cdp, `(() => {
+    state = await evaluate(cdp, `(async () => {
       const root = document.querySelector('[data-cb-route]')
       if (!root) return null
       const imgs = [...root.querySelectorAll('img')]
-      return { total: imgs.length, pending: imgs.filter((img) => !img.complete || img.naturalWidth === 0).length }
+      const withTimeout = (promise, ms) => Promise.race([
+        promise,
+        new Promise((done) => setTimeout(() => done(false), ms))
+      ])
+      const forceDecode = (img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve(true)
+        const start = () => {
+          try { img.loading = 'eager' } catch { /* attribute is read-only in some engines */ }
+          return img.decode().catch(() => {
+            // img.decode() does not always begin a lazy image's load; re-assigning the source does.
+            const src = img.currentSrc || img.src
+            if (!src) return false
+            try { img.src = src } catch { /* detached */ }
+            return img.decode().catch(() => false)
+          })
+        }
+        return withTimeout(start(), 4000)
+      }
+      await Promise.all(imgs.map(forceDecode))
+      const pending = imgs.filter((img) => !img.complete || img.naturalWidth === 0)
+      return {
+        total: imgs.length,
+        pending: pending.length,
+        pending_srcs: pending.map((img) => (img.currentSrc || img.src || '').slice(0, 120)),
+        pending_lazy: pending.filter((img) => img.loading === 'lazy').length
+      }
     })()`).catch(() => null)
-    if (!state || state.pending === 0) return state
+    if (!state) { await sleep(250); continue }
+    if (state.total === 0) {
+      zeroPolls += 1
+      if (zeroPolls >= 3) return state
+      await sleep(250)
+      continue
+    }
+    zeroPolls = 0
+    if (state.pending === 0) return state
     await sleep(250)
   }
   return state
+}
+
+/**
+ * CP-038 B3: drive the product's own appearance setting. The Coursebook palette is a per-profile
+ * setting (`data-cb-scope`), not `prefers-color-scheme`; emulating the media feature leaves the
+ * route painting the host's theme, which is why a dark frame was once filed as `-light`. This opens
+ * the settings sheet, chooses the requested option, waits for the route to repaint and closes the
+ * sheet. It refuses if the option does not exist or the route does not paint the requested palette.
+ */
+const driveAppearance = async (cdp, want, ms) => {
+  if (!want) return null
+  if (want.invalid) throw new CaptureRefusal('appearance', [want.reason], { appearance: { requested: want.raw } })
+  const control = '[data-cb-settings-control="appearance"]'
+  const openSelector = '[data-cb-settings-open]'
+  const closeSelector = '[data-cb-settings-close]'
+  const sheetSelector = '[data-cb-settings-sheet]'
+  const optionSelector = `${control} button:nth-of-type(${APPEARANCE_OPTIONS.indexOf(want.requested) + 1})`
+  const record = { requested: want.requested, before: null, applied: false, rendered_scope: null, clicks: [] }
+  const sheetOpen = () => evaluate(cdp, `(() => {
+    const el = document.querySelector(${JSON.stringify(sheetSelector)})
+    return Boolean(el) && el.hidden !== true && el.getClientRects().length > 0
+  })()`).catch(() => false)
+  if (!(await waitForSelector(cdp, openSelector, Math.min(ms, 15000)))) {
+    throw new CaptureRefusal('appearance', [
+      `--appearance ${want.requested} needs the Coursebook settings control (${openSelector}) on this surface`
+    ], { appearance: record })
+  }
+  if (!(await sheetOpen())) {
+    record.clicks.push({ purpose: 'appearance-open', ...(await evaluate(cdp, clickExpression(openSelector))) })
+    if (!(await waitForSelector(cdp, control, Math.min(ms, 15000)))) {
+      throw new CaptureRefusal('appearance', [
+        `the settings sheet opened but has no appearance control (${control})`
+      ], { appearance: record })
+    }
+  }
+  record.before = await evaluate(cdp, `(() => {
+    const el = document.querySelector(${JSON.stringify(control)})
+    return el ? el.getAttribute('data-cb-settings-value') : null
+  })()`).catch(() => null)
+  if (!(await waitForSelector(cdp, optionSelector, Math.min(ms, 15000)))) {
+    throw new CaptureRefusal('appearance', [
+      `the appearance control has no ${want.requested} option (${optionSelector})`
+    ], { appearance: record })
+  }
+  record.clicks.push({ purpose: `appearance-${want.requested}`, ...(await evaluate(cdp, clickExpression(optionSelector))) })
+  const deadline = Date.now() + ms
+  let state = null
+  while (Date.now() < deadline) {
+    await settlePage(cdp)
+    state = await evaluate(cdp, `(() => {
+      const root = document.querySelector('[data-cb-route]')
+      const control = document.querySelector(${JSON.stringify(control)})
+      return {
+        setting: control ? control.getAttribute('data-cb-settings-value') : null,
+        scope: root ? root.getAttribute('data-cb-scope') : null
+      }
+    })()`)
+    if (state && state.setting === want.requested) break
+    await sleep(150)
+  }
+  record.rendered_scope = state ? state.scope : null
+  record.applied = Boolean(state && state.setting === want.requested)
+  if (!record.applied) {
+    throw new CaptureRefusal('appearance', [
+      `the appearance control did not accept ${want.requested} (setting=${String(state && state.setting)})`
+    ], { appearance: record })
+  }
+  if (await sheetOpen()) {
+    record.clicks.push({ purpose: 'appearance-close', ...(await evaluate(cdp, clickExpression(closeSelector))) })
+    const closeDeadline = Date.now() + Math.min(ms, 5000)
+    while (Date.now() < closeDeadline) {
+      if (!(await sheetOpen())) break
+      await sleep(120)
+    }
+  }
+  // Capture hygiene: the trigger keeps keyboard focus after the sheet closes and its focus ring is
+  // not part of the evidence frame (it differed from a plain Home capture by ~31 pixels).
+  await evaluate(cdp, `(() => {
+    const el = document.activeElement
+    if (el && typeof el.blur === 'function') el.blur()
+    return true
+  })()`).catch(() => null)
+  await settlePage(cdp)
+  return record
 }
 
 /**
@@ -844,7 +995,11 @@ const liveCapture = async () => {
   // surface.
   let destinationRecord = null
   let clicks = []
+  let appearanceRecord = null
   try {
+    // The palette is a profile setting, so it is chosen on the surface that owns the settings
+    // control (Home) before the door navigates away from it.
+    appearanceRecord = await driveAppearance(cdp, appearance, timeoutMs)
     destinationRecord = await driveDestination(cdp, destination, timeoutMs)
     clicks = await driveClicks(cdp, clickSelectors, timeoutMs)
   } catch (error) {
@@ -990,11 +1145,11 @@ const liveCapture = async () => {
   if (captureError) throw new Error(`screenshot failed: ${captureError}`)
 
   const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme })
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme, appearance: appearanceRecord })
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -1038,6 +1193,7 @@ const fixtureCapture = async () => {
 
     // The destination/click/scroll hooks run against a recorded page exactly as they run against
     // the live rig, so their refusal paths are testable without an Electron host.
+    const appearanceRecord = await driveAppearance(cdp, appearance, timeoutMs)
     const destinationRecord = await driveDestination(cdp, destination, timeoutMs)
     const clicks = await driveClicks(cdp, clickSelectors, timeoutMs)
 
@@ -1066,13 +1222,13 @@ const fixtureCapture = async () => {
     const png = Buffer.from(shot.data, 'base64')
     const pixelCheck = await pixelContamination(cdp, png, probe.route.background_color, probe.route.html_background)
     const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-    const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: null, cropMode })
+    const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: null, cropMode, appearance: appearanceRecord })
     if (!gate.ok) {
       cleanup()
       writeRefusal('gates', probe, gate)
     }
     writeFileSync(pngPath, png)
-    return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture', cropMode, pixelCheck, zoom: null, destinationRecord, clicks, scroll })
+    return finishStamp({ probe, gate, png, expectedSha, pageUrl: target, shotBox: box, mode: 'fixture', cropMode, pixelCheck, zoom: null, destinationRecord, clicks, scroll, appearanceRecord })
   } catch (error) {
     if (error instanceof CaptureRefusal) {
       cleanup()
@@ -1112,7 +1268,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -1187,6 +1343,9 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       controls: destinationRecord ? destinationRecord.controls : []
     },
     clicks: Array.isArray(clicks) ? clicks : [],
+    // CP-038 B3: which palette was requested through the product's settings sheet and which one
+    // the route actually painted, so a `-light` still can never be a dark frame.
+    appearance: appearanceRecord || null,
     scroll: scroll || null,
     zoom: zoom,
     emulated_media: emulatedMedia && emulatedMedia.length ? emulatedMedia : null,
@@ -1208,6 +1367,9 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
     page_url: pageUrl
   }
   writeFileSync(stampPath, `${JSON.stringify(stamp, null, 2)}\n`)
+  // CP-038: a refusal record from an earlier run of the same name must not survive a success —
+  // otherwise a packet carries both "REFUSED" and "OK" for one still.
+  try { rmSync(refusedPath, { force: true }) } catch { /* best effort */ }
   console.log(`OK ${name}: route=${stamp.route.width}x${stamp.route.height} theme=${stamp.route.theme} ` +
     `fonts=${stamp.route.fonts_status} images=${stamp.route.images_decoded}/${stamp.route.images_total} ` +
     `sha=${String(stamp.plugin.window_sha256).slice(0, 12)}`)
@@ -1225,6 +1387,7 @@ const main = async () => {
     console.log('usage: node scripts/cp-capture.mjs --name <name> --out <dir> [--fixture <page>] [--cdp-port N]')
     console.log('       [--destination home|courses|workshop|studio|#/course/<id>|#/learn/<id>]')
     console.log('       [--click <selector>]... [--scroll <selector|px>] [--click-wait <ms>]')
+    console.log('       [--appearance system|light|dark] [--color-scheme light|dark] [--image-wait <ms>]')
     return
   }
   if (fixture) {

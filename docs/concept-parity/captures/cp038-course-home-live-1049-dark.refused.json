@@ -2,11 +2,11 @@
   "stamp_version": 1,
   "tool": "scripts/cp-capture.mjs",
   "name": "cp038-course-home-live-1049-dark",
-  "captured_at": "2026-11-10T21:27:20.266Z",
+  "captured_at": "2026-11-10T21:58:47.358Z",
   "ok": false,
   "stage": "gates",
   "reasons": [
-    "the route render logged a React key warning: Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `ModeBadge`"
+    "the route render logged a React key warning: Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `PathStop`."
   ],
   "gates": {
     "plugin_sha_match": true,
@@ -17,6 +17,8 @@
     "no_host_overlay": true,
     "no_unpainted_region": true,
     "zoom_neutral": true,
+    "v3_ready": true,
+    "appearance_applied": true,
     "no_react_key_warning": false
   },
   "plugin": {

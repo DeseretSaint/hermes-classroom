@@ -252,8 +252,22 @@ capture addressable and makes the provenance explicit:
   rendered_lesson_view,match,controls}`, `route.destination/course_home/lesson_view/marker_names`,
   `clicks` and `scroll`, so a still cannot lie about where it came from.
 - The door also waits for route images to settle (`--image-wait`, 15 s) and every `Runtime.evaluate`
-  has a timeout: a dead host bridge produced a silent hang before.
+  has a timeout: a dead host bridge produced a silent hang before. The wait is not passive: every
+  pending `[data-cb-route] img` is forced to `loading="eager"` and decoded, and a zero-image route is
+  accepted only after it is stable for three polls. This is what makes a Workshop frame possible at
+  all — its non-hero covers are lazy and sit below the capture viewport, so a passive wait polled
+  `{total:3,pending:1}` until it refused.
+- `--appearance system|light|dark` drives the product's own settings sheet (open → choose the
+  palette → close) and **refuses** unless the route repaints to the requested `data-cb-scope`. The
+  palette is a per-profile product setting, not `prefers-color-scheme`; `--color-scheme` remains for
+  hosts whose theme does follow the media feature and is refused when it does not. The stamp carries
+  `appearance{requested,before,applied,rendered_scope,clicks}` and the gate adds
+  `appearance_applied`, so a `-light` still can never be a dark frame.
+- A success deletes any stale `<name>.refused.json` from an earlier run, so a packet cannot carry
+  both REFUSED and OK for one still.
 
 `tests/test_cp_capture_route.py` covers home unchanged, a non-Home destination, a course
-destination, a wrong/unknown destination (exit 2, no frame), click state, scroll, and missing
-click/scroll selectors.
+destination, a wrong/unknown destination (exit 2, no frame), a destination control that renders a
+different route (the CP-021 defect; exit 2 with `destination.match=false`), click state, scroll,
+missing click/scroll selectors, a lazy offscreen image being forced to decode, the appearance
+setting producing a real light frame, an unknown appearance, and a success clearing a stale refusal.

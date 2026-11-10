@@ -2,11 +2,10 @@
   "stamp_version": 1,
   "tool": "scripts/cp-capture.mjs",
   "name": "cp038-workshop-live-1049-dark",
-  "captured_at": "2026-11-10T21:26:30.421Z",
+  "captured_at": "2026-11-10T21:57:03.975Z",
   "ok": false,
   "stage": "gates",
   "reasons": [
-    "undecoded image(s) in the route: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAMgCAIAAAC8ggxVAACAAElEQVR42uz93ZIsSY4kjClgkdWzS/L9X5AvQBGS33ZlGJQXqgqPWt5vj8gJm53Z7qpzMiPczc0B6F/9X/+v/ye+67",
     "the route render logged a React key warning: Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `WorkshopCa"
   ],
   "gates": {
@@ -14,11 +13,12 @@
     "route_present": true,
     "no_render_error": true,
     "fonts_loaded": true,
-    "images_decoded": false,
+    "images_decoded": true,
     "no_host_overlay": true,
     "no_unpainted_region": true,
     "zoom_neutral": true,
     "v3_ready": true,
+    "appearance_applied": true,
     "no_react_key_warning": false
   },
   "plugin": {
@@ -118,10 +118,8 @@
       "CB UI 100 900 unloaded"
     ],
     "images_total": 3,
-    "images_decoded": 2,
-    "images_broken": [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAMgCAIAAAC8ggxVAACAAElEQVR42uz93ZIsSY4kjClgkdWzS/L9X5AvQBGS33ZlGJQXqgqPWt5vj8gJm53Z7qpzMiPczc0B6F/9X/+v/ye+67"
-    ],
+    "images_decoded": 3,
+    "images_broken": [],
     "render_error_markers": [],
     "v3_ready": true,
     "v3_textures": "ready",

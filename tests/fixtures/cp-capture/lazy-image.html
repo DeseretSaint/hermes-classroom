@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>CP-038 fixture: lazy offscreen cover</title>
+<style>
+  html, body { margin: 0; background: #0d281b; }
+  [data-cb-route] { position: relative; width: 400px; min-height: 300px; background: #f7f1e4; color: #1b1b1b; }
+</style>
+</head>
+<body>
+  <!-- CP-038 fixture page. The pack cover is `loading="lazy"` and sits ~2000px below the capture
+       viewport, exactly like the Workshop shelf's non-hero covers. Without the door forcing the
+       image to eager and decoding it, the image never starts loading and the decoded-images gate
+       refuses forever. Only the plugin sha is published, so the probe reads the real image state. -->
+  <div data-cb-route="/coursebook" data-cb-scope="light" data-cb-destination="workshop"
+       data-cb-v3-ready="true" data-cb-v3-textures="ready">
+    <h1>Lazy cover shelf</h1>
+    <img src="./lazy-plate.svg" alt="" loading="lazy"
+         style="position:absolute;top:20000px;left:0;width:1200px;height:800px" />
+  </div>
+  <script>
+    window.__CP000_FIXTURE__ = {
+      plugin: {
+        window_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        loaded_path: '/tmp/fixture/plugin.js',
+        bytes: 42,
+        error: null
+      }
+    }
+  </script>
+</body>
+</html>

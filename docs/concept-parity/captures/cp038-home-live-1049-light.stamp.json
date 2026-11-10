@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "cp038-home-live-1049-light",
-  "captured_at": "2026-11-10T21:19:36.661Z",
+  "captured_at": "2026-11-10T22:07:49.317Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -15,6 +15,7 @@
     "no_unpainted_region": true,
     "zoom_neutral": true,
     "v3_ready": true,
+    "appearance_applied": true,
     "no_react_key_warning": true
   },
   "plugin": {
@@ -41,7 +42,7 @@
     "height": 1166,
     "window_width": 1323,
     "window_height": 1220,
-    "theme": "dark",
+    "theme": "light",
     "text_scale_root_px": "16px",
     "motion": "full",
     "reduced_motion": false,
@@ -97,7 +98,7 @@
       "div."
     ],
     "html_background": "rgb(13, 16, 21)",
-    "background_color": "rgb(20, 17, 12)",
+    "background_color": "rgb(245, 227, 200)",
     "host_overlays": [],
     "host_overlay_points": 0,
     "host_overlay_sampled": 384,
@@ -167,15 +168,52 @@
     ]
   },
   "destination": {
-    "requested": null,
-    "normalized": null,
+    "requested": "home",
+    "normalized": "home",
     "rendered": "home",
     "rendered_course_home": null,
     "rendered_lesson_view": null,
-    "match": null,
-    "controls": []
+    "match": true,
+    "controls": [
+      {
+        "purpose": "destination",
+        "found": true,
+        "selector": "[data-cb-nav-item=\"home\"]",
+        "tag": "button",
+        "label": "Home"
+      }
+    ]
   },
   "clicks": [],
+  "appearance": {
+    "requested": "light",
+    "before": "dark",
+    "applied": true,
+    "rendered_scope": "light",
+    "clicks": [
+      {
+        "purpose": "appearance-open",
+        "found": true,
+        "selector": "[data-cb-settings-open]",
+        "tag": "button",
+        "label": "Open Coursebook settings"
+      },
+      {
+        "purpose": "appearance-light",
+        "found": true,
+        "selector": "[data-cb-settings-control=\"appearance\"] button:nth-of-type(2)",
+        "tag": "button",
+        "label": "Light"
+      },
+      {
+        "purpose": "appearance-close",
+        "found": true,
+        "selector": "[data-cb-settings-close]",
+        "tag": "button",
+        "label": "Close settings"
+      }
+    ]
+  },
   "scroll": null,
   "zoom": {
     "original_percent": 90,
@@ -191,8 +229,8 @@
   },
   "capture": {
     "file": "cp038-home-live-1049-light.png",
-    "sha256": "72894cef3c461b8bbccbe8f782f540970d7cac9a63acf28010da9b7d781ba193",
-    "bytes": 234537,
+    "sha256": "6fd26c31b43b5bd655479b0bd98d617fd25f2e09f5b644177675383971f0e6ea",
+    "bytes": 878994,
     "crop_mode": "route",
     "clip": {
       "x": 28,
@@ -206,7 +244,7 @@
       "host_bg_pixels": 0,
       "host_bg_fraction": 0,
       "html_bg": "13, 16, 21, 1",
-      "route_bg": "20, 17, 12, 1",
+      "route_bg": "245, 227, 200, 1",
       "distinct_backgrounds": true
     }
   },
