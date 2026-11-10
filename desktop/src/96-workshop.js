@@ -481,7 +481,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
           borderRadius: '2px'
         },
         children: [
-          jsx(WorkshopCover, { item, layout, hero: false }),
+          jsx(WorkshopCover, { item, layout, hero: false }, 'cover'),
           jsx('h3', {
             style: {
               margin: 0,
@@ -494,7 +494,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               overflowWrap: 'anywhere'
             },
             children: item.title
-          }),
+          }, 'title'),
           jsx('p', {
             style: {
               margin: 0,
@@ -508,10 +508,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               overflow: 'hidden'
             },
             children: item.outcome
-          }),
-          jsx(WorkshopMeta, { item })
+          }, 'outcome'),
+          jsx(WorkshopMeta, { item }, 'meta')
         ]
-      }),
+      }, 'open'),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.5rem', marginTop: 'auto' },
         children: [
@@ -521,7 +521,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                 onClick: () => onOpen(item, { continue: true }),
                 'aria-label': `Continue ${item.title}`,
                 children: 'Continue'
-              })
+              }, 'install')
             : jsx(CbAction, {
                 variant: 'secondary',
                 onClick: () => onInstall(item),
@@ -529,7 +529,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                 pending: busy,
                 'aria-label': `Add ${item.title} to your library`,
                 children: busy ? 'Adding…' : 'Add to library'
-              }),
+              }, 'install'),
           jsx('button', {
             type: 'button',
             'data-cb-workshop-favorite': favorite ? 'on' : 'off',
@@ -552,10 +552,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               fontSize: CB_TYPE.caption
             },
             children: [
-              jsx(sdk.Codicon, { name: favorite ? 'star-full' : 'star-empty', size: CB_ICON_UI }),
-              jsx('span', { children: favorite ? 'Saved' : 'Save' })
+              jsx(sdk.Codicon, { name: favorite ? 'star-full' : 'star-empty', size: CB_ICON_UI }, 'icon'),
+              jsx('span', { children: favorite ? 'Saved' : 'Save' }, 'word')
             ]
-          }),
+          }, 'favorite'),
           userCategory
             ? jsx('span', {
                 'data-cb-workshop-user-category': userCategory,
@@ -568,10 +568,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                   padding: '0.1rem 0.45rem'
                 },
                 children: `Your shelf: ${userCategory}`
-              })
+              }, 'shelf')
             : null
         ]
-      })
+      }, 'actions')
     ]
   })
 }
