@@ -21,6 +21,7 @@ import unittest
 from pathlib import Path
 
 from tests.test_desktop_lesson_views import COMPLETE_BLOCKS, SDK_STUB, _desktop_node_modules, document
+from tests.test_v3_scope import layout_declarations
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
@@ -176,7 +177,11 @@ const snapshot = async (name) => {
     continued: document.querySelectorAll('[data-cb-continue]').length,
     stamps: document.querySelectorAll('[data-cb-course-stamp]').length,
     nextSentences: [...document.querySelectorAll('[data-cb-continue-next]')].length,
-    routePadding: document.querySelector('[data-cb-route]') ? document.querySelector('[data-cb-route]').style.paddingLeft : null
+    routePadding: document.querySelector('[data-cb-route]') ? document.querySelector('[data-cb-route]').style.paddingLeft : null,
+    routeStyle: document.querySelector('[data-cb-route]') ? document.querySelector('[data-cb-route]').getAttribute('style') : null,
+    // R1 (CP-020b): the page gutter moved off the route root onto a descendant the container query
+    // can measure. Both facts are reported so a test can refuse an inline gutter coming back.
+    gutterClass: Boolean(document.querySelector('[data-cb-route] .cb3-gutter'))
   }
   return surface
 }
@@ -549,12 +554,23 @@ class A11yStructureTest(unittest.TestCase):
         self.assertEqual(surface["nextSentences"], 0)
 
     def test_the_measured_route_gutter_is_applied(self) -> None:
-        # The narrow branch is a plain rem value jsdom can keep; the wide branch is a clamp() that
-        # jsdom drops, so it is pinned at the source and measured in the live frames.
-        self.assertEqual(self.surface("home-desk", 460)["routePadding"], "0.7rem")
+        # R1 (CP-020b): the gutter is a container-query rule on an inner wrapper, never an inline
+        # clamp on the route root. A `vw` clamp measured the Desktop window instead of the route,
+        # and a container unit on the container element resolves against its *ancestor*, so the
+        # route root can carry neither. jsdom applies no `@container`, so the two branches are
+        # pinned in the stylesheet and the live frames measure the painted padding.
+        surface = self.surface("home-desk", 460)
+        self.assertEqual(surface["routePadding"] or "", "",
+                         "the route root carries an inline gutter again")
+        self.assertNotIn("vw", layout_declarations(surface["routeStyle"] or ""),
+                         "a viewport unit reached the route root's own style")
+        self.assertTrue(surface["gutterClass"],
+                        "the route has no .cb3-gutter wrapper for the container query to measure")
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        self.assertIn("const routePad = measuredRoute > 0 && measuredRoute < 760 ? '0.7rem' : 'clamp(1.25rem, 4vw, 4rem)'", source)
-        self.assertIn("paddingLeft: routePad, paddingRight: routePad", source)
+        self.assertIn("[data-cb-v3] .cb3-gutter {", source)
+        self.assertIn("padding-inline: 0.7rem;", source)
+        self.assertIn("@container cb (min-width: 760px)", source)
+        self.assertIn("padding-inline: clamp(1.25rem, 3.05cqi, 4rem);", source)
 
     def test_authored_prose_h1_is_announced_as_level_two(self) -> None:
         """The reading body may carry its own `#` title; the page stays the only h1."""

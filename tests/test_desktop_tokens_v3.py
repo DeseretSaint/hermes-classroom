@@ -154,7 +154,7 @@ class V3TokenLiteralTest(unittest.TestCase):
 
     def test_the_literal_equals_the_contract_byte_for_byte(self) -> None:
         # Every top-level key the module carries must exist in the contract with an equal value,
-        # and the five build-critical keys must all be carried.
+        # and the six build-critical keys must all be carried.
         for key in REQUIRED_TOP_LEVEL:
             self.assertIn(key, self.tokens, f"{V3_TOKEN_CONST} does not carry {key!r}")
         for key, value in self.tokens.items():
