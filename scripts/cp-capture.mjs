@@ -243,7 +243,7 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
   return out
 })()`
 
-const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode }) => {
+const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode, colorScheme = null }) => {
   const gates = {}
   const reasons = []
   const pluginSha = probe.plugin && probe.plugin.window_sha256 ? probe.plugin.window_sha256 : null
@@ -308,6 +308,15 @@ const runGates = ({ probe, expectedSha, requireV3, pixelCheck, zoom, cropMode })
       reasons.push(`--require-v3 set but the ground textures settled as ${String(route.v3_textures)}`)
     } else if (route.v3_ready !== true) {
       reasons.push('--require-v3 set but [data-cb-v3-ready] is absent')
+    }
+  }
+
+  // A mode frame is only a mode frame if the emulated scheme actually reached the host theme.
+  if (colorScheme) {
+    gates.theme_matches_emulation = route.theme === colorScheme
+    if (!gates.theme_matches_emulation) {
+      reasons.push(`--color-scheme ${String(colorScheme)} was emulated but the route painted ` +
+        `${String(route.theme)}; the host theme did not follow prefers-color-scheme`)
     }
   }
 
@@ -594,14 +603,17 @@ const liveCapture = async () => {
     await sleep(300)
   }
 
-  // Apply reduced-motion / forced-colors emulation only when asked; never silently.
-  if (flag('reduced-motion', false)) {
-    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
-    await sleep(120)
-  }
-  if (flag('forced-colors', false)) {
-    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] })
-    await sleep(120)
+  // Apply reduced-motion / forced-colors / colour-scheme emulation only when asked; never silently.
+  // `--color-scheme` is how a mode frame is produced: the host theme follows
+  // `prefers-color-scheme`, so the stamp has to record that the mode was emulated, not inferred.
+  const colorScheme = flag('color-scheme', null)
+  const emulatedMedia = []
+  if (colorScheme) emulatedMedia.push({ name: 'prefers-color-scheme', value: String(colorScheme) })
+  if (flag('reduced-motion', false)) emulatedMedia.push({ name: 'prefers-reduced-motion', value: 'reduce' })
+  if (flag('forced-colors', false)) emulatedMedia.push({ name: 'forced-colors', value: 'active' })
+  if (emulatedMedia.length) {
+    await cdp.send('Emulation.setEmulatedMedia', { features: emulatedMedia })
+    await sleep(350)
   }
 
   const loadedPlugin = loadedPluginArg
@@ -648,11 +660,11 @@ const liveCapture = async () => {
   if (captureError) throw new Error(`screenshot failed: ${captureError}`)
 
   const expectedSha = expectSha ? String(expectSha) : sha256File(pluginPath)
-  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode })
+  const gate = runGates({ probe, expectedSha, requireV3, pixelCheck, zoom: zoomRecord, cropMode, colorScheme })
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia })
   } finally {
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
@@ -749,7 +761,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -805,6 +817,7 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       content_rect: probe.route.content_rect
     },
     zoom: zoom,
+    emulated_media: emulatedMedia && emulatedMedia.length ? emulatedMedia : null,
     console: probe.console
       ? {
           errors: probe.console.errors || [],
