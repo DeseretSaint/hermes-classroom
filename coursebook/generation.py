@@ -4213,6 +4213,10 @@ _PROVENANCE_CUE = re.compile(
 )
 _QUOTED = re.compile(r"^[\"“]([^\"”]{2,200})[\"”]")
 
+#: Keys whose prose is scope, not citation. A phrase in ``exclusions`` names a capability the
+#: course does not teach; reading it as a title or publisher is a false provenance failure.
+_PROVENANCE_EXEMPT_KEYS: frozenset[str] = frozenset({"exclusions"})
+
 
 def _provenance_key(text: Any) -> str:
     """Exact-match key for a ledger title/publisher. No stemming, no substring, no fuzzy score."""
@@ -4304,14 +4308,20 @@ def provenance_violations(
     known = _ledger_provenance(ledger)
     problems: list[str] = []
 
-    def visit(value: Any, path: str) -> None:
+    def visit(value: Any, path: str, key: str = "") -> None:
+        if key in _PROVENANCE_EXEMPT_KEYS:
+            # Scope prose is not a citation. `exclusions` records capabilities the course does
+            # not teach (and why); a phrase there is a topic, not a title or publisher the pack
+            # asserts as evidence. Linting it as provenance rejected a plan whose only defect was
+            # a quoted topic name in its own exclusion list (CP-015, astronomy).
+            return
         if isinstance(value, dict):
-            for key, child in value.items():
-                visit(child, f"{path}.{key}" if path else str(key))
+            for child_key, child in value.items():
+                visit(child, f"{path}.{child_key}" if path else str(child_key), str(child_key))
             return
         if isinstance(value, list):
             for index, child in enumerate(value):
-                visit(child, f"{path}[{index}]")
+                visit(child, f"{path}[{index}]", key)
             return
         if not isinstance(value, str):
             return

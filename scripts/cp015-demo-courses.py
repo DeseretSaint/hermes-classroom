@@ -22,6 +22,7 @@ page; a partial run prints the exact step and job that stopped it.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -165,9 +166,32 @@ def ok(method: str, payload: dict, *, revision: int | None = None, key: str | No
 _N = {"n": 0}
 
 
+_key_scope: dict[str, str] = {"scope": ""}
+
+
 def keyed(slug: str, step: str) -> str:
-    """Stable idempotency key per course step so a re-run never mints a second row."""
-    return f"cp015-{slug}-{step}"
+    """Stable idempotency key per course step so a re-run never mints a second row.
+
+    The key is scoped to the course instance the run is working on: a re-run of the same course
+    is the same key, while a freshly created course (after a data reset, or because the brief
+    changed) is a different scope. Without the scope a re-created course would collide on the
+    old enrollment/plan/attempt keys, which the kernel refuses as an idempotency conflict.
+    """
+    scope = _key_scope["scope"]
+    return f"cp015-{slug}-{scope + '-' if scope else ''}{step}"
+
+
+def spec_key(slug: str, spec: dict) -> str:
+    """``course.create`` key that also covers the brief.
+
+    A re-run with the same brief is the same course (the key is stable). A re-run whose goal,
+    scope or dials changed is a *different* course, and reusing the old key would be refused as an
+    idempotency conflict; the brief digest keeps both properties without minting a duplicate.
+    """
+    digest = hashlib.sha256(
+        json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:12]
+    return f"cp015-{slug}-create-{digest}"
 
 
 def wait_for_job(job_id: str, *, timeout: float = 1800.0, label: str = "") -> dict:
@@ -188,8 +212,9 @@ def wait_for_job(job_id: str, *, timeout: float = 1800.0, label: str = "") -> di
 
 
 def create_course(slug: str, spec: dict) -> dict:
-    created = ok("course.create", {k: v for k, v in spec.items()}, key=keyed(slug, "create"))
+    created = ok("course.create", {k: v for k, v in spec.items()}, key=spec_key(slug, spec))
     course_id = created["course_id"]
+    _key_scope["scope"] = hashlib.sha256(course_id.encode("utf-8")).hexdigest()[:10]
     enrollment = ok(
         "enrollment.create",
         {"course_id": course_id, "learner_label": spec["title"]},
@@ -543,16 +568,22 @@ def export_course(slug: str, flow: dict, copy_to: Path | None = None) -> dict:
 def run_one(slug: str, spec: dict) -> dict:
     _log(f"=== {slug}: {spec['title']} ===")
     flow = create_course(slug, spec)
-    flow = run_plan(slug, flow)
-    flow = approve_plan(slug, flow)
-    # Order matters (supervisor ruling 2026-11-10): one authored lesson page proves the plan is
-    # teachable before any image-provider call is spent on a world kit.
-    flow = run_lessons(slug, flow)
-    flow = render_lesson(slug, flow)
-    flow = build_world(slug, flow)
-    # Re-read the page after the kit: the same objective now has its world media, and the record
-    # must show the media actually resolves rather than only that files exist in the bundle.
-    flow = render_lesson(slug, flow, after_world=True)
+    try:
+        flow = run_plan(slug, flow)
+        flow = approve_plan(slug, flow)
+        # Order matters (supervisor ruling 2026-11-10): one authored lesson page proves the plan
+        # is teachable before any image-provider call is spent on a world kit.
+        flow = run_lessons(slug, flow)
+        flow = render_lesson(slug, flow)
+        flow = build_world(slug, flow)
+        # Re-read the page after the kit: the same objective now has its world media, and the
+        # record must show the media actually resolves rather than only that files exist.
+        flow = render_lesson(slug, flow, after_world=True)
+    except Exception as exc:  # noqa: BLE001 - the partial flow is the evidence
+        # A per-attempt verdict list is the evidence a reviewer needs; without this the record
+        # keeps only the first line of the last failure.
+        exc.partial_flow = flow  # type: ignore[attr-defined]
+        raise
     flow["completed_at"] = datetime.now(timezone.utc).isoformat()
     return flow
 
@@ -613,7 +644,12 @@ def main() -> int:
                     _log(f"{slug}: export FAILED — {exc}")
         except Exception as exc:  # noqa: BLE001 - recorded, then reported per course
             failures.append((slug, str(exc)))
-            record["courses"][slug] = {"slug": slug, "error": str(exc)}
+            partial = getattr(exc, "partial_flow", None)
+            if isinstance(partial, dict):
+                partial["error"] = str(exc)
+                record["courses"][slug] = partial
+            else:
+                record["courses"][slug] = {"slug": slug, "error": str(exc)}
             _log(f"{slug}: FAILED — {exc}")
         if args.record:
             Path(args.record).parent.mkdir(parents=True, exist_ok=True)
