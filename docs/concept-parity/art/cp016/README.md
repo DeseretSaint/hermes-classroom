@@ -14,7 +14,8 @@ and the host's own `image_generate` tool. No test double, no re-hosted art.
   grammar, not only service worlds). Each plate records the version it was actually rendered
   from; the packets carry a mix of v2 and v3 plates, listed per plate below. The creative set
   exercises the shipping v3 prompt in all four repaired roles; the technical set was re-rendered
-  only where its own gates failed.
+  where its own gates failed and, in round 3, where a board had recorded the wrong direction's
+  prompt (`01-style_board-authored`).
 - Provider: the host's `image_generate` tool over the managed Nous tool gateway (`fal-queue`).
 - Model: `fal-ai/flux-2-pro`. The catalog's fast default (`flux-2/klein/9b`) rendered flat
   vector and pseudo-text on the first pass, so it is not used for this proof. The model is
@@ -44,8 +45,15 @@ different classes and neither is a plate verdict on its own.
    A vision read per plate asks for a JSON verdict on musical notation, staves, chord boxes,
    tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, letters,
    numerals, brand names, and hands performing a technique. Result: **fourteen of fourteen
-   plates clean** (`notation_gate_clean` in `SUMMARY.json`). Fail-closed: an unparsed or errored
-   answer is recorded as `unchecked`, never as clean.
+   plates clean**. Fail-closed: an unparsed or errored answer, and — since review round 3 — any
+   answer whose `evidence` field is empty or the literal word `none`, is recorded as `unchecked`,
+   never as clean. Every `clean` in this packet carries a described observation naming the
+   objects inspected; `SUMMARY.json` counts `notation_gate_unchecked` separately from
+   `notation_gate_clean`, and
+   `tests/test_cp016_world_art_bible.py::ProofPacketIntegrityTest` fails if a `clean` row has no
+   evidence. (Round 2 recorded four `clean` rows with `evidence: "none"` — empty reads counted as
+   passes. Those four plates, technical 02/04 and creative 01/06, were re-read in round 3 and now
+   carry their readings.)
 
 The earlier "thirteen of fourteen plates are clean" line was an OCR-gate result quoted as a
 plate verdict. It is restated above: twelve OCR-clean, two crop-cleared, fourteen notation-clean.
@@ -58,14 +66,47 @@ Every re-render is listed in `provenance.json` with `repair_round` and `repair_m
 | Plate | Why | Round | Method | After |
 |---|---|---|---|---|
 | `creative-fingerpicking/02-style_board-warm-paper` | staves, noteheads, chord/tab grids in three open booklets | 2 | regenerate | OCR clean, notation clean |
+| `creative-fingerpicking/02-style_board-warm-paper` | round 3: the prompt the plate was made from was the **deep-pigment** board's (lookup key bug, §"Packet integrity"); re-rendered from its own warm-paper request. Round 4: that render carried pseudo-text (`fox while @1`) | 3, 4 | regenerate with the direction prompt, then regenerate with the blank-surface hardening | OCR clean, notation clean |
 | `creative-fingerpicking/03-style_board-deep-pigment` | two chord-box cards with finger dots; round-2 reroll then produced a printed UI bar | 2, 3, 4 | regenerate, regenerate, edit | OCR clean, notation clean |
 | `creative-fingerpicking/05-cover-authored` | brand name on the headstock (found by this card's notation gate, not by round-1 review); round-2 and round-3 rerolls left jar labels | 2, 3, 4 | regenerate, regenerate, edit | notation clean; one symbol-only OCR token, crop-cleared |
 | `creative-fingerpicking/07-section-s2-authored` | fretting/plucking hands, sheet music, can label | 2 | regenerate | OCR clean, notation clean |
 | `technical-brake-bleed/01-style_board-authored` | `SHIMANO` on the brake lever (found by the notation gate) | 2 | regenerate | OCR clean, notation clean |
+| `technical-brake-bleed/01-style_board-authored` | round 3: recorded and rendered with the **deep-pigment** prompt (lookup key bug); re-rendered from the authored request, which left one token `\'Ii`. Round 4: hardened re-roll | 3, 4 | regenerate with the direction prompt, then regenerate with the blank-surface hardening | OCR clean, notation clean |
 | `technical-brake-bleed/03-style_board-deep-pigment` | brand lettering on the frame, labels on two jars | 2 | regenerate | OCR clean, notation clean |
 
 `edit` is the model's own edit endpoint on the existing plate: it keeps the approved composition
 and removes the printed mark, where a fresh generation re-rolls every other detail.
+
+## Packet integrity
+
+Review round 3 found the render path recording a prompt a plate was never made from:
+`scripts/cp016-world-proof.py` looked its prompt up by `(role, section_id)`, and all three style
+boards share `role="style_board"` and `section_id=None`, so the dict kept only the last direction
+and handed the **deep-pigment** prompt to any board a repair pass re-rendered. Technical
+`01-style_board-authored` and creative `02-style_board-warm-paper` therefore carried the
+deep-pigment `prompt_hash` while their rows still said `style_id: …--authored` / `…--warm-paper`.
+The packet proved neither the authored (technical) nor the warm-paper (creative) direction.
+
+Fixed in the same round:
+
+- the lookup is keyed `(style_id, role, section_id)` and the repair path also writes
+  `row["style_id"]`, so a row cannot keep one direction's id beside another's prompt;
+- `--slug` now filters the repair loop, so `--only 01-style_board-authored` no longer matches the
+  same-named plate in both topics;
+- `--no-harden` renders the plain direction prompt when the re-render is for identity, not for a
+  defect;
+- both affected plates were re-rendered from their own direction prompt, and the packet now has
+  three distinct style-board hashes per topic. Verify from the code, not from this page:
+
+```
+python3 -m unittest tests.test_cp016_world_art_bible.ProofPacketIntegrityTest
+```
+
+That test reads both `provenance.json` files and rebuilds every current-version prompt from the
+recorded brief with `world.build_style_boards` / `world.build_kit_prompts`; it fails if two style
+boards share a `prompt_hash`, if a rebuilt prompt's hash, text or `style_id` differs from the
+row's, or if a `clean` notation verdict has no evidence. It failed on the round-2 packet (8
+failures) and passes on this one.
 
 ## Prompt contract this proof exercises
 
@@ -89,12 +130,14 @@ full prompt, negative prompt, prompt hash, prompt version, aspect, provider sour
 data-URL hash), file sha256, byte count, OCR words, notation read and timestamp. `SUMMARY.json`
 carries the per-topic gate counts. `probe/` is a throwaway diagnostic frame and is not evidence.
 
-Reproduce the gates without spending a provider call:
+Reproduce the gates without spending a provider call (run with the Hermes runtime interpreter,
+which supplies Pillow, `httpx` and `tools.*`; the script bootstraps itself when it can):
 
 ```
-scripts/run-in-hermes-env python3 scripts/cp016-world-proof.py --notation-only --slug creative-fingerpicking
-scripts/run-in-hermes-env python3 scripts/cp016-world-proof.py --summary-only
+python3 scripts/cp016-world-proof.py --notation-only --slug creative-fingerpicking --only 06-section-s1-authored
+python3 scripts/cp016-world-proof.py --summary-only
 ```
 
-`--notation-only` re-reads the plates on disk and rewrites each `notation` result;
-`--summary-only` rebuilds `SUMMARY.json` from the per-topic provenance files.
+`--notation-only` re-reads the plates on disk and rewrites each `notation` result; `--only`
+narrows it to named plates; `--summary-only` rebuilds `SUMMARY.json` from the per-topic
+provenance files.

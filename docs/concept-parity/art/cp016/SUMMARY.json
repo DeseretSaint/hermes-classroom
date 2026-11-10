@@ -12,7 +12,8 @@
       ],
       "lettering_gate_clean": 6,
       "notation_gate_clean": 7,
-      "notation_gate_suspect": 0
+      "notation_gate_suspect": 0,
+      "notation_gate_unchecked": 0
     },
     {
       "topic": "creative-fingerpicking",
@@ -25,7 +26,8 @@
       ],
       "lettering_gate_clean": 6,
       "notation_gate_clean": 7,
-      "notation_gate_suspect": 0
+      "notation_gate_suspect": 0,
+      "notation_gate_unchecked": 0
     }
   ]
 }

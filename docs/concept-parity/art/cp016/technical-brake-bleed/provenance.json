@@ -47,41 +47,41 @@
       "style_id": "workshop_manual--authored",
       "aspect_ratio": "3:2",
       "host_aspect_ratio": "landscape",
-      "prompt_hash": "sha256:96ea32e3e737fffb442527ccef91279dfbe17f8d07eee7dbbea97fd00ea76d3f",
+      "prompt_hash": "sha256:9d8ab15506d8971006eb1cdfa443b7166c46895a47cb7d16aac372650b57af38",
       "prompt_version": "world-prompt-v3",
-      "prompt": "Textless painted style board plate.  The scene includes service stand, brake caliper, handlebar lever. It is composed as a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. The pigments are warm paper (canvas), dark brown ink (ink), field green (forest), ochre (wood), coral (terracotta), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; bench, tool wall and trays painted as flat masses; the same opaque gouache, denser pigment and a wider quiet field. Light comes from one soft key light from the upper left about a third of the way above the horizon, dimmer; the same single shade plane down-right in a darker tint of the pigment. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; never a torque value, clearance, part number or sequence. This plate is for home mechanic, and the mood is practical, calm, competent. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no brand logos; no text; no workshop manual lettering or sign. Direction: deep pigment.",
+      "prompt": "Textless painted style board plate.  The scene includes service stand, brake caliper, handlebar lever. It is composed as a centered bench under one overhead lamp; a wide quiet band above carries the headline, and the tool wall runs off the right edge. The pigments are warm paper (canvas), dark brown ink (ink), ochre (wood), coral (terracotta), dark brown cuff (ink), and there are at most five of them plus the drawn line; no pigment outside the art-bible table. It is painted as a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; bench, tool wall and trays painted as flat masses. Light comes from one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail. The contour is a single dark-brown ink contour drawn last, never black and never the colder body-text ink. Leave a quiet, low-detail field for the real typed headline and controls; all type is supplied by the product UI, never by the image. The plate contains no words at all: no title, no caption, no sign, no label, no lettering, no typography and no pseudo-text. Keep the background plain warm paper; no signboards and no printed surfaces. This art is only for orientation and mood; orientation only; never a torque value, clearance, part number or sequence. This plate is for home mechanic, and the mood is practical, calm, competent. Avoid everything in this list: no text; no letters, words or labels; no numbers or measurements; no logos or brand marks; no watermarks; no UI chrome, buttons or frames; no answer content, check text or rubric; no typography or lettering of any kind; no signage, poster text or hand-lettered mark; no pseudo-text, gibberish lettering or symbols that resemble letters; no signboards, wall signs or printed labels; no course title, caption or label painted in the art; no words copied from this prompt; no mascot other than the fox; no robots; no gradient, glow or glass; no drop shadow on the art object; no black outline and no grey shade; no off-palette colour; no photorealism or photographic texture; no star, rating, price or learner count; no diagrams, charts, tables or grids; no notation of any kind; no text; no letters; no labels; no numbers; no logos; no watermarks; no ui chrome; no invented measurements; no depicted safety procedure; no depicted procedure, no torque value, no torque sequence; no clearance, part number or measurement; no wiring diagram and no hazard callout as art; no brand logos; no text; no workshop manual lettering or sign. Direction: authored palette.",
       "negative_prompt": "no text, no letters, words or labels, no numbers or measurements, no logos or brand marks, no watermarks, no UI chrome, buttons or frames, no answer content, check text or rubric, no typography or lettering of any kind, no signage, poster text or hand-lettered mark, no pseudo-text, gibberish lettering or symbols that resemble letters, no signboards, wall signs or printed labels, no course title, caption or label painted in the art, no words copied from this prompt, no mascot other than the fox, no robots, no gradient, glow or glass, no drop shadow on the art object, no black outline and no grey shade, no off-palette colour, no photorealism or photographic texture, no star, rating, price or learner count, no diagrams, charts, tables or grids, no notation of any kind, no text, no letters, no labels, no numbers, no logos, no watermarks, no ui chrome, no invented measurements, no depicted safety procedure, no depicted procedure, no torque value, no torque sequence, no clearance, part number or measurement, no wiring diagram and no hazard callout as art, no brand logos, no text, no workshop manual lettering or sign",
-      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; bench, tool wall and trays painted as flat masses; the same opaque gouache, denser pigment and a wider quiet field",
-      "light": "one soft key light from the upper left about a third of the way above the horizon, dimmer; the same single shade plane down-right in a darker tint of the pigment",
+      "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; bench, tool wall and trays painted as flat masses",
+      "light": "one soft key light from the upper left about a third of the way above the horizon; shade is a single darker tint of the same pigment, covering no more than a third of a mass, with one narrow cream highlight on the top-left edge of the head, shoulder and tail",
       "palette": [
         "warm paper #f7f1e4 (canvas)",
         "dark brown ink #3a2318 (ink)",
-        "field green #2f6047 (forest)",
         "ochre #7b4b0a (wood)",
-        "coral #9c2e1c (terracotta)"
+        "coral #9c2e1c (terracotta)",
+        "dark brown cuff #2b1d14 (ink)"
       ],
       "provider": "image_generate (managed Nous tool gateway -> fal-queue)",
       "model": "fal-ai/flux-2-pro",
       "provider_media": {
         "kind": "inline_data_url",
-        "sha256": "sha256:633207f44b2501330c9c9e2fca9a2d752070fa599adc09c3e85c55ba32f25890"
+        "sha256": "sha256:dfdf5724cb8f577ae8b85eb8dc382a46344524cd96e6253d8dcff5cc751a85d8"
       },
-      "sha256": "4449ecb9d407c226b7b5965a8202fa9106bbf394571327bd84454e165aeb5556",
-      "bytes": 993737,
+      "sha256": "ba3553038cee62e25e3aa8b2cc2d28b1cd7935a9714d8e232ac4cfdf618454e3",
+      "bytes": 1061937,
       "ocr": {
         "text": "",
         "letters": 0,
         "words": []
       },
-      "generated_at": "2026-11-10T18:29:55.171047+00:00",
+      "generated_at": "2026-11-10T19:11:12.062936+00:00",
       "notation": {
         "verdict": "clean",
         "notation": false,
         "kind": "none",
-        "evidence": "No musical notation, text, code, diagrams, or hands are visible. The image depicts a workshop scene with a fox, a bicycle frame, and tools, but contains no printed marks or symbols resembling writing.",
-        "read": "om the ceiling, illuminating the center.\n*   **Characters:** In the foreground, slightly to the left, stands an orange fox with a white chest, belly, and tail tip. It is wearing a small purple collar and appears to be looking towards the workbench.\n*   **Objects:**\n    *   **Workbench:** A simple wooden table stands in the center. On top of it, a green bicycle frame is mounted on a black repair stand.\n    *   **Bike Parts:** Leaning against the front right leg of the table is a bicycle handlebar and stem assembly. On the table surface, near the right edge, are small items that resemble a tube of lubricant or glue and perhaps a small tool or rag.\n    *   **Tool Board:** On the right wall, a wooden board (pegboard style) holds a collection of metal tools, primarily various sizes of wrenches (spanners) and possibly a screwdriver, arranged in rows.\n*   **Style:** The artwork features a painterly style with visible brush strokes and a grainy, paper-like texture overlay, creating a cozy and nostalgic atmosphere.\n\n**Audit Result:**\nThere are no musical notations, codes, equations, text, numerals, diagrams, charts, or hands visible in the image. The tools and bike parts are ordinary objects without visible markings.\n\n```json\n{\n  \"notation\": false,\n  \"kind\": \"none\",\n  \"evidence\": \"No musical notation, text, code, diagrams, or hands are visible. The image depicts a workshop scene with a fox, a bicycle frame, and tools, but contains no printed marks or symbols resembling writing.\"\n}\n```"
+        "evidence": "Inspected the top textured paper surface, workshop wall, wooden workbench, metal vise and curved metal rod on the workbench, fox character, hanging pendant lamp, wall-mounted tool rack with hanging tools, tool shelf, storage cabinet, trash bin, and small containers on the cabinet; none of these objects have musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equ",
+        "read": "{\"notation\": false, \"kind\": \"none\", \"evidence\": \"Inspected the top textured paper surface, workshop wall, wooden workbench, metal vise and curved metal rod on the workbench, fox character, hanging pendant lamp, wall-mounted tool rack with hanging tools, tool shelf, storage cabinet, trash bin, and small containers on the cabinet; none of these objects have musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, letters, numerals, brand names, writing-like symbols, or depictions of hands performing a technique/instruction step.\"}"
       },
-      "repair_round": 2,
+      "repair_round": 4,
       "repair_method": "regenerate"
     },
     {
@@ -121,9 +121,9 @@
       "notation": {
         "verdict": "clean",
         "notation": false,
-        "kind": "none",
-        "evidence": "none",
-        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"none\",\n  \"evidence\": \"none\"\n}\n```"
+        "kind": "no printed marks found",
+        "evidence": "Inspected workbench surface (wooden table with bicycle wheel on truing stand, handlebars, and tools - no text, numerals, or symbols); tool cabinet (wall-mounted unit with wrenches on pegboard and storage bins - no brand names, labels, or markings visible on tools or containers); wall and lamp (plain surfaces with no writing or diagrams)",
+        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"no printed marks found\",\n  \"evidence\": \"Inspected workbench surface (wooden table with bicycle wheel on truing stand, handlebars, and tools - no text, numerals, or symbols); tool cabinet (wall-mounted unit with wrenches on pegboard and storage bins - no brand names, labels, or markings visible on tools or containers); wall and lamp (plain surfaces with no writing or diagrams)\"\n}\n```"
       }
     },
     {
@@ -215,8 +215,8 @@
         "verdict": "clean",
         "notation": false,
         "kind": "none",
-        "evidence": "none",
-        "read": "```json\n{\n  \"notation\": false,\n  \"kind\": \"none\",\n  \"evidence\": \"none\"\n}\n```"
+        "evidence": "Inspected workbench (wooden surface covered with bicycle brake assembly mounted on stand and hand tool resting on surface), wall-mounted tool rack (covered with hanging wrenches of various sizes), wall, and hanging lamp; no printed marks, letters, numerals, musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, brand",
+        "read": "{\"notation\": false, \"kind\": \"none\", \"evidence\": \"Inspected workbench (wooden surface covered with bicycle brake assembly mounted on stand and hand tool resting on surface), wall-mounted tool rack (covered with hanging wrenches of various sizes), wall, and hanging lamp; no printed marks, letters, numerals, musical notation, staves, noteheads, clefs, chord boxes, tablature, fret numbers, code, equations, tick boxes, tables, diagrams, charts, brand names, or symbols resembling writing found on any object or surface; no hands present performing techniques\"}"
       }
     },
     {
