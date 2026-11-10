@@ -300,7 +300,10 @@ class CreateFlowSequenceTest(unittest.TestCase):
             set(out["brief"]),
             {"stage", "course_id", "enrollment_id", "goal", "recipe", "dials"},
         )
-        self.assertEqual(set(out["course"]), {"title", "recipe", "goal", "dials"})
+        self.assertEqual(set(out["course"]), {"title", "recipe", "goal", "dials", "presentation_mode"})
+        # GM-004: the create flow always states its mode. Game is the intent the chooser shows
+        # preselected, so an unset choice is recorded as `game`, not sent as an empty null.
+        self.assertEqual(out["course"]["presentation_mode"], "game")
 
     def test_the_closed_brief_has_no_field_outside_the_contract(self) -> None:
         allowed = {
