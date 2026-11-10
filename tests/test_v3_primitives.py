@@ -67,9 +67,13 @@ def _is_deck_text(value: str, deck: set[str]) -> bool:
     for text in deck:
         if "{" not in text:
             continue
+        chunks = re.split(r"(\{[^}]*\})", text)
+        # A row that is *only* a placeholder (`{subject label}`) would match any string, so it
+        # proves nothing about authorship: require some literal text in the row.
+        if not "".join(chunk for chunk in chunks if not chunk.startswith("{")).strip():
+            continue
         pattern = "^" + "".join(
-            ".+" if chunk.startswith("{") else re.escape(chunk)
-            for chunk in re.split(r"(\{[^}]*\})", text)
+            ".+" if chunk.startswith("{") else re.escape(chunk) for chunk in chunks
         ) + "$"
         if re.match(pattern, value):
             return True
@@ -193,7 +197,7 @@ const details = mount(
 
 process.stdout.write(JSON.stringify({
   surface, twoPrimaries, lab, stamps, fox, cardArt, cardTyped, bubble, bubbleQuiet, bubbleUnlabelled,
-  details, labCopy: CB3_LAB_COPY,
+  details, labCopy: CB3_LAB_COPY, medalSpecs: CB3_MEDALS,
   poses: CB3_POSES, stampStates: CB3_STAMP_STATES, medals: Object.keys(CB3_MEDALS)
 }))
 """
@@ -422,6 +426,17 @@ class V3PrimitivesRenderTest(unittest.TestCase):
                 f"{name}'s Tokens: line names roles it never reads: {unread}",
             )
 
+    def test_medallion_glyphs_match_the_provenance_table(self) -> None:
+        """Each medallion's Codicon is the one ART-PROVENANCE-A4A5 §A5 ratified for its event."""
+        spec = (ROOT / "docs" / "concept-parity" / "ART-PROVENANCE-A4A5.md").read_text(encoding="utf-8")
+        ratified = {}
+        for row in re.findall(r"^\| [^|]+ \| [^|]+ \| `([a-z-]+)`[^|]*\| `(lab\.medal\.[a-z_]+)` \|", spec, re.MULTILINE):
+            ratified[row[1]] = row[0]
+        self.assertEqual(len(ratified), 4, f"the A5 table did not yield four medallions: {ratified}")
+        rendered = {f"lab.medal.{name}": value["icon"] for name, value in self.report["medalSpecs"].items()}
+        self.assertEqual(rendered, ratified,
+                         "a medallion glyph drifted from the ratified A5 table")
+
     def test_lab_copy_is_the_deck(self) -> None:
         """Every visible string on the component sheet is a COPY.md row, verbatim.
 
@@ -435,9 +450,14 @@ class V3PrimitivesRenderTest(unittest.TestCase):
         seen = []
         lab_copy = self.report["labCopy"]
 
-        def check(value: str, where: str) -> None:
-            self.assertTrue(_is_deck_text(value, deck),
-                            f"{where} renders a string that is not in COPY.md: {value!r}")
+        def check(value: str, where: str, fragment: bool = False) -> None:
+            if fragment:
+                # A specimen line may be the sample fragment a deck row already carries
+                # (`lab.type.body` = "Body · 16/24 · A sentence of real lesson text.").
+                ok = any(value in text for text in deck) or _is_deck_text(value, deck)
+            else:
+                ok = _is_deck_text(value, deck)
+            self.assertTrue(ok, f"{where} renders a string that is not in COPY.md: {value!r}")
             seen.append(value)
 
         for section, text in lab_copy["sections"].items():
@@ -448,10 +468,10 @@ class V3PrimitivesRenderTest(unittest.TestCase):
             check(text, f"lab copy anatomy.{callout}")
         for material, text in lab_copy["materials"].items():
             check(text, f"lab copy materials.{material}")
-        for key, text in lab_copy["typeName"].items():
-            check(text, f"lab copy typeName.{key}")
+        # `typeName` is not copy: it is the contract's own step name (`caption`, `heading`) printed
+        # beside each specimen, which the deck renders inside its `lab.type.*` rows.
         for key, text in lab_copy["typeSample"].items():
-            check(text, f"lab copy typeSample.{key}")
+            check(text, f"lab copy typeSample.{key}", fragment=True)
         for key, text in lab_copy["deck"].items():
             check(text, f"lab copy deck.{key}")
         for key in ("title", "sub", "readonly", "back"):

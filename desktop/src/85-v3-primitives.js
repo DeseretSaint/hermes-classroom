@@ -105,8 +105,8 @@ const CB3_STAMP_WORD = Object.freeze({ done: 'Done', current: 'Now', upcoming: '
 const CB3_MEDALS = Object.freeze({
   first_check: Object.freeze({ icon: 'check', label: 'First check' }),
   first_review: Object.freeze({ icon: 'book', label: 'First review' }),
-  first_takehome: Object.freeze({ icon: 'home', label: 'First take-home' }),
-  course_complete: Object.freeze({ icon: 'verified', label: 'Course complete' })
+  first_takehome: Object.freeze({ icon: 'arrow-left', label: 'First take-home' }),
+  course_complete: Object.freeze({ icon: 'shield', label: 'Course complete' })
 })
 
 /* ── contrast maths, for the lab's chips only ────────────────────────────────────────────────

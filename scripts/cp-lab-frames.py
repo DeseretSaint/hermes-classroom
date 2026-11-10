@@ -5,8 +5,10 @@ The lab is the product version of R-SYS (`docs/concept-parity/refs/system.png`):
 in every state, at the real token values, in both themes and at 100 % and 200 % text. Two files
 come out of one run:
 
-* ``docs/concept-parity/lab/contact-sheet.png`` — owner checkpoint: light/dark × 100 %/200 % plus the
-  reduced-motion and forced-colors postures, each captioned with the cell id it came from;
+* ``docs/concept-parity/lab/contact-sheet.png`` — owner checkpoint: a 2×2 of the four comparison
+  cells (light/dark × 100 %/200 % text), each captioned with the cell id it came from. The two
+  posture cells (reduced motion, forced colors) are captured and named in ``lab.json``; they are
+  kept as separate files rather than shrunk into the sheet;
 * ``docs/concept-parity/lab/anatomy-vs-rsys.png`` — the card anatomy (S6) rendered from the shipped
   primitives, side by side with the same region of the R-SYS concept.
 
@@ -158,17 +160,17 @@ def build_anatomy_panel(out: Path, width: int) -> Path:
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    # R-SYS's left column carries the card-anatomy callouts in the concept sheet (1344x768).
+    # R-SYS's card-anatomy block (a four-item numbered callout list beside one collectible card)
+    # sits in the sheet's right-upper quadrant. The crop carries the whole card with margin on
+    # every side; the previous (660, 110, 960, 570) clipped the card's bottom third.
     reference = Image.open(REF_SYS).convert("RGB")
-    # R-SYS's card-anatomy block (a numbered callout list beside one collectible card) sits in the
-    # sheet's right-upper quadrant.
-    crop = reference.crop((660, 110, 960, 570))
+    crop = reference.crop((668, 84, 992, 674))
 
     panel_w, panel_h = 660, 700
     sheet = Image.new("RGB", (panel_w * 2 + 72, 96 + panel_h), (250, 248, 243))
     draw = ImageDraw.Draw(sheet)
     draw.text((24, 20), "Card anatomy: shipped primitives (left) vs R-SYS concept (right)", fill=(26, 23, 19), font=font)
-    draw.text((24, 48), "Same six callouts; the product's are DOM text at the caption step.", fill=(92, 83, 71), font=font)
+    draw.text((24, 48), "The product's six DOM callouts beside the concept's four marked callouts.", fill=(92, 83, 71), font=font)
     draw.text((24, 74), "Component preview — not a live Desktop capture.", fill=(92, 83, 71), font=font)
     left = fitted(anatomy, panel_w, panel_h)
     right = fitted(crop, panel_w, panel_h)
