@@ -9,7 +9,7 @@
     "width": 1120,
     "height": 1477
   },
-  "commit": "ed251f5a725b8efa59199afac4cc188a55341c3c",
+  "commit": "731ca6b364c3847a79030a5e419c18ca31167640",
   "branch": "wt/cp-011-material",
   "engine": "Chromium 155.0.8059.84 Arch Linux",
   "device_scale": 1,
@@ -76,5 +76,5 @@
   ],
   "wood_has_no_text": true,
   "capture_rig": "scripts/cp_material_sheet.py (proof sheet; scripts/cp-capture.mjs is CP-000 and not on this branch)",
-  "captured_at": "2026-11-10T10:09:36+00:00"
+  "captured_at": "2026-11-10T10:25:31+00:00"
 }
