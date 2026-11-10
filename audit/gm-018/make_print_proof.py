@@ -23,6 +23,7 @@ in this file; no provider call is made and no fixture is copied.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -220,13 +221,37 @@ def main() -> int:
     assert ANSWER not in pack["pages"]["learner_page"]["text"]
     assert ANSWER in pack["pages"]["answer_guide"]["text"]
 
+    # The measured object is the exported artifact itself, byte for byte: the language and tags a
+    # screen reader sees must be the ones the wire produced, not a separate re-render.
+    with db.read() as connection:
+        artifact_row = connection.execute(
+            "SELECT * FROM artifacts WHERE id = ?", (exported["artifact_id"],)
+        ).fetchone()
+    assert artifact_row is not None, exported["artifact_id"]
+    exported_bytes = Path(str(artifact_row["path"])).read_bytes()
+    exported_sha256 = "sha256:" + hashlib.sha256(exported_bytes).hexdigest()
+
+    html_result = call("takehome.html", {"pack_id": made["pack_id"]})["result"]
+    pack_language = html_result["language"]
+    assert pack_language == "en-US", pack_language
+
     evidence: dict = {"pack_id": made["pack_id"], "artifact_id": exported["artifact_id"],
-                      "paper": {}}
+                      "artifact_sha256": exported_sha256,
+                      "pack_language": pack_language, "paper": {}}
     pdf_paths = {}
     for paper, size in (("letter", (612, 792)), ("a4", (595, 842))):
-        data = takehome.render_pdf({"title": pack["title"], "audience": "parent",
-                                    "pages": preview["pages"], "language": "en-US"},
-                                   paper=paper)
+        if paper == "letter":
+            # Exactly the bytes export adopted into the artifact store.
+            data = exported_bytes
+            source = "exported artifact bytes (artifacts.path)"
+        else:
+            # ``takehome.export`` writes Letter only. This file is a re-render of the same bound
+            # pages at A4, carrying the pack's stored language; it is not a second export.
+            data = takehome.render_pdf({"title": pack["title"], "audience": "parent",
+                                        "pages": preview["pages"],
+                                        "language": pack_language}, paper=paper)
+            source = ("re-render of the same bound pages at A4 "
+                      "with the pack's stored language")
         path = OUT / f"gm-018-takehome-{paper}.pdf"
         path.write_bytes(data)
         pdf_paths[paper] = path
@@ -240,8 +265,9 @@ def main() -> int:
         boxes = [(float(page.mediabox.width), float(page.mediabox.height)) for page in reader.pages]
         assert all(box == size for box in boxes), (paper, boxes)
         probe = structure_probe(data)
-        assert probe["lang"] == "en-US", probe
-        assert probe["marked"] and probe["struct_tree_root"], probe
+        # The language comes from the stored pack content, never from a renderer default.
+        assert probe["lang"] == pack_language, (paper, probe)
+        assert probe["struct_tree_root"], probe
         assert probe["info_title"] == "Take-home: searing ribs", probe
         assert probe["display_doc_title"], probe
         assert probe["struct_elements"].get("H1", 0) >= 1, probe
@@ -258,6 +284,8 @@ def main() -> int:
         assert max(len(line) for line in lines) <= 72, max(len(line) for line in lines)
         evidence["paper"][paper] = {
             "file": str(path.relative_to(ROOT)),
+            "source": source,
+            "sha256": "sha256:" + hashlib.sha256(data).hexdigest(),
             "pages": len(boxes),
             "media_boxes": boxes,
             "qpdf_check": "ok",
@@ -268,7 +296,6 @@ def main() -> int:
         }
 
     # ── the HTML document ──────────────────────────────────────────────────
-    html_result = call("takehome.html", {"pack_id": made["pack_id"]})["result"]
     html_path = OUT / "gm-018-takehome.html"
     html_path.write_text(html_result["html"], encoding="utf-8")
     lowered = html_result["html"].lower()
@@ -308,20 +335,26 @@ def main() -> int:
         "# GM-018 take-home print follow-ups proof",
         "",
         f"- pack: `{made['pack_id']}` state `{pack['state']}`",
-        f"- exported PDF artifact: `{exported['artifact_id']}`",
+        f"- exported PDF artifact: `{exported['artifact_id']}` "
+        f"({evidence['artifact_sha256']}), source of the Letter file",
+        f"- pack content language: `{evidence['pack_language']}` (from the stored `content_json`)",
         f"- HTML document: `audit/gm-018/gm-018-takehome.html` "
         f"({evidence['html']['bytes']} bytes, `{evidence['html']['document_hash']}`)",
         "",
         "## Tagged PDF (measured, not assumed)",
         "",
-        "| Paper | File | Pages | MediaBox | qpdf | /Lang | /Marked | Info /Title | "
+        "The Letter file is the exported artifact byte-for-byte (`artifacts.path`); the A4 file "
+        "is a labelled re-render of the same bound pages, because `takehome.export` writes "
+        "Letter only. Both carry the pack's stored language.",
+        "",
+        "| Paper | File | Source | Pages | MediaBox | qpdf | /Lang | /Marked | Info /Title | "
         "H1 / H2 / P | MCIDs | ParentTree keys |",
-        "|---|---|---|---|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for paper, row in (("letter", letter), ("a4", a4)):
         s = row["structure"]
         md.append(
-            f"| {paper} | `{row['file']}` | {row['pages']} | "
+            f"| {paper} | `{row['file']}` | {row['source']} | {row['pages']} | "
             f"{', '.join(f'{w:g}x{h:g}' for w, h in row['media_boxes'])} | {row['qpdf_check']} | "
             f"`{s['lang']}` | {s['marked']} | `{s['info_title']}` | "
             f"{s['struct_elements'].get('H1',0)} / {s['struct_elements'].get('H2',0)} / "
@@ -356,12 +389,29 @@ def main() -> int:
         "- the HTML is returned as content and never adopted into the artifact store: "
         "`artifact.get` remains the only download handle",
         "",
+        "## Red evidence (captured before the fix)",
+        "",
+        "- `audit/gm-018/red-evidence-three-tests.txt` — the three named tests run against "
+        "`e1f8e6e` (the GM-005 merge, before any GM-018 source) with this branch's "
+        "`tests/test_gm_takehome.py` copied in: "
+        "`PYTHONPATH=. python3 -m unittest tests.test_gm_takehome.TakeHomePrintFollowUpTest."
+        "test_takehome_exports_standalone_html tests.test_gm_takehome.TakeHomePrintFollowUpTest."
+        "test_takehome_pdf_is_tagged tests.test_gm_takehome.TakeHomePrintFollowUpTest."
+        "test_takehome_cover_is_single_line` → `Ran 3 tests` / `FAILED (failures=3)`: the v23 "
+        "method enum has no `takehome.html`; the PDF carries no `/MarkInfo`; page 1 prints "
+        "`Take-home: searing - take-home pack` and `Take-home: Section 1: the sear` (two prefixes).",
+        "- `audit/gm-018/red-evidence-language.txt` — the review's language defect reproduced "
+        "before the fix: the new `fr-FR` assertion on the **exported artifact** failed with "
+        "`AssertionError: 'en' != 'fr-FR'` because `export` built the render pack without the "
+        "stored `content_json[\"language\"]`. The same command is green after the fix.",
+        "",
         "## Method",
         "",
         "Real `course.create` + `plan.approve` + staged validated `gen_lessons`; "
         "`takehome.preview/create/approve/export` through `api.dispatch`; `takehome.html` for the "
-        "document; `takehome.render_pdf` at Letter and A4; `qpdf --check`, `pdftotext` and an "
-        "independent pypdf walk of `/StructTreeRoot` and `/ParentTree`.",
+        "document; the Letter PDF is the exported artifact's own bytes and the A4 PDF a labelled "
+        "re-render of the same pages at A4 with the pack's stored language; `qpdf --check`, "
+        "`pdftotext` and an independent pypdf walk of `/StructTreeRoot` and `/ParentTree`.",
         "",
     ]
     (OUT / "PROOF.md").write_text("\n".join(md), encoding="utf-8")

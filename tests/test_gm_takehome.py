@@ -103,6 +103,7 @@ class TakeHomeCase(KernelCase):
         recipe: str = "committed",
         media: list[dict] | None = None,
         procedure: bool = False,
+        locale: str = "en-US",
     ) -> dict:
         created = self.ok(
             "course.create",
@@ -110,7 +111,7 @@ class TakeHomeCase(KernelCase):
                 "title": "Braising at home",
                 "recipe": recipe,
                 "goal": "Braise short ribs at home without a pressure cooker.",
-                "locale": "en-US",
+                "locale": locale,
             },
         )["result"]
         course_id = created["course_id"]
@@ -1055,8 +1056,13 @@ class TakeHomePrintFollowUpTest(TakeHomeCase):
 
     # ── tagged PDF ────────────────────────────────────────────────────────
     def test_takehome_pdf_is_tagged(self) -> None:
-        """The PDF carries a title, a language and a heading/paragraph structure tree."""
-        seeded = self.seed_course(sections=1)
+        """The exported PDF carries the pack's authored locale, title and structure tree.
+
+        The course is seeded with a non-English locale on purpose: the language tag must come
+        from the stored content the pack was created from, not from a renderer default. A
+        fallback such as ``en`` on a ``fr-FR`` course is exactly the defect this test guards.
+        """
+        seeded = self.seed_course(sections=1, locale="fr-FR")
         exported = self.exported_pack(seeded)
         data = self.pdf_bytes(exported["artifact_id"])
 
@@ -1069,7 +1075,12 @@ class TakeHomePrintFollowUpTest(TakeHomeCase):
 
         reader = PdfReader(io.BytesIO(data))
         root = reader.trailer["/Root"]
-        self.assertEqual(str(root["/Lang"]), "en")
+        self.assertEqual(str(root["/Lang"]), "fr-FR")
+        # The HTML rendering reads the same stored language, so the two outputs agree.
+        html_language = self.ok(
+            "takehome.html", {"pack_id": exported["pack_id"]}
+        )["result"]["language"]
+        self.assertEqual(html_language, "fr-FR")
         self.assertTrue(root["/MarkInfo"]["/Marked"])
         self.assertEqual(str(reader.metadata.title), "Take-home: searing")
 

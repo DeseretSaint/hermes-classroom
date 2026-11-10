@@ -1277,6 +1277,10 @@ def export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict
             "audience": str(pack_row["audience"]),
             "kind": str(pack_row["kind"]),
             "pages": pages,
+            # The authored course locale is part of the bound content, not a renderer default:
+            # export renders the exact pack that was previewed and approved, so its Tagged-PDF
+            # catalog /Lang must be the same language the HTML document reports.
+            "language": str(content.get("language") or ""),
         }
         try:
             data = render_pdf(pack)
