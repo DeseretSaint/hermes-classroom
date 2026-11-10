@@ -264,7 +264,7 @@ function JobStateText({ job }) {
       error.code
         ? jsxs('details', {
             'data-cb-job-technical': '',
-            style: { color: 'var(--cb-ink-soft)' },
+            style: { color: 'var(--cb3-ink-soft)' },
             children: [
               jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
               jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: error.code })
@@ -465,8 +465,9 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
       maxWidth: CB_MEASURE,
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-card-stock)',
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
       boxSizing: 'border-box'
     },
     children: [
@@ -606,16 +607,53 @@ const CB_TAKEHOME_EXPORT_WORD = {
   pack_superseded: 'This draft was superseded. Start a fresh draft from the lesson.'
 }
 
-/** The Parent Studio's two entrances, side by side: authored plans and take-home packs. */
+/** The Parent Studio's entrances side by side: authored plans, take-home packs, homework.
+ *
+ * CP-025b: this is the v3 tab strip. The host's `sdk.SegmentedControl` used to paint it, which put
+ * host chrome on Coursebook's own route; the tabs are now authored buttons with `role="tab"`,
+ * `aria-selected` and a 3 px terracotta marker under the current label — a shape *and* a word,
+ * never colour alone. Targets stay 44 px so the strip survives 460 and 200% text.
+ */
 function StudioEntranceTabs({ value, onChange }) {
   return jsx('div', {
     'data-cb-parent-studio-tabs': '',
-    style: { padding: '0.9rem 1rem 0.1rem', boxSizing: 'border-box' },
-    children: jsx(sdk.SegmentedControl, {
-      options: CB_STUDIO_ENTRANCES,
-      value,
-      sizing: 'content',
-      onChange
+    role: 'tablist',
+    'aria-label': 'Parent Studio sections',
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+      gap: '0.25rem',
+      padding: '0.9rem 1rem 0',
+      borderBottom: '1px solid var(--cb3-rule)',
+      boxSizing: 'border-box'
+    },
+    children: CB_STUDIO_ENTRANCES.map((item) => {
+      const current = item.id === value
+      return jsx('button', {
+        type: 'button',
+        role: 'tab',
+        'data-cb3-tab': item.id,
+        'data-current': current ? 'true' : 'false',
+        'aria-selected': current ? 'true' : 'false',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          minHeight: '44px',
+          paddingInline: '0.6rem',
+          border: 0,
+          borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+          background: 'transparent',
+          color: 'var(--cb3-ink)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
+          lineHeight: cb3Lead('meta'),
+          fontWeight: current ? 600 : 400,
+          cursor: 'pointer'
+        },
+        onClick: () => onChange(item.id),
+        children: item.label
+      }, item.id)
     })
   })
 }
@@ -679,12 +717,12 @@ function TakeHomePaperBadge({ children, tone }) {
   return jsx('span', {
     'data-cb-takehome-badge': tone || 'plain',
     style: {
-      fontFamily: CB_SANS,
-      fontSize: CB_TYPE.caption,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
       fontWeight: 600,
       letterSpacing: '0.01em',
-      color: tone === 'warn' ? 'var(--cb-coral)' : 'var(--cb-ink-soft)',
-      border: '1px solid var(--cb-rule)',
+      color: tone === 'warn' ? 'var(--cb3-alert)' : 'var(--cb3-ink-soft)',
+      border: '1px solid var(--cb3-rule)',
       borderRadius: '999px',
       padding: '0.05rem 0.5rem',
       whiteSpace: 'nowrap'
@@ -721,8 +759,8 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
       flexDirection: 'column',
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-canvas-edge)',
+      borderTop: '1px solid var(--cb3-plum)',
       boxSizing: 'border-box'
     },
     children: [
@@ -749,7 +787,7 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                 justifyContent: 'space-between',
                 gap: '0.4rem 1rem',
                 padding: '0.7rem 0',
-                borderTop: '1px solid var(--cb-rule)'
+                borderTop: '1px solid var(--cb3-rule)'
               },
               children: [
               jsxs(
@@ -759,16 +797,16 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                   children: [
                     jsx('div', {
                       style: {
-                        fontFamily: CB_SERIF,
-                        fontSize: CB_TYPE.body,
+                        fontFamily: 'var(--cb3-font-display)',
+                        fontSize: cb3Type('body'),
                         fontWeight: 600,
-                        color: 'var(--cb-ink)',
+                        color: 'var(--cb3-ink)',
                         overflowWrap: 'anywhere'
                       },
                       children: row.title || 'Untitled course'
                     }),
                     jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children:
                         `${(row.provenance && row.provenance.source) === 'bundled' ? 'Bundled' : (row.provenance && row.provenance.source) === 'community' ? 'Imported' : 'Written here'} · ` +
                         `${row.learner_label || 'Learner course'}`
@@ -836,7 +874,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                       jsx(TakeHomePaperBadge, { children: cbTakeHomeModeWord(source && source.presentation_mode) }),
                       jsx(TakeHomePaperBadge, { children: plural(objectives.length, 'written lesson', 'written lessons') }),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'No child account and no child chat: the adult prepares and prints.'
                       })
                     ]
@@ -851,12 +889,12 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                           jsx('h3', {
                             style: {
                               margin: 0,
-                              fontFamily: CB_SERIF,
-                              fontSize: CB_TYPE.body,
+                              fontFamily: 'var(--cb3-font-display)',
+                              fontSize: cb3Type('body'),
                               fontWeight: 600,
-                              color: 'var(--cb-ink)',
+                              color: 'var(--cb3-ink)',
                               paddingBottom: '0.3rem',
-                              borderBottom: '1px solid var(--cb-rule)'
+                              borderBottom: '1px solid var(--cb3-rule)'
                             },
                             children: group.title
                           }),
@@ -873,7 +911,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                   justifyContent: 'space-between',
                                   gap: '0.4rem 1rem',
                                   padding: '0.65rem 0',
-                                  borderBottom: '1px solid var(--cb-rule)'
+                                  borderBottom: '1px solid var(--cb3-rule)'
                                 },
                                 children: [
                                 jsxs(
@@ -883,15 +921,15 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                     children: [
                                       jsx('div', {
                                         style: {
-                                          fontFamily: CB_SERIF,
-                                          fontSize: CB_TYPE.body,
-                                          color: 'var(--cb-ink)',
+                                          fontFamily: 'var(--cb3-font-display)',
+                                          fontSize: cb3Type('body'),
+                                          color: 'var(--cb3-ink)',
                                           overflowWrap: 'anywhere'
                                         },
                                         children: `${objective.ordinal}. ${objective.title}`
                                       }),
                                       jsx('div', {
-                                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                                         children: objective.available
                                           ? `Evidence target: ${objective.evidence_target} · ${objective.lesson_state}` +
                                             (objective.has_world_plate ? ' · world plates available' : ' · no world art')
@@ -953,7 +991,7 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           children: [
             jsx(CbLabel, { children: 'Print proof' }),
             jsx('span', {
-              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+              style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
               children: `${plural(list.length, 'page', 'pages')} · ${paper} · ${margin} pt margins · selectable text`
             })
           ]
@@ -968,12 +1006,12 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           // page, and the plum wash plus a dashed rule for the parent-only answer guide.
           const sheet =
             {
-              cover: { background: 'var(--cb-lamp-soft)', borderColor: 'var(--cb-lamp)' },
-              parent_guide: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-accent)' },
-              learner_page: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-field)' },
-              plate: { background: 'var(--cb-accent-soft)', borderColor: 'var(--cb-accent)' },
-              answer_guide: { background: 'var(--cb-plum-soft)', borderColor: 'var(--cb-plum)' }
-            }[role] || { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-rule)' }
+              cover: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              parent_guide: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-terracotta)' },
+              learner_page: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-sage)' },
+              plate: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              answer_guide: { background: 'var(--cb3-canvas-edge)', borderColor: 'var(--cb3-plum)' }
+            }[role] || { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-rule)' }
           return jsxs(
             'article',
             {
@@ -992,7 +1030,6 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                 background: sheet.background,
                 border: '1px solid ' + sheet.borderColor,
                 borderTopStyle: role === 'answer_guide' ? 'dashed' : 'solid',
-                borderLeftWidth: role === 'learner_page' || role === 'answer_guide' ? '3px' : '1px'
               },
               children: [
             jsxs(
@@ -1005,15 +1042,15 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                     children: CB_TAKEHOME_PAGE_WORD[role] || role
                   }),
                   jsx('span', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: CB_TAKEHOME_PAGE_NOTE[role] || ''
                   }),
                   jsx('span', {
                     style: {
                       marginLeft: 'auto',
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
-                      color: 'var(--cb-ink-soft)'
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: `Page ${index + 1} of ${list.length}`
                   })
@@ -1023,28 +1060,28 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
             jsx('h3', {
               style: {
                 margin: 0,
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 fontWeight: 600,
                 lineHeight: 1.25,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 overflowWrap: 'anywhere'
               },
               children: page.title
             }),
             page.alt_text
               ? jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                  style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                   children: `Text alternative: ${page.alt_text}`
                 })
               : null,
             jsx(ProseText, {
               'data-cb-proof-text': role,
               style: {
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 lineHeight: 1.6,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 maxWidth: CB_MEASURE
               },
               text: page.text
@@ -1126,9 +1163,9 @@ function TakeHomePackPanel({
             display: 'flex',
             flexDirection: 'column',
             gap: '0.15rem',
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.caption,
-            color: 'var(--cb-ink-soft)'
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            color: 'var(--cb3-ink-soft)'
           },
           children: [
             jsx('div', {
@@ -1160,11 +1197,11 @@ function TakeHomePackPanel({
                 alignItems: 'flex-start',
                 gap: '0.55rem',
                 padding: '0.45rem 0.6rem',
-                border: '1px solid ' + (kind === option.id ? 'var(--cb-accent)' : 'var(--cb-rule)'),
-                background: kind === option.id ? 'var(--cb-accent-soft)' : 'transparent',
-                fontFamily: CB_SANS,
-                fontSize: CB_TYPE.caption,
-                color: 'var(--cb-ink)',
+                border: '1px solid ' + (kind === option.id ? 'var(--cb3-terracotta)' : 'var(--cb3-rule)'),
+                background: kind === option.id ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                color: 'var(--cb3-ink)',
                 cursor: 'pointer'
               },
               children: [
@@ -1181,8 +1218,8 @@ function TakeHomePackPanel({
                 {
                   style: { display: 'flex', flexDirection: 'column', gap: '0.1rem' },
                   children: [
-                    jsx('span', { style: { fontWeight: 600, fontSize: CB_TYPE.body }, children: option.label }),
-                    jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: option.hint })
+                    jsx('span', { style: { fontWeight: 600, fontSize: cb3Type('body') }, children: option.label }),
+                    jsx('span', { style: { color: 'var(--cb3-ink-soft)' }, children: option.hint })
                   ]
                 }
               )
@@ -1194,11 +1231,34 @@ function TakeHomePackPanel({
       jsx(CbLabel, { children: 'Who holds this copy' }),
       jsx('div', {
         'data-cb-takehome-audience': audience,
-        children: jsx(sdk.SegmentedControl, {
-          options: CB_TAKEHOME_AUDIENCES,
-          value: audience,
-          sizing: 'content',
-          onChange: onAudience
+        role: 'radiogroup',
+        'aria-label': 'Who holds this copy',
+        style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' },
+        children: CB_TAKEHOME_AUDIENCES.map((option) => {
+          const chosen = option.id === audience
+          return jsx('button', {
+            type: 'button',
+            role: 'radio',
+            'data-cb3-choice': option.id,
+            'aria-checked': chosen ? 'true' : 'false',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: '44px',
+              paddingInline: '0.7rem',
+              border: chosen ? '2px solid var(--cb3-terracotta)' : '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('pill'),
+              background: chosen ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+              color: 'var(--cb3-ink)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: chosen ? 600 : 400,
+              cursor: 'pointer'
+            },
+            onClick: () => onAudience(option.id),
+            children: option.label
+          }, option.id)
         })
       }),
       // One primary at a time, in the order the artifact actually moves.
@@ -1240,9 +1300,9 @@ function TakeHomePackPanel({
                             'div',
                             {
                               style: {
-                                fontFamily: CB_SANS,
-                                fontSize: CB_TYPE.caption,
-                                color: 'var(--cb-ink-soft)',
+                                fontFamily: 'var(--cb3-font-ui)',
+                                fontSize: cb3Type('caption'),
+                                color: 'var(--cb3-ink-soft)',
                                 overflowWrap: 'anywhere'
                               },
                               children: `${item.title}${item.url ? ' · ' + item.url : ''} · ${item.support_status}`
@@ -1254,7 +1314,7 @@ function TakeHomePackPanel({
                     }
                   )
                 : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: 'This lesson records no external sources.'
                   })
             ]
@@ -1269,18 +1329,18 @@ function TakeHomePackPanel({
               children: [
                 jsx(CbLabel, { children: 'Approval and print' }),
                 jsx('div', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                  style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                   children: `Previewed pages: ${(preview.pages || []).length} · preview hash: ${preview.preview_hash}`
                 }),
                 state === 'draft'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children: `Draft ${pack.pack_id} · revision ${revision}. Approval covers exactly the pages above.`
                     })
                   : null,
                 state === 'approved' || state === 'exported'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                       children: `${CB_TAKEHOME_STATE_WORD[state]} on ${pack.approved_at || 'approval'} · approval hash: ${pack.approval_hash || '—'}`
                     })
                   : null,
@@ -1322,9 +1382,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.15rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-coral)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-alert)'
                         },
                         children: [
                           jsx('div', {
@@ -1333,7 +1393,7 @@ function TakeHomePackPanel({
                               `${error.code ? error.code + ': ' : ''}${describeError(error)}`
                           }),
                           jsx('div', {
-                            style: { color: 'var(--cb-ink-soft)' },
+                            style: { color: 'var(--cb3-ink-soft)' },
                             children: `Backend reason: ${(error.details && error.details.reason) || 'none reported'}.`
                           })
                         ]
@@ -1345,9 +1405,9 @@ function TakeHomePackPanel({
                       'data-cb-takehome-export-error':
                         (exportError.details && exportError.details.reason) || exportError.code || 'error',
                       style: {
-                        fontFamily: CB_SANS,
-                        fontSize: CB_TYPE.caption,
-                        color: 'var(--cb-coral)'
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('caption'),
+                        color: 'var(--cb3-alert)'
                       },
                       children: cbTakeHomeExportCopy(exportError)
                     })
@@ -1361,9 +1421,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.3rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-ink-soft)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-ink-soft)'
                         },
                         children: [
                           jsx('div', {
@@ -1907,23 +1967,23 @@ function HomeworkSheetCard({ task, compact = false }) {
   const reading = target.reading && target.reading !== target.display ? target.reading : null
   const eyebrow = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
   const label = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
-  const rule = { border: 0, borderTop: '1px solid var(--cb-rule)', margin: '0.15rem 0', width: '100%' }
+  const rule = { border: 0, borderTop: '1px solid var(--cb3-rule)', margin: '0.15rem 0', width: '100%' }
   const completion =
     state === 'skipped'
       ? 'Skipped. Nothing is owed and nothing is lost.'
@@ -1946,8 +2006,8 @@ function HomeworkSheetCard({ task, compact = false }) {
       maxWidth: CB_MEASURE,
       boxSizing: 'border-box',
       padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
-      background: 'var(--cb-paper-raised)',
-      border: '1px solid var(--cb-rule)',
+      background: 'var(--cb3-card-stock)',
+      border: '1px solid var(--cb3-rule)',
       borderRadius: '2px'
     },
     children: [
@@ -1955,11 +2015,11 @@ function HomeworkSheetCard({ task, compact = false }) {
       jsx('h3', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: compact ? cb3Type('lead') : cb3Type('heading'),
           fontWeight: 600,
           lineHeight: 1.2,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: task.title || 'One task'
       }, 'title'),
@@ -1968,10 +2028,10 @@ function HomeworkSheetCard({ task, compact = false }) {
             'data-cb-homework-target': '',
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.body : CB_TYPE.heading,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: compact ? cb3Type('body') : cb3Type('heading'),
               lineHeight: 1.2,
-              color: 'var(--cb-ink)',
+              color: 'var(--cb3-ink)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(target.display) ? 'ja' : undefined,
@@ -1982,9 +2042,9 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.body,
-              color: 'var(--cb-ink-soft)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('body'),
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(reading) ? 'ja' : undefined,
@@ -1993,13 +2053,13 @@ function HomeworkSheetCard({ task, compact = false }) {
         : null,
       target.romaji
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: target.romaji
           }, 'romaji')
         : null,
       target.meaning
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
             children: target.meaning
           }, 'meaning')
         : null,
@@ -2009,10 +2069,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         'data-cb-homework-context': '',
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.context || ''
@@ -2025,10 +2085,10 @@ function HomeworkSheetCard({ task, compact = false }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.25rem',
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: steps.map((step, index) =>
           jsx('li', { style: { overflowWrap: 'anywhere' }, children: step }, `${task.task_id}-step-${index}`)
@@ -2036,7 +2096,7 @@ function HomeworkSheetCard({ task, compact = false }) {
       }, 'steps'),
       record.length > 0
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `Ticks for this card: ${record.join(' · ')}`
           }, 'record')
         : null,
@@ -2045,16 +2105,16 @@ function HomeworkSheetCard({ task, compact = false }) {
       jsx('p', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.success_criterion || ''
       }, 'criterion'),
       jsx('p', {
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
         children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
       }, 'minutes'),
       jsx('p', {
@@ -2062,11 +2122,11 @@ function HomeworkSheetCard({ task, compact = false }) {
         style: {
           margin: 0,
           paddingTop: '0.35rem',
-          borderTop: '1px solid var(--cb-rule)',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          borderTop: '1px solid var(--cb3-rule)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: completion
       }, 'completion'),
@@ -2074,10 +2134,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsxs('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               lineHeight: 1.5,
-              color: 'var(--cb-ink-soft)',
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             children: [
@@ -2145,7 +2205,7 @@ function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownlo
           })
         : null,
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
         children: 'Local only. Nothing is sent.'
       })
     ]
@@ -2352,18 +2412,18 @@ function TakeThisWithYou({
           maxWidth: CB_MEASURE,
           marginTop: '0.6rem',
           paddingTop: '0.6rem',
-          borderTop: '1px solid var(--cb-rule)'
+          borderTop: '1px solid var(--cb3-rule)'
         },
         children: [
           jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
+              color: 'var(--cb3-ink-soft)'
             },
             children: sectionTitle ? `Take this with you · ${sectionTitle}` : 'Take this with you'
           }),
@@ -2378,10 +2438,10 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.meta,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('meta'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-coral)',
+                      color: 'var(--cb3-alert)',
                       overflowWrap: 'anywhere'
                     },
                     children: error.message || 'The task could not be read.'
@@ -2411,10 +2471,10 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SERIF,
-                      fontSize: CB_TYPE.body,
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('body'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-ink)'
+                      color: 'var(--cb3-ink)'
                     },
                     children:
                       'Coursebook can write one small task from this lesson — one thing to use where you actually are. Say where and when, in one sentence.'
@@ -2422,10 +2482,10 @@ function TakeThisWithYou({
                   jsx('label', {
                     htmlFor: 'cb-homework-context',
                     style: {
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
                       fontWeight: 600,
-                      color: 'var(--cb-ink-soft)'
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: 'Where and when'
                   }),
@@ -2446,7 +2506,7 @@ function TakeThisWithYou({
                         children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
                       }),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'One task, at most three steps, three to ten minutes.'
                       })
                     ]
@@ -2493,14 +2553,14 @@ function TakeThisWithYou({
                             children: busy === 'skip' ? 'Skipping' : 'Not this one'
                           }),
                           jsx('span', {
-                            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                             children: 'Only you record it. Nothing here is marked.'
                           })
                         ]
                       })
                     : jsx('div', {
                         'data-cb-homework-report': task.state,
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children:
                           task.state === 'skipped'
                             ? 'This one is closed as skipped. A fresh task can be taken with you from another lesson.'
@@ -2517,10 +2577,10 @@ function TakeThisWithYou({
                 'data-cb-homework-notice': '',
                 style: {
                   margin: 0,
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
                   lineHeight: 1.5,
-                  color: 'var(--cb-ink)'
+                  color: 'var(--cb3-ink)'
                 },
                 children: notice
               })
@@ -2644,10 +2704,10 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         jsx('p', {
           style: {
             margin: 0,
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.meta,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('meta'),
             lineHeight: 1.5,
-            color: 'var(--cb-coral)',
+            color: 'var(--cb3-alert)',
             overflowWrap: 'anywhere'
           },
           children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
@@ -2666,7 +2726,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       minWidth: 0,
       maxWidth: CB_MEASURE,
       padding: '0.5rem 0',
-      borderTop: '1px solid var(--cb-rule)'
+      borderTop: '1px solid var(--cb3-rule)'
     },
     children: [
       jsxs('div', {
@@ -2675,9 +2735,9 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
           jsx('span', {
             'data-cb-homework-record-target': '',
             style: {
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              color: 'var(--cb-ink)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('lead'),
+              color: 'var(--cb3-ink)',
               minWidth: 0,
               overflowWrap: 'anywhere'
             },
@@ -2691,13 +2751,13 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
             children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
           }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `${Number(task.estimated_minutes) || 5} min`
           })
         ]
       }),
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: 1.5, color: 'var(--cb3-ink-soft)' },
         children: [lessonTitle || null, courseTitle || null].filter(Boolean).join(' · ') || 'This course',
       }),
       jsxs('div', {
@@ -2755,7 +2815,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         : null,
       notice
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink)' },
             children: notice
           })
         : null,
@@ -2763,9 +2823,9 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              color: 'var(--cb-coral)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              color: 'var(--cb3-alert)',
               overflowWrap: 'anywhere'
             },
             children: `${error.code}: ${error.message}`
@@ -2904,10 +2964,10 @@ function HomeworkStudio({ implemented, onOpenSource }) {
         style: {
           margin: 0,
           maxWidth: CB_MEASURE,
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink-soft)'
+          color: 'var(--cb3-ink-soft)'
         },
         children:
           'Tasks a learner took with them from a lesson on this device. A parent can record one as done; it is a report, never a mark, and it opens no chat.'
@@ -3221,33 +3281,67 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
   })
 }
 
-/** The view switcher: canonical tab strip when there is width, labelled Select when there is not. */
+/** The view switcher: authored v3 tabs when the route has width, a labelled Select when it has
+ * not. The breakpoint is read from the route (`useCbViewportWidth`), never from the window: the
+ * Desktop window can be ~1050 px wide while this route is 407 px. */
 function StudioViewPicker({ id, label, value, options, onChange }) {
+  const width = useCbViewportWidth()
+  const wide = !(width > 0 && width < 760)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
+    'data-cb-studio-view-picker': value,
     children: [
-      jsx('div', {
-        className: 'hidden min-[47.5rem]:block',
-        children: jsx(sdk.SegmentedControl, { onChange, options, sizing: 'content', value })
-      }),
-      jsxs('div', {
-        className: 'flex items-center gap-2 min-[47.5rem]:hidden',
-        children: [
-          jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
-          jsxs(sdk.Select, {
-            value,
-            onValueChange: onChange,
+      wide
+        ? jsx('div', {
+            role: 'tablist',
+            'aria-label': label,
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', borderBottom: '1px solid var(--cb3-rule)' },
+            children: options.map((option) => {
+              const current = option.id === value
+              return jsx('button', {
+                type: 'button',
+                role: 'tab',
+                'data-cb3-view-tab': option.id,
+                'data-current': current ? 'true' : 'false',
+                'aria-selected': current ? 'true' : 'false',
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '44px',
+                  paddingInline: '0.6rem',
+                  border: 0,
+                  borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+                  background: 'transparent',
+                  color: 'var(--cb3-ink)',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: current ? 600 : 400,
+                  cursor: 'pointer'
+                },
+                onClick: () => onChange(option.id),
+                children: option.label
+              }, option.id)
+            })
+          })
+        : jsxs('div', {
+            className: 'flex items-center gap-2',
             children: [
-              jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
-              jsx(
-                sdk.SelectContent,
-                { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
-                'content'
-              )
+              jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
+              jsxs(sdk.Select, {
+                value,
+                onValueChange: onChange,
+                children: [
+                  jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
+                  jsx(
+                    sdk.SelectContent,
+                    { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
+                    'content'
+                  )
+                ]
+              })
             ]
           })
-        ]
-      })
     ]
   })
 }
@@ -3666,7 +3760,7 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
     children: [
       jsx('div', {
         'data-cb-plan-validation-line': model.independence || model.state,
-        style: { color: 'var(--cb-ink)', fontWeight: 600 },
+        style: { color: 'var(--cb3-ink)', fontWeight: 600 },
         children: model.line
       }),
       model.validatorModel
@@ -3878,12 +3972,13 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
     className: 'flex max-w-prose flex-col gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
     style: {
       padding: '0.6rem 0.75rem',
-      borderLeft: '2px solid var(--cb-accent)',
-      background: 'var(--cb-accent-soft)'
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
+      background: 'var(--cb3-card-stock)'
     },
     children: [
       jsx('div', {
-        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+        style: { fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
         children: model.title
       }),
       jsx('p', { className: 'max-w-prose', children: model.body }),
@@ -6821,7 +6916,13 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
             role: 'alertdialog',
             'aria-label': 'Unsaved section changes',
             'data-cb-studio-leave-guard': pendingLeave.kind,
-            className: 'flex flex-wrap items-center gap-2 border-l-2 border-(--cb-accent) pl-2',
+            className: 'flex flex-wrap items-center gap-2',
+            style: {
+              padding: '0.6rem 0.75rem',
+              background: 'var(--cb3-card-stock)',
+              border: '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('round')
+            },
             children: [
               jsx('span', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -6908,13 +7009,13 @@ function CoursebookWordmark() {
   return jsx('div', {
     'data-cb-wordmark': '',
     style: {
-      fontFamily: CB_SERIF,
-      fontSize: CB_TYPE.meta,
+      fontFamily: 'var(--cb3-font-display)',
+      fontSize: cb3Type('meta'),
       fontWeight: 600,
       letterSpacing: '0.14em',
       textTransform: 'uppercase',
       lineHeight: 1.2,
-      color: 'var(--cb-ink-soft)',
+      color: 'var(--cb3-ink-soft)',
       // H-160: "COURSEBOOK" at 28 px (200% text) plus 0.14em tracking measures 239 px, and the
       // route pane at a 460 px window is 215 px (170 px of content). The wordmark was therefore
       // the widest unbreakable token on the route: 46 px of the 53 px routeOverflowX on its own,
