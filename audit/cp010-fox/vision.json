@@ -14,8 +14,8 @@
     "owner_approved": false
   },
   "marking_band": {
-    "definition": "Dark limb marking counted as a match when it covers the paw and extends no further than the mid-forearm or mid-shin, and never stops before the paw. The model sheet's own four views show the paw plus a short cuff, so this band is measured from the authority, not chosen to flatter the poses.",
-    "measured_on_the_sheet": "paw only in all four views"
+    "definition": "Dark limb marking counted as a match when it is a cuff at the end of the limb — the paw plus the wrist or ankle — with fur above it and nothing approaching the elbow. Measured, not chosen: ART-BIBLE.md §3 states the band from the numbers below.",
+    "measured_on_the_sheet": "front view of the model sheet: solid dark band 60-61 px on the arms and 68-70 px on the feet against a 607 px figure (9.9-10.0 % and 11.2-11.5 %); arm band top edge at 65.1-65.7 % of figure height, foot band top at 87.8-88.1 %, fur above both. scripts/cp010-marking-audit.py, recorded in audit/cp010-fox/marking-audit.json."
   },
   "rows": [
     {
@@ -28,7 +28,7 @@
         "cream_bib": true,
         "cream_tail_tip": true,
         "dark_ear_backs": true,
-        "limb_marking": "paw only, arms and legs, no cuff above the wrist or ankle"
+        "limb_marking": "a dark cuff at the end of each limb with fur above it: 60-61 px on the arms and 68-70 px on the feet of a 607 px front view, measured by scripts/cp010-marking-audit.py; no view carries dark up the limb"
       },
       "markings_match_sheet": true,
       "colour_family": "warm rust fur, cream bib and tail tip, dark brown limb ends and line — inside the post-temper family recorded in the art bible",
@@ -70,7 +70,7 @@
       "colour_family": "same family",
       "lettering": "none",
       "verdict": "pass",
-      "notes": "Round 3. Round 1 was a quadruped (aspect 1.076) and is recorded as rejected in prompts.json; round 2 was bipedal but both arms hung at the side, so it had no gesture. The pointing paw's fingers separate, where the sheet's paws are mittens — a small detail visible at 256 px, not at 64 px."
+      "notes": "Round 3. Round 1 was a quadruped (aspect 1.076) and is recorded as rejected in prompts.json; round 2 was bipedal but both arms hung at the side, so it had no gesture. The pointing paw is a mitten with a thumb and one internal line, matching the sheet's paws — checked on a 500 % nearest-neighbour crop of this master. An earlier draft of this row said the fingers separate; that was a vision read recorded as fact and is corrected here."
     },
     {
       "plate_id": "fox-clock",
@@ -168,12 +168,13 @@
       "id": "OI-1",
       "owner_decision": "D-CP010-A",
       "class": "binding-document",
-      "finding": "ART-BIBLE.md §3 and the card body require dark socks from the paw to the elbow. No shipped plate implements that, including the model sheet the rule describes: all four sheet views show the paw plus at most a short cuff, and six of seven poses match the sheet. The rule is therefore a target that the authority itself does not meet.",
+      "finding": "ART-BIBLE.md §3 and the card body required dark socks from the paw to the elbow. No shipped plate implements that, including the model sheet the rule describes. Measured on the sheet's front view (scripts/cp010-marking-audit.py): the solid dark band is 60-61 px on the arms and 68-70 px on the feet against a 607 px figure, with fur above it and nothing approaching the elbow. The rule was therefore a target that the authority itself does not meet.",
       "why_it_matters": "CP-011, CP-012 and CP-013 inherit this bible. A rule the authority violates propagates as an unmeetable instruction.",
       "options": [
         "Amend §3 to the marking the family and the sheet actually share: dark paw plus at most a short cuff, lower leg dark to the ankle.",
         "Hold the rule and regenerate the model sheet (one round left) and then all seven poses from the new sheet; the poses would exceed their per-pose round budget."
-      ]
+      ],
+      "resolution": "Option 1, by supervisor ruling 2026-11-10 05:45 MST: §3 now states the measured cuff band and names itself the authority. Reversible by the owner. No plate regenerated."
     },
     {
       "id": "OI-2",
@@ -190,12 +191,13 @@
       "id": "OI-3",
       "owner_decision": "D-CP010-B",
       "class": "wording",
-      "finding": "§3 gives the head as 45 % of standing figure height. The only plate where the silhouette permits a neck-pinch estimate (wave, arms down) measures 53.3 %, and the model sheet itself cannot be measured per view by silhouette slicing.",
+      "finding": "§3 gave the head as 45 % of standing figure height. The only plate where the silhouette permits a neck-pinch estimate (wave, arms down) measures 53.3 %, and the model sheet itself cannot be measured per view by silhouette slicing.",
       "why_it_matters": "A proportion table that a new plate cannot meet produces either an off-model plate or a re-litigated rule.",
       "options": [
         "Keep 45 % as the design target and record 53.3 % as the measured family value with its method.",
         "Adopt 53 % as the rule and re-state the tolerance."
-      ]
+      ],
+      "resolution": "Option 1, by supervisor ruling 2026-11-10 05:45 MST: §3 states 45-55 % of standing height with 45 % as the target and 53.3 % as the measured value; §4 cites §3 instead of restating a number. The six unmeasurable poses are accepted as-is for this submission. Reversible by the owner."
     },
     {
       "id": "OI-4",
