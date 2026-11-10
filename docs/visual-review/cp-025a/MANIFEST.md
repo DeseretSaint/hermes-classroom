@@ -85,7 +85,7 @@ are composite crops from the door. The parity verdict therefore belongs to CP-04
 | The sheet is one page: one target, one context, at most three steps, one `Done when`, marked Japanese, three quiet actions and no filled control | `::test_homework_sheet_keeps_one_task_and_the_v3_material`; frames `homework--sheet--1049--light--100`, `…--460--light--100` |
 | A take-home card claims no XP, grade, score, mastery or answer | `::test_homework_sheet_keeps_one_task_and_the_v3_material` (forbidden-word scan) |
 | The homework list has an authored empty state, and the studio/list/record carry their v3 markers | `::test_homework_list_empty_state_is_authored`, `::test_studio_and_notebook_lists_carry_v3_markers`; frame `homework--studio--1049--light--100` |
-| No v2 token, `sdk.Button`, `CbAction` or `sdk.Badge` survives in the rebuilt regions; no raw colour, gradient, shadow or `vw` | `::test_game_surfaces_read_the_v3_contract_only`, `::test_homework_surfaces_read_the_v3_contract_only` (both call the shared `assert_v3_only` scan) |
+| No v2 token, `sdk.Button`, `CbAction` or `sdk.Badge` survives in the rebuilt regions; no raw colour, gradient, shadow or `vw` | `::test_game_surfaces_read_the_v3_contract_only`, `::test_homework_surfaces_read_the_v3_contract_only` (both call the shared `assert_v3_only` scan). Negative control run by the maker: injecting `'data-cb-nonce-probe': '#ff0000'` into the GameHeader props makes the scan fail with *"GameHeader carries a raw colour"* (9 tests → 1 failure); the probe was removed and the module rebuilt to `e9fd149a` before this commit. |
 | The homework surfaces use three quiet actions and no primary inside the sheet actions | `::test_homework_surfaces_read_the_v3_contract_only` (`variant: 'quiet'` ×3, no `'primary'`) |
 
 ## Known gaps (honest, not hidden)
@@ -117,6 +117,13 @@ are composite crops from the door. The parity verdict therefore belongs to CP-04
    emulation, not a 1344×768 full-window frame.
 7. **Primitive/token requests:** none. Nothing in this card needed a change outside
    `desktop/src/30-home.js` and `desktop/src/95-studio.js`.
+8. **Design detector.** `impeccable context --target desktop/src/95-studio.js` reports
+   `NO_PRODUCT_MD` (this repo keeps product context in `docs/`, not PRODUCT.md) and directs a
+   mechanical detect pass. `impeccable detect --json desktop/src/30-home.js desktop/src/95-studio.js`
+   returned `[]` — **but the detector is inert on this input shape**: the same command on a copy
+   with an injected `#ff0000`, a `linear-gradient` and a `boxShadow` also returned `[]`. Its silence
+   is therefore not evidence; the authoritative check is the source-scope test above, whose
+   non-vacuity the maker proved by injecting a raw colour into GameHeader and watching it fail.
 
 ## Reproduce
 
