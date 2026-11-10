@@ -1,8 +1,8 @@
 # GM-003 evidence
 
-Branch: `wt/gm-003-world` (rebased on `origin/master` `7553925`, which carries GM-001 `4e3d6c6`,
-migration 0013, the published `rpc.v21.json`/`rpc.v22.json`, GM-014's print fixtures and the
-GM-002/GM-011 visual/tutor merges; no master merge, no
+Branch: `wt/gm-003-world` (rebased on `origin/master` `e1f8e6e`, which carries GM-001 `4e3d6c6`,
+migration 0013, the published `rpc.v21.json`/`rpc.v22.json`/`rpc.v23.json`, GM-014's print
+fixtures and the GM-002/GM-005/GM-011 visual/take-home/tutor merges; no master merge, no
 push, no gateway restart, no manifest/contract/migration edit on this branch).
 
 ## Named tests
@@ -50,8 +50,8 @@ This is deliberate, not an omission: it avoids rewriting the ten historical cont
 tests and avoids racing GM-002/GM-005/GM-009, which are parallel backend cards that would each
 otherwise need the same single manifest bump.
 
-**Update (round 9):** the rebased base `7553925` publishes `rpc.v22.json` (GM-011's
-`tutor.ask`/`tutor.history`), but it still carries no `world.*` entry. The four world methods
+**Update (round 11):** the rebased base `e1f8e6e` publishes `rpc.v23.json` (GM-005's
+take-home methods), but it still carries no `world.*` entry. The four world methods
 therefore remain keyed by the frozen GM manifest and non-dispatchable; the additive `world.*`
 entries plus the `coursebook/contracts.py` bump remain the integration card's work. This branch
 does not edit `contracts/*.json`.
@@ -363,3 +363,52 @@ defence. `world.*` is still absent from the published `rpc.v22.json`, so registr
 and non-dispatchable (additive integration bump); the media seam is a deterministic fake; the
 `world_assets` role vocabulary follows the frozen 0013 CHECK; create-time auto-queue is owned by
 GM-002.
+
+## Review round 11 — sentinel M1: a frozen verb that is also a scene word
+
+Round 10 closed L1/L2, but sentinel found that `clean` — one of the eleven verbs in the
+supervisor's own round-7 frozen §4.4 rule-5 list — was absent from `_PROCEDURE_VERB_TOKENS`, so
+`_plate_text_problems('Clean the head', 'workshop_manual')` returned `()` and a real head-gasket
+course patched with `motifs=['Clean the head']` was accepted (3 provider calls, stored, in 3/3
+prompts; the approved-style kit path accepted it too, 4 calls). A course titled `Clean the head`
+and a goal `Clean the head and refill the coolant` leaked the same way with no patch. Auditing the
+frozen list also found `disconnect` missing, and the ambiguous verbs `refill`/`break`/`polish`
+unfenced.
+
+**Fix (tests first)**
+
+- `disconnect` joins `_PROCEDURE_VERB_TOKENS` (unambiguous imperative).
+- `_DETERMINER_ONLY_PROCEDURE_VERBS = {break, clean, polish, refill}` is the second half of the
+  vocabulary: these are ordinary scene words (`clean service bay`, `break room`, `polish rag`,
+  `refill station`), so they are refused only when they take an object (`clean **the** head`),
+  never by the verb-initial test.
+- `_procedure_verb_base(token, verbs=...)` now accepts the vocabulary to resolve against; the
+  verb-initial test passes `_PROCEDURE_VERB_TOKENS` and the anywhere-in-phrase determiner test
+  uses the default (both sets). Gerund resolution (`cleaning`, `disconnecting`) inherits the same
+  sets. Because this lives inside `_names_procedure_or_spelled_value()`, every `_plate_safe()`
+  site and every patch refusal inherit it with no other change.
+
+**Tests** — `test_presentation_motifs_cannot_name_a_frozen_procedure_verb` iterates the whole
+`FROZEN_PROCEDURE_VERBS` list (the eleven frozen verbs plus the three audited omissions) on
+concepts and on the approved-style kit path (0 spend), and keeps `clean service bay` legal
+(3 calls). `test_title_or_goal_cannot_name_a_frozen_procedure_verb` covers the title-only repro
+(`Clean the head` → `Workshop manual` fallback, no `clean the` in 3/3 prompts, stored brief
+verbatim) and the goal-only repro (`Disconnect the battery` → capability clause omitted, stored
+`end_capability` verbatim). The class-closing table now walks the **whole** frozen verb list
+(`procedure:<verb>` categories × every grammar × every prompt role) instead of one representative
+string.
+
+Red evidence: `audit/gm-003/red-attempt11.txt` (3 tests, 12 intended failures — five frozen verbs
+accepted by the handler, the title leak, and five `procedure:<verb>` class-table categories).
+Green: `audit/gm-003/green-attempt11.txt` (3 OK), `test_world-attempt11.txt` (42 OK), regression
+set 317 OK (`regression-attempt11.txt`), predicate probe `predicate-attempt11.txt` (all fourteen
+verbs refused with an object; the native scenes allowed), full suite 2942 OK (skipped=1), exit 0
+(`full-attempt11.log`, 664.710s).
+
+**Residual paths (unchanged):** token-level heuristics, not a semantic classifier; a procedure
+phrased as a bare noun phrase with no digit, unit, spelled quantity, fraction or procedure verb
+(`valve clearance table`) is not detected, and the workshop hard negatives remain the second line
+of defence. `world.*` is still absent from the published `rpc.v23.json`, so registration stays
+fenced and non-dispatchable (additive integration bump); the media seam is a deterministic fake;
+the `world_assets` role vocabulary follows the frozen 0013 CHECK; create-time auto-queue is owned
+by GM-002.

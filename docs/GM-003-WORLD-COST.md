@@ -114,3 +114,13 @@ set, and singularises hyphenated fraction tails. The check is the same local pre
 or provider call (**0** image calls). Legal patches (`four-cylinder block`, `car on a lift`) still
 cost exactly the 3 boards + kit from the table above. No cache-key or `prompt_hash` change: the
 fence remains prompt-local.
+
+## Round-11 frozen-verb fence cost
+
+Round 11 completes the procedure vocabulary: `disconnect` joins the unambiguous set and
+`clean`/`break`/`polish`/`refill` are refused only when they take an object, so a caller motif such
+as `Clean the head` is refused before any world row, job or provider call (**0** image calls) while
+the native scene `clean service bay` still succeeds at exactly the 3 boards + kit cost. A course
+titled `Clean the head` is not refused: the prompt falls back to the grammar label and omits the
+unsafe capability clause, so it costs the same 3 boards + kit with **0** extra model calls. No
+cache-key or `prompt_hash` change.
