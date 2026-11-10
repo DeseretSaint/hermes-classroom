@@ -61,6 +61,9 @@ def wrap(d: ImageDraw.ImageDraw, text: str, face: ImageFont.FreeTypeFont, max_w:
 def main() -> int:
     swap = {c["pack"]: c for c in json.loads((AUDIT / "swap-check.json").read_text())["covers"]}
     prov = json.loads((AUDIT / "provenance.json").read_text())
+    retention = {c["pack"]: c for c in
+                 json.loads((AUDIT / "motif-retention.json").read_text())["covers"]}
+    worst = min(m["retained"] for c in retention.values() for m in c["motifs"])
 
     cell_w, cell_h = 430, 560
     cols = 3
@@ -76,8 +79,8 @@ def main() -> int:
            "on the shelf is DOM text.",
            font=font(18), fill=SOFT)
     d.text((32, 104),
-           "Masters 1200x800 (3:2); the 4:5 file is a mechanical centre crop. Drawn for the three "
-           "bundled packs only.",
+           "Masters 1200x800 (3:2); the 4:5 file is a mechanical centre crop. Every declared "
+           f"motif keeps {worst:.0%} of its painted ink inside that crop.",
            font=font(18), fill=SOFT)
     d.text((32, 132),
            "Owner approval: ____________________   (unsigned — this sheet is submitted, not approved)",
@@ -117,8 +120,11 @@ def main() -> int:
                font=font(13), fill=SOFT)
         motifs = ", ".join(m["mark"] for m in row["motifs"])
         d.text((cx + 8, y + 36), f"motifs: {motifs}", font=font(13), fill=SOFT)
+        kept = ", ".join(f"{m['mark']} {m['retained']:.0%}"
+                         for m in retention[pack]["motifs"])
+        d.text((cx + 8, y + 54), f"4:5 ink kept: {kept}", font=font(13), fill=SOFT)
         shipped = next(r for r in prov["rows"] if r["pack"] == pack)["shipped"][0]
-        d.text((cx + 8, y + 54), f"master sha256 {shipped['sha256'][:16]}  "
+        d.text((cx + 8, y + 72), f"master sha256 {shipped['sha256'][:16]}  "
                                  f"{shipped['bytes']} B", font=font(13), fill=SOFT)
 
     d.line([(32, height - 46), (width - 32, height - 46)], fill=RULE, width=1)

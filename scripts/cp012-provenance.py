@@ -85,8 +85,10 @@ def main() -> int:
                 "prep": "scripts/cp012-cover-prep.py",
                 "temper": "-modulate 97,78,100",
                 "paper_match": "corner scaled onto #f7f1e4, gain clamp 0.90-1.10",
-                "master": "16:9 raw centre-cropped to 864x576, Lanczos to 1200x800 (1.389x)",
+                "master": "square raw -> measured ink box fitted to the 640x800 crop window "
+                          "(16 px paper margin) -> Lanczos plate on a 1200x800 sheet of #f7f1e4",
                 "crop_4x5": "640x800 centre crop of the master, no resampling",
+                "crop_3x2": "byte-identical export of the master",
             },
             "owner_approval": "unsigned",
         })
