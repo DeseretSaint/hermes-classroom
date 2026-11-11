@@ -96,6 +96,9 @@ __all__ = [
     "COST_ACTIONS",
     "DECLARED_CALL_COST_USD",
     "DEFAULT_MAX_COST_USD",
+    "TRUNCATION_REPAIR_CALLS",
+    "UNIT_SECTIONS_ATTEMPTS",
+    "unit_sections_cost_budget",
     "LessonNotAvailable",
     "LLMRequest",
     "LLMResponse",
@@ -546,11 +549,39 @@ class CostCeilingExceeded(GenerationError):
     The exception also carries the *recovery checkpoint*: what was already authored, what was
     spent, and the three legal actions. A caller can persist it (``to_checkpoint``) and resume
     without re-authoring completed sections; nothing here grants permission to spend more.
+
+    It is a **budget stop, not a verdict about the artifact** — nothing was validated and nothing
+    was rejected. CP-015e measured the confusion that costs: a unit-sections job that ran out of
+    its four-call ceiling was read as a content refusal even though ``sections_completed_count``
+    was 0. Every raise therefore names the ``purpose`` whose call was refused and the
+    ``budget_source`` that sized the ceiling, and the message opens with
+    ``provider-call budget exhausted`` so it cannot be mistaken for a validator's rejection.
     """
 
-    def __init__(self, message: str) -> None:
+    #: A dedicated code would name this better, but ``cb.errors`` is frozen and code additions are
+    #: a contract bump owned by Atlas. ``POLICY_VIOLATION`` plus ``details.reason =
+    #: cost_ceiling_exceeded`` is the documented shape (docs/CONTRACTS.md), and the details below
+    #: make it distinguishable from a content rejection without inventing a code.
+    code = "POLICY_VIOLATION"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        purpose: str | None = None,
+        budget_source: str | None = None,
+        resume_brief: Mapping[str, Any] | None = None,
+    ) -> None:
         super().__init__(message)
         self.message = message
+        #: The provider call the ceiling refused (``coursebook.<stage>.<step>``), when known.
+        self.purpose = purpose
+        #: Where the ceiling came from (``declared`` / ``operator_env`` / ``operator_brief`` /
+        #: ``caller``), so ``cost_ceiling_exceeded`` cannot be read as "the validator said no".
+        self.budget_source = budget_source
+        #: The ``jobs.create`` brief that continues this stage. Overridden by a stage whose resume
+        #: is not the lessons pipeline (the unit stage resumes one unit).
+        self.resume_brief = dict(resume_brief) if resume_brief else None
         #: Section ids whose lesson row is already durable and validated/parked.
         self.sections_completed: list[str] = []
         self.sections_total: int = 0
@@ -573,9 +604,12 @@ class CostCeilingExceeded(GenerationError):
         usage: "_Usage",
         budget: "CostBudget",
         recovery: str,
+        resume_brief: Mapping[str, Any] | None = None,
     ) -> "CostCeilingExceeded":
         """Attach the durable facts. Never called before the rows they describe exist."""
         self.plan_id = plan_id
+        if resume_brief is not None:
+            self.resume_brief = dict(resume_brief)
         self.sections_completed = [str(item) for item in sections_completed][:200]
         self.sections_total = int(sections_total)
         self.calls = len(usage.calls)
@@ -607,8 +641,13 @@ class CostCeilingExceeded(GenerationError):
             "unknown_calls": self.unknown_calls,
             "max_cost_usd": self.max_cost_usd,
             "max_calls": self.max_calls,
+            "budget_source": self.budget_source,
+            # The call the ceiling refused. A budget stop names the arithmetic; it never implies a
+            # verdict about the artifact.
+            "refused_purpose": self.purpose,
             "actions": list(self.actions),
-            "resume": {
+            "resume": self.resume_brief
+            or {
                 "method": "jobs.create",
                 "brief": {"stage": "lessons", "plan_id": self.plan_id},
             },
@@ -861,6 +900,22 @@ CALLS_PER_LESSON_ATTEMPT = 2
 #: Attempts per section before the lesson is parked for review with its reasons.
 LESSON_ATTEMPTS = 2
 
+#: Attempts per unit-sections stage before the unit fails. The batch is transactional, so the
+#: second attempt re-authors from the first attempt's refusal reasons rather than patching rows.
+UNIT_SECTIONS_ATTEMPTS = (1, 2)
+
+#: Provider calls one *truncation re-ask* may add to a single stage attempt.
+#:
+#: :func:`_validation_answer_with_repair` spends exactly one extra call when the validator's answer
+#: was cut off by the completion cap: the same demand is re-asked once under a marked prompt
+#: version. That call is legal — refusing it reports a cut answer as a content rejection — so every
+#: budget that calls itself the *worst legal* path has to count it, or the ceiling kills a run that
+#: behaved exactly as designed. CP-015e measured that: ``unit_sections_cost_budget`` sized four
+#: calls for a six-call legal run (two attempts, each generate + validate + one repair) and job
+#: ``job_98d3c0e43fcc452dad317b7757619c41`` died at call 4 with ``sections_completed_count: 0``
+#: after every observed validation answer (8 000/8 000 tokens) ran into the cap.
+TRUNCATION_REPAIR_CALLS = 1
+
 #: Declared per-call cost used to *size* a ceiling and to charge a call whose provider reported no
 #: cost at all. This is a policy estimate, not a bill: it rounds the audit's measured $0.032 per
 #: structured call (ADVERSARIAL-AUDIT-ROUND2 P1-6) up by a quarter so a legitimate job is not
@@ -961,6 +1016,15 @@ def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tupl
 
     The minimum is one generation plus one validation per section — no retries. The worst legal
     case adds the second attempt the validator is allowed to ask for.
+
+    A truncation re-ask (:data:`TRUNCATION_REPAIR_CALLS`) is deliberately **not** counted here.
+    That is a known under-size, not a claim: a lesson validation answer cut off by the completion
+    cap costs one more legal call per attempt, and this budget refuses it. It is survivable on this
+    stage only because every lesson row is durable before the next section starts, so a ceiling
+    abort leaves a resumable checkpoint instead of losing the batch. Resizing it changes a signed
+    off sizing policy (H-17 / audit P1-6) and is tracked as its own card; the transactional unit
+    stage (:func:`unit_sections_cost_budget`) sizes the repair because there an abort loses the
+    whole unit.
     """
     sections = max(1, int(section_count))
     per_section = CALLS_PER_LESSON_ATTEMPT * max(1, int(attempts))
@@ -1207,14 +1271,17 @@ class _Usage:
     #: flight, not just calls that already returned.
     _reserved: int = 0
 
-    def reserve(self, count: int) -> None:
+    def reserve(self, count: int, *, purpose: str | None = None) -> None:
         """Hold *count* call slots before a group of parallel passes is submitted."""
         with self._lock:
             if len(self.calls) + self._reserved + int(count) > self.budget.max_calls:
                 raise CostCeilingExceeded(
-                    f"job already made {len(self.calls)} provider calls and holds "
-                    f"{self._reserved} reservation(s); {count} more would exceed the ceiling "
-                    f"{self.budget.max_calls}"
+                    f"provider-call budget exhausted: the job already made {len(self.calls)} "
+                    f"provider calls and holds {self._reserved} reservation(s); "
+                    f"{count} more for {purpose or 'the submitted passes'} would exceed the "
+                    f"{self.budget.max_calls}-call ceiling declared for this stage",
+                    purpose=purpose,
+                    budget_source=self.budget.source,
                 )
             self._reserved += int(count)
 
@@ -1240,16 +1307,25 @@ class _Usage:
                 self._reserved -= 1
             elif len(self.calls) >= self.budget.max_calls:
                 raise CostCeilingExceeded(
-                    f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
+                    f"provider-call budget exhausted before {request.purpose}: the job already "
+                    f"made {len(self.calls)} provider calls, which is the "
+                    f"{self.budget.max_calls}-call ceiling declared for this stage. No verdict was "
+                    "stated and nothing from this stage was validated or rejected",
+                    purpose=request.purpose,
+                    budget_source=self.budget.source,
                 )
             if (
                 self.budget.max_cost_usd is not None
                 and self.estimated_spend_usd >= self.budget.max_cost_usd
             ):
                 raise CostCeilingExceeded(
-                    f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
+                    f"provider-call budget exhausted before {request.purpose}: spend "
+                    f"{self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
                     f"{self.unknown_calls} with unknown cost) already reaches the "
-                    f"{self.budget.max_cost_usd:.4f} USD ceiling"
+                    f"{self.budget.max_cost_usd:.4f} USD ceiling. No verdict was stated and "
+                    "nothing from this stage was validated or rejected",
+                    purpose=request.purpose,
+                    budget_source=self.budget.source,
                 )
 
     def wait_id(self) -> str:
@@ -1304,8 +1380,12 @@ class _Usage:
             unknown = self.unknown_calls
         if over_ceiling:
             raise CostCeilingExceeded(
-                f"spend {spend:.4f} USD ({unknown} calls with unknown "
-                f"cost) exceeded the {self.budget.max_cost_usd:.4f} USD ceiling"
+                f"provider-call budget exhausted after {request.purpose}: spend {spend:.4f} USD "
+                f"({unknown} calls with unknown cost) exceeded the "
+                f"{self.budget.max_cost_usd:.4f} USD ceiling. The call's tokens are recorded as "
+                "spend; no verdict about the artifact was stated",
+                purpose=request.purpose,
+                budget_source=self.budget.source,
             )
 
     def summary(self) -> dict[str, Any]:
@@ -3356,7 +3436,7 @@ def _run_validation_passes(
 
     # Reserve every pass's slot before any of them starts: five threads that each check the call
     # ceiling as they begin would all see the same "calls so far" and cross it together.
-    usage.reserve(len(requests))
+    usage.reserve(len(requests), purpose=requests[0].purpose if requests else None)
     with ThreadPoolExecutor(max_workers=len(requests), thread_name_prefix="coursebook-validation") as pool:
         futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
         responses: list[LLMResponse | None] = [None] * len(requests)
@@ -9073,12 +9153,30 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
 
 
 def unit_sections_cost_budget(*, brief_budget_usd: Any = None) -> CostBudget:
-    """Budget for one unit-sections stage: four calls worst case (§6).
+    """Budget for one unit-sections stage: **six** calls worst case (§6).
 
-    One generation and one validation, with one retry each. The ceiling is per stage, never per
-    course: a unit job must not inherit a 24-lesson course's ceiling.
+    The unit stage is transactional: the batch is written in one transaction only after an
+    approving verdict, so a ceiling abort loses the whole unit. Its arithmetic must therefore
+    cover every legal call, including the truncation re-ask:
+
+        attempts x (generate + validate + TRUNCATION_REPAIR_CALLS)
+        2        x (1        + 1        + 1                      ) = 6
+
+    CP-015e measured the old four-call ceiling against real runs: every observed
+    ``coursebook.unit_sections.validate`` answer consumed the 8 000-token cap (8 000/8 000 on three
+    attempts), so the repair was mandatory, not exceptional — attempt 1 (generate + validate +
+    repair) plus attempt 2 (generate + validate + repair) is six calls. Four refused the second
+    attempt's validation with ``cost_ceiling_exceeded`` and ``sections_completed_count: 0``.
+
+    The repair is *not* a third attempt: :func:`_validation_answer_with_repair` re-asks the same
+    demand exactly once and then gives up with a typed ``ModelOutputInvalid``, so six is a real
+    maximum and not an estimate.
+
+    The ceiling is per stage, never per course: a unit job must not inherit a 24-lesson course's
+    ceiling. A caller/operator dollar ceiling still wins.
     """
-    worst_legal = 4
+    attempts = len(UNIT_SECTIONS_ATTEMPTS)
+    worst_legal = attempts * (CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS)
     sized_floor = worst_legal * DECLARED_CALL_COST_USD
     override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
     return CostBudget(
@@ -9477,7 +9575,8 @@ def run_unit_sections_job(
 
     Idempotent per ``(plan_id, unit_ordinal)``: existing section rows are reused, and only owner
     sections for objectives that have none are asked for. The job is one stage with its own
-    four-call budget and a durable checkpoint; it never enqueues the next unit.
+    six-call budget (two attempts, each generation + validation + one truncation re-ask; see
+    :func:`unit_sections_cost_budget`) and a durable checkpoint; it never enqueues the next unit.
 
     **Transactional over the unit.** A batch is written only after it is cleared for use. A batch
     that breaks the unit's own rules (on either attempt) or that the validator rejects is
@@ -9586,7 +9685,7 @@ def run_unit_sections_job(
     request: LLMRequest | None = None
 
     try:
-        for attempt in (1, 2):
+        for attempt in UNIT_SECTIONS_ATTEMPTS:
             validation_request = None
             validation_response = None
             verdict = None
@@ -9774,6 +9873,36 @@ def run_unit_sections_job(
             "budget": resolved_budget.as_dict(),
             "rejection_reasons": rejection_reasons if state == "needs_review" else [],
         }
+    except CostCeilingExceeded as exc:
+        # A budget stop is not a rejection and leaves no partial unit (the batch is written in one
+        # transaction after a passing verdict). Say the arithmetic and the next step, so the
+        # operator reads a spend ceiling rather than a validator refusal. CP-015e: job
+        # 98d3c0e43fcc452dad317b7757619c41 surfaced a bare POLICY_VIOLATION with
+        # ``sections_completed_count: 0`` and no checkpoint.
+        _record_usage(connection, job_id, usage, now)
+        raise exc.attach_checkpoint(
+            plan_id=str(plan_id),
+            sections_completed=[],
+            sections_total=int(target),
+            usage=usage,
+            budget=resolved_budget,
+            recovery=(
+                f"unit {requested_unit} of plan {plan_id} authored no sections: its "
+                f"{resolved_budget.max_calls}-call stage budget was exhausted"
+                + (f" before {exc.purpose}" if exc.purpose else "")
+                + ". This is a spend ceiling, not a verdict about the sections. Next: run the unit "
+                "again as a new job (a new attempt is re-budgeted), or raise "
+                f"{JOB_MAX_COST_ENV} / brief.budget_usd."
+            ),
+            resume_brief={
+                "method": "jobs.create",
+                "brief": {
+                    "stage": "unit_sections",
+                    "plan_id": str(plan_id),
+                    "unit_ordinal": requested_unit,
+                },
+            },
+        )
     except BaseException:
         _record_usage(connection, job_id, usage, now)
         raise

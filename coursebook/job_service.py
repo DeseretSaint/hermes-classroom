@@ -941,6 +941,11 @@ def _cost_details(exc: Exception) -> dict[str, Any]:
         "estimated_cost_usd": float(getattr(exc, "estimated_cost_usd", 0.0) or 0.0),
         "unknown_calls": int(getattr(exc, "unknown_calls", 0) or 0),
     }
+    # Where the ceiling came from. Together with ``details.purpose`` (the call it refused, added by
+    # ``_stage_error`` from the exception) and ``details.reason`` this cannot be read as a
+    # validator's verdict (CP-015e).
+    if getattr(exc, "budget_source", None):
+        details["budget_source"] = str(getattr(exc, "budget_source"))
     for attribute in ("max_cost_usd", "max_calls"):
         value = getattr(exc, attribute, None)
         if value is not None:

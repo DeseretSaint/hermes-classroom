@@ -909,7 +909,8 @@ who typed a ceiling must be told it was not applied.
 (generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
 section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
 behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
-was 8).
+was 8). Neither constant counts the truncation re-ask; the unit-sections stage, which cannot survive
+an abort, does — see *The truncation repair is a legal call* below.
 
 The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
 
@@ -931,6 +932,52 @@ generation + one validation per section, no retries). `jobs.create` runs the sam
 never holds a job that is guaranteed to half-fail. Below the **worst legal** cost but above the
 minimum the job starts — and if the ceiling does bind, it now leaves a recovery checkpoint instead
 of a dead end.
+
+#### The truncation repair is a legal call, and the budget counts it
+
+`_validation_answer_with_repair` spends exactly one extra provider call when a validator answer was
+cut off by the completion cap (`TRUNCATION_REPAIR_CALLS`) — the same demand, re-asked once under a
+`.cut` prompt version. A ceiling that does not count that call refuses a run that behaved exactly
+as designed and reports the refusal as though the artifact had been rejected (CP-015e).
+
+The unit-sections stage is transactional — its batch is written in one transaction after a passing
+verdict — so an abort loses the whole unit. Its budget is therefore sized to the true worst legal
+path:
+
+    max_calls    = 2 attempts x (generate + validate + 1 repair)     (6)
+    max_cost_usd = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
+
+Six calls is a real maximum, not headroom: the repair runs at most once per attempt, and a second
+cut answer in one attempt is a typed `ModelOutputInvalid` that ends the stage without a further
+call. Live evidence: every observed `coursebook.unit_sections.validate` answer consumed the
+8 000-token cap, so the repair was mandatory on every attempt, while the repaired answers that did
+parse used 1 964–2 749 tokens — the cap holds the 10-criterion + claim answer, the first ask spends
+it on reasoning.
+
+`lesson_cost_budget` still sizes `4n` per section and does **not** count the repair: a lesson row is
+durable before the next section starts, so a ceiling abort there leaves a resumable checkpoint
+rather than losing a batch. That under-size is tracked as its own card; resizing it changes the
+signed-off H-17 / audit P1-6 sizing policy.
+
+#### A budget stop is not a verdict (`CP-015e`)
+
+`CostCeilingExceeded` is a spend arithmetic stop: nothing was validated and nothing was rejected.
+`cb.errors` is frozen, so the code stays the documented `POLICY_VIOLATION` with
+`details.reason = cost_ceiling_exceeded` — a dedicated code would name it better and is a contract
+bump owned by Atlas, not something this module invents. What the backend does guarantee, so an
+operator cannot read the failure as a content refusal:
+
+* the message opens with `provider-call budget exhausted before <purpose>` (or `after` when a
+  returned call crossed the dollar ceiling);
+* `details.purpose` names the call the ceiling refused and `details.budget_source` says whether the
+  ceiling was `declared`, `operator_env`, `operator_brief` or `caller`;
+* the recovery checkpoint carries `kind: cost_ceiling_exceeded`, `refused_purpose`,
+  `budget_source`, `sections_completed: []`, `actions` and a `resume` brief for the **same** stage
+  and unit (`{stage: unit_sections, plan_id, unit_ordinal}`) — never the lessons pipeline by
+  default.
+
+A validator rejection, by contrast, is `VALIDATION_FAILED` with the rejection reasons and no budget
+arithmetic in `details`.
 
 A call whose provider reported no cost is charged at `DECLARED_CALL_COST_USD` for ceiling
 purposes. Unknown is still recorded as unknown (`cost_usd: null`, `unknown_cost: true`,
