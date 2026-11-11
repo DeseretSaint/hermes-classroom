@@ -233,6 +233,21 @@ The judge is `scripts/vq-manifest.py`; the camera is `scripts/vq-capture.mjs`. A
   `desktop/cb-assets.generated.js` (the fox, materials and object kit ship that way by contract);
 - an image's bytes match a bundled pack cover, which proves a Press Plate is standing in as
   product-surface illustration;
+- a **required display role** is satisfied only by rows whose inventoried bytes are in the packet.
+  The camera writes the bytes for every row that can satisfy a required role into `evidence/`, named
+  by their sha256; the judge re-hashes them against the row's `sha256` and reads the raster header,
+  so the declared natural size must match the file. A row with no evidence file, a hash mismatch, a
+  non-raster file, or a decoded size that differs from `natural` does not count toward the role, and
+  the cell is refused. Forging a pass needs fabricated image files, not four edited numbers. (A row
+  whose file exceeds the camera's 4 MB evidence cap is not written and is refused too.)
+- the cell names no plugin build (`window.plugin.sha256` is absent). This includes a refusal record:
+  `window.plugin` and `page.url`/`protocol` are read before navigation, so a `missing_surface` cell is
+  still tied to the build that lacked the surface;
+- a cell record cannot be parsed or carries an unknown schema. That is a named failure with the
+  offending filename, not a matrix cell that was "never captured";
+- the captured cells come from more than one capture run (`run.id`). One id per set is exported by
+  `scripts/vq-capture.sh`, so a frame left in `--out` by an earlier run is reported rather than
+  attributed to this HEAD;
 - a `background-image` layer breaks any of the rules above. Layers are judged with the same
   classification as an `<img>`, so an asset cannot escape by being delivered as CSS; the exceptions
   are stated, not silent. The 2x rule is applied per axis: an axis is exempt only when the layer
@@ -254,6 +269,23 @@ the same way, with `background-repeat` and `background-size` alongside, and the 
 axes the 2x rule covered for each layer (`x`, `y`, or none when it tiles at natural size), so a tiling
 layer is distinguishable from an upscaled one. A screen card reads the manifest; it does not need a
 browser of its own.
+
+### What the judge re-verifies, and what it takes on the camera's word
+
+Re-verified from files: the screenshot sha256; and, for every row that counts toward a required
+display role, the persisted bytes in `evidence/` — their sha256 and the natural width/height read out
+of the raster header. Those are the values a forged pass would have to fabricate files for.
+
+Camera-asserted, not independently re-verified: `rendered` geometry, the inventory `kind`,
+`complete`, `current_src`, a background layer's `repeat`/`size`, and the screenshot clip. They
+describe what the live DOM measured. A record edited after capture can still lie about them, and the
+judge does not claim otherwise. The honest statement of the gate is: the frame and the required-role
+assets are checked against bytes; the rest of the inventory is the camera's testimony.
+
+A subset run (`--widths`/`--destinations` on `scripts/vq-capture.sh`, passed through to the judge) is
+judged against the matrix it asked for, not the full 6×4 one, so it can PASS. `--require-complete` is
+redundant and kept only for old invocations: `summary.ok` has always required every requested cell,
+so completeness is not optional.
 
 **Measured on `a78ce220`, plugin sha `251a3948…`, 2026-11-11** (16 of 24 matrix cells captured, 0
 pass, 16 captured and failed, 8 never captured — classroom ×4 and world-studio ×4): no Home cell has a

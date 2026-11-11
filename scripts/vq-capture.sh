@@ -70,6 +70,9 @@ export CB013_CDP_PORT="$CDP_PORT"
 export CB013_PORT="$BACKEND_PORT"
 export CB013_TOKEN="$TOKEN"
 export CB015_CDP_PORT="$CDP_PORT"
+# One id for the whole capture set. The judge refuses a manifest that mixes run ids, so a frame
+# left in --out by an earlier run is reported instead of attributed to this HEAD.
+export VQ_RUN_ID="${VQ_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
 
 cleanup() {
   if [[ "$KEEP_WINDOW" == "1" ]]; then
@@ -168,7 +171,8 @@ done
 echo "== manifest"
 commit="$(git rev-parse HEAD 2>/dev/null || echo unrecorded)"
 set +e
-python3 scripts/vq-manifest.py --dir "$OUT" --commit "$commit"
+python3 scripts/vq-manifest.py --dir "$OUT" --commit "$commit" \
+  --widths "$WIDTHS" --destinations "$DESTINATIONS"
 verdict=$?
 set -e
 
