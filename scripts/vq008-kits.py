@@ -78,8 +78,17 @@ OCR_POLICY = {
     "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
     "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted "
                    "line art on these plates scores 12-52",
-    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught "
-                  "by the recorded vision pass on each plate instead",
+    "limitation": "OCR is a cheap backstop, not the textless control. Recall measured this round on the "
+                  "shipped lab_bench hero with Liberation Sans Bold burned in: 120 pt 'TORQUE 45 Nm' and "
+                  "'CAUTION' return no readable token at default page segmentation or at psm 6/11/12; 72 pt "
+                  "returns only isolated one-character fragments ('7' at 82.3, '4' at 59.4); 48 pt and 32 "
+                  "pt return nothing. A legible 120 pt line scoring zero shows recall does not rise with "
+                  "type size, and an independent 72 pt probe recovered one three-character fragment at "
+                  "90.9, so a clean OCR run is not evidence that a plate is textless. The primary control "
+                  "is the recorded per-plate vision pass: every accepted row in generation.json must carry "
+                  "a vision and a residual verdict, and --check refuses an accepted row without either and "
+                  "a kit whose hero, 3:2 cover, section or lesson scene has no accepted row behind it. "
+                  "Painted pseudo-lettering is the same case with less contrast.",
     "calibrated_on": [
         "docs/concept-parity/refs/home.png",
         "docs/concept-parity/refs/classroom.png",
@@ -1346,6 +1355,87 @@ def check_resolution(grammar: str, kit: dict) -> None:
                      f"{round(frame[0] / ref, 4)}")
 
 
+def check_role_rows(grammar: str, kit: dict, *, verify_bytes: bool) -> None:
+    """The loader's role rules, applied to every kit including `field_atlas`.
+
+    A display-kit loader refuses an unknown role name and a repeated asset id (`kit_unknown_role`,
+    `kit_duplicate_asset`), and mounts only kit-local PNGs. `--check` must refuse the same
+    manifests the product refuses, so this runs on both branches. `verify_bytes` re-derives the
+    hash and pixel size of each row (the field_atlas branch has no per-plate check of its own; the
+    seven call this before `check_plate`, which does the deeper reads).
+    """
+    root = kit_dir(grammar).resolve()
+    seen: dict[str, str] = {}
+    for role, rows in (kit.get("roles") or {}).items():
+        if role not in KIT_ROLES:
+            fail(f"{grammar}: role {role!r} is not in the loader vocabulary {KIT_ROLES}")
+            continue
+        for row in rows:
+            where = f"{grammar}/{role}/{row.get('id')}"
+            for field in ("id", "role", "path", "size", "sha256"):
+                if not row.get(field):
+                    fail(f"{where}: roles row has no {field}")
+            rid = row.get("id")
+            if rid in seen:
+                fail(f"{grammar}: asset id {rid!r} is declared twice ({seen[rid]} and {role}) — "
+                     f"a loader refuses kit_duplicate_asset")
+            else:
+                seen[rid] = role
+            if row.get("role") != role:
+                fail(f"{where}: row declares role {row.get('role')!r}")
+            if row.get("textless") is not True:
+                fail(f"{where}: row does not record textless=true")
+            if row.get("source") != "curated_kit":
+                fail(f"{where}: row does not record source=curated_kit")
+            rel = str(row.get("path") or "")
+            if not rel or Path(rel).is_absolute():
+                fail(f"{where}: path must be relative to the kit directory")
+                continue
+            target = (root / rel).resolve()
+            if root not in target.parents:
+                fail(f"{where}: path {rel} resolves outside its own kit directory")
+                continue
+            if not target.is_file():
+                fail(f"{where}: {rel} is not on disk")
+            elif target.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+                fail(f"{where}: {rel} is not a PNG a display plate may ship")
+            elif verify_bytes:
+                if sha256(target) != row.get("sha256"):
+                    fail(f"{where}: sha256 is stale")
+                if list(dims(target)) != list(row.get("size") or []):
+                    fail(f"{where}: size {dims(target)} != declared {row.get('size')}")
+
+
+def check_acceptance_rows(grammar: str, kit: dict) -> None:
+    """The recorded vision pass is the primary textless control (OCR recall is a backstop — see
+    `ocr_policy.limitation`), so it is enforced rather than assumed: every accepted attempt in
+    `generation.json` carries a `vision` and a `residual` verdict, and every plate the kit mounts
+    as hero, 3:2 cover, section or lesson scene has an accepted attempt behind it."""
+    log = kit_dir(grammar) / "generation.json"
+    if not log.exists():
+        fail(f"{grammar}: generation.json is missing, so no vision verdict can be read")
+        return
+    rows = json.loads(log.read_text())
+    accepted = [r for r in rows if r.get("verdict") == "accepted"]
+    for row in accepted:
+        for field in ("vision", "residual"):
+            if not str(row.get(field) or "").strip():
+                fail(f"{grammar}: accepted attempt {row.get('asset')!r} records no {field} verdict")
+    covers = [p for p in kit["roles"].get("cover") or [] if "derived_from" not in p]
+    required = {
+        "hero": (kit["roles"].get("hero") or [None])[0],
+        "cover-3x2": covers[0] if covers else None,
+        "section": (kit["roles"].get("section") or [None])[0],
+        "lesson_scene": (kit["roles"].get("lesson_scene") or [None])[0],
+    }
+    accepted_ids = {r.get("asset") for r in accepted}
+    for role, plate in required.items():
+        if plate is None:
+            fail(f"{grammar}: no {role} plate is mounted")
+        elif plate["id"] not in accepted_ids:
+            fail(f"{grammar}: {role} plate {plate['id']!r} has no accepted generation row")
+
+
 def check_manifest_shape(grammar: str, kit: dict) -> None:
     """The non-image claims the field-atlas shape carries: policy, sidecars, pins."""
     shape = kit.get("manifest_shape") or {}
@@ -1396,33 +1486,7 @@ def check_manifest_shape(grammar: str, kit: dict) -> None:
         fail(f"{grammar}: lane {kit.get('lane')!r} is not 'display_plate' (D-006)")
     if str(kit.get("status") or "").startswith(("rejected", "superseded")):
         fail(f"{grammar}: status {kit.get('status')!r} is not a consumer kit")
-    root = kit_dir(grammar).resolve()
-    for role, rows in (kit.get("roles") or {}).items():
-        if role not in KIT_ROLES:
-            fail(f"{grammar}: role {role!r} is not in the loader vocabulary {KIT_ROLES}")
-        for row in rows:
-            where = f"{grammar}/{role}/{row.get('id')}"
-            for field in ("id", "role", "path", "size", "sha256"):
-                if not row.get(field):
-                    fail(f"{where}: roles row has no {field}")
-            if row.get("role") != role:
-                fail(f"{where}: row declares role {row.get('role')!r}")
-            if row.get("textless") is not True:
-                fail(f"{where}: row does not record textless=true")
-            if row.get("source") != "curated_kit":
-                fail(f"{where}: row does not record source=curated_kit")
-            rel = str(row.get("path") or "")
-            if not rel or Path(rel).is_absolute():
-                fail(f"{where}: path must be relative to the kit directory")
-                continue
-            target = (root / rel).resolve()
-            if root not in target.parents:
-                fail(f"{where}: path {rel} resolves outside its own kit directory")
-                continue
-            if not target.is_file():
-                fail(f"{where}: {rel} is not on disk")
-            elif target.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
-                fail(f"{where}: {rel} is not a PNG a display plate may ship")
+    check_role_rows(grammar, kit, verify_bytes=False)
 
 
 def check_kernel(grammar: str, kit: dict) -> None:
@@ -1535,17 +1599,13 @@ def check_kit(grammar: str) -> int:
     kit = json.loads(path.read_text())
 
     if grammar == "field_atlas":
-        # VQ-002's approved kit is judged by its own contract (its own role list, its own
-        # vocabulary, six covers for three shelf courses), not by the VQ-008 shape.
+        # VQ-002's approved kit has its own shape (six covers for three shelf courses, kernel bytes
+        # copied in as roles, no section). Its shape stays exempt; its *loader contract* does not:
+        # a display-kit loader only sees `roles`, so the vocabulary, the duplicate-id rule and the
+        # per-row path/hash/size claims are checked here exactly as on the seven.
         if kit.get("grammar") != grammar:
             fail(f"{grammar}: kit.json grammar is {kit.get('grammar')!r}")
-        for role, rows in kit["roles"].items():
-            for row in rows:
-                p = kit_dir(grammar) / row["path"]
-                if not p.exists():
-                    fail(f"{grammar}: {row['path']} missing"); continue
-                if sha256(p) != row["sha256"]:
-                    fail(f"{grammar}: {row['path']} sha256 is stale")
+        check_role_rows(grammar, kit, verify_bytes=True)
         check_text_absence(grammar)
         return 0 if not FAILS else 1
 
@@ -1555,6 +1615,7 @@ def check_kit(grammar: str) -> int:
     check_fallbacks(grammar, kit)
     check_kernel(grammar, kit)
     check_budget(grammar, kit)
+    check_acceptance_rows(grammar, kit)
     check_text_absence(grammar)
 
     roles = kit["roles"]

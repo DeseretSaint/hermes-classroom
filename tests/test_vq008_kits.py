@@ -187,6 +187,91 @@ class KitJudge(unittest.TestCase):
         self.assertIn("is not workshop_manual@1", out.stdout)
         KIT.write_text(self.original)
 
+    def test_duplicate_asset_id_fails(self):
+        # VQ-004's loader refuses a repeated roles[].id (kit_duplicate_asset). A manifest the
+        # product refuses must not pass the acceptance run.
+        kit = json.loads(self.original)
+        kit["roles"]["section"][0]["id"] = kit["roles"]["hero"][0]["id"]
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("declared twice", out.stdout)
+        self.assertIn("kit_duplicate_asset", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_stale_ocr_policy_fails(self):
+        # The limitation sentence now states measured recall. A kit that keeps the old, weaker
+        # wording (or any other drift) must not pass: the policy is carried verbatim, not prose.
+        kit = json.loads(self.original)
+        kit["ocr_policy"]["limitation"] = "painted pseudo-lettering is not readable enough for OCR"
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("ocr_policy drifted", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_accepted_row_without_vision_fails(self):
+        # The recorded vision pass is the primary textless control, so an accepted attempt with
+        # no verdict behind it is a broken claim — the sidecar pin is kept consistent so this
+        # fails on the verdict, not on a stale hash.
+        import hashlib
+
+        log = KIT.parent / "generation.json"
+        original_log = log.read_text()
+        try:
+            rows = json.loads(original_log)
+            accepted = [r for r in rows if r.get("verdict") == "accepted"]
+            self.assertTrue(accepted, "the shipped kit has no accepted row to mutate")
+            del accepted[0]["vision"]
+            log.write_text(json.dumps(rows))
+            kit = json.loads(self.original)
+            kit["generation_log"]["sha256"] = hashlib.sha256(log.read_bytes()).hexdigest()
+            kit["generation_log"]["rows"] = len(rows)
+            KIT.write_text(json.dumps(kit))
+            out = self._check()
+            self.assertEqual(out.returncode, 1, out.stdout)
+            self.assertIn("records no vision verdict", out.stdout)
+        finally:
+            log.write_text(original_log)
+            KIT.write_text(self.original)
+
+
+class FieldAtlasJudge(unittest.TestCase):
+    """`field_atlas` keeps its own approved shape, but a display-kit loader only reads `roles`, so
+    its role vocabulary and duplicate-id rule are judged exactly like the seven."""
+
+    KIT = ROOT / "assets" / "visual-kits" / "field_atlas" / "kit.json"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.original = cls.KIT.read_text()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.KIT.write_text(cls.original)
+
+    def _mutate_and_check(self, mutate, expect: str) -> None:
+        try:
+            kit = json.loads(self.original)
+            mutate(kit)
+            self.KIT.write_text(json.dumps(kit))
+            out = run("--check-one", "field_atlas")
+            self.assertEqual(out.returncode, 1, out.stdout)
+            self.assertIn(expect, out.stdout)
+        finally:
+            self.KIT.write_text(self.original)
+            self.assertEqual(self.KIT.read_text(), self.original, "field_atlas not restored")
+
+    def test_unknown_role_fails(self):
+        def mutate(kit):
+            kit["roles"]["wallpaper"] = [dict(kit["roles"]["hero"][0])]
+        self._mutate_and_check(mutate, "loader vocabulary")
+
+    def test_duplicate_asset_id_fails(self):
+        def mutate(kit):
+            kit["roles"]["fox"][0]["id"] = kit["roles"]["hero"][0]["id"]
+        self._mutate_and_check(mutate, "declared twice")
+
 
 if __name__ == "__main__":
     unittest.main()

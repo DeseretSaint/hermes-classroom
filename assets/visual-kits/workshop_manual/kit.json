@@ -54,7 +54,7 @@
     "tool": "tesseract default page segmentation on the shipped plate",
     "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
     "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
-    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught by the recorded vision pass on each plate instead",
+    "limitation": "OCR is a cheap backstop, not the textless control. Recall measured this round on the shipped lab_bench hero with Liberation Sans Bold burned in: 120 pt 'TORQUE 45 Nm' and 'CAUTION' return no readable token at default page segmentation or at psm 6/11/12; 72 pt returns only isolated one-character fragments ('7' at 82.3, '4' at 59.4); 48 pt and 32 pt return nothing. A legible 120 pt line scoring zero shows recall does not rise with type size, and an independent 72 pt probe recovered one three-character fragment at 90.9, so a clean OCR run is not evidence that a plate is textless. The primary control is the recorded per-plate vision pass: every accepted row in generation.json must carry a vision and a residual verdict, and --check refuses an accepted row without either and a kit whose hero, 3:2 cover, section or lesson scene has no accepted row behind it. Painted pseudo-lettering is the same case with less contrast.",
     "calibrated_on": [
       "docs/concept-parity/refs/home.png",
       "docs/concept-parity/refs/classroom.png"
