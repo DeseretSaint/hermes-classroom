@@ -32,6 +32,9 @@ const THRESHOLD = Number(opt('--threshold', 0.001))
 const WRITE_BASELINE = args.includes('--write-baseline')
 const REUSE = args.includes('--reuse')
 const MONITOR = opt('--monitor', 'secondary')
+// The approved frames are 1344x768. A route narrower than this is the docked pane, not the
+// approved canvas; it must never be reported as a pass.
+const MIN_ROUTE_WIDTH = Number(opt('--min-width', 1200))
 
 const ROUTES = [
   { name: 'home', label: 'Home' },
@@ -179,6 +182,13 @@ const report = {
   }).catch(() => null),
   frames: [],
   failures: []
+}
+
+if (!report.scope || report.scope.width < MIN_ROUTE_WIDTH) {
+  report.geometry_ok = false
+  report.failures.push(`geometry: route ${report.scope ? report.scope.width : 0}px wide (< ${MIN_ROUTE_WIDTH}) — this is the docked pane, not the approved 1344x768 canvas`)
+} else {
+  report.geometry_ok = true
 }
 
 async function routeTo(label) {
