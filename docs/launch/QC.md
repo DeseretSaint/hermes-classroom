@@ -147,7 +147,7 @@ the pinned tree.
 
 `docs/launch/coursebook-walkthrough.mp4`: 51.000000 s, 1920x1080/30, h264 + AAC stereo 48 kHz,
 **-15.1 LUFS** integrated (ebur128, post-mux), sha256
-`62bfbddbb6e026e8392dd5794bcfefc0b35bb162cb5a0cf39364f5627b87aca3`, 9,553,738 B.
+`693037676af045f2319278dbcd545f4bbbb6b928a0fe41be12fdacec151e08fa`, 9,553,738 B.
 
 Seven segments: Learn anything (title), Home, Workshop, Course plan, Lesson + tutor, Graded check,
 Parent mode printout, end card. The ground is an animated ffmpeg `gradients` source and every card
@@ -156,3 +156,12 @@ guide from `docs/visual-review/gm-014/a4/`, which is the printout Parent mode pr
 
 Narration names the three modes and the pack path. The storefront sentence is future tense on
 purpose: export/import ships (gate 4 round trip), a storefront does not.
+
+### Two captions changed after an adversarial audit
+
+- Beat 5 now reads "A check you have to type." over "Graded against what the lesson taught, not the chat."
+  The previous line said "Graded against what it taught." while the frame showed an unpressed
+  `Check answer` button, i.e. a grade the picture did not contain.
+- The Home card is cropped from y=94, which removes the product's own header strip. That strip carries
+  the words `Child-safe defaults`, and the submission makes no child-safety claim; showing the label
+  next to a post that disclaims it was a contradiction.
