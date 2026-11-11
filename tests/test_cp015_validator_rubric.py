@@ -261,7 +261,7 @@ class RubricTextTest(unittest.TestCase):
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
         # v7 = CP-015d's narrowed-plan rubric; v8 = CP-015g's unit-scoped alignment rule.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v8")
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v9")
 
 
 class DisclosedGapVerdictTest(unittest.TestCase):

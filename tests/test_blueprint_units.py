@@ -492,7 +492,7 @@ class UnitOneOfTwoUnitsTest(UnitStageCase):
         self.assertNotIn("snack words", validate.input_text)
         # The pass states the delegation rule it is judged by (H-191: a criterion id is not a rubric).
         self.assertEqual(validate.prompt_version, gen.VALIDATION_PROMPT_VERSION)
-        self.assertEqual(validate.prompt_version, "validation-prompt.v8")
+        self.assertEqual(validate.prompt_version, "validation-prompt.v9")
         self.assertIn("for this unit only", validate.instructions)
         self.assertIn(
             "another unit of the course delivers is that unit's obligation",

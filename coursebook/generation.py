@@ -218,7 +218,16 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v2"
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt. H-195 adds the
 #: teaching-arc and audience requirements, so it advances to v10.
-LESSON_PROMPT_VERSION = "lesson-prompt.v10"
+#:
+#: v11 (CP-015c follow-up, ``t_a0bcacdd``): the lesson prompt states the answer-leak rule that
+#: :func:`assert_no_answer_leak` and :func:`assert_check_payload_does_not_announce_answer` enforce —
+#: which learner surfaces are scanned, that the ``model`` segment is the one presentation surface,
+#: the legal shape (the target in the model segment, referred to by function elsewhere) and the
+#: ban on shipping the key in the learner-facing check. CP-015c measured the defect: an author
+#: taught the target in the model segment and then restated it verbatim in the explanation and
+#: worked example, which is the natural way to explain a phrase the learner is about to be
+#: checked on, and both attempts parked on a rule the prompt never stated.
+LESSON_PROMPT_VERSION = "lesson-prompt.v11"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -248,7 +257,15 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: filtered to the unit, so the validator refused unit 1 of a correctly approved two-unit plan
 #: for not delivering unit 2's share. Dropping the whole-course outcome and stating the
 #: delegation rule is a change to the instruction text, so the label advances.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v8"
+#:
+#: v9 (CP-015c follow-up, ``t_a0bcacdd``): the lesson pass is told where the stored answer key
+#: lives. CP-015c measured the defect: the review page's validator read the authoring payload's
+#: ``lesson.check.reference_answer`` and ``accepted_answers`` as a learner-facing check that ships
+#: the graded response verbatim, and refused the page for it. The key is authoring material that
+#: ``learner_page`` never serializes; moving it to its own ``answer_key`` block and stating the
+#: learner surfaces the leakage criterion judges separates the two, so the validator refuses a real
+#: announcement and stops refusing the key's existence. Instruction text changed, so v9.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v9"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -3313,6 +3330,25 @@ _DECLARED_VERDICT_RULE = (
     "treating it as a refusal."
 )
 
+#: CP-015c follow-up: the lesson payload separates the stored answer key from the learner-facing
+#: artifact, and the leakage criterion is defined over the learner surfaces so the key's existence
+#: is not read as a leak. Stated because it is enforced and because the same defect was measured:
+#: a review-page validator refused a page with ``lesson.check.reference_answer`` for shipping the
+#: key it was never shipped.
+_LESSON_ANSWER_KEY_RULE = (
+    " The stored answer key travels under 'answer_key', not inside 'lesson.check':"
+    " 'reference_answer', 'accepted_answers', 'accepted_alternatives' and 'rubric' are authoring"
+    " material and are never serialized into the learner page, so their presence is not a leak."
+    " Judge 'answer_leakage' on the learner-facing surfaces only: every segment whose kind is not"
+    " 'model' (heading, body and short), the worked example (prompt, answer, steps and short),"
+    " 'learner_explanation', 'learner_explanation_short', 'parent_notes', non-narration media"
+    " text, the recap, and the check's stimulus prompt and learner_instructions. A 'model'"
+    " segment may present the target form it checks, narration-role media may read it, and a"
+    " selection check's choices may contain the correct choice. Refuse a page that announces the"
+    " key on any other surface, and refuse a check whose stimulus prompt or learner_instructions"
+    " restates the reference answer: locate that rejection as 'lesson.check.reference_answer'."
+)
+
 
 def validation_pass_instructions(
     *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
@@ -4455,6 +4491,36 @@ def _lesson_instructions(
         "A short must not add a claim. No number, date, name, acronym or quotation may appear in a "
         "short unless the same string appears in the deep text beside it, and a short must never "
         "state the check's reference answer, an accepted answer or rubric text.",
+        # CP-015c follow-up: the answer-leak gate is deterministic and scans named surfaces. An
+        # author that never saw the list taught the target in the model segment and then restated
+        # it verbatim in the explanation and the worked example — the natural way to explain a
+        # phrase the learner is about to be checked on — and every attempt parked on the gate.
+        "Answer-leak rule (enforced deterministically; a draft that breaks it is refused before "
+        "validation): the check's reference answer, every accepted answer and a practice's match "
+        "clauses are scanned for on every learner surface except one. A segment with kind "
+        "'model' is the one presentation surface: the target form, its reading or gloss and its "
+        "function belong there. Narration-role media that reads the model segment is exempt for "
+        "the same reason. Every other surface is scanned: any non-model segment's heading, body "
+        "and short (explain, guided, retrieval), the worked example's prompt, answer, steps and "
+        "short, learner_explanation, learner_explanation_short, parent_notes, non-narration media "
+        "text, the recap, and every block projected from them. A selection check's stimulus "
+        "choices are not scanned, because the correct choice must appear among the options.",
+        "Legal shape for a taught-then-checked item: present the target once, in the model "
+        "segment, as form plus reading or gloss plus function; everywhere else refer to it by "
+        "function or by a description, and never restate the reference answer verbatim. Never "
+        "write 'the answer is ...', 'the answer you should pick is ...', or 'choose the line that "
+        "names X and ends with Y' on an explanation, worked-example or recap surface. Passing "
+        "example: the model segment reads '二人です (futari desu) means \"two people\" and is how "
+        "you answer when the host asks how many people are in your party.'; the explanation then "
+        "reads 'Answer the party-size question with the phrase the model segment showed.' A draft "
+        "whose explanation says 'The answer is 二人です' is refused.",
+        "The stored answer key is not a learner surface: check.reference_answer, "
+        "check.accepted_answers, check.accepted_alternatives and check.rubric are stored "
+        "separately and must never appear in a segment, the worked example, the explanation or "
+        "the recap. The learner-facing check is its stimulus prompt, choices or items, and "
+        "learner_instructions, and it must not restate the reference answer either: ask the "
+        "question without shipping its key. A check whose stimulus prompt or learner_instructions "
+        "contains the reference answer is refused as 'lesson.check.reference_answer'.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
         "If check.stimulus.format is 'verification', enumerate the steps it asks the learner to "
@@ -4539,6 +4605,8 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
+    if subject.startswith("lesson"):
+        text += _LESSON_ANSWER_KEY_RULE
     return text
 
 
@@ -6267,6 +6335,56 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
         raise _RuleViolation(["learner-facing narrative contains rubric text"])
 
 
+#: The check fields a learner actually reads. ``choices`` and ``items`` are excluded for the same
+#: reason the page projection excludes them from the narrative scan: in a selection check the
+#: correct choice must appear among the options, and a checklist lists the steps, not the key.
+_LEARNER_CHECK_FIELDS = ("prompt", "learner_instructions")
+
+#: The shortest key this gate treats as a restated answer. A one- or two-character key is a token
+#: (a choice number, a letter) that a legitimate prompt may name without shipping the answer.
+_MIN_ANNOUNCED_KEY_CHARS = 4
+
+
+def assert_check_payload_does_not_announce_answer(lesson: Mapping[str, Any]) -> None:
+    """The learner-facing half of the check must not ship the answer with the question.
+
+    ``assert_no_answer_leak`` scans the page narrative; the check's own prompt and instructions
+    are the other surface a learner reads before answering, and they are not part of that scan.
+    CP-015c measured the defect: a validator refused a review page with
+    ``lesson.check.reference_answer`` because the learner-facing check carried the reference
+    answer, an accepted answer and a justification. The stored key is authoring material — the
+    page projection never carries it — but a prompt or instruction that restates it lets the
+    learner copy the graded response, so it is refused here under the same named reason.
+    """
+    check = lesson.get("check") or {}
+    stimulus = check.get("stimulus") or {}
+    surfaces = [
+        str(stimulus.get("prompt") or "") if field == "prompt" else str(check.get(field) or "")
+        for field in _LEARNER_CHECK_FIELDS
+    ]
+    secrets = [str(check.get("reference_answer") or "")] + [
+        str(item) for item in check.get("accepted_answers") or []
+    ]
+    for group in check.get("accepted_alternatives") or []:
+        secrets.extend(str(item) for item in group or [])
+    scanned = _normalize_answer("\n".join(surfaces))
+    # A very short key (``2``, ``b``) is a token, not a phrase: a legitimate prompt may name a
+    # number of options or a lettered choice without shipping the answer. Only a key long enough to
+    # be an answer phrase is scanned here, the same shape the narrative gate refuses.
+    leaked = [
+        secret for secret in secrets
+        if secret and len(_normalize_answer(secret)) >= _MIN_ANNOUNCED_KEY_CHARS
+        and _normalize_answer(secret) in scanned
+    ]
+    if leaked:
+        raise _RuleViolation([
+            "lesson.check.reference_answer: the learner-facing check restates the reference answer "
+            "or an accepted answer in its stimulus prompt or learner_instructions, so the graded "
+            "response can be copied; keep the key in the stored answer key and ask the question "
+            "without shipping it"
+        ])
+
+
 #: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
 #: these from its own deep text, but introducing one is introducing a claim about the material.
 #:
@@ -7214,6 +7332,9 @@ def build_lesson_request(
             "authored: strictly shorter than their deep text and adding no claim, number, name or "
             "quotation the deep text does not contain",
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
+            "answer_leak": "only a 'model' segment (and narration media that reads it) may carry the "
+            "check's reference answer or an accepted answer; every other learner surface is scanned, "
+            "and the check's stimulus prompt and learner_instructions must not restate the key",
             "media": "declarative spec with a complete text equivalent; only the roles the "
             "capability policy permits; the harness generates it and never treats an "
             "illustration as technical authority",
@@ -7243,6 +7364,11 @@ def build_lesson_request(
     )
 
 
+#: The check fields that are the stored answer key: authoring material the learner page never
+#: carries. They travel in ``answer_key`` on the lesson validation payload.
+_ANSWER_KEY_CHECK_FIELDS = ("reference_answer", "accepted_answers", "accepted_alternatives", "rubric")
+
+
 def build_lesson_validation_request(
     *,
     lesson: dict[str, Any],
@@ -7267,7 +7393,31 @@ def build_lesson_validation_request(
     compact on a legal 3-page parent plan, over the 24 000-byte lesson-stage bound, and the
     plan-wide lessons job failed before a single section was authored. The ledger is now the
     section's own slice, exactly the one the authoring pass was given.
+
+    The answer key is **not** left inside ``lesson.check``: ``reference_answer``,
+    ``accepted_answers``, ``accepted_alternatives`` and ``rubric`` move to an ``answer_key`` block
+    marked ``learner_facing: false``. The page projection already drops them, and the split is what
+    lets the validator judge ``answer_leakage`` on the surfaces a learner actually reads instead of
+    reading the key's presence as a shipped answer (CP-015c follow-up).
     """
+    # The stored answer key is authoring material, not a learner surface: ``learner_page``
+    # projects ``lesson.check`` without it. It travels in its own ``answer_key`` block so the
+    # validator can judge answer uniqueness and leakage without reading the key's presence inside
+    # the learner-facing check as a leak (CP-015c follow-up: a review-page validator refused a page
+    # with ``lesson.check.reference_answer`` on exactly that misreading).
+    learner_lesson = dict(lesson)
+    learner_check = dict(lesson.get("check") or {})
+    answer_key: dict[str, Any] = {
+        "learner_facing": False,
+        "note": (
+            "Stored answer key; never serialized into the learner page. Judge answer_leakage on "
+            "the learner-facing surfaces, not on the key's existence."
+        ),
+    }
+    for field in _ANSWER_KEY_CHECK_FIELDS:
+        if field in learner_check:
+            answer_key[field] = learner_check.pop(field)
+    learner_lesson["check"] = learner_check
     payload = {
         "artifact_kind": "lesson",
         "section": section,
@@ -7278,7 +7428,8 @@ def build_lesson_validation_request(
         "level": level or _dial_text(dials, "level"),
         "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
         "sources": _lesson_ledger(section, sources),
-        "lesson": lesson,
+        "lesson": learner_lesson,
+        "answer_key": answer_key,
         "learner_facing": True,
     }
     return LLMRequest(
@@ -11073,6 +11224,12 @@ def _author_section(
             assert_no_answer_leak({**page, "document": document} if document is not None else page, candidate)
         except _RuleViolation as exc:
             problems.extend(exc.reasons)
+        # The check's prompt and instructions are the other learner-readable surface; the key
+        # must not ship with the question (CP-015c follow-up).
+        try:
+            assert_check_payload_does_not_announce_answer(candidate)
+        except _RuleViolation as exc:
+            problems.extend(exc.reasons)
         if problems:
             rejection_reasons = problems
             if attempt == 2:
@@ -11320,6 +11477,10 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     if _leaks(page):
         raise LessonNotAvailable("projected lesson document contains answer material; refusing to serve it")
     page_text = _narrative_text(page)
+    # The learner-facing check is served from the page projection; the stored key is not part of
+    # it, and a stored check whose question restates the key is refused on the same rule the
+    # authoring pass applies (CP-015c follow-up).
+    assert_check_payload_does_not_announce_answer(_load_json(row["page_json"], {}))
     for check_row in check_rows:
         reference = _load_json(dict(check_row).get("reference_json"), {})
         for answer in [reference.get("reference_answer")] + list(reference.get("accepted_answers") or []):

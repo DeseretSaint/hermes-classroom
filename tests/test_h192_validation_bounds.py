@@ -460,7 +460,7 @@ class UnitValidationPayloadTest(unittest.TestCase):
         request = self._request(big_plan(6, units=1), [{"ordinal": 1}])
         self.assertIn("for this unit only", request.instructions)
         self.assertIn("another unit of the course delivers is that unit's obligation", request.instructions)
-        self.assertEqual(request.prompt_version, "validation-prompt.v8")
+        self.assertEqual(request.prompt_version, "validation-prompt.v9")
 
 
 if __name__ == "__main__":
