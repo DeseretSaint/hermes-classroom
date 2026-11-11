@@ -12,28 +12,68 @@ Dispatch and merge: cron supervisor `85d2218453f7` only. New cards are unassigne
 > courses use the same visual kit as built-in courses, including when the user generated the
 > lesson.
 
-## Order (one screen at a time; none starts before the previous one is installed)
+## Order — parallel lanes (amended 2026-11-11, decision D-008)
 
-| # | screen | authority | signature elements |
+The serial rule ("one screen at a time; none starts before the previous one is installed") is
+retired. It was correct while every screen needed its own bespoke scene design; with
+`field_atlas@2` merged it only spends the deadline on app relaunches. The rule that replaces it:
+
+> **One writer per file, not one screen at a time.** `desktop/plugin.js` is generated from
+> `desktop/src/NN-*.js`, so screens that own different segment files are parallel-safe; the merge
+> is `python3 scripts/build_plugin.py`, not a hunk conflict. Serialize only where two cards write
+> the same segment.
+
+| screen | authority | segment files | signature elements |
 |---|---|---|---|
-| 1 | Home | A1 + `design/home-scene.html` @ `a07b99ea` + generated pack | fox, clock, shelf, planks, tag, four covers |
-| 2 | Discover / Workshop | A3 top-right | collectible cards, banner/map, `point` fox |
-| 3 | Classroom lesson | A3 bottom-left | lesson furniture, stamp stepper, challenge card, `read` fox |
-| 4 | Design System consolidation | A3 bottom-right + A2 | card anatomy, badges, palette, pose map |
-| 5 | Course home | `docs/concept-parity/refs/map.png` | map, stops, trail |
-| 6 | Parent Studio | system-derived, no frame | composed from the system; never scored as parity |
+| Home | A1 + `design/home-scene.html` @ `a07b99ea` + generated pack | `30-home.js`, `32-desk.js` | fox, clock, shelf, planks, tag, four covers |
+| Discover / Workshop / Courses | A3 top-right + `refs/discover.png` | `96-workshop.js`, `40-courses.js`, `20-packs.js` | collectible cards, banner/map, `point` fox |
+| Classroom lesson | A3 bottom-left + `refs/classroom.png` | `70-learning.js` | lesson furniture, stamp stepper, challenge card, `read` fox |
+| Design System consolidation | A3 bottom-right + A2 | `85-v3-primitives.js`, `76-v3-scope.js` | card anatomy, badges, palette, pose map |
+| Course home | `refs/map.png` | `90-course.js`, `30-home.js` (course branch) | map, stops, trail |
+| Parent Studio | system-derived, no frame | `95-studio.js`, `62-syllabus-surfaces.js` | composed from the system; never scored as parity |
+
+Shared, single-owner files: `85-v3-primitives.js` and `75-tokens.js` belong to the kernel card
+(VQ-003) and the kit-segment card (UI-K1). A screen card consumes their accessors; it does not add
+a primitive there. If a screen needs one, it stops and asks the kernel card.
+
+### Lane order
+
+1. **Lane A — kit segment (UI-K1, running).** Adds `cb3KitSource` / `cb3KitCoverFor`. Every screen
+   card in every other lane is blocked only on this one file, so it lands first and alone.
+2. **Lane B — assets, fully parallel, no product source.** VQ-007 (Discover banner, eight
+   collectibles, classroom section plates, course-map base) and VQ-008 (seven remaining grammars)
+   both run now. Asset cards are the real Gate 0 constraint; they are disjoint directories and
+   must not queue behind a screen.
+3. **Lane C — screens, fan out the moment Lane A merges.** Classroom (UI-K3), Workshop/Courses
+   (UI-K4), Course home (UI-K5), Parent Studio (UI-K6) start together on disjoint segments.
+4. **Lane D — Design System (VQ-003).** Specimen consolidation. It does not gate a screen; it
+   records the kernel the screens already use. Run it beside Lane C.
+5. **Lane E — Home quality pass.** The only writer on `30-home.js` once CP-053 is in, so it takes
+   the Home slot after UI-K1; course-home's `30-home.js` branch waits for it or is split to
+   `90-course.js` alone.
+
+A screen card created before its asset exists is a Gate 0 violation; a screen card queued behind a
+sibling it shares no file with is a throughput violation. Both are defects.
+
+The parent edge means "it writes my file first", never "it is the next screen".
+
+### One capture per wave
+
+`scripts/vq-capture.sh` walks six destinations × four widths in one rig. It is the wave gate: one
+rebuild, one relaunch, one matrix, one contact sheet for every screen that landed in the wave, then
+critics score crops in parallel. A per-card capture run is spend with no new evidence; a card whose
+only claim is a branch capture has not landed.
 
 ## Home cards
 
 | card | id | state | scope |
 |---|---|---|---|
-| CP-053 Home scene | `t_5e22c918` | running (cinder) | the Home card. Not acceptable: 0.8064 (D-003). Let it finish. |
-| CP-005f fox adoption | `t_7803e3d1` | blocked (easel) | existing adoption card. Source/registry only: `build_cb_assets.py`, `assets/fox/manifest.json`, `cb-assets.generated.js`, `plugin.js` rebuild, `cb3FoxSource`/`FoxPose` 512/256/128/64 + srcSet, `test_cp010_fox_assets.py`. No `30-home.js`. |
+| CP-053 Home scene | `t_5e22c918` | done | the Home card. Not acceptable was 0.8064 (D-003). |
+| CP-005f fox adoption | `t_7803e3d1` | done | brand-asset segment, `cb3FoxSource`/`FoxPose` 512/256/128/64 + srcSet. No `30-home.js`. |
 | Type mapping + Home spec + audit | `t_c4bfc678` | todo, unassigned; parent CP-053 | `visual/spec/type-map.json`, `visual/spec/home.json`, `scripts/audit-screen.mjs`, tests. No product source. |
-| Home quality pass | `t_831137dd` | todo, unassigned; parents CP-053, `t_7803e3d1`, `t_c4bfc678` | covers, paper/grain, type, shelf, fox/clock composition, tag. The only writer on Home files after CP-053. |
+| Home quality pass | `t_831137dd` | todo, unassigned; parents CP-053, `t_7803e3d1`, `t_c4bfc678`, UI-K1 | covers, paper/grain, type, shelf, fox/clock composition, tag. The only writer on Home files after CP-053. |
 
-At most two cards in flight; only one touches Home's files. No other screen card is created until
-Home is installed.
+Home keeps one writer; the other lanes run beside it. No other screen waits on Home.
 
 ## Per-screen loop
 
