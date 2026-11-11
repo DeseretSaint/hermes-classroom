@@ -35,6 +35,10 @@ COPY = ROOT / "docs" / "concept-parity" / "COPY.md"
 
 #: The deck rows this surface may render. A literal in the segment that is not one of these (or a
 #: backend field the deck names for it) is copy the screen does not own.
+#: UI-K5: `course.noworld.title` / `course.noworld.body` are no longer painted on the default
+#: screen. D-007 makes the approved kit plate the ground, so the hero is painted and the "No scene
+#: yet" row would be a claim contradicted by the art. The rows stay defined (COPY.md is the deck);
+#: the typographic field still renders them when an install carries no kit segment at all.
 DECK_ARCHETYPES = (
     "Back to {parent}",
     "Your route",
@@ -46,8 +50,6 @@ DECK_ARCHETYPES = (
     "Evidence",
     "{n} of {total} sections have evidence",
     "Your other courses",
-    "No scene yet",
-    "The lesson works without art.",
 )
 
 #: The two state-specific rows are asserted in `test_course_home_v3_one_primary`, on the case that
@@ -75,8 +77,12 @@ EXPORT_SHIM = """
 // cb3CourseRoutePlan, cb3CoursePlateAnchors, cb3CourseHeroPlate, cb3CourseWorldPosture and
 // cb3CourseEvidenceLine into the module's single export block. `CourseDetail` is the one name the
 // composite screen mounts that the seam does not export, so it is the only one staged here.
+// UI-K5 adds the hero resolver and the motion publisher so the fallback order and the
+// reduced-motion rule are executable without a repo edit to the export seam.
 export {
-  CourseDetail
+  CourseDetail,
+  cb3CourseHeroResolution,
+  publishCbMotion
 };
 """
 
@@ -201,6 +207,62 @@ out.logic.evidence = [
   mod.cb3CourseEvidenceLine(NaN, 5)
 ]
 out.logic.copy = mod.CB3_COURSE_COPY
+
+// UI-K5: the hero fallback order as a pure function, with an injected kit map so the order is
+// proven independently of what the shipped asset segment happens to carry. `artifact` here is a
+// plate the caller already resolved (`src`) or an approved `world.read` artifact id.
+const kitOf = (map) => (id) => map[id] || null
+const both = kitOf({
+  'course-map': 'data:image/webp;base64,MAP',
+  'home-hero': 'data:image/webp;base64,HERO'
+})
+out.logic.heroOrder = {
+  artifactWins: mod.cb3CourseHeroResolution({
+    plate: { artifactId: 'art-9', src: null, credit: 'Plate: the studio' },
+    kit: both
+  }),
+  resolvedArtifactWins: mod.cb3CourseHeroResolution({
+    plate: { artifactId: null, src: 'data:image/png;base64,DIRECT' },
+    kit: both
+  }),
+  mapBeforeHero: mod.cb3CourseHeroResolution({ plate: { artifactId: null, src: null }, kit: both }),
+  heroOnly: mod.cb3CourseHeroResolution({
+    plate: { artifactId: null, src: null },
+    kit: kitOf({ 'home-hero': 'data:image/webp;base64,HERO' })
+  }),
+  none: mod.cb3CourseHeroResolution({ plate: { artifactId: null, src: null }, kit: kitOf({}) })
+}
+// The shipped registry: what this build actually resolves for a course with no world artifact.
+out.logic.heroShipped = mod.cb3CourseHeroResolution({ plate: { artifactId: null, src: null } })
+// Resolution is idempotent: the course screen resolves the plate `cb3CourseHeroPlate` already
+// resolved, and a second pass must not relabel the kit plate as a caller-supplied artifact.
+out.logic.heroTwice = mod.cb3CourseHeroResolution({ plate: out.logic.heroShipped })
+
+// UI-K5: reduced motion removes the companion figure; the default render keeps it.
+mod.publishCbMotion({ reduced: true })
+out.reducedMotion = renderToStaticMarkup(
+  h(mod.CourseHomeV3, {
+    row: payload.cases.default.row,
+    objectives: payload.cases.default.objectives,
+    page: payload.cases.default.page,
+    plate: payload.cases.default.plate,
+    anchors: payload.cases.default.anchors,
+    others: payload.cases.default.others,
+    sectionsDone: payload.cases.default.row.sections_done,
+    sectionsTotal: payload.cases.default.row.sections_total,
+    parentLabel: 'Home',
+    width,
+    busy: false,
+    worldState: null,
+    readState: 'ready',
+    onBack: () => {},
+    onContinue: () => {},
+    onOpenPlan: () => {},
+    onOpenSection: () => {},
+    onOpenStudio: undefined
+  })
+)
+mod.publishCbMotion({ reduced: false })
 
 process.stdout.write(JSON.stringify(out))
 """
@@ -698,10 +760,16 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         for banned in BANNED:
             self.assertNotIn(banned, lowered, f"the course home prints a banned field: {banned}")
 
-        # The no-world state names what is missing and does not pretend to have a plate.
-        noworld = strip_tags(self.report["cases"]["noworld"])
-        self.assertIn("No scene yet", noworld)
-        self.assertIn("The lesson works without art.", noworld)
+        # D-007: with no per-course world plate the hero is still painted — the approved kit field
+        # is the ground. The "No scene yet" row would be contradicted by that art, so it is not
+        # printed; the world posture still says the course's own scene is absent, and Continue is
+        # still the one next action.
+        noworld_html = self.report["cases"]["noworld"]
+        self.assertIn('data-cb-course-world-state="none"', noworld_html)
+        self.assertIn('data-cb-course-plate="art"', noworld_html)
+        self.assertIn('data-cb3-scene="kit"', noworld_html)
+        self.assertNotIn("No scene yet", strip_tags(noworld_html))
+        self.assertEqual(len(re.findall(r'data-cb3-pill="primary"', noworld_html)), 1)
 
         # The fox is the course-home pose, inside its safe area, and absent below 620 px.
         self.assertIn('data-cb3-fox="point"', html)
@@ -739,8 +807,145 @@ class CourseHomeV3RenderTest(unittest.TestCase):
             "CB3_COURSE_COPY.nodeLocked",
             "data-cb-course-node",
             "data-cb-course-route",
+            # UI-K5: the kit lane's seams.
+            "cb3CourseHeroResolution",
+            "data-cb3-scene",
+            "data-cb-course-scrim",
         ):
             self.assertIn(marker, block)
+
+    # ── 5. UI-K5: the approved kit is the ground, and its order is fixed ──────────────────────
+
+    def test_course_home_v3_hero_plate_fallback_order(self) -> None:
+        order = self.report["logic"]["heroOrder"]
+        # 1. An approved world artifact wins over both kit plates and keeps its credit.
+        self.assertEqual(order["artifactWins"]["scene"], "artifact")
+        self.assertEqual(order["artifactWins"]["artifactId"], "art-9")
+        self.assertEqual(order["artifactWins"]["sceneArtifact"], "art-9")
+        self.assertEqual(order["artifactWins"]["credit"], "Plate: the studio")
+        self.assertIsNone(order["artifactWins"]["src"])
+        # A plate the caller already resolved (`src`, as `world.read` delivers) is that artifact
+        # too — the kit never overrides it.
+        self.assertEqual(order["resolvedArtifactWins"]["scene"], "artifact")
+        self.assertEqual(order["resolvedArtifactWins"]["src"], "data:image/png;base64,DIRECT")
+        # 2. `course-map` before `home-hero`.
+        self.assertEqual(order["mapBeforeHero"]["scene"], "kit")
+        self.assertEqual(order["mapBeforeHero"]["sceneArtifact"], "course-map")
+        self.assertEqual(order["mapBeforeHero"]["src"], "data:image/webp;base64,MAP")
+        # 3. `home-hero` when the map plate is not in the registry.
+        self.assertEqual(order["heroOnly"]["scene"], "kit")
+        self.assertEqual(order["heroOnly"]["sceneArtifact"], "home-hero")
+        self.assertEqual(order["heroOnly"]["src"], "data:image/webp;base64,HERO")
+        # 4. Nothing at all is the typographic field, never an invented picture.
+        self.assertEqual(order["none"]["scene"], "none")
+        self.assertIsNone(order["none"]["src"])
+        self.assertIsNone(order["none"]["sceneArtifact"])
+
+        # Resolution is idempotent: the screen resolves the plate the reader already resolved.
+        twice = self.report["logic"]["heroTwice"]
+        self.assertEqual(twice["scene"], "kit")
+        self.assertEqual(twice["sceneArtifact"], self.report["logic"]["heroShipped"]["sceneArtifact"])
+        self.assertEqual(twice["src"], self.report["logic"]["heroShipped"]["src"])
+
+        # The shipped registry: a course with no world artifact resolves a painted kit plate.
+        shipped = self.report["logic"]["heroShipped"]
+        self.assertEqual(shipped["scene"], "kit")
+        self.assertIn(shipped["sceneArtifact"], {"course-map", "home-hero"})
+        self.assertTrue(
+            str(shipped["src"]).startswith("data:image/"),
+            "the resolved kit plate is not a real image",
+        )
+        # VQ-007 has not landed a `course-map` plate yet, so the build stands on `home-hero`. This
+        # assertion is the tripwire: when the map plate ships, it says so instead of drifting.
+        self.assertEqual(
+            shipped["sceneArtifact"],
+            "home-hero",
+            "course-map landed — move the divergence ledger row and re-point this test",
+        )
+
+        html = self.report["cases"]["default"]
+        self.assertIn('data-cb3-scene="kit"', html)
+        self.assertIn('data-cb3-scene-artifact="home-hero"', html)
+        self.assertIn('data-cb-course-plate="art"', html)
+        img = re.search(r"<img[^>]*data-cb-course-plate-art[^>]*>", html)
+        self.assertIsNotNone(img, "the kit plate resolved but no image was mounted")
+        assert img is not None
+        self.assertIn("object-fit:cover", img.group(0).replace(" ", ""))
+        self.assertIn('alt=""', img.group(0))
+        self.assertTrue(re.search(r'src="data:image/webp;base64,', img.group(0)))
+        # No text is baked into the plate; the decorative title is gone with the typographic field.
+        self.assertNotIn("data-cb-course-plate-title", html)
+        # An approved artifact keeps the current markup and says which artifact it is.
+        self.assertIn('data-cb3-scene="artifact"', self.report["cases"]["art"])
+
+    def test_course_home_v3_type_over_the_plate_is_scrimmed(self) -> None:
+        tokens = json.loads((ROOT / "contracts" / "cb.tokens.v3.json").read_text(encoding="utf-8"))
+
+        def channel(value):
+            c = int(value) / 255
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+        def luminance(hex_value):
+            text = str(hex_value).lstrip("#")
+            return (
+                0.2126 * channel(int(text[0:2], 16))
+                + 0.7152 * channel(int(text[2:4], 16))
+                + 0.0722 * channel(int(text[4:6], 16))
+            )
+
+        def contrast(a, b):
+            first, second = luminance(a), luminance(b)
+            return (max(first, second) + 0.05) / (min(first, second) + 0.05)
+
+        # The scrim is a token, and the token really carries ink at ≥ 4.5:1 in both modes.
+        for theme in ("light", "dark"):
+            ratio = contrast(tokens["modes"][theme]["ink"], tokens["modes"][theme]["card-stock"])
+            self.assertGreaterEqual(
+                ratio, 4.5, f"ink on card-stock is {ratio:.2f}:1 in {theme}; the scrim is unreadable"
+            )
+
+        html = self.report["cases"]["default"]
+        chips = re.findall(r"<span[^>]*data-cb-course-scrim=\"card-stock\"[^>]*>", html)
+        # Five section titles and five state words, every one of them over the plate.
+        self.assertEqual(len(chips), 10, f"{len(chips)} scrimmed chips, not ten")
+        for chip in chips:
+            self.assertIn(
+                "background-color:var(--cb3-card-stock)",
+                chip.replace(" ", ""),
+                f"type over the plate is not on the token scrim: {chip[:120]}",
+            )
+        # The scrimmed chips are the map route's own labels, not decoration somewhere else.
+        self.assertEqual(html.count("data-cb-course-node-label"), 5)
+        # No text is baked into the plate image itself.
+        self.assertIn('data-cb-course-plate-art=""', html)
+        self.assertNotIn("data-cb-course-plate-title", html)
+
+    def test_course_home_v3_fox_is_an_asset_not_a_drawing(self) -> None:
+        html = self.report["cases"]["default"]
+        fox = re.search(r"<div[^>]*data-cb3-fox=\"point\"[^>]*>(.*?)</div>", html, flags=re.S)
+        self.assertIsNotNone(fox, "the course home has no point-pose fox")
+        assert fox is not None
+        markup = fox.group(0)
+        # Characters are assets, never drawings: no inline SVG, no CSS shape.
+        self.assertNotIn("<svg", markup)
+        image = re.search(r"<img[^>]*>", markup)
+        self.assertIsNotNone(image, "the fox pose mounted no image")
+        assert image is not None
+        self.assertTrue(
+            re.search(r'src="data:image/(?:png|webp);base64,', image.group(0)),
+            "the fox source is not a shipped asset",
+        )
+        # 208 px box, 256 px export at the wide route: never upscaled past the asset's natural size.
+        self.assertIn('data-cb3-fox-export="256"', markup)
+        self.assertIn("width:208px", markup.replace(" ", ""))
+        self.assertNotIn('data-cb3-fox-export="64"', markup, "the fox is painted above its export")
+        # The approved pose, not the clock pose mirrored into place.
+        self.assertIn('data-cb3-fox="point"', markup)
+        # Reduced motion removes the companion rather than animating or squashing it.
+        reduced = self.report["reducedMotion"]
+        self.assertNotIn("data-cb3-fox=", reduced)
+        self.assertIn('data-cb3-scene="kit"', reduced, "the plate is lost under reduced motion")
+        self.assertIn("data-cb-continue-action", reduced)
 
 
 #: The assembled-screen harness: it mounts **`CourseDetail` on `view: 'overview'`** in jsdom against
@@ -1095,13 +1300,14 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
         self.assertEqual(set(at900["nodeDotWidths"]), {"48px"}, at900["nodeDotWidths"])
 
         # The aside is a right column only at ≥ 1000 route px; at 900 it stacks under the route
-        # while the plate keeps its M4 minimum height (SPEC-V3 §5.4). The typographic field's
-        # ratio is a minimum, not a fixed box: it grows with its title so 200 % text never clips.
+        # while the plate keeps its M4 ratio (SPEC-V3 §5.4). UI-K5: the plate is now the painted
+        # kit field on every cell, so it is the fixed 3:1 / 2:1 ratio rather than the typographic
+        # field's min-height.
         self.assertEqual(wide["bodyMode"], "split")
-        self.assertEqual(wide["plateMinHeight"], "204px")
+        self.assertEqual(wide["plateAspect"], "3 / 1")
         self.assertEqual(at900["bodyMode"], "stacked")
-        self.assertEqual(at900["plateMinHeight"], "204px")
-        self.assertEqual(self.reports[460]["plateMinHeight"], "214px")
+        self.assertEqual(at900["plateAspect"], "3 / 1")
+        self.assertEqual(self.reports[460]["plateAspect"], "2 / 1")
 
     def test_course_home_v3_route_sits_between_plate_and_aside(self) -> None:
         """SPEC-V3 §5.4: M6 is below M5, and the aside moves under the route.
@@ -1131,6 +1337,10 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
 
         jsdom has no layout, so this asserts the rule the renderer sets; the live 460/200 % cell
         measures the painted line boxes (``capture.sh`` runs the word-split probe in the driver).
+
+        UI-K5: the plate is painted kit art on every cell now, so the only live title is the course
+        ``h2``. The plate's decorative title existed for the typographic field and is gone — no text
+        is over (or inside) the art. The rule is still asserted wherever a title renders.
         """
         for width, report in self.reports.items():
             with self.subTest(width=width):
@@ -1140,18 +1350,19 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
                 ):
                     style = report.get(field)
                     if style is None:
-                        continue  # a map cell paints a plate, so there is no type field
+                        continue  # a painted plate carries no type field
                     self.assertNotIn("anywhere", style, f"{label} may split a word: {style}")
                     self.assertNotIn("break-all", style, f"{label} may split a word: {style}")
                     flat = style.replace(" ", "")
                     self.assertIn("word-break:normal", flat, f"{label}: {style}")
                     self.assertIn("overflow-wrap:break-word", flat, f"{label}: {style}")
-        # The plate's type field is the case round 2 saw: no art at 460, so the title is on paper.
-        self.assertIsNotNone(self.reports[460].get("plateTitleStyle"))
-        # And the fixed-height plate uses the body step at compact widths (a heading step in a
-        # 214 px field clipped the title's opening lines at 200 % text) and the heading step wide.
-        self.assertIn("font-size:var(--cb3-text-body)", self.reports[460]["plateTitleStyle"].replace(" ", ""))
-        self.assertIn("font-size:var(--cb3-text-heading)", self.reports[1049]["plateTitleStyle"].replace(" ", ""))
+        # The painted plate carries no text, so the typographic field's clipping case is retired.
+        for width, report in self.reports.items():
+            self.assertIsNone(
+                report.get("plateTitleStyle"),
+                f"the {width} plate paints type over the kit art; titles are DOM, not plate text",
+            )
+        self.assertIsNotNone(self.reports[460].get("courseTitleStyle"))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,295 @@
+{
+  "schema": "vq.manifest.v1",
+  "tool": "scripts/vq-manifest.py",
+  "generated_at": "2026-11-11T18:51:36+00:00",
+  "commit": "40a846c6a80aa122296c40dc5ebc24b832e0f71d",
+  "plugin_sha256": [
+    "09f63984d5243e98cf45c56df28a41c3ce2a843d8215922212588a1804522792"
+  ],
+  "capture_runs": [],
+  "matrix": {
+    "destinations": [
+      "course-home"
+    ],
+    "widths": [
+      1344
+    ]
+  },
+  "press_plate_registry": {
+    "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+    "5ae6ea8007db3d034e6b21b4b9fea865530c93c43c9b9d23e4e0dd4bd310e7e6": "bundled/packs/japanese-affection-context-l0/content/cover-4x5.png",
+    "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+    "82505bf4730e2c465bdba91877a7baab6b8b8da9a8f04ff0606ebb35a08cabe6": "bundled/packs/parent-measurement-practice/content/cover-4x5.png",
+    "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+    "668a63a9c38d07ca810d5b4f1a16bfd520ca23e668fdf5040836edbea94f8416": "bundled/packs/technical-pack-literacy/content/cover-4x5.png"
+  },
+  "cells": [
+    {
+      "cell": "course-home--1344",
+      "destination": "course-home",
+      "width": 1344,
+      "ok": false,
+      "problems": [
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 256px is below 2x rendered 208.00px",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"light\"] > div: natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "course_map",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "course-map plate"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb-course-plate-art] [data-cb-course-plate=\"art\"] > img",
+          "current_src": "data:image/webp;base64,UklGRkjqAwBXRUJQV\u2026",
+          "natural": {
+            "width": 2688,
+            "height": 1536
+          },
+          "rendered": {
+            "width": 952.03,
+            "height": 305.34
+          },
+          "sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+          "kind": "scene_plate",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.kit.field_atlas.home-hero",
+            "path": "assets/kit/field_atlas-home-hero.webp",
+            "role": "kit.hero.home-hero",
+            "group": "kit"
+          },
+          "scale_ratio": 2.823,
+          "problems": [],
+          "evidence_required": true,
+          "evidence": {
+            "file": "evidence/8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481.webp",
+            "row_sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+            "evidence_sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+            "measured_sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+            "bytes": 256592,
+            "dimensions": {
+              "width": 2688,
+              "height": 1536
+            },
+            "ok": true
+          },
+          "evidence_ok": true
+        },
+        {
+          "selector": "[data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRgJpAABXRUJQV\u2026",
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 208,
+            "height": 208
+          },
+          "sha256": "b152e628b826a563538ea1b696e86bc9e3c95468a17e710489fb6741b29a0b33",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.point.512",
+            "path": "assets/fox/fox-point-512.webp",
+            "role": "mascot.pose.point@512",
+            "group": "fox"
+          },
+          "scale_ratio": 1.231,
+          "problems": [
+            "natural 256px is below 2x rendered 208.00px"
+          ],
+          "evidence_required": false,
+          "evidence": null,
+          "evidence_ok": null
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"light\"] > div",
+          "url": "data:image/webp;base64,UklGRiwDAABXRUJQV\u2026",
+          "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "0058897dc5aca76a52a6d2230c8b13832cafdfeddd2613312a284910db4821f4",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-paper",
+            "path": "assets/material/grain-paper.webp",
+            "role": "material.tile.grain-paper",
+            "group": "material"
+          },
+          "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
+          "ratio_judged": false,
+          "judged_axes": [],
+          "problems": []
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"light\"] > div",
+          "url": "data:image/webp;base64,UklGRkoCAABXRUJQV\u2026",
+          "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "7ecca423831eb4ee7a5e2bab77d138fb89d743d35fb1e26c999880dc44ef7cd6",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-parchment",
+            "path": "assets/material/vignette-parchment.webp",
+            "role": "material.tile.vignette-parchment",
+            "group": "material"
+          },
+          "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
+          "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
+          "problems": [
+            "natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
+          ]
+        },
+        {
+          "selector": "[data-cb3-stamp=\"current\"] [data-cb3-stamp-index=\"1\"] > span",
+          "url": "data:image/webp;base64,UklGRopkAABXRUJQV\u2026",
+          "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "contain",
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 48,
+            "height": 48
+          },
+          "sha256": "9d270478dcd526d2838d893805cbb85206cec45265581ff24f7e4d264b920dc4",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.object.stamp-rim",
+            "path": "assets/objects/stamp-rim.webp",
+            "role": "object.stamp-rim",
+            "group": "objects"
+          },
+          "scale_ratio": 5.333,
+          "scale_ratio_y": 5.333,
+          "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
+          "problems": []
+        },
+        {
+          "selector": "[data-cb3-stamp=\"upcoming\"] [data-cb3-stamp-index=\"2\"] > span",
+          "url": "data:image/webp;base64,UklGRopkAABXRUJQV\u2026",
+          "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "contain",
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 48,
+            "height": 48
+          },
+          "sha256": "9d270478dcd526d2838d893805cbb85206cec45265581ff24f7e4d264b920dc4",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.object.stamp-rim",
+            "path": "assets/objects/stamp-rim.webp",
+            "role": "object.stamp-rim",
+            "group": "objects"
+          },
+          "scale_ratio": 5.333,
+          "scale_ratio_y": 5.333,
+          "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
+          "problems": []
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0dfa4d5c/desktop/plugin.js",
+        "bytes": 4146547,
+        "sha256": "09f63984d5243e98cf45c56df28a41c3ce2a843d8215922212588a1804522792"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 1344,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "light"
+      },
+      "screenshot": {
+        "file": "course-home--1344.png",
+        "declared": "0d898677327348efa6fc769fadf28b4f05c4ed32cd0e75b948efe62b8985df58",
+        "measured": "0d898677327348efa6fc769fadf28b4f05c4ed32cd0e75b948efe62b8985df58",
+        "ok": true
+      }
+    }
+  ],
+  "missing_cells": [],
+  "summary": {
+    "cells": 1,
+    "captured": 1,
+    "passed": 0,
+    "failed": 1,
+    "not_captured": 0,
+    "matrix_cells": 1,
+    "mixed_build": false,
+    "mixed_run": false,
+    "ok": false
+  }
+}

@@ -108,6 +108,7 @@ coursebook state doesn't reflect that." VQ-G0 (`t_fcdf8967`) is completed on tha
 | L-05 | brass desk clock | object-kit alarm clock | D-002 |
 | L-06 | two filled terracotta pills | one filled primary, one quiet secondary | SPEC-V3 D1, one primary per surface |
 | L-07 | header in the docked pane | host chrome; compact composition | G0-1 |
+| L-08 | course-home hero plate from the kit's `course-map` | the kit's `home-hero` field | VQ-007 has not shipped a `course-map` plate; UI-K5 resolves `world.read` artifact → `course-map` → `home-hero` and lands on `home-hero` today, marked `data-cb3-scene-artifact="home-hero"` |
 
 ### D-006 — display plates and generated Game courses
 
