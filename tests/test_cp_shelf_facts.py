@@ -358,7 +358,8 @@ class ContractFenceTest(unittest.TestCase):
 
     def test_v25_is_v24_plus_the_shelf_fact_set(self) -> None:
         v24 = contracts.contract_as("cb.rpc", 24)
-        v25 = contracts.contract("cb.rpc")
+        # The frozen v25 document: a later additive amendment (CP-052) moved the selected wire.
+        v25 = contracts.contract_as("cb.rpc", 25)
         self.assertEqual(v25["x-contract-version"], 25)
         self.assertEqual(v25["x-supersedes"], v24["$id"])
         self.assertEqual(
