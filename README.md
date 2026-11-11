@@ -1,17 +1,46 @@
 # Coursebook
 
-**Coursebook is a Hermes Desktop learning workspace where a lesson is governed state, not chat:**
-one objective at a time, typed checks, bounded grading, exactly one permitted transition per
-committed answer, and an evidence row you can inspect, export and resume. It is for an adult
-learning a real skill, and for a parent preparing a lesson pack that the parent then teaches:
-children do not chat with Coursebook.
+**Coursebook, learn anything.** A Hermes Desktop learning workspace where a course is researched,
+sequenced and governed, not a chat window with a topic in it.
 
-![Coursebook 0.1.0 course overview](https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-light.png)
+Say what you want to learn, how long you want to spend and where you are starting from. Coursebook
+researches the subject with the host's own tools, plans a course that fits the length you asked for,
+starts at your level rather than at the most technical thing it knows, authors lessons with images
+that are reviewed before they ship, keeps a specialist tutor beside every lesson, and grades with
+typed checks instead of impressions. Textbook, game and parent modes; import a syllabus and it
+builds the course around that instead.
 
-*Real capture from the pinned asset set at `1ba8ec6`, frame labelled in `docs/README-SHOTS.md`. The
-Home surface has since been rebuilt as the Trailhead (H-176, `2b0324e`, branch
-`wt/h176-trailhead-identity`, unmerged), so this README does not yet show today's Home; the
-replacement frame set is open in `docs/STORY-GAPS.md`.*
+![Coursebook Home: your field library, four courses on the shelf, the fox at the bench](docs/assets/github/home.jpg)
+
+| Create | Plan |
+|---|---|
+| ![Create: a topic, a length, a starting level](docs/assets/github/create.jpg) | ![Plan: the units and objectives before you approve them](docs/assets/github/plan.jpg) |
+
+![A course page: three missions, each opening into its lesson](docs/assets/github/course.jpg)
+
+*Captures of the current tree, not a mockup. Home and the course page are the owner's own renders of
+the shipped UI; the lesson and game frames are being re-rendered after the last fixes, so they are
+left out rather than shown stale.*
+
+## What it does
+
+- **A course, not a thread.** Research runs on the host's `web_search` and `web_extract`, every
+  fetch is ledgered, and a claim may not carry a quote that is not in its source.
+- **The length you asked for.** Scope caps units, objectives, sections and weeks; an approved plan
+  is the shape you will get.
+- **Your level first.** A learner who declares none is never handed the hardest step first; the
+  first objective has to build the concept before the act is asked for.
+- **Images that are checked, not decorative.** Generated pictures pass a review gate that refuses
+  legible numbers, depicted procedures and off-subject frames; a procedure's authority stays a
+  deterministic schematic with values quoted from the source.
+- **A tutor beside the lesson.** Bound to one lesson run, it withholds an open answer, refuses a
+  mismatched run and drops citations that do not resolve.
+- **Checks that are graded, and XP that is measured.** XP is derived from the graded row: evidence
+  target times verdict times how independently the answer was given. Reading a page pays nothing.
+- **Game and parent modes, on the same record.** A game course lives inside its world; a parent
+  packs a lesson to teach; children never chat with Coursebook.
+- **A syllabus in, a course out.** Import a syllabus, approve the mapping, and the course is built
+  around it with your level and mode.
 
 ## Install locally
 
@@ -29,8 +58,9 @@ refuses the machine-level home on purpose. Full path, dependencies and the obser
 
 ## Three things this tree can be held to
 
-Each is asserted by a test in the 2,724-test suite or by a state matrix run on this tree on
-2026-11-08. None of them is a claim about learning outcomes, and none is a video.
+Each is asserted by a test in the suite; the measured run, its commit and its counts are recorded
+in `docs/RELEASE-EVIDENCE.md` rather than repeated here, where they go stale. None of them is a
+claim about learning outcomes, and none is a video.
 
 1. **One answer, one transition.** `tests/test_kernel_transitions.py` (37 tests) asserts a pass
    commits exactly one transition, a duplicate nonce is ignored, an idempotency replay returns the
@@ -44,26 +74,28 @@ Each is asserted by a test in the 2,724-test suite or by a state matrix run on t
    asserts they equal the artifact's declared `content_hash` ("never trust the writer"), and that
    the manifest carries teaching material rather than learner history.
 
-## Status, 2026-11-10
+## Status
 
 The source repository is public and clones without credentials: `gh repo view
-DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"`, and an anonymous
-`git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves
-`3278bae`. GitHub keeps no visibility-change timestamp for a user-owned repository, so this section
-records when the public state was measured, not when it changed; the previous text here called the
-repository private, and that is corrected rather than backdated.
+DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"`. GitHub keeps no visibility-change
+timestamp for a user-owned repository, so this records when the public state was measured, not when
+it changed.
 
-A catalog entry exists and is submitted as a draft pull request: `plugin-catalog/coursebook.yaml` in
-`NousResearch/hermes-agent#152920`, pinned to the commit `3278bae` on `master`, with
-`docs_url` pointing at the `## Install locally` heading above. That pull request has not merged, so
-the catalog `hermes-agent` ships still does not resolve `coursebook`; cloning is the install path
-that works today. No release tag exists. **No demo video is recorded yet**: the demo gate
-`t_6a32ffe9` is open because this host runs one gateway and no profile can yet drive chat and the
-pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is a
-`LICENSE` file since 2026-11-10 (owner decision on `t_6f2d2080`, recorded as MIT in `LICENSE`).
-Merging the catalog pull request, tagging and announcing stay closed under `docs/SUBMISSION.md` §0.
-Everything below is the measured record, limitations included — the current candidate still has open
-gates 7, 12, 13, 14 and 15, with 5 and 6 partial.
+The catalog entry `plugin-catalog/coursebook.yaml` is submitted in
+[`NousResearch/hermes-agent#152920`](https://github.com/NousResearch/hermes-agent/pull/152920),
+pinned to the `master` commit named in that pull request's body and `docs_url` pointing at
+`## Install locally` below. The pull request has not merged, so the catalog `hermes-agent` ships
+does not yet resolve `coursebook`; cloning is the install path that works today. No release tag
+exists, and a `LICENSE` file records MIT.
+
+The 30-second launch cut is [`docs/launch/coursebook-launch-30s.mp4`](docs/launch/coursebook-launch-30s.mp4)
+(H.264 High, 1920x1080, 30 fps, AAC stereo), built from captures of the current tree.
+
+Merging the catalog pull request, tagging and announcing stay closed under `docs/SUBMISSION.md` §0,
+which is the single authority for gate state; this file does not duplicate it. Everything below is
+the measured record, limitations included. The end-to-end experience audit and the fix queue that
+came out of it are [`docs/UX-AUDIT-E2E.md`](docs/UX-AUDIT-E2E.md) and
+[`docs/UPGRADES.md`](docs/UPGRADES.md).
 
 ## Release record (0.1.0 and the product line)
 
