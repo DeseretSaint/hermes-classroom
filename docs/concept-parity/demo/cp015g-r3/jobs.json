@@ -1,0 +1,2 @@
+[{"id":"job_f91f44e3e4074ca18b49b6116ec46b31","kind":"plan","state":"failed","created_at":"2026-11-11T18:31:10Z","updated_at":"2026-11-11T18:33:32Z","error_json":"{\"category\": \"capability\", \"code\": \"HOST_UNAVAILABLE\", \"details\": {\"purpose\": \"coursebook.plan.validate\"}, \"message\": \"coursebook.plan.validate failed: APIConnectionError: Connection error.\", \"retryable\": true}"},
+{"id":"job_9e8bf482679c455ca4eb89574df24c27","kind":"plan","state":"completed","created_at":"2026-11-11T18:34:40Z","updated_at":"2026-11-11T18:36:33Z","error_json":"{}"}]
