@@ -208,6 +208,14 @@ def job_key(slug: str, step: str) -> str:
     return keyed(slug, f"{step}-{_run_nonce}")
 
 
+def _is_retryable(job: dict) -> bool:
+    """A transport/provider failure, not a content verdict. Retrying it is not a re-grade."""
+    error = job.get("error") or {}
+    if not isinstance(error, dict):
+        return False
+    return str(error.get("code") or "") == "HOST_UNAVAILABLE" and bool(error.get("retryable"))
+
+
 def wait_for_job(job_id: str, *, timeout: float = 1800.0, label: str = "") -> dict:
     started = time.monotonic()
     last = ""
@@ -288,6 +296,35 @@ def run_plan(slug: str, flow: dict) -> dict:
         "scope": spec["scope"],
     }
     flow.setdefault("plan_attempts", [])
+    # A plan the validator already cleared is not re-authored: opening the review again is the
+    # learner's own path, and re-running a job would pay for a second plan and could replace a
+    # good one with a worse one.
+    existing = ok("course.outline", {"enrollment_id": flow["enrollment_id"]})
+    existing_plan = existing.get("plan") or {}
+    existing_validation = existing_plan.get("validation") or {}
+    existing_objectives = _objectives(existing)
+    if existing_validation.get("approvable") and existing_objectives:
+        flow["plan_id"] = existing_plan.get("plan_id")
+        flow["objectives"] = existing_objectives
+        flow["validation"] = existing_validation
+        flow["plan_reused"] = True
+        flow["plan_attempts"].append(
+            {
+                "job_id": None,
+                "plan_id": existing_plan.get("plan_id"),
+                "plan_hash": existing_plan.get("plan_hash"),
+                "state": existing_plan.get("state"),
+                "verdict": existing_validation.get("verdict"),
+                "outcome": existing_validation.get("outcome"),
+                "independence": existing_validation.get("independence"),
+                "approvable": True,
+                "reasons": [],
+                "reused": True,
+            }
+        )
+        _log(f"{slug}: reusing approvable plan {flow['plan_id']} "
+             f"({len(existing_objectives)} objectives)")
+        return flow
     # A rejected plan is a real verdict, not an error to paper over: regenerating is what a learner
     # does, and every attempt's verdict is recorded so the record never claims a first-time pass.
     for attempt in range(1, PLAN_ATTEMPTS + 1):
@@ -299,6 +336,18 @@ def run_plan(slug: str, flow: dict) -> dict:
         # this driver bounds each attempt itself so one hang costs minutes, not the ~650 s a
         # provider call can outlive the job's own limit.
         final = wait_for_job(job_id, label=f"{slug} plan", timeout=PLAN_ATTEMPT_TIMEOUT_S)
+        if final.get("state") not in SUCCESS_JOB_STATES and _is_retryable(final):
+            # A transient provider/connection failure is not a content verdict. One transport
+            # retry of the same brief, recorded separately, keeps a flaky socket from burning a
+            # whole authored plan.
+            _log(f"{slug}: plan job {job_id} failed transiently "
+                 f"({json.dumps(final.get('error'))[:160]}); retrying once")
+            time.sleep(5)
+            retry = ok("jobs.create", {"kind": "plan", "brief": brief},
+                       key=job_key(slug, f"plan-transport{attempt}"))
+            job_id = retry["job_id"]
+            _log(f"{slug}: plan job {job_id} queued (transport retry)")
+            final = wait_for_job(job_id, label=f"{slug} plan", timeout=PLAN_ATTEMPT_TIMEOUT_S)
         flow["plan_job_id"] = job_id
         flow["plan_job_state"] = final.get("state")
         flow["plan_job_error"] = final.get("error")
