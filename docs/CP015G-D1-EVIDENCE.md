@@ -86,8 +86,11 @@ validator read the plan, judged it, and named why, instead of the pipeline faili
 model's output. The failure path this card removes (truncated/unparseable answer → discarded plan →
 no record) did not occur in run 2.
 
-Raw run records and the two scripts that produced them are attached to the task
-(`run-live-12000.json`, `repro_cp015g_d1.py`, `read_cp015g_d1.py`).
+Raw run record and the scripts that produced it are in `docs/cp015g-d1/`
+(`run-live-12000.json`, `repro_cp015g_d1.py`, `read_cp015g_d1.py`). The failed-host first attempt
+(`job_8400bc93bf6a4ac18eff2cca6acff28c`) is not included: it failed inside the host
+(`UnscopedSecretError` resolving `GOOGLE_API_KEY` for the auxiliary task) before the pipeline ran,
+and was fixed by pointing the isolated home's `model` route at `nous`.
 
 ## Limits stated, not papered over
 
