@@ -7,24 +7,24 @@ record block below is pasted from a command run against that extraction: `ffprob
 -framemd5`, `ffmpeg -af loudnorm|ebur128` and `sha256sum`. Nothing here is copied from another
 document and nothing is estimated. This file records measurement; it does not grant approval.
 
-## Film of record — v5, `0775f33f…6fda`
+## Film of record — v5 re-normalised, `9b6eed5e…e620`
 
 | Property | Value | Source |
 | --- | --- | --- |
-| sha256 | `0775f33f0df59aa3d6c2e7c9b144045fbaa62e40d5c77db09777c83254376fda` | `sha256sum` on the extraction |
+| sha256 | `9b6eed5eb6b17e17d6b0982b4f084e7571fe9090be3fe2e2c4b117486f17e620` | `sha256sum` on the extraction |
 | Duration | 42.400000 s (strictly under the 90 s rule) | `format=duration` |
 | Frames | 1272 = 42.4 x 30, CFR 30/1 | `-count_frames nb_read_frames` |
 | Picture | 1920x1080, h264 High, yuv420p | `stream=codec_name,width,height` |
 | Audio | AAC LC, 48 kHz, stereo, stream duration 38.400000 s | `select_streams a` |
-| Integrated loudness | **-15.1 LUFS**, true peak -4.5 dBTP, LRA 6.3 LU | `loudnorm` summary; `ebur128` agrees |
-| Size | 3,025,052 B (2.89 MiB) | `format=size,bit_rate` = 570764 b/s |
+| Integrated loudness | **-14.8 LUFS**, true peak -4.2 dBTP | `loudnorm` summary; inside the -15.0 to -13.0 window |
+| Size | 3,025,839 B (2.89 MiB) | `format=size` |
 | End card | present, names Coursebook, the repo, MIT, and the build | frame at 41.5 s |
 
-Loudness note (VIDEO-PLAN §9.3 floor is -15.0 LUFS): v5 measures **-15.1 LUFS, 0.1 LU below the
-floor**. It is not re-encoded. This is a stated deviation, not a PASS: X normalises playback gain, the
-0.1 LU is inaudible, and re-encoding the only certified film inside the freeze window is a larger risk
-than the deviation. If the owner prefers a compliant file, the fix is `-c:v copy -af volume=0.15dB -c:a aac`
-on the audio stream and a re-measure; that changes the digest and therefore gate 13.
+Loudness note (VIDEO-PLAN §9.3 window is -15.0 to -13.0 LUFS): the v5 picture landed at -15.1 LUFS,
+0.1 LU under the floor. The **audio stream was re-normalised once** (`-c:v copy -af volume=0.25dB -c:a aac
+-b:a 192k -movflags +faststart`), which leaves the video stream bit-identical, keeps the duration at
+42.400000 s and 1272 frames, and lands the file at **-14.8 LUFS / -4.2 dBTP — inside the window**. This
+file is the film of record; the pre-normalise blob `0775f33f…6fda` is superseded and must not be posted.
 
 ### Superseded: the v3 cut at `61786bd3`
 
@@ -38,10 +38,12 @@ v3 (`69303767…e08fa`, 51.000000 s, 9,557,524 B, −15.12 LUFS) was the blob th
 It failed the loudness floor by 0.12 LU and three of its captions outran their frames (recorded in the
 history below). The v5 re-cut answers the captions — its captions are plain statements the frame
 supports ("Learn anything." over the Discover shelf; "Short checks that make it stick." over a check
-card with the answer typed and Check answer unpressed) — and it lands at −15.1 LUFS, 0.1 LU below the
-floor instead of 0.12. The 42.4 s length also removes the dead tail v3 carried.
+card with the answer typed and Check answer unpressed) — but before normalisation it still sat 0.1 LU
+under the floor (−15.1 against −15.0, where v3 missed by 0.12), so the audio was re-normalised once to
+−14.8 LUFS and that re-normalised blob is the film of record. The 42.4 s length also removes the dead
+tail v3 carried.
 
-Nothing in this file certifies v3 for the post any more. The film of record is `0775f33f…6fda`.
+Nothing in this file certifies v3 for the post any more. The film of record is `9b6eed5e…e620`.
 
 ## Files in the take
 

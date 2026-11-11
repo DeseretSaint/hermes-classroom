@@ -32,9 +32,9 @@ is charged 23 regardless of its 40 rendered characters (258 − 40 + 23). Both a
 with the line break counted. Tags `@NousResearch`. Links the public repository. Makes no efficacy,
 mastery, benchmark, COPPA or child-safety claim.
 
-- Attach `coursebook-walkthrough.mp4` to the post — **42.4 s**, narrated, **−15.1 LUFS** measured (the
-  plan's −15.0 floor is missed by 0.1 LU; `QC.md` records it as a stated deviation), sha256
-  `0775f33f0df59aa3d6c2e7c9b144045fbaa62e40d5c77db09777c83254376fda`.
+- Attach `coursebook-walkthrough.mp4` to the post — **42.4 s**, narrated, **−14.8 LUFS** measured (inside
+  the plan's −15.0 to −13.0 window; the audio was re-normalised once, video stream copied bit-for-bit), sha256
+  `9b6eed5eb6b17e17d6b0982b4f084e7571fe9090be3fe2e2c4b117486f17e620`.
 - One URL only, so no card conflict: the repo link is the only link in the text.
 
 **Alt text** (paste into X's media description):
@@ -74,7 +74,7 @@ not the take; the X copy in §1 does not.
 2. Paste that URL and the catalog PR URL into the form with §2's answers.
 3. Screenshot or copy the confirmation and add it to `docs/SUBMISSION.md` gate 15.
 
-The file is 3,025,052 B (2.89 MiB), well under any upload limit; re-encode is not needed for size.
+The file is 3,025,839 B (2.89 MiB), well under any upload limit; re-encode is not needed for size.
 
 ## 4. What the film does not show, and what the copy may not say
 
@@ -103,8 +103,9 @@ Four limits follow, and the copy respects them:
 4. **The narration is optional, not load-bearing.** The AAC track is 38.4 s against the 42.4 s picture
    and does not start until 3.36 s; every beat is also written on screen, and the film's frames were
    reviewed with sound off for `QC.md` §Muted comprehension. The sentence "42 s demo, no sound needed"
-   in §1 is true; "silent" would not be, because the file carries a track. Loudness measures −15.1 LUFS,
-   which misses the plan's −15.0 floor; `QC.md` records the fail and a re-normalise would change the sha.
+   in §1 is true; "silent" would not be, because the file carries a track. Loudness measures −14.8 LUFS,
+   inside the plan's −15.0 to −13.0 window, after one audio-only re-normalise that left the picture
+   bit-identical (`QC.md` carries the command and both measurements).
 
 If the owner wants the post to claim only what the take proves, the minimal edit is to open on the shown
 surfaces — "a plan you approve, one objective at a time, typed checks" — and drop the product promise.

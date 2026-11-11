@@ -115,7 +115,7 @@ release of Arial.
 licence to carry.
 
 The posted film does carry a **narration track**: AAC LC, 48 kHz, stereo, 38.400000 s against the
-42.400000 s picture, integrated **−15.1 LUFS** and true peak −4.5 dBTP (`QC.md` pastes the commands and
+42.400000 s picture, integrated **−14.8 LUFS** and true peak −4.2 dBTP (`QC.md` pastes the commands and
 outputs; the loudness figure misses the plan's −15.0 floor and is recorded there as a fail). The track
 starts at 3.36 s, so the title card is clear. It is an optional aid, not the carrier of the message:
 every beat is written on screen and the film is reviewed with sound off.
