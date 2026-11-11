@@ -1143,7 +1143,12 @@ class V4AmendmentTest(unittest.TestCase):
                          v2_codes | {"PREREQUISITE_UNMET"})
         # The projection is a new contract id, not a new version of cb.pack: the manifest is
         # unchanged, only the derivation from it is frozen.
-        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        # This amendment changed nothing about the pack document. The *pointer* has since
+        # moved to v3 (CP-015g), so assert the frozen v1 document is still accepted rather than
+        # that it is the newest — asserting a current pointer in a historical test made the
+        # record false the moment a later pack version landed.
+        self.assertIn(1, contracts.version_files("cb.pack"))
+        self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.contract_version("cb.projection"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
@@ -1684,7 +1689,12 @@ class V5AmendmentTest(unittest.TestCase):
         # The live catalog moved on to v4 (H-26); this amendment added no code to v3.
         self.assertEqual(set(_document("errors.v3.json")["code_catalog"]),
                          set(_document("errors.v2.json")["code_catalog"]) | {"PREREQUISITE_UNMET"})
-        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        # This amendment changed nothing about the pack document. The *pointer* has since
+        # moved to v3 (CP-015g), so assert the frozen v1 document is still accepted rather than
+        # that it is the newest — asserting a current pointer in a historical test made the
+        # record false the moment a later pack version landed.
+        self.assertIn(1, contracts.version_files("cb.pack"))
+        self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.contract_version("cb.projection"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
@@ -2202,7 +2212,12 @@ class V6AmendmentTest(unittest.TestCase):
         self.assertNotIn("lesson", job_kind)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        # This amendment changed nothing about the pack document. The *pointer* has since
+        # moved to v3 (CP-015g), so assert the frozen v1 document is still accepted rather than
+        # that it is the newest — asserting a current pointer in a historical test made the
+        # record false the moment a later pack version landed.
+        self.assertIn(1, contracts.version_files("cb.pack"))
+        self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_docs_publish_the_v6_surface_and_the_invalidation_rule(self) -> None:
@@ -2372,7 +2387,12 @@ class V7AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        # This amendment changed nothing about the pack document. The *pointer* has since
+        # moved to v3 (CP-015g), so assert the frozen v1 document is still accepted rather than
+        # that it is the newest — asserting a current pointer in a historical test made the
+        # record false the moment a later pack version landed.
+        self.assertIn(1, contracts.version_files("cb.pack"))
+        self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_docs_publish_the_v7_surface_and_its_omission(self) -> None:
@@ -2744,7 +2764,12 @@ class V10AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
         self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
         self.assertEqual(contracts.contract_version("cb.jobs"), 5)
-        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        # This amendment changed nothing about the pack document. The *pointer* has since
+        # moved to v3 (CP-015g), so assert the frozen v1 document is still accepted rather than
+        # that it is the newest — asserting a current pointer in a historical test made the
+        # record false the moment a later pack version landed.
+        self.assertIn(1, contracts.version_files("cb.pack"))
+        self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.contract_version("cb.projection"), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 

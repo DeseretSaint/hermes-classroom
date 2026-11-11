@@ -624,6 +624,7 @@ def _write_lesson_page(
     staged_directory: Path,
     media_by_section: Mapping[str, list[dict[str, Any]]] | None = None,
     artifact_ids: Mapping[str, str] | None = None,
+    recipe: str = "committed",
 ) -> None:
     """Materialize the pack's own section text as a durable lesson page.
 
@@ -690,6 +691,127 @@ def _write_lesson_page(
             "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
             " VALUES (?, ?, ?, 'check_prompt', ?, ?)",
             (_new_id("seg"), run_id, ordinal, _stimulus_text(check), now),
+        )
+        # H-137b: an imported section is only *usable* when its declared check is a row the
+        # grader can bind an attempt to. Writing the prompt segment alone left every imported
+        # course with zero rows in ``checks`` — the page asked a question nothing could grade, so
+        # no attempt, transition or evidence row was reachable after a pack install. The spec is
+        # projected through the same deterministic audit the preview reports, so an item that
+        # fails its own audit imports ungraded rather than shipping a check nothing will accept.
+        spec = check_spec_from_pack_check(check, recipe=recipe)
+        if spec is None:
+            continue
+        connection.execute(
+            "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json,"
+            " rubric_json, reference_json, locale, audit_state, state, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'passed', 'open', ?)",
+            (
+                _new_id("chk"),
+                objective_row_id,
+                int(check.get("version") or ordinal),
+                str(spec["rubric"]["construct"]),
+                json.dumps(spec["stimulus"], sort_keys=True),
+                json.dumps(spec["rubric"], sort_keys=True),
+                json.dumps(spec["reference"], sort_keys=True),
+                check.get("locale"),
+                now,
+            ),
+        )
+
+
+def _restore_world(
+    connection: sqlite3.Connection,
+    *,
+    course_id: str,
+    world_block: Mapping[str, Any],
+    objective_rows: Sequence[tuple[str, Mapping[str, Any]]],
+    world_artifact_ids: Mapping[str, str],
+    now: str,
+) -> None:
+    """Rebuild an approved world kit from a pack's ``presentation.world`` block.
+
+    The imported course is Game because the pack said so, and its world is *approved* because the
+    pack carried the plates an approval was given for. The kit hash is re-derived from the rows
+    this import just wrote (the original section keys were the exporter's objective ids), so the
+    stored identity is a fact about these bytes rather than a copied string. No engagement, XP,
+    attempt or evidence row is written: the block carries art and identity only.
+    """
+    from . import world as world_module
+
+    ordinal_to_objective = {int(obj["ordinal"]): row_id for row_id, obj in objective_rows}
+    style_hash = str(world_block.get("style_hash") or "")
+    assets = [asset for asset in world_block.get("assets") or [] if isinstance(asset, Mapping)]
+    if not style_hash or not assets:
+        return
+    world_id = _new_id("wld")
+    raw_brief = world_block.get("brief")
+    brief: dict[str, Any] = dict(raw_brief) if isinstance(raw_brief, Mapping) else {}
+    brief["course_id"] = course_id
+    plates: list[tuple[str, str, str]] = []
+    restored: list[tuple[Mapping[str, Any], str, str]] = []
+    for asset in assets:
+        path = str(asset.get("file") or "")
+        artifact_id = world_artifact_ids.get(path)
+        if artifact_id is None:
+            continue
+        role = str(asset.get("role") or "")
+        section_key = ""
+        if role == "section":
+            section_key = ordinal_to_objective.get(int(asset.get("section_ordinal") or 0), "")
+            if not section_key:
+                continue
+        restored.append((asset, artifact_id, section_key))
+        plates.append((role, section_key, str(asset.get("prompt_hash") or "")))
+    if not restored:
+        return
+    # Fail closed on a partial kit. A pack that declares a world must carry a plate for every
+    # section its brief names, or the imported course would be marked `approved` while painting
+    # an incomplete world — an approval claim no author actually made.
+    declared_sections = brief.get("sections") if isinstance(brief.get("sections"), list) else []
+    expected = min(len(declared_sections), int(getattr(world_module, "MAX_KIT_SECTIONS", 8)))
+    present = {int(asset.get("section_ordinal") or 0) for asset in assets
+               if str(asset.get("role")) == "section"}
+    missing = [ordinal for ordinal in range(1, expected + 1) if ordinal not in present]
+    if missing:
+        raise PackRejected(
+            "presentation.world is partial: no section plate for objective ordinal(s) "
+            f"{missing}; refusing to import a world that would claim approval it does not have"
+        )
+    kit_hash = world_module.kit_hash_for(style_hash, plates)
+    connection.execute(
+        "INSERT INTO course_worlds (id, course_id, revision, state, brief_json, concepts_json,"
+        " selected_concept_id, style_hash, kit_hash, approved_hash, approved_at, error_json,"
+        " created_at, updated_at) VALUES (?, ?, 1, 'approved', ?, '[]', ?, ?, ?, ?, ?, '{}', ?, ?)",
+        (
+            world_id,
+            course_id,
+            json.dumps(brief, sort_keys=True),
+            str(world_block.get("style_id") or ""),
+            style_hash,
+            kit_hash,
+            kit_hash,
+            now,
+            now,
+            now,
+        ),
+    )
+    for asset, artifact_id, section_key in restored:
+        connection.execute(
+            "INSERT INTO world_assets (id, world_id, role, section_id, section_key, artifact_id,"
+            " style_hash, prompt_hash, textless, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                _new_id("was"),
+                world_id,
+                str(asset.get("role")),
+                section_key or None,
+                section_key,
+                artifact_id,
+                str(asset.get("style_hash") or style_hash),
+                str(asset.get("prompt_hash") or ""),
+                1,
+                now,
+            ),
         )
 
 
@@ -780,8 +902,16 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     # this is a no-op for every pack written before v2.
     media_links = _media_links(manifest)
     media_by_section = _media_by_section(media_links)
+    raw_presentation = manifest.get("presentation")
+    presentation: Mapping[str, Any] = (
+        raw_presentation if isinstance(raw_presentation, Mapping) else {}
+    )
+    raw_world = presentation.get("world")
+    world_block: Mapping[str, Any] | None = raw_world if isinstance(raw_world, Mapping) else None
+    world_assets = list(world_block.get("assets") or []) if world_block else []
     media_store = artifacts.ArtifactStore()
     staged_media: dict[str, artifacts.Staged] = {}
+    staged_world: dict[str, artifacts.Staged] = {}
     adopted_objects: list[Path] = []
     try:
         # Filesystem first (never inside a transaction): adopt is atomic and idempotent.
@@ -799,6 +929,23 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 if not already_stored:
                     adopted_objects.append(object_path)
                 staged_media[link["path"]] = prepared
+            for asset in world_assets:
+                path = str(asset.get("file") or "")
+                if not path or path in staged_world:
+                    continue
+                declared = next(
+                    (entry for entry in manifest["files"] if str(entry["path"]) == path), None
+                )
+                if declared is None:
+                    raise PackRejected(f"world plate {path!r} is not a declared file")
+                data = (adopted_directory / path).read_bytes()
+                prepared = media_store.stage(data, kind="visual", mime=str(declared["mime"]))
+                object_path = media_store.objects_dir / prepared.content_hash[:2] / prepared.content_hash
+                already_stored = object_path.exists()
+                media_store.adopt(prepared)
+                if not already_stored:
+                    adopted_objects.append(object_path)
+                staged_world[path] = prepared
         except artifacts.UnsafeMedia as exc:
             _discard_adopted_objects(adopted_objects)
             raise PackRejected(f"linked pack media could not be adopted: {exc}") from exc
@@ -847,9 +994,11 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     return result["revision"], result
 
             course_id = _new_id("crs")
+            imported_mode = "game" if str(presentation.get("mode") or "") == "game" else None
             connection.execute(
                 "INSERT INTO courses (id, title, recipe, goal, locale, dials_json, status, pack_id,"
-                " revision, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, ?)",
+                " revision, created_at, updated_at, presentation_mode)"
+                " VALUES (?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, ?, ?)",
                 (
                     course_id,
                     str(manifest["title"]),
@@ -860,6 +1009,7 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     pack_row_id,
                     now,
                     now,
+                    imported_mode,
                 ),
             )
             _write_sources(connection, course_id, manifest)
@@ -879,6 +1029,41 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     provenance=_media_provenance(manifest, link),
                 )
                 artifact_ids[link["path"]] = str(view["artifact_id"])
+
+            # World plates are adopted the same way, as visual artifacts with pack provenance,
+            # so the world rows below can point at real bytes that ``artifact.get`` serves.
+            world_artifact_ids: dict[str, str] = {}
+            for asset in world_assets:
+                path = str(asset.get("file") or "")
+                if not path or path in world_artifact_ids:
+                    continue
+                declared = next(
+                    entry for entry in manifest["files"] if str(entry["path"]) == path
+                )
+                view = media_store.record(
+                    connection,
+                    course_id=course_id,
+                    staged=staged_world[path],
+                    provenance={
+                        "generator": "coursebook.pack_import",
+                        "model": None,
+                        "prompt_hash": str(asset.get("prompt_hash") or ""),
+                        "source_ids": [],
+                        "notes": "world plate imported from pack content; no provider call",
+                        "label": artifacts.ILLUSTRATION_LABEL,
+                        "text_equivalent": declared.get("text_equivalent"),
+                        "license_id": str(
+                            (manifest.get("license") or {}).get("id") or "unspecified"
+                        ),
+                        "attribution": str(manifest.get("attribution") or ""),
+                        "pack_id": str(manifest["pack_id"]),
+                        "pack_version": str(manifest["pack_version"]),
+                        "pack_content_hash": str(manifest["content_hash"]),
+                        "pack_file": path,
+                        "pack_file_sha256": str(declared["sha256"]),
+                    },
+                )
+                world_artifact_ids[path] = str(view["artifact_id"])
 
             plan_id = _new_id("pln")
             connection.execute(
@@ -907,6 +1092,16 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             plan_hash = _plan_hash(connection, plan_id)
             connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (plan_hash, plan_id))
 
+            if world_block is not None and imported_mode == "game":
+                _restore_world(
+                    connection,
+                    course_id=course_id,
+                    world_block=world_block,
+                    objective_rows=objective_rows,
+                    world_artifact_ids=world_artifact_ids,
+                    now=now,
+                )
+
             enrollment_id = _new_id("enr")
             connection.execute(
                 "INSERT INTO enrollments (id, course_id, learner_label, status, revision, created_at,"
@@ -922,6 +1117,7 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     staged_directory=adopted_directory,
                     media_by_section=media_by_section,
                     artifact_ids=artifact_ids,
+                    recipe=recipe,
                 )
 
             result = {

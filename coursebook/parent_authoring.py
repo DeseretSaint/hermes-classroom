@@ -31,6 +31,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 from . import lesson_document
@@ -203,6 +204,28 @@ def _objectives(connection, plan_id: str) -> list[Any]:
     )
 
 
+def _stored_media(row: Any) -> list[dict[str, Any]]:
+    """Read one lesson row's generated media allowlist without importing the generation module.
+
+    Same fields ``generation.stored_lesson_media`` publishes (kind, role, purpose, text
+    equivalent, artifact id, mime, label, degraded, reason). A malformed column yields ``[]`` so an
+    older row exports exactly the text it always did.
+    """
+    try:
+        items = json.loads(str(row["media_json"] or "[]"))
+    except (KeyError, TypeError, ValueError):
+        return []
+    if not isinstance(items, list):
+        return []
+    fields = ("kind", "role", "purpose", "text_equivalent", "artifact_id", "mime",
+              "label", "degraded", "reason")
+    return [
+        {field: item.get(field) for field in fields}
+        for item in items
+        if isinstance(item, Mapping)
+    ]
+
+
 def generation_plan_hash(connection, plan_id: str, fallback: str = "") -> str:
     """The digest the generation rows were written under.
 
@@ -229,7 +252,8 @@ def _lesson_rows(connection, plan_id: str, plan_hash: str) -> dict[str, Any]:
     """
     rows = connection.execute(
         "SELECT s.*, l.id AS lesson_id, l.state AS lesson_state, l.page_json AS page_json,"
-        " l.parent_notes_json AS parent_notes_json, l.version AS lesson_version"
+        " l.parent_notes_json AS parent_notes_json, l.version AS lesson_version,"
+        " l.media_json AS media_json"
         " FROM gen_plan_sections s"
         " LEFT JOIN gen_lessons l ON l.id = ("
         "   SELECT g.id FROM gen_lessons g WHERE g.section_id = s.id AND g.plan_hash = ?"
@@ -460,6 +484,14 @@ def sections(connection, course, plan) -> list[dict[str, Any]]:
         page_dict = base["page"]
         context_needs = _load(row["context_needs_json"], [])
         base["check"] = check
+        # H-137e: generated lesson media lives in ``gen_lessons.media_json`` once the bytes exist.
+        # It is the only place a section's own visual/narration artifact id is recorded, so the
+        # authored export reads it here and packages those bytes with the lesson they belong to.
+        try:
+            media_items = _stored_media(row)
+        except Exception:  # noqa: BLE001 - an unreadable column must not block a text export
+            media_items = []
+        base["media"] = media_items
         base["files"] = {
             "learner_page": _learner_page_text(page_dict),
             "parent_guide": _parent_guide_text(
@@ -749,6 +781,10 @@ def build_pack(
 
     files: dict[str, bytes] = {}
     metadata: dict[str, dict[str, Any]] = {}
+    media_links: list[dict[str, Any]] = []
+    media_files: dict[str, bytes] = {}
+    media_metadata: dict[str, dict[str, Any]] = {}
+    media_licenses: list[dict[str, Any]] = []
     for section in generated:
         slug_value = slug(str(section["title"]), f"section-{int(section['ordinal']):02d}")
         paths = {
@@ -763,6 +799,78 @@ def build_pack(
             data = str(text).encode("utf-8")
             files[paths[role]] = data
             metadata[paths[role]] = {"mime": "text/markdown", "role": role}
+        # A section's own generated visual/narration bytes travel with it. ``media[]`` is the
+        # frozen v2 link (path → section_path + caption), so the importing lesson page plays the
+        # same artifact the author's page played; a file that cannot be read is a hard refusal
+        # rather than a silent text-only export.
+        for item in section.get("media") or []:
+            media_role = str(item.get("role") or "")
+            if media_role not in packs.MEDIA_LINK_ROLES or media_role == "cover":
+                continue
+            artifact_id = str(item.get("artifact_id") or "")
+            if not artifact_id:
+                continue
+            row = connection.execute(
+                "SELECT mime, path FROM artifacts WHERE id = ?", (artifact_id,)
+            ).fetchone()
+            if row is None:
+                raise AuthoredExportBlocked(
+                    "media_artifact_missing",
+                    f"section {section['ordinal']} links media artifact {artifact_id} that no "
+                    "longer exists; regenerate the lesson media before exporting.",
+                    problems=[f"artifact {artifact_id} is missing"],
+                )
+            source = Path(str(row["path"]))
+            try:
+                data = source.read_bytes()
+            except OSError as exc:
+                raise AuthoredExportBlocked(
+                    "media_bytes_unreadable",
+                    f"section {section['ordinal']} media bytes cannot be read: {exc}",
+                    problems=[f"{artifact_id}: {exc}"],
+                ) from exc
+            mime = str(row["mime"] or "")
+            extension = {
+                "image/png": "png",
+                "image/jpeg": "jpg",
+                "image/webp": "webp",
+                "audio/mpeg": "mp3",
+                "audio/wav": "wav",
+                "audio/ogg": "ogg",
+            }.get(mime)
+            if extension is None:
+                continue
+            digest = packs.file_sha256(data)
+            path = (
+                f"media/{int(section['ordinal']):02d}-{media_role}-"
+                f"{digest.split(':', 1)[1][:12]}.{extension}"
+            )
+            equivalent = str(
+                item.get("text_equivalent") or item.get("purpose") or section["title"]
+            )[:1000]
+            media_files[path] = data
+            media_metadata[path] = {
+                "mime": mime,
+                "role": media_role,
+                "text_equivalent": equivalent,
+                "description": f"{media_role} for {section['title']}"[:500],
+            }
+            media_licenses.append(
+                {
+                    "path": path,
+                    "license_id": str(AUTHORED_LICENSE["id"]),
+                    "attribution": f"{str(section['title'])[:80]} — generated in Coursebook.",
+                }
+            )
+            media_links.append(
+                {
+                    "path": path,
+                    "section_path": paths["learner_page"],
+                    "caption": str(item.get("purpose") or equivalent or section["title"])[:200],
+                }
+            )
+    files.update(media_files)
+    metadata.update(media_metadata)
 
     pack_objectives: list[dict[str, Any]] = []
     for row in objectives:
@@ -835,6 +943,15 @@ def build_pack(
         )
 
     attribution = attribution or f"{course['title']} — authored by the parent in Coursebook."
+    presentation, world_files, world_metadata, world_licenses = _presentation_export(
+        connection, course, objectives
+    )
+    files.update(world_files)
+    metadata.update(world_metadata)
+    license_record: dict[str, Any] = dict(AUTHORED_LICENSE)
+    per_artifact = list(media_licenses) + list(world_licenses)
+    if per_artifact:
+        license_record["per_artifact"] = per_artifact
     optional: dict[str, Any] = {}
     if course["locale"]:
         optional["locale"] = str(course["locale"])
@@ -847,7 +964,7 @@ def build_pack(
         title=str(course["title"])[:200] or title_fallback,
         recipe=str(course["recipe"]),
         minimum_coursebook_version="0.1.0",
-        license=dict(AUTHORED_LICENSE),
+        license=license_record,
         attribution=attribution,
         contributors=list(contributors)
         if contributors is not None
@@ -856,10 +973,133 @@ def build_pack(
         files=files,
         file_metadata=metadata,
         sources=pack_sources(connection, str(course["id"])) or None,
+        presentation=presentation,
+        media=media_links,
         **optional,
     )
     _assert_no_answer_leak(manifest, files, generated)
     return manifest, files
+
+
+def _presentation_export(
+    connection, course, objectives: Sequence[Mapping[str, Any]]
+) -> tuple[dict[str, Any], dict[str, bytes], dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    """The pack's ``presentation`` block plus the plate files that make it real.
+
+    A Textbook course exports ``{"mode": "textbook"}`` and no files: its art is its lesson layout,
+    not a plate. A Game course exports its mode always, and — when a world was approved — the kit's
+    identity and every plate as a declared ``visual`` file. A Game course with no approved world
+    exports the mode alone; the importing product names the missing world as the gate it already
+    is rather than inventing one.
+
+    Plates are course-level orientation art: they carry no lesson text, no check, no attempt and
+    no evidence, so nothing personal can ride out with them.
+    """
+    from . import gm_contract, world as world_module
+
+    stored = course["presentation_mode"] if "presentation_mode" in course.keys() else None
+    mode = gm_contract.read_presentation_mode(stored)
+    presentation: dict[str, Any] = {"mode": mode}
+    files: dict[str, bytes] = {}
+    metadata: dict[str, dict[str, Any]] = {}
+    licenses: list[dict[str, Any]] = []
+    if mode != "game":
+        return presentation, files, metadata, licenses
+
+    row = connection.execute(
+        "SELECT * FROM course_worlds WHERE course_id = ? AND state = 'approved'"
+        " ORDER BY revision DESC LIMIT 1",
+        (str(course["id"]),),
+    ).fetchone()
+    if row is None:
+        return presentation, files, metadata, licenses
+
+    ordinal_by_objective = {str(item["id"]): int(item["ordinal"]) for item in objectives}
+    title_by_ordinal = {int(item["ordinal"]): str(item["title"]) for item in objectives}
+    brief = _load(row["brief_json"], {})
+    assets: list[dict[str, Any]] = []
+    problems: list[str] = []
+    for asset in connection.execute(
+        "SELECT * FROM world_assets WHERE world_id = ? ORDER BY role, section_key", (str(row["id"]),)
+    ).fetchall():
+        role = str(asset["role"])
+        artifact = connection.execute(
+            "SELECT mime, path, bytes FROM artifacts WHERE id = ?", (str(asset["artifact_id"]),)
+        ).fetchone()
+        if artifact is None:
+            problems.append(f"{role} plate is missing its artifact")
+            continue
+        source = Path(str(artifact["path"]))
+        try:
+            data = source.read_bytes()
+        except OSError:
+            problems.append(f"{role} plate bytes are unreadable")
+            continue
+        mime = str(artifact["mime"] or "")
+        extension = {
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/webp": "webp",
+        }.get(mime)
+        if extension is None:
+            problems.append(f"{role} plate has unsupported mime {mime!r}")
+            continue
+        ordinal = ordinal_by_objective.get(str(asset["section_key"] or ""))
+        if role == "section" and ordinal is None:
+            problems.append(f"section plate {asset['section_key']!r} names no current objective")
+            continue
+        digest = packs.file_sha256(data)
+        stem = f"{role}-{ordinal if role == 'section' else 'course'}-{digest.split(':', 1)[1][:12]}"
+        path = f"world/{stem}.{extension}"
+        description = (
+            f"World plate ({role}) for {str(course['title'])[:80]!r} — textless orientation art."
+        )
+        if role == "section" and ordinal is not None:
+            description = (
+                f"World plate (section {ordinal}: {title_by_ordinal.get(ordinal, '')[:60]}) — "
+                "textless orientation art."
+            )
+        files[path] = data
+        metadata[path] = {
+            "mime": mime,
+            "role": "visual",
+            "text_equivalent": description,
+            "description": description,
+        }
+        licenses.append(
+            {
+                "path": path,
+                "license_id": str(AUTHORED_LICENSE["id"]),
+                "attribution": f"{str(course['title'])[:80]} — generated in Coursebook.",
+            }
+        )
+        entry: dict[str, Any] = {
+            "role": role,
+            "file": path,
+            "sha256": digest,
+            "style_hash": str(asset["style_hash"]),
+            "prompt_hash": str(asset["prompt_hash"]),
+            "textless": bool(int(asset["textless"] or 0)),
+        }
+        if role == "section":
+            entry["section_ordinal"] = int(ordinal)
+        assets.append(entry)
+
+    if problems:
+        raise AuthoredExportBlocked(
+            "world_kit_incomplete",
+            "the approved world kit cannot be packaged: " + "; ".join(problems),
+            problems=problems,
+        )
+    presentation["world"] = {
+        "grammar": world_module.WorldPolicy.select(brief),
+        "style_id": str(row["selected_concept_id"] or ""),
+        "style_hash": str(row["style_hash"] or ""),
+        "kit_hash": str(row["kit_hash"] or ""),
+        "brief": dict(brief) if isinstance(brief, Mapping) else {},
+        "assets": assets,
+    }
+    return presentation, files, metadata, licenses
 
 
 def _pack_id(course_id: str, prefix: str = "parent") -> str:

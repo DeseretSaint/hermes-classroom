@@ -32,6 +32,28 @@ records what the tree contains, not a released artifact.
   authorise a tag, a catalog merge or an announcement, which stay closed under
   `docs/SUBMISSION.md` §0.
 
+### Course portability and first-run wiring (CP-015g backend pass, 2026-11-11)
+
+- **`cb.pack` v3** adds one optional root `presentation` block: the authored mode
+  (`textbook`/`game`) and, for a Game course with an approved world, the world kit's identity and
+  its plate files. It cannot represent XP, engagement, attempts, evidence, homework or tutor turns,
+  and the GM contract test asserts the pack seam reads only `course_worlds`/`world_assets`.
+  Import restores `courses.presentation_mode`, an approved world and its assets, with `kit_hash`
+  re-derived from the importing database's own rows. v1 and v2 packs keep their exact shape.
+- **`course.export` carries visuals.** A section's generated `visual`/`narration` artifacts are
+  written as `media/<NN>-<role>-*.ext`, linked through the frozen v2 `media[]` with a text
+  equivalent and a per-artifact licence. A missing artifact blocks the export instead of shipping a
+  text-only lesson.
+- **Pack import materialises checks.** `pack.import` wrote a `check_prompt` segment but no `checks`
+  row, so every imported course had zero gradable checks and no attempt could be recorded. Each
+  manifest check now becomes a real `checks` row through the deterministic import audit; a check
+  that fails its own audit imports ungraded. This was the clean-seed blocker in
+  `docs/HACKATHON-DEMO.md` §3.
+- **Install provisioning check.** `python3 -m coursebook.install_check --source <checkout>
+  --provisioning` reports bundled skills, declared tools/hooks, the contract set and current
+  `cb.pack` version, dependency importability, bundled starter pack hashes and (with `--home`) the
+  profile database schema; exit 1 on any error.
+
 ### Fixed during the candidate
 
 Each item below is recorded with its own evidence in the commit that landed it; this changelog

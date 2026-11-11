@@ -468,6 +468,7 @@ def _minima_problems(manifest: Mapping[str, Any]) -> list[str]:
         if mime in MEDIA_MIME_TYPES and path not in licensed:
             problems.append(f"{path!r}: media needs a per-artifact license record")
     problems.extend(_media_link_problems(manifest, declared))
+    problems.extend(_presentation_problems(manifest, declared))
     return problems
 
 
@@ -637,6 +638,94 @@ def audit_bundle(directory: str | Path) -> list[str]:
             problems.append(f"{entry['path']!r}: media has no per-artifact license record")
 
     problems.extend(_answer_key_problems(root, manifest))
+    return problems
+
+
+def _presentation_problems(
+    manifest: Mapping[str, Any], declared: Mapping[str, Any]
+) -> list[str]:
+    """G1–G7: the rules that travel with the ``presentation`` block (``cb.pack`` v3).
+
+    A game pack's plates are art, not evidence. The block may name a mode and a world kit; it may
+    never carry gameplay state. Every plate file it names must be a declared visual with matching
+    bytes, and every section plate must name an objective ordinal that exists, or no imported
+    course can seat it. ``mode: game`` with no ``world`` is legal and honest: the course is Game
+    and its world is simply not approved yet, which the product already names as a gate.
+    """
+    problems: list[str] = []
+    presentation = manifest.get("presentation")
+    if presentation is None:
+        return problems
+    version = manifest_contract_version(manifest)
+    if version < 3:
+        problems.append(f"contract_version {version} may not carry a presentation block")
+        return problems
+    if not isinstance(presentation, Mapping):
+        return ["presentation must be an object"]
+    mode = str(presentation.get("mode") or "")
+    if mode not in ("textbook", "game"):
+        problems.append(f"presentation.mode {mode!r} is not textbook or game")
+    # A parent-led pack is a lesson plan an adult teaches, never a Game player course. A mode
+    # claim that contradicts the recipe would create a Game UI over observation-only content.
+    if mode == "game" and str(manifest.get("recipe") or "") == "parent":
+        problems.append("a parent-recipe pack may not declare presentation.mode 'game'")
+    world = presentation.get("world")
+    if world is None:
+        return problems
+    if not isinstance(world, Mapping):
+        return ["presentation.world must be an object"]
+    for key in ("grammar", "style_id", "style_hash", "kit_hash"):
+        if not str(world.get(key) or "").strip():
+            problems.append(f"presentation.world.{key} is empty")
+    ordinals = {int(objective["ordinal"]) for objective in manifest.get("objectives") or []}
+    seen: set[tuple[str, int | None]] = set()
+    roles_present: set[str] = set()
+    for index, asset in enumerate(world.get("assets") or []):
+        if not isinstance(asset, Mapping):
+            problems.append(f"presentation.world.assets[{index}] must be an object")
+            continue
+        role = str(asset.get("role") or "")
+        file = str(asset.get("file") or "")
+        entry = declared.get(file)
+        if entry is None:
+            problems.append(f"presentation.world.assets[{index}]: {file!r} is not a declared file")
+            continue
+        if str(entry.get("role")) != "visual":
+            problems.append(
+                f"presentation.world.assets[{index}]: {file!r} has role {entry.get('role')!r}; "
+                "world plates are declared as visual"
+            )
+        if str(entry.get("sha256")) != str(asset.get("sha256")):
+            problems.append(
+                f"presentation.world.assets[{index}]: sha256 does not match the declared file"
+            )
+        ordinal = asset.get("section_ordinal")
+        if role == "section":
+            if ordinal is None:
+                problems.append(
+                    f"presentation.world.assets[{index}]: a section plate needs section_ordinal"
+                )
+            elif int(ordinal) not in ordinals:
+                problems.append(
+                    f"presentation.world.assets[{index}]: section_ordinal {ordinal} is not an "
+                    "objective ordinal in this pack"
+                )
+        elif ordinal is not None:
+            problems.append(
+                f"presentation.world.assets[{index}]: only a section plate carries section_ordinal"
+            )
+        key = (role, None if ordinal is None else int(ordinal))
+        if key in seen:
+            problems.append(f"presentation.world.assets[{index}]: duplicate plate {key}")
+        seen.add(key)
+        roles_present.add(role)
+    if roles_present:
+        missing = [role for role in ("hero", "cover") if role not in roles_present]
+        if missing:
+            problems.append(
+                f"presentation.world.assets is missing the course-level plate(s) {missing}; "
+                "an imported Game course would paint an incomplete kit"
+            )
     return problems
 
 

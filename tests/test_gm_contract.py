@@ -321,12 +321,30 @@ class GmMigrationTest(unittest.TestCase):
     def test_gm_contract_evidence_and_export_reads_ignore_gm_tables(self) -> None:
         for filename in EXPORT_AND_EVIDENCE_MODULES:
             text = (SOURCE_DIR / filename).read_text(encoding="utf-8")
-            for table in gm.GM_TABLES:
+            # pack_flow/packs/archive may carry the art tables in the v3 `presentation` block;
+            # everything else on the Game side — homework, engagement, tutor — is never readable
+            # by an export, an import or an evidence read.
+            forbidden = (
+                gm.GM_NEVER_EXPORTED_TABLES
+                if filename in ("pack_flow.py", "packs.py", "archive.py")
+                else gm.GM_TABLES
+            )
+            for table in forbidden:
                 with self.subTest(module=filename, table=table):
                     self.assertIsNone(
                         re.search(rf"\b{table}\b", text),
                         f"{filename} reads {table}; it must not",
                     )
+
+    def test_gm_contract_pack_reads_only_the_art_tables(self) -> None:
+        """A pack may carry the world kit's art and nothing else from the Game side."""
+        text = (SOURCE_DIR / "pack_flow.py").read_text(encoding="utf-8")
+        for table in gm.GM_ART_TABLES:
+            self.assertIsNotNone(re.search(rf"\b{table}\b", text))
+        self.assertEqual(
+            set(gm.GM_ART_TABLES) & set(gm.GM_NEVER_EXPORTED_TABLES),
+            set(),
+        )
 
     def test_gm_contract_unmigrated_course_reads_textbook(self) -> None:
         """A row written before 0013 has no mode; it reads Textbook and stays NULL."""

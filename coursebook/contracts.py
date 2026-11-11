@@ -39,7 +39,7 @@ CONTRACT_FILES: dict[str, str] = {
     # v1 resolve ``$ref`` targets to ``pack-manifest/v1``. Bumping the inventory would either
     # break those refs or require editing a frozen wire contract, so v2 is an *accepted document
     # version* (``CONTRACT_VERSION_FILES``) while cross-document refs keep pointing at v1.
-    "cb.pack": "pack-manifest.v1.json",
+    "cb.pack": "pack-manifest.v3.json",
     "cb.projection": "projection.v1.json",
     # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
     # imported (or synthetic-fixture) document; the plugin bundles no third-party list.
@@ -56,7 +56,7 @@ WIRE_CONTRACT_VERSION = 26
 #: reachable only by an explicit version. A document that declares ``contract_version`` selects the
 #: schema it is validated against, so a v1 pack keeps the v1 allowlist and never inherits v2 fields.
 CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
-    "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json"},
+    "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json", 3: "pack-manifest.v3.json"},
     # GM-005: v23 appends the take-home family to GM-011's v22. v22 stays readable so a client
     # that pinned the tutor wire can still validate; v21 and older remain on disk as history but
     # are not offered by the loader.
@@ -170,11 +170,26 @@ def contract_sha256(contract_id: str) -> str:
 
 @lru_cache(maxsize=1)
 def registry() -> Registry:
-    """Cross-document resolver for the absolute ``$ref`` targets the contracts use."""
+    """Cross-document resolver for the absolute ``$ref`` targets the contracts use.
+
+    Every accepted *version* is registered, not only the current document: a frozen wire contract
+    (``cb.rpc``) may point at an older pack-manifest's property (``pack-manifest/v1#/properties/
+    pack_id``), and that pointer must keep resolving after a newer pack version becomes current.
+    """
     resources: list[tuple[str, Resource]] = []
+    seen: set[str] = set()
     for contract_id in CONTRACT_FILES:
-        document = contract(contract_id)
-        resources.append((str(document["$id"]), Resource.from_contents(document, default_specification=DRAFT202012)))
+        candidates = [contract(contract_id)]
+        if contract_id in CONTRACT_VERSION_FILES:
+            candidates = [
+                contract_as(contract_id, version) for version in sorted(version_files(contract_id))
+            ]
+        for document in candidates:
+            uri = str(document["$id"])
+            if uri in seen:
+                continue
+            seen.add(uri)
+            resources.append((uri, Resource.from_contents(document, default_specification=DRAFT202012)))
     return Registry().with_resources(resources)
 
 
@@ -349,9 +364,11 @@ def audit_contracts() -> list[str]:
     """Return human-readable problems; an empty list means the contract set is coherent.
 
     Checks the invariants that a JSON Schema alone cannot express across documents:
-    unique ids, ``$id`` agreeing with the declared version, every ``$ref`` resolving to the
-    *current* version of its target contract, the error-code enum matching the catalog, and the
-    RPC method enum matching the payload schemas one-for-one.
+    unique ids, ``$id`` agreeing with the declared version, every ``$ref`` resolving to an
+    *accepted* version of its target contract (current, or a frozen version still on disk and in
+    ``CONTRACT_VERSION_FILES`` — a frozen wire contract may legitimately point at an older pack
+    manifest), the error-code enum matching the catalog, and the RPC method enum matching the
+    payload schemas one-for-one.
     """
     problems: list[str] = []
     seen_ids: set[str] = set()
@@ -393,11 +410,17 @@ def audit_contracts() -> list[str]:
         if missing:
             problems.append(f"cb.rpc method {method!r} is missing payload schema(s): {', '.join(sorted(missing))}")
 
-    # Cross-document references must target the version currently in the inventory.
+    # Cross-document references must target a version this build can resolve: the current one, or
+    # a frozen version registered in CONTRACT_VERSION_FILES. A frozen wire contract is never
+    # rewritten, so requiring the newest version here would force a byte change to `cb.rpc`.
     current_version: dict[str, int] = {}
+    accepted_versions: dict[str, set[int]] = {}
+    contract_by_base: dict[str, str] = {}
     for contract_id, uri in uri_by_contract.items():
         base, _, version = uri.rpartition("/v")
         current_version[base] = int(version)
+        contract_by_base[base] = contract_id
+        accepted_versions[base] = set(version_files(contract_id))
     vocabulary_prefix = uri_by_contract["cb.vocabulary"] + "#/$defs/"
     vocabulary_ids = set(contract("cb.vocabulary").get("$defs", {}))
     for contract_id in CONTRACT_FILES:
@@ -415,9 +438,10 @@ def audit_contracts() -> list[str]:
                 expected = current_version.get(base)
                 if expected is None:
                     problems.append(f"{contract_id}: $ref targets unknown contract {ref}")
-                elif ref_version != expected:
+                elif ref_version not in accepted_versions[base]:
                     problems.append(
-                        f"{contract_id}: $ref {ref} targets v{ref_version} but {base} is at v{expected}"
+                        f"{contract_id}: $ref {ref} targets v{ref_version}, which this build does "
+                        f"not accept (accepted: {sorted(accepted_versions[base])})"
                     )
 
     if WIRE_CONTRACT_ID not in CONTRACT_FILES:

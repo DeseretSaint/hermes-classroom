@@ -730,6 +730,23 @@ class WorldPrompt:
         }
 
 
+def kit_hash_for(style_hash: str, plates: Sequence[tuple[str, str, str]]) -> str:
+    """The one kit-identity function, shared by generation and pack import.
+
+    *plates* is ``(role, section_key, prompt_hash)``. Generation keys a section plate by the
+    objective id it was derived from; an imported pack re-keys the same plates to the objective
+    ids it just created, so the imported course's kit hash is re-derived from its own rows rather
+    than copied as an unverifiable string.
+    """
+    return _prompt_hash(
+        {
+            "kind": "world_kit",
+            "style_hash": style_hash,
+            "plates": sorted(f"{role}:{key}:{prompt_hash}" for role, key, prompt_hash in plates),
+        }
+    )
+
+
 def _prompt_hash(value: Mapping[str, Any]) -> str:
     import hashlib
     import json
@@ -2753,15 +2770,9 @@ def _kit_stage(payload: Mapping[str, Any]) -> Any:
                     ),
                 )
             raise WorldPartialFailure(missing)
-        kit_hash = _prompt_hash(
-            {
-                "kind": "world_kit",
-                "style_hash": style_hash,
-                "plates": sorted(
-                    f"{prompt.role}:{prompt.section_id or ''}:{prompt.prompt_hash}"
-                    for prompt, _, _ in produced
-                ),
-            }
+        kit_hash = kit_hash_for(
+            style_hash,
+            [(prompt.role, prompt.section_id or "", prompt.prompt_hash) for prompt, _, _ in produced],
         )
         with db_transaction() as connection:
             _persist_assets(connection, world_id, produced, style_hash)

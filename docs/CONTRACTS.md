@@ -32,7 +32,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.rpc` | `contracts/rpc.v26.json` | 26 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
-| `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
+| `cb.pack` | `contracts/pack-manifest.v3.json` (v1 and v2 also accepted) | 3 (v1/v2 accepted) | Cinder (v2 media link, H-137); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
@@ -45,12 +45,26 @@ v1 **to v13** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.js
 as immutable history: the superseded current files are `rpc.v22.json`, `db.v13.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
-`cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
-(`pack-manifest.v2.json`) both live on disk, and a pack is validated, exported and allowlisted
-against the `contract_version` it declares. v2 adds one optional root `media[]` array that links a
-declared `narration`/`visual` file to the section that may play it, with a short caption; a file
-not named there stays stored evidence only, exactly as every v1 pack behaves. No `cb.rpc` method,
-`cb.db` column or migration changes (H-137 implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+`cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`), v2
+(`pack-manifest.v2.json`) and v3 (`pack-manifest.v3.json`) all live on disk, and a pack is
+validated, exported and allowlisted against the `contract_version` it declares. v2 adds one
+optional root `media[]` array that links a declared `narration`/`visual` file to the section that
+may play it, with a short caption; a file not named there stays stored evidence only, exactly as
+every v1 pack behaves. No `cb.rpc` method, `cb.db` column or migration changes (H-137 implements
+`docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+
+v3 is one additive amendment over v2: an optional root `presentation` object. It records the mode
+the course was authored in (`textbook`/`game`) and, for a Game course with an approved world, the
+kit's identity (`grammar`, `style_id`, `style_hash`, `kit_hash`, the typed `brief`) and one entry
+per declared plate file (`role`, `section_ordinal` for a section plate, `file`, `sha256`,
+`style_hash`, `prompt_hash`). Plates are declared as `visual` files with a text equivalent and a
+per-artifact licence, like any other media. The block cannot represent gameplay: there is no XP,
+engagement event, attempt, evidence, homework or tutor field, and `tests/test_gm_contract.py`
+asserts that pack/export code names only the two art tables (`course_worlds`, `world_assets`) and
+never a gameplay table. `pack.import` restores `courses.presentation_mode` and rebuilds the
+approved world rows with the kit hash re-derived from the importing database's own objective ids;
+`mode: game` with no `world` is legal and imports as a Game course whose world is not approved yet.
+A v1 or v2 pack keeps its exact shape and stamps; a reader that does not know v3 refuses it.
 
 The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v19) and
 `cb.projection` v1 resolve `$ref` targets to `pack-manifest/v1`; naming v2 current would either
@@ -943,7 +957,7 @@ remains the plan's own timestamp; the two approvals never share a row.
 
 ### `parent.export`
 
-* **One pack builder, no new manifest vocabulary.** The export assembles a `cb.pack` v1 document from
+* **One pack builder, no new manifest vocabulary.** The export assembles a `cb.pack` document from
   `packs.export_allowlist()` and declares the roles it actually carries: `parent_guide`,
   `learner_page` and `answer_guide` as `text/markdown`, and `narration` only when a real audio
   artifact exists (the role is audio-only in `packs._role_mime_mismatch`). A role enum is a list of
@@ -1518,9 +1532,13 @@ returned; a mismatch is `DELETE_SCOPE_STALE` and nothing is written. The write t
 course inside its adopt transaction and refuses with `changes_need_review` if the text changed
 between the read and the archive — the exported bytes can never be a page the caller did not see.
 
-**What is rebuilt.** `coursebook.parent_authoring.build_pack` composes a *fresh* `cb.pack` v1
+**What is rebuilt.** `coursebook.parent_authoring.build_pack` composes a *fresh* `cb.pack` v3
 manifest from the validated `gen_lessons.page_json` rows, the plan objectives and the check rows:
-`parent-guide/*.md`, `lessons/*.md`, `answer-guide/*.md`, for every objective. Identity is
+`parent-guide/*.md`, `lessons/*.md`, `answer-guide/*.md`, for every objective, plus — since
+CP-015g — the section's own generated `visual`/`narration` artifacts as `media/<NN>-<role>-*.ext`
+linked through `media[]`, and, for a Game course, its approved world plates under `world/` and the
+`presentation` block that makes them restore on import. A pack with no media and a Textbook course
+produce the same text-only archive a v2 export produced. Identity is
 `authored-<course>`, version `1.0.0`, licence `all-rights-reserved` with `redistribution:
 local_only`. `pack.export` is unchanged for pack-backed content, and an imported pack is still never
 writable: importing this archive cuts a new course bound to the pack, exactly like any other pack.

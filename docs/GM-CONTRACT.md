@@ -112,7 +112,16 @@ presentation; no fake world is ever created and no silent lesson build happens.
 
 `world.approve` takes `stage=style|final` and the caller's `approved_hash`. Style approval
 records the selected concept; final approval accepts the actual kit and freezes `approved_hash` on
-`course_worlds`. A kit that changed after preview cannot reuse the earlier approval. Plan approval
+`course_worlds`. A kit that changed after preview cannot reuse the earlier approval.
+
+**Pack portability (cb.pack v3, CP-015g).** The two art tables — `course_worlds` and
+`world_assets` — may be read by the pack export/import seam so a Game course carries its approved
+world to another device. This is art-only by construction: neither table has a column that can hold
+a verdict, a score, an attempt, evidence or a play event, and every other Game table
+(`takehome_packs`, `homework_tasks`, `homework_events`, `game_engagement`, `tutor_threads`,
+`tutor_turns`) stays unreadable to any pack, export or evidence read. `coursebook/gm_contract.py`
+declares the split as `GM_ART_TABLES` / `GM_NEVER_EXPORTED_TABLES` and
+`tests/test_gm_contract.py` asserts both halves. Plan approval
 and world approval are **separate facts**; neither silently approves the other.
 
 `world.generate` is a **media job**, never a lesson job: `kind=media`,

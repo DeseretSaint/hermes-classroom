@@ -227,8 +227,15 @@ def read_presentation_mode(stored: object) -> str:
     return PresentationMode.TEXTBOOK.value
 
 
-#: Tables that exist for the Game Mode program. None may be joined by an evidence, parent,
-#: pack or export read (asserted by ``tests/test_gm_contract.py``).
+#: Game tables whose bytes are *art*. A world kit's plates are course-level orientation art: they
+#: carry no teaching fact, no check, no attempt, no evidence and no player state, so ``cb.pack`` v3
+#: may carry them in its ``presentation`` block and an import may rebuild the world rows. This is
+#: the only exception to the rule below, and it is art-only by construction: there is no field on
+#: ``course_worlds``/``world_assets`` that can hold a verdict, a score or a play event.
+GM_ART_TABLES: tuple[str, ...] = ("course_worlds", "world_assets")
+
+#: Tables that exist for the Game Mode program. None may be joined by an evidence, parent, pack or
+#: export read, except the art tables above (asserted by ``tests/test_gm_contract.py``).
 GM_TABLES: tuple[str, ...] = (
     "course_worlds",
     "world_assets",
@@ -238,6 +245,12 @@ GM_TABLES: tuple[str, ...] = (
     "game_engagement",
     "tutor_threads",
     "tutor_turns",
+)
+
+#: The Game tables no pack, export or evidence read may ever name: gameplay, homework and tutor
+#: state are not content, and exporting them would turn a course package into a history leak.
+GM_NEVER_EXPORTED_TABLES: tuple[str, ...] = tuple(
+    table for table in GM_TABLES if table not in GM_ART_TABLES
 )
 
 #: Columns/names that must never appear on a Game Mode table: a second evidence store is a
@@ -509,6 +522,8 @@ __all__ = [
     "EngagementAction",
     "FORBIDDEN_METHOD_KEYS",
     "GM_CONTRACT_VERSION",
+    "GM_ART_TABLES",
+    "GM_NEVER_EXPORTED_TABLES",
     "GM_FORBIDDEN_COLUMNS",
     "GM_METHOD_NAMES",
     "GM_MIGRATION",

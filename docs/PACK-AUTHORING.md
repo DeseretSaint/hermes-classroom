@@ -125,7 +125,7 @@ course a parent signed off cannot change and then ship under that signature.
 `DELETE_SCOPE_STALE` and no byte is written. The write then re-reads the course inside its adopt
 transaction and refuses with `changes_need_review` if the text moved while the archive was built.
 
-**What is in the archive.** A fresh `cb.pack` v1 document, built by
+**What is in the archive.** A fresh `cb.pack` v3 document, built by
 `parent_authoring.build_pack` from the validated page rows: `parent-guide/NN-*.md`,
 `lessons/NN-*.md` and `answer-guide/NN-*.md` for every objective, the plan's objectives and
 evidence criteria, and each check's stimulus, rubric and reference answer. The learner page text is
@@ -144,4 +144,46 @@ learner-facing page prints a check's reference answer verbatim. A multiple-choic
 the correct option in its own page therefore exports but does *not* import; the page has to ask for
 the answer rather than show it. That rule is older than this command and is not relaxed here — the
 test fixture uses a short-answer prompt for exactly this reason.
+
+## 6. A pack carries its presentation and its visuals (`cb.pack` v3, CP-015g)
+
+A course is more than its Markdown. Two things a learner sees were previously lost on the way out
+of Coursebook, so an imported course did not match the course the author made:
+
+1. **The section's own generated media.** `course.export` shipped `parent-guide/`, `lessons/` and
+   `answer-guide/` text and nothing else, even when a section had a generated illustration or a
+   narration clip. The bytes existed in the artifact store and the lesson page played them; the
+   archive did not contain them.
+2. **A Game course's mode and world.** `pack.import` inserted the new course with no
+   `presentation_mode`, so a Game course re-imported as Textbook, and there was no mechanism to
+   carry the approved world kit at all.
+
+v3 fixes both without a second store and without weakening the evidence rules:
+
+* A section's generated `visual`/`narration` artifacts are written as
+  `media/<NN>-<role>-<hash>.ext` with a text equivalent and a per-artifact licence, and linked
+  through the frozen v2 `media[]` array. Import adopts those bytes as artifacts and writes the same
+  media segment into the lesson page it already builds. A media item whose artifact row disappears
+  blocks the export (`media_artifact_missing`) rather than silently shipping a text-only lesson.
+* The approved world kit is written under `world/` as declared `visual` files, and the
+  `presentation` block records the mode, the grammar, the selected style, the style hash, the kit
+  hash, the typed brief and one entry per plate with its objective ordinal. Import restores
+  `courses.presentation_mode`, inserts the `course_worlds` row at `approved`, and rebuilds
+  `world_assets` against the new objective ids; the stored `kit_hash` is re-derived from those rows
+  (`coursebook.world.kit_hash_for`), not copied as an unverifiable string.
+* `mode: game` with no approved world is legal and honest: the course imports as Game and its world
+  is simply not approved, which the product already names as a gate. Textbook courses export
+  `presentation: {mode: "textbook"}` and no plates.
+
+**What is still not in a pack.** Gameplay and history: no XP, engagement event, attempt, evidence,
+homework task or tutor turn is representable, and the GM contract test asserts that the seam reads
+only the two art tables. A course's approved lesson text remains the export gate; the presentation
+block is not a second approval surface (see the residual note in
+`docs/ADVERSARIAL-BACKEND-REVIEW.md` R3).
+
+**Proof.** `tests/test_pack_presentation_roundtrip.py` drives a real Game course through
+`course.export` → `pack.preview` → `pack.import` and reads the world back through `world.read`
+(approved, four plates, re-keyed section plates, byte-identical images), then does the same for a
+section media artifact; `tests/test_pack_import_usability.py` proves an imported course's check is
+now a real gradable row (import used to leave `checks` empty, so no attempt was possible).
 

@@ -216,6 +216,189 @@ def _scope_finding() -> Finding | None:
         f"single-home storage pinned to {pin} via {seam['module']}.{seam['attribute']}")
 
 
+def inspect_provisioning(source: Path, home: Path | None = None) -> list[Finding]:
+    """Check that the package a *user* installs is complete and wired, not just present.
+
+    The desktop check answers "is the copy of plugin.js on screen current". This answers the
+    questions a fresh install has to get right before a course can be created at all: the bundled
+    skills exist and are readable, every declared tool/hook has an implementation, every contract
+    parses and the current pack version is registered, the optional/required Python dependencies
+    are importable, every bundled starter pack verifies its own hash, and — when a home is given —
+    the profile database is at the schema version this build speaks.
+
+    Nothing here writes or installs. A missing optional dependency is a warning because the
+    product has a typed degraded path for it; a missing skill or contract is an error because the
+    generation lane cannot run without it.
+    """
+    findings: list[Finding] = []
+    source = source.expanduser().resolve()
+
+    # 1. Bundled skills: one directory per skill with a readable SKILL.md carrying a name.
+    skills_dir = source / "skills"
+    skill_dirs = sorted(child for child in skills_dir.iterdir() if child.is_dir()) if skills_dir.is_dir() else []
+    if not skill_dirs:
+        findings.append(Finding(
+            "error", "SKILLS_MISSING",
+            f"no bundled skills under {skills_dir}; the tutor/coach lanes would be unavailable"))
+    for child in skill_dirs:
+        skill_md = child / "SKILL.md"
+        if not skill_md.is_file():
+            findings.append(Finding(
+                "error", "SKILL_NO_DOCUMENT", f"{child.name} has no SKILL.md"))
+            continue
+        try:
+            text = skill_md.read_text(encoding="utf-8-sig")
+        except OSError as exc:
+            findings.append(Finding(
+                "error", "SKILL_UNREADABLE", f"{skill_md} cannot be read: {exc}"))
+            continue
+        if not text.lstrip().startswith("---") or "name:" not in text.split("---", 2)[1]:
+            findings.append(Finding(
+                "warning", "SKILL_NO_FRONTMATTER",
+                f"{skill_md} has no frontmatter name; a host may register it under a path"))
+    if skill_dirs and not any(finding.code.startswith("SKILL_") and finding.level == "error"
+                              for finding in findings):
+        findings.append(Finding(
+            "ok", "SKILLS_OK", f"{len(skill_dirs)} bundled skill(s): "
+            + ", ".join(child.name for child in skill_dirs)))
+
+    # 2. Every declared tool and hook resolves to an implementation in this build.
+    try:
+        from .contracts import ContractError, contract, version_files
+        from . import tools
+    except ImportError:  # run as a bare script
+        sys.path.insert(0, str(source))
+        from coursebook.contracts import ContractError, contract, version_files
+        from coursebook import tools
+    manifest_text = (source / "plugin.yaml").read_text(encoding="utf-8") if (source / "plugin.yaml").is_file() else ""
+    for declared, attribute in (
+        ("coursebook_status", "status_handler"),
+        ("coursebook_due", "due_handler"),
+    ):
+        if getattr(tools, attribute, None) is None:
+            findings.append(Finding(
+                "error", "TOOL_NOT_WIRED",
+                f"plugin.yaml declares {declared}, but coursebook.tools has no {attribute}"))
+    for hook in ("pre_llm_call", "post_llm_call", "post_tool_call"):
+        if f"- {hook}" in manifest_text:
+            try:
+                from . import hooks as hooks_module
+                if not hasattr(hooks_module, hook):
+                    findings.append(Finding(
+                        "warning", "HOOK_NOT_WIRED",
+                        f"plugin.yaml declares {hook}, but coursebook.hooks has no such callable"))
+            except ImportError:
+                pass
+    if not any(finding.code in ("TOOL_NOT_WIRED", "HOOK_NOT_WIRED") for finding in findings):
+        findings.append(Finding("ok", "TOOLS_OK", "declared tools and hooks resolve"))
+
+    # 3. Contracts: every document parses, and the newest pack version is registered.
+    try:
+        try:
+            from .contracts import CONTRACT_FILES, ContractError, contract, version_files
+        except ImportError:  # run as a bare script
+            sys.path.insert(0, str(source))
+            from coursebook.contracts import CONTRACT_FILES, ContractError, contract, version_files
+        pack_version = int(contract("cb.pack")["x-contract-version"])
+        known = sorted(version_files("cb.pack"))
+        missing = [name for name in CONTRACT_FILES.values()
+                   if not (source / "contracts" / name).is_file()]
+        if missing:
+            findings.append(Finding(
+                "error", "CONTRACT_FILE_MISSING", f"contract file(s) missing: {missing}"))
+        elif pack_version not in known:
+            findings.append(Finding(
+                "error", "CONTRACT_VERSION_UNREGISTERED",
+                f"cb.pack current version {pack_version} is not in version_files {known}"))
+        else:
+            findings.append(Finding(
+                "ok", "CONTRACTS_OK",
+                f"{len(CONTRACT_FILES)} contract(s); cb.pack v{pack_version} of {known}"))
+    except (ContractError, OSError, ValueError) as exc:
+        findings.append(Finding(
+            "error", "CONTRACTS_UNREADABLE", f"the contract set cannot be loaded: {exc}"))
+
+    # 4. Optional/required Python dependencies. A missing optional one degrades a named lane.
+    for module, level, lane in (
+        ("jsonschema", "error", "structured grading and every contract check"),
+        ("faster_whisper", "warning", "pronunciation practice (reported unavailable)"),
+        ("pypdf", "warning", "syllabus import (answers PARSER_UNAVAILABLE)"),
+    ):
+        try:
+            __import__(module)
+        except Exception:  # noqa: BLE001 - a broken install is the same as a missing one here
+            findings.append(Finding(
+                level, "DEP_MISSING", f"{module} is not importable; {lane} cannot run",
+                f"python3 -m pip install '{module}'"))
+    if not any(finding.code == "DEP_MISSING" for finding in findings):
+        findings.append(Finding("ok", "DEPS_OK", "declared Python dependencies import"))
+
+    # 5. Bundled starter packs: each must verify its own manifest hash.
+    packs_dir = source / "bundled" / "packs"
+    verified = 0
+    for pack_dir in sorted(packs_dir.iterdir()) if packs_dir.is_dir() else []:
+        manifest = pack_dir / "pack.json"
+        if not pack_dir.is_dir() or not manifest.is_file():
+            continue
+        try:
+            from . import packs as packs_module
+        except ImportError:
+            sys.path.insert(0, str(source))
+            from coursebook import packs as packs_module
+        try:
+            packs_module.load_manifest(manifest)
+            verified += 1
+        except Exception as exc:  # noqa: BLE001 - any refusal is a broken bundled pack
+            findings.append(Finding(
+                "error", "BUNDLED_PACK_INVALID",
+                f"{pack_dir.name} does not verify: {exc}"))
+    if packs_dir.is_dir() and verified:
+        findings.append(Finding(
+            "ok", "BUNDLED_PACKS_OK", f"{verified} bundled pack(s) verify their own hash"))
+
+    # 6. A home that already has storage must be at this build's schema version.
+    if home is not None:
+        database = home.expanduser().resolve() / "plugin-data" / PACKAGE / "data.db"
+        if not database.is_file():
+            findings.append(Finding(
+                "ok", "DB_NOT_CREATED",
+                "no profile database yet; it is created on first use (migrations 0001-current)"))
+        else:
+            try:
+                from . import db
+            except ImportError:
+                sys.path.insert(0, str(source))
+                from coursebook import db
+            try:
+                import sqlite3
+
+                connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True)
+                try:
+                    row = connection.execute(
+                        "SELECT MAX(version) FROM schema_migrations"
+                    ).fetchone()
+                    version = int(row[0] or 0) if row is not None else 0
+                finally:
+                    connection.close()
+                if version == int(db.DB_SCHEMA_VERSION):
+                    findings.append(Finding(
+                        "ok", "DB_SCHEMA_OK", f"profile database at schema v{version}"))
+                elif version < int(db.DB_SCHEMA_VERSION):
+                    findings.append(Finding(
+                        "warning", "DB_SCHEMA_BEHIND",
+                        f"profile database is at v{version}; this build migrates to "
+                        f"v{db.DB_SCHEMA_VERSION} on first open"))
+                else:
+                    findings.append(Finding(
+                        "error", "DB_SCHEMA_AHEAD",
+                        f"profile database is at v{version}, newer than this build's "
+                        f"v{db.DB_SCHEMA_VERSION}; downgrading would lose data"))
+            except Exception as exc:  # noqa: BLE001 - an unreadable db is a real finding
+                findings.append(Finding(
+                    "error", "DB_UNREADABLE", f"{database} cannot be read: {exc}"))
+    return findings
+
+
 def inspect_install(home: Path, source: Path, *, proc_root: Path | None = None) -> CheckReport:
     """Compare the installed halves with *source*; never writes anything."""
     home = home.expanduser().resolve()
@@ -477,6 +660,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--clean-sockets", action="store_true",
                         help="remove stale Chromium Singleton* entries under the package's "
                              "disposable .chromium profiles")
+    parser.add_argument("--provisioning", action="store_true",
+                        help="also check what a fresh user install needs: bundled skills, declared "
+                             "tools/hooks, contracts, dependencies, bundled packs and (with "
+                             "--home) the profile database schema")
     parser.add_argument("--dry-run", action="store_true",
                         help="with --clean-sockets, list what would go without deleting it")
     parser.add_argument("--force", action="store_true",
@@ -485,8 +672,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--quiet", action="store_true", help="print only failures")
     args = parser.parse_args(argv)
 
-    if not args.home and not args.clean_sockets:
-        parser.error("--home is required unless --clean-sockets is given")
+    if not args.home and not args.clean_sockets and not args.provisioning:
+        parser.error("--home is required unless --clean-sockets or --provisioning is given")
 
     home = Path(args.home).expanduser() if args.home else None
     source = Path(args.source).expanduser() if args.source else _default_source()
@@ -521,7 +708,25 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"could not remove {action['profile']}/{action['entry']}: {action['reason']}",
                           file=sys.stderr)
 
+    provisioning_findings: list[Finding] = []
+    if args.provisioning:
+        provisioning_findings = inspect_provisioning(source, home)
+        payload["provisioning"] = [finding.__dict__ for finding in provisioning_findings]
+
     if home is None:
+        if provisioning_findings:
+            ok = all(finding.level != "error" for finding in provisioning_findings)
+            payload["ok"] = ok
+            if args.json:
+                print(json.dumps(payload, indent=2))
+            elif not args.quiet or not ok:
+                for finding in provisioning_findings:
+                    if finding.level == "ok" and args.quiet:
+                        continue
+                    print(f"[{finding.level}] {finding.code}: {finding.message}")
+                    if finding.fix:
+                        print(f"    fix: {finding.fix}")
+            return 1 if (socket_failures or not ok) else 0
         if args.json:
             print(json.dumps(payload, indent=2))
         return 2 if socket_failures else 0
@@ -537,6 +742,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"refreshed {target} from {desktop_source_dir(source)}")
 
     report = inspect_install(home, source)
+    report.findings.extend(provisioning_findings)
     payload["findings"] = [finding.__dict__ for finding in report.findings]
     payload["ok"] = report.ok
     if args.json:
