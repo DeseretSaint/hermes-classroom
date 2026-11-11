@@ -265,8 +265,15 @@ gates in `docs/SUBMISSION.md` §0 are untouched by it.
 | `cb.pack` | v3 current; v1 and v2 still accepted; `audit_contracts()` → `[]` | `python3 -c "from coursebook.contracts import audit_contracts; print(audit_contracts())"` |
 | `cb.rpc` / `cb.db` | v26 / 93 methods and v14, unchanged by this pass | `contracts/rpc.v26.json`, `contracts/db.v14.json` |
 
-**Full suite is deliberately not quoted here.** It is running on this tree and its result is not yet
-in this record; the previous recorded `Ran 3523 tests … OK (skipped=11)` was measured on `b1913af7`
-and is **not** a claim about `b1203ee8`. The gate-8c pin card owns the full-suite measurement for
-the final tree. Every defect this pass fixed has its own focused test named in
+**Full suite** (measured on this pass, on merge tree `e7486eba`, whose `coursebook/`,
+`contracts/` and `tests/` bytes are identical to `b1203ee8` and to `10a2ed73`; the only later
+landing is UI-K4's Desktop module, which touches `desktop/` and the visual audit and no backend
+file):
+
+| Fact | Value | Command |
+| --- | --- | --- |
+| Full suite | `Ran 3951 tests in 1420.035s`, `OK (skipped=12)`, exit 0 | `python3 -m unittest discover -s tests -t .` |
+| 3523 @ `b1913af7` was the previous record and is history, not a claim about this tree | — | `docs/RELEASE-EVIDENCE.md` earlier sections |
+
+Every defect this pass fixed has its own focused test named in
 `docs/ADVERSARIAL-BACKEND-REVIEW.md` §1.
