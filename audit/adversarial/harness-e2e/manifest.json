@@ -14,19 +14,19 @@
     },
     "music_short.json": {
       "bytes": 50036,
-      "sha256": "2fd9e2e145c4b09200cd29fb8f51ce7020907b06005a658c43cadc3003b98702"
+      "sha256": "fc93343f8ea9a2cd17a29050ffd44400403fcc6cd8c8ab5cf30c4ac19829e6a4"
     },
     "partial_unit_batch.json": {
       "bytes": 908,
       "sha256": "7f8227c5f97bc53e0c8c399cbeaf97b70e3f445fcd0282ae619eb7d97e899dff"
     },
     "run-output.txt": {
-      "bytes": 8721,
-      "sha256": "815afa3ce35d76847b2f6f3c54e16d23af888986f547f97aa76015ea753f0994"
+      "bytes": 8722,
+      "sha256": "3b525c3b18ecdc9196f399a30052b0e3a59992f2aac565689b14d7c38509d31b"
     },
     "soldering_full.json": {
-      "bytes": 129578,
-      "sha256": "62e75032aa561024bd42c2a20cfdbfbb73e68eb27de3083c1d215926cb8ad4c7"
+      "bytes": 129579,
+      "sha256": "f84957091eb72873359c3dffad1f447037292257c4a78eab0a9722561eb22882"
     },
     "summary.json": {
       "bytes": 84,

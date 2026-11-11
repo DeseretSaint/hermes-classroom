@@ -153,12 +153,17 @@ class ClaimBatchingTest(unittest.TestCase):
         self.assertEqual(sorted(demanded), sorted(labels))
         self.assertEqual(len(demanded), len(set(demanded)))
 
-    def test_a_small_plan_needs_no_claim_only_pass(self) -> None:
-        # Single/short plans measured 3–5 claim labels; they must not pay for extra claim passes.
+    def test_a_small_plan_pays_for_extra_passes_rather_than_one_long_answer(self) -> None:
+        # CP-015: a four-objective plan's six-claim criteria pass answered 34 738 bytes against a
+        # 24 576-byte bound. A pass now takes three claims, so a short plan does pay for a
+        # claim-only pass — that is the bound working, not a regression. What must hold is that no
+        # single answer's claim demand exceeds the fixed maximum and no claim is judged twice.
         plan = big_plan(2, units=1)
-        self.assertLessEqual(len(gen.plan_claim_labels(plan)), gen.CLAIM_VERDICTS_PER_PASS)
+        labels = gen.plan_claim_labels(plan)
         requests = build_requests(plan)
-        self.assertEqual(len(requests), len(gen.VALIDATION_CRITERIA_PASSES))
+        self.assertGreaterEqual(len(requests), len(gen.VALIDATION_CRITERIA_PASSES))
+        seen = [label for request in requests for label in claim_enum(request)]
+        self.assertEqual(sorted(seen), sorted(labels))
         for request in requests:
             self.assertLessEqual(len(claim_enum(request)), gen.CLAIM_VERDICTS_PER_PASS)
 

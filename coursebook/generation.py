@@ -219,7 +219,7 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
 #: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
 #: read before answering, which is the H-191 lesson applied again.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v5"
+VALIDATION_PROMPT_VERSION = "validation-prompt.v6"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -2813,15 +2813,20 @@ VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
 #: large the plan is. Six keeps a single/short plan in one call (the measured claim set was 3–5
 #: labels) while a full plan becomes a handful of small concurrent passes instead of one unbounded
 #: one.
-CLAIM_VERDICTS_PER_PASS = 6
+#: CP-015 (2026-11-10): a six-claim criteria pass on a four-objective astronomy plan emitted a
+#: 34 738-byte answer against the 24 576-byte bound. Six claims plus five criteria is still more
+#: than the bound allows at this model's verbosity, so a criteria pass now takes three; the rest
+#: ride claim-only passes at a lower fixed batch. Demand per pass is what is bounded, not the
+#: plan.
+CLAIM_VERDICTS_PER_PASS = 3
 
 #: Most claim-support verdicts one *claim-only* pass may demand.
 #:
 #: A claim-only pass rules on no criterion, so its answer is a short support verdict per claim
-#: rather than criterion reasoning. Twelve keeps a maximum-band full plan (40 objectives, 12
-#: units, the learner outcome = 53 labels) to five claim-only passes while staying far below the
-#: unbounded 29 386-token answer H-192 measured.
-CLAIM_ONLY_VERDICTS_PER_PASS = 12
+#: rather than criterion reasoning. Twelve produced oversized answers on the measured plan, so a
+#: claim-only batch is four; a maximum-band full plan becomes a handful of small passes instead
+#: of one unbounded answer.
+CLAIM_ONLY_VERDICTS_PER_PASS = 4
 
 # ── Validator output bound (H-192c) ─────────────────────────────────────────
 #
