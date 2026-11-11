@@ -1,8 +1,8 @@
 {
   "schema": "vq.manifest.v1",
   "tool": "scripts/vq-manifest.py",
-  "generated_at": "2026-11-11T18:51:36+00:00",
-  "commit": "40a846c6a80aa122296c40dc5ebc24b832e0f71d",
+  "generated_at": "2026-11-11T18:51:39+00:00",
+  "commit": "6511fe5a",
   "plugin_sha256": [
     "09f63984d5243e98cf45c56df28a41c3ce2a843d8215922212588a1804522792"
   ],

@@ -1,7 +1,7 @@
 # VQ-006 installed capture manifest
 
-Generated 2026-11-11T18:51:36+00:00 by `scripts/vq-manifest.py`.
-Commit: `40a846c6a80aa122296c40dc5ebc24b832e0f71d`  
+Generated 2026-11-11T18:51:39+00:00 by `scripts/vq-manifest.py`.
+Commit: `6511fe5a`  
 Module sha256: `09f63984d5243e98cf45c56df28a41c3ce2a843d8215922212588a1804522792`
 Capture run: **unrecorded**
 
