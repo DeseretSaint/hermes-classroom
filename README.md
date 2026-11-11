@@ -57,11 +57,9 @@ A catalog entry exists and is submitted as a draft pull request: `plugin-catalog
 `NousResearch/hermes-agent#152920`, pinned to the commit `3278bae` on `master`, with
 `docs_url` pointing at the `## Install locally` heading above. That pull request has not merged, so
 the catalog `hermes-agent` ships still does not resolve `coursebook`; cloning is the install path
-that works today. No release tag exists. **A demo film exists since 2026-11-11**:
-`docs/launch/coursebook-demo-90s.mp4`, 47.0 s, five real captures of the plugin at build `c4fe2d63`,
-silent by design so it reads on mute. Posting it and submitting the contest form are DeseretSaint's
-actions under `docs/SUBMISSION.md` §0; gate 13 still needs his approval of the cut. The longer
-88-second shot list stays in `docs/HACKATHON-DEMO.md` as the historical record. There is a
+that works today. No release tag exists. **No demo video is recorded yet**: the demo gate
+`t_6a32ffe9` is open because this host runs one gateway and no profile can yet drive chat and the
+pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is a
 `LICENSE` file since 2026-11-10 (owner decision on `t_6f2d2080`, recorded as MIT in `LICENSE`).
 Merging the catalog pull request, tagging and announcing stay closed under `docs/SUBMISSION.md` §0.
 Everything below is the measured record, limitations included — the current candidate still has open
@@ -207,28 +205,17 @@ hermes plugins doctor coursebook
 bash scripts/validate.sh
 ```
 
-Cloning from GitHub is the supported install path today: the repository is public, and the clone
-in `## Install locally` above is the path the catalog entry's `docs_url` points at.
-
-```
-hermes plugins install https://github.com/DeseretSaint/hermes-classroom \
-  --ref 172b61aaffd44c33f2c89360df9f1fceeff66c37 --yes-deps --enable
-```
-
-The install-time scanner returns a **caution** verdict for this repository because it scans the
-committed test fixtures and audit captures along with the plugin code (1,183 findings, almost all
-LOW). It prints the report and refuses without a human decision, which a Desktop install cannot
-give. Read the report, then repeat the command with `--force`. A catalog install (`hermes plugins
-install coursebook`) does not need `--force`: a curated pin accepts caution without a prompt.
+Cloning from GitHub is the supported install path: the repository is public, and the clone in
+`## Install locally` above is the path the catalog entry's `docs_url` points at.
 
 `hermes plugins install coursebook` — the catalog path — does not work yet. The entry is submitted as
 `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open draft pull request,
-and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry now
-pins `172b61aa` on `master` (the CP-015g portability build) and validates under `hermes-agent`'s
-pinned-source catalog gate: the CP-039 review ran that gate at the previous pin and it exited 0,
-16/16 checks, including the symlink-confinement check that rejected the pin before it. Gates 7 and
-12 of `docs/SUBMISSION.md` (demo scenarios, catalog merge) are open, so the pull request stays
-draft. Owner: Harbor and DeseretSaint.
+and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry pins
+`3278bae` on `master` and validates under `hermes-agent`'s pinned-source catalog gate: the CP-039
+review ran that gate at the pinned sha and it exited 0, 16/16 checks, including the
+symlink-confinement check that rejected the previous pin. Gates 7 and 12 of `docs/SUBMISSION.md`
+(demo scenarios, catalog merge) are open, so the pull request stays draft. Owner: Harbor and
+DeseretSaint.
 
 ## First run
 
@@ -338,10 +325,9 @@ The product line adds surfaces with limits of their own; these are not the 0.1.0
 - Accessibility names come from the Chromium accessibility tree, not from a screen reader.
 - A failed audio preview is typed `visual` in the internal `data-cb-media-kind` attribute while its
   visible label and transcript stay correct (`t_acd97416`, low, open).
-- The product line is not demo evidence and not a release: the film at
-  `docs/launch/coursebook-demo-90s.mp4` is a cut of real captures and makes no learning-outcome
-  claim; the catalog pull request is open and draft and has not merged, and no tag or contest
-  submission was made (`docs/SUBMISSION.md` §0).
+- The product line is not demo evidence and not a release: no video exists, the demo gate is NOT
+  MET (`docs/DEMO.md`), the catalog pull request is open and draft and has not merged, and no tag or
+  contest submission was made (`docs/SUBMISSION.md` §0).
 
 There is no learning-style diagnosis, no "2 sigma" claim, no guaranteed mastery, no child safety
 or COPPA certification, and no efficacy claim. Educational research motivates the design;

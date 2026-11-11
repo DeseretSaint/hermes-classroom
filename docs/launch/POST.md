@@ -4,14 +4,14 @@ Prepared 2026-11-11 during the 13:00–14:00 MST freeze, for the contest that cl
 **15:00 MST / 17:00 EST**. Nothing in this file has been posted or submitted. The post and the form are
 DeseretSaint's actions under `docs/SUBMISSION.md` §0.
 
-The film is `docs/launch/coursebook-demo-90s.mp4` — **47.0 s**, measured, not estimated
+The film is `docs/launch/coursebook-demo-90s.mp4` — **51.0 s**, measured, not estimated
 (`QC.md` carries the command output). It is silent by design; every beat carries its message as
 on-screen type so the file reads with sound off, which is how X autoplays.
 
 ## 1. The X post — 258 characters, one URL
 
 ```
-Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a time, typed checks, evidence you can inspect. MIT. 47 s demo, no sound needed. Built with @NousResearch Hermes Agent.
+Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a time, typed checks, evidence you can inspect. MIT. 51 s demo, no sound needed. Built with @NousResearch Hermes Agent.
 github.com/DeseretSaint/hermes-classroom
 ```
 
@@ -23,7 +23,7 @@ github.com/DeseretSaint/hermes-classroom
 
 **Alt text** (paste into X's media description):
 
-> A 47-second silent product film on a dark green ground. Five real Coursebook screens appear one at a
+> A 51-second silent product film on a dark green ground. Five real Coursebook screens appear one at a
 > time with a sentence under each: the Home library with an illustrated course shelf and a fox on a
 > plank; the Courses list with per-course progress; a course page whose plan waits for approval; a
 > lesson with four objectives down the left and a Japanese register cue with furigana and romaji; and a
@@ -53,7 +53,7 @@ lives.
 2. Paste that URL and the catalog PR URL into the form with §2's answers.
 3. Screenshot or copy the confirmation and add it to `docs/SUBMISSION.md` gate 15.
 
-If X rejects the upload for size, the file is 1.94 MB — well under any limit; re-encode is not needed.
+If X rejects the upload for size, the file is 2.00 MB — well under any limit; re-encode is not needed.
 
 ## 4. What the film does not claim
 

@@ -1,6 +1,6 @@
 # Credits and provenance — Coursebook launch film
 
-Every pixel in `coursebook-demo-90s.mp4` is a crop of a real window running the installed Coursebook
+Every product pixel in `coursebook-demo-90s.mp4` is a crop of a real window running the installed Coursebook
 plugin. Nothing is redrawn, mocked, or generated. The film was composed with `ffmpeg` from five PNG
 captures; the build script is `build-final-film.sh` in the capture directory.
 

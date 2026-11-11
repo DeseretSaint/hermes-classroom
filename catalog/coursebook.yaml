@@ -65,7 +65,7 @@ screenshots:
 readme: true
 platforms: []
 known_issues:
-  - "No release tag. The demo gate (board card t_6a32ffe9) is not closed: a 47-second film of real captures ships at docs/launch/coursebook-demo-90s.mp4 and the demo scenarios have not been driven end to end on the pinned tree (docs/ACCEPTANCE-RUN.md). The 88-second shot list stays in docs/HACKATHON-DEMO.md as history."
+  - "No demo video and no release tag. The demo gate (board card t_6a32ffe9) is open: this host runs one gateway, so an isolated window cannot drive chat beside the pane, and the bundled demo pack imports its objectives but zero checks, so the graded attempt and evidence row cannot be shown yet. The 88-second shot list is docs/HACKATHON-DEMO.md; the open rows are docs/STORY-GAPS.md."
   - "The frames in image and screenshots are real captures from the pinned 0.1.0 asset set, not the current Home. The Home has since been rebuilt as the Trailhead (H-176, 2b0324e, unmerged), and two frames show a demonstration course title and a developer status strip. Replacement frames are blocked on the clean seed and the gateway binding (docs/STORY-GAPS.md G2, G3, G5)."
 
 capabilities:

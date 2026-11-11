@@ -27,6 +27,14 @@ format=yuv420p[v]" \
     -map "[v]" -t $SECS -r 30 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p "$out"
 }
 
+
+# Opening card — states the one claim before any product pixel
+ffmpeg -y -loglevel error -f lavfi -i "color=c=$BG:s=1920x1080:r=30:d=4" \
+  -vf "drawtext=fontfile=$FB:text='A course, not a chat.':x=(w-tw)/2:y=(h/2)-40:fontsize=82:fontcolor=$INK,\
+drawtext=fontfile=$F:text='Coursebook for Hermes Desktop':x=(w-tw)/2:y=(h/2)+70:fontsize=36:fontcolor=$SUB,\
+fade=t=in:st=0:d=0.5,fade=t=out:st=3.4:d=0.6,format=yuv420p" \
+  -t 4 -r 30 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p "$WORK/00.mp4"
+
 beat "$C/home-1833-light.png"       "1634:972:0:0"  "Your field library."                  "Pick a course, or start a new expedition."      "$WORK/01.mp4"
 beat "$C/workshop-1833-light.png"   "1634:972:0:0"  "Your next world is already on the shelf." "Packs you can learn from, already on this device." "$WORK/02.mp4"
 beat "$C/course-home-772-light.png" "688:972:0:0"    "The plan is the spine."               "Read it, then approve it so lessons can start." "$WORK/03.mp4"
@@ -42,7 +50,7 @@ drawtext=fontfile=$F:text='captured from the real plugin  -  build c4fe2d63':x=(
 fade=t=in:st=0:d=0.6,fade=t=out:st=6.4:d=0.6,format=yuv420p" \
   -t 7 -r 30 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p "$WORK/06.mp4"
 
-printf "file '%s'\n" "$WORK"/0{1,2,3,4,5,6}.mp4 > "$WORK/list.txt"
+printf "file '%s'\n" "$WORK"/0{0,1,2,3,4,5,6}.mp4 > "$WORK/list.txt"
 ffmpeg -y -loglevel error -f concat -safe 0 -i "$WORK/list.txt" \
   -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "$OUT/coursebook-demo-90s.mp4"
 echo "--- ffprobe ---"
