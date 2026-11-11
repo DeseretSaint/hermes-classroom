@@ -77,6 +77,26 @@ crops. Region critic Qwen3-VL-235B or Gemini 3.8 Flash, JSON only. Verifier atla
 tie-break only. Cards are created unassigned in `todo`; the cron supervisor `85d2218453f7` assigns,
 dispatches and merges.
 
+### D-007 — the approved field_atlas@2 kit goes live (owner ruling 2026-11-11 ~11:00 MST)
+
+Owner, verbatim: "I approve using the approved visual kit, but I am concerned that the live
+coursebook state doesn't reflect that." VQ-G0 (`t_fcdf8967`) is completed on that line.
+
+- **What it means:** the kit at `assets/visual-kits/field_atlas/` is the Home, Classroom and Workshop
+  art: the hero plate, the six display covers, the lesson room, the fox and the objects. The
+  live plugin (sha 0112000c) reads none of it. Home shows T/J/J/O letter plates on hatched planks.
+- **Target change:** Home is scored against the kit composition, not pixel parity with A1. Masked
+  SSIM against A1 is recorded, not gated. No letter plate or typographic cover renders where a kit
+  plate maps.
+- **Cards (submission in under four hours, review-ready by 13:15 MST):**
+  - `t_0f55ccd0` UI-K1, kit plates in the brand-asset segment (easel), parent of all three below;
+  - `t_831137dd` Home (atlas, scope override prepended);
+  - `t_e57c21cc` UI-K3, Classroom lesson-room fallback (quill);
+  - `t_093aeb9a` UI-K4, Workshop and Courses covers (lattice).
+  Disjoint files. One Home writer: VQ-003 `t_4af1937f` and VQ-005 `t_0e92f6fc` are held behind
+  Home.
+- **Writer model:** profile default, DeepSeek V4.1 Flash (owner).
+
 ## Divergence ledger
 
 | row | concept | product | reason / evidence |
@@ -102,3 +122,35 @@ lesson-scene resolver as a built-in course. There is no branch on course origin 
 fallback. See `docs/launch/VISUAL-QUALITY-PROGRAM.md` and
 `docs/launch/GAME-MODE-VISUAL-KIT.md`; the asset audit is
 `docs/launch/VISUAL-ASSET-AUDIT.md`.
+
+### D-007 — the approved kit is the live product lane
+
+Owner ruling 2026-11-11 11:00 MST, verbatim: "I approve using the approved visual kit, but I am
+concerned that the live coursebook state doesn't reflect that." `field_atlas@2` is the product
+lane; the measured gap is that no `desktop/src` file reads `assets/visual-kits/`. Kit wiring lands
+before any further screen polish.
+
+### D-008 — parallel lanes replace the one-screen-at-a-time order
+
+Owner direction 2026-11-11 11:20 MST: "Do what needs to happen to get us done within the deadline
+and keep work moving while ensuring high quality output."
+
+Ruling: the program is parallel by **file ownership**, not serial by screen. `desktop/plugin.js` is
+generated from `desktop/src/NN-*.js`, so two screens that own different segments merge without a
+hunk conflict. A card is ordered behind another only when it writes the same segment, not because
+it is the next screen in a list.
+
+Consequences, all binding:
+
+- `85-v3-primitives.js` and `75-tokens.js` have one owner at a time: the kit-segment card (UI-K1)
+  first, then the kernel card (VQ-003). A screen card consumes accessors and adds no primitive.
+- Asset cards (VQ-007, VQ-008) run fully in parallel with screens. They are the Gate 0 constraint,
+  so they never queue behind one.
+- The four measured surfaces that the installed capture fails — Home, Workshop/Courses, Course
+  home, Classroom — plus the two surfaces with no frame and no card, Course home and Parent
+  Studio, are all in flight in the same wave.
+- One capture per wave: `scripts/vq-capture.sh`, six destinations × four widths, one relaunch, one
+  contact sheet. Per-card capture runs are spend without new evidence.
+- No gate is relaxed by this ruling. Gate 0 asset existence, Gate 2 mechanical, Gate 3 region
+  critic, Gate 4 rubric floors, Gate 5 installed capture and Gate 6 cohesion all still apply per
+  surface; only the scheduling changes.

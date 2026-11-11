@@ -4,7 +4,8 @@ This test module reads the shipped bytes under ``assets/`` and ``desktop/cb-asse
 and refuses the build when any of the card's gates fails:
 
 * the generated segment is at most 2.5 MB, any single shipped asset at most 300 KB, and
-  ``desktop/plugin.js`` (alone, and with the segment it will carry) at most 4.5 MB;
+  ``desktop/plugin.js`` — the shipped module, which carries the segment since CP-020a — at most
+  4.5 MB, counted once;
 * every manifest row names a licence and a sha256 that matches the file on disk, and its path
   stays inside ``assets/``;
 * no file under a shipped group is missing from its manifest, and no provenance id repeats;
@@ -45,7 +46,7 @@ SEGMENT_BUDGET = 2_500_000
 ASSET_BUDGET = 300_000
 PLUGIN_BUDGET = 4_500_000
 
-GROUPS = ("fonts", "material", "fox", "objects")
+GROUPS = ("fonts", "material", "fox", "objects", "kit")
 ASSET_SUFFIXES = (".webp", ".avif", ".woff2")
 ALLOWED_LICENCES = {"CC0-1.0", "OFL-1.1", "MIT", "ISC", "Apache-2.0", "BSD-3-Clause", "CC-BY-4.0"}
 REQUIRED_ROW_KEYS = (
@@ -59,7 +60,15 @@ REQUIRED_ROW_KEYS = (
     "provenance_id",
     "path",
 )
-FORBIDDEN_IN_EMBEDDED = ("cover", "pattern-plate", "world-plate", "scene-header", "bundled/")
+FORBIDDEN_IN_EMBEDDED = (
+    # D-007: the curated `field_atlas@2` display plates are the product-surface lane and are
+    # embedded as `assets/kit/*`. Per-course pack covers and the world kit stay on the media route.
+    "assets/art/covers",
+    "pattern-plate",
+    "world-plate",
+    "scene-header",
+    "bundled/",
+)
 
 
 def _sha(data: bytes) -> str:
@@ -156,6 +165,7 @@ class ManifestShape(unittest.TestCase):
             "material": "cb.asset.material.",
             "fox": "cb.asset.fox.",
             "objects": "cb.asset.object.",
+            "kit": "cb.asset.kit.field_atlas.",
         }
         for group, row in _all_rows():
             self.assertTrue(
@@ -192,10 +202,19 @@ class Budgets(unittest.TestCase):
     def test_plugin_js_is_under_4_5mb(self):
         self.assertLessEqual(PLUGIN.stat().st_size, PLUGIN_BUDGET)
 
-    def test_plugin_plus_segment_is_under_4_5mb(self):
-        # The segment is meant to travel inside the single module, so the honest forward-looking
-        # gate is the sum, not the pre-wiring plugin.js on its own.
-        self.assertLessEqual(PLUGIN.stat().st_size + GENERATED.stat().st_size, PLUGIN_BUDGET)
+    def test_plugin_js_carries_the_segment_and_is_counted_once(self):
+        # CP-020a concatenates the generated segment into plugin.js, so plugin.js is already the
+        # artifact that carries those bytes. The former `plugin + segment` assertion added the
+        # same payload twice: it reported 4,492,044 B against a 4,500,000 B budget before the
+        # field_atlas@2 kit, i.e. 8 KB of headroom that no new plate could use, and 5.5 MB for
+        # the 4.1 MB artifact this card ships. PLAN.md and the CP-004 card both state the budget
+        # as "desktop/plugin.js total at most 4.5 MB"; that is what is enforced here, once.
+        segment = GENERATED.read_text(encoding="utf-8")
+        module = PLUGIN.read_text(encoding="utf-8")
+        self.assertIn(segment.split("const CB_ASSETS", 1)[1].strip(), module,
+                      "plugin.js does not carry the committed segment")
+        self.assertLessEqual(PLUGIN.stat().st_size, PLUGIN_BUDGET)
+        self.assertLessEqual(len(segment.encode("utf-8")), SEGMENT_BUDGET)
 
 
 class GeneratedObject(unittest.TestCase):
@@ -206,12 +225,12 @@ class GeneratedObject(unittest.TestCase):
         self.assertIn("const CB_ASSETS = Object.freeze(", GENERATED.read_text())
         self.assertIn("globalThis.CB_ASSETS = CB_ASSETS", GENERATED.read_text())
 
-    def test_it_carries_only_the_four_brand_groups(self):
+    def test_it_carries_only_the_shipped_brand_groups(self):
         self.assertEqual(
             set(self.doc), {"schema", "generated_by", "note", "fonts", "assets"}
         )
         groups = {row["group"] for row in self.doc["assets"].values()}
-        self.assertEqual(groups, {"fonts", "material", "fox", "objects"})
+        self.assertEqual(groups, {"fonts", "material", "fox", "objects", "kit"})
         self.assertEqual(self.doc["schema"], 1)
 
     def test_every_manifest_row_is_embedded_exactly_once(self):
@@ -241,11 +260,18 @@ class GeneratedObject(unittest.TestCase):
             self.assertTrue(family.startswith("CB "), family)
             self.assertTrue(url.startswith("data:font/woff2;base64,"), family)
 
-    def test_no_cover_or_plate_is_embedded(self):
+    def test_no_pack_cover_or_world_plate_is_embedded(self):
+        # D-007: the curated kit's display plates are the product-surface lane and ARE embedded.
+        # Per-course pack covers (assets/art/covers/), scene headers and world plates never are.
         for prov, row in self.doc["assets"].items():
-            for forbidden in FORBIDDEN_IN_EMBEDDED:
-                self.assertNotIn(forbidden, prov.lower(), prov)
-                self.assertNotIn(forbidden, row["path"].lower(), row["path"])
+            with self.subTest(prov=prov):
+                for forbidden in FORBIDDEN_IN_EMBEDDED:
+                    self.assertNotIn(forbidden, prov.lower(), prov)
+                    self.assertNotIn(forbidden, row["path"].lower(), row["path"])
+                self.assertNotIn("assets/masters/", row["path"], row["path"])
+                if not prov.startswith("cb.asset.kit."):
+                    self.assertNotIn("cover", prov.lower(), prov)
+                    self.assertNotIn("cover", row["path"].lower(), row["path"])
 
 
 class ContractPins(unittest.TestCase):
@@ -365,6 +391,8 @@ class Determinism(unittest.TestCase):
         shutil.copytree(ROOT / "assets" / "art" / "objects", tmp / "assets" / "art" / "objects")
         # CP-005f: so are the owner-signed painted fox exports (assets/art/fox/*.png).
         shutil.copytree(ROOT / "assets" / "art" / "fox", tmp / "assets" / "art" / "fox")
+        # VQ-002: the curated field_atlas@2 plates are build inputs, not masters.
+        shutil.copytree(ROOT / "assets" / "visual-kits", tmp / "assets" / "visual-kits")
         (tmp / "contracts").mkdir()
         shutil.copy2(CONTRACT, tmp / "contracts" / "cb.tokens.v3.json")
         (tmp / "desktop").mkdir()

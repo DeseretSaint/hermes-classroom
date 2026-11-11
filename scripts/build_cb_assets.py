@@ -54,6 +54,16 @@ ART_OBJECTS = ASSETS / "art" / "objects"
 #: The procedural SVG set under assets/masters/fox/ stays on disk for rollback and is no longer
 #: read by this build.
 ART_FOX = ASSETS / "art" / "fox"
+#: VQ-002's owner-approved display-plate kit (`field_atlas@2`). The kit is the source of truth for
+#: its own hashes: this build never re-derives art, it encodes the curated plates and records the
+#: kit's declaration beside each row so a drifted plate fails the build instead of shipping.
+KIT = ASSETS / "visual-kits" / "field_atlas"
+KIT_JSON = KIT / "kit.json"
+#: Where the embedded encodes live. ``assets/kit/`` is a shipped group like the fox's.
+KIT_EMBED = ASSETS / "kit"
+#: The two full-plate roles carry a 2x provider source; the six covers are already 2x of the render.
+KIT_FULL_ROLES = (("hero", 72), ("lesson_scene", 72))
+KIT_COVER_QUALITY = 80
 GENERATED = ROOT / "desktop" / "cb-assets.generated.js"
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 VENV = ROOT / ".venv-cb-assets"
@@ -432,12 +442,12 @@ def rasterize_svg(svg: Path, width: int, height: int) -> "object":
     return img.convert("RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB")
 
 
-def encode(img, fmt: str) -> bytes:
+def encode(img, fmt: str, quality: int = 88) -> bytes:
     from PIL import features
 
     buf = io.BytesIO()
     if fmt == "webp":
-        img.save(buf, format="WEBP", quality=88, method=6, exact=True)
+        img.save(buf, format="WEBP", quality=quality, method=6, exact=True)
     elif fmt == "avif":
         if not features.check("avif"):
             raise SystemExit("AVIF encoder unavailable")
@@ -567,6 +577,162 @@ def _row(role, source, licence, sha, width, height, size, provenance, path, kind
     }
     row.update(extra)
     return row
+
+
+def kit_plates() -> list[dict]:
+    """The nine curated plates this segment carries, each with the kit's declared source hash.
+
+    ``kit.json`` is the authority: the declaration is read, never recomputed, and the file it names
+    must hash to the declared value or the build stops. Nothing here reads ``assets/masters/``.
+    """
+    kit = json.loads(KIT_JSON.read_text(encoding="utf-8"))
+    if kit.get("kit_id") != "field_atlas@2":
+        raise SystemExit("unexpected kit id in %s: %r" % (KIT_JSON, kit.get("kit_id")))
+    plates = []
+    resolution = kit.get("resolution") or {}
+    roles = kit.get("roles") or {}
+    for role, quality in KIT_FULL_ROLES:
+        rows = roles.get(role) or []
+        if len(rows) != 1:
+            raise SystemExit("kit role %s must carry exactly one plate" % role)
+        plate = rows[0]
+        source = (resolution.get(role) or {}).get("source") or {}
+        if not source.get("path") or not source.get("sha256"):
+            raise SystemExit("kit role %s has no 2x source declaration" % role)
+        plates.append(
+            {
+                "id": plate["id"],
+                "kit_role": role,
+                "source": source["path"],
+                "source_size": tuple(source["size"]),
+                "render_size": tuple(plate["size"]),
+                "quality": quality,
+                "declared_sha256": source["sha256"],
+            }
+        )
+    covers = roles.get("cover") or []
+    if len(covers) != 6:
+        raise SystemExit("kit must carry six covers, found %d" % len(covers))
+    for plate in covers:
+        plates.append(
+            {
+                "id": plate["id"],
+                "kit_role": "cover",
+                "source": plate["path"],
+                "source_size": tuple(plate["size"]),
+                "render_size": tuple(plate["size"]),
+                "quality": KIT_COVER_QUALITY,
+                "declared_sha256": plate["sha256"],
+            }
+        )
+    return plates
+
+
+def build_kit(hi_res: bool = True) -> tuple[list, dict, str]:
+    """Encode the curated kit into ``assets/kit/`` and its data-url entries.
+
+    The two full plates are emitted at the provider's 2688x1536 when the segment can afford it, and
+    at the shipped 1344x768 when it cannot. Covers are always emitted at their natural size, which
+    the kit already documents as 2x of the render.
+    """
+    from PIL import Image
+
+    rows, entries, notes = [], {}, []
+    for plate in kit_plates():
+        source = KIT / plate["source"]
+        if not source.is_file():
+            raise SystemExit("missing kit plate: %s" % source)
+        actual = sha256_file(source)
+        if actual != plate["declared_sha256"]:
+            raise SystemExit(
+                "kit plate %s hashes to %s, %s declares %s"
+                % (source, actual, KIT_JSON.name, plate["declared_sha256"])
+            )
+        target = plate["render_size"]
+        if plate["kit_role"] != "cover" and hi_res:
+            target = plate["source_size"]
+        with Image.open(source) as opened:
+            img = opened.convert("RGB")
+            if img.size != target:
+                if target[0] > img.size[0] or target[1] > img.size[1]:
+                    raise SystemExit(
+                        "kit plate %s is %dx%d; %dx%d would be an upscale"
+                        % (source, *img.size, *target)
+                    )
+                img = img.resize(target, Image.Resampling.LANCZOS)
+            webp = encode(img, "webp", quality=plate["quality"])
+        rel = "assets/kit/field_atlas-%s.webp" % plate["id"]
+        out = ROOT / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(webp)
+        prov = "cb.asset.kit.field_atlas.%s" % plate["id"]
+        row = _row(
+            "kit.%s.%s" % (plate["kit_role"], plate["id"]),
+            "curated:assets/visual-kits/%s/%s" % (KIT.name, plate["source"]),
+            "CC0-1.0",
+            sha256_bytes(webp),
+            target[0],
+            target[1],
+            len(webp),
+            prov,
+            rel,
+            master="assets/visual-kits/%s/%s" % (KIT.name, plate["source"]),
+            master_sha256=plate["declared_sha256"],
+            kit_id="field_atlas@2",
+            kit_role=plate["kit_role"],
+            quality=plate["quality"],
+        )
+        rows.append(row)
+        entries[prov] = {
+            "group": "kit",
+            "role": row["role"],
+            "path": rel,
+            "mime": "image/webp",
+            "width": target[0],
+            "height": target[1],
+            "bytes": len(webp),
+            "sha256": row["sha256"],
+            "licence": "CC0-1.0",
+            "src": data_url("image/webp", webp),
+        }
+        notes.append(
+            "kit %-24s %4dx%-4d q%-2d %7d B -> %s"
+            % (plate["id"], target[0], target[1], plate["quality"], len(webp), rel)
+        )
+    rows.sort(key=lambda r: r["path"])
+    (KIT_EMBED / "manifest.json").write_text(
+        json.dumps(rows, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    scale = "2x" if hi_res else "1x"
+    note = "kit field_atlas@2: hero and lesson scene emitted at %s\n%s" % (scale, "\n".join(notes))
+    return rows, entries, note
+
+
+def segment_source(entries: dict) -> str:
+    """The exact text of ``desktop/cb-assets.generated.js`` for a set of data-url entries."""
+    assets_obj = {
+        "schema": 1,
+        "generated_by": "scripts/build_cb_assets.py",
+        "note": (
+            "Brand assets only: typefaces, material tiles, the fox, the object kit and the curated "
+            "field_atlas@2 display plates. Per-course pack covers, scene headers and world plates "
+            "are never embedded; they stay pack or world media served by /media/{artifact_id} and "
+            "/artifacts/{handle}."
+        ),
+        "fonts": {
+            spec["family"]: entries["cb.asset.font.%s" % key]["src"]
+            for key, spec in FONT_SOURCES.items()
+        },
+        "assets": entries,
+    }
+    body = json.dumps(assets_obj, indent=2, sort_keys=True, ensure_ascii=True)
+    return (
+        "// GENERATED by scripts/build_cb_assets.py -- do not edit by hand.\n"
+        "// One frozen brand-asset object: typefaces, material tiles, fox poses, object kit, and the\n"
+        "// curated field_atlas@2 display plates. Per-course covers are not in here.\n"
+        "const CB_ASSETS = Object.freeze(%s);\n"
+        "if (typeof globalThis !== \"undefined\") { globalThis.CB_ASSETS = CB_ASSETS; }\n" % body
+    )
 
 
 def build(check: bool = False) -> dict:
@@ -788,11 +954,19 @@ def build(check: bool = False) -> dict:
             row["avif_bytes"] = len(avif)
             entry["src_avif"] = data_url("image/avif", avif)
         object_entries[prov] = entry
+
+    # curated kit (field_atlas@2) --------------------------------------------------------------
+    # VQ-002's owner-approved display plates. The kit ships its own hashes; this branch encodes
+    # the curated files and stops if any of them has drifted from kit.json. The 2x hero and lesson
+    # scene are used only while the whole segment stays under SEGMENT_BUDGET.
+    kit_rows, kit_entries, kit_note = build_kit(hi_res=True)
+
     manifests = {
         "fonts": fonts_rows,
         "material": material_rows,
         "fox": fox_rows,
         "objects": object_rows,
+        "kit": kit_rows,
     }
     for group, rows in manifests.items():
         rows.sort(key=lambda r: r["path"])
@@ -841,29 +1015,19 @@ def build(check: bool = False) -> dict:
     entries.update(material_entries)
     entries.update(fox_entries)
     entries.update(object_entries)
-    assets_obj = {
-        "schema": 1,
-        "generated_by": "scripts/build_cb_assets.py",
-        "note": (
-            "Brand assets only: typefaces, material tiles, the fox and the object kit. Course "
-            "covers, scene headers and world plates are never embedded; they stay pack or world "
-            "media served by /media/{artifact_id} and /artifacts/{handle}."
-        ),
-        "fonts": {spec["family"]: font_entries["cb.asset.font.%s" % key]["src"] for key, spec in FONT_SOURCES.items()},
-        "assets": entries,
-    }
-    body = json.dumps(assets_obj, indent=2, sort_keys=True, ensure_ascii=True)
-    js = (
-        "// GENERATED by scripts/build_cb_assets.py -- do not edit by hand.\n"
-        "// One frozen brand-asset object: typefaces, material tiles, fox poses, object kit.\n"
-        "// Course covers, scene headers and world plates are never in here.\n"
-        "const CB_ASSETS = Object.freeze(%s);\n"
-        "if (typeof globalThis !== \"undefined\") { globalThis.CB_ASSETS = CB_ASSETS; }\n" % body
-    )
+    entries.update(kit_entries)
+    js = segment_source(entries)
+    if len(js.encode("utf-8")) > SEGMENT_BUDGET:
+        # The card's rule: 2x when the segment can hold it, otherwise the shipped 1x plates.
+        kit_rows, kit_entries, kit_note = build_kit(hi_res=False)
+        manifests["kit"] = kit_rows
+        entries.update(kit_entries)
+        js = segment_source(entries)
     GENERATED.parent.mkdir(parents=True, exist_ok=True)
     GENERATED.write_text(js, encoding="utf-8")
 
     report = size_report(manifests, entries, js)
+    print(kit_note)
     print(report["text"])
     if check and not report["ok"]:
         raise SystemExit(1)
@@ -895,7 +1059,11 @@ def size_report(manifests: dict, entries: dict, js: str) -> dict:
         "shipped files        %8d B" % total,
         "generated segment    %8d B  budget %8d B" % (segment, SEGMENT_BUDGET),
         "desktop/plugin.js    %8d B  budget %8d B" % (plugin, PLUGIN_BUDGET),
-        "plugin + segment     %8d B  budget %8d B" % (plugin + segment, PLUGIN_BUDGET),
+        # CP-020a concatenates the segment into plugin.js, so plugin.js already carries those
+        # bytes. The earlier "plugin + segment" line counted the same payload twice and reported
+        # 5.5 MB for a 4.1 MB artifact; the budget is on the shipped file, counted once.
+        "  of which segment   %8d B  (carried by plugin.js, counted once)" % segment,
+        "plugin source only   %8d B" % (plugin - segment),
         "data-url entries     %8d" % len(entries),
     ]
     if segment > SEGMENT_BUDGET:
@@ -904,9 +1072,6 @@ def size_report(manifests: dict, entries: dict, js: str) -> dict:
     if plugin > PLUGIN_BUDGET:
         ok = False
         lines.append("OVER: plugin.js exceeds %d B" % PLUGIN_BUDGET)
-    if plugin + segment > PLUGIN_BUDGET:
-        ok = False
-        lines.append("OVER: plugin.js plus the generated segment exceeds %d B" % PLUGIN_BUDGET)
     lines.append("")
     lines.append("VERDICT: %s" % ("within budget" if ok else "OVER BUDGET"))
     return {"ok": ok, "segment": segment, "plugin": plugin, "total": total, "entries": len(entries), "text": "\n".join(lines)}
@@ -915,7 +1080,7 @@ def size_report(manifests: dict, entries: dict, js: str) -> dict:
 def committed_state() -> tuple[dict, dict, str]:
     """Read the committed manifests and segment. Never writes; this is the --report path."""
     manifests = {}
-    for group in ("fonts", "material", "fox", "objects"):
+    for group in ("fonts", "material", "fox", "objects", "kit"):
         path = ASSETS / group / "manifest.json"
         if not path.is_file():
             raise SystemExit(

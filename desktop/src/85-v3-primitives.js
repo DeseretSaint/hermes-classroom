@@ -70,6 +70,34 @@ function cb3ObjectSource(name) {
   return cb3Asset(`cb.asset.object.${name}`)
 }
 
+/** One curated field_atlas@2 display plate (`home-hero`, `field-atlas-lesson-room`, a cover). */
+function cb3KitSource(id) {
+  return cb3Asset(`cb.asset.kit.field_atlas.${id}`)
+}
+
+/** The display cover pair a course reads in, or null when no approved plate names it. */
+function cb3KitCoverFor(course) {
+  const row = course && typeof course === 'object' ? course : {}
+  const pack = typeof row.pack_id === 'string' ? row.pack_id.trim().toLowerCase() : ''
+  const byPack = {
+    'japanese-affection-context-l0': 'japanese',
+    'parent-measurement-practice': 'parent',
+    'technical-pack-literacy': 'technical'
+  }
+  let family = byPack[pack] || null
+  if (!family) {
+    const text = `${row.title || ''} ${row.subject_domain || ''}`.toLowerCase()
+    if (/japan|japanese|kyoto|nihongo/.test(text)) family = 'japanese'
+    else if (/parent|kitchen|measur|cook/.test(text)) family = 'parent'
+    else if (/pack|technical|demo|install|code/.test(text)) family = 'technical'
+  }
+  if (!family) return null
+  return {
+    id3x2: `cb.asset.kit.field_atlas.${family}-cover-3x2`,
+    id4x5: `cb.asset.kit.field_atlas.${family}-cover-4x5`
+  }
+}
+
 /** The fox is one mascot in seven poses; the owner-signed painted set ships four export sizes. */
 const CB3_POSES = Object.freeze(['wave', 'point', 'clock', 'read', 'cheer', 'think', 'sleep'])
 const CB3_FOX_EXPORTS = Object.freeze([64, 128, 256, 512])

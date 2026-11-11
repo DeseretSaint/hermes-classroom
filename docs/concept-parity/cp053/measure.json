@@ -2,7 +2,7 @@
   "card": "CP-053",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "0112000c418cfcb6815059020857eaf1b8a7299de3d863be1c3b0431cafa0c86",
+  "module_sha256": "1d23b78cb19f887bc7cce25e4d8b494c032a071ace4e4db24addba97c50a9e0b",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
@@ -25,5 +25,5 @@
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only, and a card with no host media read paints the product's typographic cover fallback",
   "measured_at": "2026-11-11",
-  "note": "Re-rendered 2026-11-11 on the module that ships the painted A1 fox (CP-005f, module 0112000c). Pixel diff against the 0c1729eb frame (251a3948) changes only x 1136-1286, y 491-704 \u2014 the fox and the clock edge it meets \u2014 so the fox adoption is the whole delta; cards band 0.7626 -> 0.7541 comes from that painted fox reading darker against the reference. This remains the CP-053 baseline scene, not the VQ-002 Home pass: t_831137dd owns the number that must clear 0.85."
+  "note": "Re-measured 2026-11-11 on module 1d23b78c (UI-K1: the curated field_atlas@2 plates entered the brand-asset segment behind cb3KitSource/cb3KitCoverFor; no screen file moved). Re-rendered from the new module, re-screenshotted at native 1344x768 and re-run through measure.py: every number below is byte-identical to the 0112000c row (sim_grey 0.8077), which is the point \u2014 the segment grew, the Home surface did not. Prior row: module 0112000c carried the painted A1 fox (CP-005f); its pixel diff against the 0c1729eb frame (251a3948) changed only x 1136-1286, y 491-704, the fox and the clock edge it meets. This remains the CP-053 baseline scene, not the VQ-002 Home pass: t_831137dd owns the number that must clear 0.85."
 }
