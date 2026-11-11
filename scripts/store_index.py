@@ -134,11 +134,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     if args.root:
-        global ROOT, STORE, COMMUNITY, INDEX
+        global ROOT, STORE, COMMUNITY, INDEX, BUNDLED
         ROOT = Path(args.root).resolve()
         STORE = ROOT / "store"
         COMMUNITY = STORE / "packs"
         INDEX = STORE / "index.json"
+        # The data comes from the tree under review; only the code comes from the base branch.
+        BUNDLED = ROOT / "bundled" / "packs"
     text = render(build())
     if args.check:
         current = INDEX.read_text(encoding="utf-8") if INDEX.is_file() else None
