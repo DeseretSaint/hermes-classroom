@@ -8,16 +8,23 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
-Release tree: **`b9f4a197e42e4f033298d94608fcb5b63640b094`** (the H-210-R2 merge over `df052ea`: the
-live pack round trip that closed gate 4 plus its capture under
-`audit/adversarial/h210r2-pack-roundtrip/`; the diff from `df052ea` is `docs/` and `audit/` only).
-`desktop/plugin.js` there is `cd862140…c516`, so the M4 audit pin remains valid for that tree; the
-committed audit has since been regenerated for the module this tree ships, `4087908c…`
-(2026-11-10, via CP-020a/CP-020b/CP-043), with every measurement reproduced, and re-pinning the record
-to it is the freeze step. `master` has advanced past it; the
-suite count below is measured on `master` `07976d8` and names that tree.
-Every current-tree number in this file is re-derived there and checked by
-`python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
+Release tree: **`42fcd0f5`** — the tree this submission's catalog entry pins, measured 2026-11-11 at
+the 14:05 MST freeze. `desktop/plugin.js` there is `71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8`
+(`python3 scripts/build_plugin.py --check` reports the match against `desktop/src`), `node --check
+desktop/plugin.js` is clean, and `bash scripts/validate-plugin.sh` reports **4/4 runtime contracts:
+PASS** with `Release gate passed: 4/4 checks`. The full suite measured on the commit below it,
+`fc6ec7b7`, is `Ran 4031 tests in 1475.218s … OK (skipped=12)`, exit 0; the three commits between
+`fc6ec7b7` and the release tree change only `docs/` and `coursebook/workshop.py`, and the workshop's
+focused pair (`tests.test_workshop`, `tests.test_cp_021_workshop_v3`) is `Ran 26 tests in 17.373s …
+OK` on the release tree itself. `python3 scripts/check-docs-truth.py` passes on it.
+
+The **H-212 tree `b9f4a197e42e4f033298d94608fcb5b63640b094`** remains the previous record: the
+H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture under
+`audit/adversarial/h210r2-pack-roundtrip/`, a `docs/`-and-`audit/`-only diff from its parent).
+`desktop/plugin.js` there is `cd862140…c516`. The earlier suite count `Ran 3523 tests in 951.634s …
+OK (skipped=11)` at `b1913af7`, and the `2747` at `b9f4a19`, are kept as previous-record history, not
+as this tree's numbers. Every current-tree number in this file is re-derived on the release tree and
+checked by `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
 The tree carries `cb.rpc` v25 (93 declared methods, 93 handlers) and `cb.db` v14 (schema v14,
@@ -92,14 +99,14 @@ invalidates the earlier evidence.
 | 4 | Packs import and export | Lattice | Re-driven live on `df052eaeced56ddd7238e4fb5804110ea7b36e95` (the merged release tree: the H-210-R1 `artifact.get` repair `160c522` folded in as `8fd4ec2`; `desktop/plugin.js` still `cd862140…`) through the mounted HTTP `cb.rpc` v20 route against two isolated backends: `pack.preview` → `pack.import` for `japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0, `pack.export` twice on the same store with byte-identical results (`content_hash` `sha256:5343526d…`, archive sha256 `sha256:4aefd708…`; demo `sha256:ff5594a8…` / `sha256:747c61fd…`; the exported archive equals the imported archive byte-for-byte), then a fresh-store re-import with the same objectives / sections / checks (Japanese 4 / 4 / 4, demo 2 / 2 / 2) and the same media bytes. The step that answered `INTERNAL_ERROR` on `bc9f607` now passes: `artifact.get` resolves **every** media segment of both packs on both stores — four media links, ten live calls, six distinct digests including the two export archives — each response contract-valid with a single-prefixed `sha256:<64 hex>` matching the manifest and a download handle whose fetched bytes hash to that same digest. The legacy bare spelling was reproduced in an isolated store: a bare row reads back labelled and a later labelled import dedupes into it instead of adding a row. Evidence: `audit/adversarial/h210r2-pack-roundtrip/` (39/39 assertions PASS). The round trip ran on `df052ea`; the frozen tree `b9f4a19` is that commit plus the H-210-R2 merge, whose diff is `docs/` and `audit/` only — no product, test or contract file moved, so the capture still describes this tree | [x] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
-| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b9f4a19` and no video exists. Gate 5 and the recording path must close first | [ ] |
+| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`. The film this row used to say did not exist is `docs/launch/coursebook-walkthrough.mp4` (42.4 s, sha `9b6eed5e…e620`). The scenario run is card `t_720119db` on the release tree (`42fcd0f5`, module `71d940ce`); its per-scenario PASS/FAIL table lands in `docs/ACCEPTANCE-RUN.md` and this row stays `[ ]` until that file names the tree it scored | [ ] |
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `b1913af7` after the 2026-11-10 suite re-measurement (`3523 tests`, `OK (skipped=11)`) and the `cb.rpc` v26 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
-| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The draft pull request exists: `NousResearch/hermes-agent#152920`, opened 2026-11-10, pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading, and it stays draft until gates 5 and 7 close | [x] |
+| 11 | Catalog entry pins the release commit | Harbor | `plugin-catalog/coursebook.yaml` on the pull-request branch pins the release tree `42fcd0f5` (module `71d940ce`; `docs_url` at the README's `#install-locally` heading, `readme: true` so the catalog renders install steps at that commit). The pull request is `NousResearch/hermes-agent#152920`, opened 2026-11-10, **open, not draft, `mergeable: MERGEABLE`** as of 2026-11-11 14:10 MST (verified through the GitHub API, not from this file), and unmerged: merging it is gated on the owner's sign-off in §0 and on gates 5 and 7. The pin and the `readme` key were changed after the maintainer's earlier approval of `3278bae`, and that delta is stated in a comment on the PR rather than silently carried | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
-| 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-demo-90s.mp4`: `Ran`-free measurement in `docs/launch/QC.md` — 51.000000 s, 1920x1080, 30/1 CFR, h264 High, yuv420p, 1530 frames, 2,099,849 B, zero audio streams, sha256 `3d7a1d8126b58fd475931415cd2c5293c869ac395dc6eab9f1d4e0c741c77aa4`; frame provenance in `docs/launch/CREDITS.md`. Recorded and measured; **the owner's approval block in QC.md is empty** | [~] |
-| 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 258-character count are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
+| 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-walkthrough.mp4` — the file the post attaches, measured at `origin/master` at the freeze: 42.400000 s, 1920x1080, 30/1 CFR, h264 High, yuv420p, 1272 frames, 3,025,839 B, AAC LC 48 kHz stereo, integrated **−14.8 LUFS (PASSES the `VIDEO-PLAN.md` §9.3 window of −15.0 to −13.0)**, true peak −4.2 dBTP, sha256 `9b6eed5eb6b17e17d6b0982b4f084e7571fe9090be3fe2e2c4b117486f17e620`; film of record in `docs/launch/QC.md`, provenance and licences in `docs/launch/CREDITS.md`. Recorded and measured; **the owner's approval block in QC.md is empty** | [~] |
+| 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 258-character count (241 weighted) are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation; the answer table for `https://form.typeform.com/to/FwJLvOln` is in `docs/launch/POST.md` §2 | [ ] |
 
 Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (MIT license) and gate 10 (repository measured
@@ -318,7 +325,7 @@ resolved for the recording.
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
-| Catalog entry | Submitted as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` (open draft, unmerged), pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading; the in-repo review copy `catalog/coursebook.yaml` pins `61cdb03`, validator `OK: 1 file(s) valid` |
+| Catalog entry | Submitted as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` (open, not draft, unmerged), pinned to the release tree `42fcd0f5` with `docs_url` at the README's `#install-locally` heading and `readme: true` |
 | Checklist | sections 1-7 of this file: five gates open (`[ ]`: 7, 12, 13, 14, 15) and two partial (`[~]`: 5, 6) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
