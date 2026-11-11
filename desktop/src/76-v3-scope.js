@@ -227,10 +227,21 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
-  /* The room paints its own canvas. The scope's material layers sit under the content wrapper, and
-     its vignette tile composites as a dark centre at this canvas size, so the scene keeps the
-     token canvas colour flat; texture is the token canvas, not the route vignette. */
+  isolation: isolate;
+  /* D-007 — the room's ground is the approved hero plate (data-cb-home-scene-backdrop), a full
+     bleed painted backdrop. The token canvas stays as the ground under it so a plate that fails to
+     decode leaves the canvas, never a blank route. */
   background-color: var(--cb3-canvas);
+}
+
+[data-cb-v3] [data-cb-home-scene-backdrop] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  z-index: 0;
 }
 
 [data-cb-v3] [data-cb-home-scene-hero] {
@@ -238,8 +249,39 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   top: 128px;
   left: 0;
   right: 0;
-  text-align: center;
+  display: flex;
+  justify-content: center;
   z-index: 4;
+}
+
+/* The scrim is the token canvas at the vignette's own overlay alpha, behind the text block only:
+   the art is not darkened, and the hero text holds its contrast on the plate's quiet sky. */
+[data-cb-v3] [data-cb-home-scene-panel] {
+  position: relative;
+  isolation: isolate;
+  max-width: 760px;
+  padding: 18px 32px 24px;
+  border-radius: var(--cb3-radius-round);
+  text-align: center;
+}
+
+[data-cb-v3] [data-cb-home-scene-panel]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: var(--cb3-canvas);
+  opacity: 0.55;
+}
+
+[data-cb-v3] [data-cb-home-hero-band] {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: 50% 50%;
+  border-radius: var(--cb3-radius-soft);
 }
 
 [data-cb-v3] [data-cb-home-scene-question] {
@@ -381,9 +423,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 [data-cb-v3] [data-cb-home-scene-plank-one] {
   position: absolute;
   left: 219px;
-  top: 545px;
-  width: 870px;
-  height: 20px;
+  top: 559px;
+  width: 915px;
+  height: 18px;
   /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
   z-index: 1;
   background-color: var(--cb3-wood);
@@ -397,7 +439,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 20px;
+  top: 18px;
   height: 10px;
   background-color: var(--cb3-rule);
   border-bottom: 1px solid var(--cb3-wood-edge);
@@ -405,10 +447,10 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-plank-two] {
   position: absolute;
-  left: 115px;
-  top: 681px;
-  width: 1165px;
-  height: 34px;
+  left: 130px;
+  top: 684px;
+  width: 1150px;
+  height: 30px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -419,17 +461,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 34px;
-  height: 26px;
+  top: 30px;
+  height: 24px;
   background-color: var(--cb3-wood);
   border-bottom: 1px solid var(--cb3-wood-edge);
   box-shadow: var(--cb3-elev-2);
 }
 
+/* The tag reads as the kit's own kraft tag object: the plate paints, the words stay DOM. */
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 884px;
-  top: 616px;
+  left: 880px;
+  top: 606px;
   width: 164px;
   height: 88px;
   z-index: 4;
@@ -437,7 +480,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   place-items: center;
   transform: rotate(-3deg);
   background-color: var(--cb3-card-stock);
-  border: 1px solid var(--cb3-ink);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   font-family: var(--cb3-font-display);
   font-size: var(--cb3-text-lead);
   color: var(--cb3-ink);
@@ -446,17 +490,17 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
-  left: 1050px;
-  top: 596px;
-  width: 112px;
-  height: 112px;
+  left: 1042px;
+  top: 588px;
+  width: 118px;
+  height: 118px;
   z-index: 4;
 }
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1090px;
-  top: 486px;
+  left: 1088px;
+  top: 526px;
   z-index: 5;
 }
 `

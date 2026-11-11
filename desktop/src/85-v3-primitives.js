@@ -93,8 +93,8 @@ function cb3KitCoverFor(course) {
   }
   if (!family) return null
   return {
-    id3x2: `cb.asset.kit.field_atlas.${family}-cover-3x2`,
-    id4x5: `cb.asset.kit.field_atlas.${family}-cover-4x5`
+    id3x2: `${family}-cover-3x2`,
+    id4x5: `${family}-cover-4x5`
   }
 }
 
@@ -438,7 +438,7 @@ function PaperCard({ emphasis, title, meta, children, footer, className, style, 
  * pretends to be a logo.
  * Tokens: canvas-edge, ink, rule, radius.square, type.heading.
  */
-function CoverPlate3({ src, title, className, style, ...rest }) {
+function CoverPlate3({ src, title, className, style, imageStyle, ...rest }) {
   const hasArt = typeof src === 'string' && src.length > 0
   return jsxs('div', {
     ...rest,
@@ -460,7 +460,7 @@ function CoverPlate3({ src, title, className, style, ...rest }) {
             src,
             alt: '',
             'aria-hidden': 'true',
-            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover', ...(imageStyle || {}) }
           }, 'art')
         : jsx('span', {
             style: {

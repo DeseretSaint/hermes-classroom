@@ -112,6 +112,17 @@ def markup_only(html: str) -> str:
     return re.sub(r'data:[^"\s)]+', 'data:', html)
 
 
+def img_tags(html: str) -> list:
+    """Every `<img …>` tag in the rendered markup, as raw text."""
+    return [match.group(0) for match in re.finditer(r'<img\b[^>]*>', html)]
+
+
+def attr(tag: str, name: str):
+    """One attribute's value from a rendered tag, or None when the attribute is absent."""
+    match = re.search(r'(?:^|\s)' + re.escape(name) + r'="([^"]*)"', tag)
+    return match.group(1) if match else None
+
+
 @unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")
 class HomeSceneTest(unittest.TestCase):
     @classmethod
@@ -195,23 +206,27 @@ class HomeSceneTest(unittest.TestCase):
     def test_planks_and_objects_hold_the_reference_positions(self) -> None:
         one = css_block(self.source, "data-cb-home-scene-plank-one")
         self.assertEqual(declaration(one, "left"), "219px")
-        self.assertEqual(declaration(one, "width"), "870px")
-        self.assertEqual(declaration(one, "top"), "545px")
+        self.assertEqual(declaration(one, "width"), "915px")
+        self.assertEqual(declaration(one, "top"), "559px")
+        self.assertEqual(declaration(one, "height"), "18px")
         two = css_block(self.source, "data-cb-home-scene-plank-two")
-        self.assertEqual(declaration(two, "left"), "115px")
-        self.assertEqual(declaration(two, "width"), "1165px")
-        self.assertEqual(declaration(two, "top"), "681px")
+        self.assertEqual(declaration(two, "left"), "130px")
+        self.assertEqual(declaration(two, "width"), "1150px")
+        self.assertEqual(declaration(two, "top"), "684px")
+        self.assertEqual(declaration(two, "height"), "30px")
         tag = css_block(self.source, "data-cb-home-scene-tag")
-        self.assertEqual(declaration(tag, "left"), "884px")
-        self.assertEqual(declaration(tag, "top"), "616px")
+        self.assertEqual(declaration(tag, "left"), "880px")
+        self.assertEqual(declaration(tag, "top"), "606px")
         self.assertEqual(declaration(tag, "width"), "164px")
         self.assertEqual(declaration(tag, "height"), "88px")
         clock = css_block(self.source, "data-cb-home-scene-clock")
-        self.assertEqual(declaration(clock, "left"), "1050px")
-        self.assertEqual(declaration(clock, "width"), "112px")
+        self.assertEqual(declaration(clock, "left"), "1042px")
+        self.assertEqual(declaration(clock, "top"), "588px")
+        self.assertEqual(declaration(clock, "width"), "118px")
+        self.assertEqual(declaration(clock, "height"), "118px")
         fox = css_block(self.source, "data-cb-home-scene-fox")
-        self.assertEqual(declaration(fox, "left"), "1090px")
-        self.assertEqual(declaration(fox, "top"), "486px")
+        self.assertEqual(declaration(fox, "left"), "1088px")
+        self.assertEqual(declaration(fox, "top"), "526px")
         hero = css_block(self.source, "data-cb-home-scene-hero")
         self.assertEqual(declaration(hero, "top"), "128px")
 
@@ -241,6 +256,77 @@ class HomeSceneTest(unittest.TestCase):
         scene = markup_only(html[html.index('data-cb-home-scene=""'):])
         for prop in ("color:", "background:", "box-shadow:", "font-size:", "transform: rotate"):
             self.assertNotIn(prop, scene, f"inline paint leaked into the scene: {prop}")
+
+    # --- covers are approved kit plates, never letter plates --------------------------------
+
+    def kit_rows(self) -> dict:
+        rows = {}
+        for match in re.finditer(r'"(cb\.asset\.kit\.field_atlas\.[a-z0-9-]+)":\s*\{', self.source):
+            window = self.source[match.end():match.end() + 700000]
+            src = re.search(r'"src":\s*"(data:image/webp;base64,[^"]+)"', window)
+            if src:
+                rows[match.group(1)] = src.group(1)
+        return rows
+
+    def test_every_scene_cover_is_an_approved_kit_plate(self) -> None:
+        rows = self.kit_rows()
+        self.assertIn("cb.asset.kit.field_atlas.home-hero", rows, "the kit segment is not in the module")
+        html = self.render(1344)
+        covers = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-scene-cover")]
+        self.assertEqual(len(covers), 4, "every visible card carries a cover image")
+        self.assertNotIn('data-cb-home-scene-cover="type"', html, "a letter plate stands in for a cover")
+        self.assertNotIn('data-cb-cover-kind="letter"', html)
+        approved = set(rows.values())
+        for tag in covers:
+            kind = attr(tag, "data-cb-home-scene-cover")
+            self.assertIn(kind, ("kit", "art", "lesson"), kind)
+            src = attr(tag, "src") or ""
+            self.assertTrue(src.startswith("data:image/webp"), src[:48])
+            self.assertIn(src, approved, "a scene cover is not an approved field_atlas@2 row")
+
+    def test_the_japanese_course_reads_in_the_japanese_plate(self) -> None:
+        rows = self.kit_rows()
+        html = self.render(1344)
+        plate = rows["cb.asset.kit.field_atlas.japanese-cover-3x2"]
+        self.assertIn(plate, html, "the Japanese course did not resolve to its display plate")
+
+    def test_two_courses_on_one_plate_get_different_crops(self) -> None:
+        html = self.render(1344, [
+            {"title": "Japanese Cafe Basics", "sections_total": 4, "sections_done": 1},
+            {"title": "Japanese Kitchen Japanese", "sections_total": 4, "sections_done": 0},
+        ])
+        positions = [
+            attr(tag, "style") for tag in img_tags(html)
+            if attr(tag, "data-cb-home-scene-cover") == "kit"
+        ]
+        self.assertEqual(len(positions), 2)
+        self.assertNotEqual(positions[0], positions[1], "two Japanese courses share one crop")
+
+    def test_the_stage_backdrop_is_the_home_hero_plate(self) -> None:
+        rows = self.kit_rows()
+        html = self.render(1344)
+        backdrops = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-scene-backdrop") is not None]
+        self.assertEqual(len(backdrops), 1, "the stage has no painted backdrop")
+        self.assertEqual(attr(backdrops[0], "src"), rows["cb.asset.kit.field_atlas.home-hero"])
+        self.assertIn("data-cb-home-scene-panel", html, "the hero text has no token scrim panel")
+
+    def test_narrow_home_carries_the_same_covers_and_a_hero_band(self) -> None:
+        rows = self.kit_rows()
+        html = self.render(900)
+        self.assertNotIn("data-cb-home-scene", html)
+        band = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-hero-band") is not None]
+        self.assertEqual(len(band), 1, "the narrow Home has no 16:9 hero band")
+        self.assertEqual(attr(band[0], "src"), rows["cb.asset.kit.field_atlas.home-hero"])
+        plates = []
+        for chunk in html.split("data-cb-home-cover-plate")[1:]:
+            tag = re.search(r'<img\b[^>]*>', chunk)
+            if tag:
+                plates.append(attr(tag.group(0), "src"))
+        self.assertTrue(plates, "the narrow shelf has no cover plate")
+        for src in plates:
+            self.assertIn(src, set(rows.values()), "a narrow cover is not an approved kit row")
+        self.assertIn('data-cb-home-cover-kind="', html)
+        self.assertNotIn('data-cb-home-cover-kind="letter"', html)
 
     # --- honesty --------------------------------------------------------------------------
 

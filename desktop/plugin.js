@@ -3407,11 +3407,55 @@ function homeShelfLayout(width) {
   return { compact, columns, capacity }
 }
 
-/** A 3:2 paper cover: the real artifact when the media answer arrives, else the typographic plate. */
-function HomeV3Cover({ artifactId, title }) {
-  const preview = useArtifactPreview(artifactId)
-  const src = preview && preview.state === 'ready' && typeof preview.data_url === 'string' ? preview.data_url : null
-  return jsx(CoverPlate3, { src, title })
+const HOME_LESSON_CROPS = Object.freeze(['50% 42%', '66% 30%', '34% 58%', '60% 66%'])
+const HOME_KIT_REPEAT_CROPS = Object.freeze(['50% 50%', '72% 30%', '28% 64%'])
+
+/** The approved field_atlas@2 display plate a Home card reads in, or null. A cover is an asset. */
+function homeKitCover(row) {
+  const kit = cb3KitCoverFor(row)
+  if (!kit) return null
+  const src = cb3KitSource(kit.id3x2)
+  if (!src) return null
+  return { src, family: String(kit.id3x2).replace(/^.*field_atlas\./, '').replace(/-cover-3x2$/, '') }
+}
+
+/**
+ * One cover per visible card, resolved once: the kit display plate first, then the course's own
+ * artifact cover, then the kit lesson room. Two courses sharing a plate get different crops, and
+ * the card never falls back to a letter plate.
+ */
+function homeCoverPlan(slots) {
+  const seen = {}
+  return (slots || []).map((slot, index) => {
+    const row = (slot && slot.row) || {}
+    const kit = homeKitCover(row)
+    if (kit) {
+      seen[kit.family] = (seen[kit.family] || 0) + 1
+      const repeat = Math.min(seen[kit.family] - 1, HOME_KIT_REPEAT_CROPS.length - 1)
+      return { kind: 'kit', src: kit.src, position: HOME_KIT_REPEAT_CROPS[repeat] }
+    }
+    return {
+      kind: 'fallback',
+      artifactId: homeCoverArtifactId(row),
+      position: HOME_LESSON_CROPS[index % HOME_LESSON_CROPS.length]
+    }
+  })
+}
+
+/** A 3:2 cover: the approved kit plate, else the course's own artifact, else the kit lesson room. */
+function HomeV3Cover({ cover, artifactId, title }) {
+  const plan = cover || { kind: 'fallback', position: HOME_LESSON_CROPS[0] }
+  const id = plan.kind === 'kit' ? null : plan.artifactId || artifactId
+  const preview = useArtifactPreview(id)
+  const art = preview && preview.state === 'ready' && typeof preview.data_url === 'string' ? preview.data_url : null
+  const lesson = cb3KitSource('field-atlas-lesson-room')
+  const src = plan.kind === 'kit' ? plan.src : art || lesson
+  return jsx(CoverPlate3, {
+    src,
+    title,
+    'data-cb-home-cover-kind': plan.kind === 'kit' ? 'kit' : art ? 'art' : 'lesson',
+    imageStyle: { objectPosition: plan.position }
+  })
 }
 
 /**
@@ -3419,7 +3463,7 @@ function HomeV3Cover({ artifactId, title }) {
  * subject chip, one evidence line, the backend's own next-step sentence) with exactly one control:
  * an overlay `RowButton` whose name is `Open <title>`. No rating, no progress bar, no invented XP.
  */
-function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
+function HomeV3Card({ slot, mode, index, width, isNew, cover, onOpen }) {
   const row = (slot && slot.row) || {}
   const title = row.title || (slot && slot.name) || 'Untitled course'
   const [keyboardFocus, setKeyboardFocus] = useState(false)
@@ -3507,6 +3551,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
     'data-cb-course-id': row.course_id || '',
     'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
     'data-cb-home-cover': artifactId ? 'artifact' : 'type',
+    'data-cb-home-cover-kind': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
     role: 'listitem',
     style: {
       position: 'relative',
@@ -3516,9 +3561,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
       gap: '0.45rem'
     },
     children: [
-      artifactId
-        ? jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { artifactId, title }) }, 'cover')
-        : null,
+      jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { cover, artifactId, title }) }, 'cover'),
       jsx('h3', {
         style: {
           margin: 0,
@@ -3624,7 +3667,7 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
 /* CP-053 — the scene's authored geometry, measured off the binding reference frame
  * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
  * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
- * from this module by `scripts/gen-home-proof.mjs` and `tests/test_desktop_home_scene_parity.py`
+ * from this module by `scripts/gen-home-proof.py` and `tests/test_desktop_home_scene_parity.py`
  * fails if the committed page differs from a fresh render, so the proof cannot drift from the
  * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
  * because the reference is a lit room, not the desk's flat paper.
@@ -3633,18 +3676,25 @@ const CB_HOME_SCENE = Object.freeze({
   canvas: Object.freeze({ width: 1344, height: 768 }),
   hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
   cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
-  shelf: Object.freeze({ left: 219, width: 870, top: 545, height: 20, lip: 10 }),
-  ledge: Object.freeze({ left: 115, width: 1165, top: 681, height: 34, face: 26 }),
-  tag: Object.freeze({ left: 884, top: 616, width: 164, height: 88, font: 23 }),
-  clock: Object.freeze({ left: 1050, top: 596, size: 112 }),
-  fox: Object.freeze({ left: 1090, top: 486, size: 220 })
+  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
+  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
+  tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
+  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
+  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
 })
 
-function HomeSceneCard({ slot, index, onOpen }) {
+function HomeSceneCard({ slot, index, cover, onOpen }) {
   const row = (slot && slot.row) || {}
   const media = cbCoverMedia(row)
-  const preview = useArtifactPreview(media ? media.artifact_id : null)
-  const art = media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url ? preview.data_url : null
+  const plan = cover || { kind: 'fallback', position: HOME_LESSON_CROPS[0] }
+  const preview = useArtifactPreview(plan.kind === 'kit' ? null : plan.artifactId || (media ? media.artifact_id : null))
+  const artifactSrc =
+    plan.kind !== 'kit' && preview && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url
+      ? preview.data_url
+      : null
+  const lessonSrc = plan.kind === 'kit' ? null : cb3KitSource('field-atlas-lesson-room')
+  const src = plan.kind === 'kit' ? plan.src : artifactSrc || lessonSrc
+  const kind = plan.kind === 'kit' ? 'kit' : artifactSrc ? 'art' : 'lesson'
   const title = (slot && (slot.title || slot.name)) || 'Untitled course'
   const total = Number(row.sections_total) || 0
   const done = Number(row.sections_done) || 0
@@ -3654,12 +3704,14 @@ function HomeSceneCard({ slot, index, onOpen }) {
     role: 'listitem',
     onClick: () => onOpen && onOpen(slot),
     children: [
-      art
-        ? jsx('img', { 'data-cb-home-scene-cover': 'art', src: art, alt: media.caption || '' }, 'art')
-        : jsx('div', {
-            'data-cb-home-scene-cover': 'type',
-            children: (title.match(/[A-Za-z]/) || ['C'])[0].toUpperCase()
-          }, 'cover'),
+      src
+        ? jsx('img', {
+            'data-cb-home-scene-cover': kind,
+            src,
+            alt: kind === 'art' && media ? media.caption || '' : '',
+            style: { objectPosition: plan.position }
+          }, 'cover')
+        : null,
       jsxs('div', {
         'data-cb-home-scene-body': '',
         children: [
@@ -3682,47 +3734,56 @@ function HomeSceneCard({ slot, index, onOpen }) {
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
   const wood = cb3ObjectSource('shelf-plank')
   const clock = cb3ObjectSource('clock')
+  const tagObject = cb3ObjectSource('tag')
+  const heroPlate = cb3KitSource('home-hero')
   const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
+  const coverPlan = homeCoverPlan(slots)
   return jsxs('div', {
     'data-cb-home': 'scene',
     'data-cb-home-scene': '',
     children: [
-      jsxs('div', {
+      heroPlate
+        ? jsx('img', { 'data-cb-home-scene-backdrop': '', src: heroPlate, alt: '', 'aria-hidden': 'true' }, 'backdrop')
+        : null,
+      jsx('div', {
         'data-cb-home-scene-hero': '',
-        children: [
-          jsx('h1', {
-            'data-cb-home-question': '',
-            'data-cb-home-scene-question': '',
-            children: CB_HOME_V3_COPY.title
-          }, 'question'),
-          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
-          jsxs('div', {
-            'data-cb-home-scene-cta': '',
-            children: [
-              canCreate
-                ? jsx('button', {
-                    type: 'button',
-                    'data-cb-home-scene-primary': '',
-                    onClick: onStartCreate,
-                    children: CB_HOME_V3_COPY.primary
-                  }, 'create')
-                : null,
-              jsx('button', {
-                type: 'button',
-                'data-cb-home-scene-secondary': '',
-                onClick: onBrowseLibrary,
-                children: CB_HOME_V3_COPY.secondary
-              }, 'browse')
-            ]
-          }, 'cta')
-        ]
+        children: jsxs('div', {
+          'data-cb-home-scene-panel': '',
+          children: [
+            jsx('h1', {
+              'data-cb-home-question': '',
+              'data-cb-home-scene-question': '',
+              children: CB_HOME_V3_COPY.title
+            }, 'question'),
+            jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
+            jsxs('div', {
+              'data-cb-home-scene-cta': '',
+              children: [
+                canCreate
+                  ? jsx('button', {
+                      type: 'button',
+                      'data-cb-home-scene-primary': '',
+                      onClick: onStartCreate,
+                      children: CB_HOME_V3_COPY.primary
+                    }, 'create')
+                  : null,
+                jsx('button', {
+                  type: 'button',
+                  'data-cb-home-scene-secondary': '',
+                  onClick: onBrowseLibrary,
+                  children: CB_HOME_V3_COPY.secondary
+                }, 'browse')
+              ]
+            }, 'cta')
+          ]
+        }, 'panel')
       }, 'hero'),
       jsx('div', {
         'data-cb-home-scene-cards': '',
         role: 'list',
         'aria-label': CB_HOME_COPY.shelf,
         children: slots.slice(0, 4).map((slot, index) =>
-          jsx(HomeSceneCard, { slot, index, onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
+          jsx(HomeSceneCard, { slot, index, cover: coverPlan[index], onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
         )
       }, 'cards'),
       jsx('div', {
@@ -3731,7 +3792,11 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
         style: woodImage,
         children: jsx('i', {})
       }, 'plank-one'),
-      jsx('div', { 'data-cb-home-scene-tag': '', children: CB_HOME_V3_COPY.tagNew }, 'tag'),
+      jsx('div', {
+        'data-cb-home-scene-tag': '',
+        style: tagObject ? { backgroundImage: `url(${tagObject})` } : undefined,
+        children: CB_HOME_V3_COPY.tagNew
+      }, 'tag'),
       clock
         ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
         : null,
@@ -3767,6 +3832,7 @@ function CoursebookHome({
   const parentPlans = rows.filter((entry) => entry && entry.recipe === 'parent').length
   const hub = hubSlots(rows)
   const slots = hub.all.slice(0, CB_HOME_V3_LIMIT)
+  const coverPlan = homeCoverPlan(slots)
   const modeMap = modes && typeof modes === 'object' ? modes : {}
   const parentOnly = status === 'ready' && hub.total === 0 && parentPlans > 0
   const firstUse = status === 'ready' && hub.total === 0 && parentPlans === 0
@@ -4158,6 +4224,7 @@ function CoursebookHome({
                     index,
                     width,
                     isNew: homeCardFacts(slot && slot.row).isNew,
+                    cover: coverPlan[index],
                     onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
                   }, (slot && slot.course_id) || `slot-${index}`)
                 )
@@ -4210,6 +4277,14 @@ function CoursebookHome({
     }, 'scene')
   }
 
+  // D-007 — below the scene breakpoint the same approved hero plate reads as a 16:9 band over the
+  // shelf, so the narrow and docked Home carry the kit as well; the compact states below are kept.
+  const heroBandSource = cb3KitSource('home-hero')
+  const heroBand =
+    heroBandSource && status === 'ready' && hub.total > 0 && width > 0 && width < 1200
+      ? jsx('img', { 'data-cb-home-hero-band': '', src: heroBandSource, alt: '', 'aria-hidden': 'true' }, 'heroBand')
+      : null
+
   return jsxs('div', {
     'data-cb-home': status === 'ready' && hub.total === 0 ? 'empty' : status,
     'data-cb-home-layout': compact ? 'stacked' : 'wide',
@@ -4261,6 +4336,7 @@ function CoursebookHome({
           }, 'stale')
         : null,
       invitation,
+      heroBand,
       shelf
     ]
   })
@@ -4707,6 +4783,13 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
  * route paints the same object, and `data-cb-course-cover` carries the content fingerprint.
  */
 function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpenLibrary, testId }) {
+  // The Courses card reads the same approved display cover the workshop does (D-007). A course
+  // whose pack names no plate reads the kit's own lesson room, cropped — a letter or a typographic
+  // field never stands in for art. `cb3KitCoverFor` answers the full asset key, so `cb3Asset`
+  // reads it directly; the lesson room resolves through `cb3KitSource`.
+  const provenance = row && row.provenance && typeof row.provenance === 'object' ? row.provenance : {}
+  const kit = cb3KitCoverFor({ pack_id: provenance.pack_id || (row && row.pack_id), title: row && row.title })
+  const coverSrc = (kit ? cb3KitSource(kit.id3x2) : null) || cb3KitSource('field-atlas-lesson-room')
   return jsxs('article', {
     'data-cb-course-cover': cbShelfFingerprint(row),
     'data-cb-course-id': row.course_id || '',
@@ -4722,6 +4805,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
     children: [
       jsxs('div', {
         'data-cb-cover-field': '',
+        'data-cb-cover-kind': coverSrc ? 'kit' : 'letter',
         style: {
           display: 'flex',
           alignItems: 'flex-start',
@@ -4730,25 +4814,32 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
           aspectRatio: '16 / 9',
           minHeight: '3rem',
           maxHeight: '7.5rem',
-          padding: '0.5rem 0.6rem',
+          padding: coverSrc ? 0 : '0.5rem 0.6rem',
           boxSizing: 'border-box',
           background: 'var(--cb-paper-raised)',
           overflow: 'hidden'
         },
-        children: [
-          jsx('div', {
-            'aria-hidden': 'true',
-            style: {
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              fontWeight: 600,
-              letterSpacing: '0.02em',
-              lineHeight: 1,
-              color: 'var(--cb-ink-soft)'
-            },
-            children: cbCourseMonogram(row.title)
-          })
-        ]
+        children: coverSrc
+          ? jsx('img', {
+              src: coverSrc,
+              alt: '',
+              'aria-hidden': 'true',
+              'data-cb-cover-image': '',
+              'data-cb-cover-plate': kit ? kit.id3x2.split('.').pop() : 'field-atlas-lesson-room',
+              style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }
+            })
+          : jsx('div', {
+              'aria-hidden': 'true',
+              style: {
+                fontFamily: CB_SERIF,
+                fontSize: CB_TYPE.lead,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                lineHeight: 1,
+                color: 'var(--cb-ink-soft)'
+              },
+              children: cbCourseMonogram(row.title)
+            })
       }),
       jsx('h3', {
         style: {
@@ -17467,10 +17558,21 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
-  /* The room paints its own canvas. The scope's material layers sit under the content wrapper, and
-     its vignette tile composites as a dark centre at this canvas size, so the scene keeps the
-     token canvas colour flat; texture is the token canvas, not the route vignette. */
+  isolation: isolate;
+  /* D-007 — the room's ground is the approved hero plate (data-cb-home-scene-backdrop), a full
+     bleed painted backdrop. The token canvas stays as the ground under it so a plate that fails to
+     decode leaves the canvas, never a blank route. */
   background-color: var(--cb3-canvas);
+}
+
+[data-cb-v3] [data-cb-home-scene-backdrop] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  z-index: 0;
 }
 
 [data-cb-v3] [data-cb-home-scene-hero] {
@@ -17478,8 +17580,39 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   top: 128px;
   left: 0;
   right: 0;
-  text-align: center;
+  display: flex;
+  justify-content: center;
   z-index: 4;
+}
+
+/* The scrim is the token canvas at the vignette's own overlay alpha, behind the text block only:
+   the art is not darkened, and the hero text holds its contrast on the plate's quiet sky. */
+[data-cb-v3] [data-cb-home-scene-panel] {
+  position: relative;
+  isolation: isolate;
+  max-width: 760px;
+  padding: 18px 32px 24px;
+  border-radius: var(--cb3-radius-round);
+  text-align: center;
+}
+
+[data-cb-v3] [data-cb-home-scene-panel]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: var(--cb3-canvas);
+  opacity: 0.55;
+}
+
+[data-cb-v3] [data-cb-home-hero-band] {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: 50% 50%;
+  border-radius: var(--cb3-radius-soft);
 }
 
 [data-cb-v3] [data-cb-home-scene-question] {
@@ -17621,9 +17754,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 [data-cb-v3] [data-cb-home-scene-plank-one] {
   position: absolute;
   left: 219px;
-  top: 545px;
-  width: 870px;
-  height: 20px;
+  top: 559px;
+  width: 915px;
+  height: 18px;
   /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
   z-index: 1;
   background-color: var(--cb3-wood);
@@ -17637,7 +17770,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 20px;
+  top: 18px;
   height: 10px;
   background-color: var(--cb3-rule);
   border-bottom: 1px solid var(--cb3-wood-edge);
@@ -17645,10 +17778,10 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-plank-two] {
   position: absolute;
-  left: 115px;
-  top: 681px;
-  width: 1165px;
-  height: 34px;
+  left: 130px;
+  top: 684px;
+  width: 1150px;
+  height: 30px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -17659,17 +17792,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 34px;
-  height: 26px;
+  top: 30px;
+  height: 24px;
   background-color: var(--cb3-wood);
   border-bottom: 1px solid var(--cb3-wood-edge);
   box-shadow: var(--cb3-elev-2);
 }
 
+/* The tag reads as the kit's own kraft tag object: the plate paints, the words stay DOM. */
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 884px;
-  top: 616px;
+  left: 880px;
+  top: 606px;
   width: 164px;
   height: 88px;
   z-index: 4;
@@ -17677,7 +17811,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   place-items: center;
   transform: rotate(-3deg);
   background-color: var(--cb3-card-stock);
-  border: 1px solid var(--cb3-ink);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   font-family: var(--cb3-font-display);
   font-size: var(--cb3-text-lead);
   color: var(--cb3-ink);
@@ -17686,17 +17821,17 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
-  left: 1050px;
-  top: 596px;
-  width: 112px;
-  height: 112px;
+  left: 1042px;
+  top: 588px;
+  width: 118px;
+  height: 118px;
   z-index: 4;
 }
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1090px;
-  top: 486px;
+  left: 1088px;
+  top: 526px;
   z-index: 5;
 }
 `
@@ -22689,8 +22824,8 @@ function cb3KitCoverFor(course) {
   }
   if (!family) return null
   return {
-    id3x2: `cb.asset.kit.field_atlas.${family}-cover-3x2`,
-    id4x5: `cb.asset.kit.field_atlas.${family}-cover-4x5`
+    id3x2: `${family}-cover-3x2`,
+    id4x5: `${family}-cover-4x5`
   }
 }
 
@@ -23034,7 +23169,7 @@ function PaperCard({ emphasis, title, meta, children, footer, className, style, 
  * pretends to be a logo.
  * Tokens: canvas-edge, ink, rule, radius.square, type.heading.
  */
-function CoverPlate3({ src, title, className, style, ...rest }) {
+function CoverPlate3({ src, title, className, style, imageStyle, ...rest }) {
   const hasArt = typeof src === 'string' && src.length > 0
   return jsxs('div', {
     ...rest,
@@ -23056,7 +23191,7 @@ function CoverPlate3({ src, title, className, style, ...rest }) {
             src,
             alt: '',
             'aria-hidden': 'true',
-            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover', ...(imageStyle || {}) }
           }, 'art')
         : jsx('span', {
             style: {
@@ -36006,12 +36141,17 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
   const preview = useArtifactPreview(cover.kind === 'artifact' ? cover.artifact_id : null)
   const tone = workshopTone(item && item.pack_id)
   const image = cover.kind === 'artifact' && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact always wins. With no ready artifact the approved field_atlas@2 display cover
+  // for this pack is the plate (D-007), so a mapped pack never falls back to a typographic cover.
+  // `cb3KitCoverFor` answers the full asset key; `cb3Asset` is the one lookup that reads it.
+  const kit = image ? null : cb3KitCoverFor(item)
+  const kitImage = kit ? cb3KitSource(kit.id3x2) : null
   const ratio = hero ? '16 / 9' : '3 / 2'
   const alt = (cover.alt && String(cover.alt)) || (item && item.title) || 'Pack cover'
   const failed = cover.kind === 'artifact' && preview.state === 'text'
   return jsxs('figure', {
     'data-cb-workshop-cover': (item && item.pack_id) || 'none',
-    'data-cb-workshop-cover-kind': image ? 'artifact' : 'typographic',
+    'data-cb-workshop-cover-kind': image ? 'artifact' : kitImage ? 'kit' : 'typographic',
     style: {
       margin: 0,
       display: 'flex',
@@ -36057,6 +36197,24 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
                   width: '100%',
                   height: '100%',
                   objectFit: 'contain',
+                  objectPosition: 'center',
+                  background: 'var(--cb-paper)'
+                }
+              })
+            : kitImage
+            ? jsx('img', {
+                alt,
+                src: kitImage,
+                loading: hero ? 'eager' : 'lazy',
+                'data-cb-workshop-cover-image': '',
+                'data-cb-workshop-cover-plate': kit.id3x2.split('.').pop(),
+                style: {
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  // A display plate is mechanically cropped into its box, on the hero band as
+                  // well as on a store card; the pack never gets a letter standing in for art.
+                  objectFit: 'cover',
                   objectPosition: 'center',
                   background: 'var(--cb-paper)'
                 }
@@ -37054,11 +37212,23 @@ function cb3PackSubject(item) {
   return null
 }
 
-/** One cover resolver for the Store card, the pack detail and the Library tab's same row. */
+/**
+ * One cover resolver for the Store card, the pack detail and the Library tab's same row.
+ *
+ * A pack's own cover artifact always wins. When it has none — or its bytes have not arrived yet —
+ * the approved field_atlas@2 display cover for that pack is the plate (D-007), so no pack ever
+ * resolves to a typographic cover. The plate id comes from `cb3KitCoverFor`, which already answers
+ * the full `cb.asset.kit.field_atlas.*` asset key; `cb3Asset` is the one lookup that reads it.
+ */
 function cb3PackCover(item) {
   const cover = (item && item.cover) || {}
   const artifactId = cover.kind === 'artifact' && typeof cover.artifact_id === 'string' ? cover.artifact_id : null
-  return { artifactId, title: (item && item.title) || 'Untitled pack' }
+  const kit = cb3KitCoverFor(item)
+  return {
+    artifactId,
+    title: (item && item.title) || 'Untitled pack',
+    kitSrc: kit ? cb3KitSource(kit.id3x2) : null
+  }
 }
 
 /**
@@ -37117,7 +37287,9 @@ function WorkshopDiscoverHead({ line }) {
 function WorkshopDiscoverFeature({ item, layout, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const compact = layout.columns === 1
   const pad = layout.wide ? '2rem' : layout.columns === 3 ? '1.75rem' : '1.25rem'
   return jsxs('section', {
@@ -37228,7 +37400,9 @@ function cb3DiscoverOpenKey(event, item, onOpen) {
 function WorkshopDiscoverCard({ item, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const rejected = cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified')
   return jsx(CollectibleCard, {
     'data-cb3-pack': item.pack_id,
@@ -37251,7 +37425,9 @@ function WorkshopDiscoverCard({ item, onOpen }) {
 function WorkshopDiscoverRow({ item, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const subject = cb3PackSubject(item)
   return jsxs('article', {
     'data-cb3-pack': item.pack_id,
@@ -41910,6 +42086,8 @@ export {
   CB3_TRUST_LABELS,
   WorkshopProvenance,
   WorkshopView,
+  // UI-K4 — the Courses route, exported so the frame audit can photograph the shipped surface.
+  CoursesView,
   workshopFactRows,
   cbLayoutFor,
   cbModeFromTheme,

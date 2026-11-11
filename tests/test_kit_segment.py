@@ -259,9 +259,9 @@ process.stdout.write(JSON.stringify({
                "technical-pack-literacy"]
         out = self.probe([{"pack_id": pid, "title": "", "subject_domain": ""} for pid in ids], [])
         self.assertEqual(out["covers"], [
-            {"id3x2": KIT_PREFIX + "japanese-cover-3x2", "id4x5": KIT_PREFIX + "japanese-cover-4x5"},
-            {"id3x2": KIT_PREFIX + "parent-cover-3x2", "id4x5": KIT_PREFIX + "parent-cover-4x5"},
-            {"id3x2": KIT_PREFIX + "technical-cover-3x2", "id4x5": KIT_PREFIX + "technical-cover-4x5"},
+            {"id3x2": "japanese-cover-3x2", "id4x5": "japanese-cover-4x5"},
+            {"id3x2": "parent-cover-3x2", "id4x5": "parent-cover-4x5"},
+            {"id3x2": "technical-cover-3x2", "id4x5": "technical-cover-4x5"},
         ])
 
     def test_a_kyoto_title_maps_to_japanese(self):
