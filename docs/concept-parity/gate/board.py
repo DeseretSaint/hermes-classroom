@@ -19,14 +19,16 @@ anything and it never invents pixels: a product capture too short for the crop i
     python3 docs/concept-parity/gate/board.py --screen R-HOME \
         --product <capture.png> --out <board.png> --dry-run --allow-unstamped
 
-The product side must come from `scripts/cp-capture.mjs` (route-clipped, with a `.stamp.json`).
-`--allow-unstamped` exists only for a mechanics dry run and prints a warning; a board built that way
-is not parity evidence.
+The product side must come from `scripts/cp-capture.mjs` (route-clipped, with a `.stamp.json` whose
+`capture.clip` locates the route box and whose `plugin.window_sha256` names the module that produced
+the frame). `--allow-unstamped` exists only for a mechanics dry run and prints a warning; a board
+built that way is not parity evidence.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -84,20 +86,102 @@ def parse_box(text: str) -> tuple[int, int, int, int]:
     return parts[0], parts[1], parts[2], parts[3]
 
 
+MODULE = REPO_ROOT / "desktop" / "plugin.js"
+
+
+def reviewed_module_sha() -> str | None:
+    """sha256 of the module under review, or None when this checkout has no module."""
+    try:
+        return hashlib.sha256(MODULE.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def stamp_module_sha(stamp: dict) -> str | None:
+    """The module sha a capture stamp records (`plugin.window_sha256`)."""
+    plugin = stamp.get("plugin") if isinstance(stamp, dict) else None
+    sha = plugin.get("window_sha256") if isinstance(plugin, dict) else None
+    return sha.strip() if isinstance(sha, str) and sha.strip() else None
+
+
+def stamp_clip(stamp: dict) -> tuple[int, int, int, int] | None:
+    """The route box `scripts/cp-capture.mjs` recorded for this frame, in CSS px.
+
+    Current stamps write it under `capture.clip`; the top-level `clip` is a legacy fallback for a
+    stamp written before CP-038. Prefer `capture.clip` when both exist, and treat a present but
+    malformed clip the same as a missing one so the caller can say so truthfully.
+    """
+    clip = None
+    capture = stamp.get("capture") if isinstance(stamp, dict) else None
+    if isinstance(capture, dict):
+        clip = capture.get("clip")
+    if not clip and isinstance(stamp, dict):
+        clip = stamp.get("clip")
+    if not isinstance(clip, dict):
+        return None
+    try:
+        return (int(clip["x"]), int(clip["y"]), int(clip["width"]), int(clip["height"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def resolve_geometry(product: Path, override, allow_unstamped: bool):
-    """Return (route box in CSS px, device scale, stamp summary) for the product capture."""
+    """Return (route box in CSS px, device scale, stamp summary) for the product capture.
+
+    `cp-capture.mjs` hands `clip` to `Page.captureScreenshot`, so the PNG *is* that rectangle: its
+    origin is the clip origin and its size is the clip size times the device scale (2 on the rig).
+    The box a caller crops from therefore starts at (0, 0) inside the image; the clip's own x/y
+    are window offsets and must not be used as pixel offsets into an already-cropped frame.
+    """
     stamp_path = product.with_suffix(".stamp.json")
     stamp = None
     if stamp_path.exists():
         stamp = json.loads(stamp_path.read_text())
+
+    if stamp is not None:
+        recorded = stamp_module_sha(stamp)
+        reviewed = reviewed_module_sha()
+        if recorded is None:
+            print(
+                f"REFUSED: {product} has a .stamp.json but it records no plugin.window_sha256; "
+                "the board cannot prove which module produced the frame (RUBRIC-V3 E2).",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+        if reviewed is None:
+            print(
+                f"REFUSED: no module to review at {MODULE}; cannot check the stamp's "
+                f"plugin.window_sha256 ({recorded}) (RUBRIC-V3 E2).",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+        if recorded != reviewed:
+            print(
+                f"REFUSED: {product}'s stamp was captured from module {recorded} but the module "
+                f"under review ({MODULE}) is {reviewed}; a board may only compare the reviewed "
+                "commit (RUBRIC-V3 E2).",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+
+    clip = stamp_clip(stamp) if stamp is not None else None
     if override:
-        box, scale = override, 1.0
-    elif stamp and stamp.get("clip"):
-        clip = stamp["clip"]
-        box = (int(clip["x"]), int(clip["y"]), int(clip["width"]), int(clip["height"]))
+        box = override
+        with Image.open(product) as probe:
+            scale = probe.width / box[2] if box[2] else 1.0
+    elif clip:
+        box = (0, 0, clip[2], clip[3])
         with Image.open(product) as probe:
             scale = probe.width / box[2] if box[2] else 1.0
     else:
+        if stamp is not None:
+            print(
+                f"REFUSED: {product} has a .stamp.json but it records no capture.clip and no "
+                "--product-box was given; the tool cannot place the frame. Re-capture with "
+                "scripts/cp-capture.mjs (RUBRIC-V3 E1).",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
         if not allow_unstamped:
             print(
                 f"REFUSED: {product} has no .stamp.json and no --product-box; a product side without "
@@ -175,7 +259,7 @@ def main() -> int:
         "side_width": args.width,
         "stamp_sha": (stamp or {}).get("plugin", {}).get("window_sha256"),
         "stamp_ok": (stamp or {}).get("ok"),
-        "crop_mode": (stamp or {}).get("crop_mode"),
+        "crop_mode": ((stamp or {}).get("capture") or {}).get("crop_mode", (stamp or {}).get("crop_mode")),
     }
     print(json.dumps(plan, indent=2))
 
