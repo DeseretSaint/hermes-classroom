@@ -88,3 +88,17 @@ dispatches and merges.
 | L-05 | brass desk clock | object-kit alarm clock | D-002 |
 | L-06 | two filled terracotta pills | one filled primary, one quiet secondary | SPEC-V3 D1, one primary per surface |
 | L-07 | header in the docked pane | host chrome; compact composition | G0-1 |
+
+### D-006 — display plates and generated Game courses
+
+Owner decision 2026-11-11. Product surfaces use Display Plates, not Press Plate pack covers.
+Press Plate remains the pack-management lane only. Display covers are textless, painted, and
+mapped to real courses; a pack cover is never a substitute.
+
+Game mode uses the visual kit for the selected grammar. The kit is curated once and can be used
+without an image provider; generation adds subject-specific plates when available. A
+user-generated Game course uses the same `world_assets`, `world.read`, display cover, and
+lesson-scene resolver as a built-in course. There is no branch on course origin and no flat Game
+fallback. See `docs/launch/VISUAL-QUALITY-PROGRAM.md` and
+`docs/launch/GAME-MODE-VISUAL-KIT.md`; the asset audit is
+`docs/launch/VISUAL-ASSET-AUDIT.md`.
