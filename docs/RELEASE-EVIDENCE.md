@@ -45,7 +45,7 @@ count (298 over the 32 frames with an accessibility tree), the worst authored co
 the overflow/clipping counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the
 `eed7dc7` slice, not this tree.
 
-## Suite and contract re-measurement on `master` `07976d8` (2026-11-10)
+## Suite and contract re-measurement on `master` `b1913af7` (2026-11-10)
 
 The table above is the `b9f4a19` H-212 record. The suite and contract counts the release documents
 quote are re-measured on the tree the release gate reads, because test-only and contract-only merges
@@ -53,26 +53,28 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 3501 tests in 1134.427s`, `OK (skipped=11)`, exit 0 | `07976d8` (`master`, 2026-11-10, `t_12c5410e`) | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v25, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `07976d8` (`master`, 2026-11-10, `t_12c5410e`) | `contracts/rpc.v25.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 25`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
-| `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `07976d8` (`master`, 2026-11-10, `t_12c5410e`) | `coursebook/db.py`, `contracts/db.v14.json` |
+| Suite | `Ran 3523 tests in 951.634s`, `OK (skipped=11)`, exit 0 | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v26, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `contracts/rpc.v26.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 26`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
+| `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `coursebook/db.py`, `contracts/db.v14.json` |
 
 The previous record quoted `Ran 2880 tests in 540.226s … OK (skipped=1)` measured on the merged
 GM-005 tree over `origin/master` `3fb3779`. That count went stale when CP-014, CP-020a, CP-020b,
-CP-030, CP-031, CP-044 and CP-042 merged: 3501 is 621 tests above it, and the skip count is 11 on this tree
-against 1 in that record. 3501 was measured three times on two trees and agreed every time:
-this pass on `07976d8` (1134.427s), the supervisor on `07976d8` (1074.585s), and the supervisor
-on `2cf9104` (CP-042 over `7130109`, 1341.510s). The record's `cb.rpc` v23 / 83 methods was stale for the same reason: v24
-(world/homework/takehome.html, ten methods) and v25 (CP-005's seven `library_item` shelf facts) had
-landed without the record moving, so `coursebook/contracts.py` says 25 and `contracts/rpc.v25.json`
-declares 93 while the documents still quoted 23/83. Both were re-derived on `07976d8`; the ten added
-methods and the seven added properties are additive, no v1-v23 method or required key moved.
-`07976d8` is the CP-042 pack-shipping merge over `ea08a9a`, the docs-only gate 8 commits over
-`7130109`, which carries the CP-049 audit re-pin, the CP-044 merge and `916e9c9`'s rig-recipe fix over
-`19fec67` (itself the CP-020b merge over `3292679`, docs-only over `81e7642`). CP-042 added
-`tests/test_pack_shipping_labels.py` (15 tests) and touched no `coursebook/`, `contracts/`,
-`desktop/` or `audit/visual/m4-visual/` path, which is why v25/93, v14 and the module pin are
-unchanged; it is also why the 3486 measured on `7130109` could not survive its merge.
+CP-030, CP-031, CP-044, CP-042 and CP-052 merged: **3523 is 643 tests above it**, and the skip count
+is 11 on this tree against 1 in that record. The record's `cb.rpc` v23 / 83 methods was stale for the
+same reason: v24 (world/homework/takehome.html, ten methods), v25 (CP-005's seven `library_item` shelf
+facts) and v26 (CP-052's optional `world_brief.route_anchors`) landed without the record moving.
+`coursebook/contracts.py` now says 26 and `contracts/rpc.v26.json` declares 93 methods, unchanged in
+count from v25 because v26 adds no method; the only shape change is one optional property, so no
+v1-v25 method or required key moves.
+
+`b1913af7` is the CP-052 merge over `eaf2d41`, the docs-only gate 8 commit that re-pinned the
+previous count on `07976d8` (the CP-042 pack-shipping merge over `ea08a9a`, itself the docs-only gate 8
+commits over `7130109`, which carries the CP-049 audit re-pin, the CP-044 merge and `916e9c9`'s
+rig-recipe fix over `19fec67`, the CP-020b merge over `3292679`). CP-052 added
+`tests/test_cp052_route_anchors.py` and moved the four wire echoes from 25 to 26; it touched no
+`desktop/` path, which is why the module pin is still `4087908c…03b7` and the M4 row is untouched.
+The CP-040 seam merges the v3 desktop wave above this record and will move the suite count again; that
+final re-pin belongs to the gate-8b card on the seam tree, not to this section.
 The module pin and the M4 row above still describe `b9f4a19`; re-pinning them to the final demo
 commit is the remaining freeze step, and `master` may advance again before submission.
 

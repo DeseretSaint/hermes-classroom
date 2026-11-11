@@ -2,17 +2,17 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current `master` (measured 2026-11-10, gate 8 re-measurement `t_12c5410e`):**
-`07976d85c84c83a8183f2e66a481b12512b37a60`. On it `cb.rpc` is v25
+**Current `master` (measured 2026-11-10, supervisor CP-052 merge `b1913af7`):**
+`b1913af77c3f50319af1dbd85555f9adc4271a20`. On it `cb.rpc` is v26
 (`coursebook/contracts.py`) with 93 declared methods and 93 handlers, `cb.db` is v14
 (`contracts/db.v14.json`, `DB_SCHEMA_VERSION = 14` in `coursebook/db.py`, migrations
 `0001`-`0014`), `desktop/plugin.js` is sha256
 `4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (the module this tree ships; the record's
 M4 pin is the older `b9f4a19` `cd862140` measurement, whose numbers the head audit reproduces), and the suite is
-`Ran 3501 tests in 1134.427s … OK (skipped=11)`.
+`Ran 3523 tests in 951.634s … OK (skipped=11)`.
 
 The suite and contract values are the record in `docs/release-evidence.json`, measured at that
-commit (the `tests`, `rpc` and `db` blocks each name `07976d8`). The record's top-level
+commit (the `tests`, `rpc` and `db` blocks each name `b1913af7`). The record's top-level
 `measured_commit`, module pin and M4 block remain the `b9f4a19` release-tree
 measurement (`cb.rpc` v20, `cb.db` v13, module `cd862140…`, suite `Ran 2747 tests … OK (skipped=1)`).
 

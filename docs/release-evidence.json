@@ -8,22 +8,22 @@
   "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "measured_commit": "07976d85c84c83a8183f2e66a481b12512b37a60",
-    "measured_commit_short": "07976d8",
+    "measured_commit": "b1913af77c3f50319af1dbd85555f9adc4271a20",
+    "measured_commit_short": "b1913af",
     "measured_at": "2026-11-10",
-    "ran": 3501,
+    "ran": 3523,
     "skipped": 11,
-    "seconds": 1134.427,
+    "seconds": 951.634,
     "verdict": "OK (skipped=11)",
-    "note": "re-measured on master at 07976d8 (the CP-042 pack-shipping merge over ea08a9a, which is the docs-only gate 8 commit over 7130109) for gate 8 (t_12c5410e): Ran 3501 tests in 1134.427s, OK (skipped=11), exit 0. 07976d8 adds CP-042's 15 tests in tests/test_pack_shipping_labels.py plus the pack/visual-gate changes, so the 3486 measured on 7130109 was stale the moment it merged; 3501 was also measured independently by the supervisor on this same tree (1074.585s) and on 2cf9104 (CP-042 over 7130109, 1341.510s), and all three runs report the same count. The previous record's 2880 tests / skipped=1 was measured on the merged GM-005 tree over origin/master 3fb3779; the 621-test drift since then is CP-014, CP-020a, CP-020b, CP-030, CP-031, CP-044, CP-042 and the other merges that added tests, and the skip count grew with them. The commit named here is the code tree that was measured; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count. measured_commit above and the plugin pin and M4 block below remain the b9f4a19 release-tree measurement they describe; this block names its own tree."
+    "note": "re-measured by the supervisor on master at b1913af7 (the CP-052 merge over eaf2d41) after the cp.rpc v26 amendment: Ran 3523 tests in 951.634s, OK (skipped=11), exit 0. b1913af7 adds CP-052's tests/test_cp052_route_anchors.py and the v26 contract changes over eaf2d41, which pinned 3501 for the CP-042 pack-shipping tree 07976d8; the 22-test delta is CP-052's focused group plus the contract parity/vocabulary tests it touches. 3501 was itself measured three times on two trees (07976d8 at 1134.427s and 1074.585s, and 2cf9104 at 1341.510s); the 2880 / skipped=1 of the previous record was measured on the merged GM-005 tree over origin/master 3fb3779, and 3523 is 643 tests above it. The commit named here is the code tree that was measured; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count. The plugin pin and M4 block below remain the b9f4a19 release-tree measurement they describe; this block names its own tree. The CP-040 seam will merge the v3 desktop wave after this record and its suite count will then be re-pinned once more by the gate-8b card on the seam tree."
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 25,
-    "measured_commit": "07976d85c84c83a8183f2e66a481b12512b37a60",
+    "version": 26,
+    "measured_commit": "b1913af77c3f50319af1dbd85555f9adc4271a20",
     "declared_methods": 93,
     "handlers": 93,
-    "note": "re-asserted on master at 07976d8 for gate 8 (t_12c5410e): contracts/rpc.v25.json declares 93 methods and `x-supersedes` names contracts/rpc.v24.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 25; a probe importing every registering module (domain, engagement, pack_flow, pronunciation, syllabus, tutor, takehome, world/homework) reports 93 implemented methods, no declared method lacking a handler and no handler outside the contract. CP-042 touched no coursebook/, contracts/ or desktop/ path, so v25/93 is unchanged from 7130109. v25 is one additive amendment over v24 (CP-005): the `library_item` record gains seven required properties (sections_done, sections_total, checks_recorded, is_new, subject_label, cover_artifact_id, last_studied_at) and no method, request shape, existing required key, error code, job kind or vocabulary value moves. v24 is the composed additive amendment over v23 that appends ten methods: GM-004's world.read/world.style.preview/world.generate/world.approve plus course.mode.set, GM-007's homework.read/homework.create/homework.complete/homework.skip, and GM-018's takehome.html. The record's previous 83 methods / v23 was the GM-005 tree; contracts/rpc.v23.json and rpc.v24.json stay on disk as immutable history."
+    "note": "re-asserted by the supervisor on master at b1913af7 (the CP-052 merge over eaf2d41): contracts/rpc.v26.json declares 93 methods and 93 handlers and `x-supersedes` names contracts/rpc.v25.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 26; a probe importing every registering module reports 93 implemented methods, no declared method lacking a handler and no handler outside the contract. v26 is one additive amendment over v25 (CP-052): `$defs/world_brief` gains one **optional** `route_anchors` array of `{anchor_id, section_id, x, y}` entries with x/y numbers in 0-1, so a brief that declares no anchors keeps its exact v25 shape and bytes, and no method, request shape, existing required key, error code, job kind or vocabulary value moves. The read side was the defect: world.read.response.world.oneOf collapsed the real brief into \"not valid under any of the given schemas\" for a stored plate with anchors, and the write side silently dropped the field on every world.generate. rpc.v25.json stays byte-identical on disk as immutable history, and the wire echoes (`contract_version` on both response envelopes and health.get) move 25 -> 26. The record's previous v25 / 93 methods measured on 07976d8 and v24 / 83 before it stay in the immutable history. A separate post-submission card (t_ed8e33c7) lands `library_item.created_at` as v27."
   },
   "db": {
     "contract": "cb.db",
