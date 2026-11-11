@@ -62,6 +62,19 @@ def verify() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
             if str(manifest["pack_id"]) != source.stem:
                 problems.append({"pack": source.name, "problem": f"pack_id is {manifest['pack_id']!r}"})
                 continue
+            licence = manifest.get("license") if isinstance(manifest.get("license"), dict) else {}
+            if str(licence.get("redistribution") or "unset") != "allowed":
+                # A course exported for a friend says local_only on purpose. Publishing it would
+                # redistribute content whose own licence does not grant that.
+                problems.append({
+                    "pack": source.name,
+                    "problem": (
+                        "the pack's licence does not grant redistribution "
+                        f"({licence.get('redistribution') or 'unset'}); a store submission must "
+                        "publish an author-shared licence"
+                    ),
+                })
+                continue
             if str(manifest["content_hash"]) != str(row.get("content_hash")):
                 problems.append({"pack": source.name, "problem": "index content_hash does not match the pack"})
                 continue
