@@ -113,11 +113,11 @@ No image spend. `usage_events.cost_usd` is `null` on this backend, so no dollar 
 
 ## 8. Defects and follow-ups
 
-Filed to cinder from this card: the lesson author prompt never states the answer-leak surfaces
-(`learner_explanation`, `worked_example`, recap) — analogous to CP-015h — and the learner-facing
-check for the review section ships its reference answer and accepted answers with justifications
-(`lesson.check.reference_answer`). Both are recorded with the verbatim rejections and the live
-reproduction ids in the cinder card linked from `t_e9eedb0e`.
+Filed to cinder from this card as **`t_a0bcacdd`**: the lesson author prompt never states the
+answer-leak surfaces (`learner_explanation`, `worked_example`, recap) — analogous to CP-015h — and
+the learner-facing check for the review section ships its reference answer and accepted answers with
+justifications (`lesson.check.reference_answer`). Both are recorded there with the verbatim
+rejections and the live reproduction ids.
 
 Open, not diagnosed here: `source_support` for sections 2 (v1) and 3 (v1 and v2). The plan's
 stored ledger marks most sources `unassessed` with `claim_count 0`, so the lesson validator cannot
