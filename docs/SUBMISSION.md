@@ -326,7 +326,7 @@ resolved for the recording.
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
 | Catalog entry | Submitted as `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920` (open, not draft, unmerged), pinned to the release tree `42fcd0f5` with `docs_url` at the README's `#install-locally` heading and `readme: true` |
-| Checklist | sections 1-7 of this file: five gates open (`[ ]`: 7, 12, 13, 14, 15) and two partial (`[~]`: 5, 6) |
+| Checklist | sections 1-7 of this file: four gates open (`[ ]`: 7, 12, 14, 15) and three partial (`[~]`: 5, 6, 13) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
 code commit `b9f4a19` one below it, because an entry cannot carry its own hash. The numbers above are

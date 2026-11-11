@@ -13,8 +13,7 @@ superseded by the walkthrough.
 ## 1. The X post — 258 characters raw, 241 weighted
 
 ```
-Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a time, typed checks, evidence you can inspect. MIT. 42 s demo, no sound needed. Built with @NousResearch Hermes Agent.
-github.com/DeseretSaint/hermes-classroom
+Coursebook, learn anything. 📚 Pick a topic and it writes the whole course: lessons, practice, a tutor beside every page, and a game mode that turns it into a world. Built with Hermes Agent from @NousResearch. MIT. 30 seconds ↓ github.com/DeseretSaint/hermes-classroom
 ```
 
 Length, counted on the string above exactly as it sits inside the fence:
