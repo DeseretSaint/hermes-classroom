@@ -482,7 +482,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v10",
+                "prompt_version": "lesson-prompt.v11",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000001e",
@@ -558,7 +558,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2359,
+            "input_tokens": 2470,
             "output_tokens": 1051,
             "unknown_calls": 0,
             "unknown_cost": false
