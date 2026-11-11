@@ -63,6 +63,7 @@ HARNESS_IMPORTS = (
     "classroomLineFromPage",
     "classroomEvidence",
     "classroomSceneFromWorld",
+    "classroomSceneSource",
     "CB3_CLASSROOM_COPY",
 )
 
@@ -88,7 +89,7 @@ globalThis.__CB_TEST_MODE__ = payload.mode || 'light'
 
 const {
   ClassroomV3, classroomStepNodes, classroomLineFromPage, classroomEvidence,
-  classroomSceneFromWorld, CB3_CLASSROOM_COPY
+  classroomSceneFromWorld, classroomSceneSource, cb3KitSource, CB3_CLASSROOM_COPY
 } = await import('./plugin.js')
 
 const h = React.createElement
@@ -120,6 +121,32 @@ process.stdout.write(JSON.stringify({
     'Japanese affection and register'
   ),
   sceneNone: classroomSceneFromWorld(null, 'obj_2', 'Japanese affection and register'),
+  // D-007 (UI-K3) fallback chain, driven through the pure resolver: a real plate, then the kit
+  // room, and the typographic field only for a build whose asset segment carries no kit row.
+  sceneArt: classroomSceneSource(
+    { artifactId: 'art_this' },
+    { state: 'ready', data_url: 'data:image/webp;base64,ART' },
+    'data:image/webp;base64,KIT'
+  ),
+  sceneArtLoading: classroomSceneSource(
+    { artifactId: 'art_this' },
+    { state: 'loading' },
+    'data:image/webp;base64,KIT'
+  ),
+  sceneArtUnavailable: classroomSceneSource(
+    { artifactId: 'art_this' },
+    { state: 'text', message: 'could not be previewed' },
+    'data:image/webp;base64,KIT'
+  ),
+  sceneKit: classroomSceneSource(
+    { artifactId: null },
+    { state: 'text', message: 'No generated artifact is attached' },
+    'data:image/webp;base64,KIT'
+  ),
+  sceneNoKit: classroomSceneSource({ artifactId: null }, { state: 'text' }, null),
+  sceneNoKitWithArtifact: classroomSceneSource({ artifactId: 'art_this' }, { state: 'text' }, null),
+  sceneNoScene: classroomSceneSource(null, { state: 'text' }, null),
+  kitRow: cb3KitSource('field-atlas-lesson-room') ? 'present' : null,
   copy: CB3_CLASSROOM_COPY
 }))
 """
@@ -624,8 +651,67 @@ class ClassroomV3RenderTest(unittest.TestCase):
         scene = self.report["sceneSection"]
         self.assertEqual(scene["artifactId"], "art_this", "the scene borrowed another section's plate")
         self.assertIsNone(self.report["sceneNone"]["artifactId"])
-        self.assertIn('data-cb3-scene="type"', self.html["guided"],
-                      "a missing world plate did not fall back to the typographic field")
+        self.assertIn('data-cb3-scene="kit"', self.html["guided"],
+                      "a missing world plate did not fall back to the approved kit lesson room")
+
+    def test_classroom_v3_scene_falls_back_artifact_then_kit(self) -> None:
+        """D-007 (UI-K3): artifact, then the kit room; type-only only when no kit row exists."""
+        self.assertEqual(self.report["kitRow"], "present",
+                         "the shipped asset segment carries no field-atlas-lesson-room plate")
+        art = self.report["sceneArt"]
+        self.assertEqual((art["kind"], art["artifactId"]), ("art", "art_this"),
+                         "a ready per-section plate did not win the scene")
+        self.assertEqual(art["src"], "data:image/webp;base64,ART")
+        # A plate still loading, or one that never became ready, stands in the kit room.
+        for name in ("sceneArtLoading", "sceneArtUnavailable"):
+            row = self.report[name]
+            self.assertEqual(row["kind"], "kit", f"{name} did not fall back to the kit room")
+            self.assertEqual(row["artifactId"], "field-atlas-lesson-room")
+            self.assertEqual(row["src"], "data:image/webp;base64,KIT")
+        kit = self.report["sceneKit"]
+        self.assertEqual((kit["kind"], kit["artifactId"]), ("kit", "field-atlas-lesson-room"))
+        # The typographic field survives only for a build whose segment never carried a kit row.
+        self.assertEqual(self.report["sceneNoKit"]["kind"], "type")
+        self.assertEqual(self.report["sceneNoKit"]["artifactId"], "none")
+        self.assertEqual(self.report["sceneNoKitWithArtifact"]["kind"], "type")
+        self.assertEqual(self.report["sceneNoKitWithArtifact"]["artifactId"], "art_this")
+        self.assertEqual(self.report["sceneNoScene"]["kind"], "type")
+
+    def test_classroom_v3_lesson_room_is_the_kit_plate(self) -> None:
+        html = self.html["guided"]
+        self.assertIn('data-cb3-scene="kit"', html)
+        self.assertIn('data-cb3-scene-artifact="field-atlas-lesson-room"', html)
+        self.assertIn('data-cb3-scene-kit="field-atlas-lesson-room"', html)
+        self.assertNotIn('data-cb3-scene-plate="type"', html,
+                         "the typographic field is still painted where the kit exists")
+        img = re.search(r'<img[^>]*data-cb3-scene-kit="[^"]*"[^>]*>', html)
+        self.assertIsNotNone(img, "the kit room is not an image asset")
+        assert img is not None
+        # A shipped plate: a WebP data URL from the asset segment, decorative and cover-cropped.
+        self.assertIn('src="data:image/webp;base64,', img.group(0))
+        self.assertIn('alt=""', img.group(0))
+        self.assertIn('aria-hidden="true"', img.group(0))
+        self.assertIn('object-fit:cover', img.group(0))
+        # No lesson text sits on the plate: only the decorative image is inside the frame.
+        frame = re.search(r'<div data-cb3-scene="kit"[^>]*>(.*?)</div>', html, flags=re.S)
+        self.assertIsNotNone(frame)
+        assert frame is not None
+        self.assertNotIn("<span", frame.group(1), "text was laid over the plate without a scrim")
+
+    def test_classroom_v3_lesson_surface_reads_as_a_room(self) -> None:
+        html = self.html["guided"]
+        scene = re.search(r'<div data-cb3-scene="kit"[^>]*>', html)
+        self.assertIsNotNone(scene)
+        assert scene is not None
+        self.assertIn("height:16rem", scene.group(0),
+                      "the wide lesson scene is shorter than a room (needs >= 16rem at 1344)")
+        # The mascot that is already on the lesson surface reads; no second fox was added.
+        self.assertEqual(html.count("data-cb3-fox="), 1,
+                         "the lesson surface grew a second mascot")
+        self.assertIn('data-cb3-fox="read"', html)
+        # The compact pane keeps its own height.
+        self.assertIn("height:8.95rem", self.narrow)
+        self.assertNotIn("height:16rem", self.narrow)
 
     def test_classroom_v3_copy_is_the_deck(self) -> None:
         deck = {}

@@ -3229,6 +3229,22 @@ function ClassroomQuietLine({ children, role }) {
 }
 
 /**
+ * D-007 (UI-K3): which plate the lesson stands in — a real per-section artifact, then the
+ * approved kit's lesson room, and only then the typographic field of an older asset segment.
+ *
+ * Pure, so the chain is testable without an effect: `preview` is the media loader's state and
+ * `kitRow` is the resolved `cb3KitSource('field-atlas-lesson-room')` data URL (null when this
+ * build's asset segment carries no kit plate).
+ */
+function classroomSceneSource(scene, preview, kitRow) {
+  const artifactId = scene && scene.artifactId ? scene.artifactId : null
+  const ready = Boolean(artifactId && preview && preview.state === 'ready' && preview.data_url)
+  if (ready) return { kind: 'art', artifactId, src: preview.data_url }
+  if (kitRow) return { kind: 'kit', artifactId: 'field-atlas-lesson-room', src: kitRow }
+  return { kind: 'type', artifactId: artifactId || 'none', src: null }
+}
+
+/**
  * The framed scene (SPEC-V3 §5.3 C5): a mounted plate, 8 px canvas-edge mat, 1 px ink rule and the
  * elevation token from the stylesheet — never a shadow recipe here.
  */
@@ -3237,10 +3253,13 @@ function ClassroomScene({ scene, title, height }) {
   // `useArtifactPreview` is declared in the components segment; the call is unconditional so the
   // hook order is stable whether or not this section has a plate (a conditional hook throws).
   const preview = useArtifactPreview(artifactId)
-  const ready = preview && preview.state === 'ready' && preview.data_url
+  // D-007 (UI-K3): a section with no plate of its own — or a plate that never became ready —
+  // stands in the approved kit's lesson room. A real artifact always wins; the typographic field
+  // survives only for a build whose asset segment carries no kit row.
+  const source = classroomSceneSource(scene, preview, cb3KitSource('field-atlas-lesson-room'))
   return jsxs('div', {
-    'data-cb3-scene': ready ? 'art' : 'type',
-    'data-cb3-scene-artifact': artifactId || 'none',
+    'data-cb3-scene': source.kind,
+    'data-cb3-scene-artifact': source.artifactId,
     className: 'cb3-card-elevated',
     style: {
       position: 'relative',
@@ -3257,42 +3276,50 @@ function ClassroomScene({ scene, title, height }) {
       minWidth: 0
     },
     children: [
-      ready
+      source.kind === 'art'
         ? jsx('img', {
             'data-cb3-scene-art': '',
             alt: '',
             'aria-hidden': 'true',
-            src: preview.data_url,
+            src: source.src,
             style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
           }, 'art')
-        : jsxs('div', {
-            'data-cb3-scene-plate': 'type',
-            style: {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              height: '100%',
-              paddingInline: '1rem',
-              backgroundColor: cb3Role('card-stock'),
-              border: `1px solid ${cb3Role('rule')}`,
-              borderRadius: cb3Radius('square')
-            },
-            children: [
-              jsx('span', {
-                style: {
-                  fontFamily: 'var(--cb3-font-display)',
-                  fontSize: cb3Type('heading'),
-                  lineHeight: cb3Lead('heading'),
-                  fontWeight: 600,
-                  maxWidth: '20ch',
-                  textAlign: 'center',
-                  color: cb3Role('ink')
-                },
-                children: title || ''
-              }, 'title')
-            ]
-          }, 'plate'),
+        : source.kind === 'kit'
+          ? jsx('img', {
+              'data-cb3-scene-kit': source.artifactId,
+              alt: '',
+              'aria-hidden': 'true',
+              src: source.src,
+              style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+            }, 'kit')
+          : jsxs('div', {
+              'data-cb3-scene-plate': 'type',
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: '100%',
+                paddingInline: '1rem',
+                backgroundColor: cb3Role('card-stock'),
+                border: `1px solid ${cb3Role('rule')}`,
+                borderRadius: cb3Radius('square')
+              },
+              children: [
+                jsx('span', {
+                  style: {
+                    fontFamily: 'var(--cb3-font-display)',
+                    fontSize: cb3Type('heading'),
+                    lineHeight: cb3Lead('heading'),
+                    fontWeight: 600,
+                    maxWidth: '20ch',
+                    textAlign: 'center',
+                    color: cb3Role('ink')
+                  },
+                  children: title || ''
+                }, 'title')
+              ]
+            }, 'plate'),
       scene && scene.credit
         ? jsx('span', {
             'data-cb3-scene-credit': '',
@@ -4023,7 +4050,7 @@ function ClassroomV3({
               jsx(ClassroomScene, {
                 scene,
                 title: courseTitle,
-                height: wide ? '10.25rem' : compact ? '8.95rem' : '17.75rem'
+                height: wide ? '16rem' : compact ? '8.95rem' : '17.75rem'
               }, 'scene'),
               line && !compact
                 ? jsx(DialogueBubble, {
