@@ -1910,6 +1910,35 @@ class SourceTrustTest(GenerationTestBase):
         self.assertIn("10.9999/fake", joined)
         self.assertIn("isbn", joined)
 
+    def test_exclusions_record_a_gap_rather_than_a_citation(self) -> None:
+        # CP-015: the author records an unsupported capability as an exclusion. A quoted topic
+        # there is scope prose, not a title or publisher, so the provenance lint must not read it
+        # as a citation the ledger fails to contain.
+        ledger = [
+            research.SourceRecord(
+                source_id="src_real",
+                url="https://example.invalid/page",
+                title="A Real Title",
+                publisher="Real Press",
+                source_type="web_page",
+                fetched_at="2026-11-06T12:00:00Z",
+                published_at=None,
+                content_hash="sha256:0",
+                excerpt="A real sentence that the page contains.",
+            )
+        ]
+        plan = {
+            "exclusions": [
+                'Not covered — no supporting source: "explaining the cause of the Moon\'s phases"',
+                "identifying planets in the night sky",
+            ]
+        }
+        self.assertEqual(gen.provenance_violations(plan, ledger=ledger, what="plan"), [])
+        # The same phrase outside an exclusion list is still a provenance assertion.
+        dirty = {"learner_outcome": 'Source: "Invented Title" — Invented Press.'}
+        problems = gen.provenance_violations(dirty, ledger=ledger, what="plan")
+        self.assertTrue(problems, "the exemption must not silence the rest of the document")
+
     def test_a_validator_cannot_upgrade_support_without_an_excerpt(self) -> None:
         base = fixture("validation_pass")
 
