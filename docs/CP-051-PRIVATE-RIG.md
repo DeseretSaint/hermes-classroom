@@ -104,6 +104,14 @@ port. This root is invisible to the operator's profile list.
 Both are documented in `scripts/rig-private-desktop.sh`, which uses the **remote** lane (below),
 because that is the one that never calls `gateway ensure` at all.
 
+### 3.1 The remote connection's token shape is load-bearing
+
+`connections.json` stores the token as `{"encoding":"plain","value":"<token>"}` — a bare string is
+accepted into the file but the window then paints `Backend offline` even though the backend answers
+`/api/plugins/coursebook/runtime` with 200 for the same credential. The working file also keeps a
+`{"id":"local","kind":"local"}` entry beside the remote one. With the object shape the window's
+status bar shows the rig endpoint (`127.0.0.1:44551`) instead of `Backend offline`.
+
 ## 4. What is still open — the honest gap
 
 With the gateway/question settled, the remaining wall is plugin **registration inside the window**.
@@ -115,7 +123,7 @@ Measured states on module `desktop/plugin.js` sha256 `4087908c1881df93bf0f7e71bb
 | isolated home + local connection | paints, `Backend needs setup` | never started (`runtime_exited`, §1) | absent |
 | standalone profile `cp051rig` + local connection (`--profile cp051rig`) | paints, sessions load | ready (`43553`) | **absent**; `hermes:api` still logs `Invalid gateway ticket response` |
 | private root + local connection | paints, sessions load | ready (`59983`…`)` | absent; `hermes:api` logs `403 profile_scope_mismatch` |
-| isolated home + **remote** connection to `hermes serve --isolated` | paints; connection "default · CP-051 rig backend" listed, status reads `Backend offline` although `/api/plugins/coursebook/runtime` answers 200 with the same token | ready (`44551`) | **absent** — no sidebar entry, no `[data-cb-route]` |
+| isolated home + **remote** connection to `hermes serve --isolated` | paints; status bar names `127.0.0.1:44551` once the connection token uses the object shape (§3.1); earlier bare-string attempt painted `Backend offline` | ready (`44551`) | **absent** — no sidebar entry, no `[data-cb-route]` |
 
 So: a private Desktop can reach a private backend, but on this host/checkout the Coursebook
 Desktop half does not register in the window. That is a separate defect from the one in §1 and must

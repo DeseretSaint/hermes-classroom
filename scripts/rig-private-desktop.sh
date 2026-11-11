@@ -146,12 +146,17 @@ cat >"$USERDATA/connections.json" <<JSON
   "lastUsed": "remote-cp051",
   "connections": [
     {
+      "id": "local",
+      "kind": "local",
+      "label": "This device"
+    },
+    {
       "id": "remote-cp051",
       "kind": "remote",
-      "label": "CP-051 rig backend",
+      "label": "127.0.0.1:$BACKEND_PORT",
       "url": "http://127.0.0.1:$BACKEND_PORT",
       "authMode": "token",
-      "token": "$TOKEN"
+      "token": { "encoding": "plain", "value": "$TOKEN" }
     }
   ]
 }
