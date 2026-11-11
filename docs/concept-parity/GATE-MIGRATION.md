@@ -407,6 +407,18 @@ v2 section player. It now enters the v3 classroom, exits through the classroom's
 {course}` control, clicks the v2 `All courses` control only when the mounted composition offers it,
 and takes the catalog through the destination nav (which is the claim `#13` makes).
 
+The course sub-surfaces were the one place the driver still named the v2 composition: it looped
+`['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']` with `if (!control) continue`. The v3 course
+composition (`desktop/src/70-learning.js:35,49`, mounted at `desktop/src/90-course.js:3765-4045`)
+renders four primary surfaces and keeps the reference/administration set behind one `More` disclosure:
+`Attempts` (the legacy `quizzes` view id, relabelled), `Plan`, `Sources`, `Export`. No button is
+labelled `Quizzes`, so that iteration was a dead branch and the graded-attempt record was silently
+unaudited. The driver now opens `More` and clicks each v3 label; a label the mounted surface does not
+render throws instead of skipping. The walk reaches thirteen surfaces, including `course-attempts` and
+`course-sources` (the latter was absent from the v2 loop as well). `test_the_harness_reaches_every_v3_course_surface`
+pins the reached names and refuses `course-quizzes`, so a rename fails here rather than shrinking
+coverage under a green suite.
+
 | # | assertion | class | where it reads now | v3 counterpart / note |
 |---|---|---|---|---|
 | 1 | `test_every_surface_has_exactly_one_h1_and_it_is_first` | U | rendered route, incl. the v3 classroom (`section`) | classroom `h1`→`h2` fixed; the v3 page title is the shell's only `h1` |
@@ -426,6 +438,7 @@ and takes the catalog through the destination nav (which is the claim `#13` make
 | 15 | `test_home_has_one_continue_surface_and_no_duplicate_next_step_or_seal` | V2 | rendered desk | one Continue, no stamp, no next sentence |
 | 16 | `test_the_measured_route_gutter_is_applied` | V2 | rendered route root + `.cb3-gutter` rule | unchanged: no inline gutter, no `vw`; painted padding measured by `test_cp_022_geometry` |
 | 17 | `test_authored_prose_h1_is_announced_as_level_two` | U | rendered prose document | unchanged: the reading body may not add a second page title |
+| 18 | `test_the_harness_reaches_every_v3_course_surface` | V3 | the harness's reached-surface list | new pin: `Attempts` behind `More` is audited; `Quizzes` is refused |
 
 ### 4.2.3 `tests/test_desktop_home_hub.py` — three route drivers, no assertion moved
 

@@ -120,9 +120,9 @@ node scripts/cp-capture.mjs --name cp040-course-1049 --out docs/visual-review/cp
 | Gate | Result |
 |---|---|
 | `python3 -m unittest discover -s tests` (at `8f5c4df2`) | **Ran 3528 tests in 984.094s — FAILED (failures=24, errors=4, skipped=11)**. The failures were the v2 UI/accessibility gates the v3 wave replaced and never migrated (headings/landmarks/skip-link/wordmark/Home-title cases across the a11y and home-hub modules) plus `test_lesson_skills` and `test_conversation_practice` errors and two `setUpClass` errors; they were not the seam's own tests. Committed as `full-suite-8f5c4df2.log`; migrated by t_7c255559 (§4.1) |
-| `python3 -m unittest discover -s tests` (after §4.1) | **Ran 3585 tests in 834.891s — OK (skipped=11)**. The 57 extra tests are the two loader-blocked modules now importing (`test_lesson_skills` 28, `test_conversation_practice` 22) and the two CP-024 `setUpClass` suites that the duplicate-export shim had aborted. Committed as `full-suite-t_7c255559.log` |
+| `python3 -m unittest discover -s tests` (after §4.1) | **Ran 3586 tests in 1127.413s — OK (skipped=11)**, exit 0. The 58 extra tests are the two loader-blocked modules now importing (`test_lesson_skills` 28, `test_conversation_practice` 22), the two CP-024 `setUpClass` suites that the duplicate-export shim had aborted, and the new surface-coverage pin. Committed as `full-suite-t_7c255559.log` |
 | targeted seam suites | `test_plugin_build`, `test_cp_021_workshop_v3`, `test_cp_022_home_v3`, `test_cp_022_geometry`, `test_cp_023_classroom`, `test_cp_025a_homework_game_v3`, `test_cp_025b_v3_studio`, `test_desktop_h149_lesson_player`, `test_desktop_h178_field_stop`, `test_desktop_contracts`, `test_desktop_h151_action_type`, `test_desktop_h147_home_settings`, `test_desktop_field_quest`, `test_desktop_lesson_views`, `test_desktop_h174_empty_textbook`, `test_desktop_gm002_home`, `test_desktop_gm010_engagement_ui`, `test_desktop_tokens_v3`, `test_v3_scope`, `test_v3_primitives` → **278 OK** (67 s) |
-| `bash scripts/validate-plugin.sh` | **Release gate passed: 4/4** on `c86b46a8…` (4222 files); re-run 4/4 `--worktree` after §4.1 (4233 files) |
+| `bash scripts/validate-plugin.sh` | **Release gate passed: 4/4** on `c86b46a8…` (4222 files); re-run 4/4 `--worktree` after §4.1 — 4233 files before the suite log was committed, **4234 at `5e375375`** with that log in the tree |
 | `python3 scripts/check-docs-truth.py --skip-tests` | **docs-truth: PASS** (before and after §4.1) |
 | `python3 -m unittest tests.test_m4_visual_audit` | 14 OK, pin `c52b864b…` at the seam head; regenerated for §4.1 on the rebuilt module (15 claims PASS) |
 
@@ -135,6 +135,12 @@ per-assertion record with the v3 counterpart for each is
 `docs/concept-parity/GATE-MIGRATION.md` §4.2. The module was rebuilt and the M4 pin regenerated on
 the rebuilt module, so the four stamped frames in §3 still name the build they were captured from
 (`c52b864b…4c02`) and are not re-stamped.
+
+The a11y harness also reaches the course's own surfaces through the v3 composition now: it opens
+`More` and clicks `Attempts`, `Plan`, `Sources` and `Export` rather than looping the v2 `Quizzes`
+label with `if (!control) continue`. Thirteen surfaces are audited, the graded-attempt record among
+them, and `test_the_harness_reaches_every_v3_course_surface` pins the reached names so a rename
+cannot silently shrink coverage (`GATE-MIGRATION.md` §4.2.2).
 
 ## 5. What this packet does not claim
 

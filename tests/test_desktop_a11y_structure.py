@@ -267,12 +267,33 @@ const sectionExit =
 if (!sectionExit) throw new Error('the section surface rendered no exit control')
 await act(async () => { sectionExit.click() })
 await flush(200)
-for (const tab of ['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']) {
-  const control = byText('button', tab)
-  if (!control) continue
+// CP-040: the v3 course composition names its graded-attempt record `Attempts` (the legacy
+// `Quizzes` view id resolves to it) and keeps Attempts, Plan, Sources and Export behind one
+// `More` disclosure. Walk that composition as a person does: open More, then click the surface
+// the v3 label names. A label the mounted surface does not render is an error, never a silent
+// `continue`: a green suite over an unaudited surface is the failure this harness exists to catch.
+const moreSummary = document.querySelector('[data-cb-more-summary]')
+if (moreSummary && moreSummary.textContent.trim().startsWith('More')) {
+  await act(async () => { moreSummary.click() })
+  await flush(60)
+}
+const V3_COURSE_SURFACES = [
+  ['Notebook', 'course-notebook'],
+  ['Attempts', 'course-attempts'],
+  ['Evidence', 'course-evidence'],
+  ['Plan', 'course-plan'],
+  ['Sources', 'course-sources'],
+  ['Export', 'course-export']
+]
+for (const [label, name] of V3_COURSE_SURFACES) {
+  const control = byText('button', label)
+  if (!control) {
+    const seen = [...document.querySelectorAll('button, a[href]')].map((item) => text(item)).join(' | ')
+    throw new Error('the course surface rendered no ' + label + ' control among: ' + seen)
+  }
   await act(async () => { control.click() })
   await flush(120)
-  surfaces.push(await snapshot('course-' + tab.toLowerCase()))
+  surfaces.push(await snapshot(name))
 }
 
 // The list mode and the create flow are destinations of the same route.
@@ -551,6 +572,24 @@ class A11yStructureTest(unittest.TestCase):
         self.assertEqual([item["id"] for item in surface["navItems"]], ["home", "courses", "workshop", "studio"])
         self.assertEqual([item["text"] for item in surface["navItems"]], ["Home", "Courses", "Workshop", "Parent Studio"])
         self.assertEqual(surface["navItems"][0]["current"], "page")
+
+    def test_the_harness_reaches_every_v3_course_surface(self) -> None:
+        # CP-040: the v3 course composition keeps the graded-attempt record behind `More` as
+        # `Attempts`; the legacy `Quizzes` label is not rendered. The harness used to loop the v2
+        # label with `if (!control) continue`, so the attempts surface was silently unaudited.
+        # Pin the reached set so a renamed or missing control fails here instead of shrinking
+        # coverage while the suite stays green.
+        names = [item["name"] for item in self.all_surfaces()]
+        for expected in (
+            "course-notebook",
+            "course-attempts",
+            "course-evidence",
+            "course-plan",
+            "course-sources",
+            "course-export",
+        ):
+            self.assertIn(expected, names)
+        self.assertNotIn("course-quizzes", names, "the v2 `Quizzes` label is not part of the v3 course")
 
     def test_the_page_title_uses_the_display_step(self) -> None:
         # jsdom drops `clamp()` from inline styles, so the wiring is pinned at the source and the
