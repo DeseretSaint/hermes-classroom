@@ -37,15 +37,85 @@ from . import db, gm_contract
 from .api import RpcError
 from .contracts import method_names
 
-#: Points per named real action (§10B.2). A value is a product decision, shown here so a test and
-#: a future UI read the same number instead of hardcoding one in JavaScript.
-XP_POINTS: dict[str, int] = {
-    gm_contract.EngagementAction.LESSON_STEP.value: 5,
-    gm_contract.EngagementAction.CHECK_SUBMITTED.value: 20,
-    gm_contract.EngagementAction.REVIEW.value: 15,
-    gm_contract.EngagementAction.HOMEWORK_COMPLETED.value: 25,
-    gm_contract.EngagementAction.RETURNED.value: 10,
+#: Base XP by the evidence a check demands (§10B.2, revised). The number is not a feel: it is the
+#: cognitive demand the check already declares, so a transfer checkpoint cannot pay what a one-line
+#: recall pays, and reading a page pays nothing at all. Keeping the base here and the factors below
+#: means every award is recomputable from the attempt row instead of being asserted at award time.
+XP_BASE_BY_TARGET: dict[str, int] = {
+    "recall": 4,
+    "comprehension": 6,
+    "discrimination": 8,
+    "production": 12,
+    "procedure": 14,
+    "transfer": 16,
 }
+
+#: How independent the demonstration was (``attempts.evidence_class``): a hinted pass is worth half
+#: a cold one and an answer that was shown is worth a fifth. This is the difference between knowing
+#: something and having been told it.
+EVIDENCE_CLASS_FACTOR: dict[str, float] = {
+    "cold": 1.0,
+    "hinted": 0.5,
+    "parent_reported": 0.5,
+    "answer_shown": 0.2,
+    "self_reported": 0.2,
+    "override": 0.2,
+}
+
+#: What the attempt achieved (``attempts.verdict``). A failure pays nothing; there is no consolation
+#: point, because a consolation point is the thing that makes a streak worth more than a skill.
+VERDICT_FACTOR: dict[str, float] = {"pass": 1.0, "partial": 0.6}
+
+#: Spaced retrieval is the highest-value evidence there is (the testing and spacing effects), so a
+#: completed delayed review pays the transfer base rather than a token.
+REVIEW_XP = XP_BASE_BY_TARGET["transfer"]
+
+#: Real actions that are deliberately not evidence of learning. They are refused with a readable
+#: reason rather than paid a small number: paying for a page open is how activity becomes the
+#: product and learning stops being the point.
+NOT_EVIDENCE_REASON: dict[str, str] = {
+    gm_contract.EngagementAction.LESSON_STEP.value: "reading a page is not evidence of learning",
+    gm_contract.EngagementAction.RETURNED.value: "returning is not evidence of learning",
+}
+
+
+#: Every action kind the wire accepts. A kind outside this set is a malformed call, not a cheap one.
+ENGAGEMENT_ACTIONS: frozenset[str] = frozenset(
+    value
+    for name, value in vars(gm_contract.EngagementAction).items()
+    if not name.startswith("_") and isinstance(value, str)
+)
+
+
+def xp_for_evidence(target: str, verdict: str, evidence_class: str) -> int:
+    """The one formula: base by evidence target, times verdict, times independence. Pure."""
+
+    base = XP_BASE_BY_TARGET.get(str(target))
+    verdict_factor = VERDICT_FACTOR.get(str(verdict))
+    class_factor = EVIDENCE_CLASS_FACTOR.get(str(evidence_class))
+    if base is None or verdict_factor is None or class_factor is None:
+        return 0
+    points = int(round(base * verdict_factor * class_factor))
+    return max(1, points) if points > 0 else 0
+
+
+def xp_basis(target: str, verdict: str, evidence_class: str) -> str:
+    """One sentence a learner can read, built from the same three facts as the number."""
+
+    points = xp_for_evidence(target, verdict, evidence_class)
+    if points <= 0:
+        return "no XP: the check did not pass"
+    shown = {
+        "cold": "without help",
+        "hinted": "with a hint",
+        "parent_reported": "as observed by a parent",
+        "answer_shown": "after the answer was shown",
+        "self_reported": "as self-reported",
+        "override": "by override",
+    }.get(str(evidence_class), str(evidence_class))
+    if verdict == "partial":
+        shown += ", partial credit"
+    return f"{points} XP: {target} check {shown}"
 
 #: Cosmetic level width. A level is a label, never a gate: nothing in the course reads this.
 XP_PER_LEVEL = 100
@@ -192,6 +262,40 @@ def _real_action(connection, kind: str, action_id: str, enrollment_id: str) -> b
     return False
 
 
+def _evidence_for_action(
+    connection, kind: str, action_id: str, enrollment_id: str
+) -> dict[str, str] | None:
+    """The graded facts behind an action: what it demanded, what it achieved, how independently.
+
+    Returns ``None`` when the action carries no gradable evidence, which is a refusal rather than a
+    zero: the caller states why instead of paying a token. Every field comes from a committed row,
+    so the points can be recomputed later and audited against the same numbers.
+    """
+
+    if kind == gm_contract.EngagementAction.CHECK_SUBMITTED.value:
+        row = connection.execute(
+            "SELECT c.evidence_target AS evidence_target, a.verdict AS verdict,"
+            " a.evidence_class AS evidence_class"
+            " FROM attempts a JOIN checks c ON c.id = a.check_id"
+            " WHERE a.id = ? AND a.enrollment_id = ? AND a.state = 'committed'",
+            (action_id, enrollment_id),
+        ).fetchone()
+    elif kind == gm_contract.EngagementAction.REVIEW.value:
+        row = connection.execute(
+            "SELECT o.evidence_target AS evidence_target, e.evidence_class AS evidence_class"
+            " FROM evidence e JOIN objectives o ON o.id = e.objective_id"
+            " WHERE e.id = ? AND e.enrollment_id = ? AND e.kind = 'delayed_retrieval'",
+            (action_id, enrollment_id),
+        ).fetchone()
+        row = None if row is None else {**dict(row), "verdict": "pass"}
+    else:
+        return None
+    if row is None:
+        return None
+    evidence = {key: str(row[key] or "") for key in ("evidence_target", "verdict", "evidence_class")}
+    return evidence if all(evidence.values()) else None
+
+
 def _xp_total(connection, enrollment_id: str) -> int:
     row = connection.execute(
         "SELECT COALESCE(SUM(points), 0) AS total FROM game_engagement WHERE enrollment_id = ?",
@@ -294,13 +398,20 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
             return replay
         _require_context(connection, course_id, enrollment_id)
 
-        points = XP_POINTS.get(kind)
-        if points is None:
+        if kind not in ENGAGEMENT_ACTIONS:
             raise RpcError.of(
                 "VALIDATION_FAILED",
                 "that action is not a named engagement action.",
                 field="action_kind",
                 reason="unknown_action_kind",
+            )
+        not_evidence = NOT_EVIDENCE_REASON.get(kind)
+        if not_evidence is not None:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"XP is awarded for evidence of learning, and {not_evidence}.",
+                field="action_kind",
+                reason="not_evidence",
             )
         if not _real_action(connection, kind, action_id, enrollment_id):
             raise RpcError.of(
@@ -308,6 +419,28 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
                 "XP is awarded only for a real recorded action; that action id is not one.",
                 field="action_id",
                 reason="not_a_real_action",
+            )
+
+        evidence = _evidence_for_action(connection, kind, action_id, enrollment_id)
+        if evidence is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "that action has no graded evidence, so there is nothing to measure.",
+                field="action_id",
+                reason="no_graded_evidence",
+            )
+        points = xp_for_evidence(
+            evidence["evidence_target"], evidence["verdict"], evidence["evidence_class"]
+        )
+        basis = xp_basis(
+            evidence["evidence_target"], evidence["verdict"], evidence["evidence_class"]
+        )
+        if points <= 0:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                basis,
+                field="action_id",
+                reason="no_evidence_of_learning",
             )
 
         recorded = connection.execute(
@@ -322,6 +455,8 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
                 "points": 0,
                 "xp_total": total,
                 "level": level_for(total),
+                "basis": basis,
+                "basis_components": evidence,
             }
             kernel._remember(
                 connection, key, method, payload_hash,
@@ -342,6 +477,8 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
             "points": points,
             "xp_total": total,
             "level": level,
+            "basis": basis,
+            "basis_components": evidence,
         }
         kernel._remember(
             connection, key, method, payload_hash,

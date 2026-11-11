@@ -185,7 +185,19 @@ class GameXpRulesTest(GameEngagementCase):
         first = self.award("check_submitted", attempt_id)
         self.assertTrue(first["ok"], first.get("error"))
         self.assertTrue(first["result"]["awarded"])
-        self.assertEqual(first["result"]["points"], engagement.XP_POINTS["check_submitted"])
+        # The number is the formula applied to the graded facts the response returns, not a
+        # constant: the same attempt recomputes to the same points in any later session.
+        components = first["result"]["basis_components"]
+        self.assertEqual(
+            first["result"]["points"],
+            engagement.xp_for_evidence(
+                components["evidence_target"],
+                components["verdict"],
+                components["evidence_class"],
+            ),
+        )
+        self.assertIn("XP:", first["result"]["basis"])
+        self.assertGreater(first["result"]["points"], 0)
 
         # A replay with a fresh envelope key must not duplicate the ledger row.
         again = self.award("check_submitted", attempt_id)
@@ -212,14 +224,12 @@ class GameXpRulesTest(GameEngagementCase):
         self.assertFalse(conflict["ok"])
         self.assertEqual(conflict["error"]["code"], "IDEMPOTENCY_CONFLICT")
 
+        # A completed homework with no graded submission is activity, not evidence. It is refused
+        # with a readable reason and writes no ledger row, so a streak cannot outrun a skill.
         homework = self.award("homework_completed", self.homework())
-        self.assertTrue(homework["ok"], homework.get("error"))
-        self.assertTrue(homework["result"]["awarded"])
-        self.assertEqual(self.xp_rows(), 2)
-        self.assertEqual(
-            homework["result"]["xp_total"],
-            engagement.XP_POINTS["check_submitted"] + engagement.XP_POINTS["homework_completed"],
-        )
+        self.assertFalse(homework["ok"])
+        self.assertEqual(homework["error"]["details"]["reason"], "no_graded_evidence")
+        self.assertEqual(self.xp_rows(), 1)
 
     def test_game_xp_ignores_clicks_and_timers(self) -> None:
         # A surface that is not a named action is refused by the wire, not quietly priced.
@@ -252,20 +262,37 @@ class GameXpRulesTest(GameEngagementCase):
 
     def test_each_named_real_action_is_awarded_its_declared_points(self) -> None:
         step = self.lesson_step()
-        cases = [
-            ("lesson_step", step),
+        # Only the two kinds that carry graded evidence pay. The rest are refused by name, and a
+        # reading page or a return visit is refused most loudly of all: paying for those is how
+        # activity becomes the product.
+        evidence_kinds = [
             ("check_submitted", self.submitted_check()),
             ("review", self.review_evidence()),
-            ("homework_completed", self.homework()),
-            ("returned", self.returned_run()),
         ]
-        for kind, action_id in cases:
+        for kind, action_id in evidence_kinds:
             with self.subTest(kind=kind):
                 response = self.award(kind, action_id)
                 self.assertTrue(response["ok"], response.get("error"))
                 self.assertTrue(response["result"]["awarded"])
-                self.assertEqual(response["result"]["points"], engagement.XP_POINTS[kind])
-        self.assertEqual(self.xp_rows(), len(cases))
+                components = response["result"]["basis_components"]
+                self.assertEqual(
+                    response["result"]["points"],
+                    engagement.xp_for_evidence(
+                        components["evidence_target"],
+                        components["verdict"],
+                        components["evidence_class"],
+                    ),
+                )
+        for kind, action_id, reason in (
+            ("lesson_step", step, "not_evidence"),
+            ("returned", self.returned_run(), "not_evidence"),
+            ("homework_completed", self.homework(), "no_graded_evidence"),
+        ):
+            with self.subTest(kind=kind):
+                refused = self.award(kind, action_id)
+                self.assertFalse(refused["ok"])
+                self.assertEqual(refused["error"]["details"]["reason"], reason)
+        self.assertEqual(self.xp_rows(), len(evidence_kinds))
 
 
 class GameProgressAndLevelTest(GameEngagementCase):
@@ -274,7 +301,7 @@ class GameProgressAndLevelTest(GameEngagementCase):
     def test_level_and_game_progress_are_labelled_play_progress(self) -> None:
         self.award("check_submitted", self.submitted_check())
         result = self.read()
-        self.assertEqual(result["xp_total"], engagement.XP_POINTS["check_submitted"])
+        self.assertGreater(result["xp_total"], 0)
         self.assertEqual(result["progress"]["label"], "Game progress")
         self.assertIs(result["progress"]["is_play_progress"], True)
         self.assertEqual(result["progress"]["assigned_steps"], 1)
@@ -314,8 +341,11 @@ class GameExposureTest(GameEngagementCase):
         self.assertNotIn("xp_total", packs.export_allowlist())
 
     def test_textbook_has_no_engagement_surface(self) -> None:
-        step = self.lesson_step()
-        self.assertTrue(self.award("lesson_step", step)["ok"])
+        # A real graded action, because a reading step no longer pays anything by design.
+        attempt = self.submitted_check()
+        awarded = self.award("check_submitted", attempt)
+        self.assertTrue(awarded["ok"], awarded.get("error"))
+        result = {"xp_total": awarded["result"]["xp_total"]}
 
         self.execute("UPDATE courses SET presentation_mode = 'textbook' WHERE id = ?", (self.course_id,))
         refused = self.dispatch(
@@ -329,7 +359,7 @@ class GameExposureTest(GameEngagementCase):
         # The textbook course keeps the rows; switching back restores the same play layer.
         self.assertEqual(self.xp_rows(), 1)
         self.execute("UPDATE courses SET presentation_mode = 'game' WHERE id = ?", (self.course_id,))
-        self.assertEqual(self.read()["xp_total"], engagement.XP_POINTS["lesson_step"])
+        self.assertEqual(self.read()["xp_total"], result["xp_total"])
 
         # A legacy NULL mode reads as Textbook and has no surface either.
         self.execute("UPDATE courses SET presentation_mode = NULL WHERE id = ?", (self.course_id,))

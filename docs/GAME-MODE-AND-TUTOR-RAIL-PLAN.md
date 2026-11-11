@@ -924,7 +924,7 @@ The override does not permit false learning claims. It separates **play progress
 
 | Mechanic | Allowed use | Not allowed |
 |---|---|---|
-| XP | Awarded for a completed lesson step, a submitted check, a review, a completed homework task, or returning after an interval | XP for opening a page, clicking a button, or idle time; XP as a grade |
+| XP | Derived from graded evidence only: base by evidence target (recall 4, comprehension 6, discrimination 8, production 12, procedure 14, transfer 16), times the verdict (pass 1.0, partial 0.6, failure 0), times how independently it was demonstrated (cold 1.0, hinted 0.5, observed 0.5, shown/self-reported/override 0.2). A completed delayed review pays the transfer base. | XP for a reading step, a page open, a click, idle time, a return visit or a daily check-in; XP as a grade; a flat number per action kind; any XP the surface computes itself |
 | Level | Cosmetic profile level from accumulated XP; shown in the Game header | Level gating a core lesson; level shown in parent evidence |
 | Progress bar | Session progress or course completion of assigned steps; labelled `Game progress` | A bar implying mastery, a percentage of skill, or a fake completion |
 | Collectible cards | Course/section cards earned or revealed by real course activity; cosmetic frames and stamps | Cards that imply a credential or a verified skill |
@@ -951,7 +951,11 @@ real progress or none; it never invents a five-star review.
 
 ### 10B.4 Quality guardrails
 
-- Every XP award must name a real action; no arbitrary timer.
+- Every XP award must name a real action AND carry graded evidence; no arbitrary timer.
+- The number is recomputed from the graded row, not asserted at award time: the same attempt pays
+  the same points in any later session, and the response carries the three facts it was built from.
+- XP exists so learning is visible, not so activity is. The failure mode to refuse is the one where
+  a daily check-in outranks a checkpoint, which produces active users who learn nothing.
 - The game layer must not hide a check, a source, a warning or a recovery action.
 - The game layer must not make a wrong answer feel like a lost life; feedback remains informative.
 - Motion and sound follow the existing reduced-motion and optional-sound rules.

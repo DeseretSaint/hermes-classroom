@@ -6995,6 +6995,52 @@
                 "type": "integer",
                 "minimum": 0
               },
+              "basis": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "One sentence naming what the award measured, built from the same facts as the number."
+              },
+              "basis_components": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "evidence_target",
+                  "verdict",
+                  "evidence_class"
+                ],
+                "description": "The three graded facts the points were computed from, so a later reader can recompute the number.",
+                "properties": {
+                  "evidence_target": {
+                    "type": "string",
+                    "enum": [
+                      "recall",
+                      "comprehension",
+                      "production",
+                      "discrimination",
+                      "procedure",
+                      "transfer"
+                    ]
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "pass",
+                      "partial"
+                    ]
+                  },
+                  "evidence_class": {
+                    "type": "string",
+                    "enum": [
+                      "cold",
+                      "hinted",
+                      "answer_shown",
+                      "self_reported",
+                      "parent_reported",
+                      "override"
+                    ]
+                  }
+                }
+              },
               "xp_total": {
                 "type": "integer",
                 "minimum": 0
