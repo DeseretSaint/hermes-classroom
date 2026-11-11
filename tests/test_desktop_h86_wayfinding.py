@@ -88,8 +88,15 @@ class WayfindingTest(unittest.TestCase):
         # page header carries exactly one primary, and the shelf control is not it.
         primary = [value for value in self.source.splitlines() if "children: 'New course'" in value and "variant: 'primary'" in value]
         self.assertEqual(len(primary), 1, primary)
-        shelf = [value for value in self.source.splitlines() if "children: 'New course'" in value and "variant: 'primary'" not in value]
+        shelf = [
+            value
+            for value in self.source.splitlines()
+            if "children: 'New course'" in value and "variant: 'primary'" not in value and "data-cb-home-scene-tag" not in value
+        ]
         self.assertEqual(len(shelf), 1, shelf)
+        # CP-053: the wide scene's paper tag is a second "New course" surface, but it is a hooked
+        # scene object, not a catalog control — the shelf still carries exactly one.
+        self.assertIn("'data-cb-home-scene-tag': '', children: 'New course'", self.source)
         self.assertIn("'data-cb-shelf-new-course'", self.source)
         self.assertIn("variant: 'primary', children: 'New course'", self.source)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)

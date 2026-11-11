@@ -348,57 +348,28 @@ function HomeSceneCard({ slot, index, onOpen }) {
   const total = Number(row.sections_total) || 0
   const done = Number(row.sections_done) || 0
   const ratio = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0
-  const rots = [-1.6, 0.8, -0.6, 1.4]
-  const geo = CB_HOME_SCENE.cards
   return jsxs('article', {
     'data-cb-home-scene-card': '',
     role: 'listitem',
     onClick: () => onOpen && onOpen(slot),
-    style: {
-      width: `${geo.width}px`,
-      height: `${geo.height}px`,
-      flex: `0 0 ${geo.width}px`,
-      transform: `rotate(${rots[index % 4]}deg)`,
-      transformOrigin: '50% 100%',
-      background: '#efe3cd',
-      border: '1px solid rgba(90,60,35,0.18)',
-      borderRadius: `${geo.radius}px`,
-      boxShadow: '0 10px 16px -9px rgba(60,35,20,0.5)',
-      overflow: 'hidden',
-      cursor: 'pointer',
-      color: 'var(--cb3-ink, #16130f)'
-    },
     children: [
       art
-        ? jsx('img', { src: art, alt: media.caption || '', style: { display: 'block', width: '100%', height: `${geo.cover}px`, objectFit: 'cover' } }, 'art')
+        ? jsx('img', { 'data-cb-home-scene-cover': 'art', src: art, alt: media.caption || '' }, 'art')
         : jsx('div', {
             'data-cb-home-scene-cover': 'type',
-            style: {
-              height: `${geo.cover}px`,
-              display: 'grid',
-              placeItems: 'center',
-              background: 'var(--cb3-terracotta-quiet, #f0d5c1)',
-              fontFamily: 'var(--cb3-font-display, Georgia, serif)',
-              fontSize: '44px',
-              color: 'var(--cb3-forest, #0d281b)'
-            },
             children: (title.match(/[A-Za-z]/) || ['C'])[0].toUpperCase()
           }, 'cover'),
       jsxs('div', {
-        style: { padding: '8px 10px 10px' },
+        'data-cb-home-scene-body': '',
         children: [
-          jsx('h3', {
-            style: { margin: 0, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '15px', lineHeight: 1.15, fontWeight: 600, color: 'inherit' },
-            children: title
-          }, 'title'),
+          jsx('h3', { 'data-cb-home-scene-title': '', children: title }, 'title'),
           jsx('div', {
+            'data-cb-home-scene-progress': '',
             'aria-hidden': 'true',
-            style: { marginTop: '9px', height: '5px', borderRadius: '999px', background: 'rgba(90,60,35,0.17)', overflow: 'hidden' },
-            children: jsx('div', { style: { width: `${Math.round(ratio * 100)}%`, height: '100%', background: 'var(--cb3-gold, #a1741f)' } }, 'fill')
+            children: jsx('i', { style: { width: `${Math.round(ratio * 100)}%` } }, 'fill')
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            style: { margin: '5px 0 0', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '11px', lineHeight: 1.3, color: 'var(--cb3-ink-soft, #5c5347)' },
             children: total > 0 ? `${done} of ${total} sections` : 'Not started'
           }, 'meta')
         ]
@@ -410,99 +381,55 @@ function HomeSceneCard({ slot, index, onOpen }) {
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
   const wood = cb3ObjectSource('shelf-plank')
   const clock = cb3ObjectSource('clock')
-  const hero = CB_HOME_SCENE.hero
-  const geo = CB_HOME_SCENE.cards
-  const shelf = CB_HOME_SCENE.shelf
-  const ledge = CB_HOME_SCENE.ledge
-  const tag = CB_HOME_SCENE.tag
-  const clockGeo = CB_HOME_SCENE.clock
-  const foxGeo = CB_HOME_SCENE.fox
-  const plankFace = (planks) => ({
-    position: 'absolute', left: 0, right: 0, top: `${planks.height}px`, height: `${planks.face || 24}px`,
-    background: planks.faceColor, borderBottom: `2px solid ${planks.faceEdge}`
-  })
+  const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
   return jsxs('div', {
     'data-cb-home': 'scene',
     'data-cb-home-scene': '',
-    style: {
-      position: 'relative',
-      width: '100%',
-      maxWidth: `${CB_HOME_SCENE.canvas.width}px`,
-      height: `${CB_HOME_SCENE.canvas.height}px`,
-      margin: '0 auto',
-      overflow: 'hidden',
-      background: 'linear-gradient(180deg, #eedcc4 0%, #f2ddc3 26%, #f3dfc6 52%, #efdac0 78%, #ecd6b9 100%)'
-    },
     children: [
       jsxs('div', {
-        style: { position: 'absolute', top: `${hero.top}px`, left: 0, right: 0, textAlign: 'center', zIndex: 4 },
+        'data-cb-home-scene-hero': '',
         children: [
           jsx('h1', {
             'data-cb-home-question': '',
-            style: { margin: 0, fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: `${hero.title}px`, lineHeight: 1.05, fontWeight: 600, letterSpacing: `${hero.titleTracking}px`, color: '#0c2e1e' },
+            'data-cb-home-scene-question': '',
             children: CB_HOME_COPY.question
           }, 'question'),
-          jsx('p', { style: { margin: `${hero.sublineGap}px 0 0`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: `${hero.subline}px`, lineHeight: 1.15, fontWeight: 500, color: '#0c2a1b' }, children: CB_HOME_COPY.subline }, 'subline'),
+          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_COPY.subline }, 'subline'),
           jsxs('div', {
-            style: { marginTop: `${hero.ctaGap}px`, display: 'flex', gap: `${hero.ctaGapX}px`, justifyContent: 'center' },
+            'data-cb-home-scene-cta': '',
             children: [
               canCreate
-                ? jsx('button', {
-                    type: 'button',
-                    onClick: onStartCreate,
-                    style: { border: 0, borderRadius: '999px', height: `${hero.ctaHeight}px`, padding: `0 ${hero.ctaPadding}px`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#d17354', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
-                    children: CB_HOME_COPY.create
-                  }, 'create')
+                ? jsx('button', { type: 'button', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
                 : null,
-              jsx('button', {
-                type: 'button',
-                onClick: onBrowseLibrary,
-                style: { border: 0, borderRadius: '999px', height: `${hero.ctaHeight}px`, padding: `0 ${hero.ctaPadding}px`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#d87858', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
-                children: CB_HOME_COPY.browse
-              }, 'browse')
+              jsx('button', { type: 'button', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
             ]
           }, 'cta')
         ]
       }, 'hero'),
       jsx('div', {
+        'data-cb-home-scene-cards': '',
         role: 'list',
         'aria-label': CB_HOME_COPY.shelf,
-        style: { position: 'absolute', top: `${geo.top}px`, left: `${geo.left}px`, height: `${geo.height}px`, display: 'flex', gap: `${geo.gap}px`, alignItems: 'flex-end', zIndex: 3 },
         children: slots.slice(0, 4).map((slot, index) =>
           jsx(HomeSceneCard, { slot, index, onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
         )
       }, 'cards'),
-      jsxs('div', {
-        'aria-hidden': 'true',
-        style: {
-          position: 'absolute', left: `${shelf.left}px`, width: `${shelf.width}px`, top: `${shelf.top}px`, height: `${shelf.height}px`, zIndex: 1,
-          backgroundImage: wood ? `url(${wood})` : undefined,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 100%',
-          backgroundColor: wood ? undefined : 'var(--cb3-wood, #a5763f)',
-          borderBottom: '2px solid #7d5529',
-          boxShadow: '0 7px 14px -5px rgba(55,30,15,0.55)'
-        },
-        children: jsx('div', { style: plankFace({ height: shelf.height, face: shelf.lip, faceColor: '#b09a84', faceEdge: '#8d7963' }) })
-      }, 'plank-one'),
       jsx('div', {
-        style: { position: 'absolute', left: `${tag.left}px`, top: `${tag.top}px`, width: `${tag.width}px`, height: `${tag.height}px`, background: '#f4e6cd', border: '1.5px solid #3a2c1e', transform: 'rotate(-3deg)', display: 'grid', placeItems: 'center', fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: `${tag.font}px`, color: '#2a2118', zIndex: 4, boxShadow: '0 4px 6px rgba(60,35,20,0.2)' },
-        children: 'New course'
-      }, 'tag'),
-      clock
-        ? jsx('img', { src: clock, alt: '', 'aria-hidden': 'true', style: { position: 'absolute', left: `${clockGeo.left}px`, top: `${clockGeo.top}px`, width: `${clockGeo.size}px`, height: `${clockGeo.size}px`, zIndex: 4 } }, 'clock')
-        : null,
-      jsx('div', { style: { position: 'absolute', left: `${foxGeo.left}px`, top: `${foxGeo.top}px`, zIndex: 5 }, children: jsx(FoxPose, { pose: 'clock', size: foxGeo.size }, 'fox') }, 'fox-wrap'),
-      jsxs('div', {
+        'data-cb-home-scene-plank-one': '',
         'aria-hidden': 'true',
-        style: {
-          position: 'absolute', left: `${ledge.left}px`, width: `${ledge.width}px`, top: `${ledge.top}px`, height: `${ledge.height}px`, zIndex: 1,
-          backgroundImage: wood ? `url(${wood})` : undefined,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 100%',
-          backgroundColor: wood ? undefined : 'var(--cb3-wood, #a5763f)'
-        },
-        children: jsx('div', { style: plankFace({ height: ledge.height, face: ledge.face, faceColor: '#ad8663', faceEdge: '#6b4a2c' }) })
+        style: woodImage,
+        children: jsx('i', {})
+      }, 'plank-one'),
+      jsx('div', { 'data-cb-home-scene-tag': '', children: 'New course' }, 'tag'),
+      clock
+        ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
+        : null,
+      jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
+      jsx('div', {
+        'data-cb-home-scene-plank-two': '',
+        'aria-hidden': 'true',
+        style: woodImage,
+        children: jsx('i', {})
       }, 'plank-two')
     ]
   })
