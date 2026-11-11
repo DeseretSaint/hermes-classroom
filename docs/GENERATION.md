@@ -905,21 +905,21 @@ who typed a ceiling must be told it was not applied.
 
 ### Sized ceilings and the preflight gate
 
-`CostBudget.max_calls` defaults to 32 — the worst legal pipeline cost, 8 sections x 2 attempts x
-(generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
-section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
-behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
-was 8). Neither constant counts the truncation re-ask; the unit-sections stage, which cannot survive
-an abort, does — see *The truncation repair is a legal call* below.
+`CostBudget.max_calls` defaults to 32, which is a *fallback* ceiling for a job that was not sized,
+not a bound on the pipeline. A lesson job is budgeted to its own plan (`lesson_cost_budget`,
+6 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
+that were behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old
+default was 8). Every stage sizes the truncation re-ask — see *The truncation repair is a legal
+call* below.
 
 The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
 
-    max_calls     = n * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS     (4n)
+    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS)  (6n)
     max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
 
 with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
 `DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
-legitimate job is not refused by a rounding error). Eight sections therefore get $1.28, not $0.75:
+legitimate job is not refused by a rounding error). Eight sections therefore get $1.92, not $0.75:
 the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
 while the call ceiling scaled. The operator override still wins, and the value actually used is
 recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
@@ -954,10 +954,15 @@ call. Live evidence: every observed `coursebook.unit_sections.validate` answer c
 parse used 1 964–2 749 tokens — the cap holds the 10-criterion + claim answer, the first ask spends
 it on reasoning.
 
-`lesson_cost_budget` still sizes `4n` per section and does **not** count the repair: a lesson row is
-durable before the next section starts, so a ceiling abort there leaves a resumable checkpoint
-rather than losing a batch. That under-size is tracked as its own card; resizing it changes the
-signed-off H-17 / audit P1-6 sizing policy.
+The **lesson** stage uses the same arithmetic per section (CP-015e follow-up): two attempts, each
+generate + validate + one repair, so `lesson_calls` is `2n` minimum and `6n` worst legal, and
+`lesson_cost_budget(n)` sizes both ceilings from that 6. The previous `4n` was not a different
+policy, it was the H-17 / audit P1-6 "size to the worst legal path" rule applied to an undercounted
+path: CP-015b's Sourdough run recorded five `coursebook.lesson.validate` answers cut at the
+8 000-token cap for a four-lesson job, each repaired. A lesson row is durable before the next
+section starts, so the old abort wasted a run and a resume rather than losing data — a smaller
+failure than the unit stage's, not a safe one. Five sections now size to $1.20 (6 x 5 x $0.04)
+instead of $0.75, and eight to $1.92; an operator ceiling still wins.
 
 #### A budget stop is not a verdict (`CP-015e`)
 

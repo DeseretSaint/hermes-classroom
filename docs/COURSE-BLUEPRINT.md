@@ -254,12 +254,14 @@ Budget is per stage, not per course:
 |---|---:|---|
 | blueprint (`plan`) | 4 | one generate and one validate, two attempts |
 | unit sections (`unit_sections`, one unit) | 6 | one generate, one validate and one truncation re-ask, two attempts (CP-015e) |
-| unit lessons (`lessons`, one unit) | 2 calls per section times 2 attempts, over the unit's sections | unchanged lesson pipeline |
+| unit lessons (`lessons`, one unit) | 6 per section: one generate, one validate and one truncation re-ask, two attempts | same lesson pipeline as before; CP-015e follow-up counted the repair |
 
 A unit job uses `lesson_cost_budget` sized to that unit's section count, not the whole course.
 The unit-sections stage budgets six calls because the validator's answer is re-asked once when it
 is cut off by the completion cap (`_validation_answer_with_repair`): the unit batch is
-transactional, so a ceiling that refuses that legal call loses the whole unit. H-17 owns the dollar
+transactional, so a ceiling that refuses that legal call loses the whole unit. The lesson stage is
+per-section and durable, but it makes the same repair call, so `lesson_cost_budget` counts it too
+(CP-015e follow-up): six calls per section, not four. H-17 owns the dollar
 ceiling; this design only splits the work so one ceiling never covers an entire 24-lesson course.
 
 This split is also the token limit answer. The plan call carries units and objectives only. Each

@@ -1630,8 +1630,8 @@ class LessonJobTest(GenerationTestBase):
         self.assertEqual(self.count("gen_lessons"), 4)
 
     def test_lesson_budget_is_sized_to_the_plan_and_still_has_a_ceiling(self) -> None:
-        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 20)  # 5 x 2 attempts x 2 calls
-        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 32)
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 30)  # 5 x 2 attempts x 3 calls
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 48)
         budget = gen.lesson_cost_budget(2)
         usage = gen._Usage(budget)
         request = gen.build_lesson_request(

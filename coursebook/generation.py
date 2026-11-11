@@ -813,10 +813,13 @@ def validation_independence(
 class CostBudget:
     """Honest ceilings for one job. Unknown cost is charged at a declared estimate, never zero.
 
-    ``max_calls`` is the *worst legal* pipeline cost, not the happy path: 8 sections x 2 attempts
-    x (generate + validate) = 32. The old default of 8 was below the floor for any plan larger
-    than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry, so
-    the job ended ``POLICY_VIOLATION`` on a fast provider).
+    The dataclass default is a *fallback*, not a bound on the pipeline: a plan job starts it, and
+    every lesson job is re-sized to its own plan (:func:`lesson_cost_budget`, 6 calls per section
+    including the truncation re-ask) and every unit-sections job to its unit
+    (:func:`unit_sections_cost_budget`, 6). The old default of 8 was below the floor for any plan
+    larger than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry,
+    so the job ended ``POLICY_VIOLATION`` on a fast provider); 32 is kept as a ceiling that is still
+    above any single blueprint call set without pretending to be the worst legal lesson path.
 
     ``max_cost_usd`` is the hard dollar ceiling this job will not cross. ``source`` records where
     it came from so the job view can show the *actual configured* value instead of implying a
@@ -1014,31 +1017,41 @@ def default_cost_budget(*, max_calls: int | None = None, brief_budget_usd: Any =
 def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tuple[int, int]:
     """``(minimum_calls, worst_legal_calls)`` for a plan of ``section_count`` sections.
 
-    The minimum is one generation plus one validation per section — no retries. The worst legal
-    case adds the second attempt the validator is allowed to ask for.
+    The minimum is one generation plus one validation per section — no retries:
 
-    A truncation re-ask (:data:`TRUNCATION_REPAIR_CALLS`) is deliberately **not** counted here.
-    That is a known under-size, not a claim: a lesson validation answer cut off by the completion
-    cap costs one more legal call per attempt, and this budget refuses it. It is survivable on this
-    stage only because every lesson row is durable before the next section starts, so a ceiling
-    abort leaves a resumable checkpoint instead of losing the batch. Resizing it changes a signed
-    off sizing policy (H-17 / audit P1-6) and is tracked as its own card; the transactional unit
-    stage (:func:`unit_sections_cost_budget`) sizes the repair because there an abort loses the
-    whole unit.
+        sections x CALLS_PER_LESSON_ATTEMPT                                    (2n)
+
+    The worst legal case adds the second attempt the validator is allowed to ask for **and** the
+    one truncation re-ask (:data:`TRUNCATION_REPAIR_CALLS`) that each attempt may legally spend:
+
+        sections x attempts x (generate + validate + TRUNCATION_REPAIR_CALLS)   (6n)
+
+    The repair is counted because it is a designed call, not an exception. CP-015b's Sourdough run
+    recorded five ``coursebook.lesson.validate`` answers cut at the 8 000-token cap for a four-lesson
+    job, each repaired: on a route that runs into the cap, the repair is the *normal* path. Leaving
+    it out of the ceiling bought nothing — every such job either refused a legal call and failed
+    mid-course (wasting the whole run, since the operator must resume) or, on a route that never
+    truncates, never came near the ceiling anyway. The sizing policy is H-17 / audit P1-6 "size the
+    ceiling to the plan's worst legal path"; four calls per section was that policy applied to an
+    undercounted path, so counting the repair is the fix, not a new policy.
     """
     sections = max(1, int(section_count))
-    per_section = CALLS_PER_LESSON_ATTEMPT * max(1, int(attempts))
-    return sections * CALLS_PER_LESSON_ATTEMPT, sections * per_section
+    tries = max(1, int(attempts))
+    per_attempt = CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS
+    return sections * CALLS_PER_LESSON_ATTEMPT, sections * tries * per_attempt
 
 
 def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> CostBudget:
     """Budget sized to the plan's sections, not to a constant.
 
     Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
-    validation, so the call ceiling is ``4 x sections``. The *dollar* ceiling is sized the same
-    way from :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a
-    flat $0.75 left binding: 8 sections need 32 calls, and a $0.75 ceiling aborted at call 24
-    with sections unauthored. A caller/operator value still wins.
+    validation, plus the truncation re-ask each attempt may spend, so the call ceiling is
+    ``6 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
+    :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a flat $0.75
+    left binding: 8 sections need 48 calls, and a $0.75 ceiling aborted the audit's run at call 24
+    with sections unauthored. Five sections therefore get $1.20, not $0.75. A caller/operator value
+    still wins (``COURSEBOOK_JOB_MAX_COST_USD`` or ``brief.budget_usd``), so an operator who wants a
+    tighter ceiling can declare one, but the default never refuses a call the pipeline itself makes.
     """
     _, worst_legal = lesson_calls(section_count)
     sized_floor = worst_legal * DECLARED_CALL_COST_USD

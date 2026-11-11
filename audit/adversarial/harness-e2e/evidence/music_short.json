@@ -837,8 +837,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 8,
-            "maximum_cost_usd": 0.32,
+            "maximum_calls": 12,
+            "maximum_cost_usd": 0.48,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -983,8 +983,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 8,
-            "maximum_cost_usd": 0.32,
+            "maximum_calls": 12,
+            "maximum_cost_usd": 0.48,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
