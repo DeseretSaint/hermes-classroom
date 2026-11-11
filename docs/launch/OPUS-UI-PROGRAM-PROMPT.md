@@ -90,8 +90,8 @@ and the natural-vs-rendered size; a CSS-drawn substitute fails even if it looks 
 model sheet, not the shipped vector: same ear shape, muzzle, eye style, chest and leg markings, tail
 tip, line weight, palette. Each answer cites the region. Compare the reference and render crops at 2×
 for SSIM, palette distance, edge density and an embedding distance; those are diagnostics, not the
-verdict. The owner signs the model sheet and the pose contact sheet once; then every export is
-hash-locked.
+verdict. The owner approved the A1 model sheet and pose sheet on 2026-11-10 (`FOX-SIGNOFF.md`);
+every export is hash-locked. Do not re-open the character.
 
 **Pose, not paste.** One pose per surface, chosen for context, no repeated pose in the same viewport,
 no arbitrary mirroring that breaks the tail or lighting. A state change may crossfade between two
