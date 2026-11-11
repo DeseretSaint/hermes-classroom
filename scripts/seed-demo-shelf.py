@@ -25,7 +25,40 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIR = ROOT / "docs/concept-parity/demo/exports"
-EXPECTED = ("Japanese Cafe Basics", "Auto Repair Fundamentals", "Astronomy", "Sourdough")
+
+
+def expected_titles(manifests: list[dict]) -> list[str]:
+    """The titles the shelf must carry: whatever the archives themselves declare.
+
+    ``[CP-015b]`` replaced a hard-coded four-title tuple with this derivation. The tuple was a
+    quantity claim: a run that exports one course could never satisfy it, so the script reported a
+    missing course instead of checking the export it was given. The archives are the input, so the
+    expectation is read from their own manifests, never typed.
+    """
+    return [str((manifest.get("title") or "").strip()) for manifest in manifests
+            if str(manifest.get("title") or "").strip()]
+
+
+def artifact_problems(page: dict, manifest: dict) -> list[str]:
+    """Prove the imported course serves a real ``lesson.page``, not just files in a bundle.
+
+    A v1 pack carrying visual and narration files but no v2 ``media[]`` link imports a course whose
+    lesson pages carry no artifacts. Counting the zip's files cannot see that, so this reads the
+    served page. The page's own field names are ``segments`` and ``artifacts`` (CP-015b measured
+    them on a live import); the ``blocks``/``media`` spelling is accepted as a fallback because the
+    driver reads those names for the generated-course path.
+    """
+    problems: list[str] = []
+    segments = page.get("segments") or page.get("blocks") or []
+    if not segments:
+        problems.append("lesson.page served no segments")
+    artifacts = page.get("artifacts") or page.get("media") or []
+    if manifest.get("media") and not artifacts:
+        problems.append(
+            f"manifest declares {len(manifest.get('media') or [])} media[] link(s) "
+            "but the served page resolved no artifact"
+        )
+    return problems
 
 
 def call(base: str, token: str, path: str, body: dict | None = None) -> dict:
@@ -97,6 +130,7 @@ def main() -> int:
     existing = {(item.get("provenance") or {}).get("pack_id"): item for item in shelf(
         args.base_url, args.token, version)}
     problems: list[str] = []
+    manifests: list[dict] = []
     for archive in archives:
         granted = call(args.base_url, args.token, "/packs/grant", {"path": str(archive)})
         if not granted.get("ok"):
@@ -108,9 +142,12 @@ def main() -> int:
             problems.append(f"{archive.name}: preview refused: {preview.get('error')}")
             continue
         manifest = preview["result"]["manifest"]
+        manifests.append(manifest)
         pack_id = manifest["pack_id"]
         print(f"preview: {pack_id} {manifest['pack_version']} "
-              f"content_hash={str(manifest['content_hash'])[:23]}…")
+              f"content_hash={str(manifest['content_hash'])[:23]}… "
+              f"title={manifest.get('title')!r} "
+              f"license={(manifest.get('license') or {}).get('id')!r}")
         if pack_id in existing and not args.force:
             print(f"  already on the shelf: {existing[pack_id].get('title')} — skipped")
             continue
@@ -129,11 +166,35 @@ def main() -> int:
     rows = shelf(args.base_url, args.token, version)
     print("\nshelf:")
     titles = []
+    by_title = {str(item.get("title") or ""): item for item in rows}
     for item in rows:
         titles.append(str(item.get("title") or ""))
         print(f"  {item.get('title')!r:34} next={item.get('next_step')!r} "
               f"evidence={item.get('evidence_summary')!r}")
-    missing = [title for title in EXPECTED if title not in titles]
+
+    # A pack import is not a bundle of files: the course it installs must serve a real lesson page.
+    for manifest in manifests:
+        title = str(manifest.get("title") or "")
+        item = by_title.get(title)
+        if item is None:
+            continue
+        objective_id = (item.get("evidence_summary") or {}).get("current_objective_id")
+        if not objective_id:
+            problems.append(f"{title}: the shelf carries no current objective to open")
+            continue
+        page = rpc(args.base_url, args.token, version, "lesson.page",
+                   {"enrollment_id": item["enrollment_id"], "objective_id": objective_id})
+        if not page.get("ok"):
+            problems.append(f"{title}: lesson.page refused: {page.get('error')}")
+            continue
+        served = page["result"]
+        segments = served.get("segments") or served.get("blocks") or []
+        artifacts = served.get("artifacts") or served.get("media") or []
+        print(f"  artifacts: {title!r} segments={len(segments)} artifacts={len(artifacts)} "
+              f"state={served.get('state')!r}")
+        problems.extend(f"{title}: {problem}" for problem in artifact_problems(served, manifest))
+
+    missing = [title for title in expected_titles(manifests) if title not in titles]
     if missing:
         problems.append(f"missing from the shelf: {', '.join(missing)}")
     for problem in problems:

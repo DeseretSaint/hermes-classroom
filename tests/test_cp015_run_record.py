@@ -175,10 +175,15 @@ class RunRecordContractTest(unittest.TestCase):
         rows = [job for job in committed["jobs"] if job["error_code"] == "HOST_UNAVAILABLE"]
         self.assertEqual(committed["counts"]["host_unavailable"], len(rows))
         self.assertIn(f"{len(rows)} jobs ended HOST_UNAVAILABLE", committed["outcome"])
-        self.assertEqual(
-            committed["counts"]["host_unavailable_by_purpose"],
-            {"coursebook.plan.generate": 4, "coursebook.plan.validate": 2},
-        )
+        # The split is computed from the same rows, so it can only be pinned to itself: a literal
+        # here went stale the moment the run added another failed call (CP-015b).
+        by_purpose: dict[str, int] = {}
+        for job in rows:
+            key = str(job.get("purpose") or "unspecified")
+            by_purpose[key] = by_purpose.get(key, 0) + 1
+        self.assertEqual(committed["counts"]["host_unavailable_by_purpose"], by_purpose)
+        self.assertTrue(committed["counts"]["host_unavailable_by_purpose"],
+                        "the record carries HOST_UNAVAILABLE rows, so the split cannot be empty")
 
     def test_every_stored_verdict_appears_and_none_is_invented(self) -> None:
         record = _record()
@@ -217,10 +222,18 @@ class RunRecordContractTest(unittest.TestCase):
         self.assertGreaterEqual(started, min(stamps))
         self.assertLessEqual(started, min(stamps))
         self.assertEqual(finished, max(stamps))
-        final = [job for job in record["jobs"]
-                 if job["id"] == "job_2ffe300c67114e3f9e7fe114b542be40"]
-        self.assertTrue(final, "the final sourdough attempt is absent from the record")
-        self.assertIn("348f8cbb76cb5edb", {item["plan_id"] for item in record["plan_attempts"]})
+        # The window must close on the row set it carries, not on a job id from an earlier run:
+        # CP-015b added jobs after the committed ids and this assertion was pinning a stale attempt.
+        latest = max(record["jobs"], key=lambda job: self.builder.parse_ts(job["updated_at"]))
+        self.assertEqual(finished, self.builder.parse_ts(latest["updated_at"]))
+        sourdough = record["courses"]["sourdough"]
+        self.assertTrue(sourdough["plan_attempts"],
+                        "the Sourdough slot carries no plan attempt, so the record is not the run")
+        self.assertEqual(
+            {attempt["job_id"] for attempt in sourdough["plan_attempts"]} - {None},
+            set(sourdough["job_ids"]) & {attempt["job_id"]
+                                         for attempt in sourdough["plan_attempts"]},
+        )
 
     def test_live_evidence_is_the_same_row_set(self) -> None:
         record = _record()
@@ -235,7 +248,7 @@ class RunRecordContractTest(unittest.TestCase):
         fresh = self.builder.build_record(
             self.builder.collect(DEMO_DB),
             base="http://127.0.0.1:44501",
-            wire_version=25,
+            wire_version=26,
             authoring_model=self.builder.authoring_model_label(),
             validator=self.builder.validator_label(),
         )
@@ -250,11 +263,25 @@ class RunRecordContractTest(unittest.TestCase):
         self.assertEqual(fresh["started_at"], committed["started_at"])
         self.assertEqual(fresh["finished_at"], committed["finished_at"])
 
-    def test_outcome_reports_zero_approved_courses_honestly(self) -> None:
+    def test_outcome_reports_the_approved_count_honestly(self) -> None:
         record = _record()
         approved = sum(1 for course in record["courses"].values() if course["plan_approved"])
-        self.assertEqual(approved, 0)
         self.assertRegex(record["outcome"], rf"^{approved} of {len(record['courses'])} courses")
+        self.assertEqual(record["outcome"].startswith("0 of"), approved == 0)
+        # The criterion histogram in the sentence is the one on the counts block, computed from the
+        # stored rejections — so a sentence can never claim a class the rows do not carry.
+        histogram = record["counts"]["rejections_by_criterion"]
+        self.assertEqual(
+            histogram,
+            {criterion: sum(1 for attempt in record["plan_attempts"]
+                            for rejection in attempt.get("rejections") or []
+                            if rejection.get("criterion") == criterion)
+             for criterion in {rejection.get("criterion")
+                               for attempt in record["plan_attempts"]
+                               for rejection in attempt.get("rejections") or []}},
+        )
+        for criterion, count in histogram.items():
+            self.assertIn(f"{criterion} {count}", record["outcome"])
 
 
 if __name__ == "__main__":

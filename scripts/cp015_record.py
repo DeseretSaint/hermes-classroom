@@ -381,20 +381,40 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
     unvalidated = [attempt for attempt in attempts if not attempt["validated"]]
     approved_count = sum(1 for entry in courses.values() if entry["plan_approved"])
 
+    #: Rejections are counted by the criterion the stored verdict names. The sentence is computed
+    #: from the rows only: an earlier version ended with a prose diagnosis of *why* every plan was
+    #: rejected, and that sentence outlived the rule change it described (CP-015b found it still
+    #: claiming the source_support conflict after the excerpt fix removed that class entirely).
+    by_criterion: dict[str, int] = {}
+    for attempt in attempts:
+        for rejection in attempt.get("rejections") or []:
+            key = str(rejection.get("criterion") or "unnamed")
+            by_criterion[key] = by_criterion.get(key, 0) + 1
+    by_verdict: dict[str, int] = {}
+    for item in validations:
+        key = str(item["verdict"])
+        by_verdict[key] = by_verdict.get(key, 0) + 1
+    latest = max(attempts, key=lambda item: parse_ts(item["created_at"]), default=None)
+
     outcome = (
         f"{approved_count} of {len(courses)} courses reached an approved plan. "
-        f"The backend holds {len(jobs)} plan jobs for the four starter courses; "
+        f"The backend holds {len(jobs)} plan jobs; "
         f"{len(host_rows)} jobs ended HOST_UNAVAILABLE"
         + (f" ({', '.join(f'{count} {purpose}' for purpose, count in sorted(by_purpose.items()))})"
            if host_rows else "")
         + f", {len(validations)} plan verdicts are stored "
-        f"(all {', '.join(sorted({str(item['verdict']) for item in validations})) or 'none'})"
+        f"({', '.join(f'{count} {verdict}' for verdict, count in sorted(by_verdict.items())) or 'none'})"
         + (f", and {len(unvalidated)} authored plan(s) have no validation record "
            f"({', '.join(item['plan_id'] for item in unvalidated)})" if unvalidated else "")
-        + ". Every authored plan was rejected on the same structural conflict: the learner's goal "
-          "names capabilities the fetched excerpts do not carry, ledger-first authoring records "
-          "them in exclusions, and the validator then rejects the plan for not delivering the "
-          "stated goal. Nothing was hand-written to fill the count."
+        + ". Rejections by criterion: "
+        + (", ".join(f"{criterion} {count}"
+                     for criterion, count in sorted(by_criterion.items(),
+                                                    key=lambda item: (-item[1], item[0])))
+           or "none")
+        + (f". The latest stored verdict is plan {latest['plan_id']} "
+           f"({latest.get('verdict')}) with {len(latest.get('rejections') or [])} reason(s)"
+           if latest else "")
+        + ". Every count here is a stored row; nothing was hand-written to fill it."
     )
 
     return {
@@ -415,6 +435,8 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
             "host_unavailable": len(host_rows),
             "host_unavailable_by_purpose": by_purpose,
             "validation_records": len(validations),
+            "validation_verdicts": by_verdict,
+            "rejections_by_criterion": by_criterion,
             "plans": len(plans),
             "plans_without_validation": len(unvalidated),
         },

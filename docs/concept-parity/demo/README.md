@@ -27,5 +27,13 @@ Reading rules:
   `claimed_reasons` and is **not** evidence.
 - `counts.host_unavailable` counts job rows whose `error_code` is `HOST_UNAVAILABLE`, split by
   `details.purpose`; it is not a narrative estimate.
+- `counts.rejections_by_criterion` is the histogram of the criteria named in the stored
+  `gen_validation_records` rejections; the outcome sentence repeats it verbatim. Neither is an
+  interpretation of *why* a plan was rejected — read the `rejections[]` entries for that.
 - `started_at`/`finished_at` are the earliest and latest stored timestamps of the recorded rows, so
   the window cannot end before the final attempt closes.
+
+`[CP-015b]` replaced the outcome sentence's closing paragraph, which asserted a diagnosis ("every
+plan was rejected on the same structural conflict") that outlived the rule change it described. The
+sentence is now counts only: approved courses, jobs, `HOST_UNAVAILABLE` split, verdicts, the
+criterion histogram and the latest stored verdict.
