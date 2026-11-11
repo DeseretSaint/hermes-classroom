@@ -176,62 +176,92 @@ def submit(
             ledger["dry_run"] = True
             return ledger
 
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(archive_path, destination)
-        _run([sys.executable, str(repo / "scripts" / "store_index.py")], cwd=repo)
-        indexed = _store_index(repo)
-        if not any(str(row.get("pack_id")) == pack_id for row in indexed.get("packs") or []):
-            raise SystemExit(f"{pack_id} was not indexed after submission; the store is inconsistent")
-
-        branch = f"store/{pack_id}-{manifest['pack_version']}".replace(".", "-")
-        _git(repo, "checkout", "-B", branch)
-        _git(repo, "add", "store")
-        commit = _git(
-            repo,
-            "commit",
-            "-m",
-            f"store: add {manifest['title']} ({pack_id} {manifest['pack_version']})\n\n"
-            f"content-hash: {manifest['content_hash']}\n"
-            f"archive-sha256: {archive_sha}\n"
-            f"objectives: {ledger['objectives']} · media: {ledger['media']} · "
-            f"world plates: {ledger['world_plates']}\n"
-            f"submitted by scripts/submit-course.py",
-        )
-        if commit.returncode != 0:
-            raise SystemExit(f"git commit failed:\n{commit.stdout}{commit.stderr}")
-        ledger["branch"] = branch
-        ledger["commit"] = _git(repo, "rev-parse", "HEAD").stdout.strip()
-        if not push:
-            ledger["pushed"] = False
-            return ledger
-
-        _git(repo, "push", "-u", remote, branch)
-        body = (
-            f"Adds **{manifest['title']}** to the Coursebook store.\n\n"
-            f"| field | value |\n| --- | --- |\n"
-            f"| pack id | `{pack_id}` |\n"
-            + (f"| namespaced from | `{derived_from}` (id already taken by different bytes) |\n" if derived_from else "")
-            + f"| version | `{manifest['pack_version']}` |\n"
-            f"| mode | `{ledger['mode']}` |\n"
-            f"| objectives | {ledger['objectives']} |\n"
-            f"| media | {ledger['media']} |\n"
-            f"| world plates | {ledger['world_plates']} |\n"
-            f"| content hash | `{manifest['content_hash']}` |\n"
-            f"| archive sha256 | `{archive_sha}` |\n\n"
-            f"The pack passed the importer's own pre-write gate in this run, including the "
-            f"presentation rules that make a Game course import with its art. Accepting this pull "
-            f"request ships it with the next plugin update; `store/index.json` is regenerated from "
-            f"the bytes, so the hash above is the hash a user will import."
-        )
-        node = _run(
-            [
-                "gh", "pr", "create", "--repo", _repo_slug(repo), "--base", base, "--head", branch,
-                "--title", f"store: {manifest['title']} ({pack_id})", "--body", body,
-            ],
-            cwd=repo,
-        )
-        ledger["pull_request"] = node
+        # The submission is built in a throwaway worktree of the freshly fetched base, never in the
+        # checkout the plugin is running from: a share must not move the author's working tree onto a
+        # store branch, and `checkout -B` there would clobber a branch of the same name.
+        _git(repo, "fetch", "--quiet", remote, base)
+        base_sha = _git(repo, "rev-parse", "FETCH_HEAD").stdout.strip()
+        if not base_sha:
+            raise SystemExit(f"could not resolve origin/{base} to build the store branch from")
+        scratch = Path(tempfile.mkdtemp(prefix="cb-store-"))
+        work = scratch / "repo"
+        added = _git(repo, "worktree", "add", "--detach", str(work), base_sha)
+        if added.returncode != 0:
+            raise SystemExit(f"git worktree add failed:\n{added.stdout}{added.stderr}")
+        try:
+            ledger.update(_publish_from_worktree(
+                work, archive_path, pack_id, manifest, archive_sha, ledger,
+                derived_from=derived_from, base=base, remote=remote, push=push,
+            ))
+        finally:
+            _git(repo, "worktree", "remove", "--force", str(work))
+            shutil.rmtree(scratch, ignore_errors=True)
         return ledger
+
+
+def _publish_from_worktree(
+    work: Path, archive_path: Path, pack_id: str, manifest: dict[str, Any],
+    archive_sha: str, ledger: dict[str, Any], *, derived_from: str | None, base: str,
+    remote: str, push: bool,
+) -> dict[str, Any]:
+    """Place the pack, regenerate the index, commit, push and open the pull request in `work`."""
+    destination = work / "store" / "packs" / f"{pack_id}.zip"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(archive_path, destination)
+    _run([sys.executable, str(work / "scripts" / "store_index.py")], cwd=work)
+    indexed = _store_index(work)
+    if not any(str(row.get("pack_id")) == pack_id for row in indexed.get("packs") or []):
+        raise SystemExit(f"{pack_id} was not indexed after submission; the store is inconsistent")
+
+    branch = f"store/{pack_id}-{manifest['pack_version']}".replace(".", "-")
+    _git(work, "checkout", "-B", branch)
+    _git(work, "add", "store")
+    commit = _git(
+        work,
+        "commit",
+        "-m",
+        f"store: add {manifest['title']} ({pack_id} {manifest['pack_version']})\n\n"
+        f"content-hash: {manifest['content_hash']}\n"
+        f"archive-sha256: {archive_sha}\n"
+        f"objectives: {ledger['objectives']} · media: {ledger['media']} · "
+        f"world plates: {ledger['world_plates']}\n"
+        f"submitted by scripts/submit-course.py",
+    )
+    if commit.returncode != 0:
+        raise SystemExit(f"git commit failed:\n{commit.stdout}{commit.stderr}")
+    ledger["branch"] = branch
+    ledger["commit"] = _git(work, "rev-parse", "HEAD").stdout.strip()
+    if not push:
+        ledger["pushed"] = False
+        return ledger
+
+    _git(work, "push", "-u", remote, branch)
+    body = (
+        f"Adds **{manifest['title']}** to the Coursebook store.\n\n"
+        f"| field | value |\n| --- | --- |\n"
+        f"| pack id | `{pack_id}` |\n"
+        + (f"| namespaced from | `{derived_from}` (id already taken by different bytes) |\n" if derived_from else "")
+        + f"| version | `{manifest['pack_version']}` |\n"
+        f"| mode | `{ledger['mode']}` |\n"
+        f"| objectives | {ledger['objectives']} |\n"
+        f"| media | {ledger['media']} |\n"
+        f"| world plates | {ledger['world_plates']} |\n"
+        f"| content hash | `{manifest['content_hash']}` |\n"
+        f"| archive sha256 | `{archive_sha}` |\n\n"
+        f"The pack passed the importer's own pre-write gate in this run, including the "
+        f"presentation rules that make a Game course import with its art. Accepting this pull "
+        f"request ships it with the next plugin update; `store/index.json` is regenerated from "
+        f"the bytes, so the hash above is the hash a user will import."
+    )
+    node = _run(
+        [
+            "gh", "pr", "create", "--repo", _repo_slug(work), "--base", base, "--head", branch,
+            "--title", f"store: {manifest['title']} ({pack_id})", "--body", body,
+        ],
+        cwd=work,
+    )
+    ledger["pull_request"] = node
+    return ledger
 
 
 def _repo_slug(repo: Path) -> str:
