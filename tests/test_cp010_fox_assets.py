@@ -10,10 +10,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
+
+from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 
 ROOT = Path(__file__).resolve().parent.parent
 ART = ROOT / "assets" / "art" / "fox"
@@ -22,6 +27,10 @@ BIBLE = ROOT / "docs" / "concept-parity" / "ART-BIBLE.md"
 PROVENANCE_DOC = ROOT / "docs" / "concept-parity" / "ART-PROVENANCE.md"
 CONTACT = ROOT / "docs" / "concept-parity" / "art" / "fox-contact-sheet.png"
 MODEL_CONTACT = ROOT / "docs" / "concept-parity" / "art" / "fox-model-sheet-contact.png"
+FOX_MANIFEST = ROOT / "assets" / "fox" / "manifest.json"
+GENERATED = ROOT / "desktop" / "cb-assets.generated.js"
+PLUGIN = ROOT / "desktop" / "plugin.js"
+BUILDER = ROOT / "scripts" / "build_cb_assets.py"
 
 POSES = ["wave", "point", "clock", "read", "cheer", "think", "sleep"]
 SIZES = [512, 256, 128, 64]
@@ -346,6 +355,316 @@ class VisionRecord(unittest.TestCase):
                 self.assertGreaterEqual(len(item["options"]), 2,
                                         "an open item with one option is a decision that was not made")
                 self.assertTrue(item["finding"] and item["why_it_matters"])
+
+
+class BrandSegmentAdoption(unittest.TestCase):
+    """CP-005f — the brand-asset segment encodes the owner-signed painted fox, not the placeholder.
+
+    The owner approved the painted A1 set on 2026-11-10 (``docs/launch/FOX-SIGNOFF.md``) and the
+    product kept shipping the procedural SVG derivative for another day, because no test asserted
+    where the segment's fox bytes came from. These tests are that assertion:
+
+    * every manifest row for the seven poses at 64/128/256/512 names
+      ``assets/art/fox/fox-<pose>-<size>.png`` as its source and master, and carries that file's
+      real hash;
+    * the shipped WebP decodes to that painted plate at that size (alpha identical), so the bytes
+      cannot quietly come from anywhere else;
+    * the generated segment has one key per pose and export, pointing at that file with that hash;
+    * ``cb3FoxSource``/``cb3FoxPixels`` in the built module select 512 at >=416, 256 at >=208,
+      128 at >=128 and 64 below, and ``FoxPose`` renders 208 and 512 from those exports with a
+      1x/2x srcSet;
+    * no ``assets/masters/fox`` path is reachable from the manifest, the segment or the module.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rows = json.loads(FOX_MANIFEST.read_text())
+        cls.by_path = {row["path"]: row for row in cls.rows}
+        text = GENERATED.read_text()
+        start = text.index("Object.freeze(") + len("Object.freeze(")
+        cls.assets = json.loads(text[start:text.rindex(");")])["assets"]
+
+    #: The audit's rule (``docs/launch/FOX-ASSET-AUDIT.md`` item 3), stated here independently of
+    #: the module so a silent change to the thresholds is a failure, not a new truth.
+    @staticmethod
+    def expected_export(size: int) -> int:
+        if size >= 416:
+            return 512
+        if size >= 208:
+            return 256
+        if size >= 128:
+            return 128
+        return 64
+
+    def manifest_row(self, pose: str, size: int) -> dict:
+        path = "assets/fox/fox-%s-%d.webp" % (pose, size)
+        self.assertIn(path, self.by_path, "no manifest row for %s" % path)
+        return self.by_path[path]
+
+    def test_one_row_per_pose_and_export_from_the_painted_file(self):
+        self.assertEqual(len(self.rows), len(POSES) * len(SIZES), "fox manifest row count changed")
+        from PIL import Image
+
+        for pose in POSES:
+            for size in SIZES:
+                with self.subTest(pose=pose, size=size):
+                    row = self.manifest_row(pose, size)
+                    painted_rel = "assets/art/fox/fox-%s-%d.png" % (pose, size)
+                    self.assertEqual(row["source"], "authored:%s" % painted_rel)
+                    self.assertEqual(row["master"], painted_rel)
+                    painted = ROOT / painted_rel
+                    self.assertTrue(painted.is_file(), "%s is missing" % painted_rel)
+                    self.assertEqual(row["master_sha256"], sha256(painted))
+                    with Image.open(painted) as img:
+                        self.assertEqual(img.mode, "RGBA")
+                        self.assertEqual(img.size, (size, size))
+                        self.assertEqual(img.getchannel("A").getpixel((0, 0)), 0,
+                                         "%s is not an alpha cutout" % painted_rel)
+                    shipped = ROOT / row["path"]
+                    self.assertEqual(row["sha256"], sha256(shipped))
+                    self.assertEqual(row["bytes"], shipped.stat().st_size)
+                    self.assertEqual((row["width"], row["height"]), (size, size))
+
+    def test_shipped_webp_is_that_painted_plate(self):
+        """A hash chain proves the bookkeeping; the pixels prove it is the same animal.
+
+        Measured on the shipped set: alpha is byte-identical to the painted PNG at every size, the
+        mean RGB delta is 0.78–2.45/255 and no channel anywhere is off by more than 47/255. The
+        placeholder can never pass this: it is a different drawing, not a lossy encode.
+        """
+        from PIL import Image, ImageChops, ImageStat
+
+        for pose in POSES:
+            for size in SIZES:
+                with self.subTest(pose=pose, size=size):
+                    row = self.manifest_row(pose, size)
+                    with Image.open(ROOT / row["master"]) as master, \
+                            Image.open(ROOT / row["path"]) as shipped:
+                        self.assertEqual(shipped.size, (size, size))
+                        a = master.convert("RGBA")
+                        b = shipped.convert("RGBA")
+                        self.assertEqual(
+                            ImageChops.difference(a.getchannel("A"), b.getchannel("A")).getbbox(),
+                            None,
+                            "%s alpha drifted from the painted plate" % row["path"],
+                        )
+                        # Compare the visible plate: RGB under a transparent pixel is not paint.
+                        paper = Image.new("RGBA", a.size, (255, 255, 255, 255))
+                        flattened = [
+                            Image.alpha_composite(paper, image).convert("RGB") for image in (a, b)
+                        ]
+                    diff = ImageChops.difference(*flattened)
+                    mean = sum(ImageStat.Stat(diff).mean) / 3.0
+                    worst = max(channel.getextrema()[1] for channel in diff.split())
+                    self.assertLess(mean, 3.0,
+                                    "%s is not an encode of the painted plate (mean delta %.2f)"
+                                    % (row["path"], mean))
+                    self.assertLess(worst, 64,
+                                    "%s has a %d/255 channel error against the painted plate"
+                                    % (row["path"], worst))
+
+    def test_no_placeholder_path_is_reachable(self):
+        for name, path in (("fox manifest", FOX_MANIFEST), ("generated segment", GENERATED),
+                           ("built module", PLUGIN)):
+            with self.subTest(artifact=name):
+                self.assertNotIn("assets/masters/fox", path.read_text(),
+                                 "%s still reaches the procedural placeholder" % name)
+
+    def test_registry_has_every_pose_and_export(self):
+        for pose in POSES:
+            for size in SIZES:
+                with self.subTest(pose=pose, size=size):
+                    key = "cb.asset.fox.%s.%d" % (pose, size)
+                    self.assertIn(key, self.assets, "segment has no %s" % key)
+                    entry = self.assets[key]
+                    row = self.manifest_row(pose, size)
+                    self.assertEqual(entry["path"], row["path"])
+                    self.assertEqual(entry["sha256"], row["sha256"])
+                    self.assertEqual(entry["width"], size)
+                    self.assertTrue(entry["src"].startswith("data:image/webp;base64,"))
+
+    def test_builder_reads_the_painted_set(self):
+        source = BUILDER.read_text()
+        self.assertIn("FOX_EXPORTS = (512, 256, 128, 64)", source)
+        self.assertIn('ART_FOX = ASSETS / "art" / "fox"', source)
+        self.assertNotIn('"authored:assets/masters/fox', source)
+        # The procedural SVG generator may survive for --write-masters, but the fox branch may not
+        # rasterize it: a fallback here would re-ship the placeholder behind a missing-export typo.
+        fox_branch = source.split("# fox ---", 1)[1].split("# objects ---", 1)[0]
+        self.assertNotIn("rasterize_svg", fox_branch, "the fox branch rasterizes an SVG again")
+        self.assertIn("missing painted fox export", fox_branch)
+
+    # ── the built module: selection rule, srcSet and a real FoxPose render ────────────────────
+
+    PROBE = r"""
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { createHash } from 'node:crypto'
+import fs from 'node:fs'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+globalThis.__CB_TEST_WIDTH__ = String(payload.width || 1344)
+const mod = await import('./plugin.js')
+
+const sha = (url) => {
+  if (!url) return null
+  const comma = String(url).indexOf(',')
+  if (comma < 0) return null
+  return createHash('sha256').update(Buffer.from(String(url).slice(comma + 1), 'base64')).digest('hex')
+}
+const candidates = (set) => String(set || '')
+  .split(', ')
+  .filter(Boolean)
+  .map((candidate) => {
+    const [url, descriptor] = candidate.split(' ')
+    return { descriptor: descriptor || '', sha: sha(url) }
+  })
+
+const probes = payload.sizes.map((size) => ({
+  size,
+  px: mod.cb3FoxPixels(size),
+  src: sha(mod.cb3FoxSource(payload.pose, size)),
+  srcset: candidates(mod.cb3FoxSrcSet(payload.pose, size))
+}))
+
+const markup = renderToStaticMarkup(
+  React.createElement('div', null,
+    ...payload.renders.map((r) => React.createElement(mod.FoxPose, { pose: r.pose, size: r.size }))
+  )
+)
+const imgs = []
+for (const tag of markup.match(/<img[^>]*>/g) || []) {
+  const get = (name) => {
+    const m = tag.match(new RegExp('\\s' + name + '="([^"]*)"', 'i'))
+    return m ? m[1] : null
+  }
+  imgs.push({ src: sha(get('src')), srcset: candidates(get('srcset')) })
+}
+const wrappers = []
+for (const m of markup.matchAll(/data-cb3-fox="([^"]+)"[^>]*?data-cb3-fox-export="(\d+)"/g)) {
+  wrappers.push({ pose: m[1], px: Number(m[2]) })
+}
+process.stdout.write(JSON.stringify({ exports: mod.CB3_FOX_EXPORTS, probes, imgs, wrappers }))
+"""
+
+    @classmethod
+    def setUpClassModule(cls) -> None:
+        if cls.module is not None:
+            return
+
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        root = Path(tempfile.mkdtemp(prefix="coursebook-cp005f-probe-"))
+        (root / "plugin.js").write_text(PLUGIN.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "probe.mjs").write_text(cls.PROBE, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}),
+            encoding="utf-8",
+        )
+        (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
+        cls.module = root
+
+    module = None
+
+    def probe(self, payload: dict) -> dict:
+        self.setUpClassModule()
+        case = self.module / "case.json"
+        case.write_text(json.dumps(payload), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.module / "probe.mjs"), str(case)],
+            cwd=self.module, capture_output=True, text=True, timeout=300,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-4000:])
+        return json.loads(result.stdout)
+
+    def test_the_primitive_selects_the_export_the_audit_names(self):
+        sizes = [16, 32, 64, 96, 112, 127, 128, 160, 207, 208, 220, 256, 320, 415, 416, 512, 768]
+        out = self.probe({"pose": "clock", "sizes": sizes, "renders": []})
+        self.assertEqual(out["exports"], [64, 128, 256, 512])
+        for probe in out["probes"]:
+            size = probe["size"]
+            expected = self.expected_export(size)
+            with self.subTest(size=size):
+                self.assertEqual(probe["px"], expected,
+                                 "a %d px box resolved to the %s export" % (size, probe["px"]))
+                self.assertEqual(probe["src"], self.manifest_row("clock", expected)["sha256"],
+                                 "a %d px box embedded something other than the %d WebP"
+                                 % (size, expected))
+                next_up = next((px for px in (64, 128, 256, 512) if px > expected), 512)
+                self.assertEqual(
+                    [c["descriptor"] for c in probe["srcset"]], ["1x", "2x"],
+                    "a %d px box has no 1x/2x srcSet" % size,
+                )
+                self.assertEqual(
+                    [c["sha"] for c in probe["srcset"]],
+                    [self.manifest_row("clock", expected)["sha256"],
+                     self.manifest_row("clock", next_up)["sha256"]],
+                    "the srcSet candidates are not the %d and %d painted WebPs"
+                    % (expected, next_up),
+                )
+
+    def test_foxpose_renders_208_and_512_from_the_painted_set(self):
+        renders = [{"pose": "wave", "size": 208}, {"pose": "clock", "size": 208},
+                   {"pose": "clock", "size": 512}]
+        out = self.probe({"pose": "clock", "sizes": [], "renders": renders})
+        self.assertEqual(out["wrappers"], [
+            {"pose": "wave", "px": 256},
+            {"pose": "clock", "px": 256},
+            {"pose": "clock", "px": 512},
+        ], "FoxPose did not mount the 208 boxes on the 256 export")
+        expected = [("wave", 256), ("clock", 256), ("clock", 512)]
+        self.assertEqual(len(out["imgs"]), len(expected))
+        for image, (pose, px) in zip(out["imgs"], expected):
+            with self.subTest(pose=pose, px=px):
+                self.assertEqual(image["src"], self.manifest_row(pose, px)["sha256"])
+                self.assertEqual([c["descriptor"] for c in image["srcset"]], ["1x", "2x"])
+                self.assertEqual(image["srcset"][0]["sha"], self.manifest_row(pose, px)["sha256"])
+
+
+class FoxProofPage(unittest.TestCase):
+    """The frame in the review packet is generated from the module, not drawn by hand.
+
+    ``design/fox-adoption.html`` mounts ``FoxPose`` from ``desktop/plugin.js`` at 208 for the two
+    poses the acceptance names. Re-running the generator must reproduce the committed bytes, and
+    the page must actually carry two 208 px boxes resolved to the 256 export.
+    """
+
+    PAGE = ROOT / "design" / "fox-adoption.html"
+    GENERATOR = ROOT / "scripts" / "gen-fox-proof.py"
+
+    def test_the_committed_page_pins_the_current_module(self):
+        self.assertTrue(self.PAGE.is_file(), "design/fox-adoption.html is missing")
+        page = self.PAGE.read_text()
+        self.assertIn(hashlib.sha256(PLUGIN.read_bytes()).hexdigest(), page,
+                      "the proof page names a module sha that is not desktop/plugin.js")
+        self.assertEqual(page.count('style="width:208px;height:208px'), 2,
+                         "the proof does not show two 208 px boxes")
+        self.assertGreaterEqual(page.count('data-cb3-fox-export="256"'), 2,
+                                "a 208 px box is not mounted on the 256 export")
+        for pose in POSES:
+            with self.subTest(pose=pose):
+                self.assertIn('data-cb3-fox="%s"' % pose, page)
+
+    def test_a_fresh_render_reproduces_the_committed_page(self):
+        import sys
+
+        if _desktop_node_modules() is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        result = subprocess.run(
+            [sys.executable, str(self.GENERATOR), "--check"],
+            cwd=ROOT, capture_output=True, text=True, timeout=300,
+        )
+        self.assertEqual(result.returncode, 0,
+                         "%s\n%s" % (result.stdout[-2000:], result.stderr[-2000:]))
 
 
 if __name__ == "__main__":

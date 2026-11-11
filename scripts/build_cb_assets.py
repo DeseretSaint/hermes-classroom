@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build the Coursebook brand-asset segment: fonts, material tiles, fox poses, object kit.
 
-Inputs are the approved masters under ``assets/masters/`` plus the two pinned upstream font
-masters. Outputs are the shipped files under ``assets/{fonts,material,fox,objects}/``, their
+Inputs are the approved masters under ``assets/masters/``, the painted object kit under
+``assets/art/objects/``, the owner-signed painted fox exports under ``assets/art/fox/``, plus the two
+pinned upstream font masters. Outputs are the shipped files under ``assets/{fonts,material,fox,objects}/``, their
 ``manifest.json`` rows, and the single frozen ``CB_ASSETS`` object in
 ``desktop/cb-assets.generated.js``.
 
@@ -48,6 +49,11 @@ MASTERS = ASSETS / "masters"
 #: CP-013's painted object masters (card-owned art). Not embedded; the shipped assets/objects/*
 #: files are encodes of these.
 ART_OBJECTS = ASSETS / "art" / "objects"
+#: CP-010's owner-signed painted fox exports (660x660 RGBA masters plus 512/256/128/64 PNG
+#: exports). Not embedded; the shipped assets/fox/*.webp files are encodes of the per-size PNGs.
+#: The procedural SVG set under assets/masters/fox/ stays on disk for rollback and is no longer
+#: read by this build.
+ART_FOX = ASSETS / "art" / "fox"
 GENERATED = ROOT / "desktop" / "cb-assets.generated.js"
 CONTRACT = ROOT / "contracts" / "cb.tokens.v3.json"
 VENV = ROOT / ".venv-cb-assets"
@@ -57,7 +63,9 @@ ASSET_BUDGET = 300_000
 PLUGIN_BUDGET = 4_500_000
 
 FOX_POSES = ("wave", "point", "clock", "read", "cheer", "think", "sleep")
-FOX_EXPORTS = (128, 64)
+#: The four painted export sizes under assets/art/fox/. Every pose ships all four: the primitive
+#: picks 512 at >=416 px, 256 at >=208, 128 at >=128 and 64 below that.
+FOX_EXPORTS = (512, 256, 128, 64)
 OBJECTS = (
     "clock",
     "tag",
@@ -653,21 +661,33 @@ def build(check: bool = False) -> dict:
         material_entries[prov] = entry
 
     # fox -----------------------------------------------------------------------------------
+    # CP-005f: the owner-signed painted set is canonical. Each shipped WebP/AVIF is an encode of
+    # the painted PNG export at that size, so alpha, palette and resampling are the art team's,
+    # not this script's. A missing export fails the build; it never falls back to the procedural
+    # SVG fox, which would silently re-ship the placeholder.
     for pose in FOX_POSES:
-        master = MASTERS / "fox" / ("fox-%s.svg" % pose)
-        if not master.exists():
-            raise SystemExit("missing fox master: %s" % master)
         for px in FOX_EXPORTS:
-            img = rasterize_svg(master, px, px)
+            painted = ART_FOX / ("fox-%s-%d.png" % (pose, px))
+            if not painted.is_file():
+                raise SystemExit("missing painted fox export: %s" % painted)
+            from PIL import Image
+
+            with Image.open(painted) as opened:
+                img = opened.convert("RGBA")
+            if img.size != (px, px):
+                raise SystemExit(
+                    "painted fox %s is %dx%d, not %dx%d" % (painted.name, *img.size, px, px)
+                )
             webp = encode(img, "webp")
             rel = "assets/fox/fox-%s-%d.webp" % (pose, px)
             out = ROOT / rel
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(webp)
+            master_rel = "assets/art/fox/fox-%s-%d.png" % (pose, px)
             prov = "cb.asset.fox.%s.%d" % (pose, px)
             row = _row(
                 "mascot.pose.%s@%d" % (pose, px),
-                "authored:assets/masters/fox/fox-%s.svg" % pose,
+                "authored:%s" % master_rel,
                 "CC0-1.0",
                 sha256_bytes(webp),
                 px,
@@ -675,8 +695,8 @@ def build(check: bool = False) -> dict:
                 len(webp),
                 prov,
                 rel,
-                master="assets/masters/fox/fox-%s.svg" % pose,
-                master_sha256=sha256_file(master),
+                master=master_rel,
+                master_sha256=sha256_file(painted),
             )
             az = None
             if may_emit_avif(webp):

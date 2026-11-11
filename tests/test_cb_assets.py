@@ -363,6 +363,8 @@ class Determinism(unittest.TestCase):
         shutil.copytree(ROOT / "assets" / "masters", tmp / "assets" / "masters")
         # CP-013's painted object masters are pipeline inputs too (assets/art/objects/*.png).
         shutil.copytree(ROOT / "assets" / "art" / "objects", tmp / "assets" / "art" / "objects")
+        # CP-005f: so are the owner-signed painted fox exports (assets/art/fox/*.png).
+        shutil.copytree(ROOT / "assets" / "art" / "fox", tmp / "assets" / "art" / "fox")
         (tmp / "contracts").mkdir()
         shutil.copy2(CONTRACT, tmp / "contracts" / "cb.tokens.v3.json")
         (tmp / "desktop").mkdir()
