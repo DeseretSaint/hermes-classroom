@@ -10693,8 +10693,14 @@ def run_lesson_job(
                 )
                 next_version = int((version_row or {}).get("v") or 0) + 1
             review_target = None
+            park_reason = None
             if blueprint_plan and str(section.get("section_role") or "owner") == "review":
                 review_target = _resolve_review_target(connection, str(plan_id), section)
+                # CP-015j: the review page is authored either way. When the owner check it
+                # presents is closed (its owner page is parked `needs_review`), the review is
+                # stored `needs_review` with the closed checks named rather than failing the unit.
+                if not review_target.get("check_open", True):
+                    park_reason = _review_park_reason(section, review_target)
             lesson_summaries.append(
                 _author_section(
                     connection,
@@ -10716,6 +10722,7 @@ def run_lesson_job(
                     now=now,
                     parent_brief=lesson_parent_brief,
                     review_target=review_target,
+                    park_reason=park_reason,
                     version=next_version,
                 )
             )
@@ -10782,59 +10789,163 @@ def _resolve_review_target(
     A review lesson authors **no new check** (§5). It presents the existing owner check of the
     objective it reinforces. Choosing the first reinforced ref that already has an open check is
     deterministic; the caller stores the link and never inserts a ``checks`` row.
+
+    CP-015j: a review is *authorable* while its owner page is parked ``needs_review``. That page
+    exists, its check is closed, and the page may be approved or regenerated later — failing the
+    whole unit job here meant a unit whose owners needed review could never author its review
+    section at all (job_57a89f823d274b2ba7d769edd81eee0c). So a closed owner check is returned as
+    a target with ``check_open: False``; the caller authors the review page but parks it
+    ``needs_review`` with the closed checks named. An objective with **no check at all** has no
+    owner lesson, and that is still a structural refusal.
     """
     refs = [int(ref) for ref in section.get("objective_refs") or []]
+    found: list[dict[str, Any]] = []
     for ref in refs:
         objective = _objective_for(connection, plan_id, ref)
         if objective is None:
             continue
         row = _row_dict(
             connection.execute(
-                "SELECT * FROM checks WHERE objective_id = ? AND state = 'open' "
-                "ORDER BY version DESC LIMIT 1",
+                # Prefer the open check, exactly like the practice and attempt lanes; fall back
+                # to the latest closed one so a parked owner page still names a real check.
+                "SELECT * FROM checks WHERE objective_id = ? "
+                "ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
                 (str(objective["id"]),),
             ).fetchone()
         )
         if row is None:
             continue
-        stimulus = _load_json(row["stimulus_json"], {})
-        reference = _load_json(row["reference_json"], {})
-        rubric = _load_json(row["rubric_json"], {})
+        target = _review_check_target(connection, ref, objective, row)
+        found.append(target)
+        if target["check_open"]:
+            target["closed_refs"] = [
+                item["objective_ordinal"] for item in found if not item["check_open"]
+            ]
+            target["missing_refs"] = [
+                other for other in refs if other not in {item["objective_ordinal"] for item in found}
+            ]
+            # Reuse the first *open* owner check: a review over an approved owner is servable even
+            # when another reinforced owner is still parked.
+            target["closed_owner_checks"] = [
+                _closed_check_summary(item) for item in found if not item["check_open"]
+            ]
+            return target
+    if not found:
+        raise GenerationRejected(
+            f"review section {section.get('ordinal')} reinforces objectives {refs} but no owner "
+            "lesson has authored a check for any of them; author the owner lessons for those "
+            "objectives first"
+        )
+    chosen = found[0]
+    chosen["closed_refs"] = [item["objective_ordinal"] for item in found]
+    chosen["missing_refs"] = [
+        other for other in refs if other not in {item["objective_ordinal"] for item in found}
+    ]
+    chosen["closed_owner_checks"] = [_closed_check_summary(item) for item in found]
+    return chosen
+
+
+def _review_check_target(
+    connection: sqlite3.Connection,
+    ref: int,
+    objective: dict[str, Any],
+    row: dict[str, Any],
+) -> dict[str, Any]:
+    """One owner check projected into the shape a review lesson reuses.
+
+    The check is never re-authored and its row is never rewritten: the review lesson links this
+    exact check id. ``check_open`` is carried so the caller can park the review when the owner page
+    is still ``needs_review``.
+    """
+    stimulus = _load_json(row["stimulus_json"], {})
+    reference = _load_json(row["reference_json"], {})
+    rubric = _load_json(row["rubric_json"], {})
+    # The lesson that authored the check is the owner section's, never the review that later
+    # links the same check id — a review link must not be reported as the check's owner.
+    kind_row = _row_dict(
+        connection.execute(
+            "SELECT l.id AS lesson_id, l.state AS lesson_state, l.page_json FROM gen_lessons l"
+            " JOIN gen_lesson_checks g ON g.lesson_id = l.id"
+            " JOIN gen_plan_sections s ON s.id = l.section_id AND s.plan_id = l.plan_id"
+            " WHERE g.check_id = ? AND s.section_role = 'owner'"
+            " ORDER BY l.version DESC, l.rowid DESC LIMIT 1",
+            (str(row["id"]),),
+        ).fetchone()
+    )
+    if kind_row is None:
         kind_row = _row_dict(
             connection.execute(
-                "SELECT l.page_json FROM gen_lessons l JOIN gen_lesson_checks g ON g.lesson_id = l.id "
-                "WHERE g.check_id = ? LIMIT 1",
+                "SELECT l.id AS lesson_id, l.state AS lesson_state, l.page_json FROM gen_lessons l"
+                " JOIN gen_lesson_checks g ON g.lesson_id = l.id WHERE g.check_id = ?"
+                " ORDER BY l.version DESC, l.rowid DESC LIMIT 1",
                 (str(row["id"]),),
             ).fetchone()
         )
-        page = _load_json(kind_row["page_json"], {}) if kind_row is not None else {}
-        kind = (page.get("check") or {}).get("kind") or "quiz"
-        check = {
-            "kind": kind,
-            "evidence_target": row["evidence_target"],
-            "stimulus": dict(stimulus),
-            "learner_instructions": stimulus.get("learner_instructions") or "",
-            # H-18: an owner check authored after this change stores the open scaffold list, and a
-            # legacy one stores the Japanese triple object. Normalise both instead of dict()-ing a
-            # list, so a review lesson over an H-18 lesson keeps working and its scaffolds stay
-            # readable by enforce_lesson_rules.
-            "scaffolds": localization.copy_scaffolds(stimulus.get("scaffolds")),
-            "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
-            "reference_answer": reference.get("reference_answer"),
-            "accepted_answers": list(reference.get("accepted_answers") or []),
-            "accepted_alternatives": [list(group) for group in reference.get("accepted_alternatives") or []],
-            "rubric": [dict(item) for item in rubric.get("criteria") or []],
-        }
-        return {
-            "check_id": str(row["id"]),
-            "objective": objective,
-            "objective_ordinal": ref,
-            "check": check,
-        }
-    raise GenerationRejected(
-        f"review section {section.get('ordinal')} reinforces objectives {refs} but none has an "
-        "open owner check; author the owner lessons for those objectives first"
+    page = _load_json(kind_row["page_json"], {}) if kind_row is not None else {}
+    check = {
+        "kind": (page.get("check") or {}).get("kind") or "quiz",
+        "evidence_target": row["evidence_target"],
+        "stimulus": dict(stimulus),
+        "learner_instructions": stimulus.get("learner_instructions") or "",
+        # H-18: an owner check authored after this change stores the open scaffold list, and a
+        # legacy one stores the Japanese triple object. Normalise both instead of dict()-ing a
+        # list, so a review lesson over an H-18 lesson keeps working and its scaffolds stay
+        # readable by enforce_lesson_rules.
+        "scaffolds": localization.copy_scaffolds(stimulus.get("scaffolds")),
+        "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
+        "reference_answer": reference.get("reference_answer"),
+        "accepted_answers": list(reference.get("accepted_answers") or []),
+        "accepted_alternatives": [list(group) for group in reference.get("accepted_alternatives") or []],
+        "rubric": [dict(item) for item in rubric.get("criteria") or []],
+    }
+    return {
+        "check_id": str(row["id"]),
+        "objective": objective,
+        "objective_ordinal": ref,
+        "check": check,
+        "check_state": str(row["state"]),
+        "check_open": str(row["state"]) == "open",
+        "owner_lesson_id": kind_row.get("lesson_id") if kind_row is not None else None,
+        "owner_lesson_state": kind_row.get("lesson_state") if kind_row is not None else None,
+    }
+
+
+def _closed_check_summary(target: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "objective_ref": target["objective_ordinal"],
+        "check_id": target["check_id"],
+        "check_state": target["check_state"],
+        "lesson_id": target.get("owner_lesson_id"),
+        "lesson_state": target.get("owner_lesson_state"),
+    }
+
+
+def _review_park_reason(section: dict[str, Any], review_target: dict[str, Any]) -> str:
+    """Why a review lesson over closed owner checks is authored but not servable.
+
+    The review page is real content and is stored for revision; its check is the owner's, and a
+    closed owner check cannot be presented to a learner. Naming the exact owner lessons makes the
+    parent's next action concrete: approve or regenerate those owners, then regenerate this
+    section.
+    """
+    details = []
+    for item in review_target.get("closed_owner_checks") or []:
+        lesson = item.get("lesson_id") or "no lesson row"
+        state = item.get("lesson_state") or "unknown"
+        details.append(
+            f"objective {item['objective_ref']} is served by {item['check_id']} "
+            f"({item['check_state']}) from owner lesson {lesson} ({state})"
+        )
+    missing = review_target.get("missing_refs") or []
+    if missing:
+        details.append(f"objectives {sorted(missing)} have no owner check at all")
+    return (
+        f"review section {section.get('ordinal')} presents a closed owner check: "
+        + "; ".join(details)
+        + ". The review page is authored and parked; approve or regenerate the owner lessons, "
+        "then regenerate this section so the review binds to an open check."
     )
+
 
 
 def _author_section(
@@ -10858,6 +10969,7 @@ def _author_section(
     subject_domain: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     review_target: dict[str, Any] | None = None,
+    park_reason: str | None = None,
     version: int = 1,
 ) -> dict[str, Any]:
     objective_ordinal = int(
@@ -11041,6 +11153,13 @@ def _author_section(
         state = "model_assessed"
     else:
         state = "needs_review"
+    if park_reason is not None:
+        # CP-015j: the review page is authored content, but the owner check it presents is closed
+        # (its owner page is still `needs_review`). A review that cannot present a servable check
+        # is not a validated lesson: park it with the closed owner checks named, instead of
+        # failing the whole unit job. The page survives for revision.
+        state = "needs_review"
+        rejection_reasons = [park_reason, *[reason for reason in rejection_reasons if reason != park_reason]]
     check_payloads = _check_payloads(
         lesson, locale=locale, recipe=recipe,
         practice_check_already=_plan_has_practice(connection, plan_id),
@@ -11128,7 +11247,10 @@ def _author_section(
         "lesson_id": lesson_id,
         "check_id": check_id,
         "state": state,
-        "check_enabled": state in ("validated", "model_assessed"),
+        # A review lesson presents its owner's check: the page is only usable when that check is
+        # open. A parked review keeps the page but never claims an enabled check.
+        "check_enabled": state in ("validated", "model_assessed")
+        and (review_target is None or bool(review_target.get("check_open", True))),
         "audit_state": "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
         "validation_id": validation_id,
         "validation_verdict": verdict["verdict"],
@@ -11138,6 +11260,12 @@ def _author_section(
         "generation": generation_provenance(response, request),
         "reused": False,
     }
+    if review_target is not None:
+        summary["review_check_open"] = bool(review_target.get("check_open", True))
+        summary["review_check_state"] = review_target.get("check_state")
+    if park_reason is not None:
+        summary["parked"] = True
+        summary["park_reason"] = park_reason
     warning = summary["validation"].get("warning")
     if warning:
         summary["warning"] = warning

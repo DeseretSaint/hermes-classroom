@@ -209,6 +209,15 @@ reinforces, so a cold pass there is the delayed retrieval evidence the kernel al
 and a hinted or answer_shown pass stays non-independent. This is how a section can serve more
 than one objective without inventing a second check authority or a practice-only evidence class.
 
+A review section is **authorable while its owner pages are parked `needs_review`**. A parked
+owner page is authored content whose check is closed; failing the whole unit job on it would mean
+a unit whose owners need review can never author its review section, and a re-run cannot satisfy
+"author the owner lessons first" any differently. The review page is authored and stored
+`needs_review` with the closed owner checks named (objective, check id, owner lesson and its
+state); it is not servable until an owner check is open, and regenerating the review section then
+binds the open check. An objective with **no owner lesson at all** is still a structural
+refusal — the review names the objectives and asks for the owner lessons.
+
 Check plan v2 removes `count` and `independent_evidence`. Both were decorative: the lesson
 pipeline writes exactly one check per owner section and independence is an evidence-class
 property, not a plan promise. The v2 entry is `objective_ref`, `kind`, `evidence_target`,
