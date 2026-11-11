@@ -109,7 +109,7 @@ coursebook state doesn't reflect that." VQ-G0 (`t_fcdf8967`) is completed on tha
 | L-06 | two filled terracotta pills | one filled primary, one quiet secondary | SPEC-V3 D1, one primary per surface |
 | L-07 | header in the docked pane | host chrome; compact composition | G0-1 |
 | L-09 | course home as a paper page with a 3:1 hero band | the plate is the page's ground; head, route and aside composed inside it | D-009; SPEC-V3 §5.4 M4 amended |
-| L-08 | course-home hero plate from the kit's `course-map` | the kit's `home-hero` field | VQ-007 has not shipped a `course-map` plate; UI-K5 resolves `world.read` artifact → `course-map` → `home-hero` and lands on `home-hero` today, marked `data-cb3-scene-artifact="home-hero"` |
+| L-08 | course-home hero plate from the kit's `course-map` | the kit's `home-hero` field | VQ-007 has not shipped a `course-map` plate; UI-K5 resolves `world.read` artifact → `course-map` → `home-hero` and lands on `home-hero` today, marked `data-cb3-scene-artifact="home-hero"`. **Enforced since D-010:** the `course_map` role is matched by plate identity, so the committed UI-K5 cell re-judges as `course_map 0/1 (present: home-hero)`. This row is the gap; it closes when the map plate ships |
 
 ### D-006 — display plates and generated Game courses
 
@@ -178,8 +178,51 @@ Consequences, all binding:
 - The four measured surfaces that the installed capture fails — Home, Workshop/Courses, Course
   home, Classroom — plus the two surfaces with no frame and no card, Course home and Parent
   Studio, are all in flight in the same wave.
-- One capture per wave: `scripts/vq-capture.sh`, six destinations × four widths, one relaunch, one
-  contact sheet. Per-card capture runs are spend without new evidence.
+- One capture per wave: `scripts/vq-capture.sh`, seven destinations × four widths (six until D-010
+  gave the course desk its own cell), one relaunch, one contact sheet. Per-card capture runs are
+  spend without new evidence.
 - No gate is relaxed by this ruling. Gate 0 asset existence, Gate 2 mechanical, Gate 3 region
   critic, Gate 4 rubric floors, Gate 5 installed capture and Gate 6 cohesion all still apply per
   surface; only the scheduling changes.
+
+### D-010 — the rig names its course surfaces; a role that names a plate is identity-matched
+
+Architect ruling 2026-11-11, from the UI-K5 review (t_df06de74). Two capture-tooling defects, both
+in `scripts/`, neither in product source.
+
+**1. `course-home` was photographing the desk.** The rig's destination documented "the first Home
+shelf card" and waited for `[data-cb-course-home]`, which `desktop/src/98-page.js` mounts as
+`FieldDesk` (GM-002). `CourseHomeV3` (`data-cb-course-home-v3`, `desktop/src/90-course.js`) is the
+course detail's `overview` view and was unreachable from the rig. So VQ-006's `course_map 0/1` and
+`fox_pose 0/1` cells were findings about the desk, and no UI-K5 change to `CourseHomeV3` could move
+them.
+
+Ruling: **`Course home` is `CourseHomeV3`.** It is the surface VISUAL-QUALITY-PROGRAM §2 describes
+with the map reference, and it is the surface the R-MAP composition lives on. `FieldDesk` is the
+selected course's trailhead, a distinct GM-002 surface with its own card about hierarchy and copy;
+it is not the product course home. Consequences:
+
+- `--destination course-home` now drives the shelf card, then the desk's own "See the plan" control,
+  and waits for `[data-cb-course-detail="overview"] [data-cb-course-home-v3]`.
+- FieldDesk is captured as `--destination course-desk` (`[data-cb-course-home]`), a seventh matrix
+  destination with no required display role.
+- A cell record names which surface it is (`route.course_home`, `route.course_home_v3`,
+  `route.course_detail`), and the judge refuses a frame of one captured as the other. Re-judged
+  committed VQ-006 cells now say "this frame is FieldDesk, not the course-home surface"; the UI-K5
+  packet passes the surface rule through its recorded probe list.
+
+**2. `course_map` was satisfied by any scene or cover plate.** `REQUIREMENTS["course-home"]` accepted
+`kinds: (scene_plate, cover_plate)`, so the kit's `home-hero`, a lesson room or a pack cover all
+greened it. UI-K5's committed manifest showed `course_map found 1 / ok true` for `home-hero`.
+
+Ruling: **a role that names one plate is matched by that plate's identity**, not by its `kind`
+class. `course_map` requires the authored `data-cb3-scene-artifact` id `course-map` or the bundled kit
+role `kit.hero.course-map`; the camera records `scene_artifact` per image and the judge falls back to
+the marker list for packets captured before that field existed. The role is kept, not deleted: the
+divergence ledger already owns the missing plate (L-08), and the gate must not claim the gap is
+closed. A kind-based requirement would green a false map the moment someone paints a hero.
+
+**Evidence.** `python3 -m unittest tests.test_vq_capture_harness` (88 tests, OK). Re-judged the
+committed packets in a scratch copy, never editing them: UI-K5 `course-home--1344` now reports
+`course_map 0/1 (no row identifies as course-map; present: home-hero)`; all four VQ-006 `course-home`
+cells report the desk. `desktop/src/**` untouched; no re-capture.

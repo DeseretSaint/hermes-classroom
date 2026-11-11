@@ -28,13 +28,20 @@
  *   node scripts/vq-capture.mjs --destination home --width 1344 \
  *     --out docs/visual-review/vq-006 --cdp-port 9391
  *
- * Destinations: home | discover | classroom | course-home | world-studio | design-system
+ * Destinations: home | discover | course-home | course-desk | classroom | world-studio |
+ *               design-system
  *
  *   home          [data-cb-nav-item="home"]
  *   discover      Workshop destination, then its Discover tab
- *   course-home   the first Home shelf card (or --course <course_id>)
- *   classroom     course home, then its "Open section" control
- *   world-studio  course home, then "Open World Studio"
+ *   course-home   the course's own page: the first Home shelf card (or --course <course_id>), then
+ *                 the desk's "See the plan" control, which opens CourseDetail in its `overview`
+ *                 view. That view is `CourseHomeV3` ([data-cb-course-home-v3], the R-MAP
+ *                 composition). It is *not* the shelf card's destination.
+ *   course-desk   the same shelf card, stopping on FieldDesk ([data-cb-course-home], GM-002's
+ *                 selected-course desk). The desk is its own surface with its own cell: the
+ *                 course home is the R-MAP composition, and a frame of the desk cannot judge it.
+ *   classroom     FieldDesk, then its "Open section" control
+ *   world-studio  FieldDesk, then "Open World Studio"
  *   design-system the Design System surface — refused as `missing_surface` when the installed
  *                 plugin does not mount one. A component-lab render harness is never substituted:
  *                 a design fixture is not product evidence.
@@ -190,6 +197,15 @@ async function pageProbe(payload) {
     if (has('data-cb-slot-cover=')) return 'artifact_media'
     return 'unknown'
   }
+  // A role that names one plate (`course_map`) is judged by the plate's identity, not by its
+  // `kind` class: a lesson room or the kit's home hero is also a `scene_plate`. The identity is
+  // the authored `data-cb3-scene-artifact` value; capture it as its own field so the judge never
+  // depends on the six-marker slice below.
+  const markerValue = (marks, name) => {
+    const hit = marks.find((m) => m.startsWith(`${name}=`))
+    if (!hit) return null
+    return hit.slice(name.length + 1).replace(/^"(.*)"$/, '$1')
+  }
   const selectorOf = (el) => {
     const marker = nearestMarker(el)
       .filter((m) => !/^data-cb-route=/.test(m))
@@ -276,6 +292,7 @@ async function pageProbe(payload) {
     inventory.push({
       selector: selectorOf(img),
       markers: marks.slice(0, 6),
+      scene_artifact: markerValue(marks, 'data-cb3-scene-artifact'),
       kind,
       src_attr: (img.getAttribute('src') || '').slice(0, 200),
       current_src: currentSrc.startsWith('data:') ? `data:${currentSrc.slice(5, 40)}…` : currentSrc,
@@ -347,6 +364,17 @@ async function pageProbe(payload) {
         const el = document.querySelector('[data-cb-course-home]')
         return el ? el.getAttribute('data-cb-course-home') : null
       })(),
+      // Which of the two course surfaces this frame is: FieldDesk (`course_home`) or the course
+      // detail's overview (`course_home_v3`). A cell names both so a `course-home` frame of the
+      // desk cannot be mistaken for the R-MAP composition.
+      course_home_v3: (() => {
+        const el = document.querySelector('[data-cb-course-home-v3]')
+        return el ? el.getAttribute('data-cb-course-home-v3') : null
+      })(),
+      course_detail: (() => {
+        const el = document.querySelector('[data-cb-course-detail]')
+        return el ? el.getAttribute('data-cb-course-detail') : null
+      })(),
       lesson_view: (() => {
         const el = document.querySelector('[data-cb-lesson-view]')
         return el ? el.getAttribute('data-cb-lesson-view') : null
@@ -416,7 +444,8 @@ const PROBES = {
   'design-system': ['[data-cb-design-system]', '[data-cb3-surface="component.lab"]', '[data-cb3-lab]', '[data-cb-nav-item="system"]'],
   'world-studio': ['[data-cb-course-world-studio]', '[data-cb-world-studio]'],
   classroom: ['[data-cb-lesson-view]', '[data-cb3-scene]', '[data-cb-continue]'],
-  'course-home': ['[data-cb-course-home]'],
+  'course-home': ['[data-cb-course-home-v3]', '[data-cb-course-detail="overview"]'],
+  'course-desk': ['[data-cb-course-home]', '[data-cb-trailhead]'],
   discover: ['[data-cb-workshop-tab="discover"]', '[data-cb-workshop]'],
   home: ['[data-cb-home-card]', '[data-cb-home-invitation]', '[data-cb-desk]']
 }
@@ -513,7 +542,11 @@ async function warmLazyImages(cdp) {
   })()`)
 }
 
-async function openCourse(cdp, courseId) {
+/* The shelf card opens the selected course's desk. That is the launch point for three
+ * destinations, but the desk itself is not the course home: the course home is the course
+ * detail's `overview` view (CourseHomeV3). Keep the two steps named so a capture cannot quietly
+ * photograph one while claiming the other. */
+async function openCourseDesk(cdp, courseId) {
   const candidates = [
     courseId ? `[data-cb-course-id="${courseId}"] [data-cb-home-card-action]` : null,
     courseId ? `[data-cb-course-id="${courseId}"]` : null,
@@ -556,6 +589,28 @@ async function openCourse(cdp, courseId) {
   return opened
 }
 
+/* Course home = the course detail's `overview` view, i.e. CourseHomeV3. Reached through the
+ * desk's own "See the plan" control; the desk's `onSeePlan` opens the course row and CourseDetail
+ * defaults to `overview`. The wait names both markers, so a frame captured here cannot be the
+ * desk: the desk unmounts when the detail mounts, and `route.course_home` comes back null. */
+async function openCourseHome(cdp, courseId) {
+  const opened = await openCourseDesk(cdp, courseId)
+  const control = await clickSelector(cdp, '[data-cb-trailhead-see-plan]')
+  if (!control) throw new Error('FieldDesk has no "See the plan" control to open the course home')
+  await cdp.waitFor(
+    "Boolean(document.querySelector('[data-cb-course-detail=\"overview\"] [data-cb-course-home-v3]'))",
+    'the course home (CourseHomeV3 inside the course detail overview)',
+    25000
+  )
+  await cdp.wait(900)
+  await warmLazyImages(cdp)
+  const detail = await cdp.eval(
+    "(() => { const el = document.querySelector('[data-cb-course-home-v3]'); return el ? el.getAttribute('data-cb-course-home-v3') : null })()"
+  )
+  if (!detail) throw new Error('the course detail mounted without CourseHomeV3')
+  return opened
+}
+
 async function navigate(cdp, destination) {
   // Every destination starts from the route and uses the product's own control.
   await cdp.eval("location.hash = '#/coursebook'")
@@ -574,11 +629,20 @@ async function navigate(cdp, destination) {
     return { control: '[data-cb-nav-item="workshop"] + [data-cb-workshop-tab="discover"]' }
   }
   if (destination === 'course-home') {
-    const opened = await openCourse(cdp, courseId)
+    const opened = await openCourseHome(cdp, courseId)
+    return { control: '[data-cb-home-card-action] + [data-cb-trailhead-see-plan]', course_home_id: opened }
+  }
+  if (destination === 'course-desk') {
+    const opened = await openCourseDesk(cdp, courseId)
+    // The desk is the surface, and it must not be the course home wearing a desk's name.
+    const courseHomeMounted = await cdp.eval(
+      "Boolean(document.querySelector('[data-cb-course-home-v3]'))"
+    )
+    if (courseHomeMounted) throw new Error('course-desk opened CourseHomeV3 instead of the desk')
     return { control: '[data-cb-home-card-action]', course_home_id: opened }
   }
   if (destination === 'classroom') {
-    const opened = await openCourse(cdp, courseId)
+    const opened = await openCourseDesk(cdp, courseId)
     await clickText(cdp, 'Open section')
     await cdp.waitFor(
       "Boolean(document.querySelector('[data-cb-lesson-view]') || document.querySelector('[data-cb3-scene]'))",
@@ -589,7 +653,7 @@ async function navigate(cdp, destination) {
     return { control: '[data-cb-trailhead-actions] "Open section"', course_home_id: opened }
   }
   if (destination === 'world-studio') {
-    const opened = await openCourse(cdp, courseId)
+    const opened = await openCourseDesk(cdp, courseId)
     const probes = [
       '[data-cb-world-change]',
       '[data-cb-world-open-studio]',

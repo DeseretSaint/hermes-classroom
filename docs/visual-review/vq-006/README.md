@@ -89,3 +89,16 @@ synthetic media seam, not model output), only to prove the harness can reach tho
 
 Frames from that rig are not in this directory and are not evidence: its world art is a synthetic
 tonal swatch stamped as such by `docs/visual-review/gm-004/MANIFEST.md`.
+
+## Re-judged after D-010 (2026-11-11, tooling only)
+
+The `course-home` rows above are a frame of **FieldDesk**, not of `CourseHomeV3`: the destination's
+control at capture time was the Home shelf card, which mounts the selected course's desk
+(`[data-cb-course-home]`). That is a defect in the rig, not in this packet's records, and it is
+recorded as D-010 in `docs/launch/UI-DECISIONS.md`. The rig now reaches CourseHomeV3 through the
+desk's "See the plan" control and captures the desk as its own `course-desk` destination.
+
+Re-judging these same committed cell records with the current judge (a scratch copy; nothing here was
+edited) names the surface: every `course-home` cell reports "this frame is FieldDesk, not the
+course-home surface", alongside the role findings the table lists. The cells are still failed and
+still not evidence of the R-MAP composition. A re-capture is the only way to judge it.
