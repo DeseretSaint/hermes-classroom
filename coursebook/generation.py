@@ -326,6 +326,10 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
 #: this set for those stages, so a lesson draft is never refused for a plan-level proposition.
 LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
     criterion for criterion in VALIDATION_CRITERIA if criterion != "goal_capability_disclosure"
+) + (
+    # Topicality is a property of a page, not of a plan: a plan's objectives can all serve the
+    # goal while one section wanders. Asked only where a section exists.
+    "section_topicality",
 )
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
@@ -350,6 +354,33 @@ CHECK_KIND_BY_TARGET: dict[str, tuple[str, ...]] = {
 # larger size the pair is rewritten to the size's default instead of being refused, because a
 # learner who asked for a short course and one task meant the short course.
 SCOPE_RECIPE_DEFAULTS: dict[str, str] = {"single": "one_off", "short": "casual", "full": "committed"}
+
+
+#: Tokens a learner uses to say they are starting from nothing. The create form offers
+#: "None / Some / Confident"; a free-text level may arrive as any of these spellings. A beginner
+#: band is a sequencing rule, not a grade: it says the course must build the concept before it
+#: asks for the act.
+BEGINNER_LEVEL_TOKENS: tuple[str, ...] = (
+    "none",
+    "no experience",
+    "never",
+    "beginner",
+    "complete beginner",
+    "absolute beginner",
+    "novice",
+    "l0",
+    "a1",
+    "start from scratch",
+)
+
+
+def is_beginner_level(level: str | None) -> bool:
+    """True when the declared level places the learner at the start of the subject."""
+
+    text = " ".join(str(level or "").casefold().replace("-", " ").split())
+    if not text:
+        return False
+    return any(token in text for token in BEGINNER_LEVEL_TOKENS)
 
 
 def coerce_recipe_scope(recipe: str, scope: str | None) -> tuple[str, str | None]:
@@ -3442,6 +3473,18 @@ _LESSON_ANSWER_KEY_RULE = (
 )
 
 
+#: A section that teaches a neighbouring subject is the failure the owner names as "going off
+#: track". The criterion is asked only of a lesson draft, and the rubric states what it means:
+#: the prose, the worked example, the check and the media prompt answer this section's objective.
+_LESSON_TOPICALITY_RULE = (
+    " Judge section_topicality against the objective this section serves. The teaching prose,"
+    " the worked example, the check and every media prompt must be about that objective's"
+    " subject. Refuse a page whose prose teaches a different topic, whose worked example comes"
+    " from another subject, whose check asks about something the section never taught, or whose"
+    " media prompt describes a scene from another course. Background that the objective does not"
+    " ask for is a rejection even when it is accurate."
+)
+
 #: CP-015g/D1-F2: the rule that a declared gap is not a defect. Stated by both plan prompt
 #: builders for the same reason as :data:`_DECLARED_VERDICT_RULE` — the kernel enforces it
 #: (:func:`validation_verdict` reclassifies such a rejection and the plan stage refuses to
@@ -4774,6 +4817,7 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         text += _PLAN_SUPPORT_RULE
     if subject.startswith("lesson"):
         text += _LESSON_ANSWER_KEY_RULE
+        text += _LESSON_TOPICALITY_RULE
     return text
 
 
@@ -5120,6 +5164,7 @@ def enforce_plan_rules(
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
     subject_domain: str | None = None,
+    level: str | None = None,
 ) -> None:
     """Dispatch on the document's own schema marker, never on a caller's guess.
 
@@ -5147,6 +5192,7 @@ def enforce_plan_rules(
                 scope=scope,
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
+                level=level,
                 # H-195: the goal is what the drift check compares against. Dropping it here made
                 # the rule unreachable on the real path, so it is threaded through explicitly.
                 goal=goal,
@@ -5757,6 +5803,7 @@ def _enforce_plan_rules_v2(
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
     subject_domain: str | None = None,
+    level: str | None = None,
 ) -> None:
     """The §5 blueprint rules. Structure first, then the shared tail.
 
@@ -5802,6 +5849,17 @@ def _enforce_plan_rules_v2(
         reasons.append("a one-off brief is exactly one unit and exactly one objective")
     if recipe == "one_off" and declared_scope not in ("", "single"):
         reasons.append("a one-off brief must declare scope 'single'")
+    # Rule 1b — a declared beginner may not open with the act. A learner who says "none" at auto
+    # repair must meet the parts and the vocabulary before the head comes off; a plan whose first
+    # objective is a procedure or a transfer is refused rather than shipped to a beginner.
+    if is_beginner_level(level) and objectives:
+        opening = str(objectives[0].get("evidence_target") or "")
+        if opening in ("procedure", "transfer"):
+            reasons.append(
+                "a learner starting from nothing may not open with a "
+                f"{opening!r} objective; the first objective must build the concept "
+                "(recall or comprehension) before the act is asked for"
+            )
 
     # Rule 2 — contiguous ordinals, every ref names an existing unit.
     if sorted(unit_ordinals) != list(range(1, len(unit_ordinals) + 1)):
@@ -9594,6 +9652,7 @@ def run_plan_job(
                     frequency_selection=frequency_selection,
                     goal=planning_goal,
                     subject_domain=subject_domain,
+                    level=level,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons

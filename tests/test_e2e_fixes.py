@@ -87,5 +87,24 @@ class ProcedureCheckKindTest(unittest.TestCase):
         self.assertIn("verification", reasons)
 
 
+class BeginnerOpeningTest(unittest.TestCase):
+    """A learner who starts from nothing is not handed the act first."""
+
+    def test_level_tokens_that_mean_starting_from_nothing(self) -> None:
+        for level in ("none", "None", "no experience", "complete beginner", "NOVICE", "L0", "A1"):
+            self.assertTrue(generation.is_beginner_level(level), level)
+
+    def test_levels_that_do_not_mean_starting_from_nothing(self) -> None:
+        for level in ("confident", "some", "A2", "B1", "intermediate", "", None):
+            self.assertFalse(generation.is_beginner_level(level), level)
+
+    def test_the_beginner_rule_is_stated_in_the_plan_rules(self) -> None:
+        # The v2 rule set is the only place a plan's opening objective can be refused, and no
+        # v2 plan fixture exists in this tree, so the rule's own text is pinned here.
+        source = Path(generation.__file__).read_text(encoding="utf-8")
+        self.assertIn("may not open with a", source)
+        self.assertIn("is_beginner_level(level)", source)
+
+
 if __name__ == "__main__":
     unittest.main()
