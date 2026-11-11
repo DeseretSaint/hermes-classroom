@@ -179,15 +179,20 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
    `crs_97ee…`, `crs_9fa5…`, `crs_a96e…`. A frame whose aside appears to list "the course you are
    on" is showing the twin course, not a self row.
 
-## Verification run on this tree
+## Verification run on this tree (review round 4)
 
-- `python3 scripts/build_plugin.py --check` → matches `desktop/src` (`31c8bc94…42dc`).
-- `tests.test_plugin_build` + `tests.test_cp_024_course_home_v3` → 20 tests OK (the three card-named
-  tests, the composed overview, the new DOM-order and title-wrap tests).
-- Targeted regression group (`plugin_build`, `cp_024`, `m4_visual_audit`, `visual_gate_tools`,
-  `desktop_tokens_v3`, `v3_primitives`, `a11y_structure`, `home_hub`, `gate_scope`, `cp_shelf_facts`,
-  `lesson_views`) → **Ran 160, OK (skipped=2)**.
-- Full suite on `e1a5289` → **Ran 3495 tests in 1363.820s, OK (skipped=11)**.
-- `bash scripts/validate-plugin.sh` on `e1a5289` → **release gate passed 4/4** (4147 files).
-- `docs/visual-review/cp-024/verify_stamps.py` → 15 stamps, 0 problems.
+- `python3 scripts/build_plugin.py --check` → matches `desktop/src` (`31c8bc94…42dc`); `node --check
+  desktop/plugin.js` OK.
+- `tests.test_plugin_build` + `tests.test_cp_024_course_home_v3` + `tests.test_cp_024_capture_scale`
+  + `test_m4_visual_audit` + `test_visual_gate_tools` + `test_cp_capture_stamp` → **Ran 56, OK**
+  (the three card-named tests, the composed overview, the DOM-order/title-wrap/completion tests, and
+  the seven new capture-scale/verifier tests).
+- Targeted regression group (`plugin_build`, `cp_024` ×2, `m4_visual_audit`, `visual_gate_tools`,
+  `cp_capture_stamp`, `desktop_tokens_v3`, `v3_primitives`, `a11y_structure`, `home_hub`,
+  `gate_scope`, `cp_shelf_facts`, `lesson_views`) → **Ran 177, OK (skipped=2)**.
+- Full suite on the round-4 tree → **Ran 3502 tests in 943.715s, OK (skipped=11)**.
+- `docs/visual-review/cp-024/verify_stamps.py` → **15 stamps, 0 problems** (per-cell root font,
+  requested size, frame bytes, duplicate-frame rejection).
 - `scripts/m4v-audit.py` regenerated on this module (15/15 claims PASS) + `test_m4_visual_audit` → 14 OK.
+- `bash scripts/validate-plugin.sh` on the round-4 HEAD → release gate (recorded in the review
+  summary).
