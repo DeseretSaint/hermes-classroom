@@ -1,40 +1,53 @@
 # CP-024 — visual gate results (binding, `docs/concept-parity/VISUAL-GATE.md`)
 
-Run on branch `wt/cp-024-course-home` at module `6aaa9c3909bd75a8791347ac9f5f53c5b619c20aecf16b6f19421384c846b3c0`,
-against the CP-024 rig only (`CDP 9357`, state `~/.hermes/coursebook-test-cp024`). Port `9371` also
-answered `find-cdp.mjs`; it is not this card's window and was not opened, driven or captured.
+Run on branch `wt/cp-024-course-home` at module
+`1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9`, against the CP-024 rig only:
+state `~/.hermes/coursebook-test-cp024-r2`, backend `127.0.0.1:44427`, window **CDP 9361**.
+`find-cdp.mjs` also answers `9395`; that window belongs to another profile's run and was not opened,
+driven or captured.
 
-```
+```bash
 cd visual
-node find-cdp.mjs                 # 9371, 9357
-node audit.mjs --port 9357        # frames/, diffs/, report.html, report.json
+node find-cdp.mjs                 # 9395, 9361   (9361 = this card's rig)
+node audit.mjs --port 9361        # frames/, diffs/, report.html, report.json  (copied here)
 cd ..
-scripts/compare-ref.sh <frame> docs/concept-parity/refs/map.png \
-  docs/visual-review/cp-024/compare course-home-1049-light
+scripts/compare-ref.sh docs/visual-review/cp-024/course-home--1049--light--100--default.png \
+  docs/concept-parity/refs/map.png docs/visual-review/cp-024/compare course-home-1049-light
 python3 scripts/cp-sbs.py --concept docs/concept-parity/refs/map.png --crop 0,0,1344,768 \
-  --product <frame> --out docs/visual-review/cp-024/compare/sbs-course-home-1049-light.png
+  --product docs/visual-review/cp-024/course-home--1049--light--100--default.png \
+  --out docs/visual-review/cp-024/compare/sbs-course-home-1049-light.png
+node docs/visual-review/cp-024/measure-course-home.mjs --port 9361 --width 1440
 ```
 
 ## The card's surface — course home v3
 
+The course home is a **deep screen** (shell state under `#/coursebook`), so `visual/audit.mjs` — which
+scores the four destination routes — cannot reach it. `measure-course-home.mjs` attaches to the same
+rig, drives the same real clicks, emulates the audit viewport, and measures the route. Raw record:
+`gate-course-home-1440.json` (and `-1049`, `-900`, `-460`).
+
 | Fact | Value |
 |---|---|
-| Route as rendered (audit viewport 1440) | **1515 × 1889** (route box, light scope) |
-| Capture cells (width-controlled) | 1049 × 1166, 900 × 1166, 460 × 1166, 1349 × 1166 |
-| `data-cb-scope` | **light** (dark cells: `course-home--1049--dark`, `course-home--900--dark`, `course-home--460--dark`) |
+| Route as rendered @ 1440 × 900 emulated viewport | **1412 × 846** |
+| `data-cb-scope` | **light** (`motion: full`) |
 | `CB Display` loaded | **true** |
 | `CB UI` loaded | **true** |
-| axe serious/critical on `[data-cb-course-detail]` | **none** (0 violations) |
-| Filled primaries on the assembled screen | **1** (`Review 3 objective(s)`) |
-| `data-cb-course-body` at 1515 route px | `split` |
+| axe serious/critical on `[data-cb-course-detail]` | **none** (0 serious/critical; 0 violations) |
+| Filled primaries on the assembled course home | **1** |
+| Route mode / body | `list` (no anchored plate in this rig) / `split` at 1440 and 1049, `stacked` at 900 and 460 |
+| DOM order | `plate → route → aside` at **1440, 1049, 900 and 460** |
+| Horizontal overflow | **false** at 1440, 1049, 900 and 460 |
+| Title word splits (live, per-word line boxes) | **none** at 1440, 1049, 900 and 460 |
 
 ## Pixel diff against the baseline
 
-Not measurable on this rig: the stored baseline frame is **1101 × 1336** and this window renders
-**1517 × 1891**, so `audit.mjs` reports `diff ratio 1.0 — size 1101x1336 -> 1517x1891`. That is a
-geometry mismatch between two differently sized rigs, not content drift, and it is recorded as
-unmeasurable rather than as a pass. The width-controlled capture cells above are the frames whose
-geometry is known.
+**Not applicable for this route**: `visual/baselines/` holds `home`, `courses`, `workshop` and
+`studio` only — there is no stored course-home baseline to diff against, and inventing one on the
+same run that renders it would be self-certification. Recorded as not-applicable, not as a pass.
+
+The audit run itself reports the four destination routes as `frame size changed` against their
+baselines because this rig's window is tiled to 941 × 662 while the baselines were recorded in a
+larger window — a geometry mismatch, recorded rather than claimed as drift or as a pass.
 
 ## Similarity against the approved reference
 
@@ -44,8 +57,8 @@ portrait route crop.
 ```
 render:    course-home--1049--light--100--default.png (810x900 after equal-height scaling)
 reference: docs/concept-parity/refs/map.png (1575x900 after equal-height scaling)
-rmse:      0.316998
-similarity: 0.6830
+rmse:      0.31669
+similarity: 0.6833
 sheet:     docs/visual-review/cp-024/compare/course-home-1049-light-sheet.png
 diff:      docs/visual-review/cp-024/compare/course-home-1049-light-diff.png
 ```
@@ -56,10 +69,10 @@ product 691 px at equal height).
 ## Composition differences a reviewer must weigh (not parity claims)
 
 - The reference paints an illustrated landscape with a winding route and numbered nodes; this frame
-  renders the **typographic plate** ("No scene yet / The lesson works without art.") and the
-  **vertical route list**, because the rig's course has no approved world plate and the wire cannot
-  carry `route_anchors` yet (MANIFEST "Map mode"). The map composition is proved by tests, not by
-  this frame.
+  renders the **typographic plate** ("No scene yet / The lesson works without art."), the
+  **vertical route list under the plate**, and the aside to its right at 1049. The rig's course has
+  no approved world plate and the wire cannot carry `route_anchors` yet (MANIFEST "Map mode"). The
+  map composition is proved by tests, not by this frame.
 - The reference's shelf of cards is replaced by the honest three-row `Your other courses` aside,
   and its header search / second create button are removed (SPEC-V3 §5.4 "better than the concept").
 - Palette, material and type are the product's own v3 contract; the concept is an AI still with
@@ -67,12 +80,13 @@ product 691 px at equal height).
 
 ## Other destinations (audit route list) — pre-existing, outside this card
 
-| Route | Fonts | axe serious/critical | Targets (all outside `[data-cb-course-detail]`) |
+From this round's `gate-report.json` (port 9361):
+
+| Route | Fonts | serious/critical | Targets (all outside `[data-cb-course-detail]`) |
 |---|---|---|---|
 | Home | true / true | none | — |
-| Courses | true / true | `color-contrast`, `label-content-name-mismatch` | shelf `summary` nodes, course-cover disclosures |
-| Workshop | true / true | `label-content-name-mismatch` | `button[data-cb-workshop-open=…]`, favourite toggle, card action |
-| Parent Studio | true / true | `color-contrast`, `label-content-name-mismatch` | studio tab buttons, `summary` |
+| Courses | true / true | `color-contrast` | shelf rows / cover disclosures in `30-home.js`, `40-courses.js` |
+| Workshop | true / true | none | — |
+| Parent Studio | true / true | `color-contrast` | studio controls in `95-studio.js` |
 
-These live in `30-home.js` / `40-courses.js` / `95-studio.js` / `96-workshop.js`, which CP-024 does
-not own. Recorded for the owning cards; not fixed here.
+These live in files CP-024 does not own. Recorded for the owning cards; not fixed here.

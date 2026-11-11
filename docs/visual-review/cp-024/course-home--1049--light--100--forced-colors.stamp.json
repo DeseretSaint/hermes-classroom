@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "course-home--1049--light--100--forced-colors",
-  "captured_at": "2026-11-11T00:45:38.079Z",
+  "captured_at": "2026-11-11T01:23:53.283Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -18,11 +18,11 @@
     "no_react_key_warning": true
   },
   "plugin": {
-    "expected_sha256": "6aaa9c3909bd75a8791347ac9f5f53c5b619c20aecf16b6f19421384c846b3c0",
-    "window_sha256": "6aaa9c3909bd75a8791347ac9f5f53c5b619c20aecf16b6f19421384c846b3c0",
+    "expected_sha256": "1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9",
+    "window_sha256": "1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9",
     "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp024-r2/home/desktop-plugins/coursebook/plugin.js",
     "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/desktop/plugin.js",
-    "bytes": 2306757
+    "bytes": 2308070
   },
   "backend": {
     "url": "http://127.0.0.1:44427",
@@ -121,6 +121,7 @@
     "lesson_view": null,
     "lesson_document": null,
     "scroll_y": 0,
+    "word_wraps": [],
     "marker_names": [
       "data-cb-continue",
       "data-cb-continue-action",
@@ -235,8 +236,8 @@
   },
   "capture": {
     "file": "course-home--1049--light--100--forced-colors.png",
-    "sha256": "25592329248892a1d5ed7824910db172d0db38d58cbd2e8017c30d277cf691d4",
-    "bytes": 265381,
+    "sha256": "94457156d7c48b150f38c66ad9bc08b01dca490576de9506283e2c93c892df2c",
+    "bytes": 300642,
     "crop_mode": "route",
     "clip": {
       "x": 28,
@@ -247,8 +248,8 @@
     "pixel_check": {
       "ok": true,
       "sampled": 116900,
-      "host_bg_pixels": 113151,
-      "host_bg_fraction": 0.9679,
+      "host_bg_pixels": 112802,
+      "host_bg_fraction": 0.9649,
       "html_bg": "0, 0, 0, 1",
       "route_bg": "0, 0, 0, 1",
       "distinct_backgrounds": false

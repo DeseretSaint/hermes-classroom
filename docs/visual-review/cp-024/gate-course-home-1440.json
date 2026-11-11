@@ -1,0 +1,39 @@
+{
+  "generated": "2026-11-11T01:30:04.890Z",
+  "port": 9361,
+  "emulated_viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "route": {
+    "width": 1412,
+    "height": 846
+  },
+  "scope": "light",
+  "motion": "full",
+  "fonts": [
+    {
+      "family": "CB Display",
+      "loaded": true
+    },
+    {
+      "family": "CB UI",
+      "loaded": true
+    }
+  ],
+  "fonts_status": "loaded",
+  "course_home_mode": "list",
+  "body_mode": "split",
+  "primaries": 1,
+  "dom_order": [
+    "plate",
+    "route",
+    "aside"
+  ],
+  "overflows_horizontally": false,
+  "word_wraps": [],
+  "axe": {
+    "violations": []
+  },
+  "serious_critical": []
+}

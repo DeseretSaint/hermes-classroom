@@ -1,6 +1,6 @@
 {
-  "generated": "2026-11-10T23:45:27.817Z",
-  "port": 9357,
+  "generated": "2026-11-11T01:28:09.061Z",
+  "port": 9361,
   "width": 1440,
   "frames": [
     {
@@ -42,7 +42,7 @@
       },
       "diff": {
         "ratio": 1,
-        "reason": "size 1101x1336 -> 1517x1891"
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
@@ -80,18 +80,12 @@
             "impact": "serious",
             "nodes": 3,
             "help": "Elements must meet minimum color contrast ratio thresholds"
-          },
-          {
-            "id": "label-content-name-mismatch",
-            "impact": "serious",
-            "nodes": 2,
-            "help": "Elements must have their visible text as part of their accessible name"
           }
         ]
       },
       "diff": {
         "ratio": 1,
-        "reason": "size 1101x1336 -> 1517x1891"
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
@@ -122,18 +116,11 @@
         "Technical demo: reading a pack before you install it"
       ],
       "axe": {
-        "violations": [
-          {
-            "id": "label-content-name-mismatch",
-            "impact": "serious",
-            "nodes": 5,
-            "help": "Elements must have their visible text as part of their accessible name"
-          }
-        ]
+        "violations": []
       },
       "diff": {
         "ratio": 1,
-        "reason": "size 1101x1336 -> 1517x1891"
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
@@ -167,28 +154,21 @@
             "impact": "serious",
             "nodes": 2,
             "help": "Elements must meet minimum color contrast ratio thresholds"
-          },
-          {
-            "id": "label-content-name-mismatch",
-            "impact": "serious",
-            "nodes": 1,
-            "help": "Elements must have their visible text as part of their accessible name"
           }
         ]
       },
       "diff": {
         "ratio": 1,
-        "reason": "size 1101x1336 -> 1517x1891"
+        "reason": "size 1101x1336 -> 913x608"
       }
     }
   ],
   "failures": [
     "home: frame size changed",
-    "courses: axe color-contrast,label-content-name-mismatch",
+    "courses: axe color-contrast",
     "courses: frame size changed",
-    "workshop: axe label-content-name-mismatch",
     "workshop: frame size changed",
-    "studio: axe color-contrast,label-content-name-mismatch",
+    "studio: axe color-contrast",
     "studio: frame size changed"
   ]
 }

@@ -1,17 +1,17 @@
 {
-  "generated": "2026-11-10T23:24:46.938Z",
-  "port": 9337,
+  "generated": "2026-11-11T01:28:09.061Z",
+  "port": 9361,
   "width": 1440,
   "frames": [
     {
       "route": "home",
       "label": "Home",
       "route_ready": true,
-      "shot": "/home/deseretsaint/Projects/hermes-classroom/visual/frames/home.png",
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/home.png",
       "fonts": [
         {
           "family": "CB Display",
-          "loaded": false,
+          "loaded": true,
           "present": true
         },
         {
@@ -41,20 +41,19 @@
         ]
       },
       "diff": {
-        "ratio": 0,
-        "changed": 0,
-        "total": 1252622
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
       "route": "courses",
       "label": "Courses",
       "route_ready": true,
-      "shot": "/home/deseretsaint/Projects/hermes-classroom/visual/frames/courses.png",
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/courses.png",
       "fonts": [
         {
           "family": "CB Display",
-          "loaded": false,
+          "loaded": true,
           "present": true
         },
         {
@@ -75,23 +74,29 @@
         "H103 live failure check"
       ],
       "axe": {
-        "violations": []
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 3,
+            "help": "Elements must meet minimum color contrast ratio thresholds"
+          }
+        ]
       },
       "diff": {
-        "ratio": 0,
-        "changed": 0,
-        "total": 1252622
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
       "route": "workshop",
       "label": "Workshop",
       "route_ready": true,
-      "shot": "/home/deseretsaint/Projects/hermes-classroom/visual/frames/workshop.png",
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/workshop.png",
       "fonts": [
         {
           "family": "CB Display",
-          "loaded": false,
+          "loaded": true,
           "present": true
         },
         {
@@ -114,20 +119,19 @@
         "violations": []
       },
       "diff": {
-        "ratio": 0,
-        "changed": 0,
-        "total": 1252622
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 913x608"
       }
     },
     {
       "route": "studio",
       "label": "Parent Studio",
       "route_ready": true,
-      "shot": "/home/deseretsaint/Projects/hermes-classroom/visual/frames/studio.png",
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/visual/frames/studio.png",
       "fonts": [
         {
           "family": "CB Display",
-          "loaded": false,
+          "loaded": true,
           "present": true
         },
         {
@@ -144,19 +148,27 @@
         "H103 live reject check"
       ],
       "axe": {
-        "violations": []
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": 2,
+            "help": "Elements must meet minimum color contrast ratio thresholds"
+          }
+        ]
       },
       "diff": {
-        "ratio": 0,
-        "changed": 0,
-        "total": 1252622
+        "ratio": 1,
+        "reason": "size 1101x1336 -> 913x608"
       }
     }
   ],
   "failures": [
-    "home: font fallback CB Display",
-    "courses: font fallback CB Display",
-    "workshop: font fallback CB Display",
-    "studio: font fallback CB Display"
+    "home: frame size changed",
+    "courses: axe color-contrast",
+    "courses: frame size changed",
+    "workshop: frame size changed",
+    "studio: axe color-contrast",
+    "studio: frame size changed"
   ]
 }
