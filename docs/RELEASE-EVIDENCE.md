@@ -53,7 +53,7 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 3523 tests in 951.634s`, `OK (skipped=11)`, exit 0 | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 4033 tests in 1298.016s`, `OK (skipped=12)`, exit 0 | `6d08cc8a` (`master`, 2026-11-11, final adversarial pass) | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v26, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `contracts/rpc.v26.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 26`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
 | `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `coursebook/db.py`, `contracts/db.v14.json` |
 
@@ -272,8 +272,8 @@ file):
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Full suite | `Ran 3951 tests in 1420.035s`, `OK (skipped=12)`, exit 0 | `python3 -m unittest discover -s tests -t .` |
-| 3523 @ `b1913af7` was the previous record and is history, not a claim about this tree | — | `docs/RELEASE-EVIDENCE.md` earlier sections |
+| Full suite | `Ran 4033 tests in 1298.016s`, `OK (skipped=12)`, exit 0 | `python3 -m unittest discover -s tests -t .` |
+| 3951 @ `e7486eba` and 3523 @ `b1913af7` are history, not claims about this tree | — | `docs/RELEASE-EVIDENCE.md` earlier sections |
 
 Every defect this pass fixed has its own focused test named in
 `docs/ADVERSARIAL-BACKEND-REVIEW.md` §1.

@@ -26,11 +26,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: pr
-      - name: The rules it is judged by (base branch)
+      - name: The rules it is judged by (the base branch as it stands now)
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          # ``base.sha`` is the merge base, which can be days old; the rules that will actually
+          # judge this pack after merge are the ones on the base branch today.
+          ref: ${{ github.base_ref }}
           path: base
       - uses: actions/setup-python@v5
         with:

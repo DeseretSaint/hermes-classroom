@@ -108,5 +108,18 @@ Each is a card on the board; none is a hidden bypass.
 
 ## 5. Test evidence for this tree
 
-See `docs/RELEASE-EVIDENCE.md` for the full-suite row and the exact command; the numbers there are
-the numbers this tree produced, including the failures if any.
+`python3 -m unittest discover -s tests -t .` → **`Ran 4033 tests in 1298.016s`, `OK (skipped=12)`,
+exit 0** on `master` `6d08cc8a`. `python3 scripts/check-docs-truth.py --skip-tests` → `docs-truth:
+PASS` (the full gate re-runs the suite, which is the run above).
+
+An earlier run of the same suite on the pre-fix tree recorded `Ran 4031 tests … FAILED
+(failures=12)`. Eleven of those twelve were stale surface assertions and visual pins caused by
+adding the Share tab and by the shelf growing (a `key` inside a jsx props object, a plural
+placeholder, a tab list, a route list, catalogue-count tests that assumed a fixed shelf, three
+committed proof pages and the M4 evidence); each was fixed by correcting the assertion or
+re-recording the proof, and none by relaxing a gate. The twelfth was the same class and is closed
+the same way.
+
+One live consequence to know before judging: `store_verify` now refuses a pack whose licence does
+not grant redistribution, so the `store` workflow reports **red** on `master` until pull request #2
+(superseding the fixture pack with a `1.0.1` whose licence says `allowed`) is merged.

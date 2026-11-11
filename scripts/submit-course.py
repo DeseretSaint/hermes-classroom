@@ -268,7 +268,10 @@ def _push(work: Path, remote: str, branch: str) -> tuple[subprocess.CompletedPro
     the pull request is then opened across repositories. Returns the push result and the head ref
     the pull request needs.
     """
-    direct = _git(work, "push", "-u", remote, branch)
+    # ``--force-with-lease`` and not ``--force``: a re-run of the same submission (same pack id and
+    # version) must be able to replace its own earlier attempt, and must refuse if anyone else has
+    # pushed to that branch since.
+    direct = _git(work, "push", "--force-with-lease", "-u", remote, branch)
     if direct.returncode == 0:
         return direct, branch
     failure = f"{direct.stdout}\n{direct.stderr}".lower()
@@ -280,7 +283,7 @@ def _push(work: Path, remote: str, branch: str) -> tuple[subprocess.CompletedPro
     login = _run(["gh", "api", "user", "--jq", ".login"], cwd=work)
     owner, name = slug.split("/", 1)
     fork_url = f"https://github.com/{login}/{name}.git"
-    forked = _git(work, "push", "-u", fork_url, branch)
+    forked = _git(work, "push", "--force-with-lease", "-u", fork_url, branch)
     return forked, f"{login}:{branch}"
 
 
@@ -320,7 +323,9 @@ def _publish_from_worktree(
         ledger["pushed"] = False
         return ledger
 
-    _git(work, "push", "-u", remote, branch)
+    pushed, head = _push(work, remote, branch)
+    if pushed.returncode != 0:
+        raise SystemExit(f"git push failed:\n{pushed.stdout}{pushed.stderr}")
     body = (
         f"Adds **{manifest['title']}** to the Coursebook store.\n\n"
         f"| field | value |\n| --- | --- |\n"
