@@ -314,6 +314,31 @@ HASH64_RE = re.compile(r"\b[0-9a-f]{64}\b")
 COMMIT_TOKEN_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
 
 
+ARTIFACT_FILE_RE = re.compile(r"\.(mp4|webm|mov|png|jpe?g|gif|json|ya?ml)\b")
+MODULE_CONTEXT = ("plugin.js", "plugin pin", "module_sha256", "desktop/src")
+
+
+def _is_artifact_sha(block: str, pin: str) -> bool:
+    """True when a 64-hex value is an artifact hash (a film, a PNG) quoted inside a
+    passage that also mentions the plugin module.
+
+    A release table is one markdown block: the film's sha256 and the module pin can sit
+    four rows apart without being the same kind of value. Treating every 64-hex in a
+    block that says "desktop/plugin.js" as a module pin rejects a truthful artifact hash.
+    The value is an artifact hash only when every line that carries it names a file it is
+    hashing and none of them frames it as the module.
+    """
+    lines = [line for line in block.splitlines() if pin in line]
+    if not lines:
+        return False
+    for line in lines:
+        if any(marker in line for marker in MODULE_CONTEXT):
+            return False
+        if not ARTIFACT_FILE_RE.search(line):
+            return False
+    return True
+
+
 def check_doc_plugin_pins() -> None:
     """Every 64-hex desktop/plugin.js pin a release document quotes must be the real module.
 
@@ -341,6 +366,11 @@ def check_doc_plugin_pins() -> None:
                 if full and full not in commits:
                     commits.append(full)
             for pin in sorted(set(HASH64_RE.findall(block))):
+                if _is_artifact_sha(block, pin):
+                    notes.append(
+                        f"{name}: sha256 {pin[:8]}… is quoted as an artifact hash, not a module pin"
+                    )
+                    continue
                 carriers = [
                     c for c in commits
                     if git_blob_sha_bytes("desktop/plugin.js", c) == pin

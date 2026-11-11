@@ -1,11 +1,32 @@
 # Credits and provenance — Coursebook launch film
 
-Every product pixel in `coursebook-demo-90s.mp4` is a crop of a real window running the installed Coursebook
-plugin. Nothing is redrawn, mocked, or generated. The film was composed with `ffmpeg` from five PNG
-captures; the build script is `build-final-film.sh` in the capture directory.
+Every product pixel in the posted film, `coursebook-walkthrough.mp4`, renders shipped Coursebook code.
+Nothing is redrawn, mocked, or invented. The film was composed with `ffmpeg` from five source images;
+the build script is `captures/freeze/build-v2.sh`, and the narration track was muxed onto it afterwards
+(`QC.md` records the delivered file's measurements).
 
 Composition: `ffmpeg n9.0.2`, GPL build (`--enable-gpl --enable-libx264`), x264, on Omarchy 7.2.15.
 The film carries no third-party footage, no music and no stock imagery.
+
+## The posted take — five sources, two methods
+
+| Beat | Source | Module | Method |
+| --- | --- | --- | --- |
+| 1 Home | `captures/freeze/captures-src/f-home.png` | `71d940ce`, the pin | **component render** with seeded fixture data (four enrollments), 1920x1080, Chromium |
+| 2 Workshop / Discover | `captures/freeze/captures-src/f-workshop.png` | `71d940ce`, the pin | **component render** with fixture data, 1920x1080, Chromium |
+| 3 Course page | `captures/freeze/captures-src/course-home-772-light.png` | `98400108` | real window capture |
+| 4 Lesson | `captures/freeze/captures-src/04-lesson-top.png` | `98400108` | real window capture, no stamp |
+| 5 Typed check | `captures/freeze/captures-src/07-answer.png` | `98400108` | real window capture, no stamp |
+
+The two Home-side beats are **not screenshots of a running Desktop.** They were rendered from checkout
+`fc6ec7b7` at module `71d940ce` because the plugin installed on the capture host was stale module
+`0d98d606`; `captures/freeze/captures-src/manifest.json` records the checkout, the module digest, the
+commands and the fixtures. The end card's claim — "rendered from the real plugin" — is true of all five
+beats under that definition.
+
+The earlier silent cut `coursebook-demo-90s.mp4` used window captures at module `98400108` for all five
+beats; its Home frame pre-dates the seating fix. That file is kept only as the picture-only master, and
+the stamp table below describes its captures.
 
 ## Capture build — what the stamps say, per file
 
@@ -24,7 +45,7 @@ $ git show 172b61aa:desktop/plugin.js | sha256sum
 9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395  -
 ```
 
-| Beat | File | sha256 | Stamp | `tree.commit` | module | `captured_at` |
+| Silent-cut beat | File | sha256 | Stamp | `tree.commit` | module | `captured_at` |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | `captures-src/home-1833-light.png` | `77bfb00627822aa730a676cb3761cd9dd139793962bea8334a8d86e8a804f852` | `freeze/home-1833-light.stamp.json` | `172b61aa` | `98400108` | 2026-11-11T19:26:45.228Z |
 | 2 | `captures-src/workshop-1833-light.png` | `148b3e02ab41262e88f3d0f348dc508f750106bcdf38afa43232a1f308309938` | `freeze/workshop-1833-light.stamp.json` | `172b61aa` | `98400108` | 2026-11-11T19:27:04.373Z |
@@ -43,8 +64,9 @@ Two provenance gaps are stated rather than papered over.
    lists only `build-final-film.sh` and the PNGs; the `*.stamp.json` files live in the working tree.
    Commit them with the next capture so provenance is inspectable from a clone.
 
-Caption on the end card reads `captured from the real plugin - build c4fe2d63`; both trees carry the
-same module digest, so the card is true of the pixels.
+Caption on the end card of the posted film reads `rendered from the real plugin`; the silent cut's card
+carried `captured from the real plugin - build c4fe2d63`. Both are accurate descriptions of how their
+own pixels were made.
 
 Capture window: 772-1833 px wide (source PNGs `773x1092` and `1834x1092`), light theme, the installed
 plugin driven by the capture rig, 2026-11-11 12:26-12:31 MST.
@@ -71,8 +93,10 @@ $ git diff --stat 172b61aa 7831d31d -- desktop/
 `468f45c0` touches the **Home screen only**: the `CB_HOME_SCENE` seating of the fox and clock, the
 Home-scoped CSS in `76-v3-scope.js` (`[data-cb-home-scene-panel]`, `[data-cb-home-hero-band]`,
 `[data-cb-home-scene-clock]`, `[data-cb-home-scene-fox]`), and one `data-cb-home-cover` attribute.
-Beats 2-5 render from code this commit does not change. Beat 1 renders the pre-`468f45c0` Home; the
-delta and its visible effect are measured per beat in `QC.md` and declared there.
+Beats 3-5 render from code this commit does not change, so their pixels are true of the pin. Beat 1 is
+the one screen the commit changes, and the posted walkthrough re-renders it from `71d940ce`; the delta
+is no longer in the delivered film. `QC.md` §Beat 1 geometry records the seating arithmetic and states
+which clearance figure is a commit-message claim rather than a measurement.
 
 ## Type
 
@@ -84,12 +108,21 @@ release of Arial.
 - Licence text: <https://github.com/liberationfonts/liberation-fonts/blob/main/LICENSE>
 - Installed at `/usr/share/fonts/liberation/` (distribution package `ttf-liberation`).
 
-## Music and sound
+## Narration and sound
 
-**None.** The film has no audio stream at all — `ffprobe -select_streams a` reports zero streams
-(`QC.md` pastes the command). This is deliberate: X autoplays muted, every beat is written on screen, and
-a licensed track could not be cleared and credited inside the submission window. No sound effect, no bed,
-no narration. There is no track, so there is no track licence to carry.
+**No music.** There is no bed, no sound effect and no stock audio, so there is no third-party track
+licence to carry.
+
+The posted film does carry a **narration track**: AAC LC, 48 kHz, stereo, 43.600000 s against the
+51.000000 s picture, integrated −14.90 LUFS and true peak −4.45 dBTP (`QC.md` pastes the commands and
+outputs). The track starts at 3.64 s and ends at 43.02 s, so it sits inside the picture and leaves the
+title card and end card clear. It is an optional aid, not the carrier of the message: every beat is
+written on screen and the film is reviewed with sound off.
+
+The narration is synthesised speech. `docs/launch/QC.md` at `61771289` records it as synthesised with
+OpenAI TTS, slowed to 0.88 and delayed 3.6 s; the synthesis step is not in this repository, and no human
+recording is used. The picture-only master `coursebook-demo-90s.mp4` has no audio stream at all — for it,
+`ffprobe -select_streams a` reports zero streams and the loudness rows are not applicable.
 
 ## Illustration and course art
 

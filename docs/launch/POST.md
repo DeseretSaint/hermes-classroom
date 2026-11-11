@@ -4,46 +4,48 @@ Prepared 2026-11-11 during the 13:00–14:00 MST freeze, for the contest that cl
 **15:00 MST / 17:00 EST**. Nothing in this file has been posted or submitted. The post and the form are
 DeseretSaint's actions under `docs/SUBMISSION.md` §0.
 
-The film is `docs/launch/coursebook-demo-90s.mp4` — **51.0 s**, measured, not estimated
-(`QC.md` carries the command output). It is silent by design; every beat carries its message as
-on-screen type so the file reads with sound off, which is how X autoplays.
+The film to post is `docs/launch/coursebook-walkthrough.mp4` — **51.0 s**, measured, not estimated
+(`QC.md` carries the command output). It is a 51 s cut with an **optional narration track (−14.9 LUFS)**
+and burned-in type, so it reads with sound off, which is how X autoplays. The picture-only master is
+`coursebook-demo-90s.mp4`, which has no audio stream; the earlier `coursebook-demo-voiced.mp4` mux is
+superseded by the walkthrough.
 
-## 1. The X post — 271 characters raw, 254 weighted
+## 1. The X post — 258 characters raw, 241 weighted
 
 ```
-Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — a plan you approve, one objective at a time, typed checks, packs already on the device. MIT. 51 s silent demo. Built with @NousResearch Hermes Agent.
+Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a time, typed checks, evidence you can inspect. MIT. 51 s demo, no sound needed. Built with @NousResearch Hermes Agent.
 github.com/DeseretSaint/hermes-classroom
 ```
 
 Length, counted on the string above exactly as it sits inside the fence:
 
 ```
-$ printf '%s' '<the two lines above>' > post.txt && wc -m post.txt
-271
-$ awk '{print length($0)}' post.txt
-230
-40
+$ git show origin/master:docs/launch/POST.md | sed -n '14,15p' | wc -m
+259
+$ git show origin/master:docs/launch/POST.md | sed -n '14,15p' | awk '{print NR": "length($0)}'
+1: 217
+2: 40
 ```
 
-271 characters including the line break (230 + 40 + one line break); X's weighted count is **254**, because the bare URL is charged
-23 regardless of its 40 rendered characters. Both are under X's 280 limit, with the line break counted.
-Tags `@NousResearch`. Links the public repository. Makes no efficacy, mastery, benchmark, COPPA or
-child-safety claim.
+217 + 40 + **one line break** = **258 characters**. X's weighted count is **241**, because the bare URL
+is charged 23 regardless of its 40 rendered characters (258 − 40 + 23). Both are under X's 280 limit,
+with the line break counted. Tags `@NousResearch`. Links the public repository. Makes no efficacy,
+mastery, benchmark, COPPA or child-safety claim.
 
-- Attach `coursebook-demo-90s.mp4` to the post.
+- Attach `coursebook-walkthrough.mp4` to the post — 51.0 s, narrated, −14.9 LUFS, sha256 `9051c4328b587379ce237fddb1efe035aeaa6b99f26c83542498ae270d7d343a`.
 - One URL only, so no card conflict: the repo link is the only link in the text.
 
 **Alt text** (paste into X's media description):
 
-> A 51-second silent product film on a dark green ground. A title card reads "A course, not a chat." Then
-> five real Coursebook screens appear one at a time, each with a sentence beneath it: the Home library, an
-> illustrated shopfront over three course cards, with a fox standing in front of a clock on the shelf; the
-> Workshop's Discover shelf, a Japanese register pack preview above three pack cards; a course page titled
-> Read the Night Sky whose plan waits for approval, above an Evidence list; a lesson with four objectives
-> in a row and a Japanese line shown with furigana and romaji; and a typed check with the learner's answer
-> filled in and a Check answer button. The end card reads Coursebook, a local-first study plugin for
-> Hermes Agent, github.com/DeseretSaint/hermes-classroom, MIT, captured from the real plugin - build
-> c4fe2d63.
+> A 51-second product film on a dark green ground, with an optional narration track and every beat
+> written on screen. A title card reads "A course, not a chat." Then five Coursebook screens appear one
+> at a time, each with a sentence beneath it: the Home library, an illustrated shopfront over four
+> course cards, with a fox standing ahead of a clock at the shelf's front edge; the Workshop's Discover
+> shelf, a Japanese register pack preview above three pack cards; a course page titled Read the Night
+> Sky whose plan waits for approval, above an Evidence list; a lesson with four objectives in a row and
+> a Japanese line shown with furigana and romaji; and a typed check with the learner's answer filled in
+> and a Check answer button. The end card reads Coursebook, a local-first study plugin for Hermes Agent,
+> github.com/DeseretSaint/hermes-classroom, MIT, rendered from the real plugin.
 
 ## 2. The contest form — `https://form.typeform.com/to/FwJLvOln`
 
@@ -69,16 +71,18 @@ not the take; the X copy in §1 does not.
 2. Paste that URL and the catalog PR URL into the form with §2's answers.
 3. Screenshot or copy the confirmation and add it to `docs/SUBMISSION.md` gate 15.
 
-The file is 2.00 MB, well under any upload limit; re-encode is not needed for size.
+The file is 3,203,434 B (3.06 MiB), well under any upload limit; re-encode is not needed for size.
 
 ## 4. What the film does not show, and what the copy may not say
 
-The frames are captures of a real installed plugin at tree `172b61aa`, module `98400108`. The submission
-pins `7831d31d`, module `71d940ce`; the single desktop commit between them is `468f45c0`, which changed
-the Home scene only. `QC.md` §Frame provenance measures that per beat and records the Home delta as a
-declared deviation.
+Provenance is mixed and is stated per beat in `QC.md` §Frame provenance. Beats 1 Home and 2 Workshop are
+**component renders of the submitted module** `71d940ce` (`7831d31d`) with seeded fixture data, made
+because the installed plugin on the capture host is stale (`0d98d606`). Beats 3-5 are real window
+captures of module `98400108` (`172b61aa`), and the one desktop commit between those modules,
+`468f45c0`, changes the Home scene only, so those three screens are pixel-identical to the pin. The
+end card's "rendered from the real plugin" is true of all five beats; no frame is a mockup.
 
-Two limits follow, and the copy respects both:
+Three limits follow, and the copy respects them:
 
 1. **No goal-to-course generation is shown.** The film shows a course that already exists, its plan, a
    lesson and a check. The claim in §1 ("turn a topic into a course you can finish") is the product
@@ -88,6 +92,10 @@ Two limits follow, and the copy respects both:
    unpressed; no grade or feedback appears. The film's own caption says "graded against the objective",
    which is the take's one on-screen overstatement, recorded in `QC.md`. The X copy was cut from
    "evidence you can inspect" for the same reason: no evidence surface appears in the film.
+3. **The narration is optional, not load-bearing.** The AAC track is 43.6 s against the 51.0 s picture
+   and does not start until 3.64 s; every beat is also written on screen, and the film's frames were
+   reviewed with sound off for `QC.md` §Muted comprehension. The sentence "51 s demo, no sound needed"
+   in §1 is true; "silent" would not be, because the file carries a track.
 
 If the owner wants the post to claim only what the take proves, the minimal edit is to open on the shown
 surfaces — "a plan you approve, one objective at a time, typed checks" — and drop the product promise.
