@@ -254,8 +254,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: 4;
 }
 
-/* The scrim is the token canvas at the vignette's own overlay alpha, behind the text block only:
-   the art is not darkened, and the hero text holds its contrast on the plate's quiet sky. */
+/* The scrim is the token canvas behind the text block only: the art is not darkened, and the text
+   holds >= 4.5:1 on the plate's quiet sky. 0.60 is the measured floor for the plate's darkest
+   upper-third pixel under the ink hero; the vignette's 0.55 left forest at 4.45:1. */
 [data-cb-v3] [data-cb-home-scene-panel] {
   position: relative;
   isolation: isolate;
@@ -272,7 +273,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: -1;
   border-radius: inherit;
   background-color: var(--cb3-canvas);
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 [data-cb-v3] [data-cb-home-hero-band] {
@@ -291,7 +292,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   line-height: var(--cb3-leading-display);
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--cb3-forest);
+  color: var(--cb3-ink);
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
@@ -491,7 +492,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
   left: 1042px;
-  top: 588px;
+  top: 568px;
   width: 118px;
   height: 118px;
   z-index: 4;
@@ -499,8 +500,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1088px;
-  top: 526px;
+  left: 1110px;
+  top: 481px;
   z-index: 5;
 }
 `

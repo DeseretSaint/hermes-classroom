@@ -1,0 +1,56 @@
+{
+  "schema": "t831137dd.capture.v1",
+  "cell": {
+    "width": 1344,
+    "height": 768,
+    "scope": "light",
+    "destination": "home",
+    "clip": "the [data-cb-route] box at 1x (the VQ-006 camera convention)"
+  },
+  "module_sha256": "71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8",
+  "installed_plugin": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_831137dd/desktop/plugin.js",
+  "captured_at": "2026-11-11T19:14:46.503Z",
+  "screenshot": {
+    "file": "home-1344-light.png",
+    "bytes": 359037,
+    "sha256": "3c317a8a99a549859740701db343a28337a2f82ef7eac7b7225edc4104d199c3",
+    "size": [
+      1344,
+      768
+    ]
+  },
+  "readback": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "inner": [
+      1604,
+      822,
+      1
+    ],
+    "scope": "light",
+    "routeRect": [
+      260,
+      34,
+      1344,
+      768
+    ],
+    "scene": false,
+    "fonts": {
+      "display": true,
+      "ui": true,
+      "status": "loaded"
+    },
+    "heroBand": null,
+    "backdrop": [],
+    "covers": [],
+    "plankOne": null,
+    "plankTwo": null,
+    "tag": null,
+    "clock": null,
+    "fox": null,
+    "foxExport": null,
+    "foxNatural": null,
+    "cardCount": 0,
+    "letterPlates": 0,
+    "routeText": "Skip to course content\nCOURSEBOOK\nHome\nDefault view · Game\n· Child-safe defaults\n· Session · 15 min\nSettings\nHome\nCourses\nWorkshop\nParent Studio\nYour field library\n\nChoose a course or start a new expe"
+  }
+}

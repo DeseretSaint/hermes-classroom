@@ -3550,7 +3550,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, cover, onOpen }) {
     'data-cb-home-card-index': String(index),
     'data-cb-course-id': row.course_id || '',
     'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
-    'data-cb-home-cover': artifactId ? 'artifact' : 'type',
+    'data-cb-home-cover': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
     'data-cb-home-cover-kind': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
     role: 'listitem',
     style: {
@@ -3679,8 +3679,12 @@ const CB_HOME_SCENE = Object.freeze({
   shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
   ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
   tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
-  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
-  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
+  // D-007 seating: the animated group stands ON plank two, whose top edge is y=684. The clock's
+  // painted base sits 2.3 px above its 118 px box bottom and the fox's painted feet 4.9 px above its
+  // 208 px box bottom, so the boxes start at 568 and 481 to land base/feet on 683.7 / 684.1. The fox
+  // also clears the clock's opaque right edge by 11.4 px (1099.5 -> 1153.9): no overlap.
+  clock: Object.freeze({ left: 1042, top: 568, size: 118 }),
+  fox: Object.freeze({ left: 1110, top: 481, size: 208 })
 })
 
 function HomeSceneCard({ slot, index, cover, onOpen }) {
@@ -17585,8 +17589,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: 4;
 }
 
-/* The scrim is the token canvas at the vignette's own overlay alpha, behind the text block only:
-   the art is not darkened, and the hero text holds its contrast on the plate's quiet sky. */
+/* The scrim is the token canvas behind the text block only: the art is not darkened, and the text
+   holds >= 4.5:1 on the plate's quiet sky. 0.60 is the measured floor for the plate's darkest
+   upper-third pixel under the ink hero; the vignette's 0.55 left forest at 4.45:1. */
 [data-cb-v3] [data-cb-home-scene-panel] {
   position: relative;
   isolation: isolate;
@@ -17603,7 +17608,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   z-index: -1;
   border-radius: inherit;
   background-color: var(--cb3-canvas);
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 [data-cb-v3] [data-cb-home-hero-band] {
@@ -17622,7 +17627,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   line-height: var(--cb3-leading-display);
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--cb3-forest);
+  color: var(--cb3-ink);
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
@@ -17822,7 +17827,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
   left: 1042px;
-  top: 588px;
+  top: 568px;
   width: 118px;
   height: 118px;
   z-index: 4;
@@ -17830,8 +17835,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1088px;
-  top: 526px;
+  left: 1110px;
+  top: 481px;
   z-index: 5;
 }
 `

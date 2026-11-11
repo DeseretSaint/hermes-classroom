@@ -221,14 +221,43 @@ class HomeSceneTest(unittest.TestCase):
         self.assertEqual(declaration(tag, "height"), "88px")
         clock = css_block(self.source, "data-cb-home-scene-clock")
         self.assertEqual(declaration(clock, "left"), "1042px")
-        self.assertEqual(declaration(clock, "top"), "588px")
+        self.assertEqual(declaration(clock, "top"), "568px")
         self.assertEqual(declaration(clock, "width"), "118px")
         self.assertEqual(declaration(clock, "height"), "118px")
         fox = css_block(self.source, "data-cb-home-scene-fox")
-        self.assertEqual(declaration(fox, "left"), "1088px")
-        self.assertEqual(declaration(fox, "top"), "526px")
+        self.assertEqual(declaration(fox, "left"), "1110px")
+        self.assertEqual(declaration(fox, "top"), "481px")
         hero = css_block(self.source, "data-cb-home-scene-hero")
         self.assertEqual(declaration(hero, "top"), "128px")
+
+    def test_the_fox_and_clock_stand_on_plank_two_and_do_not_overlap(self) -> None:
+        # Scope override item 3: feet and clock base sit on the plank's top edge (+/- 2 px). The card's
+        # own 526/588 boxes put feet 45 px and the base 20 px below 684, so the seating instruction
+        # (the later authority) wins. Insets are the painted-art opaque bounds inside each box,
+        # measured on the rendered proof (alpha bottom 203.1/208 fox, 115.7/118 clock; opaque right
+        # 100.5/118 clock, opaque left 43.9/208 fox).
+        plank_top = 684
+        fox_top = int(declaration(css_block(self.source, "data-cb-home-scene-fox"), "top")[:-2])
+        clock_top = int(declaration(css_block(self.source, "data-cb-home-scene-clock"), "top")[:-2])
+        feet = fox_top + 203.1
+        base = clock_top + 115.7
+        self.assertLessEqual(abs(feet - plank_top), 2, f"fox feet at {feet}, plank edge {plank_top}")
+        self.assertLessEqual(abs(base - plank_top), 2, f"clock base at {base}, plank edge {plank_top}")
+        fox_left = int(declaration(css_block(self.source, "data-cb-home-scene-fox"), "left")[:-2])
+        clock_left = int(declaration(css_block(self.source, "data-cb-home-scene-clock"), "left")[:-2])
+        fox_opaque_left = fox_left + 43.9
+        clock_opaque_right = clock_left + 100.5
+        self.assertGreaterEqual(fox_opaque_left - clock_opaque_right, 11,
+                                "the fox and clock opaque art still overlap")
+
+    def test_the_hero_holds_its_contrast_on_the_plate(self) -> None:
+        question = css_block(self.source, "data-cb-home-scene-question")
+        self.assertEqual(declaration(question, "color"), "var(--cb3-ink)",
+                         "the hero must not paint forest on the plate's dark sky")
+        match = re.search(r'\[data-cb-v3\] \[data-cb-home-scene-panel\]::before\s*\{([^}]*)\}', self.source)
+        self.assertIsNotNone(match, "the hero text has no token scrim")
+        self.assertGreaterEqual(float(declaration(match.group(1), "opacity")), 0.6,
+                                "the scrim is below the measured 4.5:1 floor")
 
     def test_the_scene_paints_from_tokens_only(self) -> None:
         scene_rules = re.findall(r'\[data-cb-v3\] \[data-cb-home-scene[^{]*\{[^}]*\}', self.source)
@@ -283,6 +312,32 @@ class HomeSceneTest(unittest.TestCase):
             src = attr(tag, "src") or ""
             self.assertTrue(src.startswith("data:image/webp"), src[:48])
             self.assertIn(src, approved, "a scene cover is not an approved field_atlas@2 row")
+
+    def test_each_card_reads_the_plate_for_its_own_course(self) -> None:
+        # "Equals the kit row" (scope override item 1): a swapped or shared plate must fail, not just
+        # an unapproved one. cb3KitCoverFor answers one family per course; a course with no family
+        # falls back to the kit's own lesson room, never a letter plate.
+        rows = self.kit_rows()
+        html = self.render(1344, [
+            {"title": "Technical Pack Basics", "sections_total": 4, "sections_done": 1},
+            {"title": "Japanese Cafe Basics", "sections_total": 4, "sections_done": 2},
+            {"title": "Parent Kitchen Practice", "sections_total": 4, "sections_done": 0},
+            {"title": "Astronomy", "sections_total": 6, "sections_done": 1},
+        ])
+        # Cards paint in shelf order, which is not render order, so map cover -> title, not by index.
+        found = {}
+        for article in re.findall(r'<article[^>]*data-cb-home-scene-card.*?</article>', html, re.S):
+            title = re.search(r'data-cb-home-scene-title[^>]*>([^<]+)<', article)
+            cover = re.search(r'<img[^>]*data-cb-home-scene-cover[^>]*>', article)
+            if title and cover:
+                found[title.group(1)] = attr(cover.group(0), "src")
+        self.assertEqual(set(found), {
+            "Technical Pack Basics", "Japanese Cafe Basics", "Parent Kitchen Practice", "Astronomy",
+        })
+        self.assertEqual(found["Technical Pack Basics"], rows["cb.asset.kit.field_atlas.technical-cover-3x2"])
+        self.assertEqual(found["Japanese Cafe Basics"], rows["cb.asset.kit.field_atlas.japanese-cover-3x2"])
+        self.assertEqual(found["Parent Kitchen Practice"], rows["cb.asset.kit.field_atlas.parent-cover-3x2"])
+        self.assertEqual(found["Astronomy"], rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"])
 
     def test_the_japanese_course_reads_in_the_japanese_plate(self) -> None:
         rows = self.kit_rows()

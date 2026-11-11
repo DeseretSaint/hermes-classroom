@@ -447,7 +447,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, cover, onOpen }) {
     'data-cb-home-card-index': String(index),
     'data-cb-course-id': row.course_id || '',
     'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
-    'data-cb-home-cover': artifactId ? 'artifact' : 'type',
+    'data-cb-home-cover': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
     'data-cb-home-cover-kind': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
     role: 'listitem',
     style: {
@@ -576,8 +576,12 @@ const CB_HOME_SCENE = Object.freeze({
   shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
   ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
   tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
-  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
-  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
+  // D-007 seating: the animated group stands ON plank two, whose top edge is y=684. The clock's
+  // painted base sits 2.3 px above its 118 px box bottom and the fox's painted feet 4.9 px above its
+  // 208 px box bottom, so the boxes start at 568 and 481 to land base/feet on 683.7 / 684.1. The fox
+  // also clears the clock's opaque right edge by 11.4 px (1099.5 -> 1153.9): no overlap.
+  clock: Object.freeze({ left: 1042, top: 568, size: 118 }),
+  fox: Object.freeze({ left: 1110, top: 481, size: 208 })
 })
 
 function HomeSceneCard({ slot, index, cover, onOpen }) {
