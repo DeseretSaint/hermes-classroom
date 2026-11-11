@@ -70,13 +70,33 @@ function cb3ObjectSource(name) {
   return cb3Asset(`cb.asset.object.${name}`)
 }
 
-/** The fox is one mascot in seven poses; the export sizes the contract ships are 128 and 64. */
+/** The fox is one mascot in seven poses; the owner-signed painted set ships four export sizes. */
 const CB3_POSES = Object.freeze(['wave', 'point', 'clock', 'read', 'cheer', 'think', 'sleep'])
+const CB3_FOX_EXPORTS = Object.freeze([64, 128, 256, 512])
+
+/** The export a box of `size` px needs: the smallest that is not an upscale. 208 gets the 256. */
+function cb3FoxPixels(size) {
+  const want = Number(size) > 0 ? Number(size) : 0
+  if (want >= 416) return 512
+  if (want >= 208) return 256
+  if (want >= 128) return 128
+  return 64
+}
 
 function cb3FoxSource(pose, size) {
   const key = CB3_POSES.indexOf(pose) >= 0 ? pose : 'clock'
-  const want = Number(size) >= 128 ? 128 : 64
+  const want = cb3FoxPixels(size)
   return cb3Asset(`cb.asset.fox.${key}.${want}`) || cb3Asset(`cb.asset.fox.${key}.64`)
+}
+
+/** The 1x candidate is the export itself, the 2x candidate the next size up (never above 512). */
+function cb3FoxSrcSet(pose, size) {
+  const key = CB3_POSES.indexOf(pose) >= 0 ? pose : 'clock'
+  const want = cb3FoxPixels(size)
+  const next = CB3_FOX_EXPORTS.find((px) => px > want) || 512
+  const one = cb3Asset(`cb.asset.fox.${key}.${want}`) || cb3Asset(`cb.asset.fox.${key}.64`)
+  const two = cb3Asset(`cb.asset.fox.${key}.${next}`) || one
+  return one && two ? `${one} 1x, ${two} 2x` : null
 }
 
 /* ── the four shipped destinations ───────────────────────────────────────────────────────────
@@ -716,10 +736,12 @@ function Medallion({ event, label, size, className, style, ...rest }) {
 
 /* ── FoxPose ─────────────────────────────────────────────────────────────────────────────────
  * The one mascot, in one of seven poses, inside one box. `aria-hidden` throughout: the adjacent
- * visible text carries whatever meaning it has, never the picture. Sizes are the shipped
- * exports (128 and 64) and the box includes the pose's widest frame. Below a 620 px route the
- * fox is absent, not squashed (SPEC-V3 §3.8), and it never overlaps type or a control: the
- * safe-area clearance is 24 px at a wide route and 16 px below it.
+ * visible text carries whatever meaning it has, never the picture. Sizes are free box sizes: the
+ * image is the smallest painted export that is not an upscale of the box (208 gets the 256, a
+ * 512 box gets the 512), with a 1x/2x srcSet so a device pixel ratio of 2 gets the next export up.
+ * The box includes the pose's widest frame. Below a 620 px route the fox is absent, not squashed
+ * (SPEC-V3 §3.8), and it never overlaps type or a control: the safe-area clearance is 24 px at a
+ * wide route and 16 px below it.
  * Tokens: none (the plate is art); geometry from the spec's safe area.
  */
 function FoxPose({ pose, size, className, style, ...rest }) {
@@ -727,10 +749,12 @@ function FoxPose({ pose, size, className, style, ...rest }) {
   if (width > 0 && width < 620) return null
   const box = Number(size) > 0 ? Number(size) : 128
   const clearance = width >= 920 ? '24px' : '16px'
+  const srcSet = cb3FoxSrcSet(pose, box)
   return jsx('div', {
     ...rest,
     'data-cb3-fox': CB3_POSES.indexOf(pose) >= 0 ? pose : 'clock',
     'data-cb3-fox-safe': clearance,
+    'data-cb3-fox-export': cb3FoxPixels(box),
     'aria-hidden': 'true',
     className: ['cb3-fox', className || ''].filter(Boolean).join(' '),
     style: {
@@ -743,6 +767,7 @@ function FoxPose({ pose, size, className, style, ...rest }) {
     },
     children: jsx('img', {
       src: cb3FoxSource(pose, box),
+      srcSet: srcSet || undefined,
       alt: '',
       'aria-hidden': 'true',
       style: { display: 'block', width: '100%', height: '100%', objectFit: 'contain' }

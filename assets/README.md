@@ -49,8 +49,10 @@ fixed instant, encoder parameters are explicit, and masters are committed rather
 segment, so a non-deterministic build fails the suite.
 
 Budgets: the generated segment ≤ 2.5 MB, any single shipped asset ≤ 300 KB, `desktop/plugin.js`
-≤ 4.5 MB (alone and with the segment it will carry). Current build: ~462 KB segment, ~200 KB of
-shipped files, largest asset ~110 KB.
+≤ 4.5 MB (alone and with the segment it carries). Current build: 1,384,979 B segment, 893,202 B of
+shipped files, largest single asset 110,076 B (`CBDisplay-VF.woff2`). The plugin-plus-segment gate is
+now the tight one: 4,492,044 B against its 4,500,000 B ceiling, because `plugin.js` embeds the whole
+segment and the gate counts it twice. Raising that ceiling is a budget decision, not a build order.
 
 ## Art status
 
@@ -59,9 +61,15 @@ blanks (CP-013): `assets/art/objects/*.png` is the object kit's single source, a
 `scripts/build_cb_assets.py` encodes it into `assets/objects/*.webp` (+ AVIF past 8 KB). The
 procedural SVG kit under `assets/masters/objects/` is kept only as the fallback for an object with no
 painted master; `--write-masters` never overwrites a painted blank. The material tiles are CP-011's
-and are still provisional until its proof lands. The fox WebPs under `assets/fox/` are still drawn
-from the procedural SVG masters, not from `assets/art/fox/`; wiring the painted fox into the segment
-is CP-020a's card, not this pipeline's.
+and are still provisional until its proof lands.
+
+The fox WebPs under `assets/fox/` are encodes of the owner-signed painted exports under
+`assets/art/fox/fox-<pose>-<size>.png` at 512, 256, 128 and 64, alpha preserved, and every
+`assets/fox/manifest.json` row names its painted PNG as both `source` and `master` (CP-005f). The
+procedural SVG set under `assets/masters/fox/` is kept on disk for rollback only: nothing in the
+segment, the manifest or the module reaches it, and `tests/test_cp010_fox_assets.py` fails if it
+does. `design/fox-adoption.html` is a generated proof of the painted 208 render, pinned to
+`desktop/plugin.js` by that same test module.
 
 The scene plates (`assets/art/scenes/`) are **not** part of this tree's shipped files: they are pack
 or world media and travel on the media route.

@@ -2219,6 +2219,9 @@ export {
   cb3Contrast,
   cb3StepRendering,
   cb3FoxSource,
+  cb3FoxPixels,
+  cb3FoxSrcSet,
+  CB3_FOX_EXPORTS,
   // CP-040 — the merge seam. Every v3 component and helper the six wave cards (CP-021, CP-022,
   // CP-023, CP-024, CP-025a, CP-025b) declared is exported from the module that ships: a surface
   // may not be mounted on the route without also being renderable from `desktop/plugin.js`, and
