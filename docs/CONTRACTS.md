@@ -2400,6 +2400,12 @@ import stores no `gen_plan_sections`, so the course has no `section_id` to revis
 `parent.blueprint.read` answers `sections: []`. The defect is reachable through `plan.edit`
 (objective title / target / criteria / order), which is what the regression test drives; the
 `lesson_revisions` clause is defensive and is tested by writing that ledger row directly.
+`lesson.revise` now answers the typed `NOT_FOUND` (`section lesson <id> does not exist in this
+scope.`) for a section that is not a generated section, because the generation tables
+(`gen_plan_documents`, `gen_lessons`) are created lazily and a pack-backed course has none: before
+this guard the command answered `INTERNAL_ERROR` ("lesson.revise failed: OperationalError",
+`retryable: true`) for the very section id it had to refuse. A generated course sees the same
+`NOT_FOUND` shape it already got from a stale section id, so nothing a working caller sees moves.
 
 **No wire change.** `error.details` is an open object and `details.reason` is the existing snake_case
 seam, so `cb.rpc` stays **v26** and `cb.db` stays **v14**: no method, request field, response key,
@@ -2408,7 +2414,8 @@ for a `pack.export` refusal, so the recovery sentence reaches the author without
 
 Regression guard: `tests/test_pack_flow.py::ExportTest` — the refusal names the reason and writes
 nothing, a criteria-only edit is caught, an undone edit exports the published pack and re-imports the
-published text, and a `lesson_revisions` row blocks the export.
+published text, a `lesson_revisions` row blocks the export, and the card's `lesson.revise` route is
+pinned as unwritable on a pack course (`sections: []`, typed `NOT_FOUND`, no ledger row written).
 
 ## cb.db v13 delta (GM-001) — Game Mode storage, additive and unbackfilled
 

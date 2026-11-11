@@ -576,6 +576,42 @@ class ExportTest(PackFlowCase):
         self.assertEqual(error["details"]["changed"], [])
         self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'"))), 0)
 
+    def test_the_lesson_revise_route_is_not_writable_on_a_pack_course(self) -> None:
+        """Why the defect is driven through `plan.edit`, not `lesson.revise` (the card's repro).
+
+        `lesson.revise` revises a *generated* section: it reads `gen_lessons` under the plan's
+        generation digest. A pack has no generated staging (`sections: []`), so an imported course
+        has no section id to revise and the command answers NOT_FOUND rather than writing a
+        revision. The stale-export hole is therefore reachable only through the objective rows
+        `plan.edit` writes — which is what the refusal above is proven on. This test pins that
+        fact so a later authoring path cannot reopen the hole by making sections revisable.
+        """
+        imported, plan, _objective, _manifest = self.pack_course()
+        blueprint = self.ok("parent.blueprint.read", {"course_id": imported["course_id"]})["result"]
+        self.assertEqual(blueprint["sections"], [])
+        # Pack import never touches the generation pipeline: no section staging, and the lazily
+        # created `gen_lessons` table does not even exist in this database yet.
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM gen_plan_sections"))), 0)
+        self.assertIsNone(
+            self.scalar("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'gen_lessons'")
+        )
+        error = self.err(
+            "lesson.revise",
+            {
+                "enrollment_id": imported["enrollment_id"],
+                "plan_id": plan["id"],
+                "section_id": "sec_does_not_exist",
+                "expected_page_hash": "sha256:" + "d" * 64,
+                "title": "EDITED SECTION TITLE",
+            },
+            expected_revision=0,
+            idempotency_key="pack-reexport-revise-0001",
+        )
+        self.assertEqual(error["code"], "NOT_FOUND")
+        self.assertIn("section lesson", error["message"])
+        self.assertEqual(error["details"]["id"], "sec_does_not_exist")
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM lesson_revisions"))), 0)
+
     def test_file_review_lists_every_included_file(self) -> None:
         manifest, files = archive.read_directory(JAPANESE)
         document, exported = packs.build_export(manifest, files)
