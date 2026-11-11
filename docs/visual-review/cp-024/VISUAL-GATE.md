@@ -1,7 +1,7 @@
 # CP-024 — visual gate results (binding, `docs/concept-parity/VISUAL-GATE.md`)
 
 Run on branch `wt/cp-024-course-home` at module
-`1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9`, against the CP-024 rig only:
+`31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc`, against the CP-024 rig only:
 state `~/.hermes/coursebook-test-cp024-r2`, backend `127.0.0.1:44427`, window **CDP 9361**.
 `find-cdp.mjs` also answers `9395`; that window belongs to another profile's run and was not opened,
 driven or captured.

@@ -5,7 +5,7 @@ Base: master `ef7ec52` (merged; carries CP-020b primitives, CP-038's capture doo
 visual-gate tools `docs/concept-parity/VISUAL-GATE.md`, `visual/find-cdp.mjs`,
 `scripts/compare-ref.sh`)
 Maker: `lattice`   Reviewer: `cbqa` (must not be the maker)
-Module: `desktop/plugin.js` sha256 `1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9`
+Module: `desktop/plugin.js` sha256 `31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc`
 (built by `python3 scripts/build_plugin.py` from 20 segments; `--check` reports the same bytes)
 
 **Status: review round 3.** The 15-cell live matrix is captured on this module on one rig (0
@@ -26,7 +26,7 @@ v25 field carries a plate's `route_anchors` (see "Map mode" below).
 | Evidence hygiene: `no-world` was byte-identical to `default` (the rig's course has no world row at all) | the duplicate cell is **retired**: `default` carries the no-world state and `capture.sh` says so. A cell that repeats another cell is coverage theatre |
 | `capture.sh` prerequisites still said `9357 / 44417` | corrected to the r2 rig and made env-overridable in one place |
 
-## The matrix — 15 cells, every stamp `plugin.window_sha256 = 1f29b0ac…ff9`
+## The matrix — 15 cells, every stamp `plugin.window_sha256 = 31c8bc94…42dc`
 
 Verified by `verify_stamps.py` on this module: **15 stamps, 0 problems** (sha, name ↔ width ↔ theme ↔
 text scale, all door gates true, course home in `overview`, no word split). Each frame passed the
@@ -36,21 +36,21 @@ key warning.
 
 | # | Cell | Route (w × h) | Theme |
 |---|---|---|---|
-| 1 | `course-home--1049--light--100--default` | 1049 × 1166 | light |
-| 2 | `course-home--1049--dark--100--default` | 1049 × 1126 | dark |
-| 3 | `course-home--900--light--100--default` | 900 × 1166 | light |
-| 4 | `course-home--900--dark--100--default` | 900 × 1166 | dark |
-| 5 | `course-home--460--light--100--default` | 460 × 1166 | light |
-| 6 | `course-home--460--dark--100--default` | 460 × 1166 | dark |
-| 7 | `course-home--1349--light--100--default` | 1349 × 1166 | light |
-| 8 | `course-home--1049--light--100--forced-colors` | 1049 × 1166 | light, forced-colors |
-| 9 | `course-home--1049--light--100--plan-in-review` | 1049 × 1166 | light |
-| 10 | `course-home--1049--light--100--world-running` | 1049 × 1166 | light |
-| 11 | `course-home--1049--light--100--world-rejected` | 1049 × 1166 | light |
-| 12 | `course-home--1049--light--100--course-end` | 1049 × 1166 | light |
-| 13 | `course-home--1049--light--100--read-error` | 1049 × 1166 | light |
-| 14 | `course-home--1049--light--100--loading` | 1049 × 1166 | light |
-| 15 | `course-home--460--light--200--text-200` | 460 × 1126 | light, root 32 px |
+| 1 | `course-home--1049--light--100--default` | 1021 × 1811 | light |
+| 2 | `course-home--1049--dark--100--default` | 1021 × 1811 | dark |
+| 3 | `course-home--900--light--100--default` | 872 × 2516 | light |
+| 4 | `course-home--900--dark--100--default` | 872 × 2516 | dark |
+| 5 | `course-home--460--light--100--default` | 460 × 2980 | light |
+| 6 | `course-home--460--dark--100--default` | 460 × 2980 | dark |
+| 7 | `course-home--1349--light--100--default` | 1321 × 1817 | light |
+| 8 | `course-home--1049--light--100--forced-colors` | 1021 × 1811 | light, forced-colors |
+| 9 | `course-home--1049--light--100--plan-in-review` | 1021 × 2375 | light |
+| 10 | `course-home--1049--light--100--world-running` | 1021 × 1811 | light |
+| 11 | `course-home--1049--light--100--world-rejected` | 1021 × 1811 | light |
+| 12 | `course-home--1049--light--100--course-end` | 1021 × 2001 | light |
+| 13 | `course-home--1049--light--100--read-error` | 1021 × 1911 | light |
+| 14 | `course-home--1049--light--100--loading` | 1021 × 1166 | light |
+| 15 | `course-home--460--light--200--text-200` | 460 × 2980 | light, root 32 px |
 
 Rerun: `docs/visual-review/cp-024/capture.sh` (no argument = all 15; each cell is listed by name).
 Every cell is `capture.reloaded: false` on a window restarted on this module, so the stamp names the
@@ -79,7 +79,7 @@ module the window evaluated. `verify_stamps.py` re-checks the whole packet in on
 
 Disposable state `~/.hermes/coursebook-test-cp024-r2` (`home/`, `userdata/`), backend
 `hermes serve --isolated` on `127.0.0.1:44427` (token `cp024-test-token`), window CDP
-`127.0.0.1:9361` (dev Electron, class `hermes`), installed module = checkout = `1f29b0ac…ff9`.
+`127.0.0.1:9361` (dev Electron, class `hermes`), installed module = checkout = `31c8bc94…42dc`.
 The older `coursebook-test-cp024` state belongs to another profile's run and is not used here.
 
 ```bash
@@ -152,7 +152,7 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
 
 ## Verification run on this tree
 
-- `python3 scripts/build_plugin.py --check` → matches `desktop/src` (`1f29b0ac…ff9`).
+- `python3 scripts/build_plugin.py --check` → matches `desktop/src` (`31c8bc94…42dc`).
 - `tests.test_plugin_build` + `tests.test_cp_024_course_home_v3` → 20 tests OK (the three card-named
   tests, the composed overview, the new DOM-order and title-wrap tests).
 - `docs/visual-review/cp-024/verify_stamps.py` → 15 stamps, 0 problems.

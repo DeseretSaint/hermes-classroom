@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "course-home--1049--light--100--world-rejected",
-  "captured_at": "2026-11-11T01:24:05.418Z",
+  "captured_at": "2026-11-11T01:53:32.392Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -18,11 +18,11 @@
     "no_react_key_warning": true
   },
   "plugin": {
-    "expected_sha256": "1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9",
-    "window_sha256": "1f29b0ac6a2f36f0e22f13792fa8f4bb6bb1fb2cb180c6ce2aa849bcdc973ff9",
+    "expected_sha256": "31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc",
+    "window_sha256": "31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc",
     "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp024-r2/home/desktop-plugins/coursebook/plugin.js",
     "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/desktop/plugin.js",
-    "bytes": 2308070
+    "bytes": 2309290
   },
   "backend": {
     "url": "http://127.0.0.1:44427",
@@ -38,11 +38,11 @@
     "marker": "/coursebook",
     "destination": "courses",
     "width": 1049,
-    "height": 1166,
-    "window_width": 1077,
-    "window_height": 1220,
+    "height": 1811,
+    "window_width": 1105,
+    "window_height": 1885,
     "theme": "light",
-    "text_scale_root_px": "16px",
+    "text_scale_root_px": "32px",
     "motion": "full",
     "reduced_motion": false,
     "forced_colors": false,
@@ -86,7 +86,7 @@
     "v3_textures": "ready",
     "style_sheet_count": 19,
     "css_rule_count": 1629,
-    "host_slots": 33,
+    "host_slots": 34,
     "host_shell": true,
     "heading_font_family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
     "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
@@ -109,12 +109,12 @@
       "bottom": 0
     },
     "content_width": 1049,
-    "content_height": 1166,
+    "content_height": 1811,
     "content_rect": {
-      "x": 28,
+      "x": 56,
       "y": 34,
       "width": 1049,
-      "height": 1166
+      "height": 1811
     },
     "course_home": null,
     "course_detail": "overview",
@@ -122,6 +122,12 @@
     "lesson_document": null,
     "scroll_y": 0,
     "word_wraps": [],
+    "plate_title": {
+      "font_size": "48.89px",
+      "client_height": 217,
+      "scroll_height": 217,
+      "clipped_vertically": false
+    },
     "marker_names": [
       "data-cb-continue",
       "data-cb-continue-action",
@@ -233,18 +239,18 @@
   },
   "capture": {
     "file": "course-home--1049--light--100--world-rejected.png",
-    "sha256": "529be60565835c59279fdacb1ca1ac30e537d0274702fe11295092366899194c",
-    "bytes": 910716,
+    "sha256": "21ed85947c92ae0a3cc8917f8bdab8527706b548c8153ec1167d0805a1d474c5",
+    "bytes": 1218071,
     "crop_mode": "route",
     "clip": {
-      "x": 28,
+      "x": 56,
       "y": 34,
       "width": 1049,
-      "height": 1166
+      "height": 1811
     },
     "pixel_check": {
       "ok": true,
-      "sampled": 116900,
+      "sampled": 115500,
       "host_bg_pixels": 0,
       "host_bg_fraction": 0,
       "html_bg": "13, 16, 21, 1",

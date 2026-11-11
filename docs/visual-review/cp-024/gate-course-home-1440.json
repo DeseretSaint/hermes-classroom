@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-11T01:30:04.890Z",
+  "generated": "2026-11-11T01:50:54.530Z",
   "port": 9361,
   "emulated_viewport": {
     "width": 1440,
@@ -31,6 +31,12 @@
     "aside"
   ],
   "overflows_horizontally": false,
+  "plate_title": {
+    "font_size": "33.32px",
+    "client_height": 188,
+    "scroll_height": 188,
+    "clipped_vertically": false
+  },
   "word_wraps": [],
   "axe": {
     "violations": []

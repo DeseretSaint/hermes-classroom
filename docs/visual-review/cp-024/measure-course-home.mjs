@@ -34,6 +34,8 @@ const opt = (name, fallback) => {
 const PORT = Number(opt('--port', 9361))
 const EMULATE_WIDTH = Number(opt('--width', 1440))
 const EMULATE_HEIGHT = Number(opt('--height', 900))
+const ROOT_FONT = opt('--root-font', null)
+const SHOT = opt('--shot', null)
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function attach() {
@@ -78,6 +80,11 @@ await sleep(300)
 await settle()
 await frame.evaluate(() => { window.location.hash = '#/coursebook' })
 await sleep(1200)
+if (ROOT_FONT) {
+  await frame.evaluate((value) => { document.documentElement.style.fontSize = value }, ROOT_FONT)
+  await sleep(400)
+  await settle()
+}
 
 const driver = fs.readFileSync(path.join(HERE, 'drive-course-home.js'), 'utf8')
 await frame.evaluate(`(async () => { ${driver} })()`)
@@ -147,6 +154,17 @@ const measured = await frame.evaluate(() => {
           : 'plate'
     ),
     overflows_horizontally: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    plate_title: (() => {
+      const el = document.querySelector('[data-cb-course-plate-title]')
+      if (!el) return null
+      const style = getComputedStyle(el)
+      return {
+        font_size: style.fontSize,
+        client_height: el.clientHeight,
+        scroll_height: el.scrollHeight,
+        clipped_vertically: el.scrollHeight > el.clientHeight + 1
+      }
+    })(),
     word_wraps: words
   }
 })
@@ -173,6 +191,10 @@ const serious = axe.violations.filter(
   (violation) => violation.impact === 'serious' || violation.impact === 'critical'
 )
 await cdp.send('Emulation.clearDeviceMetricsOverride').catch(() => {})
+if (SHOT) {
+  await page.locator('[data-cb-course-plate]').first().screenshot({ path: SHOT, animations: 'disabled' })
+  console.log(`plate shot:   ${SHOT}`)
+}
 const record = {
   generated: new Date().toISOString(),
   port: PORT,
@@ -188,6 +210,7 @@ console.log(`scope:        ${record.scope}   motion: ${record.motion}`)
 console.log(`fonts:        ${record.fonts.map((f) => `${f.family}=${f.loaded}`).join('  ')} (${record.fonts_status})`)
 console.log(`course home:  ${record.course_home_mode}   body: ${record.body_mode}   primaries: ${record.primaries}`)
 console.log(`dom order:    ${record.dom_order.join(' -> ')}   overflow: ${record.overflows_horizontally}`)
+console.log(`plate title:  ${record.plate_title ? JSON.stringify(record.plate_title) : 'no type field'}`)
 console.log(`axe serious/critical: ${record.serious_critical.length ? record.serious_critical.join(', ') : 'none'}`)
 console.log(`word splits:  ${record.word_wraps.length ? JSON.stringify(record.word_wraps) : 'none'}`)
 console.log(`wrote ${path.relative(ROOT, out)}`)

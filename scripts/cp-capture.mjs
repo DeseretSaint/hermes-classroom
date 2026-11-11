@@ -292,6 +292,17 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       // Word-wrap probe (CP-024 review round 2): a course title may wrap between words, never
       // inside one. For every word in the course title and the plate's type field, count the line
       // boxes its own Range paints; more than one box means the renderer split a word.
+      plate_title: (() => {
+        const el = document.querySelector('[data-cb-course-plate-title]')
+        if (!el) return null
+        const style = getComputedStyle(el)
+        return {
+          font_size: style.fontSize,
+          client_height: el.clientHeight,
+          scroll_height: el.scrollHeight,
+          clipped_vertically: el.scrollHeight > el.clientHeight + 1
+        }
+      })(),
       word_wraps: (() => {
         const out = []
         for (const sel of ['[data-cb-course-title]', '[data-cb-course-plate-title]']) {
@@ -1153,9 +1164,19 @@ const liveCapture = async () => {
     const rect = root.getBoundingClientRect()
     const scroller = document.querySelector('main#cb-main-content')
     if (scroller) scroller.scrollTop = 0
-    return { height: rect.height, top: rect.top, left: rect.left, width: rect.width }
+    // The route box can be shorter than its content when the host clamps the main scroller to the
+    // viewport (seen at 200 % text, where the plate and route overflow below a 1126 px box); the
+    // scroller's scrollHeight is then the truth for the crop.
+    const inner = scroller ? scroller.scrollHeight : 0
+    return {
+      height: Math.max(rect.height, inner),
+      content_height: Math.max(root.scrollHeight || 0, inner),
+      top: rect.top,
+      left: rect.left,
+      width: rect.width
+    }
   })()`)
-  const wantedHeight = Math.min(5000, Math.max(targetHeight, Math.ceil(box.height + box.top + 40)))
+  const wantedHeight = Math.min(5000, Math.max(targetHeight, Math.ceil(Math.max(box.height, box.content_height) + box.top + 40)))
   if (wantedHeight !== targetHeight) {
     targetHeight = wantedHeight
     await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -1423,6 +1444,7 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       lesson_document: probe.route.lesson_document || null,
       scroll_y: probe.route.scroll_y,
       word_wraps: probe.route.word_wraps || [],
+      plate_title: probe.route.plate_title || null,
       marker_names: probe.route.marker_names || []
     },
     // CP-038: the frame's provenance is not only the plugin sha. A still must say which

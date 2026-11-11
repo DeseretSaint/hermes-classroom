@@ -16,7 +16,7 @@
 #   * `world` state fixtures are the rig's own DB rows (a real `course_worlds` row, valid brief),
 #     switched per cell below; they are removed at the end.
 #
-# Cells (14):
+# Cells (15):
 #   eight baseline  1049/900/460 × light/dark, 1349 wide, forced colors
 #   named states    plan-in-review, world-running, world-rejected, course-end, read-error, loading
 #   text scale      460 at 200 % root text
