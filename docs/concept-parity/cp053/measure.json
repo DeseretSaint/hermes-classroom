@@ -2,23 +2,28 @@
   "card": "CP-053",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd",
+  "module_sha256": "0112000c418cfcb6815059020857eaf1b8a7299de3d863be1c3b0431cafa0c86",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
-  "size": [1344, 768],
+  "size": [
+    1344,
+    768
+  ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
-  "rmse_rgb": 49.786,
-  "rmse_grey": 48.727,
-  "sim_grey": 0.8089,
-  "sim_rgb": 0.8048,
+  "rmse_rgb": 50.133,
+  "rmse_grey": 49.047,
+  "sim_grey": 0.8077,
+  "sim_rgb": 0.8034,
   "bands_sim_grey": {
     "header": 0.8835,
     "hero": 0.8194,
-    "cards": 0.7626,
-    "shelf1": 0.8054,
-    "objects": 0.829,
-    "shelf2": 0.833
+    "cards": 0.7541,
+    "shelf1": 0.8202,
+    "objects": 0.8406,
+    "shelf2": 0.835
   },
-  "not_a_desktop_capture": "no host, no backend; the scene canvas only, and a card with no host media read paints the product's typographic cover fallback"
+  "not_a_desktop_capture": "no host, no backend; the scene canvas only, and a card with no host media read paints the product's typographic cover fallback",
+  "measured_at": "2026-11-11",
+  "note": "Re-rendered 2026-11-11 on the module that ships the painted A1 fox (CP-005f, module 0112000c). Pixel diff against the 0c1729eb frame (251a3948) changes only x 1136-1286, y 491-704 \u2014 the fox and the clock edge it meets \u2014 so the fox adoption is the whole delta; cards band 0.7626 -> 0.7541 comes from that painted fox reading darker against the reference. This remains the CP-053 baseline scene, not the VQ-002 Home pass: t_831137dd owns the number that must clear 0.85."
 }
