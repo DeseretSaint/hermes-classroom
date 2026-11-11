@@ -138,6 +138,12 @@ If the user creates a lesson inside an existing Game course, it reuses that cour
 world. No new world job and no new image spend are required. If the user imports a Textbook course
 and switches to Game, the same World Studio flow applies.
 
+There is no branch on course origin. Built-in and user-created Game courses carry the same
+`world_id`, the same `world_assets` roles, and the same `world.read` shape. Home, Discover, and
+Classroom choose components by asset role, not by `created_by`, `origin`, or a generated flag. A
+test renders a built-in and a user-created course with the same kit and asserts the same
+components and asset roles.
+
 If no approved kit exists for the grammar, Game mode is unavailable and the course stays in
 Textbook mode. A flat Game fallback is forbidden.
 
