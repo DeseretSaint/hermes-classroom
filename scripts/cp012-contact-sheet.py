@@ -31,7 +31,7 @@ FONT = "/usr/share/fonts/liberation/LiberationSans-%s.ttf"
 SLUGS = {
     "japanese-affection-context-l0": "japanese",
     "parent-measurement-practice": "parent",
-    "technical-demo-pack": "technical",
+    "technical-pack-literacy": "technical",
 }
 
 

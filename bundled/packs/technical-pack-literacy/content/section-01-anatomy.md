@@ -19,7 +19,7 @@ Six fields decide what you are holding.
   the manifest names must match its declared size and hash or the import is refused.
 - `objectives[]` — the sections a learner works through, each with its own `sections[]` and, where
   the pack grades anything, a `checks[]` record.
-- `license` and `attribution` — who made it and under what terms. A demo fixture can honestly say
+- `license` and `attribution` — who made it and under what terms. A pack can honestly say
   `unspecified` and `local_only`; it may not pretend to a redistribution right it does not have.
 
 The order matters. Hashes and structure are checked **before** any teaching text is read, so a

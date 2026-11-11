@@ -16,7 +16,7 @@
   "body_px": 16,
   "font_family": "Liberation Serif, Noto Serif, serif",
   "text_source": {
-    "path": "bundled/packs/technical-demo-pack/content/section-01-anatomy.md",
+    "path": "bundled/packs/technical-pack-literacy/content/section-01-anatomy.md",
     "sha256": "5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c",
     "note": "the bundled technical pack's own teaching prose; no copy invented for the sheet"
   },

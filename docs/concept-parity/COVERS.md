@@ -101,7 +101,7 @@ packs keep their press plates and nothing here claims otherwise.
 |---|---|---|---|---|---|
 | `japanese-affection-context-l0` | `field_atlas` (lantern variant) | none (see note) | lantern, noren, counter | 800 | `66aaf53939cfac93` |
 | `parent-measurement-practice` | `kitchen_table` | `field` (linen `#2f6047`) | jug, bowl, oranges, table | 630 | `5f57005fb58b3d72` |
-| `technical-demo-pack` | `workshop_manual` | none | manual, sheets, bench | 686 | `36927aabcffa5d8f` |
+| `technical-pack-literacy` | `workshop_manual` | none | manual, sheets, bench | 686 | `36927aabcffa5d8f` |
 
 **Accent note.** `GM-SUBJECT-WORLDS.md` §1 permits a `lamp` accent on the Japanese world; the round-2
 plate paints the lantern in paper-cream and ships **no lamp pigment** (measured: no pixel within ΔE 12

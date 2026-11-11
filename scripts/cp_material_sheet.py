@@ -36,7 +36,7 @@ OUT_DIR = ROOT / "docs" / "concept-parity" / "art" / "material"
 MANIFEST = TILE_DIR / "manifest.json"
 
 # Real product prose, taken from a bundled pack's own teaching text. Never invented copy.
-TEXT_SOURCE = ROOT / "bundled" / "packs" / "technical-demo-pack" / "content" / "section-01-anatomy.md"
+TEXT_SOURCE = ROOT / "bundled" / "packs" / "technical-pack-literacy" / "content" / "section-01-anatomy.md"
 
 BODY_PX = 16
 MEASURE_CH = 62

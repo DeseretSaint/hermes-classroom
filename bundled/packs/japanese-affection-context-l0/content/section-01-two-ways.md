@@ -1,6 +1,6 @@
 # Lesson 1 — two ways of saying it
 
-This is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by
+This is an L0 lesson for an adult beginner. Every Japanese line is followed by
 romaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and
 it is not evidence that you can read Japanese.
 

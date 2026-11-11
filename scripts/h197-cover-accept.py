@@ -7,7 +7,7 @@ This script therefore materialises the builder's Press Plate output into a tempo
 the same acceptance block over it, so the fallback lane stays provable without a shipped file.
 
 The art direction measured the host image pipeline and wrote a hard acceptance list for a cover
-plate. The plates in this repository are printed by `bundled/packs/build_demo_packs.py` instead of
+plate. The plates in this repository are printed by `bundled/packs/build_bundled_packs.py` instead of
 by a model, so the same list is enforced mechanically here:
 
 * exactly five identity inks, and none of them outside the Atlas Lamp token set;
@@ -55,7 +55,7 @@ GROUND = {PAPER, LAMP, LAMP_SOFT}
 
 PLATES = (
     ("japanese", "japanese-affection-context-l0", {PAPER, INK, ACCENT, LAMP_SOFT, LAMP}),
-    ("technical", "technical-demo-pack", {PAPER, INK, RULE, LAMP_SOFT, LAMP}),
+    ("technical", "technical-pack-literacy", {PAPER, INK, RULE, LAMP_SOFT, LAMP}),
 )
 MAX_BYTES = 40 * 1024
 
@@ -220,7 +220,7 @@ def main() -> int:
     import tempfile
 
     spec = importlib.util.spec_from_file_location(
-        "h197_fallback_builder", ROOT / "bundled" / "packs" / "build_demo_packs.py"
+        "h197_fallback_builder", ROOT / "bundled" / "packs" / "build_bundled_packs.py"
     )
     if spec is None or spec.loader is None:
         print("cannot load the demo pack builder")

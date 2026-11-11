@@ -5,7 +5,7 @@
   "covers": [
     {
       "pack": "japanese-affection-context-l0",
-      "title": "Japanese affection and register — a Sample L0 classroom",
+      "title": "Japanese register: affection and closeness",
       "grammar": "field_atlas (lantern variant)",
       "accent": "none",
       "accent_note": "docs/GM-SUBJECT-WORLDS.md §1 permits the lamp accent; the round-2 plate paints the lantern in paper-cream and ships no lamp pigment (measured: no pixel within dE 12 of #e8a93a), so the cover declares no accent rather than claiming one it does not carry. The lit-lantern accent stays with the world hero plate (CP-016).",
@@ -22,7 +22,7 @@
     },
     {
       "pack": "parent-measurement-practice",
-      "title": "Parent demo: measuring ingredients together",
+      "title": "Measuring together: a kitchen lesson",
       "grammar": "kitchen_table",
       "accent": "field",
       "accent_note": "The accent is field green #2f6047 on the folded linen. Round 1 shipped a plum cloth (#6a3e74), which GM-SUBJECT-WORLDS.md §0 bans and ART-BIBLE.md §2 has no pigment for; the plum is gone from the art and from the pipeline.",
@@ -39,8 +39,8 @@
       ]
     },
     {
-      "pack": "technical-demo-pack",
-      "title": "Technical demo: reading a pack before you install it",
+      "pack": "technical-pack-literacy",
+      "title": "Reading a pack before you install it",
       "grammar": "workshop_manual",
       "accent": "none",
       "accent_note": "GM §2 sets the subject accent to none for the workshop grammar. Paper, ink (with the dark cuff ink on the manual spine) and cream only; measured frame hue band is warm paper and brown, with no lamp, field, ochre, coral or plum pigment.",
