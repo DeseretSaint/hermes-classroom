@@ -8,17 +8,26 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
-Current measurement commit: **`b9f4a197e42e4f033298d94608fcb5b63640b094`** (frozen `master`, the H-210-R2
-merge over `df052ea`: the live pack round trip that closed gate 4 plus its capture under
+Release tree: **`b9f4a197e42e4f033298d94608fcb5b63640b094`** (the H-210-R2 merge over `df052ea`: the
+live pack round trip that closed gate 4 plus its capture under
 `audit/adversarial/h210r2-pack-roundtrip/`; the diff from `df052ea` is `docs/` and `audit/` only).
-`desktop/plugin.js` is still `cd862140…c516`, so the M4 audit pin remains valid and was not
-regenerated.
+`desktop/plugin.js` there is `cd862140…c516`, so the M4 audit pin remains valid for that tree; the
+committed audit has since been regenerated for the module this tree ships, `4087908c…`
+(2026-11-10, via CP-020a/CP-020b/CP-043), with every measurement reproduced, and re-pinning the record
+to it is the freeze step. `master` has advanced past it; the
+suite count below is measured on `master` `7130109` and names that tree.
 Every current-tree number in this file is re-derived there and checked by
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
-The tree carries `cb.rpc` v23 (83 declared methods, 83 handlers) and `cb.db` v14 (schema v14,
-migrations `0001`-`0014`): v23 is additive over v22 — the Parent Studio take-home pack family
+The tree carries `cb.rpc` v25 (93 declared methods, 93 handlers) and `cb.db` v14 (schema v14,
+migrations `0001`-`0014`): v25 is one additive amendment over v24 — CP-005 makes seven `library_item`
+shelf facts required (`sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`,
+`cover_artifact_id`, `last_studied_at`) so a v3 card renders every number, chip and cover from one
+`library.list` read; no method moves. v24 is additive over v23 and appends ten methods — GM-004's
+World Studio `world.read`, `world.style.preview`, `world.generate`, `world.approve` plus
+`course.mode.set`, GM-007's away-from-screen `homework.read`, `homework.create`, `homework.complete`,
+`homework.skip`, and GM-018's `takehome.html`. v23 is additive over v22 — the Parent Studio take-home pack family
 appends six methods (`takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`,
 `takehome.export`, `takehome.read`) whose print artifact is bound to the source course, objective,
 lesson version and content hash, with the learner page and the parent-only answer guide as
@@ -35,8 +44,10 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 2880 tests in 540.226s … OK (skipped=1)` on the merged GM-005 tree
-over `origin/master` `3fb3779` and the measured commit `b9f4a19`.
+additive only. The suite is `Ran 3486 tests in 1356.895s … OK (skipped=11)` on `master` `7130109`
+(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-10: the CP-049 audit re-pin
+and CP-044 merge over `19fec67`); the release tree
+`b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -74,14 +85,14 @@ invalidates the earlier evidence.
 
 | # | Gate | Owner | Evidence (frozen tree `b9f4a19` unless a row names another commit) | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Contracts frozen | Atlas | `contracts/rpc.v23.json` (83 declared methods), `contracts/db.v14.json`, `docs/REVIEW_CB001.md` | [x] |
+| 1 | Contracts frozen | Atlas | `contracts/rpc.v25.json` (93 declared methods), `contracts/db.v14.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh` on `b9f4a19`: admission PASS, `node --check` PASS, desktop contract tests PASS, runtime contracts PASS — 4/4 on 2786 files | [x] |
 | 3 | Backend kernel with migrations | Cinder | At `b9f4a19`: `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`; suite `Ran 2747 tests in 410.301s … OK (skipped=1)` | [x] |
 | 4 | Packs import and export | Lattice | Re-driven live on `df052eaeced56ddd7238e4fb5804110ea7b36e95` (the merged release tree: the H-210-R1 `artifact.get` repair `160c522` folded in as `8fd4ec2`; `desktop/plugin.js` still `cd862140…`) through the mounted HTTP `cb.rpc` v20 route against two isolated backends: `pack.preview` → `pack.import` for `japanese-affection-context-l0` 2.1.0 and `technical-demo-pack` 2.0.0, `pack.export` twice on the same store with byte-identical results (`content_hash` `sha256:5343526d…`, archive sha256 `sha256:4aefd708…`; demo `sha256:ff5594a8…` / `sha256:747c61fd…`; the exported archive equals the imported archive byte-for-byte), then a fresh-store re-import with the same objectives / sections / checks (Japanese 4 / 4 / 4, demo 2 / 2 / 2) and the same media bytes. The step that answered `INTERNAL_ERROR` on `bc9f607` now passes: `artifact.get` resolves **every** media segment of both packs on both stores — four media links, ten live calls, six distinct digests including the two export archives — each response contract-valid with a single-prefixed `sha256:<64 hex>` matching the manifest and a download handle whose fetched bytes hash to that same digest. The legacy bare spelling was reproduced in an isolated store: a bare row reads back labelled and a later labelled import dedupes into it instead of adding a row. Evidence: `audit/adversarial/h210r2-pack-roundtrip/` (39/39 assertions PASS). The round trip ran on `df052ea`; the frozen tree `b9f4a19` is that commit plus the H-210-R2 merge, whose diff is `docs/` and `audit/` only — no product, test or contract file moved, so the capture still describes this tree | [x] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b9f4a19` and no video exists. Gate 5 and the recording path must close first | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `b9f4a19` | [x] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `7130109` after the 2026-11-10 suite re-measurement (`3486 tests`, `OK (skipped=11)`) and the `cb.rpc` v25 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The draft pull request exists: `NousResearch/hermes-agent#152920`, opened 2026-11-10, pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading, and it stays draft until gates 5 and 7 close | [x] |
@@ -286,8 +297,9 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified on this candidate, so they are not blockers: 83/83 `cb.rpc` v23 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 2880 tests, pack round-trip and export
+Verified, so they are not blockers: 93/93 `cb.rpc` v25 methods mounted with no
+contract problems, schema v14 from migrations `0001`-`0014`, 3486 tests on `master` `7130109`
+(2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content
 hash `sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond
