@@ -19,7 +19,7 @@ github.com/DeseretSaint/hermes-classroom
   rendered length, so the effective count is lower).
 - Tags `@NousResearch`. Links the public repository. Makes no efficacy, mastery, benchmark, COPPA or
   child-safety claim.
-- Attach `coursebook-walkthrough.mp4` to the post — 51.0 s, narrated, −14.9 LUFS, sha256 `86ade99dccbf8b16867270de34c95442d61d2621d82daab9c12a5348763c0a70`.
+- Attach `coursebook-walkthrough.mp4` to the post — 51.0 s, narrated, −14.9 LUFS, sha256 `62bfbddbb6e026e8392dd5794bcfefc0b35bb162cb5a0cf39364f5627b87aca3`.
 
 **Alt text** (paste into X's media description):
 

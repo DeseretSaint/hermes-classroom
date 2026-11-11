@@ -147,7 +147,7 @@ the pinned tree.
 
 `docs/launch/coursebook-walkthrough.mp4`: 51.000000 s, 1920x1080/30, h264 + AAC stereo 48 kHz,
 **-15.1 LUFS** integrated (ebur128, post-mux), sha256
-`86ade99dccbf8b16867270de34c95442d61d2621d82daab9c12a5348763c0a70`, 9,499,230 B.
+`62bfbddbb6e026e8392dd5794bcfefc0b35bb162cb5a0cf39364f5627b87aca3`, 9,553,738 B.
 
 Seven segments: Learn anything (title), Home, Workshop, Course plan, Lesson + tutor, Graded check,
 Parent mode printout, end card. The ground is an animated ffmpeg `gradients` source and every card
