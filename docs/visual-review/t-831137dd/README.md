@@ -10,7 +10,9 @@ Module under test: `desktop/plugin.js` sha256 `71d940ce0398220fe1d25d1ec39b1e4bd
 2. Fox moved right, `left` 1088 -> 1110: opaque fox art now clears the opaque clock art by 11.4 px
    (clock right 1142.5, fox left 1153.9), where round 1 overlapped by 10.6 px.
 3. Hero contrast: the question paints `var(--cb3-ink)` (was `var(--cb3-forest)`, which measured
-   4.45:1 on the plate) and the panel scrim is `--cb3-canvas` at opacity 0.60 (was 0.55).
+   4.45:1 on the plate) and the panel scrim is `--cb3-canvas` at opacity 0.60 (was 0.55). Measured
+   on the committed 1344x768 proof, background pixels >= 6 px from any near-ink pixel: title box
+   worst 5.62:1 (ink), subline band worst 5.77:1 (ink); the same pixels give forest 4.94 / 5.08.
 4. `data-cb-home-cover` on the narrow hub card no longer says `type` for a painted kit cover.
 5. New pins: seating + separation arithmetic, hero ink + scrim floor, and per-course cover mapping
    (technical / japanese / parent / lesson-room) instead of "any approved row".
