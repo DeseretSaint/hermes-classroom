@@ -151,4 +151,11 @@ Results — full detail in `docs/visual-review/cp-024/VISUAL-GATE.md`:
 - `tests.test_m4_visual_audit` → 14 tests OK; `scripts/m4v-audit.py` regenerated on this module
   (15/15 claims PASS, pin = `6aaa9c39…b3c0`).
 - Targeted regression group (tokens_v3, v3_primitives, a11y_structure, home_hub, gate_scope,
-  cp_shelf_facts, lesson_views, gm010) and the full suite: numbers in the review summary.
+  cp_shelf_facts, lesson_views, gm010, cp_capture_stamp) → 136 tests OK (skipped=2).
+- **Full suite on `73aa29c`: `Ran 3491 tests in 1267.604s` — OK (skipped=11).** A first run of the
+  same suite on this commit reported 4 failures that were all one generated file: `desktop/plugin.js`
+  had been replaced with master's build (`4087908c…03b7`) mid-run. Restored with
+  `git checkout -- desktop/plugin.js`, the four named tests passed (25 OK), and the full rerun above
+  held the file at `6aaa9c39…b3c0` for the whole run. No test in the tree writes the repo module;
+  the cause was not reproducible.
+- `bash scripts/validate-plugin.sh` → **release gate passed 4/4** on `73aa29c` (4092 files).
