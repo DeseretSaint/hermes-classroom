@@ -3,8 +3,27 @@
 
 The camera is `scripts/vq-capture.mjs`; this file decides whether the frames it produced may be
 used as visual evidence. Keeping them apart is deliberate: the rules below are pure functions over
-a cell record, so they can be tested without an Electron host, and a hand-edited cell record or a
-swapped PNG is caught rather than trusted.
+a cell record, so they can be tested without an Electron host.
+
+What the judge re-verifies instead of trusting the record:
+
+- **screenshot bytes** — the PNG on disk hashes to the sha256 the cell record claims;
+- **required-role image bytes** — every inventory row that would satisfy a required display role
+  carries persisted bytes written by the camera into `evidence/`. The record's `evidence.file` is
+  untrusted input: the judge accepts only `evidence/<row sha256>.<raster ext>` relative to the cell,
+  refuses absolute paths, `..`, other directories and any name that is not the row's own sha256,
+  and refuses bytes identical to the cell screenshot. It hashes the file against the row sha256
+  and reads the raster header, so the declared natural size must match the file it claims to
+  describe. One asset may not satisfy two rows of the same role. A record whose required-role row
+  has no verifiable backing is refused, so forging a pass needs image files with matching bytes
+  rather than four edited numbers;
+- **build identity** — the cell names the plugin sha the window read (`window.plugin.sha256`);
+- **one capture set** — every captured cell carries one run id and one plugin sha.
+
+What is camera-asserted and *not* independently re-verified: rendered geometry (`rendered`), the
+inventory `kind`, `complete`, `current_src`, background `repeat`/`size`, and the screenshot clip.
+Those describe what the live DOM measured; a record edited after capture can still lie about them,
+and the judge does not claim otherwise.
 
 Rules applied to every cell (from `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2 and Gate 5):
 
@@ -28,6 +47,7 @@ Rules applied to every cell (from `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2
 
 Usage:
     python3 scripts/vq-manifest.py --dir docs/visual-review/vq-006 [--commit <sha>]
+        [--destinations "home discover"] [--widths "1344 460"]
 """
 
 from __future__ import annotations
@@ -105,6 +125,191 @@ REPEATING_MODES = ("repeat", "repeat-x", "repeat-y", "round", "space")
 #: above cannot apply: `cover`/`contain` on a 96 px file over a 900 px box is an upscale whatever the
 #: repeat mode says. Percentages are included for the same reason (`100% 100%` is a full-box stretch).
 BOX_SCALING_SIZES = ("cover", "contain")
+
+
+#: Where, inside a cell packet, the camera persists the inventoried bytes for required-role rows.
+#: The judge reads evidence from nowhere else: a record may not point at another file in the packet
+#: (the screenshot included), and the basename must be the row's own sha256. A forged required-role
+#: row therefore needs a file whose bytes hash to the number it claims, not four edited numbers.
+EVIDENCE_DIR = "evidence"
+#: Raster extensions the camera writes and the judge can read a header from.
+RASTER_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp")
+
+
+def required_kinds(destination: str | None) -> frozenset[str]:
+    """The inventory kinds that can satisfy a required role on this destination."""
+    requirements = REQUIREMENTS.get(str(destination), ())
+    return frozenset(kind for requirement in requirements for kind in requirement["kinds"])
+
+
+def evidence_kinds() -> frozenset[str]:
+    """Every kind any destination holds to a required role; the camera persists bytes for these."""
+    return frozenset(
+        kind
+        for requirements in REQUIREMENTS.values()
+        for requirement in requirements
+        for kind in requirement["kinds"]
+    )
+
+
+def _png_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 33 or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return None
+    if data[12:16] != b"IHDR" or b"IEND" not in data[-64:]:
+        return None
+    width = int.from_bytes(data[16:20], "big")
+    height = int.from_bytes(data[20:24], "big")
+    return (width, height) if width and height else None
+
+
+def _jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
+    if not data.startswith(b"\xff\xd8"):
+        return None
+    index = 2
+    while index + 9 < len(data):
+        if data[index] != 0xFF:
+            index += 1
+            continue
+        marker = data[index + 1]
+        if marker in (0xD8, 0xD9, 0x01) or 0xD0 <= marker <= 0xD7:
+            index += 2
+            continue
+        length = int.from_bytes(data[index + 2:index + 4], "big")
+        if length < 2:
+            return None
+        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+            height = int.from_bytes(data[index + 5:index + 7], "big")
+            width = int.from_bytes(data[index + 7:index + 9], "big")
+            return (width, height) if width and height else None
+        index += 2 + length
+    return None
+
+
+def _gif_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 10 or data[:6] not in (b"GIF87a", b"GIF89a"):
+        return None
+    width = int.from_bytes(data[6:8], "little")
+    height = int.from_bytes(data[8:10], "little")
+    return (width, height) if width and height else None
+
+
+def _webp_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 30 or data[0:4] != b"RIFF" or data[8:12] != b"WEBP":
+        return None
+    if int.from_bytes(data[4:8], "little") + 8 > len(data):
+        return None  # a truncated RIFF payload is not a readable image
+    chunk = data[12:16]
+    if chunk == b"VP8X":
+        width = int.from_bytes(data[24:27], "little") + 1
+        height = int.from_bytes(data[27:30], "little") + 1
+        return (width, height)
+    if chunk == b"VP8L":
+        if len(data) < 25 or data[20] != 0x2F:
+            return None
+        bits = int.from_bytes(data[21:25], "little")
+        return ((bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1)
+    if chunk == b"VP8 ":
+        start = data.find(b"\x9d\x01\x2a", 20)
+        if start < 0 or start + 7 > len(data):
+            return None
+        width = int.from_bytes(data[start + 3:start + 5], "little") & 0x3FFF
+        height = int.from_bytes(data[start + 5:start + 7], "little") & 0x3FFF
+        return (width, height) if width and height else None
+    return None
+
+
+def raster_dimensions(path: Path) -> tuple[int, int] | None:
+    """Width and height read from the file's own header, or None when it is not a known raster.
+
+    Only the container header is inspected: the judge is checking that the persisted bytes are a
+    real image of the declared size, not re-rendering them.
+    """
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    for reader in (_png_dimensions, _jpeg_dimensions, _gif_dimensions, _webp_dimensions):
+        dimensions = reader(data)
+        if dimensions:
+            return dimensions
+    return None
+
+
+def evidence_path(file_name: str, cell_dir: Path, row_sha256: str | None) -> tuple[Path | None, list[str]]:
+    """Resolve a row's `evidence.file` to a confined path, or name why it is not acceptable.
+
+    The record supplies this path, so it is treated as untrusted input. Only one shape is accepted:
+    `evidence/<row sha256>.<raster ext>` relative to the cell. Anything else — an absolute path, a
+    `..` step, another directory, a name that is not the row's own sha256 — is refused, because a
+    path with no confinement let a hand-edited record back a required-role row with a file already
+    in the packet (its own screenshot included) and mint a PASS without any new bytes.
+    """
+    relative = Path(file_name)
+    if relative.is_absolute():
+        return None, [f"evidence file must be relative to the cell, got the absolute path {file_name!r}"]
+    if ".." in relative.parts:
+        return None, [f"evidence file must not step outside the cell, got {file_name!r}"]
+    if len(relative.parts) != 2 or relative.parts[0] != EVIDENCE_DIR:
+        return None, [
+            f"evidence file must live at {EVIDENCE_DIR}/<row sha256>.<ext> in this cell, got {file_name!r}"
+        ]
+    if relative.suffix.lower() not in RASTER_EXTENSIONS:
+        return None, [
+            f"evidence file must carry a raster extension ({', '.join(RASTER_EXTENSIONS)}), got {file_name!r}"
+        ]
+    if not row_sha256 or relative.stem.lower() != str(row_sha256).lower():
+        return None, [
+            f"evidence file name must be the row sha256 ({row_sha256 or 'none'}), got {relative.name!r}"
+        ]
+    return cell_dir / relative, []
+
+
+def evidence_verdict(image: dict, cell_dir: Path,
+                     screenshot_sha256: str | None = None) -> tuple[list[str], dict | None]:
+    """Check the persisted bytes a required-role row points at, and return (problems, info)."""
+    evidence = image.get("evidence") or {}
+    file_name = str(evidence.get("file") or "")
+    if not file_name:
+        return ["no persisted image evidence (evidence.file is absent)"], None
+    path, path_problems = evidence_path(file_name, cell_dir, image.get("sha256"))
+    if path is None:
+        return path_problems or [f"evidence file could not be resolved: {file_name}"], None
+    if not path.is_file():
+        return [f"evidence file missing on disk: {file_name}"], None
+    measured = sha256_file(path)
+    natural = image.get("natural") or {}
+    natural_width = int(natural.get("width") or 0)
+    natural_height = int(natural.get("height") or 0)
+    info = {
+        "file": file_name,
+        "row_sha256": image.get("sha256"),
+        "evidence_sha256": evidence.get("sha256"),
+        "measured_sha256": measured,
+        "bytes": path.stat().st_size,
+        "dimensions": None,
+        "ok": False,
+    }
+    problems: list[str] = []
+    if measured != image.get("sha256"):
+        problems.append("evidence sha256 does not match the row sha256")
+    if evidence.get("sha256") and measured != evidence.get("sha256"):
+        problems.append("evidence sha256 does not match the evidence row")
+    if screenshot_sha256 and measured == screenshot_sha256:
+        problems.append(
+            "evidence bytes are the cell screenshot, not the inventoried asset"
+        )
+    dimensions = raster_dimensions(path)
+    if dimensions is None:
+        problems.append("evidence file is not a readable raster (png/jpeg/gif/webp)")
+    else:
+        info["dimensions"] = {"width": dimensions[0], "height": dimensions[1]}
+        if dimensions != (natural_width, natural_height):
+            problems.append(
+                f"evidence image is {dimensions[0]}x{dimensions[1]}px but the record claims natural "
+                f"{natural_width}x{natural_height}px"
+            )
+    info["ok"] = not problems
+    return problems, info
 
 
 def sha256_file(path: Path) -> str:
@@ -315,8 +520,14 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
     route = record.get("route") or {}
     page = record.get("page") or {}
     surface = record.get("surface") or {}
+    plugin = (record.get("window") or {}).get("plugin") or {}
     problems: list[str] = []
     warnings: list[str] = []
+
+    # Every cell must name the build it was captured from, including a refusal record: a
+    # `missing_surface` throw must not leave the cell untraceable to a plugin sha.
+    if not plugin.get("sha256"):
+        problems.append("cell names no plugin build (window.plugin.sha256 is absent)")
 
     # 1. live product
     if page.get("protocol") not in ("http:", "https:"):
@@ -342,9 +553,25 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
         warnings.append("v3 primitives are not mounted on this surface")
 
     # 3/4/5. required images and asset quality
+    declared_screenshot_sha = (record.get("screenshot") or {}).get("sha256")
+    required_for_destination = required_kinds(destination)
     inventory = []
     for image in record.get("images") or []:
         verdict = classify_image(image, press_plates)
+        evidence_problems: list[str] = []
+        evidence = None
+        evidence_required = bool(
+            verdict["kind"] in required_for_destination
+            and not verdict["placeholder"]
+            and not verdict["press_plate"]
+            and not verdict["problems"]
+        )
+        if evidence_required:
+            evidence_problems, evidence = evidence_verdict(
+                image, cell_dir, screenshot_sha256=declared_screenshot_sha
+            )
+            if evidence_problems:
+                problems.extend(f"image {image.get('selector')}: {p}" for p in evidence_problems)
         inventory.append({
             "selector": image.get("selector"),
             "current_src": image.get("current_src"),
@@ -358,9 +585,15 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
             "bundled_asset": verdict["bundled_asset"],
             "scale_ratio": verdict["scale_ratio"],
             "problems": verdict["problems"],
+            "evidence_required": evidence_required,
+            "evidence": evidence,
+            "evidence_ok": (not evidence_problems) if evidence_required else None,
         })
 
-    usable = [row for row in inventory if not row["placeholder"] and not row["press_plate"]]
+    usable = [
+        row for row in inventory
+        if not row["placeholder"] and not row["press_plate"] and row["evidence_ok"] is not False
+    ]
     # Background layers are judged for quality but do not satisfy a display role: a role is a
     # placement the surface must show, and accepting a CSS layer would let a surface pass a
     # requirement it never rendered as an image.
@@ -401,16 +634,31 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
             })
             continue
         satisfying = [row for row in usable if row["kind"] in requirement["kinds"]]
+        # One asset may not satisfy several copies of the same role. The camera writes one file per
+        # distinct asset, so rows that share evidence bytes are the same picture counted twice: four
+        # rows pointing at one real cover is a missing display set, not a complete one.
+        evidence_shas = [
+            row["evidence"]["measured_sha256"]
+            for row in satisfying
+            if (row.get("evidence") or {}).get("measured_sha256")
+        ]
+        reused = sorted({sha for sha in evidence_shas if evidence_shas.count(sha) > 1})
+        for sha in reused:
+            problems.append(
+                f"required role {requirement['role']} counts the same image bytes "
+                f"{evidence_shas.count(sha)} times ({sha[:12]}); each row of a role needs its own asset"
+            )
+        distinct = len(satisfying) - sum(evidence_shas.count(sha) - 1 for sha in reused)
         requirement_rows.append({
             "role": requirement["role"],
             "required": requirement["min"],
-            "found": len(satisfying),
-            "ok": len(satisfying) >= requirement["min"],
+            "found": distinct,
+            "ok": distinct >= requirement["min"],
             "note": requirement["note"],
         })
-        if len(satisfying) < requirement["min"]:
+        if distinct < requirement["min"]:
             problems.append(
-                f"required image missing: {requirement['role']} {len(satisfying)}/{requirement['min']}"
+                f"required image missing: {requirement['role']} {distinct}/{requirement['min']}"
             )
 
     press_rows = [row for row in inventory + background_inventory if row["press_plate"]]
@@ -461,7 +709,7 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
         "requirements": requirement_rows,
         "images": inventory,
         "backgrounds": background_inventory,
-        "plugin": (record.get("window") or {}).get("plugin") or {},
+        "plugin": plugin,
         "route": {
             "marker": route.get("marker"),
             "destination": route.get("destination"),
@@ -475,35 +723,111 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
     }
 
 
-def build_manifest(cell_dir: Path, commit: str | None = None) -> dict:
+def _record_identity(path: Path) -> tuple[str | None, int | None]:
+    """Destination and width from a `<destination>--<width>.json` filename."""
+    destination, separator, width_text = path.stem.rpartition("--")
+    if not separator:
+        return None, None
+    try:
+        return destination or None, int(width_text)
+    except ValueError:
+        return destination or None, None
+
+
+def _unreadable_cell(path: Path, reason: str) -> dict:
+    """A named failure for a record the judge cannot read, instead of silently dropping it.
+
+    Skipping these made a truncated record look like a matrix cell that was never captured, and a
+    `vq.capture.v2` typo look like an empty capture set. Both are failures about a file the run
+    wrote, so they are reported as such, with the offending filename.
+    """
+    destination, width = _record_identity(path)
+    return {
+        "cell": path.stem,
+        "destination": destination,
+        "width": width,
+        "ok": False,
+        "problems": [f"cell record {path.name} {reason}"],
+        "warnings": [],
+        "requirements": [],
+        "images": [],
+        "backgrounds": [],
+        "plugin": {},
+        "route": {},
+        "screenshot": None,
+        "unreadable": True,
+    }
+
+
+def build_manifest(cell_dir: Path, commit: str | None = None,
+                   destinations: tuple[str, ...] | None = None,
+                   widths: tuple[int, ...] | None = None) -> dict:
     registry = press_plate_registry()
+    matrix_destinations = tuple(destinations) if destinations else DESTINATIONS
+    matrix_widths = tuple(widths) if widths else WIDTHS
     records = []
+    unreadable = []
+    requested = {
+        (destination, width) for destination in matrix_destinations for width in matrix_widths
+    }
+
+    def outside_subset(path: Path) -> bool:
+        """A record the run did not ask for is not judged here, readable or not."""
+        return _record_identity(path) not in requested
+
     for path in sorted(cell_dir.glob("*.json")):
         if path.name in ("manifest.json",) or path.name.endswith(".stamp.json"):
             continue
         try:
             record = json.loads(path.read_text())
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            if outside_subset(path):
+                continue
+            unreadable.append(_unreadable_cell(path, f"could not be parsed ({error})"))
+            continue
+        if not isinstance(record, dict):
+            if outside_subset(path):
+                continue
+            unreadable.append(_unreadable_cell(path, "is not a JSON object"))
             continue
         if record.get("schema") != "vq.capture.v1":
+            if outside_subset(path):
+                continue
+            unreadable.append(
+                _unreadable_cell(path, f"has schema {record.get('schema')!r}, expected 'vq.capture.v1'")
+            )
+            continue
+        cell = record.get("cell") or {}
+        if (cell.get("destination"), cell.get("width")) not in requested:
+            # A frame outside the requested subset belongs to another run; judging it here would
+            # attribute it to this matrix. A subset run says what it asked for.
             continue
         records.append((path, record))
 
-    cells = [judge_cell(record, cell_dir, registry) for _, record in records]
+    cells = [judge_cell(record, cell_dir, registry) for _, record in records] + unreadable
     # A cell that was captured and failed is *failed*; a matrix cell with no record at all is
     # *not captured*. Conflating them reported 16 failed frames as 24 missing ones.
-    captured = {(cell["destination"], cell["width"]) for cell in cells}
+    captured = {
+        (cell["destination"], cell["width"])
+        for cell in cells
+        if cell["destination"] in matrix_destinations and cell["width"] in matrix_widths
+    }
 
     missing_cells = [
         {"destination": destination, "width": width}
-        for destination in DESTINATIONS
-        for width in WIDTHS
+        for destination in matrix_destinations
+        for width in matrix_widths
         if (destination, width) not in captured
     ]
     plugin_shas = sorted({
         str(cell["plugin"].get("sha256"))
         for cell in cells
         if cell["plugin"].get("sha256")
+    })
+    run_ids = sorted({
+        str((record.get("run") or {}).get("id"))
+        for _, record in records
+        if (record.get("run") or {}).get("id")
     })
     mixed_build = len(plugin_shas) > 1
     if mixed_build:
@@ -513,13 +837,22 @@ def build_manifest(cell_dir: Path, commit: str | None = None) -> dict:
                 "cells were captured from more than one plugin build "
                 f"({', '.join(sha[:12] for sha in plugin_shas)}); the set is not one product"
             )
+    mixed_run = len(run_ids) > 1
+    if mixed_run:
+        for cell in cells:
+            cell["ok"] = False
+            cell["problems"].append(
+                "cells come from more than one capture run "
+                f"({', '.join(run_ids)}); frames from an earlier run cannot be attributed to this one"
+            )
     manifest = {
         "schema": SCHEMA,
         "tool": "scripts/vq-manifest.py",
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "commit": commit,
         "plugin_sha256": plugin_shas,
-        "matrix": {"destinations": list(DESTINATIONS), "widths": list(WIDTHS)},
+        "capture_runs": run_ids,
+        "matrix": {"destinations": list(matrix_destinations), "widths": list(matrix_widths)},
         "press_plate_registry": registry,
         "cells": cells,
         "missing_cells": missing_cells,
@@ -529,8 +862,9 @@ def build_manifest(cell_dir: Path, commit: str | None = None) -> dict:
             "passed": sum(1 for cell in cells if cell["ok"]),
             "failed": sum(1 for cell in cells if not cell["ok"]),
             "not_captured": len(missing_cells),
-            "matrix_cells": len(DESTINATIONS) * len(WIDTHS),
+            "matrix_cells": len(matrix_destinations) * len(matrix_widths),
             "mixed_build": mixed_build,
+            "mixed_run": mixed_run,
             "ok": bool(cells) and all(cell["ok"] for cell in cells) and not missing_cells,
         },
     }
@@ -595,6 +929,7 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         f"Generated {manifest['generated_at']} by `{manifest['tool']}`.",
         f"Commit: `{manifest['commit'] or 'unrecorded'}`  ",
         f"Module sha256: {', '.join(f'`{sha}`' for sha in manifest['plugin_sha256']) or '**none recorded**'}",
+        f"Capture run: {', '.join(f'`{run}`' for run in manifest.get('capture_runs') or []) or '**unrecorded**'}",
         "",
         f"Cells: **{manifest['summary']['passed']} passed / {manifest['summary']['failed']} failed / "
         f"{manifest['summary']['not_captured']} never captured** "
@@ -638,17 +973,21 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         lines.append(f"**{cell['cell']}** — {len(cell['images'])} image(s), "
                      f"{len(cell['backgrounds'])} background layer(s)")
         lines.append("")
-        lines.append("| selector | kind | natural | rendered | ratio | sha256 |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.append("| selector | kind | natural | rendered | ratio | sha256 | evidence |")
+        lines.append("|---|---|---|---|---|---|---|")
         for image in cell["images"]:
             natural = image.get("natural") or {}
             rendered = image.get("rendered") or {}
             digest = image.get("sha256") or "none"
+            if image.get("evidence_required"):
+                backing = "verified" if image.get("evidence_ok") else "**missing**"
+            else:
+                backing = "not required"
             lines.append(
                 f"| `{image.get('selector')}` | {image.get('kind')} | "
                 f"{natural.get('width')}x{natural.get('height')} | "
                 f"{rendered.get('width')}x{rendered.get('height')} | "
-                f"{image.get('scale_ratio')} | `{digest}` |"
+                f"{image.get('scale_ratio')} | `{digest}` | {backing} |"
             )
         lines.append("")
         if cell["backgrounds"]:
@@ -681,15 +1020,38 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", required=True, help="capture output directory")
     parser.add_argument("--commit", default=None)
+    parser.add_argument("--widths", default=None,
+                        help="judge only these route widths (space or comma separated); default is the full matrix")
+    parser.add_argument("--destinations", default=None,
+                        help="judge only these destinations (space or comma separated); default is the full matrix")
     parser.add_argument("--require-complete", action="store_true",
-                        help="also fail when a matrix cell was never captured")
+                        help="deprecated and redundant: summary.ok has always required every requested cell")
     args = parser.parse_args()
 
     output_dir = Path(args.dir).resolve()
     if not output_dir.is_dir():
         print(f"vq: no such capture directory: {output_dir}", file=sys.stderr)
         return 2
-    manifest = build_manifest(output_dir, args.commit)
+    widths = None
+    if args.widths:
+        try:
+            widths = tuple(int(token) for token in str(args.widths).replace(",", " ").split())
+        except ValueError:
+            print(f"vq: --widths must be integers: {args.widths}", file=sys.stderr)
+            return 2
+        unknown = [width for width in widths if width not in WIDTHS]
+        if unknown:
+            print(f"vq: unknown width(s) {unknown}; the installed matrix is {list(WIDTHS)}", file=sys.stderr)
+            return 2
+    destinations = None
+    if args.destinations:
+        destinations = tuple(str(args.destinations).replace(",", " ").split())
+        unknown = [name for name in destinations if name not in DESTINATIONS]
+        if unknown:
+            print(f"vq: unknown destination(s) {unknown}; the installed matrix is {list(DESTINATIONS)}",
+                  file=sys.stderr)
+            return 2
+    manifest = build_manifest(output_dir, args.commit, destinations=destinations, widths=widths)
     (output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     render_markdown(manifest, output_dir)
     sheet = contact_sheet(output_dir, manifest, output_dir / "contact-sheet.png")
@@ -697,6 +1059,8 @@ def main() -> int:
     summary = manifest["summary"]
     print(f"output  : {output_dir}")
     print(f"contact : {sheet or 'not produced'}")
+    print(f"matrix  : {len(manifest['matrix']['destinations'])} destinations x "
+          f"{len(manifest['matrix']['widths'])} widths = {summary['matrix_cells']} cells")
     print(f"cells   : {summary['cells']} captured ({summary['passed']} pass, {summary['failed']} fail)")
     print(f"missing : {summary['not_captured']} of {summary['matrix_cells']} matrix cells were never "
           f"captured ({summary['captured']} have a frame)")
@@ -704,7 +1068,7 @@ def main() -> int:
         print(f"  {'PASS' if cell['ok'] else 'FAIL'}  {cell['cell']}")
         for problem in cell["problems"][:4]:
             print(f"        - {problem}")
-    ok = summary["ok"] and not (args.require_complete and manifest["missing_cells"])
+    ok = summary["ok"]
     print(f"verdict : {'PASS' if ok else 'FAIL'}")
     return 0 if ok else 1
 

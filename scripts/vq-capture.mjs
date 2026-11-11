@@ -7,11 +7,14 @@
  * two files that are the only evidence a screen card may use:
  *
  *   <name>.png    the route itself, clipped to `[data-cb-route]`, at 1x
- *   <name>.json    the machine-readable cell record: destination actually rendered, window and
- *                  plugin sha, fonts/v3/render-error state, the screenshot sha256, and one inventory
- *                  row per image in the route (selector, currentSrc, natural size, rendered size,
- *                  sha256, and whether it is a bundled kit asset, a Press Plate, a data-URI
- *                  stand-in or a placeholder).
+ *   <name>.json    the machine-readable cell record: destination actually rendered, run id, window
+ *                  and plugin sha, page url/protocol, fonts/v3/render-error state, the screenshot
+ *                  sha256, and one inventory row per image in the route (selector, currentSrc,
+ *                  natural size, rendered size, sha256, and whether it is a bundled kit asset, a
+ *                  Press Plate, a data-URI stand-in or a placeholder).
+ *   evidence/      the inventoried bytes for rows that can satisfy a required display role, named
+ *                  by their sha256. The judge re-hashes them and reads their raster header, so a
+ *                  required-role natural size is checked against a file, not trusted from the JSON.
  *
  * Why an inventory and not only a screenshot: `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2/5
  * judges *assets*, not pixels. A frame can look plausible while every cover is a typographic
@@ -61,6 +64,36 @@ const pluginPath = arg('plugin', 'desktop/plugin.js') ? resolve(String(arg('plug
 const name = String(arg('name', `${destination}--${width}`))
 const timeoutMs = Number(arg('timeout', 30000))
 const assetsFile = resolve(String(arg('assets', 'desktop/cb-assets.generated.js')))
+//: The inventory kinds that can satisfy a required display role. Mirrors `REQUIREMENTS` in
+//: `scripts/vq-manifest.py`; if the two drift the judge refuses the row for having no evidence,
+//: so a drift fails loudly rather than accepting an unbacked number.
+const EVIDENCE_KINDS = ['cover_plate', 'scene_plate', 'fox_pose', 'unknown']
+//: Persisted evidence is capped per row; a file above the cap is not written and the judge refuses
+//: the row (no silent pass on a missing file).
+const EVIDENCE_BYTE_CAP = 4 * 1024 * 1024
+//: One id per capture set. `scripts/vq-capture.sh` exports it so every cell in a run shares it;
+//: a bare single-cell run has no set and records `run.id: null`.
+const runId = arg('run-id', process.env.VQ_RUN_ID || null)
+const evidenceDir = resolve(outDir, 'evidence')
+
+/* The extension of a persisted evidence file comes from its bytes, not from the URL: the judge
+ * accepts only `<row sha256>.<raster ext>`, and a URL extension is a claim (a `.webp` URL can serve
+ * PNG bytes, and a data URI can be mislabelled). Sniffing the container makes the name describe the
+ * file the judge will actually read. */
+function evidenceExtension(bytes) {
+  const head = bytes.subarray(0, 16)
+  if (head.length >= 8 && head.subarray(0, 8).equals(
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return '.png'
+  if (head.length >= 12
+      && head.subarray(0, 4).toString('latin1') === 'RIFF'
+      && head.subarray(8, 12).toString('latin1') === 'WEBP') return '.webp'
+  if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return '.jpg'
+  if (head.length >= 6 && /^GIF8[79]a$/.test(head.subarray(0, 6).toString('latin1'))) return '.gif'
+  const text = head.toString('utf8').trimStart()
+  if (text.startsWith('<svg') || text.startsWith('<?xml')) return '.svg'
+  return '.bin'
+}
+
 
 /* ── a minimal CDP client (same protocol as scripts/cb015-lib.mjs, with an explicit port) ───── */
 async function connect(port) {
@@ -174,17 +207,33 @@ async function pageProbe(payload) {
     const digest = await crypto.subtle.digest('SHA-256', bytes)
     return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
   }
-  const fetchSha = async (url) => {
+  // Evidence bytes are persisted only for rows that can satisfy a required display role; base64
+  // keeps the probe payload JSON-safe. A cap keeps one pathological file out of the packet.
+  const base64Of = (bytes) => {
+    let binary = ''
+    const chunk = 0x8000
+    for (let index = 0; index < bytes.length; index += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunk))
+    }
+    return btoa(binary)
+  }
+  const fetchSha = async (url, wantBytes = false) => {
     try {
       const response = await fetch(url, { credentials: 'include' })
-      if (!response.ok) return { sha256: null, bytes: null, error: `http ${response.status}` }
+      if (!response.ok) return { sha256: null, bytes: null, base64: null, error: `http ${response.status}` }
       const buffer = await response.arrayBuffer()
-      return { sha256: await digestBytes(buffer), bytes: buffer.byteLength, error: null }
+      const bytes = new Uint8Array(buffer)
+      return {
+        sha256: await digestBytes(buffer),
+        bytes: bytes.byteLength,
+        base64: wantBytes && bytes.byteLength <= payload.evidenceByteCap ? base64Of(bytes) : null,
+        error: null
+      }
     } catch (error) {
-      return { sha256: null, bytes: null, error: String(error && error.message ? error.message : error) }
+      return { sha256: null, bytes: null, base64: null, error: String(error && error.message ? error.message : error) }
     }
   }
-  const dataUriSha = async (url) => {
+  const dataUriSha = async (url, wantBytes = false) => {
     try {
       const comma = url.indexOf(',')
       const meta = url.slice(5, comma)
@@ -197,29 +246,37 @@ async function pageProbe(payload) {
       } else {
         bytes = new TextEncoder().encode(decodeURIComponent(text))
       }
-      return { sha256: await digestBytes(bytes), bytes: bytes.length, error: null }
+      return {
+        sha256: await digestBytes(bytes),
+        bytes: bytes.byteLength,
+        base64: wantBytes && bytes.byteLength <= payload.evidenceByteCap ? base64Of(bytes) : null,
+        error: null
+      }
     } catch (error) {
-      return { sha256: null, bytes: null, error: String(error && error.message ? error.message : error) }
+      return { sha256: null, bytes: null, base64: null, error: String(error && error.message ? error.message : error) }
     }
   }
 
+  const evidenceKinds = new Set(payload.evidenceKinds || [])
   if (!route) return { route: null }
   const routeRect = route.getBoundingClientRect()
   const images = [...route.querySelectorAll('img')]
   const inventory = []
   for (const img of images) {
     const marks = nearestMarker(img)
+    const kind = kindOf(marks)
     const rect = img.getBoundingClientRect()
     const currentSrc = img.currentSrc || img.src || ''
     const isData = currentSrc.startsWith('data:')
-    const sha = isData ? await dataUriSha(currentSrc) : await fetchSha(currentSrc)
+    const wantBytes = evidenceKinds.has(kind)
+    const sha = isData ? await dataUriSha(currentSrc, wantBytes) : await fetchSha(currentSrc, wantBytes)
     const bundled = sha && sha.sha256 ? payload.assets[sha.sha256] || null : null
     const naturalWidth = img.naturalWidth || 0
     const naturalHeight = img.naturalHeight || 0
     inventory.push({
       selector: selectorOf(img),
       markers: marks.slice(0, 6),
-      kind: kindOf(marks),
+      kind,
       src_attr: (img.getAttribute('src') || '').slice(0, 200),
       current_src: currentSrc.startsWith('data:') ? `data:${currentSrc.slice(5, 40)}…` : currentSrc,
       current_src_data_uri: isData,
@@ -229,6 +286,7 @@ async function pageProbe(payload) {
       sha256: sha && sha.sha256 ? sha.sha256 : null,
       sha_error: sha ? sha.error : 'no source',
       bytes: sha ? sha.bytes : null,
+      evidence_base64: sha ? sha.base64 : null,
       bundled_asset: bundled,
       alt: img.getAttribute('alt') || '',
       complete: Boolean(img.complete)
@@ -585,6 +643,30 @@ async function navigate(cdp, destination) {
   throw new Error(`unknown destination ${destination}`)
 }
 
+/** Hash the installed plugin source the window can read. Called before navigation so a refusal
+ *  record still names the build it was refused on. */
+async function readWindowPlugin(cdp, pluginPath) {
+  return cdp
+    .eval(
+      `(async () => {
+        const path = ${JSON.stringify(pluginPath)}
+        if (!path || !window.hermesDesktop || !window.hermesDesktop.readPluginSource) {
+          return { error: 'readPluginSource unavailable' }
+        }
+        try {
+          const read = await window.hermesDesktop.readPluginSource(path)
+          const bytes = new TextEncoder().encode(read.text)
+          const digest = await crypto.subtle.digest('SHA-256', bytes)
+          const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+          return { loaded_path: read.path || path, bytes: read.byteSize || read.text.length, sha256 }
+        } catch (error) {
+          return { error: String(error && error.message ? error.message : error) }
+        }
+      })()`
+    )
+    .catch((error) => ({ error: error.message }))
+}
+
 async function fitRouteWidth(cdp, target) {
   const read = () => cdp.eval("Math.round(document.querySelector('[data-cb-route]').getBoundingClientRect().width)")
   const base = await cdp.eval(
@@ -623,6 +705,7 @@ async function main() {
     schema: 'vq.capture.v1',
     cell: { name, destination, width, height },
     captured_at: new Date().toISOString(),
+    run: runId ? { id: String(runId), started_at: new Date().toISOString() } : null,
     window: { cdp_port: Number(cdpPort) },
     route: null,
     surface: { requested: destination, resolved: null, control: null, missing: null },
@@ -640,6 +723,13 @@ async function main() {
     // React shell state, and the only reproducible way back to global Home is a reload.
     await cdp.send('Page.reload', { ignoreCache: false })
     await cdp.wait(2500)
+    // Identify the build and the page *before* navigation. A `missing_surface` throw happens inside
+    // navigate(), and a refusal record must still name the plugin sha and protocol it was refused
+    // on — otherwise the cell is not tied to any build.
+    record.page = await cdp.eval(
+      "({ url: location.href, protocol: location.protocol, proof_script: Boolean(window.__VQ_PROOF__ || window.__CP000_FIXTURE__) })"
+    )
+    record.window.plugin = await readWindowPlugin(cdp, pluginPath)
     await ensureRoute(cdp)
     const nav = await navigate(cdp, destination)
     record.surface.control = nav.control
@@ -661,33 +751,33 @@ async function main() {
     const probe = await cdp.eval(
       `(${pageProbe.toString()})(${JSON.stringify({
         assets: assetIndex,
-        probes: PROBES[destination] || []
+        probes: PROBES[destination] || [],
+        evidenceKinds: EVIDENCE_KINDS,
+        evidenceByteCap: EVIDENCE_BYTE_CAP
       })})`
     )
     record.route = probe.route
     record.images = probe.page.images
+    // Persist the inventoried bytes for every row that can satisfy a required display role. The
+    // judge re-hashes them and reads the raster header, so the declared natural size is checked
+    // against a file rather than trusted. Content-addressed, so identical assets across cells share
+    // one file.
+    for (const row of record.images) {
+      if (!row.evidence_base64) {
+        delete row.evidence_base64
+        continue
+      }
+      const bytes = Buffer.from(row.evidence_base64, 'base64')
+      const digest = createHash('sha256').update(bytes).digest('hex')
+      const relative = `evidence/${digest}${evidenceExtension(bytes)}`
+      mkdirSync(evidenceDir, { recursive: true })
+      writeFileSync(resolve(outDir, relative), bytes)
+      row.evidence = { file: relative, sha256: digest, bytes: bytes.byteLength }
+      delete row.evidence_base64
+    }
     record.backgrounds = probe.page.backgrounds
     record.page = { url: probe.page.url, protocol: probe.page.protocol, proof_script: probe.page.proof_script }
     record.surface.resolved = probe.route ? probe.route.destination : null
-    record.window.plugin = await cdp
-      .eval(
-        `(async () => {
-          const path = ${JSON.stringify(pluginPath)}
-          if (!path || !window.hermesDesktop || !window.hermesDesktop.readPluginSource) {
-            return { error: 'readPluginSource unavailable' }
-          }
-          try {
-            const read = await window.hermesDesktop.readPluginSource(path)
-            const bytes = new TextEncoder().encode(read.text)
-            const digest = await crypto.subtle.digest('SHA-256', bytes)
-            const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
-            return { loaded_path: read.path || path, bytes: read.byteSize || read.text.length, sha256 }
-          } catch (error) {
-            return { error: String(error && error.message ? error.message : error) }
-          }
-        })()`
-      )
-      .catch((error) => ({ error: error.message }))
     const clip = {
       x: Math.round(probe.route.left),
       y: Math.round(probe.route.top),
