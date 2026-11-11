@@ -1,0 +1,347 @@
+{
+  "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+  "scope": "short",
+  "presentation_mode": "game",
+  "run": "ff63dc",
+  "course_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-course-create-a984064b",
+    "revision": 0,
+    "result": {
+      "course_id": "crs_82c5def1c4b14cf4a25641960de77165",
+      "plan_id": "pln_b565737a6c70483b9f8ebd0cb96598dd",
+      "revision": 0
+    }
+  },
+  "enrollment_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-enrollment-create-9e4daf6b",
+    "revision": 0,
+    "result": {
+      "enrollment_id": "enr_7105d3de1d1e46f7a3131dd232db387b",
+      "revision": 0
+    }
+  },
+  "jobs_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-jobs-create-e50e9b9b",
+    "revision": 0,
+    "result": {
+      "job_id": "job_d54065dcf81b4cc6affe55b32107fa6d",
+      "state": "queued"
+    }
+  },
+  "job_id": "job_d54065dcf81b4cc6affe55b32107fa6d",
+  "jobs_get": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-jobs-get-c84adbf3",
+    "revision": 0,
+    "result": {
+      "job": {
+        "job_id": "job_d54065dcf81b4cc6affe55b32107fa6d",
+        "kind": "plan",
+        "state": "completed",
+        "operation_id": "cp015g-d1-jobs-create-e50e9b9b",
+        "attempt_id": "att_76997d48908443ccae128403d6ed6e90",
+        "brief": {
+          "course_id": "crs_82c5def1c4b14cf4a25641960de77165",
+          "dials": {
+            "depth": "working"
+          },
+          "enrollment_id": "enr_7105d3de1d1e46f7a3131dd232db387b",
+          "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+          "locale": "en-US",
+          "recipe": "casual",
+          "scope": "short",
+          "stage": "plan"
+        },
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v11",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": null,
+            "resolved_domain": "language",
+            "source": "declared_locale",
+            "target_language": "en"
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 4,
+          "plan_hash": "sha256:e13b135adaa4d6eccffd9de59ffc2ebafa17a6471d6ab1ee6e76a57b4ff12029",
+          "plan_id": "pln_b565737a6c70483b9f8ebd0cb96598dd",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 1,
+          "rejection_reasons": [
+            "objective:3: It is marked sourced with three source_ids, but the supplied excerpts do not show how to distinguish Jupiter's moons from background stars.",
+            "objective:4: It is marked sourced, but the cited excerpts do not show dated two-night sketches or the explanation that the pattern changes because the moons orbit Jupiter."
+          ],
+          "reuse_declined": null,
+          "reused": false,
+          "units": 2,
+          "validation": {
+            "cost": {
+              "calls": 2,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "same_model",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_verdict": "reject"
+        },
+        "progress": {
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1,
+          "message": "plan authored (needs_review)"
+        },
+        "activity": {
+          "stage": "plan",
+          "stage_source": "checkpoint",
+          "steps_done": 1,
+          "steps_total": 1,
+          "elapsed_seconds": 98,
+          "elapsed_basis": "created_to_updated",
+          "can_cancel": false,
+          "can_retry": false,
+          "terminal": true,
+          "readable": true,
+          "message": "plan authored (needs_review)",
+          "last_progress_at": "2026-11-11T12:33:59Z",
+          "usage": {
+            "calls": 4,
+            "tokens": {
+              "input": 26324,
+              "output": 24640,
+              "cache_read": null,
+              "cache_write": null
+            },
+            "cost_usd": null,
+            "unknown_cost_calls": 4,
+            "artifacts": 0,
+            "providers": [
+              "nous"
+            ],
+            "models": [
+              "deepseek/deepseek-v4.1-flash-1017"
+            ]
+          }
+        },
+        "lease": null,
+        "artifact_ids": [],
+        "error": null,
+        "created_at": "2026-11-11T12:32:21Z",
+        "updated_at": "2026-11-11T12:33:59Z",
+        "cancel_requested_at": null
+      }
+    }
+  },
+  "course_outline": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-course-outline-a2116d99",
+    "revision": 0,
+    "result": {
+      "enrollment_id": "enr_7105d3de1d1e46f7a3131dd232db387b",
+      "plan": {
+        "plan_id": "pln_b565737a6c70483b9f8ebd0cb96598dd",
+        "version": 1,
+        "state": "draft",
+        "plan_hash": "sha256:e13b135adaa4d6eccffd9de59ffc2ebafa17a6471d6ab1ee6e76a57b4ff12029",
+        "validation": {
+          "approvable": false,
+          "source": null,
+          "verdict": "reject",
+          "outcome": "rejected",
+          "independence": "same_model",
+          "facts_unverified": false,
+          "reasons": [
+            "objective:3: It is marked sourced with three source_ids, but the supplied excerpts do not show how to distinguish Jupiter's moons from background stars.",
+            "objective:4: It is marked sourced, but the cited excerpts do not show dated two-night sketches or the explanation that the pattern changes because the moons orbit Jupiter."
+          ],
+          "reason": "plan_not_validated",
+          "detail": null,
+          "manual_authoring": false
+        },
+        "units": [
+          {
+            "ordinal": 1,
+            "title": "Get the Telescope Ready and Find Jupiter",
+            "goal": "Learner can set up the small telescope safely, align the finder, and use low power to put Jupiter in the eyepiece; this comes first because every later moon observation depends on reliable pointing.",
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "unmet": [],
+            "objectives": [
+              {
+                "objective_id": "2c24eb6fec6eb738",
+                "ordinal": 1,
+                "title": "Explain the safe setup steps and align the finder so a distant target stays centered",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "cfeaf4e2a7704669",
+                "ordinal": 2,
+                "title": "Use a sky chart or planetarium app to locate Jupiter and place it in a low-power eyepiece",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "title": "Identify Jupiter's Moons and Record Their Positions",
+            "goal": "Learner can use repeated low-power views to identify Jupiter's bright moons, sketch their positions, and explain why the pattern changes; it comes after Unit 1 because it reuses the same pointing and centering routine on a located Jupiter.",
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "prerequisite_state": "unmet",
+            "unmet": [
+              {
+                "objective_id": "2c24eb6fec6eb738",
+                "ordinal": 1,
+                "title": "Explain the safe setup steps and align the finder so a distant target stays centered",
+                "state": "not_started"
+              },
+              {
+                "objective_id": "cfeaf4e2a7704669",
+                "ordinal": 2,
+                "title": "Use a sky chart or planetarium app to locate Jupiter and place it in a low-power eyepiece",
+                "state": "not_started"
+              }
+            ],
+            "objectives": [
+              {
+                "objective_id": "71ef9ebf6d2d72d4",
+                "ordinal": 3,
+                "title": "Identify Jupiter's bright moons in the eyepiece and explain how to tell them from background stars",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "a4949171b425291b",
+                "ordinal": 4,
+                "title": "Sketch the moons' positions on two different nights and explain why the pattern changes",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "objective_id": "2c24eb6fec6eb738",
+          "ordinal": 1,
+          "title": "Explain the safe setup steps and align the finder so a distant target stays centered",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "cfeaf4e2a7704669",
+          "ordinal": 2,
+          "title": "Use a sky chart or planetarium app to locate Jupiter and place it in a low-power eyepiece",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "71ef9ebf6d2d72d4",
+          "ordinal": 3,
+          "title": "Identify Jupiter's bright moons in the eyepiece and explain how to tell them from background stars",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "a4949171b425291b",
+          "ordinal": 4,
+          "title": "Sketch the moons' positions on two different nights and explain why the pattern changes",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        }
+      ],
+      "total": 4,
+      "truncated": false
+    }
+  },
+  "course_surface": {
+    "ok": false,
+    "contract_version": 26,
+    "operation_id": "unknown-operation",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "category": "validation",
+      "message": "RPC request violates cb.rpc at method: 'course.surface' is not one of ['health.get', 'schema.get', 'course.create', 'course.get', 'enrollment.create', 'plan.approve', 'plan.replan', 'check.open', 'attempt.submit', 'attempt.override', 'attempt.dispute', 'progression.challenge_out', 'notebook.save', 'notebook.list', 'notebook.delete', 'quiz.history', 'binding.get', 'jobs.create', 'jobs.get', 'jobs.cancel', 'pack.preview', 'pack.import', 'pack.export', 'usage.summary', 'library.list', 'lesson.page', 'lesson.begin', 'enrollment.update', 'enrollment.delete', 'pack.delete', 'artifact.get', 'jobs.list', 'notebook.update', 'binding.abandon', 'review.queue', 'review.action', 'evidence.inspect', 'evidence.disputes', 'pack.inspect', 'pack.list', 'course.outline', 'check.get', 'lesson.assist', 'parent.brief.create', 'parent.brief.get', 'parent.plan.edit', 'parent.final.approve', 'parent.blueprint.read', 'parent.export', 'parent.reflection.record', 'parent.reflection.list', 'source.revalidate', 'pronunciation.attempt', 'pronunciation.dispute', 'syllabus.intake.create', 'syllabus.get', 'syllabus.parse', 'syllabus.align', 'syllabus.alignment.get', 'syllabus.alignment.review', 'syllabus.delete', 'course.export.read', 'course.export', 'observation.record', 'practice.start', 'practice.state', 'practice.end', 'practice.cancel', 'plan.edit', 'plan.undo', 'lesson.revise', 'lesson.regenerate', 'parent.review.read', 'engagement.read', 'engagement.award', 'tutor.ask', 'tutor.history', 'takehome.sources', 'takehome.preview', 'takehome.create', 'takehome.approve', 'takehome.export', 'takehome.read', 'homework.create', 'homework.read', 'homework.complete', 'homework.skip', 'takehome.html', 'world.read', 'world.style.preview', 'world.generate', 'world.approve', 'course.mode.set']",
+      "retryable": false,
+      "details": {
+        "path": "method"
+      }
+    }
+  }
+}
