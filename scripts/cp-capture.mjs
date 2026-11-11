@@ -289,6 +289,34 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       render_error_markers: ${JSON.stringify(RENDER_ERROR_SELECTORS)}.filter((sel) => document.querySelector(sel)),
       v3_ready: Boolean(document.querySelector('[data-cb-v3-ready]')),
       v3_textures: root ? root.getAttribute('data-cb-v3-textures') : null,
+      // Word-wrap probe (CP-024 review round 2): a course title may wrap between words, never
+      // inside one. For every word in the course title and the plate's type field, count the line
+      // boxes its own Range paints; more than one box means the renderer split a word.
+      word_wraps: (() => {
+        const out = []
+        for (const sel of ['[data-cb-course-title]', '[data-cb-course-plate-title]']) {
+          const el = document.querySelector(sel)
+          if (!el) continue
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+          let node = walker.nextNode()
+          while (node) {
+            const value = node.nodeValue || ''
+            const re = /\\S+/g
+            let match = re.exec(value)
+            while (match) {
+              const range = document.createRange()
+              range.setStart(node, match.index)
+              range.setEnd(node, match.index + match[0].length)
+              const rects = [...range.getClientRects()].filter((r) => r.width > 0)
+              const tops = new Set(rects.map((r) => Math.round(r.top / 2)))
+              if (tops.size > 1) out.push({ selector: sel, word: match[0], line_boxes: rects.length })
+              match = re.exec(value)
+            }
+            node = walker.nextNode()
+          }
+        }
+        return out
+      })(),
       style_sheet_count: styleSheets.length,
       css_rule_count: cssRuleCount,
       host_slots: document.querySelectorAll('[data-slot]').length,
@@ -1394,6 +1422,7 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       lesson_view: probe.route.lesson_view || null,
       lesson_document: probe.route.lesson_document || null,
       scroll_y: probe.route.scroll_y,
+      word_wraps: probe.route.word_wraps || [],
       marker_names: probe.route.marker_names || []
     },
     // CP-038: the frame's provenance is not only the plugin sha. A still must say which

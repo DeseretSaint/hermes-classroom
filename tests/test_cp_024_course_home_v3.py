@@ -123,6 +123,15 @@ for (const [name, fixture] of Object.entries(payload.cases)) {
     })
   )
   out.cases[name] = html
+  // DOM order, as the markup emits it: plate → route → aside. Read from the string so the order
+  // is checked on every case, at every width, not only on the one a screenshot happened to show.
+  const at = (needle) => html.indexOf(needle)
+  out.order = out.order || {}
+  out.order[name] = {
+    plate: at('data-cb-course-plate="'),
+    route: at('data-cb-course-route="list"'),
+    aside: at('data-cb-course-aside')
+  }
 }
 
 // Negative control: the one-primary counter must read two when a composition really has two.
@@ -379,9 +388,12 @@ class CourseHomeV3RenderTest(unittest.TestCase):
                     },
                 ),
                 "objectives": [
-                    dict(item, independent=True, state="completed") for item in _objectives()
+                    dict(item, independent=True, state="completed", locked=False)
+                    for item in _objectives()
                 ],
-                "page": None,
+                # The last opened section is still named by the page; at the close it must still
+                # read `Done`, not `You are here` (SPEC-V3 §5.4 course-end).
+                "page": _page(),
                 "plate": _plate(),
                 "anchors": None,
                 "others": [],
@@ -571,6 +583,19 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         self.assertEqual(
             len(re.findall(r"<button[^>]*data-cb3-stamp=\"[^\"]+\"[^>]*>", compact)), 5
         )
+        # SPEC-V3 §5.4 order, on every rendered case at every width: the plate first, the aside
+        # last, and in list mode the route between them (a route that trails the aside puts M6
+        # under M7–M9, which round 2 found at 460 and 900).
+        for width, report in self.reports.items():
+            order = report.get("order") or {}
+            self.assertTrue(order, f"the {width} harness reported no DOM order")
+            for name, marks in order.items():
+                with self.subTest(width=width, case=name):
+                    self.assertGreaterEqual(marks["plate"], 0)
+                    self.assertGreater(marks["aside"], marks["plate"], marks)
+                    if marks["route"] >= 0:
+                        self.assertGreater(marks["route"], marks["plate"], marks)
+                        self.assertLess(marks["route"], marks["aside"], marks)
 
     # ── 3. one primary, and it is the backend's own next step ─────────────────────────────────
 
@@ -612,6 +637,15 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         complete = self.report["cases"]["complete"]
         self.assertIn("Course complete", complete)
         self.assertIn("Every section has evidence.", complete)
+        # At the close no node is left as the current step: every section reads Done, even the one
+        # the page still names as last opened (SPEC-V3 §5.4 course-end).
+        self.assertNotIn("You are here", complete, "a completed course still marks a current step")
+        self.assertNotIn('data-cb-course-node-state="current"', complete)
+        self.assertNotIn('aria-current="step"', complete)
+        self.assertEqual(
+            complete.count('data-cb-course-node-state="done"'), 5, "a completed node is not marked done"
+        )
+        self.assertNotIn("You are here", self.reports[460]["cases"]["complete"])
 
     # ── 4. the rest of the surface's honesty rules ────────────────────────────────────────────
 
@@ -823,6 +857,28 @@ const out = {
   overviewRoutes: document.querySelectorAll('[data-cb-overview-route]').length,
   overviewNext: document.querySelectorAll('[data-cb-overview-next]').length,
   asideCount: document.querySelectorAll('[data-cb-course-aside]').length,
+  // The assembled DOM order, measured with the DOM's own document-position comparison: the route
+  // must sit between the plate and the aside (SPEC-V3 §5.4: M6 below M5, the aside under the
+  // route), not trail the whole body.
+  domOrder: [
+    ...document.querySelectorAll(
+      '[data-cb-course-plate],[data-cb-course-route="list"],[data-cb-course-aside]'
+    )
+  ].map((el) =>
+    el.hasAttribute('data-cb-course-aside')
+      ? 'aside'
+      : el.hasAttribute('data-cb-course-route')
+        ? 'route'
+        : 'plate'
+  ),
+  plateTitleStyle: (() => {
+    const title = document.querySelector('[data-cb-course-plate-title]')
+    return title ? title.getAttribute('style') : null
+  })(),
+  courseTitleStyle: (() => {
+    const title = document.querySelector('[data-cb-course-title]')
+    return title ? title.getAttribute('style') : null
+  })(),
   nodeCount: nodes.length,
   nodeDotWidths: nodes.map((node) => {
     const dot = node.querySelector('span[aria-hidden="true"]')
@@ -974,7 +1030,7 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
         others = [item for item in _others() if item["course_id"] != row["course_id"]]
         cls.responses = _composition_responses(row, others)
         cls.reports = {}
-        for width in (1049, 900):
+        for width in (1049, 900, 460):
             case = root / f"composed-{width}.json"
             case.write_text(
                 json.dumps(
@@ -1047,6 +1103,52 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
         self.assertEqual(wide["plateAspect"], "3 / 1")
         self.assertEqual(at900["bodyMode"], "stacked")
         self.assertEqual(at900["plateAspect"], "3 / 1")
+
+    def test_course_home_v3_route_sits_between_plate_and_aside(self) -> None:
+        """SPEC-V3 §5.4: M6 is below M5, and the aside moves under the route.
+
+        Round 2 found the list route trailing the whole body, so at 460/900 the DOM order was
+        plate → aside → route. In list mode the route now lives in the main column directly under
+        the plate; in map mode it is inside the plate, so only plate and aside are siblings.
+        """
+        wide = self.reports[1049]
+        at900 = self.reports[900]
+        compact = self.reports[460]
+        self.assertEqual(wide["homeMode"], "map")
+        self.assertEqual(wide["domOrder"], ["plate", "aside"], wide["domOrder"])
+        self.assertEqual(at900["homeMode"], "map")
+        self.assertEqual(at900["domOrder"], ["plate", "aside"], at900["domOrder"])
+        self.assertEqual(compact["homeMode"], "list")
+        self.assertEqual(
+            compact["domOrder"],
+            ["plate", "route", "aside"],
+            f"the 460 course home emits {compact['domOrder']}, not plate → route → aside",
+        )
+        self.assertEqual(compact["listRoutes"], 1, "the 460 route is not the vertical list")
+        self.assertEqual(compact["asideCount"], 1)
+
+    def test_course_home_v3_titles_wrap_between_words(self) -> None:
+        """A course title wraps between words; it is never split mid-word (round 2, 460/200 %).
+
+        jsdom has no layout, so this asserts the rule the renderer sets; the live 460/200 % cell
+        measures the painted line boxes (``capture.sh`` runs the word-split probe in the driver).
+        """
+        for width, report in self.reports.items():
+            with self.subTest(width=width):
+                for field, label in (
+                    ("courseTitleStyle", "the course title"),
+                    ("plateTitleStyle", "the plate's type field"),
+                ):
+                    style = report.get(field)
+                    if style is None:
+                        continue  # a map cell paints a plate, so there is no type field
+                    self.assertNotIn("anywhere", style, f"{label} may split a word: {style}")
+                    self.assertNotIn("break-all", style, f"{label} may split a word: {style}")
+                    flat = style.replace(" ", "")
+                    self.assertIn("word-break:normal", flat, f"{label}: {style}")
+                    self.assertIn("overflow-wrap:break-word", flat, f"{label}: {style}")
+        # The plate's type field is the case round 2 saw: no art at 460, so the title is on paper.
+        self.assertIsNotNone(self.reports[460].get("plateTitleStyle"))
 
 
 if __name__ == "__main__":

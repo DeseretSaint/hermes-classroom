@@ -24342,7 +24342,7 @@ function cb3CourseHeroPlate(world) {
  * everything else is `upcoming`. `label` is the section's own title; when the outline carries no
  * title the node falls back to its state word rather than to a fabricated name.
  */
-function cb3CourseNodes({ objectives, row, page }) {
+function cb3CourseNodes({ objectives, row, page, complete = false }) {
   const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
   const summary = (row && row.evidence_summary) || {}
   const section = page && page.section
@@ -24354,6 +24354,10 @@ function cb3CourseNodes({ objectives, row, page }) {
     const independent = entry.independent === true || entry.state === 'completed'
     let state = 'upcoming'
     if (locked) state = 'locked'
+    // At the course's close every node is done, including whichever section was opened last:
+    // SPEC-V3 §5.4's `course-end` says "every node marked done", and leaving the last section as
+    // the current step would mark one node not-done on a screen whose own beat is completion.
+    else if (complete && independent) state = 'done'
     else if (entry.objective_id === currentId) state = 'current'
     else if (independent) state = 'done'
     const word =
@@ -24705,7 +24709,12 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
                       lineHeight: cb3Lead('heading'),
                       fontWeight: 600,
                       color: cb3Role('ink'),
-                      overflowWrap: 'anywhere'
+                      // Normal word wrapping: a title may wrap between words, never inside one.
+                      // `anywhere` split "demonstration" mid-word at 460 px / 200 % text; `break-word`
+                      // still reflows a word that genuinely cannot fit, without hyphenating it.
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
+                      hyphens: 'none'
                     },
                     children: title || ''
                   }, 'type'),
@@ -24957,7 +24966,16 @@ function CourseHomeV3({
   // a 268 px aside beside an 852 px plate on a 900 route, which §5.4 puts below the route.
   const mapWide = routeWidth >= 900
   const wide = routeWidth >= 1000
-  const nodes = cb3CourseNodes({ objectives, row, page })
+  const summary = (row && row.evidence_summary) || {}
+  const declaredDone = Number(sectionsDone)
+  const done = Number.isFinite(declaredDone)
+    ? Math.max(0, declaredDone)
+    : Math.max(0, Number(summary.independent) || 0)
+  const total = Math.max(0, Number(sectionsTotal) || Number(summary.total_objectives) || 0)
+  const courseComplete = total > 0 && done >= total
+  // `complete` is passed before the anchors: at the course's close every node reads done, so the
+  // last opened section cannot keep a "You are here" word on a completed route.
+  const nodes = cb3CourseNodes({ objectives, row, page, complete: courseComplete })
   // Anchor precedence: an explicit set from the caller, then the plate's own declaration, then the
   // plate row's inline field. The plan normalises whichever arrives, and falls back to the vertical
   // route when a section would be left unplaced.
@@ -24974,18 +24992,12 @@ function CourseHomeV3({
           : []),
     width: routeWidth
   })
-  const summary = (row && row.evidence_summary) || {}
-  const declaredDone = Number(sectionsDone)
-  const done = Number.isFinite(declaredDone)
-    ? Math.max(0, declaredDone)
-    : Math.max(0, Number(summary.independent) || 0)
-  const total = Math.max(0, Number(sectionsTotal) || Number(summary.total_objectives) || 0)
   const evidenceLine = cb3CourseEvidenceLine(done, total)
   const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
   const step = {
     kind: nextKind,
     label: (row && row.next_step && row.next_step.label) || CB3_COURSE_COPY.continueTitle,
-    done: total > 0 && done >= total
+    done: courseComplete
   }
   const backLabel = CB3_COURSE_COPY.backPrefix + (parentLabel || 'Home')
   return jsxs('div', {
@@ -25043,7 +25055,10 @@ function CourseHomeV3({
               letterSpacing: '-0.01em',
               color: cb3Role('ink'),
               maxWidth: '34ch',
-              overflowWrap: 'anywhere'
+              // Same rule as the plate's type field: wrap between words, never inside one.
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
+              hyphens: 'none'
             },
             children: (row && row.title) || ''
           }, 'title'),
@@ -25161,7 +25176,14 @@ function CourseHomeV3({
                         )
                       })
                     : null
-              })
+              }),
+              // SPEC-V3 §5.4: M6 sits **below** M5, and the aside moves under the route. In list
+              // mode the route therefore lives in the main column directly under the plate, so the
+              // DOM order is plate → route → aside at every width (the map carries its route
+              // inside the plate instead).
+              plan.mode === 'list' && nodes.length
+                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+                : null
             ]
           }, 'hero'),
           jsx(CourseHomeAside, {
@@ -25177,12 +25199,7 @@ function CourseHomeV3({
             onOpenOther
           }, 'aside')
         ]
-      }, 'body'),
-      // M5 fallback and the map's accessible duplicate: below a 900 px route, or on a plate with no
-      // usable anchors, the route is the vertical stamp list — every section still reachable.
-      plan.mode === 'list' && nodes.length
-        ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
-        : null
+      }, 'body')
     ]
   })
 }
