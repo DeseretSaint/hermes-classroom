@@ -35,3 +35,53 @@ frames are the right size and scope, but they are not composition evidence. The 
 frames (module `3cdfa1d0`) were taken before the plugin was reinstalled into this rig home; after
 reinstall the host renders the plugin but does not bind its runtime context. That harness defect is
 routed with `t_92878d65`; this card does not fake around it.
+
+## Audit deltas a reader will see, and why they are deliberate
+
+`node scripts/audit-screen.mjs visual/spec/home.json --html design/home-scene.html` on this proof
+reports **3 mismatched / 14 out-of-tolerance** (was 39 out of tolerance at `3cdfa1d0`). The three
+mismatches are the D-007 trades, not drift:
+
+- fox `box.top` −45 px and fox `box.left` +22 px — the fox moved from the pack's 526/1088 box to
+  481/1110 so its painted feet sit on plank two's 684 top edge and its opaque art clears the clock's;
+- clock `box.top` −20 px — 588 → 568 for the same seating rule (painted base 683.7);
+- `subline` paints `--cb3-ink` (`#1a1713`) where the pack spec says `#5c5347` — ink on the token
+  scrim is what holds the hero text at ≥ 4.5:1 over the painted plate.
+
+`visual/spec/home.json` still carries the pre-trade boxes, so the audit stays red on those four
+values. The audit is recorded, not gated, under D-007.
+
+## Capture attempt after review round 2 (2026-11-11 12:35–13:15 MST) — still no bound frame
+
+The reviewer asked for one more recapture from a freshly started, freshly seeded rig window. That
+was attempted; it did not produce a usable frame, and the reason is now known precisely:
+
+1. **The rig had no backend of its own.** `serve-44219.log` ends with
+   `BACKEND_PORT_IN_USE port=44219`. The listener on 44219 was another card's backend:
+   `/proc/<pid>/environ` shows `HERMES_HOME=/home/deseretsaint/.hermes/coursebook-test/home` and its
+   runtime answers `plugin_root: /home/deseretsaint/Projects/hermes-classroom`. The rig script's
+   readiness loop greps the whole appended log, so earlier `HERMES_DASHBOARD_READY` lines in that
+   same file satisfied it and the window was pointed at a foreign backend.
+2. **Restarted on free ports with its own backend.** State `~/.hermes/coursebook-test-t831137dd`,
+   backend 44671, CDP 9481, dev Electron from `apps/desktop`. Verified by direct request:
+   `plugin_root` = this worktree, `HERMES_HOME` = the rig home, `wire_version` 26; installed
+   `plugin.js` sha256 `71d940ce…` equals the checkout and `home/plugins/coursebook/desktop/plugin.js`.
+3. **The window still does not bind that backend.** With the round-2 userdata the app rendered the
+   scene at 1344 (`scene:true`, 4 cards, 4 covers, fox and clock present) but the card titles were
+   `Read the Night Sky`, `Technical demo: reading a pack…`, `Japanese affection and register — a
+   Sample L0 classroom`, `… an L0 demonstration classroom` — courses that live in
+   `~/.hermes/coursebook-test/home`, not in this rig's DB (which holds 3: *Japanese register:
+   affection and closeness*, *Measuring together: a kitchen lesson*, *Reading a pack before you
+   install it*). So that frame photographs a foreign library under this module; it is **not
+   shipped as evidence**.
+4. **A fresh userdata dir binds the operator's local gateway.** `connections.json` names
+   `remote-cp051` at 127.0.0.1:44671 as primary and `lastUsed`, yet the window logs
+   `Gateway inaccessible (runtime_exited)` from `ensureLocalGateway` and the sidebar lists the
+   operator's own sessions. The renderer also resets any `#/coursebook` hash to `#/`, so the plugin
+   route cannot be opened without a connection that serves it.
+
+Net: no frame in this card shows the kit composition under an installed plugin. The composition
+evidence remains the generated 1344x768 proof (`home-scene-1344-proof.png`), which
+`python3 scripts/gen-home-proof.py --check` ties byte-for-byte to `desktop/plugin.js`
+(`71d940ce…`). The ruling that a proof render may substitute for a host frame is the UI director's;
+it is raised on the card rather than assumed here.
