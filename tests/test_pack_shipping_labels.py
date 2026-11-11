@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "bundled" / "packs"
 CATALOG = ROOT / "catalog" / "workshop.v1.json"
 BUILDER = PACKS / "build_bundled_packs.py"
+PROVENANCE_DOC = ROOT / "docs" / "ASSET-PROVENANCE.md"
 
 #: The owner's rule for this card, verbatim.
 FIXTURE_WORDING = re.compile(r"demo|sample|fixture", re.IGNORECASE)
@@ -303,6 +304,40 @@ class PackContentShippingTests(unittest.TestCase):
                 # No prose role may exist that ``declared_text_files`` would skip silently.
                 extra = roles - set(self.PROSE_ROLES) - {"cover", "visual", "narration", "manifest"}
                 self.assertEqual(extra, set(), f"{pack_id} ships an unscanned role: {sorted(extra)}")
+
+
+class ProvenanceDocumentTests(unittest.TestCase):
+    """``docs/ASSET-PROVENANCE.md`` is release evidence, so its pack rows must describe the bytes.
+
+    Round 2 of this card shipped a provenance table whose three pack ``content_hash`` values and
+    two byte totals matched no committed tree, while the document asserted the hashes had been
+    printed by ``sha256sum`` from that tree. A hand-maintained evidence table drifts; this pins
+    every catalogue entry's manifest hash and declared byte total to the document.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.entries = catalog_entries()
+        cls.document = PROVENANCE_DOC.read_text(encoding="utf-8")
+
+    def test_document_records_each_shipped_pack_hash_and_byte_total(self) -> None:
+        for entry in self.entries:
+            manifest = manifest_for(entry)
+            declared_bytes = sum(int(item["bytes"]) for item in manifest["files"])
+            with self.subTest(pack=entry["pack_id"], field="content_hash"):
+                self.assertIn(
+                    manifest["content_hash"],
+                    self.document,
+                    f"{entry['pack_id']} content_hash {manifest['content_hash']} is not recorded in "
+                    f"{PROVENANCE_DOC.relative_to(ROOT)}; the document claims these hashes come "
+                    "from this tree",
+                )
+            with self.subTest(pack=entry["pack_id"], field="expanded_bytes"):
+                self.assertIsNotNone(
+                    re.search(rf"\b{declared_bytes:,} expanded bytes", self.document),
+                    f"{entry['pack_id']} declares {declared_bytes:,} expanded bytes and the "
+                    "provenance document states a different total",
+                )
 
 
 class CatalogSurfaceTests(KernelCase):

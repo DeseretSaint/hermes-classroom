@@ -151,6 +151,19 @@ romaji and an English meaning. …
 No served page text matched `/demo|sample|fixture/i` (`fixture_word_hits: 0` across the three
 courses).
 
+## Provenance table pinned to the tree (round 3)
+
+`docs/ASSET-PROVENANCE.md` is release evidence and its pack rows had drifted: at `3fc30ae` the
+table stated `content_hash` `d4ca702e…` / `bf58385e…` / `4836c8bc…` and `9,285` / `10,130`
+expanded bytes, none of which existed at `e6a5807`, `74ac5ce` or `3fc30ae`, while the document
+asserted those hashes had been printed by `sha256sum` from that tree. The rows now carry the real
+values (`3e4fc645…` / `40c56aeb…` / `a700ee6b…`, `44,957` / `8,659` / `9,508` declared bytes) and a
+test pins them: `tests.test_pack_shipping_labels.ProvenanceDocumentTests` fails when a shipped
+manifest's `content_hash` or declared byte total is absent from the document. RED at `3fc30ae`
+(`Ran 1 test … FAILED (failures=6)` — three hashes plus three byte totals), green after the fix.
+The same section's closing rights claim ("model-produced cover plates … redistributed under
+CC-BY-4.0") was stale against the deterministic `CC0-1.0` covers and is corrected in the same edit.
+
 ## No stamped live frame on this card
 
 `scripts/cp-capture.mjs` needs a live Electron window mirrored over CDP (`--cdp-port`, default
