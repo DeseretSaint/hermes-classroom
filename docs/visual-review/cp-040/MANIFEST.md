@@ -118,7 +118,8 @@ node scripts/cp-capture.mjs --name cp040-course-1049 --out docs/visual-review/cp
 
 | Gate | Result |
 |---|---|
-| `python3 -m unittest discover -s tests` | see §5 (suite ran on this tree; counts pasted in the card result) |
+| `python3 -m unittest discover -s tests` | **Ran 3528 tests in 984.094s — FAILED (failures=24, errors=4, skipped=11)** on `8f5c4df2`. The failures are the v2 UI/accessibility gates the v3 wave replaced and never migrated (headings/landmarks/skip-link/wordmark/Home-title cases across the a11y, H-14x and home-hub modules) plus `test_lesson_skills` and `test_conversation_practice` errors and two `setUpClass` errors; they are not the seam's own tests, which are green (below) |
+| targeted seam suites | `test_plugin_build`, `test_cp_021_workshop_v3`, `test_cp_022_home_v3`, `test_cp_022_geometry`, `test_cp_023_classroom`, `test_cp_025a_homework_game_v3`, `test_cp_025b_v3_studio`, `test_desktop_h149_lesson_player`, `test_desktop_h178_field_stop`, `test_desktop_contracts`, `test_desktop_h151_action_type`, `test_desktop_h147_home_settings`, `test_desktop_field_quest`, `test_desktop_lesson_views`, `test_desktop_h174_empty_textbook`, `test_desktop_gm002_home`, `test_desktop_gm010_engagement_ui`, `test_desktop_tokens_v3`, `test_v3_scope`, `test_v3_primitives` → **278 OK** (67 s) |
 | `bash scripts/validate-plugin.sh` | **Release gate passed: 4/4** on `c86b46a8…` (4222 files) |
 | `python3 scripts/check-docs-truth.py --skip-tests` | **docs-truth: PASS** |
 | `python3 -m unittest tests.test_m4_visual_audit` | 14 OK, pin `c52b864b…` |
