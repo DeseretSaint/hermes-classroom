@@ -739,6 +739,14 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": "general",
+            "resolved_domain": "general",
+            "source": "declared",
+            "target_language": null
+          },
+          "domain_source": "declared",
           "job_id": "job_00000000000000000000000000000029",
           "job_kind": "lesson",
           "lessons": [
@@ -746,6 +754,7 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000002b",
+              "domain_source": "declared",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -757,6 +766,7 @@
               "reused": false,
               "section_id": "000000000000001c",
               "state": "validated",
+              "subject_domain": "general",
               "validation": {
                 "cost_usd": null,
                 "facts_unverified": false,
@@ -787,6 +797,7 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000002e",
+              "domain_source": "declared",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -798,6 +809,7 @@
               "reused": false,
               "section_id": "000000000000001d",
               "state": "validated",
+              "subject_domain": "general",
               "validation": {
                 "cost_usd": null,
                 "facts_unverified": false,
@@ -845,6 +857,7 @@
           },
           "sections_total": 2,
           "stage": "lessons",
+          "subject_domain": "general",
           "unit_ordinal": 1,
           "usage": {
             "budget": {
@@ -867,7 +880,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4330,
+            "input_tokens": 4411,
             "output_tokens": 1813,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -885,6 +898,14 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": "general",
+            "resolved_domain": "general",
+            "source": "declared",
+            "target_language": null
+          },
+          "domain_source": "declared",
           "job_id": "job_00000000000000000000000000000035",
           "job_kind": "lesson",
           "lessons": [
@@ -892,6 +913,7 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000037",
+              "domain_source": "declared",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -903,6 +925,7 @@
               "reused": false,
               "section_id": "0000000000000023",
               "state": "validated",
+              "subject_domain": "general",
               "validation": {
                 "cost_usd": null,
                 "facts_unverified": false,
@@ -933,6 +956,7 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000003a",
+              "domain_source": "declared",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -944,6 +968,7 @@
               "reused": false,
               "section_id": "0000000000000024",
               "state": "validated",
+              "subject_domain": "general",
               "validation": {
                 "cost_usd": null,
                 "facts_unverified": false,
@@ -991,6 +1016,7 @@
           },
           "sections_total": 2,
           "stage": "lessons",
+          "subject_domain": "general",
           "unit_ordinal": 2,
           "usage": {
             "budget": {
@@ -1013,7 +1039,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 4404,
+            "input_tokens": 4486,
             "output_tokens": 1870,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1276,7 +1302,7 @@
           "calls": 3,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 3662,
+          "input_tokens": 3670,
           "output_tokens": 1153,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -1358,6 +1384,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_source": "declared",
           "job_id": "job_0000000000000000000000000000001b",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
@@ -1374,6 +1401,7 @@
           "sections": 2,
           "stage": "unit_sections",
           "state": "validated",
+          "subject_domain": "general",
           "unit_ordinal": 1,
           "usage": {
             "budget": {
@@ -1396,7 +1424,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1262,
+            "input_tokens": 1289,
             "output_tokens": 525,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1417,6 +1445,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_source": "declared",
           "job_id": "job_00000000000000000000000000000022",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
@@ -1433,6 +1462,7 @@
           "sections": 2,
           "stage": "unit_sections",
           "state": "validated",
+          "subject_domain": "general",
           "unit_ordinal": 2,
           "usage": {
             "budget": {
@@ -1455,7 +1485,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1280,
+            "input_tokens": 1307,
             "output_tokens": 524,
             "unknown_calls": 0,
             "unknown_cost": false

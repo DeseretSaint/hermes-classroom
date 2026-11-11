@@ -471,6 +471,14 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": "repair",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "domain_source": "declared",
           "job_id": "job_0000000000000000000000000000001d",
           "job_kind": "lesson",
           "lessons": [
@@ -478,6 +486,7 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000001f",
+              "domain_source": "declared",
               "generation": {
                 "known": true,
                 "model": "recorded-transcript-h40",
@@ -489,6 +498,7 @@
               "reused": false,
               "section_id": "0000000000000018",
               "state": "validated",
+              "subject_domain": "technical_procedure",
               "validation": {
                 "cost_usd": null,
                 "facts_unverified": false,
@@ -536,6 +546,7 @@
           },
           "sections_total": 1,
           "stage": "lessons",
+          "subject_domain": "technical_procedure",
           "unit_ordinal": 1,
           "usage": {
             "budget": {
@@ -558,7 +569,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2359,
+            "input_tokens": 2406,
             "output_tokens": 1017,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -728,7 +739,7 @@
           "calls": 3,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 3987,
+          "input_tokens": 3995,
           "output_tokens": 814,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -806,6 +817,7 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
+          "domain_source": "declared",
           "job_id": "job_00000000000000000000000000000017",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
@@ -821,6 +833,7 @@
           "sections": 1,
           "stage": "unit_sections",
           "state": "validated",
+          "subject_domain": "technical_procedure",
           "unit_ordinal": 1,
           "usage": {
             "budget": {
@@ -843,7 +856,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1049,
+            "input_tokens": 1080,
             "output_tokens": 431,
             "unknown_calls": 0,
             "unknown_cost": false
