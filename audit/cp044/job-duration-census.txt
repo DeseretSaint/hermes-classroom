@@ -1,0 +1,13 @@
+distinct job rows: 77
+   852.0s  completed  plan   job_ee3f99b00c904664a8a1d9db8635ee94  2026-11-06T23:10:23Z  coursebook-test-cp000-clone
+   800.0s  completed  plan   job_8807d36fbf4f44dea559e409eb376af2  2026-11-09T04:21:07Z  coursebook-test-h182d3
+   772.0s  completed  plan   job_7525ca82c37e4a03822e55944717c108  2026-11-06T23:19:46Z  coursebook-test-h61fd-1789000000
+   653.0s  completed  plan   job_878796eb19a94773b51572b5b0d4dae6  2026-11-06T22:49:52Z  coursebook-test-cp000-clone
+   602.0s  cancelled  plan   job_8404917e65334eb9982bbbf973dbe148  2026-11-07T19:25:39Z  coursebook-test-cp000-clone
+   537.0s  cancelled  plan   job_659f1edba70d491b831dd9d263539db3  2026-11-10T22:25:03Z  coursebook-test-cp015
+   527.0s  completed  plan   job_2390ab7ac33d4bff9e62d8eae5649ee7  2026-11-06T23:45:24Z  coursebook-test-h61fd-1789000000
+   523.0s  running    plan   job_dacb88cad64e43848a24521de15a2205  2026-11-10T23:34:41Z  coursebook-test-cp015
+   502.0s  failed     plan   job_d28fb916efc246619404f4248f599228  2026-11-09T01:50:29Z  coursebook-test-h182d3
+   495.0s  failed     plan   job_06388582367a40af8c69d01dd9c3964a  2026-11-06T15:37:56Z  coursebook-test-cp000-clone
+completed jobs: 45  slowest: 852.0s
+rows above the 1800 s attempt budget: 0

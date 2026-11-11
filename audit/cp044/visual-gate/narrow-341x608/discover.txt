@@ -1,0 +1,6 @@
+render:   visual/frames/courses.png (505x900)
+reference: docs/concept-parity/refs/discover.png (1575x900)
+rmse:     0.365451
+similarity: 0.6345
+sheet:    visual/compare/discover-sheet.png
+diff:     visual/compare/discover-diff.png

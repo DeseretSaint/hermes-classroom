@@ -35,8 +35,10 @@ rather than leaking a generic exception to the job row.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import contextvars
 import logging
+import os
 import queue
 import threading
 import time
@@ -54,6 +56,31 @@ WAIT_HEARTBEAT_SECONDS = 5.0
 #: slot until the worker actually returns, so a provider that hangs forever cannot grow the
 #: process one abandoned loop thread per retry.
 MAX_ASYNC_CALLS = 8
+
+#: Seconds one job **attempt** may spend before its remaining budget starts cutting calls.
+#:
+#: Per-call deadlines are not a job deadline: a plan attempt runs 2 x (generate 900 s + validate
+#: 180 s), so a job could spend well over half an hour across calls that each finished "in time"
+#: while the row stayed ``running`` (CP-015 checkpoint 4 measured a 648 s attempt). This is the
+#: attempt's own outer bound; a deployment overrides it with
+#: ``COURSEBOOK_JOB_DEADLINE_SECONDS``. It is policy, not a measurement: the measured per-call
+#: bounds in ``generation.PROVIDER_TIMEOUT_SECONDS`` stay untouched.
+#:
+#: The value is ~2.1x the slowest *completed* job measured across the disposable homes (852 s;
+#: 45 completed jobs, none above this budget — ``probes/cp044-job-duration-census.py``). It is a
+#: backstop for a stuck attempt, not a target: raise it per deployment rather than removing it.
+JOB_DEADLINE_SECONDS = 1800.0
+
+#: Environment variable that overrides :data:`JOB_DEADLINE_SECONDS` for one deployment.
+JOB_DEADLINE_ENV = "COURSEBOOK_JOB_DEADLINE_SECONDS"
+
+#: Deadline (monotonic clock) of the job attempt running on this thread, or ``None`` when the
+#: caller is not inside a job (tests, pure helpers). Set by ``job_budget``; read by every bounded
+#: foreign call, so the *remaining* budget — not the purpose's nominal bound — decides how long
+#: an in-flight call may still run.
+_JOB_BUDGET: "contextvars.ContextVar[float | None]" = contextvars.ContextVar(
+    "coursebook_job_budget", default=None
+)
 
 
 class DeadlineExceeded(TimeoutError):
@@ -75,6 +102,67 @@ class CallCapacityExhausted(RuntimeError):
     The caller must fail with a typed unavailable error rather than open another thread: an
     unbounded thread allowance for a hung foreign call is the defect this module replaces.
     """
+
+
+class JobDeadlineExceeded(DeadlineExceeded):
+    """The job attempt's own deadline passed; the call was refused, not started.
+
+    Carries the contract's ``HOST_UNAVAILABLE`` code (the same code a provider timeout already
+    uses): no new error code is invented, and a reader sees the retryable capability failure it
+    already knows.
+    """
+
+    code = "HOST_UNAVAILABLE"
+
+    def __init__(self, label: str, *, deadline_s: float, elapsed_s: float | None = None) -> None:
+        self.purpose = str(label)
+        self.job_deadline = True
+        super().__init__(label, deadline_s, elapsed_s=elapsed_s)
+        self.message = (
+            f"{self.label}: the job's {self.deadline_s:g}s deadline is spent; "
+            "no further provider call was started"
+        )
+        self.args = (self.message,)
+
+
+@contextlib.contextmanager
+def job_budget(seconds: float) -> Any:
+    """Declare the running job attempt's wall-clock budget for the duration of the block."""
+    deadline = time.monotonic() + float(seconds)
+    token = _JOB_BUDGET.set(deadline)
+    try:
+        yield None
+    finally:
+        _JOB_BUDGET.reset(token)
+
+
+def job_deadline_remaining() -> float | None:
+    """Seconds left in the current job attempt's budget, or ``None`` when unbudgeted."""
+    deadline = _JOB_BUDGET.get()
+    if deadline is None:
+        return None
+    return deadline - time.monotonic()
+
+
+def deadline_for(timeout_s: float, *, label: str) -> float:
+    """Clamp a per-call deadline to what is left of the job attempt's budget (CP-044).
+
+    Outside a job this is the caller's timeout unchanged. Inside one it is the smaller of the
+    two, so an *in-flight* request is cancelled at whichever bound arrives first — the call's own
+    purpose deadline or the job's remaining time. An already-spent budget refuses the call before
+    it starts instead of opening a socket the job will not wait for.
+    """
+    timeout = float(timeout_s)
+    remaining = job_deadline_remaining()
+    if remaining is None:
+        return timeout
+    if remaining <= 0:
+        raise JobDeadlineExceeded(
+            label,
+            deadline_s=float(os.environ.get(JOB_DEADLINE_ENV) or JOB_DEADLINE_SECONDS),
+            elapsed_s=0.0,
+        )
+    return min(timeout, remaining)
 
 
 def _await_with_heartbeat(
@@ -177,6 +265,7 @@ class BoundedCallPool:
         deadline_s = float(timeout_s)
         if deadline_s <= 0:
             raise ValueError(f"deadline for {label!r} must be positive, got {deadline_s}")
+        budgeted_s = deadline_for(deadline_s, label=label)
         call = _Call(fn, contextvars.copy_context())
         with self._lock:
             if self._inflight >= self.max_workers:
@@ -190,14 +279,19 @@ class BoundedCallPool:
                 self._spawn_locked()
         started = time.monotonic()
         self._queue.put(call)
-        _await_with_heartbeat(
-            call.done,
-            deadline_s=deadline_s,
-            label=label,
-            started=started,
-            on_wait=on_wait,
-            heartbeat_s=heartbeat_s,
-        )
+        try:
+            _await_with_heartbeat(
+                call.done,
+                deadline_s=budgeted_s,
+                label=label,
+                started=started,
+                on_wait=on_wait,
+                heartbeat_s=heartbeat_s,
+            )
+        except DeadlineExceeded as exc:
+            if budgeted_s < deadline_s:
+                exc.job_deadline = True  # type: ignore[attr-defined]
+            raise
         if call.error is not None:
             raise call.error
         return call.result
@@ -344,6 +438,7 @@ def run_async_bounded(
     deadline_s = float(timeout_s)
     if deadline_s <= 0:
         raise ValueError(f"deadline for {label!r} must be positive, got {deadline_s}")
+    budgeted_s = deadline_for(deadline_s, label=label)
     started = time.monotonic()
     call = _AsyncCall(awaitable_factory)
     _reserve_async_slot(label)
@@ -361,13 +456,15 @@ def run_async_bounded(
     try:
         _await_with_heartbeat(
             call.done,
-            deadline_s=deadline_s,
+            deadline_s=budgeted_s,
             label=label,
             started=started,
             on_wait=on_wait,
             heartbeat_s=heartbeat_s,
         )
-    except DeadlineExceeded:
+    except DeadlineExceeded as exc:
+        if budgeted_s < deadline_s:
+            exc.job_deadline = True  # type: ignore[attr-defined]
         _cancel_async(call)
         raise
     if call.error is not None:
