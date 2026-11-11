@@ -1,0 +1,83 @@
+{
+  "bed": {
+    "bit_depth": 24,
+    "bpm": 96.0,
+    "path": "docs/launch/audio/bed-75s.wav",
+    "peak_dbfs": -3.0,
+    "rms_dbfs": -16.92,
+    "sample_rate": 48000,
+    "seconds": 75.0
+  },
+  "sfx": [
+    {
+      "name": "01-paper-tap-1",
+      "path": "docs/launch/audio/sfx/01-paper-tap-1.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -40.55,
+      "seconds": 0.3
+    },
+    {
+      "name": "02-paper-tap-2",
+      "path": "docs/launch/audio/sfx/02-paper-tap-2.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -41.58,
+      "seconds": 0.3
+    },
+    {
+      "name": "03-paper-tap-3",
+      "path": "docs/launch/audio/sfx/03-paper-tap-3.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -41.8,
+      "seconds": 0.3
+    },
+    {
+      "name": "04-click-1",
+      "path": "docs/launch/audio/sfx/04-click-1.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -41.41,
+      "seconds": 0.14
+    },
+    {
+      "name": "05-click-2",
+      "path": "docs/launch/audio/sfx/05-click-2.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -42.65,
+      "seconds": 0.14
+    },
+    {
+      "name": "06-keyboard",
+      "path": "docs/launch/audio/sfx/06-keyboard.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -41.72,
+      "seconds": 0.55
+    },
+    {
+      "name": "07-stamp",
+      "path": "docs/launch/audio/sfx/07-stamp.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -33.11,
+      "seconds": 0.45
+    },
+    {
+      "name": "08-correct-chime",
+      "path": "docs/launch/audio/sfx/08-correct-chime.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -31.17,
+      "seconds": 1.1
+    },
+    {
+      "name": "09-page-turn",
+      "path": "docs/launch/audio/sfx/09-page-turn.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -35.74,
+      "seconds": 0.6
+    },
+    {
+      "name": "10-level-sting",
+      "path": "docs/launch/audio/sfx/10-level-sting.wav",
+      "peak_dbfs": -18.0,
+      "rms_dbfs": -31.59,
+      "seconds": 0.9
+    }
+  ]
+}
