@@ -8,6 +8,7 @@ document.
 | Item | Value |
 |---|---|
 | base commit | `172b61aaffd44c33f2c89360df9f1fceeff66c37` (= `origin/master` at freeze time) |
+| evidence tip | `0ce3a2e7` (film + post); suite measured on `2c001e7a` |
 | copy fix | `82a0866a` — the exact-answer miss names whose answer it is |
 | generated proofs re-derived | `15e1301d` — `design/fox-adoption.html`, `design/home-scene.html`, CP-053 record |
 | `desktop/plugin.js` sha256 | `9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395` |
@@ -40,8 +41,23 @@ CP-053 measurement still named module `3cdfa1d0` while `desktop/plugin.js` is `9
 | `test_the_recorded_measurement_names_the_module_it_was_taken_on` | CP-053 `measure.json` pins the old module | re-derived at 1344×768; `sim_grey 0.6401` and `rmse_grey 91.782` reproduced identically, so the row was re-pinned, not re-scored |
 | `test_harness_does_not_edit_product_source` | race with this run's own file writes | passes in isolation (`Ran 71 tests … OK`) |
 
-After the fix the three affected modules pass (`Ran 108 tests in 4.915s … OK`), and a second full run
-on `15e1301d` was started; its result supersedes this section when it lands.
+After the fix the three affected modules passed, and a second full run on `15e1301d` came back with
+**two** failures — both `test_fresh_evidence_reproduces_the_committed_bytes`, and both caused by the
+copy fix itself: the H-40 packets embed the validator's message, so `music_short` and `soldering_full`
+no longer re-ran byte-identically. Regenerated with the packet's own generator (`2c001e7a`);
+`bicycle_single` was already reproducible and was left alone.
+
+Final run on `2c001e7a`:
+
+```
+Ran 3965 tests in 1460.040s
+
+OK (skipped=12)
+```
+
+Three runs, same tree family, measured end to end: 5 failures → 2 → 0. Every failure along the way was
+a stale *generated* artifact, never product logic — which is itself the lesson: this tree pins its own
+generated evidence, so any change to a message or a module invalidates it until it is regenerated.
 
 ## Frames
 
@@ -145,7 +161,7 @@ backend on that same tree. Both are on GitHub; the film names the module it came
 | 5 | Resume a lesson | **NOT RUN** | no resume was driven |
 | 6 | A rejected plan's repair path | **NOT RUN** | the rejection is proven from `course.outline`, the repair UI was not driven |
 | 7 | Parent-only surface | **PASS (render only)** | Parent Studio renders "Plans for your child", "New lesson plan", two plan cards; approval path not driven |
-| 8 | Full unit suite | **5 failures, all stale generated artifacts, fixed in `15e1301d`** | see Suite above |
+| 8 | Full unit suite | **PASS** | `Ran 3965 tests in 1460.040s … OK (skipped=12)` on `2c001e7a`; 5 stale-artifact failures found and fixed on the way |
 
 ## Defects reproduced (none fixed except the two named in the tree table)
 
