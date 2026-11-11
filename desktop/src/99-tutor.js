@@ -2216,7 +2216,65 @@ export {
   CB3_LAB_COPY,
   cb3Contrast,
   cb3StepRendering,
-  cb3FoxSource
+  cb3FoxSource,
+  // CP-040 — the merge seam. Every v3 component and helper the six wave cards (CP-021, CP-022,
+  // CP-023, CP-024, CP-025a, CP-025b) declared is exported from the module that ships: a surface
+  // may not be mounted on the route without also being renderable from `desktop/plugin.js`, and
+  // the render suites import these names from the built module rather than a test-only copy.
+  // Home (CP-022, 30-home.js)
+  CB_HOME_V3_COPY,
+  CB_HOME_V3_LIMIT,
+  CB_HOME_TAG_MAX_AGE_MS,
+  HomeV3Card,
+  HomeV3Cover,
+  homeCardFacts,
+  homeCardWidth,
+  homeContentWidth,
+  homeCoverArtifactId,
+  homeGutter,
+  homeNewTagSlot,
+  homeNumber,
+  homeShelfColumns,
+  homeShelfLayout,
+  // Classroom (CP-023, 70-learning.js)
+  ClassroomV3,
+  ClassroomV3Surface,
+  ClassroomCheckCard,
+  ClassroomQuietLine,
+  ClassroomScene,
+  CB3_CLASSROOM_COPY,
+  CB3_CLASSROOM_RUBY,
+  CB3_DIALOGUE_LINE,
+  CB3_JAPANESE,
+  CB3_KANJI,
+  classroomCopy,
+  classroomEvidence,
+  classroomLineFromPage,
+  classroomRubySegments,
+  classroomSceneFromWorld,
+  classroomStepNodes,
+  classroomVerdictSentence,
+  modelRevision,
+  // Course home (CP-024, 90-course.js)
+  CourseHomeV3,
+  CourseHeroPlate,
+  CourseHomeAside,
+  CourseRouteList,
+  CourseRouteMapNode,
+  CB3_COURSE_COPY,
+  cb3CourseAnchorPoints,
+  cb3CourseEvidenceLine,
+  cb3CourseHeroPlate,
+  cb3CourseNodes,
+  cb3CoursePlateAnchors,
+  cb3CourseRoutePlan,
+  cb3CourseWorldPosture,
+  // Discover (CP-021, 96-workshop.js)
+  CB3_DISCOVER_BODY,
+  CB3_DISCOVER_HEADING,
+  cb3DiscoverOpenKey,
+  // World Studio (CP-025b, 97-world.js)
+  WorldStudioFrame
 }
 
 export default {

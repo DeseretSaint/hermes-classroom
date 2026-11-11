@@ -1365,9 +1365,9 @@ function WorkshopDiscoverFeature({ item, layout, onOpen }) {
       ...(compact ? {} : { aspectRatio: '4 / 1' }),
       overflow: 'hidden',
       borderRadius: cb3Radius('round'),
-      backgroundColor: cb3Role('card-stock'),
-      boxShadow: 'var(--cb3-elev-1)'
+      backgroundColor: cb3Role('card-stock')
     },
+    className: 'cb3-elev-1',
     children: [
       jsxs('div', {
         'data-cb3-quiet-field': '',
@@ -1594,9 +1594,9 @@ function WorkshopDiscoverNotice({ state, title, body, actionLabel, onAction }) {
       minHeight: '226px',
       padding: '2rem',
       borderRadius: cb3Radius('round'),
-      backgroundColor: cb3Role('card-stock'),
-      boxShadow: 'var(--cb3-elev-1)'
+      backgroundColor: cb3Role('card-stock')
     },
+    className: 'cb3-elev-1',
     children: [
       jsx('h3', { style: CB3_DISCOVER_HEADING, children: title }, 'title'),
       jsx('p', { style: CB3_DISCOVER_BODY, children: body }, 'body'),

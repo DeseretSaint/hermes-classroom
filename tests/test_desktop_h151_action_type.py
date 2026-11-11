@@ -10,7 +10,8 @@ and the real Section / Course Detail surfaces through React in jsdom, with a stu
 `Button` keeps inline style so target size and fill can be measured:
 
   * every default-variant button on a surface is a `CbAction primary`;
-  * at most one primary per core surface, and it is lamp/on-lamp at 44px;
+  * at most one primary per core surface: a v2 primary is lamp/on-lamp at 44px, while the v3 Home
+    primary is the `PillAction` terracotta pill at 48px (SPEC-V3 §3.10) and is gated by its own case;
   * secondary is 44px, tertiary is 24px, row is 44px and full-width;
   * exactly one h1, at display; PlateHead h2s at heading; no second display-sized heading;
   * every Codicon is 16px (UI) or 20px (plate), never 12-14px.
@@ -138,6 +139,7 @@ const read = (el) => ({
   tag: el.tagName.toLowerCase(),
   text: text(el).slice(0, 48),
   action: el.getAttribute('data-cb-action'),
+  pill: el.getAttribute('data-cb3-pill'),
   variant: el.getAttribute('data-variant'),
   breadcrumb: el.getAttribute('data-cb-breadcrumb'),
   disabled: Boolean(el.disabled),
@@ -400,10 +402,17 @@ class ActionRenderTest(unittest.TestCase):
                 )
 
     def test_the_primary_is_the_lamp_field_at_44_px(self) -> None:
+        # The v2 action language: the one filled control is the Atlas Lamp at 44 px. CP-022's v3
+        # Home is a different material system (SPEC-V3 §3.10: terracotta pill, 48 px), so a button
+        # carrying `data-cb3-pill` is claimed by its own gate below, not by this v2 value. The
+        # `data-cb-action="primary"` hook stays on the v3 pill because GM-002's behavioural
+        # focus-ring case reads it; the hook is an identity, not a paint claim.
         seen = 0
         for item in self.surfaces():
             for button in item["buttons"]:
                 if button["action"] != "primary":
+                    continue
+                if button["pill"]:
                     continue
                 seen += 1
                 if button["disabled"]:
@@ -413,7 +422,32 @@ class ActionRenderTest(unittest.TestCase):
                 self.assertEqual(button["background"], "var(--cb-lamp)", button)
                 self.assertEqual(button["color"], "var(--cb-on-lamp)", button)
                 self.assertEqual(self.px(button["minHeight"], button["text"]), 44, button)
-        self.assertGreater(seen, 0, "no primary action rendered on any surface")
+        self.assertGreater(seen, 0, "no v2 primary action rendered on any surface")
+
+    def test_the_v3_home_primary_is_the_terracotta_pill_at_48_px(self) -> None:
+        # SPEC-V3 §3.10: Home's one primary is a filled terracotta pill, 48 px tall, pill radius.
+        # It paints through the scoped `.cb3-primary` class (the v3 system keeps paint in
+        # `CB_V3_CSS`, not inline styles), so the assertion reads both the rendered class and the
+        # one rule that class resolves to. Exactly one filled pill on the surface, and its label is
+        # the deck's `home.primary` (`Start a new course`).
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        rule = source[source.index("[data-cb-v3] .cb3-primary {"):]
+        rule = rule[: rule.index("}")]
+        self.assertIn("background-color: var(--cb3-terracotta)", rule)
+        self.assertIn("color: var(--cb3-on-terracotta)", rule)
+        self.assertIn("border-radius: var(--cb3-radius-pill)", rule)
+        for width in (1049, 900, 460):
+            with self.subTest(width=width):
+                item = self.surface("home", width)
+                pills = [b for b in item["buttons"] if b["pill"] == "primary"]
+                self.assertEqual(len(pills), 1, pills)
+                pill = pills[0]
+                self.assertEqual(pill["text"], "Start a new course", pill)
+                self.assertIn("cb3-primary", pill["className"], pill)
+                self.assertEqual(pill["action"], "primary",
+                                 "the GM-002 behavioural focus case reads this hook")
+                self.assertEqual(self.px(pill["minHeight"], pill["text"]), 48, pill)
+                self.assertIn("var(--cb3-radius-pill)", pill["styleAttr"], pill)
 
     def test_every_variant_meets_its_target(self) -> None:
         floors = {"primary": 44, "secondary": 44, "tertiary": 24, "row": 44}

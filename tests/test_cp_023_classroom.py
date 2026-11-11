@@ -14,13 +14,12 @@ The card's contract, in executable form (`docs/concept-parity/SPEC-V3.md` §5.3)
 * evidence is counted from `lesson.page.checks[]`, and the recorded integrity classes stay visible.
 
 The module's single `export {}` seam lives in its last segment, which this card may not edit, so
-the harness imports a **copy** of the built module with one extra export appended. That copy is a
-test artifact, never the shipped file: `tests.test_plugin_build` stays the authority on
-`desktop/plugin.js`. At merge the manager adds these names to the real seam and mounts
-`ClassroomV3Surface` in the route composition.
+the harness imports a **copy** of the built module. CP-040 (the merge seam) added every name the
+harness imports to that seam and mounted `ClassroomV3Surface` in the route composition, so the
+copy no longer needs an extra export; `_export_line_for` only appends a name the shipped module
+does not already export. `tests.test_plugin_build` stays the authority on `desktop/plugin.js`.
 
-What this does NOT prove: that a browser paints the composition (the captures do), or that the
-route currently mounts it (the manager's integration step does).
+What this does NOT prove: that a browser paints the composition (the captures do).
 """
 
 from __future__ import annotations
@@ -52,6 +51,31 @@ EXPORT_LINE = (
     "\nexport { ClassroomV3, ClassroomCheckCard, classroomStepNodes, classroomLineFromPage, "
     "classroomEvidence, classroomSceneFromWorld, CB3_CLASSROOM_COPY };\n"
 )
+
+#: The names this render harness imports from the copy. CP-023 could not edit the module's export
+#: seam, so it appended them; CP-040 (the merge seam) added every one of them to the shipped
+#: `export {}` block. Re-declaring a binding the module already exports is a SyntaxError
+#: ("Duplicate export"), so the copy only appends the names that are still missing.
+HARNESS_IMPORTS = (
+    "ClassroomV3",
+    "ClassroomCheckCard",
+    "classroomStepNodes",
+    "classroomLineFromPage",
+    "classroomEvidence",
+    "classroomSceneFromWorld",
+    "CB3_CLASSROOM_COPY",
+)
+
+
+def _export_line_for(source: str) -> str:
+    missing = [
+        name
+        for name in HARNESS_IMPORTS
+        if f"\n  {name},\n" not in source and f"\n  {name}\n" not in source
+    ]
+    if not missing:
+        return ""
+    return "\nexport { " + ", ".join(missing) + " };\n"
 
 HARNESS = r"""
 import React from 'react'
@@ -401,7 +425,7 @@ class ClassroomV3RenderTest(unittest.TestCase):
         cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-cp023-")
         cls.root = Path(cls.tmp.name)
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        (cls.root / "plugin.js").write_text(source + EXPORT_LINE, encoding="utf-8")
+        (cls.root / "plugin.js").write_text(source + _export_line_for(source), encoding="utf-8")
         (cls.root / "harness.mjs").write_text(HARNESS, encoding="utf-8")
         stage_desktop_node_modules(cls.root)
         sdk = cls.root / "node_modules" / "@hermes" / "plugin-sdk"
