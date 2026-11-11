@@ -124,6 +124,10 @@ class WorldBrief:
     motifs: tuple[str, ...] = ()
     forbidden: tuple[str, ...] = ()
     sections: tuple[tuple[str, str], ...] = ()
+    #: CP-052: the plate's own route geometry, verbatim as the manifest declared it. Anonymous
+    #: tuples of mappings rather than typed coordinates so a stored anchor reads back byte-identical
+    #: instead of being re-derived; `route_anchor_problems` is the one validator.
+    route_anchors: tuple[Mapping[str, Any], ...] = ()
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "WorldBrief":
@@ -131,6 +135,9 @@ class WorldBrief:
             (str(item.get("id") or ""), str(item.get("title") or ""))
             for item in (value.get("sections") or ())
             if isinstance(item, Mapping) and item.get("id")
+        )
+        anchors = tuple(
+            dict(item) for item in (value.get("route_anchors") or ()) if isinstance(item, Mapping)
         )
         return cls(
             course_id=str(value.get("course_id") or ""),
@@ -145,11 +152,12 @@ class WorldBrief:
             motifs=tuple(str(item) for item in (value.get("motifs") or ()) if str(item).strip()),
             forbidden=tuple(str(item) for item in (value.get("forbidden") or ()) if str(item).strip()),
             sections=sections,
+            route_anchors=anchors,
         )
 
     def as_dict(self) -> dict[str, Any]:
         """The JSON-safe form stored in ``course_worlds.brief_json`` and the job brief."""
-        return {
+        brief: dict[str, Any] = {
             "course_id": self.course_id,
             "title": self.title,
             "subject_domain": self.subject_domain,
@@ -163,6 +171,11 @@ class WorldBrief:
             "forbidden": list(self.forbidden),
             "sections": [{"id": sid, "title": title} for sid, title in self.sections],
         }
+        # CP-052: absent when the plate declares none, so every brief written before v26 keeps its
+        # exact bytes and a no-anchor read is unchanged. Anchors are carried, never recomputed.
+        if self.route_anchors:
+            brief["route_anchors"] = [dict(item) for item in self.route_anchors]
+        return brief
 
     @property
     def needs_service_grammar(self) -> bool:
@@ -514,6 +527,7 @@ __all__ = [
     "foreign_grammar_motifs",
     "grammar_record",
     "notation_hazards",
+    "route_anchor_problems",
 ]
 
 
@@ -2370,6 +2384,11 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
                 presentation[field] = patch[field]
     merged = authoritative.as_dict()
     merged.update(presentation)
+    # CP-052: a plate's declared route geometry is carried across a regenerate, never re-derived
+    # and never caller-patchable (`route_anchors` is not in `BRIEF_PATCH_FIELDS`). Without this a
+    # world.generate would silently erase anchors the stored plate had already declared.
+    if isinstance(stored, Mapping) and stored.get("route_anchors"):
+        merged["route_anchors"] = list(stored["route_anchors"])
     if "motifs" in presentation:
         # Plan §4.4 rule 2: at least two motifs come from the grammar's own vocabulary. A
         # patched set may add subject-specific cues, but it never replaces every native cue.
@@ -2393,6 +2412,63 @@ def _merged_brief(connection: Any, course_id: str, row: Any, patch: Any) -> Worl
                 key=lambda item: 0 if _is_native_motif(item, record.name) else 1,
             )
     return WorldBrief.from_mapping(merged)
+
+
+#: The closed key set of one stored route anchor (CP-052). Extra keys are not silently ignored:
+#: a typo such as `x_pct` would otherwise place a node nowhere.
+ROUTE_ANCHOR_FIELDS: tuple[str, ...] = ("anchor_id", "section_id", "x", "y")
+
+
+def route_anchor_problems(brief: Mapping[str, Any]) -> tuple[str, str] | None:
+    """``(field path, message)`` for the first malformed stored ``route_anchors`` entry, else None.
+
+    A read of a stored plate validates its own anchors so a bad coordinate surfaces as a named
+    ``VALIDATION_FAILED`` field, never as the contract's generic "not valid under any of the given
+    schemas". Validation never rewrites: a valid array is returned exactly as stored.
+    """
+    raw = brief.get("route_anchors")
+    if raw is None:
+        return None
+    if not isinstance(raw, (list, tuple)):
+        return "route_anchors", "route_anchors must be an array of route-anchor objects."
+    sections = {
+        str(item.get("id"))
+        for item in (brief.get("sections") or ())
+        if isinstance(item, Mapping) and item.get("id")
+    }
+    seen: set[str] = set()
+    for index, entry in enumerate(raw):
+        field = f"route_anchors[{index}]"
+        if not isinstance(entry, Mapping):
+            return field, "a route anchor must be an object of anchor_id, section_id, x and y."
+        unexpected = sorted(set(entry) - set(ROUTE_ANCHOR_FIELDS))
+        if unexpected:
+            return f"{field}.{unexpected[0]}", (
+                f"{unexpected[0]} is not a route-anchor field; the closed set is "
+                + ", ".join(ROUTE_ANCHOR_FIELDS)
+                + "."
+            )
+        for key in ROUTE_ANCHOR_FIELDS:
+            if key not in entry:
+                return f"{field}.{key}", f"{key} is required on every route anchor."
+        anchor_id = entry.get("anchor_id")
+        if not isinstance(anchor_id, str) or not anchor_id.strip():
+            return f"{field}.anchor_id", "anchor_id must be a non-empty string."
+        if anchor_id in seen:
+            return f"{field}.anchor_id", "anchor_id must be unique within one plate's route anchors."
+        seen.add(anchor_id)
+        section_id = entry.get("section_id")
+        if not isinstance(section_id, str) or not section_id.strip():
+            return f"{field}.section_id", "section_id must be a non-empty string."
+        if sections and section_id not in sections:
+            return f"{field}.section_id", "section_id must name a section the plate's brief declares."
+        for axis in ("x", "y"):
+            value = entry.get(axis)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return f"{field}.{axis}", f"{axis} must be a number normalised 0-1 of the plate box."
+            if not (0.0 <= float(value) <= 1.0):
+                return f"{field}.{axis}", f"{axis} must be normalised 0-1 of the plate box."
+    return None
 
 
 def _world_view(connection: Any, row: Any) -> dict[str, Any]:
@@ -2888,6 +2964,21 @@ def world_read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
         course = _course_row(connection, course_id)
         row = _latest_world(connection, course_id)
         world = _world_view(connection, row) if row is not None else None
+    if world is not None:
+        # CP-052: the plate manifest is read, not authored — but a stored anchor outside the
+        # contract is refused at the field that is wrong. A generic schema failure on `world`
+        # (INTERNAL_ERROR) told a caller nothing about which coordinate was bad.
+        problem = route_anchor_problems(world["brief"])
+        if problem is not None:
+            from .api import RpcError
+
+            field, message = problem
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"this plate's route_anchors are malformed at {field}: {message}",
+                field=field,
+                path=f"world.brief.{field}",
+            )
     mode = read_presentation_mode(course["presentation_mode"])
     fallback = None if (world and world["state"] == "approved") else "textbook"
     return 0, {

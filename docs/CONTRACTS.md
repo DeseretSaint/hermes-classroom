@@ -1,6 +1,6 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v25** (CP-005: `cb.rpc` v25 is one additive amendment — the `library_item` record gains the seven v3 shelf facts `sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`, `cover_artifact_id`, `last_studied_at`, so a card renders every number, chip and cover from one `library.list` read; see the v25 delta below. GM-004: `cb.rpc` v24 appends the four `world.*` methods the World Studio drives — `world.read`, `world.style.preview`, `world.generate`, `world.approve` — plus the documented extra `course.mode.set`, and gives `course.create` one optional `presentation_mode` creation intent; see the v24 delta below. GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
+Status: **frozen at v26** (CP-052: `cb.rpc` v26 is one additive amendment — `$defs/world_brief` gains one optional `route_anchors` array of `{anchor_id, section_id, x, y}` entries, each `x`/`y` normalised 0–1 of the plate box, so `world.read` returns a plate that declares its route geometry instead of answering `INTERNAL_ERROR`; a brief with no anchors keeps its exact v25 shape; see the v26 delta below. CP-005: `cb.rpc` v25 is one additive amendment — the `library_item` record gains the seven v3 shelf facts `sections_done`, `sections_total`, `checks_recorded`, `is_new`, `subject_label`, `cover_artifact_id`, `last_studied_at`, so a card renders every number, chip and cover from one `library.list` read; see the v25 delta below. GM-004: `cb.rpc` v24 appends the four `world.*` methods the World Studio drives — `world.read`, `world.style.preview`, `world.generate`, `world.approve` — plus the documented extra `course.mode.set`, and gives `course.create` one optional `presentation_mode` creation intent; see the v24 delta below. GM-005: `cb.rpc` v23 appends the six take-home pack methods — `takehome.sources`, `takehome.preview`, `takehome.create`, `takehome.approve`, `takehome.export`, `takehome.read` — a rendered print artifact bound to the source course/objective/lesson version and content hash, with the learner page and the parent-only answer guide as separate artifacts; `cb.db` v14 scopes a pack's revision to the pack instead of its source slot. GM-011: `cb.rpc` v22 appends the two lesson-bound tutor commands — `tutor.ask`, a bounded, cited, tool-free answer scoped to one lesson run whose context excludes answer keys, checks, rubric and attempts and which never writes an attempt, transition or evidence row, and `tutor.history`, the persisted thread read. A turn is not a grade; while a check is open the final answer is withheld (`answer_withheld`) and a hint rides the existing `lesson.assist` policy; a provider failure is the named `provider_failure` state, never an empty or fabricated answer. GM-009: `cb.rpc` v21 appends the two game-only engagement methods `engagement.read` and `engagement.award`; XP is a play layer derived from real recorded actions, idempotent per `(enrollment_id, action_kind, action_id)`, refused outside a `game` course and never joined by evidence, parent, pack or export reads. H-182/D3: `cb.rpc` v20 carries a second additive amendment — `course.outline`'s `outline_plan` and `parent.blueprint.read`'s `plan` gain one optional `validation` object (`approvable`, `source`, `verdict`, `outcome`, `independence`, `facts_unverified`, `reasons`, `reason`, `detail`, `manual_authoring`), the durable approval provenance computed by the same gate `plan.approve` fences on, so a review surface cannot render an approval control for a rejected or unvalidated version. No method, request shape, error code, job kind or vocabulary value moves. H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised.
 v19 = H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
 commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
 and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
@@ -29,7 +29,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v25.json` | 25 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v26.json` | 26 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
@@ -2572,3 +2572,55 @@ Regression guard: `tests/test_contracts.py::V25AmendmentTest` pins the additive 
 frozen v24 document; `tests/test_cp_shelf_facts.py` exercises a new course, a course mid-path, a
 finished course, a pack-backed course and a course whose world was rejected against the real
 SQLite store.
+
+## v26 delta (CP-052) — the plate's own route geometry
+
+`cb.rpc` v26 is v25 with **one additive amendment**: `$defs/world_brief` gains one **optional**
+array, `route_anchors`, whose entries are `$defs/world_route_anchor`:
+
+| Anchor field | Type | What it is, exactly |
+|---|---|---|
+| `anchor_id` | identifier | Stable id of this anchor **within one plate manifest**, so a renderer can key a node to it. Unique within its array. |
+| `section_id` | identifier | The `world_brief.sections[].id` this point belongs to. An anchor never names a section the brief does not declare. |
+| `x` | number 0–1 | Fraction of the plate box's width, origin top-left. Never pixels, never a percentage string. |
+| `y` | number 0–1 | Fraction of the plate box's height, same origin and rule. |
+
+The array is **presentation geometry, not instruction**: it carries no label, check, answer key,
+rubric or attempt, and it changes no plate prompt, no content-addressed cache key and no lesson
+hash. It is absent by default — a brief that declares no anchors keeps its exact v25 shape and
+bytes, and `world.read` returns it verbatim (no empty array is manufactured).
+
+### Which side was wrong
+
+Both sides, differently:
+
+* **The read was wrong in the schema.** `$defs/world_brief` is a closed object, so a stored plate
+  that declared `route_anchors` failed `world.read`'s own response validation and surfaced as
+  `INTERNAL_ERROR … is not valid under any of the given schemas` at path `world` (the generic
+  `oneOf` message hid the nested field). v26 admits the field.
+* **The write was wrong by silently dropping.** `WorldBrief` is a typed dataclass, so
+  `from_mapping` discarded any key it did not know and `as_dict` — which rewrites
+  `course_worlds.brief_json` on every `world.generate` — erased a stored plate's anchors. `WorldBrief`
+  now carries `route_anchors` verbatim and `_merged_brief` carries a stored array across a
+  regenerate. Anchors are **not** caller-patchable: `route_anchors` is outside
+  `BRIEF_PATCH_FIELDS`, so a `world.generate.brief_patch` that tries to place nodes is refused with
+  `VALIDATION_FAILED` at that field.
+
+A malformed stored anchor is refused at the field, not by a generic internal error: `world.read`
+validates the array and answers `VALIDATION_FAILED` with `details.field` naming the entry, e.g.
+`route_anchors[1].x`, and `details.path` `world.brief.route_anchors[1].x`. That covers a coordinate
+outside 0–1, a missing `section_id`, an unknown key, a duplicate `anchor_id`, and a `section_id`
+the brief does not declare. Validation never rewrites: a valid array reads back exactly as stored.
+
+No method is added or removed; `$defs/method.enum` is byte-for-byte the v25 list. No request shape,
+existing required key, error code, job kind, answer kind, verdict, evidence class or vocabulary
+value moves. `rpc.v25.json` stays byte-identical on disk (sha256
+`02bd2b9304a55ebf8b79e581ef7740d1e265b8a136045bc51848ceb15889c130`) and `x-supersedes` names
+`.../rpc/v25`. The wire echoes (`contract_version` on both response envelopes and `health.get`)
+move together to 26.
+
+Regression guard: `tests/test_contracts.py::V26AmendmentTest` pins the additive field set, the
+closed anchor item, the optionality and the frozen v25 document; `tests/test_cp052_route_anchors.py`
+reads a fixture plate with three anchors, one with none, and two malformed ones against the real
+SQLite store.
+
