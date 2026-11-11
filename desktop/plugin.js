@@ -42086,6 +42086,8 @@ export {
   CB3_TRUST_LABELS,
   WorkshopProvenance,
   WorkshopView,
+  // UI-K4 — the Courses route, exported so the frame audit can photograph the shipped surface.
+  CoursesView,
   workshopFactRows,
   cbLayoutFor,
   cbModeFromTheme,
