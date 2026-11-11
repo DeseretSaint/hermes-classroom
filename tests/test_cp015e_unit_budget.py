@@ -98,12 +98,14 @@ class UnitBudgetArithmeticTest(unittest.TestCase):
         self.assertEqual(budget.source, "operator_brief")
 
     def test_the_unit_validation_cap_is_the_measured_value_not_a_separate_one(self) -> None:
-        """The 8 000-token cap holds the answer; the repair covers the first ask's overrun.
+        """The shared cap holds the answer; the repair covers the first ask's overrun.
 
         Measured (CP-015e): the repaired answers that parsed used 1 964 and 2 749 completion
         tokens on the same 10-criterion + claim demand, so the cap is not too small for the answer
         — the first ask spends it on reasoning, which is what the bounded re-ask exists for. The
-        purpose therefore keeps the shared cap instead of inventing a second one.
+        purpose therefore keeps the shared cap instead of inventing a second one. The value moved
+        8 000 → 12 000 with CP-015g/D1, which re-measured the route and still saw a plan-validation
+        pass return exactly its cap at 8 000.
         """
         request = gen.build_unit_sections_validation_request(
             plan={"title": "A unit plan", "learner_outcome": "Do the thing."},
@@ -118,7 +120,7 @@ class UnitBudgetArithmeticTest(unittest.TestCase):
         )
         self.assertEqual(request.purpose, "coursebook.unit_sections.validate")
         self.assertEqual(request.max_tokens, gen.VALIDATION_OUTPUT_TOKENS)
-        self.assertEqual(gen.VALIDATION_OUTPUT_TOKENS, 8000)
+        self.assertEqual(gen.VALIDATION_OUTPUT_TOKENS, 12000)
         self.assertEqual(
             gen.VALIDATION_AUX_DEFAULTS["extra_body"]["max_tokens"], gen.VALIDATION_OUTPUT_TOKENS
         )
@@ -181,8 +183,11 @@ class UnitBudgetStageTest(UnitStageCase):
         )
         # The approved batch is stored with its validation record attached.
         with db.read() as connection:
+            # CP-015g/D1 records every unreadable attempt under its own row, so the *verdict* is
+            # the merged row (pass_index -1); the cut first answers have their own rows beside it.
             record = connection.execute(
                 "SELECT * FROM gen_validation_records WHERE subject_kind = 'unit_sections'"
+                " AND pass_index = -1"
             ).fetchone()
             sections = connection.execute(
                 "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE plan_id = ?", (plan_id,)
@@ -227,8 +232,15 @@ class UnitBudgetStageTest(UnitStageCase):
                 "SELECT COUNT(*) AS n FROM gen_validation_records"
                 " WHERE subject_kind = 'unit_sections'"
             ).fetchone()["n"]
+            verdict_rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_validation_records"
+                " WHERE subject_kind = 'unit_sections' AND pass_index = -1"
+            ).fetchone()["n"]
         self.assertEqual(int(sections), 0)
-        self.assertEqual(int(validations), 0)
+        # The unreadable answer it read before the refused call keeps its own attempt row
+        # (CP-015g/D1: one row per attempt), but no *verdict* row is written for a refused call.
+        self.assertEqual(int(validations), 1)
+        self.assertEqual(int(verdict_rows), 0)
 
     def test_the_budget_stop_checkpoint_resumes_the_same_unit(self) -> None:
         _course_id, plan_id, plan = self._plan()

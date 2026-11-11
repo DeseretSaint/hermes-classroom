@@ -135,7 +135,7 @@ a five-criteria/six-claim pass emitted 19 739 completion tokens in 927 s and mis
 deadline. Widening the deadline is not a repair. `register(ctx)` instead calls
 `register_validation_output_bound(ctx)`, which declares one plugin-owned auxiliary task
 (`cb_validate`) with host-documented `defaults`: `reasoning_effort: "low"` and
-`extra_body.max_tokens: 4000`. Both reach the provider body through the host's own task-config
+`extra_body.max_tokens: 12000`. Both reach the provider body through the host's own task-config
 merge (`hermes_cli/plugins_aux_tasks.py` → `agent/auxiliary_task_config.py` →
 `agent/auxiliary_client._get_task_extra_body` → `_build_call_kwargs`), on the same route that
 drops the `max_tokens` argument. Every validation call — the configured second-model route and
@@ -784,6 +784,44 @@ The rule now (`generation._call_llm`):
 The observer-facing limit: `cb.errors` is frozen and has no `MODEL_OUTPUT_INVALID` code, so
 `VALIDATION_FAILED` ("payload violates the frozen contract") carries it. A dedicated code needs a
 contract bump owned by Atlas, not a private code in this module.
+
+**A text answer that is not JSON is repaired too (`t_754a8332`, CP-015g/D1).** The re-ask above
+only existed for the host's *schema gate* (`ValueError`). The installed product's failure was the
+other seam: `complete_structured` returned **text with `parsed: None`** — prose on one attempt,
+JSON cut off mid-string on the other — so nothing raised until `_parse_validation_answer` saw it,
+and that path failed the job with `repair_attempted: false`. Both `coursebook.plan.validate` calls
+of the measured attempt had returned exactly `VALIDATION_OUTPUT_TOKENS` (4 000) completion tokens,
+and the product's own retry returned 3 433 and 3 582 tokens that still did not parse. The cap is
+now 12000 (room for a reasoning trace plus the schema answer on a short plan — the live rerun at
+8 000 still saw one pass return exactly its cap) and
+`generation._validation_answer_with_repair` parses every validator answer *inside* the stage:
+
+* an answer that carries no verdict is re-asked **once**, on the same pass, schema, purpose and
+  input bytes, under a marked `prompt_version`: `.cut` when the answer consumed its cap (CP-015's
+  truncation repair), `.validate-repair` when the answer arrived unreadable below its cap
+  (CP-015g/D1) — the two carry different corrected instruction texts, so they carry different
+  labels. A cut answer is asked for a shorter one; a malformed one for exactly one JSON object.
+  The re-ask inherits what is left of the pass deadline and is skipped below
+  `MIN_SHAPE_REPAIR_SECONDS`;
+* an answer whose recorded completion tokens reached the cap is named a **truncation** in the
+  record and the failure (`_answer_was_cut`), never "invalid JSON" — the provider reports no
+  `finish_reason` through this seam, so the token count is the honest signal;
+* a *verdict* violation (a declared `reject` grounded in nothing, `t_0affea08`) is **not**
+  re-asked: a second call cannot ground a refusal;
+* only after the repair does the job fail, with `repair_attempted: true` and the named parse
+  outcome in `details`.
+
+**Every validation attempt is recorded, including the ones that carried no verdict.** A failed
+answer used to write nothing, so `gen_validation_records` was empty for both failed attempts of the
+measured plan. `_record_validation_attempt` now writes a row per unreadable attempt — the
+first-time answer, its repair, and each pass of a multi-pass review — carrying
+`validator_prompt_version`, `validator_model`, `validator_provider`, `parse_outcome`
+(`not_json`, `empty`, `truncated`, `schema_violation`, `verdict_violation`), `attempt_index`,
+`pass_index` and a `failure_json` block. Its `verdict` is `invalid` and its `outcome` is
+`unreadable`: an unreadable answer is **not** a rejection of the artifact. The merged review row
+written after a successful validation keeps `pass_index = -1`. The table's unique key now includes
+`attempt_index` and `pass_index`; a database created before this change is rebuilt in place with
+every recorded row copied across.
 
 The `item` bound itself is **not** widened. It is a locator (`plan.goal`, `check_plan[0]`) whose
 explanations belong in `reason`, and the same `ITEM_REFERENCE_MAX_CHARS` constant now feeds both

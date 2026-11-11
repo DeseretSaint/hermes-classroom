@@ -157,7 +157,15 @@ class TruncationRepairTests(unittest.TestCase):
         self.assertEqual(len(provider.requests), 2)
         self.assertEqual(answered.shape_repair_attempts, 1)
 
-    def test_a_malformed_answer_under_the_cap_is_not_re_asked(self) -> None:
+    def test_a_malformed_answer_under_the_cap_is_re_asked_once(self) -> None:
+        """CP-015g/D1 changed this contract deliberately.
+
+        The stack shipped this as *not* re-asked: a malformed answer below its cap was treated as
+        a bad answer that a re-ask could not fix. The live in-plugin run measured the opposite
+        outcome — an unreadable answer discarded a ~30k-output-token plan and failed the job
+        non-retryably — so one repair re-ask on the same pass is paid, under its own label, and a
+        second unreadable answer is the typed failure.
+        """
         short = gen.LLMResponse(
             text='{"verdict": "pass"',
             parsed=None,
@@ -167,15 +175,21 @@ class TruncationRepairTests(unittest.TestCase):
             output_tokens=180,
             cost_usd=None,
         )
-        provider = _Scripted(short)
+        provider = _Scripted(short, _good_answer())
 
-        with self.assertRaises(gen.ModelOutputInvalid) as raised:
-            gen._validation_answer_with_repair(
-                provider, _request(), provider(_request()), _usage(), what="plan validation"
-            )
+        document, answered = gen._validation_answer_with_repair(
+            provider, _request(), provider(_request()), _usage(), what="plan validation"
+        )
 
-        self.assertEqual(len(provider.requests), 1)
-        self.assertFalse(raised.exception.repair_attempted)
+        # The harness hands the first answer through the provider, so [0] is the first ask and
+        # [1] is the single re-ask — a third call would be a resample loop.
+        self.assertEqual(len(provider.requests), 2, "exactly one re-ask")
+        self.assertEqual(
+            provider.requests[1].prompt_version,
+            _request().prompt_version + gen.VALIDATION_REPAIR_PROMPT_SUFFIX,
+        )
+        self.assertEqual([entry["id"] for entry in document["criteria"]], list(CRITERIA))
+        self.assertEqual(answered.shape_repair_attempts, 1)
 
     def test_a_second_cut_off_answer_is_typed_and_never_a_third_call(self) -> None:
         first = _cut_answer()
@@ -192,9 +206,10 @@ class TruncationRepairTests(unittest.TestCase):
         )
 
     def test_the_completion_cap_is_pinned_to_the_measured_value(self) -> None:
-        # 4 000 was the measured truncating cap on the demo route; a return to it fails here.
-        self.assertEqual(gen.VALIDATION_OUTPUT_TOKENS, 8000)
-        self.assertEqual(gen.VALIDATION_AUX_DEFAULTS["extra_body"]["max_tokens"], 8000)
+        # 4 000 was the measured truncating cap on the demo route, and 8 000 still truncated one
+        # plan-validation pass on CP-015g/D1's live rerun; a return to either fails here.
+        self.assertEqual(gen.VALIDATION_OUTPUT_TOKENS, 12000)
+        self.assertEqual(gen.VALIDATION_AUX_DEFAULTS["extra_body"]["max_tokens"], 12000)
 
 
 if __name__ == "__main__":  # pragma: no cover

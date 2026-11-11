@@ -396,6 +396,14 @@ REPAIR_PROMPT_SUFFIX = ".repair"
 #: being folded into the schema-repair path (different rejection, different rule stated).
 TRUNCATION_REPAIR_PROMPT_SUFFIX = ".cut"
 
+#: Suffix the *validation* repair pass carries on its ``prompt_version`` when an answer arrived
+#: unreadable but did *not* consume its cap (CP-015g/D1). A validator answer that arrived as text
+#: and did not parse used to fail the whole job with ``repair_attempted: false`` and no record. The
+#: repair is one re-ask of the same pass under this label, so a repaired verdict is never stored
+#: under the first-time pass label. A *cut* answer keeps ``.cut`` above, because its corrected
+#: instruction text is a different text (``docs/GENERATION.md`` §1).
+VALIDATION_REPAIR_PROMPT_SUFFIX = ".validate-repair"
+
 #: How close an answer's recorded completion tokens must be to its cap to be read as *cut off*.
 #: Token accounting is the provider's, and a trailing newline or one-final-token difference is not
 #: proof that the answer was allowed to finish; the slop keeps the check from missing a truncation
@@ -553,6 +561,7 @@ class ModelOutputInvalid(GenerationError):
         schema_name: str | None = None,
         violation: str | None = None,
         repair_attempted: bool = False,
+        parse_outcome: str = "schema_violation",
     ) -> None:
         super().__init__(message)
         self.message = message
@@ -560,6 +569,10 @@ class ModelOutputInvalid(GenerationError):
         self.schema_name = schema_name
         self.violation = violation
         self.repair_attempted = repair_attempted
+        #: How the answer failed to parse, named so a failure record says what happened rather
+        #: than only that something did: ``not_json``, ``empty``, ``schema_violation``,
+        #: ``truncated`` or ``verdict_violation``. It is *not* a verdict about the artifact.
+        self.parse_outcome = parse_outcome
 
 
 #: The recovery actions a cost abort may offer. Fixed strings so a UI can switch on them; the
@@ -782,6 +795,9 @@ OUTCOME_INDEPENDENT = "independently_validated"
 #: A pass by the author's own model, or a pass whose facts research could not ground.
 OUTCOME_MODEL_ASSESSED = "model_assessed"
 OUTCOME_REJECTED = "rejected"
+#: CP-015g/D1: an answer that never parsed produced no verdict and no rejection. It is its own
+#: recorded outcome, so a failed validation attempt is never read as a judgement of the artifact.
+OUTCOME_UNREADABLE = "unreadable"
 
 
 def model_identity(response: LLMResponse | None) -> dict[str, Any]:
@@ -3059,19 +3075,21 @@ VALIDATION_REASONING_EFFORT = "low"
 #: Hard completion cap per validation answer, in tokens. It counts reasoning tokens too, so it is
 #: sized for a low-effort reasoning trace plus a full schema answer.
 #:
-#: CP-015 measured this on the demo authoring model (``nous`` / ``deepseek-v4.1-flash``, the host's
-#: configured route) while creating four real courses: of nine ``coursebook.plan.validate`` calls,
-#: four consumed the cap exactly (``output_tokens: 4000``), and three of those came back as
-#: truncated or empty content — ``plan validation is not valid JSON: Unterminated string``,
-#: ``... not valid JSON: Expecting value``, ``plan validation was empty``. The three answers that
-#: did parse used 2 998–3 814 tokens, so 4 000 sat at the median answer, not above it. The cap is
-#: therefore 8 000: still far below the 19 739-token unbounded answer H-192c measured, but with
-#: room for the route's reasoning trace *and* the schema answer. A pass that would still exceed it
-#: is truncated by the provider, which the shape gate reports as ``VALIDATION_FAILED``; a
-#: truncation whose cap was fully consumed is first re-asked once (see
-#: :func:`_validation_answer_with_repair`), because a cut answer is an incomplete answer, not a
-#: verdict.
-VALIDATION_OUTPUT_TOKENS = 8000
+#: CP-015g/D1 measured this on the demo authoring route (``nous`` / ``deepseek-v4.1-flash``, the
+#: host's configured route) while attempting an Observatory/Short/Game plan: both
+#: ``coursebook.plan.validate`` calls of the first attempt returned **exactly 4 000** completion
+#: tokens and one arrived cut off mid-JSON (``plan validation is not valid JSON: Unterminated
+#: string``); the product's own retry returned 3 433 and 3 582 tokens and still did not parse.
+#: A short plan's two narrowed passes therefore sat at or above the old 4 000 cap, which is why the
+#: cap is 12 000: far below the 19 739-token unbounded answer H-192c measured, with room for the
+#: route's reasoning trace *and* the schema answer on the plan shapes the product creates (short
+#: course, 3–6 sections). CP-015g/D1 re-measured the same route at 8 000 first: on the live rerun a
+#: single ``coursebook.plan.validate`` pass still returned exactly 8 000 tokens (cut mid-JSON,
+#: 59.9 s) while the other passes of the same review returned 3 923, 3 587 and 1 815 tokens, so
+#: 8 000 bound the route only for the pass that reasoned longest. An answer that still consumes the
+#: cap is named a truncation and re-asked once (:func:`_validation_answer_with_repair`), because a
+#: cut answer is incomplete, not a verdict.
+VALIDATION_OUTPUT_TOKENS = 12000
 
 #: The auxiliary-task defaults declared at register time. ``reasoning_effort`` is folded into
 #: ``extra_body.reasoning`` by the host; ``extra_body.max_tokens`` is the route-level cap the
@@ -3505,7 +3523,15 @@ def _run_validation_passes(
     time at the slowest pass instead of the sum.
     """
     if len(requests) <= 1:
-        return [_call_llm(llm, request, usage) for request in requests]
+        try:
+            return [_call_llm(llm, request, usage) for request in requests]
+        except BaseException as exc:  # noqa: BLE001 - the same typed failure, plus its pass index
+            try:
+                exc.validation_pass_index = 0  # type: ignore[attr-defined]
+                exc.validation_pass_total = len(requests)  # type: ignore[attr-defined]
+            except Exception:  # noqa: BLE001
+                pass
+            raise
     from concurrent.futures import ThreadPoolExecutor
 
     # Reserve every pass's slot before any of them starts: five threads that each check the call
@@ -3515,13 +3541,23 @@ def _run_validation_passes(
         futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
         responses: list[LLMResponse | None] = [None] * len(requests)
         first_error: BaseException | None = None
+        first_error_index: int | None = None
         for index, future in enumerate(futures):
             try:
                 responses[index] = future.result()
             except BaseException as exc:  # noqa: BLE001 - re-raised after every pass is settled
                 if first_error is None:
                     first_error = exc
+                    first_error_index = index
     if first_error is not None:
+        # CP-015g/D1: the caller records the failed pass before the job fails, so the raised error
+        # carries which pass it was. The exception is still the same typed failure; the two
+        # attributes are bookkeeping for the record, not a new contract.
+        try:
+            first_error.validation_pass_index = first_error_index  # type: ignore[attr-defined]
+            first_error.validation_pass_total = len(requests)  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001 - a frozen exception must not change the failure
+            pass
         raise first_error
     assert all(response is not None for response in responses)
     return [response for response in responses if response is not None]
@@ -6580,6 +6616,7 @@ def _parse_validation_answer(
             purpose=request.purpose,
             schema_name=request.schema_name,
             violation=str(exc),
+            parse_outcome=_parse_failure_kind(str(exc)),
         ) from exc
     if "verdict" in (schema.get("properties") or {}):
         problem = _declared_reject_problem(
@@ -6591,18 +6628,34 @@ def _parse_validation_answer(
                 purpose=request.purpose,
                 schema_name=request.schema_name,
                 violation=problem,
+                parse_outcome="verdict_violation",
             )
     return document
 
 
-def _answer_was_cut(response: LLMResponse, request: LLMRequest) -> bool:
-    """Whether the provider's own token count says this answer ran into the cap.
+def _parse_failure_kind(message: str) -> str:
+    """Name how an answer failed to parse, from the wording :func:`_parse_structured` produces.
 
-    A cut answer is not a verdict. The provider reports no ``finish_reason`` through this seam, so
-    the recorded completion tokens are the only truncation signal: an answer that consumed its
-    whole cap and still arrived empty or mid-JSON was stopped, not finished. An answer that ends
-    malformed well below its cap is a genuinely bad answer and is *not* repairable this way —
-    re-asking it spends the same call to get the same shape.
+    The three shapes are distinguishable and the operator needs them: an empty answer, prose that
+    is not JSON at all, and JSON that broke its own schema are different repairs. A fourth shape —
+    an answer that consumed its whole completion budget — is decided by :func:`_answer_was_cut`,
+    which has the response's token count.
+    """
+    text = str(message)
+    if "was empty" in text:
+        return "empty"
+    if "is not valid JSON" in text:
+        return "not_json"
+    return "schema_violation"
+
+
+def _answer_was_cut(response: LLMResponse, request: LLMRequest) -> bool:
+    """Whether the provider's own token count says this answer ran into its completion cap.
+
+    The provider reports no ``finish_reason`` through this seam, so the recorded completion tokens
+    are the truncation signal: an answer that consumed its whole budget and still arrived empty or
+    mid-JSON was stopped, not finished. CP-015g/D1 measured exactly that — both plan-validation
+    calls of the first Observatory attempt returned 4 000 tokens against a 4 000 cap.
     """
     used = getattr(response, "output_tokens", None)
     if used is None:
@@ -6613,26 +6666,52 @@ def _answer_was_cut(response: LLMResponse, request: LLMRequest) -> bool:
         return False
 
 
-def _truncation_repair_request(request: LLMRequest) -> LLMRequest:
-    """The one re-ask for a cut-off answer: same demand, the answer-length rule stated.
+def _validation_repair_request(
+    request: LLMRequest, *, violation: str, cut: bool, timeout_s: float
+) -> LLMRequest:
+    """The one re-ask for a validator answer that carried no verdict.
 
     The pass, its schema, its criteria and its claim set are byte-identical to the original call,
-    so the re-ask is still this pass answering its own request — it is not a second validator and
-    it cannot widen the reviewed set. Only ``instructions`` gains the correction and only
-    ``prompt_version`` is marked (``docs/GENERATION.md`` §1).
+    so this is still *this* validator pass answering its own request — not a second role, not a
+    wider reviewed set. Only ``instructions`` gains the correction and only ``prompt_version`` is
+    marked, because the instruction text is different (``docs/GENERATION.md`` §1).
+
+    A cut answer is asked again for a *shorter* one; an answer that arrived malformed below its cap
+    is asked again for one JSON object matching the schema. Both quote the measured failure as
+    untrusted data, bounded, so the correction is specific without letting model output act as an
+    instruction.
     """
-    note = (
-        "\n\nYour previous answer to this same request was cut off before it finished: it "
-        "consumed the whole answer-length budget and no usable JSON object arrived, so no verdict "
-        "from it survives. Answer the request again and keep the answer short — one sentence per "
-        f"reason (under {VALIDATION_REASON_MAX_CHARS} characters), no restating the artifact, no "
-        "method explanation, and no discussion inside the answer fields. Return exactly one JSON "
-        "object matching the schema, with every required field present."
+    if cut:
+        note = (
+            "\n\nYour previous answer to this same request was cut off before it finished: it "
+            "consumed the whole answer-length budget and no usable JSON object arrived, so no "
+            "verdict from it survives. Answer the request again and keep the answer short — one "
+            "sentence per reason, no restating the artifact, no method explanation, and no "
+            "discussion inside the answer fields. Return exactly one JSON object matching the "
+            "schema, with every required field present and every string inside its length bound."
+        )
+    else:
+        note = (
+            "\n\nYour previous answer to this same request could not be read: no JSON object "
+            "matching the schema arrived, so no verdict from it survives. Answer the request again "
+            "and return exactly one JSON object that matches the schema — no prose before or after "
+            "it, no markdown fence, no commentary. Every field in the schema's required list must "
+            "be present, no field outside the schema may appear, enum fields keep their listed "
+            "values, and every string stays inside its schema length bound. The item fields are "
+            "locators, not sentences: put each explanation in 'reason'."
+        )
+    quoted = " ".join(str(violation or "").split())[:SHAPE_VIOLATION_QUOTE_CHARS]
+    quoted = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", quoted)
+    note += (
+        f"\nThe rejection reason, quoted as untrusted data: {UNTRUSTED_SOURCE_BEGIN} {quoted} "
+        f"{UNTRUSTED_SOURCE_END}"
     )
     return replace(
         request,
         instructions=request.instructions + note,
-        prompt_version=request.prompt_version + TRUNCATION_REPAIR_PROMPT_SUFFIX,
+        prompt_version=request.prompt_version
+        + (TRUNCATION_REPAIR_PROMPT_SUFFIX if cut else VALIDATION_REPAIR_PROMPT_SUFFIX),
+        timeout_s=float(timeout_s),
     )
 
 
@@ -6643,33 +6722,98 @@ def _validation_answer_with_repair(
     usage: "_Usage",
     *,
     what: str,
+    started_at: float | None = None,
+    on_unreadable: Any = None,
 ) -> tuple[dict[str, Any], LLMResponse]:
-    """Parse one validator answer, re-asking once when the answer was *cut off* by the cap.
+    """Parse one validator answer, re-asking the same pass once when it carried no verdict.
 
-    A truncated or empty answer is an incomplete answer: the validator never stated a verdict, so
-    reporting it as a non-retryable ``VALIDATION_FAILED`` tells the operator a permanent rejection
-    happened when the only thing that happened is that the route spent its budget on reasoning.
-    CP-015 measured that on the demo route: four of nine plan-validation calls consumed the cap
-    exactly and three of them arrived unusable. The re-ask is bounded — exactly one, on the same
-    demand — and its answer is parsed by the same gate, so a second cut answer is still a typed
-    contract failure. A malformed answer that did *not* run into the cap is not retried here.
+    CP-015g/D1 measured the defect this exists for: one unreadable ``coursebook.plan.validate``
+    answer (truncated at the output cap, then plain unparseable JSON on the product's own retry)
+    discarded a ~30k-output-token authored plan and failed the job non-retryably with
+    ``repair_attempted: false``. A malformed answer is not a verdict, and re-asking the *same*
+    pass is cheap next to regenerating and re-validating the whole plan.
 
-    The returned response carries ``shape_repair_attempts=1`` when a re-ask produced it, so
-    provenance and the validation record never present a repaired answer as first-time clean.
+    The re-ask is bounded: exactly one per pass, and only when enough of the pass's declared
+    deadline remains to finish — the same rule the schema-repair path uses. A verdict violation (a
+    declared ``reject`` grounded in nothing, ``t_0affea08``) is **not** re-asked: no second call
+    can make an ungrounded refusal grounded, and the rule is stated in the prompt.
+
+    A second unreadable answer raises :class:`ModelOutputInvalid` with ``repair_attempted`` true
+    and the named parse outcome, so the job's ``error_json`` says the repair was tried and what
+    failed. The returned response carries ``shape_repair_attempts`` >= 1 when a repair produced
+    it, so the recorded verdict is never presented as first-time clean.
     """
     try:
         return _parse_validation_answer(response, request, what=what), response
-    except ModelOutputInvalid:
-        if not _answer_was_cut(response, request):
+    except ModelOutputInvalid as first:
+        if first.parse_outcome == "verdict_violation":
             raise
-    usage.reserve(1)
-    retry = _truncation_repair_request(request)
-    repaired = _call_llm(llm, retry, usage)
-    document = _parse_validation_answer(repaired, retry, what=what)
-    return document, replace(
-        repaired,
-        shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
-    )
+        repairs = int(getattr(response, "shape_repair_attempts", 0) or 0)
+        elapsed = 0.0 if started_at is None else max(0.0, time.monotonic() - float(started_at))
+        remaining = float(request.timeout_s) - elapsed
+        cut = _answer_was_cut(response, request)
+        outcome = "truncated" if cut else first.parse_outcome
+        if repairs or remaining < MIN_SHAPE_REPAIR_SECONDS:
+            reason = (
+                "the host's schema gate already re-asked once"
+                if repairs
+                else f"only {remaining:.1f}s of the pass deadline remained"
+            )
+            raise ModelOutputInvalid(
+                f"{what} returned no readable answer ({outcome}: {first.violation}); "
+                f"no repair was spent because {reason}",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=first.violation,
+                repair_attempted=bool(repairs),
+                parse_outcome=outcome,
+            ) from first
+        usage.reserve(1)
+        if callable(on_unreadable):
+            # Record the unreadable first answer *before* the repair is spent, so the audit trail
+            # holds one row per attempt even when the re-ask succeeds and the merged review row is
+            # the only other record.
+            on_unreadable(first, response, outcome)
+        retry = _validation_repair_request(
+            request, violation=first.violation or str(first), cut=cut, timeout_s=remaining
+        )
+        try:
+            repaired = _call_llm(llm, retry, usage, repair_shape=False)
+        except ModelOutputInvalid as gate:
+            failure = ModelOutputInvalid(
+                f"{what} returned no readable answer ({outcome}: {first.violation}); the one "
+                f"repair re-ask also failed ({gate.violation})",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=gate.violation or first.violation,
+                repair_attempted=True,
+                parse_outcome=outcome,
+            )
+            failure.validation_request = retry  # type: ignore[attr-defined]
+            raise failure from gate
+        try:
+            document = _parse_validation_answer(repaired, retry, what=what)
+        except ModelOutputInvalid as second:
+            second_outcome = (
+                "truncated" if _answer_was_cut(repaired, retry) else second.parse_outcome
+            )
+            failure = ModelOutputInvalid(
+                f"{what} returned no readable answer ({outcome}: {first.violation}); the one "
+                f"repair re-ask also failed ({second_outcome}: {second.violation})",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=second.violation,
+                repair_attempted=True,
+                parse_outcome=second_outcome,
+            )
+            # The record names the request that actually failed: the repair pass, under its own
+            # marked prompt version, not the first-time pass it replaced.
+            failure.validation_request = retry  # type: ignore[attr-defined]
+            raise failure from second
+        return document, replace(
+            repaired,
+            shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+        )
 
 
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
@@ -7621,7 +7765,20 @@ _GENERATION_DDL: tuple[str, ...] = (
         generator_prompt_sha256 TEXT NOT NULL,
         validator_prompt_sha256 TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version)
+        -- CP-015g/D1: a validator answer that never became a verdict is recorded too, so the
+        -- review is auditable instead of silent. ``-1`` marks the merged review row written after
+        -- a validation that produced verdicts; a pass that produced nothing carries its 0-based
+        -- pass index here.
+        pass_index INTEGER NOT NULL DEFAULT -1,
+        pass_total INTEGER,
+        -- 1-based attempt number of the *stage* (the plan/lesson/unit-sections attempt loop).
+        attempt_index INTEGER NOT NULL DEFAULT 1,
+        -- 'parsed' for a row that carries a verdict; otherwise how the answer failed to parse
+        -- ('not_json', 'empty', 'truncated', 'schema_violation', 'verdict_violation').
+        parse_outcome TEXT NOT NULL DEFAULT 'parsed',
+        repair_attempted INTEGER NOT NULL DEFAULT 0,
+        failure_json TEXT,
+        UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version, attempt_index, pass_index)
     )
     """,
     """
@@ -7742,6 +7899,60 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         ):
             if column not in validation_columns:
                 connection.execute(f"ALTER TABLE gen_validation_records ADD COLUMN {column} {ddl}")
+        # CP-015g/D1: the unique key now carries the pass and stage attempt, because one review is
+        # several passes and a failed pass writes its own row. SQLite cannot alter a UNIQUE
+        # constraint in place, so the table is rebuilt with every recorded row carried across
+        # (pass_index -1 marks a legacy merged row). The rebuild is a copy, never a drop:
+        # validation records are the audit trail of past approvals.
+        if "pass_index" not in validation_columns:
+            connection.execute(
+                "CREATE TABLE gen_validation_records_v2 ("
+                " id TEXT PRIMARY KEY,"
+                " subject_kind TEXT NOT NULL,"
+                " subject_id TEXT NOT NULL,"
+                " subject_hash TEXT NOT NULL,"
+                " generator_prompt_version TEXT NOT NULL,"
+                " validator_prompt_version TEXT NOT NULL,"
+                " validator_model TEXT,"
+                " generator_model TEXT,"
+                " generator_provider TEXT,"
+                " validator_provider TEXT,"
+                " independence TEXT,"
+                " facts_unverified INTEGER,"
+                " outcome TEXT,"
+                " verdict TEXT NOT NULL,"
+                " criteria_json TEXT NOT NULL,"
+                " rejections_json TEXT NOT NULL,"
+                " generator_prompt_sha256 TEXT NOT NULL,"
+                " validator_prompt_sha256 TEXT NOT NULL,"
+                " created_at TEXT NOT NULL,"
+                " pass_index INTEGER NOT NULL DEFAULT -1,"
+                " pass_total INTEGER,"
+                " attempt_index INTEGER NOT NULL DEFAULT 1,"
+                " parse_outcome TEXT NOT NULL DEFAULT 'parsed',"
+                " repair_attempted INTEGER NOT NULL DEFAULT 0,"
+                " failure_json TEXT,"
+                " UNIQUE(subject_kind, subject_id, subject_hash, validator_prompt_version,"
+                " attempt_index, pass_index))"
+            )
+            connection.execute(
+                "INSERT INTO gen_validation_records_v2 (id, subject_kind, subject_id, subject_hash,"
+                " generator_prompt_version, validator_prompt_version, validator_model, generator_model,"
+                " generator_provider, validator_provider, independence, facts_unverified, outcome,"
+                " verdict, criteria_json, rejections_json, generator_prompt_sha256,"
+                " validator_prompt_sha256, created_at, pass_index, pass_total, attempt_index,"
+                " parse_outcome, repair_attempted, failure_json)"
+                " SELECT id, subject_kind, subject_id, subject_hash,"
+                " generator_prompt_version, validator_prompt_version, validator_model, generator_model,"
+                " generator_provider, validator_provider, independence, facts_unverified, outcome,"
+                " verdict, criteria_json, rejections_json, generator_prompt_sha256,"
+                " validator_prompt_sha256, created_at, -1, NULL, 1, 'parsed', 0, NULL"
+                " FROM gen_validation_records"
+            )
+            connection.execute("DROP TABLE gen_validation_records")
+            connection.execute(
+                "ALTER TABLE gen_validation_records_v2 RENAME TO gen_validation_records"
+            )
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -8373,6 +8584,7 @@ def _record_validation(
     response: LLMResponse,
     verdict: dict[str, Any],
     now: datetime | None,
+    attempt_index: int = 1,
 ) -> str:
     validation_id = _new_id()
     generator = model_identity(generation_response)
@@ -8383,8 +8595,9 @@ def _record_validation(
             "INSERT OR IGNORE INTO gen_validation_records (id, subject_kind, subject_id, subject_hash, "
             "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
             "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
-            "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at, "
+            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 validation_id,
                 subject_kind,
@@ -8418,12 +8631,117 @@ def _record_validation(
                 sha256_of_text(generation_request.system_prompt),
                 sha256_of_text(validation_request.system_prompt),
                 _now_iso(now),
+                # This is the merged review row: it is not one pass, so it carries -1 rather than
+                # pretending to be pass 0.
+                -1,
+                None,
+                int(attempt_index),
+                "parsed",
+                1 if int(getattr(response, "shape_repair_attempts", 0) or 0) else 0,
+                None,
             ),
         )
         row = connection.execute(
             "SELECT id FROM gen_validation_records WHERE subject_kind = ? AND subject_id = ? AND subject_hash = ? "
-            "AND validator_prompt_version = ?",
-            (subject_kind, subject_id, subject_hash, validation_request.prompt_version),
+            "AND validator_prompt_version = ? AND attempt_index = ? AND pass_index = -1",
+            (subject_kind, subject_id, subject_hash, validation_request.prompt_version, int(attempt_index)),
+        ).fetchone()
+    return str(row[0]) if row is not None else validation_id
+
+
+def _record_validation_attempt(
+    connection: sqlite3.Connection,
+    *,
+    subject_kind: str,
+    subject_id: str,
+    subject_hash: str,
+    generation_request: LLMRequest,
+    generation_response: LLMResponse | None,
+    validation_request: LLMRequest,
+    response: LLMResponse | None,
+    failure: "ModelOutputInvalid",
+    parse_outcome: str,
+    pass_index: int,
+    pass_total: int | None,
+    attempt_index: int,
+    now: datetime | None,
+) -> str:
+    """Record one validator answer that produced no verdict.
+
+    CP-015g/D1: ``gen_validation_records`` was empty for both failed attempts of the Observatory
+    plan, so the operator could see a job failure but not what the validator actually answered,
+    which model answered it, or whether a repair was tried. A row is written for every such
+    attempt — including the repair re-ask — and it is written *before* the failure is raised, so
+    the record survives the job's error path.
+
+    ``verdict`` is ``'invalid'``: an unreadable answer is not a rejection of the artifact, and
+    storing it as one would claim a judgement the validator never made. ``parse_outcome`` names
+    how the answer failed (``not_json``, ``empty``, ``truncated``, ``schema_violation``,
+    ``verdict_violation``).
+    """
+    validation_id = _new_id()
+    generator = model_identity(generation_response)
+    validator = model_identity(response)
+    independence = validation_independence(generator, validator)
+    failure_record = {
+        "violation": failure.violation or str(failure),
+        "message": str(failure),
+        "parse_outcome": str(parse_outcome),
+        "repair_attempted": bool(failure.repair_attempted),
+        "pass_index": int(pass_index),
+        "pass_total": None if pass_total is None else int(pass_total),
+        "max_tokens": int(validation_request.max_tokens),
+        "output_tokens": None if response is None else response.output_tokens,
+        "provider": validator["provider"],
+        "model": validator["model"],
+    }
+    with _transaction(connection):
+        connection.execute(
+            "INSERT OR IGNORE INTO gen_validation_records (id, subject_kind, subject_id, subject_hash, "
+            "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
+            "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
+            "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at, "
+            "pass_index, pass_total, attempt_index, parse_outcome, repair_attempted, failure_json) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                validation_id,
+                subject_kind,
+                subject_id,
+                subject_hash,
+                generation_request.prompt_version,
+                validation_request.prompt_version,
+                validator["model"],
+                generator["model"],
+                generator["provider"],
+                validator["provider"],
+                independence,
+                0,
+                OUTCOME_UNREADABLE,
+                "invalid",
+                "[]",
+                _json({"rejections": [], "unreadable": failure_record}),
+                sha256_of_text(generation_request.system_prompt),
+                sha256_of_text(validation_request.system_prompt),
+                _now_iso(now),
+                int(pass_index),
+                None if pass_total is None else int(pass_total),
+                int(attempt_index),
+                str(parse_outcome),
+                1 if failure.repair_attempted else 0,
+                _json(failure_record),
+            ),
+        )
+        row = connection.execute(
+            "SELECT id FROM gen_validation_records WHERE subject_kind = ? AND subject_id = ? "
+            "AND subject_hash = ? AND validator_prompt_version = ? AND attempt_index = ? AND pass_index = ?",
+            (
+                subject_kind,
+                subject_id,
+                subject_hash,
+                validation_request.prompt_version,
+                int(attempt_index),
+                int(pass_index),
+            ),
         ).fetchone()
     return str(row[0]) if row is not None else validation_id
 
@@ -8854,22 +9172,73 @@ def run_plan_job(
             )
             for validation_request in validation_requests:
                 assert_separate_pass(plan_request, validation_request)
-            validation_responses = _run_validation_passes(validator, validation_requests, usage)
-            reports = []
-            for index, (validation_request, validation_response) in enumerate(
+            validation_started = time.monotonic()
+            assert plan_request is not None
+
+            def record_plan_attempt(pass_index: int, failure: ModelOutputInvalid, resp: Any, outcome: str) -> None:
+                # CP-015g/D1: every failed validation attempt is recorded before the job fails.
+                # The row names the pass, the model, the prompt version, the parse outcome and
+                # whether a repair was spent — the audit trail the silent path never wrote.
+                _record_validation_attempt(
+                    connection,
+                    subject_kind="plan",
+                    subject_id=str(course_id),
+                    subject_hash=plan_hash(candidate),
+                    generation_request=plan_request,
+                    generation_response=response,
+                    validation_request=getattr(
+                        failure, "validation_request", validation_requests[pass_index]
+                    ),
+                    response=resp,
+                    failure=failure,
+                    parse_outcome=outcome,
+                    pass_index=pass_index,
+                    pass_total=len(validation_requests),
+                    attempt_index=int(attempt),
+                    now=now,
+                )
+
+            try:
+                validation_responses = _run_validation_passes(validator, validation_requests, usage)
+            except ModelOutputInvalid as exc:
+                # The host's schema gate threw the answer away before this module could read it,
+                # and its own single re-ask did not fix it. Record the attempt (identity unknown:
+                # the gate discards the answer before it can report a model) and fail.
+                attempt_pass = int(getattr(exc, "validation_pass_index", -1) or 0)
+                attempt_pass = attempt_pass if 0 <= attempt_pass < len(validation_requests) else 0
+                record_plan_attempt(attempt_pass, exc, LLMResponse(), exc.parse_outcome)
+                raise
+            reports: list[tuple[tuple[str, ...], dict[str, Any]]] = []
+            answered: list[LLMResponse] = []
+            first_failure: ModelOutputInvalid | None = None
+            for pass_index, (validation_request, validation_response) in enumerate(
                 zip(validation_requests, validation_responses)
             ):
-                report, answered = _validation_answer_with_repair(
-                    validator,
-                    validation_request,
-                    validation_response,
-                    usage,
-                    what="plan validation",
+                try:
+                    document, answered_response = _validation_answer_with_repair(
+                        validator,
+                        validation_request,
+                        validation_response,
+                        usage,
+                        what="plan validation",
+                        started_at=validation_started,
+                        on_unreadable=lambda failure, resp, outcome, _i=pass_index: record_plan_attempt(
+                            _i, failure, resp, outcome
+                        ),
+                    )
+                except ModelOutputInvalid as exc:
+                    record_plan_attempt(pass_index, exc, validation_response, exc.parse_outcome)
+                    # Every pass's answer arrived, so every unreadable one is recorded before the
+                    # job is failed; the first failure is the one the operator is shown.
+                    if first_failure is None:
+                        first_failure = exc
+                    continue
+                reports.append(
+                    (validation_pass_criteria(validation_request), document)
                 )
-                # A truncation re-ask answers the same pass under a marked label; keep the
-                # answering response so provenance reports the re-ask, never a first-time clean.
-                validation_responses[index] = answered
-                reports.append((validation_pass_criteria(validation_request), report))
+                answered.append(answered_response)
+            if first_failure is not None:
+                raise first_failure
             report = merge_validation_reports(reports)
             validation_request = validation_requests[0]
             # H-192b: the review is several passes. Provenance is recorded from an answering
@@ -8877,7 +9246,7 @@ def run_plan_job(
             # pretending the review was first-time clean (all passes answer with the same model,
             # so identity is unchanged).
             validation_response = max(
-                validation_responses,
+                answered,
                 key=lambda item: int(getattr(item, "shape_repair_attempts", 0) or 0),
             )
             independence = validation_independence(
@@ -9170,6 +9539,7 @@ def run_plan_job(
                     response=validation_response,
                     verdict=verdict,
                     now=now,
+                    attempt_index=int(attempt),
                 )
             result["validation_id"] = validation_id
             result["plan_version"] = version
@@ -10042,14 +10412,44 @@ def run_unit_sections_job(
             )
             assert request is not None
             assert_separate_pass(request, validation_request)
-            validation_response = _call_llm(validator, validation_request, usage)
-            report, validation_response = _validation_answer_with_repair(
-                validator,
-                validation_request,
-                validation_response,
-                usage,
-                what="unit sections validation",
-            )
+            validation_started = time.monotonic()
+
+            def record_unit_attempt(failure: ModelOutputInvalid, resp: Any, outcome: str) -> None:
+                assert request is not None and validation_request is not None
+                _record_validation_attempt(
+                    connection,
+                    subject_kind="unit_sections",
+                    subject_id=f"{plan_id}:{requested_unit}",
+                    subject_hash=sha256_of_text(canonical_json(batch)),
+                    generation_request=request,
+                    generation_response=response,
+                    validation_request=getattr(failure, "validation_request", validation_request),
+                    response=resp,
+                    failure=failure,
+                    parse_outcome=outcome,
+                    pass_index=0,
+                    pass_total=1,
+                    attempt_index=int(attempt),
+                    now=now,
+                )
+
+            # Named before the call so the failure record can always say what came back, even
+            # when the host's own schema gate threw the answer away.
+            validation_response = LLMResponse()
+            try:
+                validation_response = _call_llm(validator, validation_request, usage)
+                report, validation_response = _validation_answer_with_repair(
+                    validator,
+                    validation_request,
+                    validation_response,
+                    usage,
+                    what="unit sections validation",
+                    started_at=validation_started,
+                    on_unreadable=record_unit_attempt,
+                )
+            except ModelOutputInvalid as exc:
+                record_unit_attempt(exc, validation_response, exc.parse_outcome)
+                raise
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
             )
@@ -10148,6 +10548,7 @@ def run_unit_sections_job(
                     response=validation_response,
                     verdict=verdict,
                     now=now,
+                    attempt_index=int(attempt),
                 )
         _record_usage(connection, job_id, usage, now)
         total_sections = len(existing_sections) + len(authored)
@@ -11251,14 +11652,42 @@ def _author_section(
             subject_domain=subject_domain,
         )
         assert_separate_pass(request, validation_request)
-        validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
-        report, validation_response = _validation_answer_with_repair(
-            validation_llm() or llm,
-            validation_request,
-            validation_response,
-            usage,
-            what="lesson validation",
-        )
+        validation_started = time.monotonic()
+
+        def record_lesson_attempt(failure: ModelOutputInvalid, resp: Any, outcome: str) -> None:
+            assert request is not None and validation_request is not None
+            _record_validation_attempt(
+                connection,
+                subject_kind="lesson",
+                subject_id=str(section["section_id"]),
+                subject_hash=sha256_of_text(canonical_json(page)),
+                generation_request=request,
+                generation_response=response,
+                validation_request=getattr(failure, "validation_request", validation_request),
+                response=resp,
+                failure=failure,
+                parse_outcome=outcome,
+                pass_index=0,
+                pass_total=1,
+                attempt_index=int(attempt),
+                now=now,
+            )
+
+        validation_response = LLMResponse()
+        try:
+            validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
+            report, validation_response = _validation_answer_with_repair(
+                validation_llm() or llm,
+                validation_request,
+                validation_response,
+                usage,
+                what="lesson validation",
+                started_at=validation_started,
+                on_unreadable=record_lesson_attempt,
+            )
+        except ModelOutputInvalid as exc:
+            record_lesson_attempt(exc, validation_response, exc.parse_outcome)
+            raise
         independence = validation_independence(
             model_identity(response), model_identity(validation_response)
         )
@@ -11396,6 +11825,7 @@ def _author_section(
                 response=validation_response,
                 verdict=verdict,
                 now=now,
+                attempt_index=int(attempt),
             )
             connection.execute("UPDATE gen_lessons SET validation_id = ? WHERE id = ?", (validation_id, lesson_id))
 

@@ -428,9 +428,18 @@ class SecondViolationIsTypedNotAnOutageTest(ShapeRepairCase):
         self.assertNotIsInstance(error, gen.ProviderFailure)
         self.assertEqual(job_service._error_code(error), "VALIDATION_FAILED")
 
-        # No verdict, no rejection, no validation record: a malformed answer is not an artifact
-        # verdict, and nothing is presented as validated or rejected.
-        self.assertEqual(self.rows("SELECT COUNT(*) AS n FROM gen_validation_records")[0]["n"], 0)
+        # No verdict, no rejection, no plan document: a malformed answer is not an artifact
+        # verdict, and nothing is presented as validated or rejected. CP-015g/D1: the failed
+        # *attempt* is recorded, because a silence is not an audit trail — the row says the answer
+        # was unreadable, names the model and prompt version, and says the repair was spent.
+        records = self.rows("SELECT * FROM gen_validation_records")
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(record["verdict"], "invalid")
+        self.assertEqual(record["outcome"], gen.OUTCOME_UNREADABLE)
+        self.assertEqual(record["parse_outcome"], "schema_violation")
+        self.assertEqual(record["repair_attempted"], 1)
+        self.assertEqual(record["validator_prompt_version"], gen.VALIDATION_PROMPT_VERSION)
         self.assertEqual(self.rows("SELECT COUNT(*) AS n FROM gen_plan_documents")[0]["n"], 0)
         self.assertEqual(self.rows("SELECT COUNT(*) AS n FROM plans")[0]["n"], 0)
 
