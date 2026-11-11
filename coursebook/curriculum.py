@@ -27,12 +27,14 @@ from typing import Any
 
 __all__ = [
     "CURRICULUM_PROFILES",
+    "DOMAIN_SOURCES",
     "PERFORMANCE_FAMILIES",
     "curriculum_brief",
     "curriculum_prompt_lines",
     "curriculum_queries",
     "language_name",
     "performance_requirement",
+    "resolve_domain",
 ]
 
 #: The profiles are deliberately coarse. They choose the *kind* of sequence reasoning,
@@ -182,6 +184,201 @@ def _domain_key(domain: str | None) -> str:
     return key if key in CURRICULUM_PROFILES else "general"
 
 
+# ── Domain resolution ──────────────────────────────────────────────────────
+#
+# CP-015g/D1-F2: an undeclared subject domain used to fall through to the locale default, which
+# was `language`. A hands-on goal ("set up a small backyard telescope and find and observe the
+# moons of Jupiter") therefore got a language-course brief and language-course research queries,
+# and the plan author had to ignore both. The fix is a single resolution rule, shared by the
+# brief, the research queries and the caller's run record:
+#
+#   * a declared domain wins, always (``source: declared``);
+#   * an undeclared domain is read from the goal text — a performed physical act is
+#     ``technical_procedure``, and a goal that names a target language and asks the learner to
+#     use or learn it is ``language`` (``source: inferred``);
+#   * anything else is ``general`` (``source: default``), and the record says so.
+#
+# `language` is never reachable from the locale alone: a caller that omits the subject domain and
+# the language in the goal gets `general`, not a language course. This supersedes H-44's
+# no-inference choice (docs/COURSE-BLUEPRINT.md §15); the inference is recorded in the run record
+# rather than passed off as a declaration.
+
+#: How the resolved domain was chosen. Only ``declared`` is the caller's decision.
+DOMAIN_SOURCES: tuple[str, ...] = ("declared", "inferred", "default")
+
+#: Verbs and nouns that mark a goal as language learning rather than a subject taught in a
+#: language. These are the only words that let an undeclared goal reach the ``language`` route.
+_LANGUAGE_LEARNING = re.compile(
+    r"\b("
+    r"learn|learning|study|studying|practi[cs]e|practi[cs]ing|"
+    r"speak|speaking|converse|conversation|pronounce|pronunciation|"
+    r"vocabulary|grammar|conjugat\w*|fluen\w*|phrases?|dialog(?:ue)?s?|"
+    r"kana|kanji|hiragana|katakana|romaji|alphabet"
+    r")\b",
+    re.IGNORECASE,
+)
+
+#: A named language. Only a language the learner can name makes an undeclared goal a language
+#: course; "a language" on its own is handled by :data:`_GENERIC_LANGUAGE`.
+_LANGUAGE_TARGET = re.compile(
+    r"\b("
+    + "|".join(
+        sorted(
+            {name.lower() for name in _LANGUAGE_NAMES.values()}
+            | {
+                "italian",
+                "portuguese",
+                "russian",
+                "dutch",
+                "swedish",
+                "norwegian",
+                "danish",
+                "polish",
+                "turkish",
+                "hebrew",
+                "greek",
+                "latin",
+                "hindi",
+                "thai",
+                "vietnamese",
+                "indonesian",
+                "english",
+            }
+        )
+    )
+    + r")\b",
+    re.IGNORECASE,
+)
+
+#: "Learn a foreign language" without naming one. The study verb has to sit next to the noun, so
+#: "build a language learning app" does not become a language course.
+_GENERIC_LANGUAGE = re.compile(
+    r"\b(?:learn|learning|study|studying|practi[cs]e|practi[cs]ing|speak|speaking)\b"
+    r"[^.]{0,20}\blanguages?\b",
+    re.IGNORECASE,
+)
+
+#: A goal about a culture or a country's past is a content course, not a language course, even
+#: when it names a language ("read Spanish colonial history"). A language-learning word above
+#: still wins, so "learn Spanish history vocabulary" stays a language goal.
+_SUBJECT_FRAME = re.compile(
+    r"\b("
+    r"history|histories|culture|literature|politics|political|economy|economics|geography|"
+    r"cuisine|cooking|war|film|cinema|art|music|poetry|religion|philosophy"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _declared_locale(locale: str | None) -> str | None:
+    text = str(locale or "").strip()
+    return text or None
+
+
+def _language_goal(text: str) -> bool:
+    """True when the goal itself asks for language learning or use of a target language."""
+    if not text:
+        return False
+    if not (_LANGUAGE_TARGET.search(text) or _GENERIC_LANGUAGE.search(text)):
+        return False
+    if _LANGUAGE_LEARNING.search(text):
+        return True
+    return not _SUBJECT_FRAME.search(text)
+
+
+def resolve_domain(
+    *,
+    goal: str | None = None,
+    domain: str | None = None,
+    locale: str | None = None,
+) -> dict[str, Any]:
+    """The one place an undeclared subject domain is decided, and how it was decided.
+
+    Returns ``domain`` (a key of :data:`CURRICULUM_PROFILES`), ``source`` (one of
+    :data:`DOMAIN_SOURCES`), the declared inputs, the target language (only for a resolved
+    language course) and — for an inferred or default choice — a machine-readable
+    ``inferred_from`` and/or a human ``note`` explaining it.
+
+    Deterministic and side-effect free: it reads the goal, the declared domain and the declared
+    locale, nothing else. Every caller (the brief, the research queries, the run record) must use
+    this function so the profile the research uses and the profile the author is told about are
+    the same profile.
+    """
+    declared = str(domain).strip() if domain is not None and str(domain).strip() else None
+    declared_locale = _declared_locale(locale)
+    if declared is not None:
+        # One alias table for the whole product: `policy.normalise_subject_domain` owns the
+        # spelling map ("repair" -> "technical_procedure"), so resolution never grows a second.
+        from . import policy as capability_policy
+
+        key = _domain_key(capability_policy.normalise_subject_domain(declared))
+        return {
+            "domain": key,
+            "source": "declared",
+            "declared_subject_domain": declared,
+            "declared_locale": declared_locale,
+            "target_language": language_name(declared_locale) if key == "language" else None,
+        }
+    text = " ".join(str(goal or "").split())
+    performance = performance_requirement(text)
+    if performance is not None:
+        # A performed act is a procedure course whether or not a locale is declared: the act is
+        # what the learner must do, and the delivery locale says nothing about the subject.
+        return {
+            "domain": "technical_procedure",
+            "source": "inferred",
+            "inferred_from": "goal_performance",
+            "declared_subject_domain": None,
+            "declared_locale": declared_locale,
+            "target_language": None,
+            "note": (
+                f"no subject domain was declared; the goal asks the learner to carry out "
+                f"{performance['detected_action']!r}, so this course is authored as "
+                "technical_procedure. That domain is inferred from the goal, not declared."
+            ),
+        }
+    if _language_goal(text):
+        if declared_locale is not None:
+            return {
+                "domain": "language",
+                "source": "inferred",
+                "inferred_from": "goal_language",
+                "declared_subject_domain": None,
+                "declared_locale": declared_locale,
+                "target_language": language_name(declared_locale),
+                "note": (
+                    "no subject domain was declared; the goal asks the learner to learn or use a "
+                    "target language, so this course is authored as a language course. That "
+                    "domain is inferred from the goal, not declared."
+                ),
+            }
+        return {
+            "domain": "general",
+            "source": "default",
+            "inferred_from": "goal_language_without_locale",
+            "declared_subject_domain": None,
+            "declared_locale": None,
+            "target_language": None,
+            "note": (
+                "the goal asks for a language, but the brief declared no locale, so this course "
+                "is authored as a general course: a language course needs a declared target "
+                "language. Declare the locale and the subject domain to author a language course."
+            ),
+        }
+    return {
+        "domain": "general",
+        "source": "default",
+        "declared_subject_domain": None,
+        "declared_locale": declared_locale,
+        "target_language": None,
+        "note": (
+            "no subject domain was declared and the goal names neither a performed physical act "
+            "nor a target language, so this course is authored as a general course: the domain "
+            "is the default, not a content decision. Declare the subject domain to name it."
+        ),
+    }
+
+
 def curriculum_queries(
     goal: str,
     *,
@@ -193,12 +390,14 @@ def curriculum_queries(
 
     A survey pass stays one query; ``working`` and ``deep`` add these. They are placed
     before the generic reference/glossary queries so a small budget cannot truncate the
-    curriculum question away.
+    curriculum question away. The domain is resolved with :func:`resolve_domain` from the same
+    goal the brief is given, so a language research query is only ever derived for a course the
+    brief also hands the author as a language course.
     """
     base = " ".join(str(goal).split())
     if not base:
         return []
-    domain_key = _domain_key(domain)
+    domain_key = resolve_domain(goal=base, domain=domain, locale=locale)["domain"]
     queries = [f"{base} how to teach curriculum sequence"]
     if domain_key == "language":
         target = language_name(locale)
@@ -225,13 +424,20 @@ def curriculum_brief(
 
     It is intentionally input-only: no field here is a learner-facing progress claim. The
     plan author must fill the actual sequence from the supplied sources and the goal.
+
+    The subject domain is resolved by :func:`resolve_domain` from the declared value and the goal
+    text, and the brief states how it was chosen (``domain_source``). A caller that declares no
+    domain and gives no goal gets ``general`` — never the locale's language.
     """
-    key = _domain_key(domain)
+    resolved = resolve_domain(goal=goal, domain=domain, locale=locale)
+    key = resolved["domain"]
     target = language_name(locale)
     brief: dict[str, Any] = {
         "model": "backward_design_prerequisite_frequency",
         "profile": CURRICULUM_PROFILES[key],
         "domain": key,
+        "domain_source": resolved["source"],
+        "declared_subject_domain": resolved["declared_subject_domain"],
         "required_research": [
             "exit performance: what the learner must be able to do",
             "prerequisite map: what must be known or practised first",

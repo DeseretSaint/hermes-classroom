@@ -443,7 +443,8 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn('"role": "none"', instructions)
         self.assertIn("sourced_reference", instructions)
         self.assertIn("never declare decorative media", instructions.lower())
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v12")
+        # CP-015g/D1-F2 adds the resolved-subject-domain line, so the label advances to v14.
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v14")
 
     def test_lesson_prompt_receives_the_declared_permissions_not_a_wish_list(self) -> None:
         for name, row in MATRIX.items():

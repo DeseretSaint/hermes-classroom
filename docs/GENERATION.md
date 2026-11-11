@@ -16,23 +16,26 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v12` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v13` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v14` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v15` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v6` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v7` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v6` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v7` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v13` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v12` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v15` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v14` otherwise.
 
-The prompt labels above are the ones **CP-015g/D1-F1** ships: on top of H-192b's labels the two plan
-prompts now also state the evidence-family rule (the check's `kind` follows the objective's
+The prompt labels above are the ones **CP-015g/D1-F2** ships. On top of H-192b's labels the two plan
+prompts state the evidence-family rule (the check's `kind` follows the objective's
 `evidence_target`; a quiz evidences recall, comprehension or discrimination only), the
 performance rule (`curriculum.performance_requirement`, §5b), the casual self-check form rule and
-the objective claim-link rule, so they advance `v10` → `v12` and `v11` → `v13`. The validation
-prompt advances `v5` → `v6` because the plan-validation payload now carries the curriculum brief's
-typed `performance` block; its instruction text is unchanged.
+the objective claim-link rule (CP-015g/D1-F1, `v10` → `v12` and `v11` → `v13`). CP-015g/D1-F2 adds
+the resolved-subject-domain line: when the brief declared no subject domain and the goal itself
+names one, the author is told `Subject domain: <domain> (inferred from the goal; the brief declared
+none)`, so the labels advance `v12` → `v14` and `v13` → `v15`. The validation prompt advances
+`v6` → `v7` because the plan-validation payload now carries that same resolved domain and its
+`domain_source`; its instruction text is unchanged.
 `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
 fingerprint, so a plan or lesson authored under an older label is never silently reused under the
 current rules.
@@ -87,8 +90,8 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
 whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v6` (the label advanced from `v5` only because the plan-validation payload now
-carries the curriculum `performance` block; the rule text is unchanged by CP-015g/D1-F1), so it is a
+`validation-prompt.v7` (the label advanced from `v5` for the plan payload, and from `v6` to `v7` for
+the resolved-domain brief; the rule text is unchanged by CP-015g/D1-F1 and CP-015g/D1-F2), so it is a
 stated contract rather than an unstated schema trap (the H-191
 lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
 `docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
@@ -212,11 +215,17 @@ raises instead of silently behaving like one of the three.
 
 * Queries are derived deterministically from goal + recipe + dials + locale, plus the declared
   `subject_domain`/`level` when the brief carries them. Every query that ran is recorded with its
-  result count or its error. `subject_domain` supplies one subject qualifier (a procedure brief
-  asks for procedure steps and safety limits; a mathematics brief asks for definitions and worked
-  examples); when it is declared, `locale` no longer adds a language query unless the domain is
-  `language`. This keeps the language of delivery and the subject of the course separate
-  (adversarial review P0-4).
+  result count or its error. The subject domain is resolved by `curriculum.resolve_domain`
+  (`docs/COURSE-BLUEPRINT.md` §15) from the same goal the brief is given: a declared domain wins
+  (canonicalised by the one alias table), an undeclared domain is inferred from the goal (a
+  performed physical act is `technical_procedure`; a goal that asks the learner to learn or use a
+  named target language, with a declared locale, is `language`), and otherwise it is `general`.
+  The resolved domain supplies one subject qualifier (a procedure brief asks for procedure steps
+  and safety limits; a mathematics brief asks for definitions and worked examples); `locale` adds
+  a language reference query only for a `language` course or for a `general` default where the
+  locale is the only routing signal. This keeps the language of delivery and the subject of the
+  course separate (adversarial review P0-4), and an undeclared domain can never turn a hands-on
+  goal into a language-course research brief.
 
 | scope | survey (q/rpq/pages/sources) | working | deep |
 | --- | --- | --- | --- |
@@ -424,8 +433,10 @@ deterministic, goal-only detector. It fires on an act the learner performs with 
 instruments (`set up`, `assemble`, `solder`, `calibrate`, `align`, `replace`, …; or a weaker act such
 as `observe`/`measure` when the goal also names an instrument, a board, a bike, the sky and so on),
 and never on a goal that asks only for understanding. It does not read the resolved subject domain:
-an undeclared domain resolves to the locale default (`language`), which is the wrong answer for a
-hands-on goal. The block is added to the curriculum brief, so the plan author and the plan validator
+it reads the goal text only, so the requirement stands whether the domain was declared, inferred or
+left to the default (CP-015g/D1-F2 resolves an undeclared hands-on goal to `technical_procedure`,
+but the detector must not depend on that resolution to be right). The block is added to the
+curriculum brief, so the plan author and the plan validator
 are told the same thing: such a goal needs objectives whose `evidence_target` is `procedure` or
 `transfer`, and their checks are a performance checklist (kind `verification`) or an observation log
 (kind `verification`/`observation`) — never a quiz.
@@ -467,7 +478,18 @@ v10). They are their own fields; they are never written into `dials`, which stay
   instructions, which is what keeps a Spanish brake-pad procedure from being scored as a language
   lesson. The lesson stage still makes the final per-lesson decision with the section's intent.
 * **The validator** receives `level`, `subject_domain` and `scope` too, so it judges the plan
-  against the declared level and scope, not against the locale.
+  against the declared level and scope, not against the locale. It is handed the same curriculum
+  brief the author was — including the resolved domain and `domain_source` — so both passes read
+  one profile.
+* **An undeclared domain is resolved once.** `curriculum.resolve_domain(goal=…, domain=…,
+  locale=…)` is the only resolver: a declared domain wins; an undeclared one is inferred from the
+  goal (a performed physical act → `technical_procedure`; a goal that asks the learner to learn or
+  use a named target language, with a declared locale → `language`); otherwise the course is
+  `general`. The result carries `domain_source` (`declared` / `inferred` / `default`), and the run
+  record's `domain_provenance` repeats it with `inferred_from` where one applies. `language` is
+  never reachable from the locale alone — the CP-015g defect this replaces (a telescope goal
+  authored under a language brief) cannot recur by omission. `docs/COURSE-BLUEPRINT.md` §15 has
+  the full table.
 * **The fingerprint** (`_request_fingerprint`) and therefore the reuse cache include all three, so
   a plan authored under a different level, domain or scope is never reused. Reuse is still scoped
   to one course; an identical retry of the same brief is still free.

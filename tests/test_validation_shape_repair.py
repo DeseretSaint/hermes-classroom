@@ -288,8 +288,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # A label is part of stored validation bindings and the idempotency fingerprint; a
         # different instruction text under a reused label is never silently accepted.
         # v5 (`t_0affea08`) added the declared-reject rule to the pass instructions; the label
-        # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v6")
+        # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`). v7 (CP-015g/D1-F2) adds
+        # the resolved-domain brief to the plan-validation payload, so the label advances again.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v7")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

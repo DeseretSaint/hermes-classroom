@@ -1235,17 +1235,18 @@ class LanguageGoalDomainProvenanceTest(GenerationTestBase):
         self.assertIn("general course", provenance["note"])
         self.assertTrue(any("general course" in warning for warning in result["warnings"]))
 
-    def test_language_goal_with_locale_records_the_declared_locale(self) -> None:
+    def test_language_goal_with_locale_records_the_inferred_domain(self) -> None:
         result = self._run(locale="es-MX")
-        # The declared locale routes the course to `language`; the record states where it came
-        # from and no default warning is invented.
+        # The goal names the target language and a locale is declared, so the language route is
+        # inferred from the goal (CP-015g/D1-F2) — never from the locale alone. The record says
+        # where it came from and no default warning is invented.
         self.assertEqual(result["locale"], "es-MX")
         self.assertEqual(result["target_language"], "es")
         provenance = result["domain_provenance"]
-        self.assertEqual(provenance["source"], "declared_locale")
+        self.assertEqual(provenance["source"], "inferred")
+        self.assertEqual(provenance["inferred_from"], "goal_language")
         self.assertEqual(provenance["resolved_domain"], "language")
         self.assertEqual(provenance["declared_locale"], "es-MX")
-        self.assertNotIn("note", provenance)
         self.assertFalse(any("general course" in warning for warning in result["warnings"]))
 
     def test_the_two_records_differ_in_the_returned_value_not_a_log(self) -> None:
@@ -1826,6 +1827,67 @@ class ProviderDeadlineTest(unittest.TestCase):
         # The provider charged for that call: the ledger says so instead of dropping it.
         self.assertEqual(usage.summary()["calls"], 1)
         self.assertEqual(usage.summary()["cost_usd"], 0.02)
+
+
+# ── Domain resolution: a hands-on goal is not a language course (CP-015g/D1-F2) ──
+
+
+class HandsOnGoalDomainProvenanceTest(GenerationTestBase):
+    """CP-015g/D1-F2: a hands-on goal with no declared domain is a procedure course.
+
+    The live CP-015g flow sends a goal and a recipe only. The undeclared domain used to resolve
+    to the locale default (`language`), so the telescope goal was handed a language brief. The
+    run record now names the inferred domain, and the author and the validator are handed the
+    same procedure brief.
+    """
+
+    GOAL = (
+        "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear "
+        "night"
+    )
+
+    def _run(self) -> tuple[dict, FakeLLM]:
+        llm = FakeLLM(
+            {
+                "coursebook.plan.generate": plan_from_fixture(),
+                "coursebook.plan.validate": validation_from_fixture(),
+            }
+        )
+        result = gen.run_plan_job(
+            self.connection,
+            plan_job(goal=self.GOAL, recipe="casual", dials={"depth": "working"}, locale="en-US"),
+            llm,
+            FakeSearch(),
+            now=NOW,
+        )
+        return result, llm
+
+    def test_the_run_record_names_the_inferred_procedure_domain(self) -> None:
+        result, _llm = self._run()
+        # The inferred domain is never written back as a declared one.
+        self.assertIsNone(result["subject_domain"])
+        provenance = result["domain_provenance"]
+        self.assertEqual(provenance["resolved_domain"], "technical_procedure")
+        self.assertEqual(provenance["source"], "inferred")
+        self.assertEqual(provenance["inferred_from"], "goal_performance")
+        self.assertIsNone(provenance["target_language"])
+        # No language-course vocabulary warning and no general-default warning are invented.
+        self.assertFalse(any("language course" in w.lower() for w in result["warnings"]))
+        self.assertFalse(any("general course" in w for w in result["warnings"]))
+
+    def test_the_author_and_validator_are_handed_the_procedure_brief(self) -> None:
+        _result, llm = self._run()
+        plan_request = next(r for r in llm.requests if r.purpose == "coursebook.plan.generate")
+        payload = json.loads(plan_request.input_text)
+        self.assertEqual(payload["curriculum"]["domain"], "technical_procedure")
+        self.assertEqual(payload["curriculum"]["domain_source"], "inferred")
+        self.assertNotIn("language", payload["curriculum"])
+        self.assertIn("Subject domain: technical_procedure (inferred from the goal", plan_request.instructions)
+        for request in llm.requests:
+            if request.purpose != "coursebook.plan.validate":
+                continue
+            validated = json.loads(request.input_text)
+            self.assertEqual(validated["curriculum"]["domain"], "technical_procedure")
 
 
 # ── Source trust: round-2 P0-2 regressions ────────────────────────────────

@@ -103,7 +103,8 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         # H-89 adds the vocabulary-inventory block, so the prompt version advances (v4 -> v6)
         # without changing that range; H-195 adds the through-line and prerequisite-assumption
         # requirements and advances the label again (v6 -> v8), still with the same range.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v12")
+        # CP-015g/D1-F2 adds the resolved-subject-domain line (v12 -> v14), same range.
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v14")
         for scope, expected in (("single", "4 to 5"), ("short", "4 to 6"), ("full", "4 to 8")):
             with self.subTest(scope=scope):
                 text = gen._plan_instructions(
