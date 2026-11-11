@@ -2007,6 +2007,8 @@ export {
   FieldRail,
   FieldDeskHome,
   CoursebookHome,
+  HomeScene,
+  CB_HOME_SCENE,
   cbShelfEdgeMask,
   HomeLibraryPanel,
   HomeCourseCard,

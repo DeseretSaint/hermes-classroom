@@ -32,9 +32,13 @@ STATIC_HARNESS = r"""
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import fs from 'node:fs'
-import { CoursebookHome, FieldDeskHome, buildDeskModel, cbShelfEdgeMask } from './plugin.js'
 
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+// These assertions are about the compact Home. Pin the viewport below the 1200 px scene
+// breakpoint so a wide-route scene does not answer a compact-layout question. The width must be
+// set before plugin.js is evaluated, so the import is dynamic (a static import would hoist).
+globalThis.__CB_TEST_WIDTH__ = String(payload.width || 1049)
+const { CoursebookHome, FieldDeskHome, buildDeskModel, cbShelfEdgeMask } = await import('./plugin.js')
 
 const lib = (rows, overrides = {}) => ({
   items: rows,

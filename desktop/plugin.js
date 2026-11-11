@@ -3146,6 +3146,24 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  * routes. Art comes from the shipped object kit and each card's real cover artifact; no rating is
  * invented, the row under a title is the course's own section progress.
  */
+/* CP-053 — the scene's authored geometry, measured off the binding reference frame
+ * (`docs/concept-parity/refs/home-concept-owner.png`, 1344x768). Every number below is a pixel
+ * position on that canvas. `design/home-scene.html` is the standalone proof of the same layout and
+ * `tests/test_desktop_home_scene_geometry.py` pins the two together, so the proof cannot drift from
+ * the shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
+ * because the reference is a lit room, not the desk's flat paper.
+ */
+const CB_HOME_SCENE = Object.freeze({
+  canvas: Object.freeze({ width: 1344, height: 768 }),
+  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 6, ctaGap: 30, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
+  cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
+  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 8 }),
+  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
+  tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
+  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
+  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
+})
+
 function HomeSceneCard({ slot, index, onOpen }) {
   const row = (slot && slot.row) || {}
   const media = cbCoverMedia(row)
@@ -3156,54 +3174,56 @@ function HomeSceneCard({ slot, index, onOpen }) {
   const done = Number(row.sections_done) || 0
   const ratio = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0
   const rots = [-1.6, 0.8, -0.6, 1.4]
+  const geo = CB_HOME_SCENE.cards
   return jsxs('article', {
     'data-cb-home-scene-card': '',
     role: 'listitem',
     onClick: () => onOpen && onOpen(slot),
     style: {
-      width: '278px',
-      flex: '0 0 278px',
+      width: `${geo.width}px`,
+      height: `${geo.height}px`,
+      flex: `0 0 ${geo.width}px`,
       transform: `rotate(${rots[index % 4]}deg)`,
       transformOrigin: '50% 100%',
-      background: 'var(--cb3-card-stock, #fffdf4)',
-      border: '1px solid rgba(90,60,35,0.16)',
-      borderRadius: '10px',
-      boxShadow: '0 12px 20px -10px rgba(60,35,20,0.45)',
+      background: '#efe3cd',
+      border: '1px solid rgba(90,60,35,0.18)',
+      borderRadius: `${geo.radius}px`,
+      boxShadow: '0 10px 16px -9px rgba(60,35,20,0.5)',
       overflow: 'hidden',
       cursor: 'pointer',
       color: 'var(--cb3-ink, #16130f)'
     },
     children: [
       art
-        ? jsx('img', { src: art, alt: media.caption || '', style: { display: 'block', width: '100%', height: '170px', objectFit: 'cover' } }, 'art')
+        ? jsx('img', { src: art, alt: media.caption || '', style: { display: 'block', width: '100%', height: `${geo.cover}px`, objectFit: 'cover' } }, 'art')
         : jsx('div', {
             'data-cb-home-scene-cover': 'type',
             style: {
-              height: '170px',
+              height: `${geo.cover}px`,
               display: 'grid',
               placeItems: 'center',
               background: 'var(--cb3-terracotta-quiet, #f0d5c1)',
               fontFamily: 'var(--cb3-font-display, Georgia, serif)',
-              fontSize: '54px',
+              fontSize: '44px',
               color: 'var(--cb3-forest, #0d281b)'
             },
             children: (title.match(/[A-Za-z]/) || ['C'])[0].toUpperCase()
           }, 'cover'),
       jsxs('div', {
-        style: { padding: '10px 13px 13px' },
+        style: { padding: '8px 10px 10px' },
         children: [
           jsx('h3', {
-            style: { margin: 0, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '17px', lineHeight: 1.16, fontWeight: 600, color: 'inherit' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '15px', lineHeight: 1.15, fontWeight: 600, color: 'inherit' },
             children: title
           }, 'title'),
           jsx('div', {
             'aria-hidden': 'true',
-            style: { marginTop: '8px', height: '4px', borderRadius: '999px', background: 'rgba(90,60,35,0.16)', overflow: 'hidden' },
+            style: { marginTop: '9px', height: '5px', borderRadius: '999px', background: 'rgba(90,60,35,0.17)', overflow: 'hidden' },
             children: jsx('div', { style: { width: `${Math.round(ratio * 100)}%`, height: '100%', background: 'var(--cb3-gold, #a1741f)' } }, 'fill')
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            style: { margin: '6px 0 0', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '12px', color: 'var(--cb3-ink-soft, #5c5347)' },
+            style: { margin: '5px 0 0', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '11px', lineHeight: 1.3, color: 'var(--cb3-ink-soft, #5c5347)' },
             children: total > 0 ? `${done} of ${total} sections` : 'Not started'
           }, 'meta')
         ]
@@ -3215,39 +3235,54 @@ function HomeSceneCard({ slot, index, onOpen }) {
 function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
   const wood = cb3ObjectSource('shelf-plank')
   const clock = cb3ObjectSource('clock')
-  const plank = (top) => jsxs('div', {
-    'aria-hidden': 'true',
-    style: { position: 'absolute', left: '50px', right: '50px', top, height: '26px', zIndex: 2 }
-  }, `plank-${top}`)
+  const hero = CB_HOME_SCENE.hero
+  const geo = CB_HOME_SCENE.cards
+  const shelf = CB_HOME_SCENE.shelf
+  const ledge = CB_HOME_SCENE.ledge
+  const tag = CB_HOME_SCENE.tag
+  const clockGeo = CB_HOME_SCENE.clock
+  const foxGeo = CB_HOME_SCENE.fox
+  const plankFace = (planks) => ({
+    position: 'absolute', left: 0, right: 0, top: `${planks.height}px`, height: `${planks.face || 24}px`,
+    background: planks.faceColor, borderBottom: `2px solid ${planks.faceEdge}`
+  })
   return jsxs('div', {
     'data-cb-home': 'scene',
     'data-cb-home-scene': '',
-    style: { position: 'relative', width: '100%', maxWidth: '1344px', height: '768px', margin: '0 auto', overflow: 'hidden' },
+    style: {
+      position: 'relative',
+      width: '100%',
+      maxWidth: `${CB_HOME_SCENE.canvas.width}px`,
+      height: `${CB_HOME_SCENE.canvas.height}px`,
+      margin: '0 auto',
+      overflow: 'hidden',
+      background: 'linear-gradient(180deg, #eedcc4 0%, #f2ddc3 26%, #f3dfc6 52%, #efdac0 78%, #ecd6b9 100%)'
+    },
     children: [
       jsxs('div', {
-        style: { position: 'absolute', top: '104px', left: 0, right: 0, textAlign: 'center', zIndex: 4 },
+        style: { position: 'absolute', top: `${hero.top}px`, left: 0, right: 0, textAlign: 'center', zIndex: 4 },
         children: [
           jsx('h1', {
             'data-cb-home-question': '',
-            style: { margin: 0, fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: '62px', lineHeight: 1.05, fontWeight: 600, letterSpacing: '-0.6px', color: 'var(--cb3-forest, #123528)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: `${hero.title}px`, lineHeight: 1.05, fontWeight: 600, letterSpacing: `${hero.titleTracking}px`, color: '#0c2e1e' },
             children: CB_HOME_COPY.question
           }, 'question'),
-          jsx('p', { style: { margin: '15px 0 0', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '17.5px', color: 'var(--cb3-ink-soft, #2b4a3a)' }, children: CB_HOME_COPY.subline }, 'subline'),
+          jsx('p', { style: { margin: `${hero.sublineGap}px 0 0`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: `${hero.subline}px`, lineHeight: 1.15, fontWeight: 500, color: '#0c2a1b' }, children: CB_HOME_COPY.subline }, 'subline'),
           jsxs('div', {
-            style: { marginTop: '24px', display: 'flex', gap: '18px', justifyContent: 'center' },
+            style: { marginTop: `${hero.ctaGap}px`, display: 'flex', gap: `${hero.ctaGapX}px`, justifyContent: 'center' },
             children: [
               canCreate
                 ? jsx('button', {
                     type: 'button',
                     onClick: onStartCreate,
-                    style: { border: 0, borderRadius: '999px', padding: '14px 27px', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#cf7053', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
+                    style: { border: 0, borderRadius: '999px', height: `${hero.ctaHeight}px`, padding: `0 ${hero.ctaPadding}px`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#d17354', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
                     children: CB_HOME_COPY.create
                   }, 'create')
                 : null,
               jsx('button', {
                 type: 'button',
                 onClick: onBrowseLibrary,
-                style: { border: 0, borderRadius: '999px', padding: '14px 27px', fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#dd8a6c', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
+                style: { border: 0, borderRadius: '999px', height: `${hero.ctaHeight}px`, padding: `0 ${hero.ctaPadding}px`, fontFamily: 'var(--cb3-font-ui, sans-serif)', fontSize: '16px', fontWeight: 600, color: '#fff', background: '#d87858', boxShadow: '0 2px 3px rgba(70,40,20,0.18)', cursor: 'pointer' },
                 children: CB_HOME_COPY.browse
               }, 'browse')
             ]
@@ -3257,42 +3292,42 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
       jsx('div', {
         role: 'list',
         'aria-label': CB_HOME_COPY.shelf,
-        style: { position: 'absolute', top: '372px', left: '62px', right: '62px', height: '268px', display: 'flex', gap: '20px', alignItems: 'flex-end', zIndex: 3 },
+        style: { position: 'absolute', top: `${geo.top}px`, left: `${geo.left}px`, height: `${geo.height}px`, display: 'flex', gap: `${geo.gap}px`, alignItems: 'flex-end', zIndex: 3 },
         children: slots.slice(0, 4).map((slot, index) =>
           jsx(HomeSceneCard, { slot, index, onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
         )
       }, 'cards'),
-      jsx('div', {
+      jsxs('div', {
         'aria-hidden': 'true',
         style: {
-          position: 'absolute', left: '50px', right: '50px', top: '640px', height: '35px', zIndex: 1,
+          position: 'absolute', left: `${shelf.left}px`, width: `${shelf.width}px`, top: `${shelf.top}px`, height: `${shelf.height}px`, zIndex: 1,
           backgroundImage: wood ? `url(${wood})` : undefined,
           backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 26px',
+          backgroundSize: 'auto 100%',
           backgroundColor: wood ? undefined : 'var(--cb3-wood, #a5763f)',
-          borderBottom: '2px solid var(--cb3-wood-edge, #6b4524)',
-          boxShadow: '0 8px 14px -6px rgba(55,30,15,0.5)'
-        }
+          borderBottom: '2px solid #7d5529',
+          boxShadow: '0 7px 14px -5px rgba(55,30,15,0.55)'
+        },
+        children: jsx('div', { style: plankFace({ height: shelf.height, face: shelf.lip, faceColor: '#b09a84', faceEdge: '#8d7963' }) })
       }, 'plank-one'),
       jsx('div', {
-        style: { position: 'absolute', left: '886px', top: '626px', width: '152px', height: '82px', background: '#fdf8ea', border: '1.5px solid #2a2118', transform: 'rotate(-3deg)', display: 'grid', placeItems: 'center', fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: '22px', color: '#1d1a14', zIndex: 4, boxShadow: '0 4px 6px rgba(60,35,20,0.18)' },
+        style: { position: 'absolute', left: `${tag.left}px`, top: `${tag.top}px`, width: `${tag.width}px`, height: `${tag.height}px`, background: '#f4e6cd', border: '1.5px solid #3a2c1e', transform: 'rotate(-3deg)', display: 'grid', placeItems: 'center', fontFamily: 'var(--cb3-font-display, Georgia, serif)', fontSize: `${tag.font}px`, color: '#2a2118', zIndex: 4, boxShadow: '0 4px 6px rgba(60,35,20,0.2)' },
         children: 'New course'
       }, 'tag'),
       clock
-        ? jsx('img', { src: clock, alt: '', 'aria-hidden': 'true', style: { position: 'absolute', left: '1052px', top: '590px', width: '152px', height: '152px', zIndex: 4 } }, 'clock')
+        ? jsx('img', { src: clock, alt: '', 'aria-hidden': 'true', style: { position: 'absolute', left: `${clockGeo.left}px`, top: `${clockGeo.top}px`, width: `${clockGeo.size}px`, height: `${clockGeo.size}px`, zIndex: 4 } }, 'clock')
         : null,
-      jsx('div', { style: { position: 'absolute', left: '1150px', top: '520px', zIndex: 5 }, children: jsx(FoxPose, { pose: 'clock', size: 196 }, 'fox') }, 'fox-wrap'),
-      jsx('div', {
+      jsx('div', { style: { position: 'absolute', left: `${foxGeo.left}px`, top: `${foxGeo.top}px`, zIndex: 5 }, children: jsx(FoxPose, { pose: 'clock', size: foxGeo.size }, 'fox') }, 'fox-wrap'),
+      jsxs('div', {
         'aria-hidden': 'true',
         style: {
-          position: 'absolute', left: '50px', right: '50px', top: '714px', height: '36px', zIndex: 1,
+          position: 'absolute', left: `${ledge.left}px`, width: `${ledge.width}px`, top: `${ledge.top}px`, height: `${ledge.height}px`, zIndex: 1,
           backgroundImage: wood ? `url(${wood})` : undefined,
           backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 26px',
-          backgroundColor: wood ? undefined : 'var(--cb3-wood, #a5763f)',
-          borderBottom: '2px solid var(--cb3-wood-edge, #6b4524)',
-          boxShadow: '0 8px 14px -6px rgba(55,30,15,0.5)'
-        }
+          backgroundSize: 'auto 100%',
+          backgroundColor: wood ? undefined : 'var(--cb3-wood, #a5763f)'
+        },
+        children: jsx('div', { style: plankFace({ height: ledge.height, face: ledge.face, faceColor: '#ad8663', faceEdge: '#6b4a2c' }) })
       }, 'plank-two')
     ]
   })
@@ -37738,6 +37773,8 @@ export {
   FieldRail,
   FieldDeskHome,
   CoursebookHome,
+  HomeScene,
+  CB_HOME_SCENE,
   cbShelfEdgeMask,
   HomeLibraryPanel,
   HomeCourseCard,
