@@ -780,7 +780,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v16",
+      "prompt_version": "plan-prompt.v18",
       "warning": null
     },
     "attempt_rows": [
@@ -935,7 +935,7 @@
     "plan_scope": "full",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v16",
+    "prompt_version": "plan-prompt.v18",
     "schema_name": "coursebook_plan_v2",
     "sections": 12,
     "units": 6,
@@ -1470,7 +1470,7 @@
       "sources": [
         {
           "content_hash": "sha256:8d35aa82ce62ba1aed94e1808a398e5d20641679bf80960d1d2f7bc1e94ef08d",
-          "excerpt": "150909 SOLDERING, ASSEMBLY, # AND MANUFACTURING [Image: Image6] George Hadley ©2014, Images Property of their Respective Owners. --- ## OUTLINE • Importance of soldering • Soldering equipment, tools, and supplies • How do solder and flux work? • Electrostatic discharge (ESD) and safety considerations • Through-hole soldering techniques • Surface mount soldering techniques • Hot air rework • Common soldering pitfalls --- ## IMPORTANCE OF SOLDERING • Valuable engineering skill (in research, entrepreneurship, or industry) • Able to correct minor hardware issues discovered after PCB is received (“flywiring”) • Able to fabricate one-off prototypes, designs, and proof-of-concepts --- ## SOLDERING EQUIPMENT AND TOOLS ## Soldering Iron, Sponge, Tips ### • Soldering Iron: • Temperature controlled, heats soldering probe ### • Soldering Probe: • Detachable probe, used for probing in circuit; transfers heat to board ### • Soldering Tips: • Interchangeable tips; changes heat profile at board contact point (different tips for different jobs) • Soldering Base/Holder: • Holds soldering probe when not in use ### • Soldering Sponge/Brass: • Used for cleaning solder, oxidation, and impurities from ti",
+          "excerpt": "150909 SOLDERING, ASSEMBLY, # AND MANUFACTURING [Image: Image6] George Hadley ©2014, Images Property of their Respective Owners. --- ## OUTLINE • Importance of soldering • Soldering equipment, tools, and supplies • How do solder and flux work?",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1486,7 +1486,7 @@
         },
         {
           "content_hash": "sha256:4f4de4ce3cd779e3b9e82e4944f3eb50bdc3386f4dab8a8204e558e4214f76b6",
-          "excerpt": "You will likely need to solder components during the course, particularly for the final project. Your instructors and TAs are happy to help, but the resources below will help you get started. Before soldering, review the [soldering safety guidelines](https://physicslabs.colorado.edu/courses/phys-3330/resources/lab-safety/#soldering-safety) on the Lab Safety page. ## The Basics [Copy link to section](https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/\\#the-basics \"Copy link to section\") A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely. A bad joint looks dull, blobby, or cracked. The most common beginner mistakes are: - **Not heating both surfaces.** Touch the iron tip to both the pad and the lead simultaneously, then feed solder into the joint. If you only heat one surface, the solder won’t flow properly and you’ll get a cold joint. - **Too much solder.** You need less than you think. A small, concave fillet is ideal. Large blobs can bridge adjacent pads and create shorts. - **Moving too soon.** Hold the component steady until the solder solidifies (about a second). Moving the joint while it cools c",
+          "excerpt": "You will likely need to solder components during the course, particularly for the final project. Your instructors and TAs are happy to help, but the resources below will help you get started. Before soldering, review the [soldering safety guidelines](https://physicslabs.colorado.edu/courses/phys-3330/resources/lab-safety/#soldering-safety) on the Lab Safety page. ## The Basics [Copy link to section](https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/\\#the-basics \"Copy link to section\") A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely. A bad joint looks dull, blobby, or cracked. The most common beginner mistakes are: - **Not heating both surfaces.** Touch the iron tip to both the pad and the lead simultaneously, then feed solder into the joint. If you only heat one surface, the solder won’t flow properly and you’ll get a cold joint. - **Too much solder.** You need less than you think. A small, concave fillet is ideal. Large blobs can bridge adjacent pads and create shorts. - **Moving too soon.** Hold the component steady until the solder solidifies (about a second).",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1502,7 +1502,7 @@
         },
         {
           "content_hash": "sha256:b3a0187de6742fa2d57f887d854d6df2ab33c46ac5c5d5b17a1e9b9b0d937083",
-          "excerpt": "## TN1225 ### Mounting instructions for THD (through-hole device) packages #### Introduction The mounting instructions herein provide the main recommendations to appropriately handle, assemble and rework through‑hole device packages. It is necessary to follow some basic assembly rules to limit thermal and mechanical stresses or ensure optimal thermal conduction and electrical insulation. STPOWER --- ### Package description In the through-hole device packages the leads of these type of devices (THD packages) are longer and straight at the end, so that they can be inserted into drilled holes in PCBs and attached by wave soldering. An extra heat sink can be either mounted on the heat slug or exposed die pad. Depending on the process and technology, this requires an extra process before or after soldering the leads. The figure below shows examples of THD packages. **Figure 1. Example of THD packages** TO-220 TO-247 TO247-4 I²PAK IPAK TO-3P TO-220FP Max247 TO-3PF #### 1.1 Thermal performance The thermal resistance of semiconductor assembly is the parameter which characterizes its resistance to the heat flow generated by the junction during operation. A temperature exceeding the maximum",
+          "excerpt": "## TN1225 ### Mounting instructions for THD (through-hole device) packages #### Introduction The mounting instructions herein provide the main recommendations to appropriately handle, assemble and rework through‑hole device packages. It is necessary to follow some basic assembly rules to limit thermal and mechanical stresses or ensure optimal thermal conduction and electrical insulation. STPOWER --- ### Package description In the through-hole device packages the leads of these type of devices (THD packages) are longer and straight at the end, so that they can be inserted into drilled holes in PCBs and attached by wave soldering. An extra heat sink can be either mounted on the heat slug or exposed die pad. Depending on the process and technology, this requires an extra process before or after soldering the leads. The figure below shows examples of THD packages. **Figure 1. Example of THD packages** TO-220 TO-247 TO247-4 I²PAK IPAK TO-3P TO-220FP Max247 TO-3PF #### 1.1 Thermal performance The thermal resistance of semiconductor assembly is the parameter which characterizes its resistance to the heat flow generated by the junction during operation.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1518,7 +1518,7 @@
         },
         {
           "content_hash": "sha256:465d8f2308a00d9cb8cd4e332089f4e29567dc8fe46a905a20b60498eca40731",
-          "excerpt": "Free Shipping on Domestic Orders $75+ Perhaps you’re at the same point in your repair journey as me: I know my way around a screwdriver and spudger, have popped many a cable and swapped my share of puffy batteries. But whenever I would come across soldered connections, the ghastly anti-repair corporate rhetoric swirled in my mind: _Contact a certified technician!_ Determined to overcome this barrier, I decided to take matters into my own hands. I sought advice from colleagues, watched instructional videos, explored forums, and even enrolled in a short primer class to boost my confidence and give me the basic knowledge to take the plunge. To document my journey and face down my fears, I chose to share my experiences in this blog. While there’s a handful of soldering disciplines, this piece focuses on simple through-hole soldering. I’m going to go over my thought process setting up my workstation, then hop right into a through-hole soldering project. ## Setting Up My Workstation There’s loads of soldering gadgets and doodads on the market, but I was interested in rounding up the basics so I could get right into soldering without any fluff! I was able to furnish my workstation with pa",
+          "excerpt": "Free Shipping on Domestic Orders $75+ Perhaps you’re at the same point in your repair journey as me: I know my way around a screwdriver and spudger, have popped many a cable and swapped my share of puffy batteries. But whenever I would come across soldered connections, the ghastly anti-repair corporate rhetoric swirled in my mind: _Contact a certified technician!_ Determined to overcome this barrier, I decided to take matters into my own hands. I sought advice from colleagues, watched instructional videos, explored forums, and even enrolled in a short primer class to boost my confidence and give me the basic knowledge to take the plunge. To document my journey and face down my fears, I chose to share my experiences in this blog. While there’s a handful of soldering disciplines, this piece focuses on simple through-hole soldering. I’m going to go over my thought process setting up my workstation, then hop right into a through-hole soldering project. ## Setting Up My Workstation There’s loads of soldering gadgets and doodads on the market, but I was interested in rounding up the basics so I could get right into soldering without any fluff!",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1550,7 +1550,7 @@
         },
         {
           "content_hash": "sha256:71a8d510b5fbd24d6cd167b48e49fe3cd52fb752774ea9f15e39716fbc3c0fc3",
-          "excerpt": "![Soldering Glossary of Terms](https://guide-images.cdn.ifixit.com/igi/TDgoeawDbxoyFFrR.standard) # Soldering Glossary of Terms Here's a place to find out what all of the soldering terms mean. Author: [Bill Gilbert](https://www.ifixit.com/User/4152395/Bill+Gilbert)(and 3 other contributors) ### Table of Contents [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Alloy \"Link to this section\") A mixture of two or more elements (usually metallic) that have properties differing from the pure elements. [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Bridging \"Link to this section\") A soldering defect where excess solder creates an unintended connection between two adjacent conductors or terminals [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Cold_Joint \"Link to this section\") A poor solder joint that results from insufficient heat or improper soldering technique. Often, repeated reheating of a joint without additional flux will cause this. [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Desoldering \"Link to this section\") The process",
+          "excerpt": "![Soldering Glossary of Terms](https://guide-images.cdn.ifixit.com/igi/TDgoeawDbxoyFFrR.standard) # Soldering Glossary of Terms Here's a place to find out what all of the soldering terms mean. Author: [Bill Gilbert](https://www.ifixit.com/User/4152395/Bill+Gilbert)(and 3 other contributors) ### Table of Contents [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Alloy \"Link to this section\") A mixture of two or more elements (usually metallic) that have properties differing from the pure elements. [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Bridging \"Link to this section\") A soldering defect where excess solder creates an unintended connection between two adjacent conductors or terminals [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Cold_Joint \"Link to this section\") A poor solder joint that results from insufficient heat or improper soldering technique. Often, repeated reheating of a joint without additional flux will cause this.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1706,8 +1706,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10717,
-            "output_tokens": 1816,
+            "input_tokens": 9645,
+            "output_tokens": 1884,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1852,8 +1852,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10722,
-            "output_tokens": 1820,
+            "input_tokens": 9650,
+            "output_tokens": 1888,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1998,8 +1998,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10682,
-            "output_tokens": 1809,
+            "input_tokens": 9610,
+            "output_tokens": 1877,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2144,8 +2144,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10655,
-            "output_tokens": 1779,
+            "input_tokens": 9583,
+            "output_tokens": 1847,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2290,8 +2290,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10715,
-            "output_tokens": 1826,
+            "input_tokens": 9643,
+            "output_tokens": 1894,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2436,8 +2436,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10714,
-            "output_tokens": 1823,
+            "input_tokens": 9642,
+            "output_tokens": 1891,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2877,7 +2877,7 @@
           12,
           40
         ],
-        "prompt_version": "plan-prompt.v16",
+        "prompt_version": "plan-prompt.v18",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           2,
@@ -2890,7 +2890,7 @@
       },
       "research": {
         "fetches": 6,
-        "queries": 10,
+        "queries": 12,
         "status": "ok"
       },
       "result": {
@@ -2904,7 +2904,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v16",
+          "prompt_version": "plan-prompt.v18",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -2919,7 +2919,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v16",
+          "prompt_version": "plan-prompt.v18",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -2936,15 +2936,17 @@
         "research": {
           "queries": [
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+            "Prepare for a first soldering repair on a through-hole PCB official procedure steps safety limits",
+            "safety official procedure steps safety limits",
+            "component placement official procedure steps safety limits",
+            "joints official procedure steps safety limits",
+            "inspection official procedure steps safety limits",
+            "desoldering official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. how to teach curriculum sequence",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. common mistakes",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. examples and practice",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. step by step",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. glossary"
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance"
           ],
           "reason": null,
           "status": "ok"
@@ -2981,8 +2983,8 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 32226,
-          "output_tokens": 2134,
+          "input_tokens": 30062,
+          "output_tokens": 2167,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -3125,8 +3127,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6126,
-            "output_tokens": 517,
+            "input_tokens": 5522,
+            "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3184,8 +3186,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6122,
-            "output_tokens": 504,
+            "input_tokens": 5517,
+            "output_tokens": 538,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3243,8 +3245,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6110,
-            "output_tokens": 503,
+            "input_tokens": 5505,
+            "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3302,8 +3304,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6116,
-            "output_tokens": 505,
+            "input_tokens": 5512,
+            "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3361,8 +3363,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6120,
-            "output_tokens": 509,
+            "input_tokens": 5515,
+            "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -3420,8 +3422,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 6137,
-            "output_tokens": 508,
+            "input_tokens": 5532,
+            "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false
           },

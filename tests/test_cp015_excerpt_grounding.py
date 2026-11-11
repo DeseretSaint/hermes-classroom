@@ -45,7 +45,13 @@ class ExcerptContentTest(unittest.TestCase):
         self.assertIn("sunlit half faces Earth", text)
 
     def test_window_is_bounded(self) -> None:
-        self.assertEqual(len(research._excerpt("prose " * 2000, 300)), 300)
+        # CP-015a R-3 changed this contract by ruling: the window now ends on the last sentence
+        # boundary at or before the ceiling, so it can only be shorter than the ceiling and the
+        # old "== 300" assertion is now a "<= 300" plus a boundary assertion.
+        self.assertLessEqual(len(research._excerpt("prose " * 2000, 300)), 300)
+        bounded = research._excerpt("A starter is alive and active. " * 100, 300)
+        self.assertLessEqual(len(bounded), 300)
+        self.assertTrue(bounded.endswith("."), bounded[-40:])
 
     def test_plain_prose_is_not_stripped(self) -> None:
         text = research._excerpt("A constellation is a group of stars.\nIt has no boundary.", 200)
@@ -90,15 +96,16 @@ class PlanSourcingRulesTest(unittest.TestCase):
                 self.assertNotIn("Cover the goal:", text)
                 self.assertIn("assess every evidence criterion", text)
                 # A check exercises the capability, not the source's wording; a goal the ledger
-                # cannot support is named as out of scope in the learner_outcome too; a
-                # prerequisite edge must name a shared concept.
+                # cannot support is recorded in exclusions and kept out of the learner_outcome
+                # (CP-015a: naming it there is refused by the rule gate); a prerequisite edge must
+                # name a shared concept.
                 self.assertIn("not to recall the source's wording", text)
-                self.assertIn("out of scope", text)
+                self.assertIn("Do not name the excluded capability in learner_outcome", text)
                 self.assertIn("false ordering", text)
 
     def test_plan_prompt_versions_are_current(self) -> None:
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v15")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v16")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v17")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v18")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):

@@ -574,7 +574,10 @@ class ResearchTest(GenerationTestBase):
         self.assertLessEqual(single.max_sources, single.max_pages)
 
     def test_failed_fetches_keep_their_urls_and_degrade(self) -> None:
-        seam = ExpandingSearch(fail_suffixes=("/3",))
+        # CP-015a R-1b: selection takes the first page of every query before any second page, so a
+        # failure has to be planted on a URL the pass actually fetches. The goal query's own first
+        # page is always fetched; a suffix deeper in one query's list may never be reached.
+        seam = ExpandingSearch(fail_suffixes=("/greetings/0",))
         run = research.run_research(
             "greetings", recipe="committed", dials={"depth": "working"}, scope="single", search=seam, now=NOW
         )
@@ -709,7 +712,10 @@ class PlanJobTest(GenerationTestBase):
             validation_responder,
         )
 
-        seam = ExpandingSearch(fail_suffixes=("/3",))
+        # CP-015a R-1b: one page per query is taken before any second page, so plant the failure
+        # on the first page of every query — the survivors are the second-pass pages, which is
+        # exactly the degraded pass this test is about.
+        seam = ExpandingSearch(fail_suffixes=("/0",))
         scoped = blueprint_plan(scope="full", units=2, objectives_per_unit=6)
         result = gen.run_plan_job(
             self.connection,
@@ -929,7 +935,14 @@ class PlanJobTest(GenerationTestBase):
 
     def test_rejected_plan_regenerates_once_with_reasons_then_records_conflict(self) -> None:
         conflict = fixture("validation_pass")
-        conflict["criteria"][1] = {"id": "source_support", "verdict": "fail", "reason": "the source contradicts the claim"}
+        # By id, not by position: the criteria list is now eleven entries and CP-015a inserted
+        # goal_capability_disclosure at index 1.
+        conflict["criteria"] = [
+            {"id": "source_support", "verdict": "fail", "reason": "the source contradicts the claim"}
+            if entry.get("id") == "source_support"
+            else entry
+            for entry in conflict["criteria"]
+        ]
         conflict["rejections"] = [
             {
                 "item": "objective:1",
@@ -1965,6 +1978,16 @@ class SourceTrustTest(GenerationTestBase):
     def test_validator_invented_provenance_is_flagged_and_downgraded(self) -> None:
         run = self._run()
         report = fixture("validation_pass")
+        # The recorded answer predates CP-015a's eleventh criterion; a wide report must still answer
+        # every criterion the review asks for, so the slot is supplied here rather than weakening
+        # the "validator must answer every criterion" rule.
+        report["criteria"].append(
+            {
+                "id": "goal_capability_disclosure",
+                "verdict": "pass",
+                "reason": "every goal capability maps to an objective or an exclusion",
+            }
+        )
         report["claim_verdicts"][0]["reason"] = (
             "confirmed by https://invented.invalid/authority which the ledger never fetched"
         )

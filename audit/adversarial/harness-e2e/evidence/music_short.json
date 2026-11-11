@@ -269,7 +269,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v16",
+      "prompt_version": "plan-prompt.v18",
       "warning": null
     },
     "attempt_rows": [
@@ -340,7 +340,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v16",
+    "prompt_version": "plan-prompt.v18",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -868,7 +868,7 @@
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
             "input_tokens": 4330,
-            "output_tokens": 1813,
+            "output_tokens": 1881,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1014,7 +1014,7 @@
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
             "input_tokens": 4404,
-            "output_tokens": 1870,
+            "output_tokens": 1938,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1178,7 +1178,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v16",
+        "prompt_version": "plan-prompt.v18",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1191,7 +1191,7 @@
       },
       "research": {
         "fetches": 1,
-        "queries": 4,
+        "queries": 6,
         "status": "ok"
       },
       "result": {
@@ -1205,7 +1205,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v16",
+          "prompt_version": "plan-prompt.v18",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1220,7 +1220,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v16",
+          "prompt_version": "plan-prompt.v18",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
@@ -1237,9 +1237,11 @@
         "research": {
           "queries": [
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
+            "Understand intervals",
+            "triads",
+            "the circle of fifths well enough to analyse a pop song",
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives",
-            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence",
-            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. prerequisite knowledge learning progression"
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence"
           ],
           "reason": null,
           "status": "ok"
@@ -1276,8 +1278,8 @@
           "calls": 4,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 4871,
-          "output_tokens": 1158,
+          "input_tokens": 4861,
+          "output_tokens": 1191,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -1397,7 +1399,7 @@
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
             "input_tokens": 1262,
-            "output_tokens": 525,
+            "output_tokens": 559,
             "unknown_calls": 0,
             "unknown_cost": false
           },
@@ -1456,7 +1458,7 @@
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
             "input_tokens": 1280,
-            "output_tokens": 524,
+            "output_tokens": 558,
             "unknown_calls": 0,
             "unknown_cost": false
           },

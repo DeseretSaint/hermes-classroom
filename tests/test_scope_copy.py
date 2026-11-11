@@ -104,7 +104,7 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
         # without changing that range; H-195 adds the through-line and prerequisite-assumption
         # requirements and advances the label again (v6 -> v8), still with the same range.
         # CP-015's ledger-first authoring rule advances the label to v13; the range is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v15")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v17")
         for scope, expected in (("single", "4 to 5"), ("short", "4 to 6"), ("full", "4 to 8")):
             with self.subTest(scope=scope):
                 text = gen._plan_instructions(

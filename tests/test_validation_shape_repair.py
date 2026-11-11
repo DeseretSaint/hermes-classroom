@@ -97,16 +97,31 @@ def _owned_criteria(request: gen.LLMRequest | None) -> list[str]:
 def _narrow_to_pass(document: dict, request: gen.LLMRequest | None) -> dict:
     """Answer exactly the pass: its criteria, its rejections, its claims.
 
-    H-192b splits the review into passes of five criteria, so a recorded ten-criterion answer
-    would fail the narrowed schema on ``criteria`` (too long) before the shape under test is
-    reached. Narrowing keeps the recorded text and only removes what another pass owns.
+    H-192b splits the review into passes, so a recorded wide answer would fail the narrowed schema
+    on ``criteria`` (too long) before the shape under test is reached. Narrowing keeps the recorded
+    text and only removes what another pass owns. CP-015a added an eleventh criterion, so a pass can
+    own a criterion the recorded answer predates; that slot is filled with a plain ``pass`` entry
+    (as ``tests/blueprint_support.narrowed_validation_answer`` does) rather than letting the count
+    be what the schema rejects — the recorded defect under test here is the over-long ``item``.
     """
-    owned = set(_owned_criteria(request))
+    owned = _owned_criteria(request)
+    owned_set = set(owned)
     document["criteria"] = [
-        entry for entry in document.get("criteria") or [] if entry.get("id") in owned
+        entry for entry in document.get("criteria") or [] if entry.get("id") in owned_set
     ]
+    if ((_claim_block(request).get("criteria") or {}) if request is not None else {}):
+        answered = {entry.get("id") for entry in document["criteria"]}
+        document["criteria"].extend(
+            {
+                "id": criterion,
+                "verdict": "pass",
+                "reason": "nothing in the artifact contradicts this criterion",
+            }
+            for criterion in owned
+            if criterion not in answered
+        )
     document["rejections"] = [
-        entry for entry in document.get("rejections") or [] if entry.get("criterion") in owned
+        entry for entry in document.get("rejections") or [] if entry.get("criterion") in owned_set
     ]
     return _with_claims(document, request)
 

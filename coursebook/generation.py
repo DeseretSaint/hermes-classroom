@@ -184,7 +184,13 @@ logger = logging.getLogger("coursebook.generation")
 #: v13: the plan author is ledger-first — it may state only objectives a supplied excerpt
 #: carries, may stay short, and records an unsupported goal capability in exclusions instead of
 #: inventing an objective (CP-015).
-PLAN_PROMPT_VERSION = "plan-prompt.v15"
+#: v17 (CP-015a): the exclusions rule no longer asks the author to name the removed capability in
+#: ``learner_outcome`` — that line fought the goal-coverage criterion, because a plan cannot both
+#: promise and exclude the same capability. The rule gate ``goal_outcome_integrity_reasons`` now
+#: refuses the contradiction deterministically, so the prompt states the authoring rule that
+#: satisfies it. The label advances past every label already shipped (v15 here, v16 for the
+#: blueprint prompt).
+PLAN_PROMPT_VERSION = "plan-prompt.v17"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -196,7 +202,9 @@ PLAN_PROMPT_VERSION = "plan-prompt.v15"
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
 #: v14: the ledger-first authoring rule, the short-course rule and the exclusions record (CP-015).
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v16"
+#: v18 (CP-015a): same exclusions/outcome-integrity rule as the v1 prompt's v17 — the shared
+#: ``_plan_sourcing_rules`` text changed, so both labels advance.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v18"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -221,10 +229,18 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: read before answering, which is the H-191 lesson applied again.
 VALIDATION_PROMPT_VERSION = "validation-prompt.v6"
 
-#: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
+#: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
+#:
+#: ``goal_capability_disclosure`` (CP-015a) is the goal-coverage completeness check: the validator
+#: lists the capabilities the *goal* names and maps each one to a covered objective or to an
+#: ``exclusions`` entry. A goal capability in neither is a reject. It replaces the old reading of
+#: ``objective_alignment`` under which the plan had to deliver the raw goal sentence — a promise a
+#: bounded ledger can never keep. ``objective_alignment`` keeps its other jobs (curriculum
+#: sequence, unit prerequisites, the matching of an objective to the goal it serves).
 VALIDATION_CRITERIA: tuple[str, ...] = (
     "objective_alignment",
+    "goal_capability_disclosure",
     "source_support",
     "factual_correctness",
     "answer_uniqueness",
@@ -234,6 +250,14 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
     "answer_leakage",
     "hazard_age_appropriateness",
     "evidence_target_fit",
+)
+
+#: Plan criteria that do not apply to a lesson or a unit-section batch. Those artifacts carry no
+#: goal and no ``exclusions``, so asking a validator to judge disclosure over one would demand a
+#: verdict it has no evidence for, and ``unknown`` is not a pass. ``validation_verdict`` is given
+#: this set for those stages, so a lesson draft is never refused for a plan-level proposition.
+LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
+    criterion for criterion in VALIDATION_CRITERIA if criterion != "goal_capability_disclosure"
 )
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
@@ -2808,12 +2832,22 @@ VALIDATION_SCHEMA: dict[str, Any] = {
 #: plan it was still running at the 600 s deadline (job failed ``HOST_UNAVAILABLE``), and on a
 #: short plan it emitted 22 325 tokens / 539 s. Ten criteria reasoned over a full plan is not a
 #: fixed demand. The criteria set is therefore split into two passes of five: every pass now
-#: answers a fixed maximum (five criteria, six claims), independent of plan size, and the two
+#: answers a fixed maximum (at most six criteria, six claims), independent of plan size, and the two
 #: halves run together (max of the two, not the sum).
 VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
-    VALIDATION_CRITERIA[:5],
-    VALIDATION_CRITERIA[5:],
+    # CP-015a adds an eleventh criterion. The split stays two passes of a fixed maximum (six and
+    # five criteria) so no pass's verdict count grows with plan size — the H-192b property this
+    # ledger exists to protect. ``objective_alignment`` and ``goal_capability_disclosure`` share a
+    # pass because both read the same goal/outcome text, and their narrowed prompts state both
+    # rubrics together.
+    VALIDATION_CRITERIA[:6],
+    VALIDATION_CRITERIA[6:],
 )
+
+#: The most criteria one validation pass may demand. Fixed by the layout above, never a function
+#: of plan size — the property H-192b bought with the split, and the reason a criterion may not be
+#: appended to the widest pass without re-checking the demand measurement.
+VALIDATION_CRITERIA_PER_PASS_MAX = max(len(batch) for batch in VALIDATION_CRITERIA_PASSES)
 
 #: Most claim-support verdicts one validation pass may demand.
 #:
@@ -2908,6 +2942,19 @@ VALIDATION_AUX_DEFAULTS: dict[str, Any] = {
 #: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
 #: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
 _PLAN_SEQUENCE_CRITERION = "objective_alignment"
+
+#: CP-015a: the goal-coverage completeness criterion. The rubric is stated in the pass that owns
+#: it, because the pass answers a narrowed schema and an unstated rule is a trap (H-191).
+_PLAN_DISCLOSURE_CRITERION = "goal_capability_disclosure"
+
+_PLAN_DISCLOSURE_RULE = (
+    " Also judge goal coverage under goal_capability_disclosure: list every capability the goal "
+    "names, and map each one either to an objective that covers it or to an entry in the plan's "
+    "exclusions. A goal capability that appears in neither is a reject: silence about a capability "
+    "the learner asked for is the failure this criterion exists to catch. A capability the plan "
+    "honestly records as excluded is disclosed, not covered — do not reject a plan for disclosing "
+    "a gap, and do not pass one that hides it."
+)
 
 
 def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
@@ -3054,6 +3101,8 @@ def validation_pass_instructions(
             "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
             "language-coverage claim is unsourced or treats coverage as comprehension."
         )
+    if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
+        text += _PLAN_DISCLOSURE_RULE
     return text
 
 
@@ -3084,8 +3133,9 @@ def merge_validation_reports(
     """Combine one report per validation pass into the single report ``validation_verdict`` reads.
 
     ``passes`` is one ``(owned_criteria, report)`` pair per pass. Nothing is dropped to make the
-    merge succeed: every one of the ten criteria must arrive from the pass that owns it, so a pass
-    that answered only part of its batch is a typed rejection rather than a smaller review. The
+    merge succeed: every criterion in :data:`VALIDATION_CRITERIA` must arrive from the pass that
+    owns it, so a pass that answered only part of its batch is a typed rejection rather than a
+    smaller review. The
     merged report keeps the shape and the meaning ``validation_verdict`` already relies on
     (``outcome``, ``independence`` and the recorded validator identity are computed there, not
     here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
@@ -3677,10 +3727,12 @@ def _plan_sourcing_rules() -> list[str]:
         "A check item must require the learner to perform the objective's capability, not to recall "
         "the source's wording. 'What does the guide say it examines?' is recall of a document; "
         "'describe the Moon's changing shape' is the capability. Write the second kind.",
-        "When the goal names a capability the ledger cannot support, say so in learner_outcome as "
-        "well as in exclusions: name what the course does cover and that the unsupported "
-        "capability is out of scope. A learner_outcome that still promises it contradicts the "
-        "plan's own exclusions and is rejected as goal coverage.",
+        "When the goal names a capability the ledger cannot support, record it in exclusions with "
+        "the prefix 'Not covered — no supporting source:' and say in learner_outcome only what "
+        "the course does cover. Do not name the excluded capability in learner_outcome, in an "
+        "objective title or in an objective's evidence criteria: a plan whose stated outcome "
+        "promises a capability its own exclusions remove is refused by the goal-coverage rule "
+        "before any validator reads it.",
         "Declare a prerequisite unit edge only when an earlier unit's concept is genuinely required "
         "by the later unit's goal. Do not add an edge to show a sequence; a prerequisite with no "
         "shared concept is a false ordering.",
@@ -4739,6 +4791,124 @@ def _enforce_plan_rules_v1(
         raise _RuleViolation(reasons)
 
 
+#: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
+#: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
+#: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
+EXCLUSION_PREFIX = "Not covered — no supporting source:"
+
+#: Tolerate the punctuation a model actually writes for that prefix (hyphen, en dash, missing
+#: space) rather than only the em dash the prompt shows. The *meaning* is unchanged.
+_EXCLUSION_PREFIX_RE = re.compile(
+    r"^\s*not\s+covered\s*[—–\-:]+\s*no\s+supporting\s+source\s*:\s*", re.IGNORECASE
+)
+
+
+def excluded_capabilities(plan: Mapping[str, Any]) -> list[str]:
+    """The capability phrases the plan's own ``exclusions`` record as unsupported, in order.
+
+    An entry without the ``Not covered — no supporting source:`` prefix is not a capability
+    exclusion: it is ordinary scope prose ("no graded exam in week one"), and it must not be read
+    as a removed capability. The returned phrase is the entry with the prefix stripped and its
+    trailing punctuation removed; a fragment under four characters carries no capability and is
+    skipped rather than matched everywhere.
+    """
+    phrases: list[str] = []
+    seen: set[str] = set()
+    for entry in plan.get("exclusions") or []:
+        text = str(entry or "")
+        if not _EXCLUSION_PREFIX_RE.match(text):
+            continue
+        phrase = _EXCLUSION_PREFIX_RE.sub("", text, count=1)
+        phrase = " ".join(phrase.split()).strip(" .,;:—-–")
+        if len(phrase) < 4:
+            continue
+        key = phrase.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        phrases.append(phrase)
+    return phrases
+
+
+#: Suffixes stripped before the word-set comparison, so "shape"/"shaping"/"shapes" and
+#: "develop"/"development" are read as the same capability word. This is stemming, not semantics:
+#: a paraphrase that shares no word with the recorded capability is not matched and is not claimed.
+_STEM_SUFFIXES = ("ings", "ing", "ments", "ment", "ed", "es", "s", "e")
+
+
+def _stem(token: str) -> str:
+    for suffix in _STEM_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            return token[: -len(suffix)]
+    return token
+
+
+def _word_set(text: Any) -> set[str]:
+    """The stemmed word set of one field: lowercased, punctuation and hyphens become spaces.
+
+    Hyphenation is why this exists: a plan writes ``open-crumb`` in its outcome and ``open crumb``
+    in its exclusions, and the two must read as the same capability.
+    """
+    return {_stem(word) for word in re.findall(r"[a-z0-9]+", str(text or "").casefold())}
+
+
+def goal_outcome_integrity_reasons(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> list[str]:
+    """CP-015 c1 — a plan must not promise a capability its own exclusions remove.
+
+    This is the deterministic half of the goal-coverage criterion (the validator half is
+    ``goal_capability_disclosure``). The class it closes rejected all three stored Sourdough
+    plans: the goal named levain, dough development, shaping, steam and open crumb, the planner
+    honestly recorded them in ``exclusions`` because the ledger could not support them, and the
+    plan's ``learner_outcome`` still promised a baked open-crumb loaf. A model opinion is not
+    needed to read that contradiction, and a prompt line alone cannot refuse it.
+
+    Checked, for every capability phrase an exclusion removes: the plan's ``learner_outcome``,
+    every objective title, and every objective's declared evidence target (the ``evidence_target``
+    family plus the ``evidence_criteria`` list — the document's own words for what the learner is
+    asked to demonstrate). A phrase matches a field when **every** word of the phrase appears in
+    that field's word set (see :func:`_word_set`), so ``open crumb`` matches ``open-crumb`` and
+    ``shaping`` matches ``shape it``. The vocabulary is the plan's own: a paraphrase that shares no
+    word with the recorded capability is not detected, and that limit is stated rather than papered
+    over.
+    """
+    phrases = excluded_capabilities(plan)
+    if not phrases:
+        return []
+    reasons: list[str] = []
+    outcome = _word_set(plan.get("learner_outcome"))
+    for phrase in phrases:
+        words = _word_set(phrase)
+        if words and words <= outcome:
+            reasons.append(
+                f"plan.learner_outcome promises {phrase!r}, which plan.exclusions records as "
+                "not covered by any supporting source (goal coverage: outcome integrity)"
+            )
+    for objective in objectives:
+        title = _word_set(objective.get("title"))
+        evidence = _word_set(objective.get("evidence_target")) | _word_set(
+            " ".join(str(item or "") for item in objective.get("evidence_criteria") or [])
+        )
+        for phrase in phrases:
+            words = _word_set(phrase)
+            if not words:
+                continue
+            if words <= title:
+                reasons.append(
+                    f"objective {objective.get('ordinal')} promises {phrase!r} in its title, "
+                    "which plan.exclusions records as not covered by any supporting source "
+                    "(goal coverage: outcome integrity)"
+                )
+            elif words <= evidence:
+                reasons.append(
+                    f"objective {objective.get('ordinal')} promises {phrase!r} in its evidence "
+                    "target, which plan.exclusions records as not covered by any supporting "
+                    "source (goal coverage: outcome integrity)"
+                )
+    return reasons
+
+
 def _enforce_plan_tail(
     plan: dict[str, Any],
     *,
@@ -4798,6 +4968,12 @@ def _enforce_plan_tail(
                             f"{field_name} drifts into generic study skills ({phrase!r}) that "
                             "the goal does not ask for"
                         )
+
+    # CP-015 c1 (goal coverage: outcome integrity). The plan's own exclusions remove capabilities
+    # the ledger could not support; a learner_outcome, objective title or evidence target that
+    # still promises one of them makes the plan contradict its own scope. Deterministic, before
+    # any validator call, so the contradiction cannot be argued away.
+    reasons.extend(goal_outcome_integrity_reasons(plan, objectives))
 
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
@@ -6134,6 +6310,7 @@ def validation_verdict(
     research_status: str,
     ledger: Sequence[SourceRecord] = (),
     independence: str = INDEPENDENCE_UNIDENTIFIED,
+    criteria: Sequence[str] = VALIDATION_CRITERIA,
 ) -> dict[str, Any]:
     """Turn a validator report into an outcome the pipeline can act on.
 
@@ -6162,7 +6339,7 @@ def validation_verdict(
     seen: dict[str, str] = {}
     for entry in report.get("criteria") or []:
         seen[str(entry.get("id"))] = str(entry.get("verdict"))
-    missing = [criterion for criterion in VALIDATION_CRITERIA if criterion not in seen]
+    missing = [criterion for criterion in criteria if criterion not in seen]
     if missing:
         raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
     failed = [criterion for criterion, value in seen.items() if value == "fail"]
@@ -6844,7 +7021,7 @@ def build_lesson_validation_request(
         purpose="coursebook.lesson.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="lesson and its learner page", criteria=VALIDATION_CRITERIA),
+        instructions=_validation_instructions(subject="lesson and its learner page", criteria=LESSON_VALIDATION_CRITERIA),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -8984,7 +9161,7 @@ def build_unit_sections_validation_request(
         purpose="coursebook.unit_sections.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="unit sections", criteria=VALIDATION_CRITERIA),
+        instructions=_validation_instructions(subject="unit sections", criteria=LESSON_VALIDATION_CRITERIA),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -9335,6 +9512,7 @@ def run_unit_sections_job(
                 research_status=research_status,
                 ledger=sources,
                 independence=independence,
+                criteria=LESSON_VALIDATION_CRITERIA,
             )
             if verdict["verdict"] == "pass":
                 authored = batch
@@ -10381,6 +10559,7 @@ def _author_section(
             research_status=research_status,
             ledger=sources,
             independence=independence,
+            criteria=LESSON_VALIDATION_CRITERIA,
         )
         if verdict["verdict"] == "pass":
             lesson = candidate

@@ -201,7 +201,8 @@ class MergeTest(unittest.TestCase):
             ]
         )
         self.assertEqual([entry["id"] for entry in merged["criteria"]], list(gen.VALIDATION_CRITERIA))
-        self.assertEqual(len(merged["criteria"]), 10)
+        # CP-015a: the reviewed set is eleven criteria (goal_capability_disclosure added).
+        self.assertEqual(len(merged["criteria"]), len(gen.VALIDATION_CRITERIA))
 
     def test_same_model_validation_is_still_model_assessed(self) -> None:
         requests = build_requests()
@@ -226,7 +227,10 @@ class MultiPassAggregationTest(unittest.TestCase):
 
     PAIRS = tuple(
         (gen.VALIDATION_CRITERIA[index], gen.VALIDATION_CRITERIA[index + 1])
-        for index in range(0, len(gen.VALIDATION_CRITERIA), 2)
+        # CP-015a: the criteria count is odd (eleven), so the last criterion has no partner in this
+        # local pair layout. It is owned by the shipped 6/5 split; this fixture only needs a legal
+        # multi-pass shape, and it asserts pass count, aggregation and loss handling, not coverage.
+        for index in range(0, len(gen.VALIDATION_CRITERIA) - 1, 2)
     )
 
     def build_pair_requests(self):

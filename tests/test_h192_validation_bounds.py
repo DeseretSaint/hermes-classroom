@@ -117,8 +117,10 @@ class ClaimBatchingTest(unittest.TestCase):
                 )
 
     def test_the_criteria_passes_cover_the_whole_ten_criterion_review(self) -> None:
-        # H-192b: the review is split into fixed-size passes, so no answer reasons over ten
-        # criteria and a full plan at once. Together they still cover exactly the reviewed set.
+        # H-192b: the review is split into fixed-size passes, so no answer reasons over the whole
+        # reviewed set and a full plan at once. Together they still cover exactly that set.
+        # CP-015a adds an eleventh criterion (goal_capability_disclosure); the per-pass maximum is
+        # six now, and it is still fixed rather than a function of plan size.
         requests = build_requests(big_plan(20))
         owned = [
             criterion
@@ -127,7 +129,9 @@ class ClaimBatchingTest(unittest.TestCase):
         ]
         self.assertEqual(tuple(owned), gen.VALIDATION_CRITERIA)
         for request in requests:
-            self.assertLessEqual(len(gen.validation_pass_criteria(request)), 5)
+            self.assertLessEqual(
+                len(gen.validation_pass_criteria(request)), gen.VALIDATION_CRITERIA_PER_PASS_MAX
+            )
 
     def test_leftover_claims_become_claim_only_passes(self) -> None:
         plan = big_plan(20)
@@ -168,8 +172,9 @@ class ClaimBatchingTest(unittest.TestCase):
             self.assertLessEqual(len(claim_enum(request)), gen.CLAIM_VERDICTS_PER_PASS)
 
     def test_every_pass_demands_a_fixed_maximum(self) -> None:
-        # H-192b: no answer's demand grows with plan size — five criteria at most, six claims at
-        # most on a criteria pass, twelve on a claim-only pass.
+        # H-192b: no answer's demand grows with plan size — a fixed, small number of criteria at
+        # most (six after CP-015a's eleventh criterion), six claims at most on a criteria pass,
+        # twelve on a claim-only pass.
         for plan in (big_plan(2, units=1), big_plan(12), big_plan(40, units=12)):
             requests = build_requests(plan)
             labels = gen.plan_claim_labels(plan)
@@ -180,7 +185,7 @@ class ClaimBatchingTest(unittest.TestCase):
             for request in requests:
                 criteria = gen.validation_pass_criteria(request)
                 claims = claim_enum(request)
-                self.assertLessEqual(len(criteria), 5)
+                self.assertLessEqual(len(criteria), gen.VALIDATION_CRITERIA_PER_PASS_MAX)
                 if criteria:
                     self.assertLessEqual(len(claims), gen.CLAIM_VERDICTS_PER_PASS)
                 else:

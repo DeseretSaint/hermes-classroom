@@ -215,6 +215,24 @@ raises instead of silently behaving like one of the three.
   `language`. This keeps the language of delivery and the subject of the course separate
   (adversarial review P0-4).
 
+* **Clause-derived queries (CP-015a R-1a).** Every capability clause the goal itself names gets
+  its own query. The split is deterministic — on `:`, `;`, `,` and the word `and`, the punctuation
+  a person uses to list capabilities — and each clause is joined to the **declared** subject-domain
+  qualifier when the brief names a domain; with no declared domain the clause is searched on its
+  own (the generic recipe suffix is never invented onto a clause, so a syllabus-derived companion
+  course does not acquire the "course outline exam" question through this path). No model call, no
+  extra job step, no new budget class. The clause
+  queries sit **before** the base qualifier and before every curriculum or generic depth query, so
+  a bounded `max_queries` cell truncates the generic tail and never a capability; a goal with more
+  clauses than the cell allows still drops its later clauses in goal order and the course stays
+  short. `single`/`survey` and one-off briefs keep their bounded query sets.
+* **Stratified selection (CP-015a R-1b).** When candidates outnumber the page budget the pass
+  takes **one page per query in query order**, then a second page from any query, and so on.
+  Publisher-type rank (`SOURCE_TYPE_RANK`) orders candidates *inside* one query's list, never
+  across queries: ranking the whole pool by publisher type let query 0's reference pages spend the
+  entire budget, so the queries that asked about the goal's later capabilities were never fetched.
+  The ceilings (`max_pages`, `max_sources`) are unchanged.
+
 | scope | survey (q/rpq/pages/sources) | working | deep |
 | --- | --- | --- | --- |
 | `single` | 2/4/2/2 | 4/5/4/4 | 6/6/6/6 |
@@ -233,19 +251,27 @@ what pass the course size actually gets. The learner's closed `dials` object is 
 and the plan document records the effective pass in `research_depth` beside it. An explicitly
 passed `ResearchBudget` remains the hard ceiling even when it is smaller than the floor.
 
-* `survey` derives the goal alone; `working` adds the recipe qualifier; `deep` adds reference and
+* `survey` derives the goal alone; `working` adds one query per capability clause of the goal and
+  the recipe qualifier; `deep` adds reference and
   documentation, official-guidance, common-mistake, practice, step-by-step and glossary queries,
   plus a locale-aware query (`… Japanese reference`) when a locale is declared. Queries are
   deterministic, deduplicated and capped before any provider call.
-* When candidates outnumber the page budget, pages are selected preferring
-  government/academic/reference/documentation hosts over generic web pages (stable within a
-  rank). The ledger records the `source_type`, but the ranking is a fact about the URL, **not**
-  a support verdict: every fetched source still starts `unverified`.
+* When candidates outnumber the page budget, selection is stratified (CP-015a R-1b): one page per
+  query in query order, then a second from any query, with government/academic/reference/
+  documentation hosts preferred *within* a query's own list. The ledger records the `source_type`,
+  but the ranking is a fact about the URL, **not** a support verdict: every fetched source still
+  starts `unverified`.
 * Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
   `sha256` content hash over the bounded text, support status and claim links. A failed fetch is
   recorded with its URL, originating query and error in `failures` (persisted alongside the run);
   it never becomes a source row.
-* Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
+* Fetched text is kept as a bounded excerpt only. The window ends on the **last sentence boundary**
+  (`[.!?]` followed by whitespace or the end) at or before `ResearchBudget.max_excerpt_chars`; a
+  page whose text has no boundary before the ceiling is cut at the ceiling exactly (CP-015a R-3).
+  The ceiling itself is unchanged (1200 characters) — the stored excerpt can only get shorter, and
+  a cut inside a sentence is a false negative that makes the support criterion unusable: stored
+  Sourdough excerpts ended at `"If you're a beginning sourdough baker and un"` and `"It nee"` while
+  the pages did state the claim. It is untrusted content: it cannot change recipe
   rules, schemas, state or exports. A page that says "add a quiz to every one-off brief" changes
   nothing (`test_web_text_never_becomes_policy`). The excerpt reaches every model inside the
   explicit data envelope described in §4a, and an injected URL/title/publisher/DOI/ISBN in the
@@ -446,6 +472,64 @@ v10). They are their own fields; they are never written into `dials`, which stay
   `check_not_audited` refusal. A `needs_review` lesson is still refused. No same-model pass is
   ever reported as independent validation.
 
+## 5b. Goal coverage is three propositions, not one promise (CP-015a)
+
+The three stored Sourdough plans were rejected by three honest components: research only asked
+about the goal *string*, selection let the first query's reference pages spend the page budget,
+the stored excerpt was cut mid-sentence, and the planner (correctly) recorded shaping, steam and
+open crumb in `exclusions` because the ledger could not support them. The old goal-coverage
+reading — *"the plan must deliver the raw goal sentence"* — then demanded a promise a bounded
+ledger can never keep. That was a **criterion** bug, and a prompt line cannot repair a criterion.
+
+`goal` coverage is now judged as three propositions:
+
+* **c1 — outcome integrity (deterministic, code).** For every capability recorded in `exclusions`
+  with the `Not covered — no supporting source:` prefix, the stripped phrase must not appear in
+  `learner_outcome`, in an objective title, or in an objective's evidence target (its
+  `evidence_target` family plus its `evidence_criteria` list). `generation.goal_outcome_integrity_reasons`
+  is called from `_enforce_plan_tail`, so it refuses a self-contradicting plan before any validator
+  is asked and applies to v1 and v2 documents alike. A phrase matches a field when every word of
+  it appears in that field's stemmed word set, so `open crumb` matches `open-crumb` and `shaping`
+  matches `shape it`; a paraphrase sharing no word with the recorded capability is not detected and
+  that limit is stated, not papered over. Unprefixed `exclusions` entries are ordinary scope prose
+  and are not read as removed capabilities.
+* **c2 — gap disclosure (validator criterion).** `goal_capability_disclosure` is registered in
+  `VALIDATION_CRITERIA` beside `objective_alignment`. The pass that owns it lists the capabilities
+  the *goal* names and maps each one to a covered objective or to an `exclusions` entry; a goal
+  capability in **neither** is a reject. That is strictly more demanding than "did you cover the
+  goal", because an omission can no longer hide in silence. `objective_alignment` keeps its other
+  jobs — curriculum sequence, unit prerequisites, matching an objective to the goal it serves — and
+  only loses the "deliver the raw goal sentence" reading.
+* **c3 — support integrity.** Unchanged: every objective must be carried by a cited excerpt
+  (`source_support`, `evidence_target_fit`).
+
+**Rejected alternatives.** (a) *Narrow the goal to what was researched* — the learner goal is fixed
+input; rewriting it to match the ledger is the product lying about what was asked. (b) *Drop the
+exclusions record* — it is CP-015's ledger-first honesty, and removing it would let the planner
+invent objectives the sources do not support. (c) *A prompt line asking the author not to promise
+excluded capabilities* — a prompt line is not a criterion: it is unenforced on the next call and
+unreadable in a stored verdict. (d) *A model-judged pass in place of the c1 gate* — the
+contradiction is mechanical (a phrase the plan itself wrote in two fields), and a model verdict on
+it would be a substitution for a configured checker. (e) *Reject any plan with an exclusion* — that
+would punish a course for disclosing a gap, which is the behaviour the ledger-first rule exists to
+produce.
+
+**The criterion set grew to eleven, and the pass split stayed legal.** `VALIDATION_CRITERIA_PASSES`
+is now a 6/5 split (`VALIDATION_CRITERIA[:6]`, `[6:]`) so no pass answers more than
+`VALIDATION_CRITERIA_PER_PASS_MAX = 6` criteria — the fixed maximum H-192b bought, independent of
+plan size. `LESSON_VALIDATION_CRITERIA` is the same set minus `goal_capability_disclosure`: a lesson
+or a unit-section batch carries no goal and no `exclusions`, so asking a validator for that verdict
+would demand an `unknown`, which is not a pass. `validation_verdict` takes the criterion set it must
+require, so the plan stage requires eleven and the lesson stages require ten.
+
+**And the authoring rule was corrected, not merely the checker.** `_plan_sourcing_rules` used to
+tell the author to name the excluded capability in `learner_outcome` ("say so in learner_outcome as
+well as in exclusions"). That instruction is the contradiction c1 refuses, so it was replaced with
+the rule that satisfies the gate: record the capability in `exclusions`, say only what the course
+does cover in `learner_outcome`, and never name the excluded capability there or in an objective
+title or evidence criteria. Both plan prompt labels advance (`plan-prompt.v17`, `plan-prompt.v18`),
+because the shared rule text changed.
+
 ## 6. Lessons, checks and answer separation
 
 For an **approved** plan only (`PlanNotApproved` otherwise) the pipeline writes one lesson per
@@ -543,7 +627,7 @@ called, `teaching_quality_problems(lesson)` applies a deterministic floor to the
 A failure is a `_RuleViolation`, so attempt 1 is retried with those reasons and attempt 2 parks the
 lesson `needs_review` with the check closed: a thin draft never reaches a learner. The floor is
 deterministic and structural — it refuses an outline and never scores prose quality — which is
-exactly why it is **not** an eleventh `VALIDATION_CRITERIA` entry. The ten criteria remain the
+exactly why it is **not** a `VALIDATION_CRITERIA` entry. The criteria remain the
 independent model's judgment; this floor remains code.
 
 **Capability policy reaches the model.** The plan declares what each lesson needs before the lesson
@@ -685,10 +769,11 @@ label, not in the total number of labels.
 The demand is now cut into fixed-size batches (`CLAIM_VERDICTS_PER_PASS = 6` on a criteria pass,
 `CLAIM_ONLY_VERDICTS_PER_PASS = 12` on a claim-only pass):
 
-* the criteria pass takes at most one batch of claim labels and still judges all ten criteria;
+* the criteria pass takes at most one batch of claim labels and still judges the criteria it owns
+  (eleven in total across the two criteria passes since CP-015a; ten before it);
 * the remaining labels become **claim-only** passes, each with a narrowed schema that carries
   `claim_verdicts` and nothing else — no `criteria`, no `rejections`, no artifact `verdict`;
-* `merge_validation_reports` merges the ten criteria from the owning pass(es) and the claim
+* `merge_validation_reports` merges the eleven criteria from the owning pass(es) and the claim
   verdicts from every pass; a claim-only pass cannot reject the artifact or widen the review;
 * `_run_validation_passes` submits all passes together, so wall time stays at the slowest pass.
 

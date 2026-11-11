@@ -445,7 +445,7 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn("never declare decorative media", instructions.lower())
         # CP-015's ledger-first authoring rule advances the label (v12 -> v14); the media
         # declaration rule this test guards is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v15")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v17")
 
     def test_lesson_prompt_receives_the_declared_permissions_not_a_wish_list(self) -> None:
         for name, row in MATRIX.items():

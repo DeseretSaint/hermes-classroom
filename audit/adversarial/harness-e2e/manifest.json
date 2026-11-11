@@ -2,7 +2,7 @@
   "evidence": {
     "bicycle_single.json": {
       "bytes": 28464,
-      "sha256": "49c860d677f0609ab3f05f956b6949a40b3b5f58828bb954ba0d7b0240a099f1"
+      "sha256": "2e7aceb180a57efa111d6c20b09b0bbb6204b2fd1e0733f36254657048df8970"
     },
     "focused-tests.txt": {
       "bytes": 4558,
@@ -13,8 +13,8 @@
       "sha256": "5eede56a14d8a02c5acc2d7f3478c184470fadf6474d7925cf4dc1d3bedd66e4"
     },
     "music_short.json": {
-      "bytes": 50036,
-      "sha256": "b23dfb468b46d2246696ef6fc5e614f4a116c2c2cf6b860e5b918761089dfe34"
+      "bytes": 50016,
+      "sha256": "2486b32905ad3cef1a4e9c117b2c94748b80946673cacaffd8817e8864ed6bdc"
     },
     "partial_unit_batch.json": {
       "bytes": 908,
@@ -25,8 +25,8 @@
       "sha256": "3b525c3b18ecdc9196f399a30052b0e3a59992f2aac565689b14d7c38509d31b"
     },
     "soldering_full.json": {
-      "bytes": 129579,
-      "sha256": "8e5b02f35ef35ef5854dc90a48e4345cb0652750799d71c25afd100451691c93"
+      "bytes": 128144,
+      "sha256": "e17e9f0ad9fb5c19354f1a1214ad1f263371e361e26001e1546d38e5fdb2ef5a"
     },
     "summary.json": {
       "bytes": 84,
