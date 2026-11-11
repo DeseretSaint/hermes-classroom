@@ -334,10 +334,17 @@ class UngroundedRefusalDoesNotReauthorTest(KernelCase):
         self.assertIn("declared reject", error.violation or "")
         # H-182/D1's repair loop is not entered: there is no rule to repair.
         self.assertEqual(len(author_calls), 1)
-        # Nothing is persisted that a reviewer could read as a refusal: no plan document and no
-        # validation record exists for an answer the pipeline refused to call a verdict.
+        # Nothing is persisted that a reviewer could read as a refusal: no plan document exists.
+        # CP-015g/D1: the failed *validation attempt* is recorded — with ``parse_outcome``
+        # ``verdict_violation`` and no verdict stored — so the operator can audit what the
+        # validator said. It is not a rejection of the plan.
         self.assertEqual(self.counts("gen_plan_documents"), 0)
-        self.assertEqual(self.counts("gen_validation_records"), 0)
+        records = self.rows("SELECT * FROM gen_validation_records")
+        self.assertEqual(len(records), 2, "one row per validation pass that carried no verdict")
+        for record in records:
+            self.assertEqual(record["verdict"], "invalid")
+            self.assertEqual(record["parse_outcome"], "verdict_violation")
+            self.assertEqual(record["repair_attempted"], 0)
 
     def test_a_grounded_refusal_still_re_authors_once(self) -> None:
         """H-182/D1 is untouched: a refusal with reasons is still a repairable plan."""
