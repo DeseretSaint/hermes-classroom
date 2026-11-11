@@ -318,6 +318,20 @@ process.stdout.write(JSON.stringify({
   gridTemplate: grid ? grid.style.gridTemplateColumns : null,
   cardCount: cards.length,
   cardTitles: cards.map((node) => text(node.querySelector('h3'))),
+  cardCovers: cards.map((node) => {
+    const plate = node.querySelector('[data-cb3-cover]')
+    const img = plate ? plate.querySelector('img') : null
+    return {
+      pack: node.getAttribute('data-cb3-pack'),
+      kind: plate ? plate.getAttribute('data-cb3-cover') : null,
+      src: img ? img.getAttribute('src') : null
+    }
+  }),
+  kitCovers: {
+    japanese: mod.cb3KitSource('japanese-cover-3x2'),
+    parent: mod.cb3KitSource('parent-cover-3x2'),
+    technical: mod.cb3KitSource('technical-cover-3x2')
+  },
   cardMetas: cards.map((node) => text(node.querySelector('[data-cb3-card-meta]') || node.querySelector('p'))),
   cardSubjects: cards.map((node) => text(node.querySelector('[data-cb3-chip="subject"]'))),
   cardCoordinates: cards.map((node) => node.getAttribute('role') + '/' + node.getAttribute('tabindex')),
@@ -425,6 +439,28 @@ class WorkshopV3RenderTest(unittest.TestCase):
         return self.reports[key]
 
     # ── the named card tests ────────────────────────────────────────────────────────────────
+
+    def test_no_typographic_cover_for_the_three_seeded_packs(self) -> None:
+        """D-007: a mapped pack reads the approved display cover, never a typographic plate."""
+        report = self.render()
+        covers = {row["pack"]: row for row in report["cardCovers"]}
+        self.assertEqual(set(covers), {
+            "japanese-affection-context-l0",
+            "parent-measurement-practice",
+            "technical-demo-pack",
+        })
+        for pack, row in covers.items():
+            with self.subTest(pack=pack):
+                self.assertEqual(row["kind"], "art", f"{pack} still renders a typographic cover")
+                self.assertTrue(row["src"], f"{pack} serves no plate")
+        # A real pack artifact still wins over the kit plate.
+        self.assertTrue(covers["japanese-affection-context-l0"]["src"].startswith("data:image/png;base64,art_cover_japanese"))
+        self.assertTrue(covers["technical-demo-pack"]["src"].startswith("data:image/png;base64,art_cover_technical"))
+        # The pack with no cover artifact of its own is the one that has to read the kit plate.
+        self.assertEqual(covers["parent-measurement-practice"]["src"], report["kitCovers"]["parent"])
+        self.assertTrue(covers["parent-measurement-practice"]["src"].startswith("data:image/webp;base64,"))
+        self.assertNotEqual(report["kitCovers"]["japanese"], report["kitCovers"]["parent"])
+        self.assertNotEqual(report["kitCovers"]["parent"], report["kitCovers"]["technical"])
 
     def test_workshop_v3_no_ratings_or_counts(self) -> None:
         report = self.render()

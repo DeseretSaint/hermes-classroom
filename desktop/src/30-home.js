@@ -1680,6 +1680,13 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
  * route paints the same object, and `data-cb-course-cover` carries the content fingerprint.
  */
 function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpenLibrary, testId }) {
+  // The Courses card reads the same approved display cover the workshop does (D-007). A course
+  // whose pack names no plate reads the kit's own lesson room, cropped — a letter or a typographic
+  // field never stands in for art. `cb3KitCoverFor` answers the full asset key, so `cb3Asset`
+  // reads it directly; the lesson room resolves through `cb3KitSource`.
+  const provenance = row && row.provenance && typeof row.provenance === 'object' ? row.provenance : {}
+  const kit = cb3KitCoverFor({ pack_id: provenance.pack_id || (row && row.pack_id), title: row && row.title })
+  const coverSrc = (kit ? cb3Asset(kit.id3x2) : null) || cb3KitSource('field-atlas-lesson-room')
   return jsxs('article', {
     'data-cb-course-cover': cbShelfFingerprint(row),
     'data-cb-course-id': row.course_id || '',
@@ -1695,6 +1702,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
     children: [
       jsxs('div', {
         'data-cb-cover-field': '',
+        'data-cb-cover-kind': coverSrc ? 'kit' : 'letter',
         style: {
           display: 'flex',
           alignItems: 'flex-start',
@@ -1703,25 +1711,32 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
           aspectRatio: '16 / 9',
           minHeight: '3rem',
           maxHeight: '7.5rem',
-          padding: '0.5rem 0.6rem',
+          padding: coverSrc ? 0 : '0.5rem 0.6rem',
           boxSizing: 'border-box',
           background: 'var(--cb-paper-raised)',
           overflow: 'hidden'
         },
-        children: [
-          jsx('div', {
-            'aria-hidden': 'true',
-            style: {
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              fontWeight: 600,
-              letterSpacing: '0.02em',
-              lineHeight: 1,
-              color: 'var(--cb-ink-soft)'
-            },
-            children: cbCourseMonogram(row.title)
-          })
-        ]
+        children: coverSrc
+          ? jsx('img', {
+              src: coverSrc,
+              alt: '',
+              'aria-hidden': 'true',
+              'data-cb-cover-image': '',
+              'data-cb-cover-plate': kit ? kit.id3x2.split('.').pop() : 'field-atlas-lesson-room',
+              style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }
+            })
+          : jsx('div', {
+              'aria-hidden': 'true',
+              style: {
+                fontFamily: CB_SERIF,
+                fontSize: CB_TYPE.lead,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                lineHeight: 1,
+                color: 'var(--cb-ink-soft)'
+              },
+              children: cbCourseMonogram(row.title)
+            })
       }),
       jsx('h3', {
         style: {
