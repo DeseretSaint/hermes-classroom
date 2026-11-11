@@ -1,9 +1,12 @@
 # CP-024 evidence manifest — the v3 course home (R-MAP)
 
 Branch: `wt/cp-024-course-home`
-Base: master `ef7ec52` (merged; carries CP-020b primitives, CP-038's capture door, CP-043's keys, the
+Base: master `ef7ec52` (carries CP-020b primitives, CP-038's capture door, CP-043's keys, the
 visual-gate tools `docs/concept-parity/VISUAL-GATE.md`, `visual/find-cdp.mjs`,
-`scripts/compare-ref.sh`)
+`scripts/compare-ref.sh`), with `origin/master` merged twice on top: `9c769e7` (CP-044, CP-049,
+CP-051) and `acf5ab2` (Gate 8 docs/release-evidence only). Neither merge changed
+`desktop/plugin.js`; the module stayed `31c8bc94…42dc`, so the 15 stamps still name the shipped
+bytes.
 Maker: `lattice`   Reviewer: `cbqa` (must not be the maker)
 Module: `desktop/plugin.js` sha256 `31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc`
 (built by `python3 scripts/build_plugin.py` from 20 segments; `--check` reports the same bytes)
