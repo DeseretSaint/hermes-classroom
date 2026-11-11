@@ -49,7 +49,16 @@ let output
 if (payload.kind === 'intake') output = syllabusIntakePayload(payload.input)
 else if (payload.kind === 'parse-view') output = syllabusParseView(payload.view)
 else if (payload.kind === 'course-payload')
-  output = syllabusCoursePayload({ parsed: payload.parsed, scope: payload.scope, goal: payload.goal, learnerLabel: payload.learnerLabel })
+  output = syllabusCoursePayload({
+    parsed: payload.parsed,
+    scope: payload.scope,
+    goal: payload.goal,
+    learnerLabel: payload.learnerLabel,
+    level: payload.level,
+    subjectDomain: payload.subjectDomain,
+    locale: payload.locale,
+    presentationMode: payload.presentationMode
+  })
 else if (payload.kind === 'plan-brief')
   output = syllabusPlanBrief(payload.input)
 else if (payload.kind === 'align-payload') output = syllabusAlignPayload(payload.input)
@@ -129,6 +138,39 @@ class DesktopLiveSequenceTest(SyllabusCase):
 
     def js(self, case: dict) -> dict:
         return DesktopPayloadHarness().js(case)
+
+    def test_the_learner_answers_are_accepted_and_read_back(self) -> None:
+        """WIRE-3/WIRE-4: the five answers survive `course.create` and are readable again."""
+        built = self.js(
+            {
+                "kind": "course-payload",
+                "parsed": {},
+                "scope": "short",
+                "goal": "Keep up with the CS 340 labs",
+                "learnerLabel": "CS 340",
+                "level": "none",
+                "subjectDomain": "computer science",
+                "locale": "en-US",
+                "presentationMode": "game",
+            }
+        )
+        self.assertEqual(built["recipe"], "companion")
+        self.assertEqual(built["level"], "none")
+        self.assertEqual(built["subject_domain"], "computer science")
+        self.assertEqual(built["locale"], "en-US")
+        self.assertEqual(built["presentation_mode"], "game")
+        created = self.ok("course.create", built, idempotency_key="cb-companion-fields-live")["result"]
+        course = self.ok("course.get", {"course_id": created["course_id"]})["result"]["course"]
+        self.assertEqual(course["goal"], "Keep up with the CS 340 labs")
+        self.assertEqual(course["level"], "none")
+        self.assertEqual(course["subject_domain"], "computer science")
+        self.assertEqual(course["locale"], "en-US")
+        self.assertEqual(course["recipe"], "companion")
+        with db.read() as connection:
+            row = connection.execute(
+                "SELECT presentation_mode FROM courses WHERE id = ?", (created["course_id"],)
+            ).fetchone()
+        self.assertEqual(row["presentation_mode"], "game")
 
     def test_the_shipped_payloads_drive_a_real_companion_course_to_an_approved_plan(self) -> None:
         text = (FIXTURES / "cs340-databases.md").read_text(encoding="utf-8")

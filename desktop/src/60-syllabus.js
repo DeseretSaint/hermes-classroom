@@ -80,6 +80,16 @@ const SYLLABUS_COPY = Object.freeze({
   staleLead: 'Your syllabus changed. The earlier mapping was made against the previous version, so it is marked stale.',
   staleAction: 'Check the new version, then review the mapping again. Your approved plan and lessons are kept as they were.',
   startsCompanion: 'Create companion course',
+  sheetTitle: 'Set up this companion course',
+  sheetLead: 'Your syllabus sets the scope. These are the same choices a new course asks for, on one sheet, before the course and its plan are created.',
+  levelQuestion: 'Where are you starting from? (optional)',
+  levelHint: 'None means the course builds the idea before it asks you to use it. This is a starting point, not a grade.',
+  modeQuestion: 'How should lessons look?',
+  goalQuestion: 'What do you want from this course? (optional)',
+  goalHint: (goal) => `Leave this blank to use “${goal}”.`,
+  tuneLabel: 'Help me tune it (optional)',
+  subjectLabel: 'Subject, in your own words',
+  localeLabel: 'Language or locale (language courses only)',
   coversLine: (covered, total) => `This course covers ${covered} of ${total} syllabus weeks.`
 })
 
@@ -510,29 +520,65 @@ function syllabusCourseFields(parsed) {
 }
 
 /**
+ * The goal a companion course carries when the learner types none: the course title the syllabus
+ * states, made into a goal sentence. It never invents a subject the file did not name.
+ */
+function syllabusDefaultGoal(parsed) {
+  const fields = syllabusCourseFields(parsed)
+  return fields.title ? `Support the class on ${fields.title}.` : 'Support the class described in my syllabus.'
+}
+
+/**
  * `course.create` for a companion course (§6.2). The syllabus id and revision travel together or
  * not at all; `recipe` is always `companion` and `pack_id` is never sent, so the backend keeps
  * `courses.pack_id` NULL.
+ *
+ * WIRE-3/WIRE-4: the learner's own answers travel too. `goal` falls back to the syllabus title when
+ * nothing is typed, and `level` / `subject_domain` / `locale` / `presentation_mode` are the same
+ * fields `courseCreatePayload` in `50-create.js` sends, so a companion course can start at the
+ * learner's level and can be a Game course. Absent answers are omitted, never sent blank.
  */
-function syllabusCoursePayload({ parsed, scope, goal, learnerLabel }) {
+function syllabusCoursePayload({ parsed, scope, goal, learnerLabel, locale, level, subjectDomain, presentationMode }) {
   const fields = syllabusCourseFields(parsed)
   const title = fields.title || fields.code || String(learnerLabel || '').trim() || 'Companion course'
   const payload = {
     title,
     recipe: 'companion',
-    goal: String(goal || '').trim() || (fields.title ? `Support the class on ${fields.title}.` : 'Support the class described in my syllabus.'),
+    goal: String(goal || '').trim() || syllabusDefaultGoal(parsed),
     dials: {},
     scope: scope || 'short'
   }
+  const named = (value) => String(value || '').trim()
+  if (named(locale)) payload.locale = named(locale)
+  if (named(level)) payload.level = named(level)
+  if (named(subjectDomain)) payload.subject_domain = named(subjectDomain)
+  // GM-004: Game is creation intent, not an approved world. Omitted keeps the contract default,
+  // which reads as Textbook; the sheet always sends the learner's choice.
+  if (presentationMode === 'game' || presentationMode === 'textbook') payload.presentation_mode = presentationMode
   if (parsed && parsed.syllabus_id) payload.syllabus_id = parsed.syllabus_id
   if (parsed && parsed.revision !== undefined) payload.syllabus_revision = parsed.revision
   return payload
 }
 
 /** The plan job brief: the existing brief plus the syllabus fields the contract added. */
-function syllabusPlanBrief({ courseId, enrollmentId, goal, syllabusId, syllabusRevision, alignmentRevision, scope }) {
+function syllabusPlanBrief({
+  courseId,
+  enrollmentId,
+  goal,
+  syllabusId,
+  syllabusRevision,
+  alignmentRevision,
+  scope,
+  locale,
+  level,
+  subjectDomain
+}) {
   const brief = { stage: 'plan', course_id: courseId, enrollment_id: enrollmentId, goal, recipe: 'companion', dials: {} }
   if (scope) brief.scope = scope
+  const named = (value) => String(value || '').trim()
+  if (named(locale)) brief.locale = named(locale)
+  if (named(level)) brief.level = named(level)
+  if (named(subjectDomain)) brief.subject_domain = named(subjectDomain)
   if (syllabusId) brief.syllabus_id = syllabusId
   if (syllabusRevision !== undefined && syllabusRevision !== null) brief.syllabus_revision = syllabusRevision
   if (alignmentRevision !== undefined && alignmentRevision !== null) brief.alignment_revision = alignmentRevision
@@ -664,8 +710,29 @@ function syllabusStaleNotice({ revision, counts, planRevision }) {
  * The same shape as `startLearnerPlan`, with the syllabus binding and no second engine. A failed
  * plan job keeps the ids that already exist, and the same key retries the same job.
  */
-async function startCompanionCourse({ call, key, parsed, scope, goal, learnerLabel }) {
-  const course = await call('course.create', syllabusCoursePayload({ parsed, scope, goal, learnerLabel }), {
+async function startCompanionCourse({
+  call,
+  key,
+  parsed,
+  scope,
+  goal,
+  learnerLabel,
+  locale,
+  level,
+  subjectDomain,
+  presentationMode
+}) {
+  const payload = syllabusCoursePayload({
+    parsed,
+    scope,
+    goal,
+    learnerLabel,
+    locale,
+    level,
+    subjectDomain,
+    presentationMode
+  })
+  const course = await call('course.create', payload, {
     idempotencyKey: key,
     expectedRevision: null
   })
@@ -690,8 +757,13 @@ async function startCompanionCourse({ call, key, parsed, scope, goal, learnerLab
       brief: syllabusPlanBrief({
         courseId,
         enrollmentId,
-        goal,
+        // The brief carries the same resolved goal and inputs the course row just stored, so the
+        // plan cannot be authored from a different answer than the course reports.
+        goal: payload.goal,
         scope,
+        locale: payload.locale,
+        level: payload.level,
+        subjectDomain: payload.subject_domain,
         syllabusId: parsed && parsed.syllabus_id,
         syllabusRevision: parsed && parsed.revision
       })

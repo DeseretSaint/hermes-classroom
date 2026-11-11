@@ -1,5 +1,18 @@
 // ── surfaces ────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * The three level answers the create flow offers, as the values the planner reads.
+ *
+ * `none` is one of `generation.BEGINNER_LEVEL_TOKENS`, so a course that starts from nothing is
+ * sequenced with the concept before the act. `some` and `confident` are not beginner tokens. These
+ * are the learner's own words, never a diagnosis or a grade.
+ */
+const SYLLABUS_LEVEL_OPTIONS = Object.freeze([
+  { id: 'none', label: 'None' },
+  { id: 'some', label: 'Some' },
+  { id: 'confident', label: 'Confident' }
+])
+
 /** A value and its anchors. An unknown is a word, not an empty cell. */
 function SyllabusValue({ item, label, onAnchor }) {
   const view = syllabusItemView(item)
@@ -817,6 +830,13 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
   const [state, setState] = useState(parsed && parsed.parse_state ? 'parsed' : 'parsing')
   const [step, setStep] = useState('review')
   const [scope, setScope] = useState('short')
+  // WIRE-3/WIRE-4: one sheet, not a wizard. The same answers the create flow asks for travel with
+  // the companion course: the learner's level, the lesson mode, and an optional typed goal.
+  const [goal, setGoal] = useState('')
+  const [level, setLevel] = useState('')
+  const [presentationMode, setPresentationMode] = useState('game')
+  const [subjectDomain, setSubjectDomain] = useState('')
+  const [locale, setLocale] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [failure, setFailure] = useState(null)
   // The backend's answer to a cancel, rendered instead of assumed. `asking` is the unanswered
@@ -1003,10 +1023,61 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       { id: 'short', label: 'A short course' },
       { id: 'full', label: 'The whole term' }
     ]
-    return jsxs('div', { className: 'flex flex-col gap-3', 'data-cb-syllabus': 'scope', children: [
-      jsx('div', { className: 'text-sm font-semibold', children: 'How much of the class should this course support?' }),
-      jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: proposal.proposal ? proposal.reason : proposal.reason }),
-      jsx(sdk.SegmentedControl, { onChange: setScope, options: choices, sizing: 'content', value: scope }),
+    const defaultGoal = syllabusDefaultGoal(target)
+    const tune = (id, label, value, onChange, placeholder, maxLength) => jsxs('div', {
+      className: 'flex flex-col gap-1.5',
+      children: [
+        jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: id, children: label }),
+        jsx(sdk.Input, { id, maxLength, onChange: (event) => onChange(event.target.value), placeholder, value })
+      ]
+    })
+    return jsxs('div', { className: 'flex flex-col gap-4', 'data-cb-syllabus': 'scope', children: [
+      jsx('div', { className: 'text-sm font-semibold', children: SYLLABUS_COPY.sheetTitle }),
+      jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.sheetLead }),
+      // Goal: the create flow opens here, so the syllabus sheet asks it first too. A blank field is
+      // not an empty goal — the syllabus title becomes the goal sentence, and the hint says which.
+      jsxs('div', { className: 'flex flex-col gap-1.5', 'data-cb-syllabus-goal': '', children: [
+        jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-syllabus-goal', children: SYLLABUS_COPY.goalQuestion }),
+        jsx(sdk.Input, {
+          id: 'cb-syllabus-goal',
+          maxLength: 4000,
+          onChange: (event) => setGoal(event.target.value),
+          placeholder: defaultGoal,
+          value: goal
+        }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.goalHint(defaultGoal) })
+      ] }),
+      jsxs('div', { className: 'flex flex-col gap-1.5', children: [
+        jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'How much of the class should this course support?' }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: proposal.proposal ? proposal.reason : proposal.reason }),
+        jsx(sdk.SegmentedControl, { onChange: setScope, options: choices, sizing: 'content', value: scope })
+      ] }),
+      // Level: the same three answers the create flow offers. `none` is the token the planner's
+      // beginner rule recognises, so the course builds the concept before it asks for the act.
+      jsxs('div', { className: 'flex flex-col gap-1.5', 'data-cb-syllabus-level': level || 'unset', children: [
+        jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: SYLLABUS_COPY.levelQuestion }),
+        jsx(sdk.SegmentedControl, { onChange: setLevel, options: SYLLABUS_LEVEL_OPTIONS, sizing: 'content', value: level }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.levelHint })
+      ] }),
+      // Mode: the same two cards the create flow uses, Game first because it is the default intent.
+      jsxs('div', { className: 'flex flex-col gap-1.5', 'data-cb-syllabus-mode': presentationMode, children: [
+        jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: SYLLABUS_COPY.modeQuestion }),
+        jsx('div', {
+          style: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.4rem', minWidth: 0 },
+          children: ['game', 'textbook'].map((mode) => createModeCard(mode, presentationMode, setPresentationMode))
+        })
+      ] }),
+      jsxs('details', {
+        'data-cb-syllabus-tune': '',
+        className: 'border-t border-(--ui-stroke-tertiary) pt-3 text-xs text-(--ui-text-secondary)',
+        children: [
+          jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: SYLLABUS_COPY.tuneLabel }),
+          jsxs('div', { className: 'mt-2 flex flex-col gap-3', children: [
+            tune('cb-syllabus-subject', SYLLABUS_COPY.subjectLabel, subjectDomain, setSubjectDomain, 'e.g. computer science, Spanish, electrical safety', 60),
+            tune('cb-syllabus-locale', SYLLABUS_COPY.localeLabel, locale, setLocale, 'e.g. es-ES for Spanish, ja-JP for Japanese', 35)
+          ] })
+        ]
+      }),
       jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.researchMinutes }),
       failure ? jsx(sdk.ErrorState, { title: failure.code, description: failure.message }) : null,
       jsxs('div', { className: 'flex flex-wrap gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
@@ -1022,7 +1093,11 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
               key: keyRef.current,
               parsed: target,
               scope,
-              goal: '',
+              goal: goal.trim(),
+              level: level || null,
+              subjectDomain: subjectDomain.trim() || null,
+              locale: locale.trim() || null,
+              presentationMode,
               learnerLabel: (syllabusCourseFields(target).title || 'Companion course')
             })
             setSubmitting(false)

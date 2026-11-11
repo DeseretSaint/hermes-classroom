@@ -112,8 +112,12 @@ if (payload.kind === 'intake') {
     call: t.call,
     key: 'cb-companion-key1',
     parsed: payload.parsed,
-    scope: 'short',
-    goal: 'Keep up with the labs',
+    scope: payload.scope || 'short',
+    goal: payload.goal === undefined ? 'Keep up with the labs' : payload.goal,
+    level: payload.level,
+    subjectDomain: payload.subjectDomain,
+    locale: payload.locale,
+    presentationMode: payload.presentationMode,
     learnerLabel: 'CS 340'
   })
   const aligned = created.ok
@@ -642,6 +646,46 @@ class SyllabusDesktopTest(unittest.TestCase):
         self.assertEqual(brief["syllabus_id"], FIXTURE_PARSE["syllabus_id"])
         self.assertEqual(brief["syllabus_revision"], 2)
 
+    def test_the_learner_answers_travel_with_the_companion_course(self) -> None:
+        out = self.run_case({
+            "kind": "sequence",
+            "parsed": FIXTURE_PARSE,
+            "goal": "Keep up with the labs",
+            "level": "none",
+            "subjectDomain": "computer science",
+            "locale": "en-US",
+            "presentationMode": "game",
+        })
+        course = out["calls"][0]["payload"]
+        self.assertEqual(course["goal"], "Keep up with the labs")
+        self.assertEqual(course["level"], "none")
+        self.assertEqual(course["subject_domain"], "computer science")
+        self.assertEqual(course["locale"], "en-US")
+        self.assertEqual(course["presentation_mode"], "game")
+        self.assertEqual(course["recipe"], "companion")
+        brief = out["calls"][2]["payload"]["brief"]
+        self.assertEqual(brief["goal"], course["goal"])
+        self.assertEqual(brief["level"], "none")
+        self.assertEqual(brief["subject_domain"], "computer science")
+        self.assertEqual(brief["locale"], "en-US")
+
+    def test_a_blank_sheet_uses_the_syllabus_title_and_sends_no_blank_field(self) -> None:
+        out = self.run_case({
+            "kind": "sequence",
+            "parsed": FIXTURE_PARSE,
+            "goal": "",
+            "level": None,
+            "presentationMode": "textbook",
+        })
+        course = out["calls"][0]["payload"]
+        self.assertEqual(course["goal"], "Support the class on Introduction to Databases.")
+        self.assertEqual(course["presentation_mode"], "textbook")
+        for absent in ("level", "locale", "subject_domain"):
+            self.assertNotIn(absent, course)
+        brief = out["calls"][2]["payload"]["brief"]
+        self.assertEqual(brief["goal"], course["goal"])
+        self.assertNotIn("level", brief)
+
     def test_a_typed_refusal_stops_the_sequence_and_names_the_stage(self) -> None:
         out = self.run_case({"kind": "sequence", "parsed": FIXTURE_PARSE, "fail": "course.create"})
         self.assertFalse(out["created"]["ok"])
@@ -751,6 +795,35 @@ class SyllabusSourceAssertions(unittest.TestCase):
             self.assertNotIn(banned, panel, banned)
         # Revision changes never trigger a silent re-map or regeneration.
         self.assertIn("onRealign: stale ? null : mapPlan", source)
+
+    def test_the_sheet_asks_the_same_level_and_mode_questions_as_create(self) -> None:
+        source = _source()
+        self.assertIn("const SYLLABUS_LEVEL_OPTIONS = Object.freeze([", source)
+        for option in ("{ id: 'none', label: 'None' }", "{ id: 'some', label: 'Some' }", "{ id: 'confident', label: 'Confident' }"):
+            self.assertIn(option, source)
+        # The tokens mean what the planner's beginner rule reads them as.
+        from coursebook import generation
+
+        self.assertTrue(generation.is_beginner_level("none"))
+        self.assertFalse(generation.is_beginner_level("some"))
+        self.assertFalse(generation.is_beginner_level("confident"))
+        start = source.index("function SyllabusParseStage")
+        end = source.index("function SyllabusEntry")
+        stage = source[start:end]
+        for needle in (
+            "SYLLABUS_COPY.goalQuestion",
+            "SYLLABUS_COPY.levelQuestion",
+            "SYLLABUS_COPY.modeQuestion",
+            "createModeCard(mode, presentationMode, setPresentationMode)",
+            "level: level || null",
+            "subjectDomain: subjectDomain.trim() || null",
+            "locale: locale.trim() || null",
+            "presentationMode,",
+        ):
+            self.assertIn(needle, stage)
+        # One sheet: the answers are on the scope step, and no second wizard step was added.
+        self.assertIn("if (step === 'scope')", stage)
+        self.assertNotIn("setStep('answers')", stage)
 
     def test_the_one_job_engine_is_reused(self) -> None:
         source = _source()
