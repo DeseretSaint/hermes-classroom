@@ -1,0 +1,32 @@
+name: store
+# The store shelf is generated from bytes, so the only review a submission needs is this check:
+# every community pack must pass the importer's own pre-write gate, and store/index.json must match
+# the files. A green run is what makes "Merge" a one-click acceptance.
+on:
+  pull_request:
+    paths:
+      - "store/**"
+      - "scripts/store_index.py"
+      - "scripts/store_verify.py"
+      - "coursebook/packs.py"
+      - "coursebook/pack_flow.py"
+      - "coursebook/archive.py"
+  push:
+    branches: [master]
+    paths:
+      - "store/**"
+
+jobs:
+  shelf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the pack dependencies
+        run: python -m pip install --quiet "jsonschema>=4,<5"
+      - name: The index matches the bytes
+        run: python scripts/store_index.py --check
+      - name: Every community pack passes the import gate
+        run: python scripts/store_verify.py

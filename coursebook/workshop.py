@@ -532,6 +532,9 @@ def _entry_item(entry: Mapping[str, Any], manifest: Mapping[str, Any], preview: 
         "title": _text(manifest.get("title"), limit=200) or "Untitled pack",
         "subtitle": _text(manifest.get("subtitle"), limit=300),
         "recipe": str(manifest.get("recipe") or ""),
+        # The card's mode badge: a store card must say a pack is a Game course before it is added,
+        # because that is what decides whether the world kit and its art come with it.
+        "mode": str((_mapping(manifest.get("presentation")).get("mode")) or "textbook"),
         "level_label": _text(manifest.get("level_label"), limit=60),
         "locale": _text(manifest.get("locale"), limit=40),
         "content_hash": str(manifest.get("content_hash")),

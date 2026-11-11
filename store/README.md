@@ -29,11 +29,34 @@ out of the pack, never typed by hand.
 ## Accept a submission (one merge)
 
 Read the PR body. The hashes are computed from the submitted bytes; `store/index.json` in the diff is
-the generated shelf. Merge to `master` — the pack is then part of the next plugin update and appears
-in every user's Workshop.
+the generated shelf. The `store` workflow runs two checks and nothing else:
 
-A duplicate `pack_id`, a zip whose name does not match its own `pack_id`, a stale index, or a pack
-that fails the import gate all fail before merge.
+- `python3 scripts/store_index.py --check` — the index matches the files;
+- `python3 scripts/store_verify.py` — every community pack passes the importer's own pre-write gate,
+  including the presentation rules that make a Game course import with its world kit and art.
+
+Green checks plus one Merge is the whole acceptance. The pack is then part of the next plugin update
+and appears in every user's Workshop.
+
+## Identity without configuration
+
+The submit script asks for nothing. A course exported from Coursebook already carries a pack id
+derived from its own course id. When that id is already on a shelf with different bytes, the script
+namespaces it with eight hex of its own content hash and re-gates the rewritten archive:
+`spanish-basics` becomes `spanish-basics-98ff9171`. Identical bytes again returns
+`already_present`, and nothing is written.
+
+Refusals (exit code 3, one JSON line) come from the same gate the importer uses: a corrupt or
+truncated archive, a non-`.zip`, an undeclared or missing member, a bad content hash, a missing
+teaching minimum, or a presentation block the importer cannot reconstruct.
+
+## What travels with a Game course
+
+A v3 pack carries `presentation.mode`, the approved world's identity and every plate, plus a
+section's generated visual/narration through `media[]` with a text equivalent and a per-artifact
+licence. Import restores the mode, an approved world re-keyed to the importing course's objectives,
+the plate bytes (hash-identical), and the media segments. The store card carries the mode, so a Game
+course is visibly a Game course before anyone adds it.
 
 ## Add a store course to your Coursebook
 
