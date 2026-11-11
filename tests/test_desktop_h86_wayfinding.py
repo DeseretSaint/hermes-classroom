@@ -95,8 +95,10 @@ class WayfindingTest(unittest.TestCase):
         ]
         self.assertEqual(len(shelf), 1, shelf)
         # CP-053: the wide scene's paper tag is a second "New course" surface, but it is a hooked
-        # scene object, not a catalog control — the shelf still carries exactly one.
-        self.assertIn("'data-cb-home-scene-tag': '', children: 'New course'", self.source)
+        # scene object, not a catalog control — the shelf still carries exactly one. Its label is
+        # the deck's own `home.tag.firstuse` row, so the pin is the constant, not a string literal.
+        self.assertIn("'data-cb-home-scene-tag': '', children: CB_HOME_V3_COPY.tagNew", self.source)
+        self.assertIn("  tagNew: 'New course',", self.source)
         self.assertIn("'data-cb-shelf-new-course'", self.source)
         self.assertIn("variant: 'primary', children: 'New course'", self.source)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)
