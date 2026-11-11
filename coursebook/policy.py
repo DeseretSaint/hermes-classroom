@@ -53,6 +53,10 @@ EVIDENCE_TARGETS: tuple[str, ...] = (
 #: many distinct observable criteria; "understands" is never one of them.
 MIN_RUBRIC_CRITERIA = 3
 
+#: Mirrors ``coursebook.curriculum.DOMAIN_SOURCES``. How a capability decision's subject domain was
+#: chosen: declared by the caller, inferred from the course goal, or the plain default.
+DOMAIN_SOURCES: tuple[str, ...] = ("declared", "inferred", "default")
+
 Recipe = Literal["one_off", "casual", "committed", "companion", "parent"]
 EvidenceTarget = Literal["recall", "comprehension", "production", "discrimination", "procedure", "transfer"]
 MediaLevel = Literal["none", "optional", "required"]
@@ -289,6 +293,18 @@ _ILLUSTRATION_VISUAL = re.compile(
     r"image\s+for\s+context|artwork)\b"
 )
 
+#: Language-course visuals. An illustration whose construct names a language-learning artefact
+#: (a word card, a phrase scene, a script chart) presupposes a language lesson; a course resolved
+#: to any other domain may still carry generic context artwork, but not this role. CP-015g/D1-F2
+#: followup: this is what stops a telescope lesson being handed a "language visual aid".
+_LANGUAGE_VISUAL = re.compile(
+    r"\b("
+    r"language|vocabular(?:y|ies)|words?|phrases?|pronunciation|translations?|"
+    r"alphabet|letters?|scripts?|kana|kanji|romaji|flash\s?cards?|"
+    r"dialogues?|conversations?"
+    r")\b"
+)
+
 #: Source-analysis constructs. They make a named source image the evidence, not decoration.
 _SOURCE_ANALYSIS = re.compile(
     r"\b("
@@ -360,6 +376,10 @@ class LessonCapabilityPlan:
     locale: str | None = None
     level: str | None = None
     subject_domain: str | None = None
+    #: How ``subject_domain`` was chosen: ``declared`` by the caller, ``inferred`` from the course
+    #: goal, or the ``default`` used when neither named a subject. Recorded so a stored policy can
+    #: never present an inferred domain as the caller's declaration.
+    domain_source: str | None = None
     reasons: tuple[str, ...] = ()
     #: True when the plan declared the need and the policy adopted it, rather than inferring a
     #: construct from the authored intent. A declared plan is the product path; the inference path
@@ -372,6 +392,10 @@ class LessonCapabilityPlan:
             raise CapabilityPolicyError(f"unknown recipe {self.recipe!r}")
         if self.evidence_target not in EVIDENCE_TARGETS:
             raise CapabilityPolicyError(f"unknown evidence target {self.evidence_target!r}")
+        if self.domain_source is not None and self.domain_source not in DOMAIN_SOURCES:
+            raise CapabilityPolicyError(
+                f"unknown domain source {self.domain_source!r}; expected one of {DOMAIN_SOURCES}"
+            )
         if self.check_angle not in CHECK_ANGLES:
             raise CapabilityPolicyError(f"unknown check angle {self.check_angle!r}")
         if self.rubric_profile not in RUBRIC_PROFILES:
@@ -423,6 +447,7 @@ class LessonCapabilityPlan:
             "locale": self.locale,
             "level": self.level,
             "subject_domain": self.subject_domain,
+            "domain_source": self.domain_source,
             "reasons": list(self.reasons),
             "declared": self.declared,
             "construct": self.construct,
@@ -441,8 +466,18 @@ def _check_media(kind: str, level: str, role: str | None, allowed_roles: tuple[s
 
 
 def _normalise_domain(subject_domain: str | None, locale: str | None) -> str:
+    """The canonical domain name for a declared ``subject_domain``, or ``general`` for none.
+
+    A locale is the language of delivery, never the subject of the course. The pre-v10 rule
+    returned ``language`` whenever a locale was present and no domain was declared; that is how a
+    telescope lesson was gated as a language lesson. ``language`` is now reachable only when the
+    domain is actually declared (or resolved from the goal by ``curriculum.resolve_domain`` and
+    passed in): an omitted domain is ``general`` whatever the locale says. ``locale`` is kept in
+    the signature because this is a public alias-table entry point, but it no longer selects a
+    domain.
+    """
     if subject_domain is None or not str(subject_domain).strip():
-        return "language" if locale else "general"
+        return "general"
     domain = str(subject_domain).strip().lower().replace("-", "_").replace(" ", "_")
     return _DOMAIN_ALIASES.get(domain, domain)
 
@@ -451,9 +486,9 @@ def normalise_subject_domain(subject_domain: str | None, locale: str | None = No
     """The canonical domain name for a declared ``subject_domain``.
 
     Public because the research pass has to ask the same question ("what is this course
-    *about*?") and there must be exactly one alias table. ``locale`` is only consulted when no
-    domain was declared, which is the pre-v10 shape; a declared domain always wins, so a
-    Spanish brake-pad procedure is ``technical_procedure`` and not ``language``.
+    *about*?") and there must be exactly one alias table. A declared domain always wins, so a
+    Spanish brake-pad procedure is ``technical_procedure`` and not ``language``; an omitted domain
+    is ``general`` rather than the locale's ``language`` (CP-015g/D1-F2 followup).
     """
     return _normalise_domain(subject_domain, locale)
 
@@ -514,6 +549,11 @@ def _image_decision(
     schematic = _match(_SCHEMATIC_VISUAL, text)
     sourced = _match(_SOURCED_VISUAL, text)
     illustration = _match(_ILLUSTRATION_VISUAL, text)
+    if illustration and domain != "language" and _LANGUAGE_VISUAL.search(text):
+        # A language artefact (word card, phrase scene, script chart) is not context artwork for a
+        # non-language course. CP-015g/D1-F2 followup: a telescope lesson resolved to
+        # technical_procedure must not be handed the "language visual aid" role.
+        illustration = None
 
     if recipe == "parent":
         # The parent is the presenter and the observer. Only reference material the parent must
@@ -733,6 +773,11 @@ def _declared_image_decision(
             raise CapabilityPolicyError(
                 "an AI illustration is context only and can never be a required visual need"
             )
+        if domain != "language" and _LANGUAGE_VISUAL.search(text):
+            raise CapabilityPolicyError(
+                f"domain {domain!r} is not a language lesson; an illustration whose construct "
+                f"names a language artefact ({need.construct!r}) is not permitted"
+            )
         if domain in SYMBOLIC_DOMAINS:
             raise CapabilityPolicyError(
                 f"a {domain} lesson is symbolic; an AI illustration is never evidence there, so "
@@ -883,6 +928,7 @@ def plan_lesson_capability(
     locale: str | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    domain_source: str | None = None,
     media_need: object = None,
     media_preferences: Mapping[str, str] | None = None,
 ) -> LessonCapabilityPlan:
@@ -902,6 +948,12 @@ def plan_lesson_capability(
     Raises :class:`CapabilityPolicyError` for an unknown recipe or evidence target, and for a
     declaration that names a role this lesson cannot carry. It never raises for an ordinary
     lesson: the fallback is no media, never invented media.
+
+    ``subject_domain`` is the *resolved* domain and ``domain_source`` says how it was chosen
+    (``declared``, ``inferred`` or ``default``). The policy does not resolve the domain itself:
+    the caller uses :func:`curriculum.resolve_domain`, so the profile the plan, the research pass
+    and this lesson decision use is one profile. An omitted domain is ``general`` here — the
+    pre-v10 locale-to-``language`` default is gone.
     """
     if recipe not in RECIPES:
         raise CapabilityPolicyError(f"unknown recipe {recipe!r}; expected one of {RECIPES}")
@@ -972,6 +1024,7 @@ def plan_lesson_capability(
         locale=locale,
         level=level,
         subject_domain=domain,
+        domain_source=domain_source,
         reasons=reasons,
         declared=need is not None,
         construct=need.construct if need is not None else None,

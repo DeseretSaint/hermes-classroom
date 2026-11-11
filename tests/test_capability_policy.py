@@ -21,6 +21,7 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 from coursebook import generation, packs, policy
+from coursebook import curriculum
 
 POLICY_SOURCE = Path(policy.__file__)
 
@@ -637,6 +638,7 @@ class PurityTest(unittest.TestCase):
         self.assertEqual(policy.RECIPES, generation.RECIPES)
         self.assertEqual(policy.EVIDENCE_TARGETS, generation.EVIDENCE_TARGETS)
         self.assertEqual(policy.MIN_RUBRIC_CRITERIA, packs.MIN_RUBRIC_CRITERIA)
+        self.assertEqual(policy.DOMAIN_SOURCES, curriculum.DOMAIN_SOURCES)
 
 
 class ParentMediaPreferenceTest(unittest.TestCase):

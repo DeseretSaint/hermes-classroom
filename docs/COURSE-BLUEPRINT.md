@@ -660,6 +660,31 @@ Only the `default` case appends its note to the result's `warnings`; an inferred
 but is not a warning, because the goal named it. A goal that names a language with no declared locale
 resolves to `general` with a note saying a language course needs a declared target language.
 
+### 15.1.1 The lesson stage reuses the plan's decision
+
+The per-lesson capability policy used to keep a pre-v10 rule of its own: `policy._normalise_domain`
+returned `language` whenever a locale was declared and no domain was. That is the same defect one
+layer down — a CP-015g telescope course (`subject_domain: null`) was gated as a language lesson, so a
+section could declare narration audio, an illustration was read as a "language visual aid", and the
+rubric profile could be `language_production`.
+
+The lesson stage now consumes the plan's decision instead of making its own:
+
+* `policy._normalise_domain(None, locale)` is `general`; a locale is the delivery language, not the
+  subject. A language course exists only when the domain is declared or resolved from the goal.
+* The plan document stores `domain_provenance` beside the declared `subject_domain`.
+  `generation.lesson_capability_plan` takes the plan's record (or, for a pre-field plan, resolves
+  from the course row's goal with the same resolver) and passes the resolved `domain` and
+  `domain_source` to `policy.plan_lesson_capability`. A section/plan/dials declaration still wins
+  as `declared`; the alias table remains `policy.normalise_subject_domain`.
+* `LessonCapabilityPlan` records `subject_domain` and `domain_source`, the stored
+  `gen_lessons.policy_json` keeps both, and the lesson job's result carries `subject_domain`,
+  `domain_source` and the full `domain_provenance` — the same values the plan result named.
+* Media rules follow the resolved domain: audio is refused for a non-language lesson, and an
+  illustration whose construct names a language artefact (word card, phrase scene, script chart)
+  is refused outside a language course. Generic context artwork remains optional where a plan
+  declared it; nothing is invented for an undeclared or `general` course.
+
 ### 15.2 Why inference replaced "never infer"
 
 H-44 declined to infer a language from goal text, on the ground that a regex turning "read Spanish
@@ -684,4 +709,11 @@ passed off as the caller's declaration.
   validator the procedure brief.
 * `tests/test_generation.py::LanguageGoalDomainProvenanceTest` — the H-44 cases, updated to the
   `inferred` source.
+* `tests/test_cp015g_lesson_domain.py` — the lesson-stage half: an omitted domain is `general` in
+  the policy whatever the locale; a telescope lesson resolves `technical_procedure`/`inferred` and
+  cannot declare narration audio or a language illustration (while generic context artwork stays
+  optional); an inferred language course keeps its pronunciation audio and a declared language
+  course keeps `domain_source=declared`; a declared `technical_procedure` course is unchanged; and
+  the lesson run record (and the stored `policy_json`) names the same domain and source as the plan
+  record.
 

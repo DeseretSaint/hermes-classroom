@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v14` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v15` | `PLAN_SCHEMA_V2` |
-| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v2` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v7` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v7` | `VALIDATION_SCHEMA` |
@@ -490,6 +490,16 @@ v10). They are their own fields; they are never written into `dials`, which stay
   never reachable from the locale alone — the CP-015g defect this replaces (a telescope goal
   authored under a language brief) cannot recur by omission. `docs/COURSE-BLUEPRINT.md` §15 has
   the full table.
+* **The lesson stage authors under the plan's resolved domain.** The plan document stores
+  `domain_provenance` beside the declared `subject_domain`. `run_lesson_job` (and the unit-sections
+  stage) reuses that record rather than re-deriving a domain, and passes the resolved domain and
+  its `domain_source` to `policy.plan_lesson_capability`; a plan authored before the field existed
+  resolves from the course row's own goal with the same resolver. The capability plan, the stored
+  `gen_lessons.policy_json`, the lesson run record and the plan record therefore name one domain
+  and one source. `policy` itself no longer maps an omitted domain to `language`: with no domain
+  it is `general`, whatever the locale. A declaration that names a language artefact as an
+  illustration is refused outside a language course, so an undeclared course cannot be handed a
+  "language visual aid".
 * **The fingerprint** (`_request_fingerprint`) and therefore the reuse cache include all three, so
   a plan authored under a different level, domain or scope is never reused. Reuse is still scoped
   to one course; an identical retry of the same brief is still free.

@@ -159,7 +159,7 @@ MATRIX = {
         "target": "production",
         "intent": "Model one polite greeting, then have the learner say it aloud.",
         "locale": "ja-JP",
-        "dials": {"level": "L0"},
+        "dials": {"level": "L0", "subject_domain": "language"},
         "profile": "language_production",
         "angle": "production",
         "image": "none",

@@ -202,7 +202,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v14"
 #: CP-015g/D1-F2 adds the resolved-subject-domain line, so it advances to v15.
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v15"
 #: The unit-sections authoring stage. One unit per call, so its own version.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v2"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
@@ -2308,6 +2308,10 @@ POLICY_SCHEMA: dict[str, Any] = {
         "locale": {"type": ["string", "null"], "maxLength": 35},
         "level": {"type": ["string", "null"], "maxLength": 35},
         "subject_domain": {"type": ["string", "null"], "maxLength": 60},
+        "domain_source": {
+            "type": ["string", "null"],
+            "enum": [*capability_policy.DOMAIN_SOURCES, None],
+        },
         "reasons": {
             "type": "array",
             "maxItems": 8,
@@ -3400,6 +3404,29 @@ def _domain_provenance(
     return record
 
 
+def _stage_domain_provenance(
+    document: Mapping[str, Any] | None,
+    *,
+    goal: str | None,
+    subject_domain: str | None,
+    locale: str | None,
+) -> dict[str, Any]:
+    """The domain decision a post-plan stage authors under.
+
+    A plan document authored after CP-015g/D1-F2 records ``domain_provenance``: the resolver's
+    answer plus its source. Reusing that record is what makes the plan stage, the unit-sections
+    stage, the lesson stage and the run records name one domain — a lesson can never re-derive a
+    different profile from the locale. A document authored before the field existed (or a caller
+    that passes no document) resolves here from the same course goal with the same function, so a
+    legacy plan and a new one cannot disagree about whether the course is a language course.
+    """
+    if isinstance(document, Mapping):
+        stored = document.get("domain_provenance")
+        if isinstance(stored, Mapping) and stored.get("resolved_domain"):
+            return dict(stored)
+    return _domain_provenance(goal=goal, subject_domain=subject_domain, locale=locale)
+
+
 #: The typed Parent Studio brief fields that reach the plan model. Internal routing keys and the
 #: two consent flags do not: ``egress_acknowledged`` is a precondition of the command, and
 #: ``redaction_requested`` is an export instruction the planner cannot act on.
@@ -3568,6 +3595,43 @@ def _subject_domain(
     return None
 
 
+def _lesson_domain_resolution(
+    *,
+    plan: dict[str, Any] | None,
+    section: dict[str, Any] | None,
+    dials: dict[str, Any] | None,
+    subject_domain: str | None,
+    locale: str | None,
+    goal: str | None,
+    domain_provenance: Mapping[str, Any] | None,
+) -> dict[str, str]:
+    """The domain one lesson is authored under, and how it was chosen.
+
+    Precedence:
+
+    * a domain declared on the section, the plan document or the dials is ``declared`` (it is what
+      the caller actually said, and the alias table canonicalises it);
+    * otherwise the plan's recorded ``domain_provenance`` is reused verbatim, so the lesson names
+      the same resolved domain and source the plan record did;
+    * otherwise the course goal resolves it with :func:`curriculum.resolve_domain` — never the
+      locale. A lesson left without a goal is ``general``, never ``language``.
+    """
+    declared = _subject_domain(plan=plan, section=section) or (
+        subject_domain.strip() if isinstance(subject_domain, str) and subject_domain.strip() else None
+    ) or _subject_domain(dials=dials)
+    if declared is not None:
+        resolved = curriculum.resolve_domain(domain=declared, locale=locale)
+        return {"domain": resolved["domain"], "source": resolved["source"]}
+    if isinstance(domain_provenance, Mapping) and domain_provenance.get("resolved_domain"):
+        return {
+            "domain": str(domain_provenance["resolved_domain"]),
+            "source": str(domain_provenance.get("source") or "inferred"),
+        }
+    goal_text = str(goal or (plan or {}).get("goal") or "").strip()
+    resolved = curriculum.resolve_domain(goal=goal_text or None, domain=None, locale=locale)
+    return {"domain": resolved["domain"], "source": resolved["source"]}
+
+
 def lesson_capability_plan(
     *,
     recipe: str,
@@ -3578,17 +3642,24 @@ def lesson_capability_plan(
     plan: dict[str, Any] | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    domain_provenance: Mapping[str, Any] | None = None,
+    goal: str | None = None,
     parent_brief: dict[str, Any] | None = None,
 ) -> capability_policy.LessonCapabilityPlan:
     """Compute the one capability decision this section is authored under.
 
     The plan (recipe), the objective (evidence target), the authored section intent, the
-    learner's locale/level and the advisory subject domain are the only inputs. The result is
+    learner's locale/level and the resolved subject domain are the only inputs. The result is
     immutable and deterministic; nothing here reads a provider, a clock or the database.
 
     ``level``/``subject_domain`` are the declared cb.rpc v10 inputs from the plan document. They
     are accepted beside ``dials`` because ``dials`` is the closed four-dial object; the dials
     fallback exists only for a pre-v10 plan document, which has nowhere else to carry them.
+
+    The subject domain itself is **resolved**, not read off the locale: a domain declared on the
+    section/plan/dials is `declared`; else the plan's recorded ``domain_provenance`` is reused;
+    else ``goal`` (the course goal) resolves it through :func:`curriculum.resolve_domain`. The
+    capability plan carries both the resolved domain and its ``domain_source``.
     """
     section = section or {}
     evidence_target = str(
@@ -3597,10 +3668,14 @@ def lesson_capability_plan(
         or "comprehension"
     )
     resolved_level = level or dials.get("level")
-    resolved_domain = (
-        _subject_domain(plan=plan, section=section)
-        or (subject_domain.strip() if isinstance(subject_domain, str) and subject_domain.strip() else None)
-        or _subject_domain(dials=dials)
+    resolution = _lesson_domain_resolution(
+        plan=plan,
+        section=section,
+        dials=dials,
+        subject_domain=subject_domain,
+        locale=locale,
+        goal=goal,
+        domain_provenance=domain_provenance,
     )
     return capability_policy.plan_lesson_capability(
         recipe=str(recipe),
@@ -3608,7 +3683,8 @@ def lesson_capability_plan(
         lesson_intent=str(section.get("lesson_intent") or ""),
         locale=locale,
         level=str(resolved_level) if resolved_level else None,
-        subject_domain=resolved_domain,
+        subject_domain=resolution["domain"],
+        domain_source=resolution["source"],
         media_preferences=_media_preferences(parent_brief),
         # The plan's own declaration. When it is present the policy adopts it (and may reject the
         # declared role); the intent prose is then a description, not the media decision.
@@ -4683,6 +4759,7 @@ def _enforce_plan_rules_v1(
                 locale=locale,
                 dials=dials,
                 plan=plan,
+                goal=goal,
             )
         except capability_policy.CapabilityPolicyError as exc:
             reasons.append(f"section {section_ordinal}: {exc}")
@@ -6620,6 +6697,7 @@ def build_plan_request(
         locale=locale,
         level=declared_level,
         subject_domain=resolved_domain["domain"],
+        domain_source=resolved_domain["source"],
     )
     pages = desired_pages(parent_brief) if recipe == "parent" else None
     # The blueprint schema is used when the brief declares a scope: the three-scope contract is
@@ -6865,6 +6943,8 @@ def build_lesson_request(
     capability: capability_policy.LessonCapabilityPlan | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    domain_provenance: Mapping[str, Any] | None = None,
+    goal: str | None = None,
 ) -> LLMRequest:
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
@@ -6880,6 +6960,8 @@ def build_lesson_request(
         plan=plan,
         level=declared_level,
         subject_domain=declared_domain,
+        domain_provenance=domain_provenance,
+        goal=goal,
     )
     payload = {
         "plan_title": plan.get("title"),
@@ -6892,6 +6974,10 @@ def build_lesson_request(
         "locale": locale,
         "level": declared_level,
         "subject_domain": declared_domain,
+        # The resolved domain and how it was chosen travel beside the declared input: the author
+        # is told the profile this lesson is actually authored under, and whether it was inferred.
+        "resolved_subject_domain": capability.subject_domain,
+        "domain_source": capability.domain_source,
         "capability_policy": capability.to_dict(),
         "sources": _lesson_ledger(section, sources),
         "rules": {
@@ -6944,6 +7030,7 @@ def build_lesson_validation_request(
     timeout_s: float | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    domain_source: str | None = None,
 ) -> LLMRequest:
     """The independent pass over one authored lesson.
 
@@ -6965,6 +7052,7 @@ def build_lesson_validation_request(
         "locale": locale,
         "level": level or _dial_text(dials, "level"),
         "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
+        "domain_source": domain_source,
         "sources": _lesson_ledger(section, sources),
         "lesson": lesson,
         "learner_facing": True,
@@ -8969,6 +9057,11 @@ def run_plan_job(
                             "level": level,
                             "subject_domain": subject_domain,
                             "scope": scope,
+                            # CP-015g/D1-F2 followup: the resolved domain and its source are stored
+                            # beside the declared input, so every later stage (unit sections,
+                            # lessons, media policy, run records) reads one decision instead of
+                            # re-deriving one from the locale.
+                            "domain_provenance": domain_provenance,
                             # The effective research floor. The brief's closed dials are stored
                             # unchanged above; this records the pass the size actually bought.
                             "research_depth": effective_depth(dials.get("depth"), scope),
@@ -9193,7 +9286,8 @@ def _section_owner_ref(section: dict[str, Any]) -> int | None:
 
 
 def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[dict[str, Any]],
-                                recipe: str, locale: str | None, feedback: str | None = None) -> str:
+                                recipe: str, locale: str | None, feedback: str | None = None,
+                                domain_provenance: Mapping[str, Any] | None = None) -> str:
     lines = [
         "Design the sections for exactly one unit of an approved blueprint plan.",
         f"Unit {unit['ordinal']}: {unit['title']!r}. Goal: {unit['goal']}",
@@ -9220,6 +9314,21 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
     lines.append(f"Total sections for this unit: exactly {int(unit.get('target_lessons', 0))}.")
     if locale:
         lines.append(f"Content locale: {locale}.")
+    if isinstance(domain_provenance, Mapping) and domain_provenance.get("resolved_domain"):
+        # The same resolved domain and source the plan was authored under. Stated as inferred
+        # when it was inferred, so the author never reads a profile as the caller's declaration.
+        source = str(domain_provenance.get("source") or "")
+        qualifier = (
+            " (inferred from the goal; the brief declared none)"
+            if source in ("inferred", "default")
+            else ""
+        )
+        lines.append(
+            f"Subject domain: {domain_provenance['resolved_domain']}{qualifier}. This is what the "
+            "course is about, not the language it is delivered in. Audio may only be declared for "
+            "a language lesson whose construct is spoken or listened to; a non-language course "
+            "cannot declare narration."
+        )
     if feedback:
         lines.append("The previous attempt broke required rules:\n- " + "\n- ".join([feedback]))
     return "\n".join(lines)
@@ -9237,6 +9346,7 @@ def build_unit_sections_request(
     research_status: str,
     feedback: str | None = None,
     timeout_s: float | None = None,
+    domain_provenance: Mapping[str, Any] | None = None,
 ) -> LLMRequest:
     """The unit stage request. It carries the unit's objectives and the shared ledger, never the
     whole course outline (§6: no call grows with course length except the blueprint)."""
@@ -9245,6 +9355,14 @@ def build_unit_sections_request(
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
+        "subject_domain": (
+            domain_provenance.get("resolved_domain")
+            if isinstance(domain_provenance, Mapping)
+            else None
+        ),
+        "domain_source": (
+            domain_provenance.get("source") if isinstance(domain_provenance, Mapping) else None
+        ),
         "plan_title": plan.get("title"),
         "plan_scope": plan.get("scope"),
         "unit": {
@@ -9278,7 +9396,8 @@ def build_unit_sections_request(
         prompt_version=UNIT_SECTIONS_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=_unit_sections_instructions(
-            unit=unit, objectives=objectives, recipe=recipe, locale=locale, feedback=feedback
+            unit=unit, objectives=objectives, recipe=recipe, locale=locale, feedback=feedback,
+            domain_provenance=domain_provenance,
         ),
         input_text=_bounded_input(payload),
         schema=UNIT_SECTIONS_SCHEMA,
@@ -9328,12 +9447,21 @@ def build_unit_sections_validation_request(
     sources: Sequence[SourceRecord],
     research_status: str,
     timeout_s: float | None = None,
+    domain_provenance: Mapping[str, Any] | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "unit_sections",
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
+        "subject_domain": (
+            domain_provenance.get("resolved_domain")
+            if isinstance(domain_provenance, Mapping)
+            else None
+        ),
+        "domain_source": (
+            domain_provenance.get("source") if isinstance(domain_provenance, Mapping) else None
+        ),
         "plan_brief": _unit_plan_brief(plan, objectives),
         "unit": unit,
         "objectives": list(objectives),
@@ -9366,6 +9494,8 @@ def enforce_unit_section_rules(
     locale: str | None,
     ledger: Sequence[SourceRecord],
     existing_owner_refs: Sequence[int] = (),
+    domain_provenance: Mapping[str, Any] | None = None,
+    goal: str | None = None,
 ) -> None:
     """§5 rules 4 and 7, on the batch the unit stage just authored.
 
@@ -9466,6 +9596,8 @@ def enforce_unit_section_rules(
                     locale=locale,
                     dials=dials,
                     plan=plan,
+                    domain_provenance=domain_provenance,
+                    goal=goal,
                 )
             except capability_policy.CapabilityPolicyError as exc:
                 reasons.append(f"section {index + 1}: {exc}")
@@ -9586,6 +9718,15 @@ def run_unit_sections_job(
         or plan.get("title")
         or ""
     )
+    # The unit stage gates every declared media need with the same resolved domain and source the
+    # plan recorded, so a Japanese course's pronunciation reference stays legal and a telescope
+    # course cannot declare narration.
+    domain_provenance = _stage_domain_provenance(
+        document["document"],
+        goal=goal.strip() or None,
+        subject_domain=subject_domain,
+        locale=locale,
+    )
 
     existing_sections = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
     existing_owner_refs = [
@@ -9609,6 +9750,8 @@ def run_unit_sections_job(
             "owners": len(existing_owner_refs),
             "reviews": len(existing_sections) - len(existing_owner_refs),
             "reused": True,
+            "subject_domain": domain_provenance.get("resolved_domain"),
+            "domain_source": domain_provenance.get("source"),
             "next_unit_ordinal": _next_unit_ordinal(connection, str(plan_id), requested_unit),
         }
 
@@ -9659,6 +9802,8 @@ def run_unit_sections_job(
                     locale=locale,
                     ledger=sources,
                     existing_owner_refs=existing_owner_refs,
+                    domain_provenance=domain_provenance,
+                    goal=goal.strip() or None,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -9678,6 +9823,7 @@ def run_unit_sections_job(
                 locale=locale,
                 sources=sources,
                 research_status=research_status,
+                domain_provenance=domain_provenance,
             )
             assert request is not None
             assert_separate_pass(request, validation_request)
@@ -9825,6 +9971,8 @@ def run_unit_sections_job(
             "stage": "unit_sections",
             "unit_ordinal": requested_unit,
             "state": state,
+            "subject_domain": domain_provenance.get("resolved_domain"),
+            "domain_source": domain_provenance.get("source"),
             "sections": total_sections,
             "owners": len(existing_owner_refs) + len(
                 [s for s in authored if str(s.get("role") or "owner") == "owner"]
@@ -10291,6 +10439,21 @@ def run_lesson_job(
     subject_domain = _plan_input(document["document"], "subject_domain")
     dials = _policy_dials(stored_dials, level=level, subject_domain=subject_domain)
     locale = document["document"].get("locale")
+    # CP-015g/D1-F2 followup: the lesson stage authors under the *same* resolved domain and source
+    # the plan recorded. The plan document carries `domain_provenance`; a document authored before
+    # that field existed resolves from the course row's own goal with the same resolver, so a
+    # lesson can never fall back to "a locale means a language course".
+    course_row = _row_dict(
+        connection.execute(
+            "SELECT goal FROM courses WHERE id = ?", (str(plan_row["course_id"]),)
+        ).fetchone()
+    )
+    domain_provenance = _stage_domain_provenance(
+        document["document"],
+        goal=str((course_row or {}).get("goal") or "").strip() or None,
+        subject_domain=subject_domain,
+        locale=locale,
+    )
     # The typed brief the plan was authored for; a plan authored before this field is absent.
     lesson_parent_brief = document["document"].get("parent_brief")
     if not isinstance(lesson_parent_brief, dict):
@@ -10452,6 +10615,8 @@ def run_lesson_job(
                         "state": existing["state"],
                         "check_enabled": existing["state"] == "validated",
                         "reused": True,
+                        "subject_domain": domain_provenance.get("resolved_domain"),
+                        "domain_source": domain_provenance.get("source"),
                     }
                 )
                 continue
@@ -10480,6 +10645,7 @@ def run_lesson_job(
                     stored_dials=stored_dials,
                     level=level,
                     subject_domain=subject_domain,
+                    domain_provenance=domain_provenance,
                     locale=locale,
                     sources=sources,
                     research_status=research_status,
@@ -10530,6 +10696,11 @@ def run_lesson_job(
         "plan_hash": digest,
         "stage": "lessons",
         "plan_schema": plan.get("plan_schema"),
+        # The same resolved domain and source the plan record named: the lesson stage reuses the
+        # plan's decision rather than re-deriving one from the locale.
+        "subject_domain": domain_provenance.get("resolved_domain"),
+        "domain_source": domain_provenance.get("source"),
+        "domain_provenance": domain_provenance,
         "unit_ordinal": int(unit["ordinal"]) if unit is not None else None,
         "next_unit_ordinal": (
             _next_unit_ordinal(connection, str(plan_id), int(unit["ordinal"]))
@@ -10629,6 +10800,7 @@ def _author_section(
     stored_dials: dict[str, Any] | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    domain_provenance: Mapping[str, Any] | None = None,
     parent_brief: dict[str, Any] | None = None,
     review_target: dict[str, Any] | None = None,
     version: int = 1,
@@ -10656,6 +10828,7 @@ def _author_section(
         plan=plan,
         level=level,
         subject_domain=subject_domain,
+        domain_provenance=domain_provenance,
         parent_brief=parent_brief,
     )
     rubric_profile = rubrics.resolve_profile(capability.rubric_profile, capability.evidence_target)
@@ -10685,6 +10858,7 @@ def _author_section(
             capability=capability,
             level=level,
             subject_domain=subject_domain,
+            domain_provenance=domain_provenance,
         )
         response = _call_llm(llm, request, usage)
         candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)
@@ -10752,7 +10926,10 @@ def _author_section(
             locale=locale,
             sources=sources,
             level=level,
-            subject_domain=subject_domain,
+            # The validator judges the lesson under the resolved domain and its source, exactly
+            # as the author and the stored policy did — never the declared-null input.
+            subject_domain=capability.subject_domain,
+            domain_source=capability.domain_source,
         )
         assert_separate_pass(request, validation_request)
         validation_started = time.monotonic()
@@ -10934,6 +11111,10 @@ def _author_section(
         "validation_verdict": verdict["verdict"],
         "validation": _validation_block(verdict, response, validation_response),
         "validation_model": validation_response.model if validation_response is not None else None,
+        # The domain and its source this lesson was authored under; identical to the plan record's,
+        # because the lesson stage reuses the plan's decision instead of re-deriving it.
+        "subject_domain": capability.subject_domain,
+        "domain_source": capability.domain_source,
         # H-195: which model and prompt label wrote this lesson, from the provider's report.
         "generation": generation_provenance(response, request),
         "reused": False,

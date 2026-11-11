@@ -278,15 +278,16 @@ class PolicyThreadingTest(KernelCase):
         # A realistic payload spelling reaches the same decision through the one alias table.
         self.assertEqual(policy.normalise_subject_domain("repair"), "technical_procedure")
 
-        # The pre-v10 shape (locale only, no declared domain) inferred a language course from
-        # the Spanish locale. That is the defect this branch closes; the domain is the input.
+        # A locale alone no longer infers a language course (CP-015g/D1-F2 followup): the policy's
+        # omission default is `general`, and the domain is the input. The declared decision below
+        # is what a product path passes after `curriculum.resolve_domain`.
         inferred = policy.plan_lesson_capability(
             recipe="one_off",
             evidence_target="procedure",
             lesson_intent=intent,
             locale="es-MX",
         )
-        self.assertEqual(inferred.subject_domain, "language")
+        self.assertEqual(inferred.subject_domain, "general")
         self.assertNotEqual(declared.to_dict(), inferred.to_dict())
 
     def test_japanese_math_lesson_keeps_symbolic_protection(self) -> None:
@@ -321,14 +322,15 @@ class PolicyThreadingTest(KernelCase):
         self.assertEqual(graph.image, "optional")
         self.assertEqual(graph.image_role, "schematic")
 
-        # Locale alone said "language", which is what used to let the illustration through.
+        # A locale alone is `general` now, and the declared mathematics domain is what keeps the
+        # illustration out. The symbolic protection is the declaration's, not the locale's.
         inferred = policy.plan_lesson_capability(
             recipe="casual",
             evidence_target="comprehension",
             lesson_intent=intent,
             locale="ja-JP",
         )
-        self.assertEqual(inferred.subject_domain, "language")
+        self.assertEqual(inferred.subject_domain, "general")
         self.assertNotEqual(protected.image, inferred.image)
 
     # ── 4. the lesson stage reads the same declared inputs ─────────────────
