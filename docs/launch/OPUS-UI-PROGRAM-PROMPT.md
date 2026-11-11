@@ -34,9 +34,10 @@ ten-line report. Nothing in between.
   is done, verify its capture and create one follow-up only if the painted fox is absent.
 - Create at most two UI cards before Home lands: (1) the asset-adoption card, titled exactly
   `[UI] Adopt painted A1 fox into the brand-asset segment`; (2) the type-mapping card. Create both
-  in `todo`. Do not reopen CP-010, CP-020a, or any done card.
-- Assign the adoption card to the profile that owns the Home lane (CP-053 is `cinder`); assign
-  verification to `atlas` or `cbqa`; never assign to the owner; never two writers on one screen.
+  in `todo`, unassigned. Do not reopen CP-010, CP-020a, or any done card.
+- The cron supervisor assigns and dispatches. Do not assign cards yourself unless the owner makes
+  you sole supervisor. If you are sole supervisor, assign the adoption card only after CP-053
+  lands; verification goes to `atlas` or `cbqa`; never the owner; never two writers on one screen.
 - Card bodies and comments are argv, not shell. Use Python `subprocess.run([...])` or a file, then
   re-read with `hermes kanban show <id>`; never pass markdown through a double-quoted shell string.
 - Do not delete cards, create a new board, touch non-UI cards, or change board configuration.
@@ -277,8 +278,9 @@ Read `docs/launch/UI-MANAGER-BRIEF.md`, `docs/launch/VISION-ROUTE-RESEARCH.md`,
 `docs/launch/UI-CONTEXT-PACK.md`, `docs/concept-parity/refs/REFS.md`, and the generated pack.
 
 Write `docs/launch/UI-PROGRAM.md` (screens, order, cards, caps) and `docs/launch/UI-DECISIONS.md`
-(the Gate 0 defaults). Create the asset-adoption card first, in `todo`. Do not create a second Home
-card; CP-053 is the Home card. If CP-053 is not running, link the adoption card as its parent; if it
-is running, leave the adoption card standalone and let the supervisor sequence it. Create the
-type-mapping card. Start Home only after the adoption lands and the source test passes. Do not ask
-for approval, do not write an introduction, and do not produce a project plan longer than one page.
+(the Gate 0 defaults). Create the asset-adoption card first, in `todo`, unassigned. Do not create a
+second Home card; CP-053 is the Home card. If CP-053 is not running, link the adoption card as its
+parent; if it is running, leave the adoption card standalone and let the supervisor sequence it.
+Create the type-mapping card, also unassigned. Start Home only after the adoption lands and the
+source test passes. Do not ask for approval, do not write an introduction, and do not produce a
+project plan longer than one page.
