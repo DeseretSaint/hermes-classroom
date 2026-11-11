@@ -233,12 +233,23 @@ The judge is `scripts/vq-manifest.py`; the camera is `scripts/vq-capture.mjs`. A
   `desktop/cb-assets.generated.js` (the fox, materials and object kit ship that way by contract);
 - an image's bytes match a bundled pack cover, which proves a Press Plate is standing in as
   product-surface illustration;
+- a `background-image` layer breaks any of the rules above. Layers are judged with the same
+  classification as an `<img>`, so an asset cannot escape by being delivered as CSS; the exceptions
+  are stated, not silent: a layer whose recorded `background-repeat` tiles is decoration and is not
+  held to the 2x ratio, and no background layer satisfies a display role (a role is a placement the
+  surface must render as an image);
 - the PNG on disk does not hash to the sha256 the cell record claims.
+
+`manifest.json` separates three states, and `summary.ok` is false if any is non-zero: **passed**
+(judged, no finding), **failed** (a frame was captured and the judge refused it), and **never
+captured** (no cell record at all — nothing to judge). A failed frame is never counted as missing.
 
 Each cell record carries, for every image in the route: `selector`, `currentSrc`, natural width and
 height, rendered width and height, `sha256`, the resolved bundled-asset path when one exists, and
-whether the row is a placeholder or a Press Plate. Background-image layers are recorded the same
-way. A screen card reads the manifest; it does not need a browser of its own.
+whether the row is a placeholder or a Press Plate. Background-image layers are recorded and judged
+the same way, with `background-repeat` and `background-size` alongside so a tiling layer is
+distinguishable from an upscaled one. A screen card reads the manifest; it does not need a browser
+of its own.
 
 **Measured on `0c1729eb`, plugin sha `251a3948…`, 2026-11-11** (16 cells captured, 0 pass, 24
 matrix cells not captured): no Home cell has a display cover (0 of 4). At 1049/900/460 the two

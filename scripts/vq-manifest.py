@@ -15,7 +15,10 @@ Rules applied to every cell (from `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2
 3. **required images** — the destination's declared roles must be present in the required count.
 4. **asset quality** — every image that stands in for a kit or display asset must be complete,
    carry a sha256, have natural size at least 2x its rendered size, and not be a data URI unless it
-   is a hashed bundled brand asset from `desktop/cb-assets.generated.js`.
+   is a hashed bundled brand asset from `desktop/cb-assets.generated.js`. The same rules apply to
+   every `background-image` layer the camera recorded, so an asset cannot escape judgement by being
+   delivered as CSS; a layer whose `background-repeat` tiles is decoration and is not held to the 2x
+   ratio, while a record with no repeat mode is judged as a one-shot image.
 5. **Press Plate lane** — a Press Plate is legal as a pack cover and illegal as a product-surface
    illustration. The judge counts them separately and fails a cell whose required display role was
    satisfied only by Press Plates.
@@ -89,6 +92,11 @@ REQUIREMENTS = {
 
 PLACEHOLDER_PATTERNS = ("placeholder", "blank", "spacer", "1x1", "transparent.", "no-image")
 PRESS_PATTERNS = ("cover-4x5", "cover-3x2", "press-plate", "press_plate", "/press/")
+#: `background-repeat` values that tile the layer. A tiled layer is decoration, not a display
+#: illustration, so the 2x rule does not apply to it — the same 96 px grain tile that is correct as
+#: a repeating overlay would be an upscaled asset as a one-shot image. Only an explicit repeat mode
+#: in the cell record exempts a layer; a record without one is judged as a one-shot image.
+REPEATING_MODES = ("repeat", "repeat-x", "repeat-y", "round", "space")
 
 
 def sha256_file(path: Path) -> str:
@@ -151,7 +159,8 @@ def classify_image(image: dict, press_plates: dict[str, str] | None = None) -> d
     data_uri_stand_in = data_uri and not bundled
 
     scale_ratio = (natural_width / rendered_width) if rendered_width > 0 else None
-    scale_ok = bool(scale_ratio is not None and scale_ratio >= 1.998)
+    repeating = bool(image.get("repeating"))
+    scale_ok = bool((scale_ratio is not None and scale_ratio >= 1.998) or repeating)
 
     problems = []
     if placeholder_reasons:
@@ -174,8 +183,36 @@ def classify_image(image: dict, press_plates: dict[str, str] | None = None) -> d
         "bundled_asset": bundled,
         "scale_ok": scale_ok,
         "scale_ratio": round(scale_ratio, 3) if scale_ratio is not None else None,
+        "ratio_judged": not repeating,
         "problems": problems,
     }
+
+
+def classify_background(background: dict, press_plates: dict[str, str] | None = None) -> dict:
+    """Judge one CSS `background-image` layer with the same rules as an `<img>`.
+
+    A background layer carries `url`/`data_uri` instead of `currentSrc` and has no `complete` flag:
+    a layer that painted is loaded, so an empty url or a zero natural size is the placeholder
+    signal instead of an incompleteness flag. Everything else — data URI stand-in, 2x ratio, Press
+    Plate by bundled-cover hash — is the rule applied to an image, so a kit asset cannot escape
+    judgement by being delivered as a CSS layer.
+    """
+    repeat = str(background.get("background_repeat") or "").strip().lower()
+    modes = repeat.split()
+    row = {
+        "selector": background.get("selector"),
+        "kind": str(background.get("kind") or "background"),
+        "current_src": background.get("url") or "",
+        "current_src_data_uri": bool(background.get("data_uri")),
+        "natural": background.get("natural") or {},
+        "rendered": background.get("rendered") or {},
+        "sha256": background.get("sha256"),
+        "bundled_asset": background.get("bundled_asset"),
+        "markers": background.get("marks") or background.get("markers") or [],
+        "complete": True,
+        "repeating": any(mode in REPEATING_MODES for mode in modes),
+    }
+    return classify_image(row, press_plates)
 
 
 def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None = None) -> dict:
@@ -233,6 +270,30 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
         })
 
     usable = [row for row in inventory if not row["placeholder"] and not row["press_plate"]]
+    # Background layers are judged for quality but do not satisfy a display role: a role is a
+    # placement the surface must show, and accepting a CSS layer would let a surface pass a
+    # requirement it never rendered as an image.
+    background_inventory = []
+    for background in record.get("backgrounds") or []:
+        verdict = classify_background(background, press_plates)
+        background_inventory.append({
+            "selector": background.get("selector"),
+            "url": background.get("url"),
+            "data_uri": bool(background.get("data_uri")),
+            "background_repeat": background.get("background_repeat"),
+            "background_size": background.get("background_size"),
+            "natural": background.get("natural"),
+            "rendered": background.get("rendered"),
+            "sha256": background.get("sha256"),
+            "kind": verdict["kind"],
+            "placeholder": verdict["placeholder"],
+            "press_plate": verdict["press_plate"],
+            "press_plate_source": verdict["press_plate_source"],
+            "bundled_asset": verdict["bundled_asset"],
+            "scale_ratio": verdict["scale_ratio"],
+            "ratio_judged": verdict["ratio_judged"],
+            "problems": verdict["problems"],
+        })
     requirement_rows = []
     for requirement in REQUIREMENTS.get(str(destination), ()):
         min_width = requirement.get("min_width")
@@ -259,7 +320,7 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
                 f"required image missing: {requirement['role']} {len(satisfying)}/{requirement['min']}"
             )
 
-    press_rows = [row for row in inventory if row["press_plate"]]
+    press_rows = [row for row in inventory + background_inventory if row["press_plate"]]
     if press_rows and REQUIREMENTS.get(str(destination)):
         sources = sorted({row["press_plate_source"] for row in press_rows if row["press_plate_source"]})
         problems.append(
@@ -270,6 +331,9 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
     for row in inventory:
         for problem in row["problems"]:
             problems.append(f"image {row['selector']}: {problem}")
+    for row in background_inventory:
+        for problem in row["problems"]:
+            problems.append(f"background {row['selector']}: {problem}")
 
     # 6. evidence integrity
     screenshot = record.get("screenshot") or {}
@@ -303,7 +367,7 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
         "warnings": warnings,
         "requirements": requirement_rows,
         "images": inventory,
-        "backgrounds": record.get("backgrounds") or [],
+        "backgrounds": background_inventory,
         "plugin": (record.get("window") or {}).get("plugin") or {},
         "route": {
             "marker": route.get("marker"),
@@ -333,13 +397,15 @@ def build_manifest(cell_dir: Path, commit: str | None = None) -> dict:
         records.append((path, record))
 
     cells = [judge_cell(record, cell_dir, registry) for _, record in records]
-    present = {(cell["destination"], cell["width"]) for cell in cells if cell["ok"]}
+    # A cell that was captured and failed is *failed*; a matrix cell with no record at all is
+    # *not captured*. Conflating them reported 16 failed frames as 24 missing ones.
+    captured = {(cell["destination"], cell["width"]) for cell in cells}
 
     missing_cells = [
         {"destination": destination, "width": width}
         for destination in DESTINATIONS
         for width in WIDTHS
-        if (destination, width) not in present
+        if (destination, width) not in captured
     ]
     plugin_shas = sorted({
         str(cell["plugin"].get("sha256"))
@@ -366,9 +432,11 @@ def build_manifest(cell_dir: Path, commit: str | None = None) -> dict:
         "missing_cells": missing_cells,
         "summary": {
             "cells": len(cells),
+            "captured": len(captured),
             "passed": sum(1 for cell in cells if cell["ok"]),
             "failed": sum(1 for cell in cells if not cell["ok"]),
-            "missing_matrix_cells": len(missing_cells),
+            "not_captured": len(missing_cells),
+            "matrix_cells": len(DESTINATIONS) * len(WIDTHS),
             "mixed_build": mixed_build,
             "ok": bool(cells) and all(cell["ok"] for cell in cells) and not missing_cells,
         },
@@ -436,7 +504,8 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         f"Module sha256: {', '.join(f'`{sha}`' for sha in manifest['plugin_sha256']) or '**none recorded**'}",
         "",
         f"Cells: **{manifest['summary']['passed']} passed / {manifest['summary']['failed']} failed / "
-        f"{manifest['summary']['missing_matrix_cells']} matrix cells not captured**",
+        f"{manifest['summary']['not_captured']} never captured** "
+        f"({manifest['summary']['captured']} of {manifest['summary']['matrix_cells']} matrix cells have a frame)",
         "",
         "## Matrix",
         "",
@@ -450,6 +519,17 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
             cell = by_cell.get((destination, width))
             row.append("| " + ("pass" if cell and cell["ok"] else ("fail" if cell else "not captured")) + " ")
         lines.append("".join(row) + "|")
+    lines += ["", "## Never captured", ""]
+    if not manifest["missing_cells"]:
+        lines.append("None — every matrix cell has a frame.")
+    else:
+        lines.append(
+            f"{len(manifest['missing_cells'])} matrix cell(s) have no cell record at all. These are "
+            "not failures: nothing was captured for them, so there is nothing to judge."
+        )
+        lines.append("")
+        for cell in manifest["missing_cells"]:
+            lines.append(f"- {cell['destination']} at {cell['width']}px")
     lines += ["", "## Failed cells", ""]
     failures = [cell for cell in manifest["cells"] if not cell["ok"]]
     if not failures:
@@ -462,7 +542,8 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         lines.append("")
     lines += ["", "## Images per cell", ""]
     for cell in manifest["cells"]:
-        lines.append(f"**{cell['cell']}** — {len(cell['images'])} image(s)")
+        lines.append(f"**{cell['cell']}** — {len(cell['images'])} image(s), "
+                     f"{len(cell['backgrounds'])} background layer(s)")
         lines.append("")
         lines.append("| selector | kind | natural | rendered | ratio | sha256 |")
         lines.append("|---|---|---|---|---|---|")
@@ -477,6 +558,24 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
                 f"{image.get('scale_ratio')} | `{digest}` |"
             )
         lines.append("")
+        if cell["backgrounds"]:
+            lines.append("Background layers (judged for placeholder, data URI stand-in, Press Plate "
+                         "and, unless the layer tiles, 2x):")
+            lines.append("")
+            lines.append("| selector | repeat | natural | rendered | ratio | sha256 | problems |")
+            lines.append("|---|---|---|---|---|---|---|")
+            for layer in cell["backgrounds"]:
+                natural = layer.get("natural") or {}
+                rendered = layer.get("rendered") or {}
+                digest = layer.get("sha256") or "none"
+                problems = "; ".join(layer["problems"]) or "none"
+                lines.append(
+                    f"| `{layer.get('selector')}` | {layer.get('background_repeat') or 'unrecorded'} | "
+                    f"{natural.get('width')}x{natural.get('height')} | "
+                    f"{rendered.get('width')}x{rendered.get('height')} | "
+                    f"{layer.get('scale_ratio')} | `{digest}` | {problems} |"
+                )
+            lines.append("")
     text = "\n".join(lines) + "\n"
     (output_dir / "MANIFEST.md").write_text(text)
     return text
@@ -502,9 +601,9 @@ def main() -> int:
     summary = manifest["summary"]
     print(f"output  : {output_dir}")
     print(f"contact : {sheet or 'not produced'}")
-    print(f"cells   : {summary['cells']} ({summary['passed']} pass, {summary['failed']} fail)")
-    print(f"missing : {summary['missing_matrix_cells']} of "
-          f"{len(DESTINATIONS) * len(WIDTHS)} matrix cells")
+    print(f"cells   : {summary['cells']} captured ({summary['passed']} pass, {summary['failed']} fail)")
+    print(f"missing : {summary['not_captured']} of {summary['matrix_cells']} matrix cells were never "
+          f"captured ({summary['captured']} have a frame)")
     for cell in manifest["cells"]:
         print(f"  {'PASS' if cell['ok'] else 'FAIL'}  {cell['cell']}")
         for problem in cell["problems"][:4]:

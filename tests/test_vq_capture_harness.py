@@ -57,7 +57,7 @@ def image(selector: str, kind: str, natural: tuple[int, int], rendered: tuple[in
 def record(destination: str, images: list[dict], *, width: int = 1344,
            protocol: str = "http:", proof_script: bool = False,
            proof_markers: list[str] | None = None, v3_ready: bool = True,
-           fonts_ok: bool = True) -> dict:
+           fonts_ok: bool = True, backgrounds: list[dict] | None = None) -> dict:
     return {
         "schema": "vq.capture.v1",
         "cell": {"name": f"{destination}--{width}", "destination": destination,
@@ -73,7 +73,7 @@ def record(destination: str, images: list[dict], *, width: int = 1344,
         "surface": {"requested": destination, "resolved": destination, "control": "x", "missing": None},
         "screenshot": {"file": "shot.png", "sha256": None, "bytes": 1, "clip": None},
         "images": images,
-        "backgrounds": [],
+        "backgrounds": backgrounds or [],
         "page": {"url": "http://127.0.0.1:5174/#/coursebook", "protocol": protocol,
                  "proof_script": proof_script},
         "error": None,
@@ -89,6 +89,26 @@ def home_images(cover_count: int = 4) -> list[dict]:
                         data_uri=True,
                         bundled={"key": "cb.asset.fox.clock.128", "path": "assets/fox/fox-clock-128.webp"}))
     return covers
+
+
+def background(selector: str, natural: tuple[int, int], rendered: tuple[int, int], *,
+               data_uri: bool = False, bundled: dict | None = None, sha: str | None = FAKE_SHA,
+               repeat: str = "no-repeat", url: str | None = None) -> dict:
+    return {
+        "selector": selector,
+        "url": url if url is not None else (
+            "data:image/webp;base64,AAAA" if data_uri
+            else f"http://127.0.0.1/media/{selector.strip('/')}.webp"
+        ),
+        "data_uri": data_uri,
+        "natural": {"width": natural[0], "height": natural[1]},
+        "rendered": {"width": rendered[0], "height": rendered[1]},
+        "background_repeat": repeat,
+        "background_size": "auto",
+        "sha256": sha,
+        "bundled_asset": bundled,
+        "marks": [],
+    }
 
 
 class HarnessCase(unittest.TestCase):
@@ -246,6 +266,81 @@ class TestRefusals(HarnessCase):
         self.assert_fails_with(verdict, "rendered destination 'home'")
 
 
+class TestBackgroundRefusals(HarnessCase):
+    """A kit asset delivered as a CSS layer must fail the same rules as one delivered as <img>.
+
+    Reproduced from review: the same numbers passed as a background row while they failed as an
+    image row, because the judge never read `record["backgrounds"]`.
+    """
+
+    def test_background_without_a_natural_size_is_a_placeholder(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-hero] > div", (0, 0), (900, 900)),
+        ])
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "background [data-cb-home-hero] > div: no natural size")
+        self.assertTrue(verdict["backgrounds"][0]["placeholder"])
+
+    def test_background_with_an_empty_url_is_a_placeholder(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-hero] > div", (1800, 1800), (900, 900), url=""),
+        ])
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "empty currentSrc")
+
+    def test_data_uri_background_standing_in_for_a_kit_asset_fails(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-hero] > div", (1800, 1800), (900, 900), data_uri=True),
+        ])
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "data URI stands in for a kit asset")
+
+    def test_below_two_x_background_fails(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-hero] > div", (96, 96), (900, 900)),
+        ])
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "natural 96px is below 2x rendered 900.00px")
+
+    def test_background_matching_a_bundled_pack_cover_is_a_press_plate(self):
+        registry = vq.press_plate_registry()
+        if not registry:
+            self.skipTest("no bundled pack covers in this checkout")
+        cover_sha, cover_path = next(iter(registry.items()))
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-hero] > div", (1200, 800), (600, 400), sha=cover_sha),
+        ])
+        verdict = self.judge(rec)
+        layer = verdict["backgrounds"][0]
+        self.assertTrue(layer["press_plate"])
+        self.assertEqual(layer["press_plate_source"], cover_path)
+        self.assert_fails_with(verdict, "Press Plate(s) counted on a product surface")
+
+    def test_a_bundled_tiled_background_is_not_a_stand_in_and_is_not_ratio_judged(self):
+        # The grain/vignette materials ship as hashed data URIs and tile; a 96 px tile repeated
+        # over a 900 px box is not an upscaled illustration, so the 2x rule does not apply.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-grain]", (96, 96), (900, 714), data_uri=True,
+                       repeat="repeat", bundled={"key": "cb.asset.material.grain-night"}),
+        ])
+        verdict = self.judge(rec)
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        layer = verdict["backgrounds"][0]
+        self.assertFalse(layer["placeholder"])
+        self.assertFalse(layer["press_plate"])
+        self.assertFalse(layer["ratio_judged"])
+        self.assertEqual(layer["problems"], [])
+
+    def test_a_background_row_cannot_satisfy_a_display_role(self):
+        # Four 2x cover plates delivered as CSS layers are still 0 of 4 rendered display covers.
+        rec = record("home", home_images(cover_count=0), backgrounds=[
+            background(f"[data-cb-cover={index}]", (1200, 800), (600, 400))
+            for index in range(4)
+        ])
+        verdict = self.judge(rec)
+        self.assert_fails_with(verdict, "required image missing: display_cover 0/4")
+
+
 class TestMatrix(HarnessCase):
     def test_missing_matrix_cells_are_named(self):
         self.judge(record("home", home_images()))
@@ -253,6 +348,39 @@ class TestMatrix(HarnessCase):
         self.assertEqual(len(manifest["missing_cells"]), len(vq.DESTINATIONS) * len(vq.WIDTHS) - 1)
         self.assertIn({"destination": "design-system", "width": 1344}, manifest["missing_cells"])
         self.assertFalse(manifest["summary"]["ok"])
+
+    def test_a_failed_cell_is_not_counted_as_never_captured(self):
+        # Reproduced from review: 16 captured-but-failing cells were reported as 24 "not captured".
+        self.judge(record("home", home_images()))
+        broken = record("discover", [])
+        name = broken["cell"]["name"]
+        (self.dir / f"{name}.json").write_text(json.dumps(broken))
+        rec_shot = self.dir / "shot.png"
+        rec_shot.write_bytes(b"png-bytes")
+        broken["screenshot"]["sha256"] = hashlib.sha256(b"png-bytes").hexdigest()
+        (self.dir / f"{name}.json").write_text(json.dumps(broken))
+
+        manifest = vq.build_manifest(self.dir)
+        summary = manifest["summary"]
+        self.assertEqual(summary["cells"], 2)
+        self.assertEqual(summary["captured"], 2)
+        self.assertEqual(summary["passed"], 1)
+        self.assertEqual(summary["failed"], 1)
+        self.assertEqual(summary["not_captured"], len(vq.DESTINATIONS) * len(vq.WIDTHS) - 2)
+        self.assertEqual(summary["matrix_cells"], 24)
+        self.assertFalse(summary["ok"])
+
+    def test_the_packet_wording_separates_failed_from_never_captured(self):
+        self.judge(record("home", home_images()))
+        broken = record("discover", [])
+        broken["screenshot"]["sha256"] = hashlib.sha256(b"png-bytes").hexdigest()
+        (self.dir / f"{broken['cell']['name']}.json").write_text(json.dumps(broken))
+        manifest = vq.build_manifest(self.dir)
+        text = vq.render_markdown(manifest, self.dir)
+        self.assertIn("1 passed / 1 failed / 22 never captured", text)
+        self.assertIn("## Never captured", text)
+        self.assertNotIn("matrix cells not captured", text)
+        self.assertIn("- classroom at 1344px", text)
 
     def test_a_second_plugin_build_invalidates_the_set(self):
         first = record("home", home_images())
@@ -306,6 +434,8 @@ class TestCameraStatic(unittest.TestCase):
         for field in ("selector", "current_src", "natural", "rendered", "sha256", "bundled_asset"):
             self.assertIn(field, source, field)
         self.assertIn("readPluginSource", source)
+        # A background layer must carry the mode the judge needs to tell a tile from an upscale.
+        self.assertIn("background_repeat", source)
 
     def test_one_command_runs_the_judge(self):
         script = (SCRIPTS / "vq-capture.sh").read_text()

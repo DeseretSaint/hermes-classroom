@@ -256,6 +256,8 @@ async function pageProbe(payload) {
       data_uri: url.startsWith('data:'),
       natural: loaded,
       rendered: { width: round(rect.width), height: round(rect.height) },
+      background_repeat: style.backgroundRepeat,
+      background_size: style.backgroundSize,
       sha256: sha && sha.sha256 ? sha.sha256 : null,
       bundled_asset: bundled,
       marks: nearestMarker(el).slice(0, 4)
