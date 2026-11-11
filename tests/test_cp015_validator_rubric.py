@@ -260,8 +260,10 @@ class RubricTextTest(unittest.TestCase):
         self.assertNotIn("goal_capability_disclosure", gen.LESSON_VALIDATION_CRITERIA)
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
-        # v7 = CP-015d's narrowed-plan rubric; v8 = CP-015g's unit-scoped alignment rule.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v9")
+        # v7 = CP-015d's narrowed-plan rubric; v8 = CP-015g's unit-scoped alignment rule;
+        # v9 = the lesson pass's answer-key locator; v10 = CP-015g/D1-F1's typed curriculum
+        # ``performance`` block in the plan-validation payload (text unchanged, payload changed).
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v10")
 
 
 class DisclosedGapVerdictTest(unittest.TestCase):

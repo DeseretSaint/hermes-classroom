@@ -310,7 +310,11 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # internal_contradiction / goal_capability_disclosure and sizes the answer demand.
         # v8 (CP-015g) states that a unit-sections pass judges one unit against its own goal and
         # objectives, and drops the whole-course learner_outcome from the unit-stage brief.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v9")
+        # v9 (CP-015c follow-up) states where the stored answer key lives for the lesson pass.
+        # v10 (CP-015g/D1-F1): the plan-validation payload carries the curriculum brief's typed
+        # ``performance`` block; the instruction text is unchanged, the payload a label is keyed
+        # to is not.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v10")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

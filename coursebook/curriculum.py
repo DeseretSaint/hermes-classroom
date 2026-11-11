@@ -22,14 +22,17 @@ profile and the questions the author must answer, rather than inventing a univer
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 __all__ = [
     "CURRICULUM_PROFILES",
+    "PERFORMANCE_FAMILIES",
     "curriculum_brief",
     "curriculum_prompt_lines",
     "curriculum_queries",
     "language_name",
+    "performance_requirement",
 ]
 
 #: The profiles are deliberately coarse. They choose the *kind* of sequence reasoning,
@@ -65,6 +68,113 @@ def language_name(locale: str | None) -> str | None:
 def _profile(domain: str | None) -> str:
     key = str(domain or "").strip().lower()
     return CURRICULUM_PROFILES.get(key, CURRICULUM_PROFILES["general"])
+
+
+# ── Physical-performance detection ─────────────────────────────────────────
+#
+# CP-015g/D1-F1: a plan for a goal the learner *carries out* must evidence the carrying out, not
+# only knowledge about it. Two live runs authored four objectives about a telescope with every
+# check a comprehension quiz, and the independent validator refused the plan for it. The fix is a
+# typed requirement computed here (the same one the author and the validator are told about) plus
+# a deterministic rule the plan is refused on.
+#
+# This is a goal detector, not a topic classifier: a match is a manual act the goal asks for, and
+# a miss means the goal may still be about the subject without asking the learner to perform it.
+# It deliberately does not fire on "understand/explain/analyse", and does not read the declared
+# subject domain — an undeclared domain resolves to the locale default (`language`), which is the
+# wrong answer for a hands-on goal.
+
+#: Acts that are unambiguously performed with hands, tools or instruments. These are stems, not
+#: whole words: "replacing" and "soldering" are the same act as "replace" and "solder".
+_ALWAYS_PHYSICAL_ACT = re.compile(
+    r"\b("
+    r"set\s+up|assembl|disassembl|install|replac|refit|re-fit|repair|solder|desolder|"
+    r"weld|drill|calibrat|collimat|align|tune"
+    r")"
+)
+
+#: Acts that are only physical when the goal also names something you hold, point or stand at.
+#: ``mount`` and ``wire`` sit here rather than above because both are also nouns ("telescope
+#: mounts", "the wiring"), and the noun alone is a topic, not a performance.
+_PHYSICAL_ACT = re.compile(
+    r"\b("
+    r"focus|observ|measur|weigh|inspect|sketch|record|operat|clean|lubricat|charge|prime|"
+    r"find|check|test|build|use|mount|wire"
+    r")"
+)
+
+#: The instruments, tools and objects a physical course is performed with or at.
+_PHYSICAL_OBJECT = re.compile(
+    r"\b("
+    r"telescope|eyepiece|finder|tripod|mount|lens|filter|binoculars?|"
+    r"board|pcb|circuit|solder|iron|meter|multimeter|probe|wiring|"
+    r"bike|bicycle|wheel|tube|tyre|tire|brake|engine|carburett?or|chain|"
+    r"drill|saw|blade|sandpaper|needle|thread|fabric|loom|"
+    r"oven|pan|dough|knife|stove|"
+    r"guitar|piano|violin|instrument|strings?|"
+    r"antenna|radio|sensor|thermometer|scale|camera|microscope|"
+    r"plant|soil|seed|compost|garden|"
+    r"moons?|stars?|planets?|sky"
+    r")\b"
+)
+
+#: The evidence families a performed objective can be evidenced by: an ordered performance, or
+#: the same performance applied to a new case (a second night, a second board).
+PERFORMANCE_FAMILIES: tuple[str, ...] = ("procedure", "transfer")
+
+#: A goal that opens by asking for understanding is not a performance goal on its own. This does
+#: not veto the strong acts above ("understand how to solder a joint" still asks for the act as
+#: the exit performance only if the goal says so); it only stops the weak act list from firing.
+_UNDERSTANDING_FRAME = re.compile(
+    r"^\s*(?:understand|explain|learn\s+about|know|describe|analyse|analyze|appreciate|"
+    r"the\s+history\s+of|what\s+is|why\s+is)\b",
+    re.IGNORECASE,
+)
+
+
+def performance_requirement(goal: str | None) -> dict[str, Any] | None:
+    """The typed performance rule for one goal, or ``None`` when the goal is not a performance.
+
+    Deterministic, side-effect free and replayable: it reads the goal string only. The plan
+    author and the independent validator are both told the same block, and
+    ``generation.enforce_plan_rules`` refuses a plan that declares no performance objective for
+    a performance goal.
+
+    No subject fact is invented here. The block names the act the goal itself contains and the
+    two evidence families that can carry it.
+    """
+    text = " ".join(str(goal or "").split())
+    if not text:
+        return None
+    strong = _ALWAYS_PHYSICAL_ACT.search(text.casefold())
+    weak = _PHYSICAL_ACT.search(text.casefold())
+    object_match = _PHYSICAL_OBJECT.search(text.casefold())
+    action: str | None = None
+    if strong:
+        action = strong.group(0)
+    elif weak and object_match and not _UNDERSTANDING_FRAME.search(text):
+        action = weak.group(0)
+    if action is None:
+        return None
+    return {
+        "required": True,
+        "detected_action": action,
+        "performance_families": list(PERFORMANCE_FAMILIES),
+        "rule": (
+            "The goal asks the learner to carry out a physical act "
+            f"({action!r}), so the course must evidence the act, not only knowledge about it. "
+            "An objective whose exit performance is that act declares evidence_target "
+            "'procedure' (an ordered performance) or 'transfer' (the same performance applied "
+            "to a new case or a second session). At least one objective in the plan, and at "
+            "least one objective in the opening unit, must declare one of those families."
+        ),
+        "check_rule": (
+            "A 'procedure' objective's check is a performance checklist (kind 'verification'); "
+            "a 'transfer' objective's check is a recorded attempt or an observation log (kind "
+            "'verification' or 'observation'). A quiz evidences recall, comprehension or "
+            "discrimination only, so a quiz cannot evidence a performance."
+        ),
+    }
 
 
 def _domain_key(domain: str | None) -> str:
@@ -109,6 +219,7 @@ def curriculum_brief(
     locale: str | None,
     level: str | None,
     recipe: str,
+    goal: str | None = None,
 ) -> dict[str, Any]:
     """The typed curriculum brief passed into plan generation and validation.
 
@@ -141,6 +252,11 @@ def curriculum_brief(
     }
     if level and str(level).strip():
         brief["level"] = str(level).strip()
+    performance = performance_requirement(goal)
+    if performance is not None:
+        # CP-015g/D1-F1: the same typed block reaches the author and the validator, and the
+        # deterministic rule set refuses a plan that declares no performance objective for it.
+        brief["performance"] = performance
     if key == "language":
         brief["language"] = {
             "target_language": target,
@@ -205,6 +321,31 @@ def curriculum_prompt_lines(brief: dict[str, Any]) -> list[str]:
         "percentage, cite the supplied source and the corpus/modality; never turn a rule of "
         "thumb into a measured claim.",
     ]
+    performance = brief.get("performance")
+    if isinstance(performance, dict):
+        # CP-015g/D1-F1: the goal is a performance, so the plan must evidence the performance.
+        lines.append(str(performance.get("rule") or "").strip())
+        lines.append(str(performance.get("check_rule") or "").strip())
+    lines.extend(
+        [
+            "An objective's `evidence_target` is the performance the learner must demonstrate, "
+            "not the subject the objective is about. A knowledge objective declares 'recall', "
+            "'comprehension' or 'discrimination'; an objective the learner performs declares "
+            "'procedure' (an ordered performance) or 'transfer' (the performance applied to a "
+            "new case or a second session), and its check is a verification checklist or an "
+            "observation log. A quiz evidences recall, comprehension or discrimination only.",
+            "`source_ids` is a claim link, not a reading list. Set it only on an objective whose "
+            "`support` is 'sourced', list only sources whose supplied excerpt carries that "
+            "objective's claim, and copy the carrying words into `source_quote` verbatim. If no "
+            "supplied excerpt carries the claim, leave `source_ids` empty and set `support` to "
+            "'unverified' rather than citing a source that does not say it.",
+            "Where a supplied excerpt does carry the claim, citing it is required: a plan that "
+            "marks every objective 'unverified' while the excerpts contain its claims has not "
+            "used the research it was given. Read each excerpt before deciding — page navigation, "
+            "menus and cookie notices are not evidence, and neither is a claim the excerpt only "
+            "mentions in passing.",
+        ]
+    )
     language = brief.get("language")
     if isinstance(language, dict):
         target = language.get("target_language") or "the target language"

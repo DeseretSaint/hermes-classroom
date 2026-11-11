@@ -67,8 +67,16 @@ def plan_job(
 
 
 def blueprint() -> dict:
-    """A schema-valid blueprint plan for the default one-off, single-scope brief."""
-    return blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="one_off")
+    """A schema-valid blueprint plan for the default one-off, single-scope brief.
+
+    CP-015g/D1-F1: the brief's goal is a physical act ("Replace the front brake pads"), so the
+    objective declares the performance it must evidence. A plan of knowledge objectives would now
+    be refused before validation, and this fixture is meant to reach validation.
+    """
+    plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="one_off")
+    plan["objectives"][0]["evidence_target"] = "procedure"
+    plan["check_plan"][0]["evidence_target"] = "procedure"
+    return plan
 
 
 def plan_script(plan: dict | None = None) -> FakeLLM:

@@ -65,6 +65,9 @@ def source_record() -> research.SourceRecord:
         published_at=None,
         content_hash="sha256:" + "0" * 64,
         support_status="supported",
+        # CP-015g/D1-F1: plan_ja's `sourced` objective carries a verbatim `source_quote`, so the
+        # ledger entry it stands for must be an excerpt that actually carries those words.
+        excerpt="Standard polite forms are the safe default.",
     )
 
 

@@ -219,7 +219,9 @@ class LessonValidationPayloadSplitTest(unittest.TestCase):
         return lesson, request, json.loads(request.input_text)
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v9")
+        # v9 is this card's answer-key locator; v10 is CP-015g/D1-F1's typed performance block
+        # in the plan-validation payload (this pass's text is unchanged, the label is shared).
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v10")
 
     def test_the_key_leaves_the_learner_facing_check_and_is_marked_authoring_material(self) -> None:
         lesson, _request, payload = self.build()

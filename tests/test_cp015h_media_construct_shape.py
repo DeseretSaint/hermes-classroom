@@ -161,7 +161,11 @@ class UnitSectionsPromptTest(UnitStageCase):
         # v3 adds CP-015g/D3's citation rule to the same instruction text this card states its
         # construct shape on, so the label advances rather than reusing v2 (docs/GENERATION.md §1).
         self.assertEqual(gen.UNIT_SECTIONS_PROMPT_VERSION, "unit-sections-prompt.v3")
-        self.assertEqual(self.request().prompt_version, "unit-sections-prompt.v2")
+        # The request builder carries the constant (``build_unit_sections_request`` points at
+        # ``UNIT_SECTIONS_PROMPT_VERSION``), so the emitted label is the same v3. This assertion
+        # pinned v2 and was left stale by CP-015g/D3's bump; it is the tree that was red, not the
+        # builder.
+        self.assertEqual(self.request().prompt_version, "unit-sections-prompt.v3")
 
 
 class UnitSectionsRetryConvergesTest(UnitStageCase):

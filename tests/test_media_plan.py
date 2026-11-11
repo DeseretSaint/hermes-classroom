@@ -443,9 +443,11 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn('"role": "none"', instructions)
         self.assertIn("sourced_reference", instructions)
         self.assertIn("never declare decorative media", instructions.lower())
-        # CP-015's ledger-first authoring rule advances the label (v12 -> v14); the media
-        # declaration rule this test guards is unchanged.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v17")
+        # CP-015's ledger-first authoring rule advances the label (v12 -> v14); CP-015a then
+        # advances it to v17 and CP-015g/D1-F1 states the evidence-family and claim-link rules on
+        # the same shared text, so it becomes v19. The media declaration rule this test guards is
+        # unchanged.
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v19")
 
     def test_lesson_prompt_receives_the_declared_permissions_not_a_wish_list(self) -> None:
         for name, row in MATRIX.items():

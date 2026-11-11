@@ -29,19 +29,53 @@ def fixture(name: str) -> dict:
     return json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
 
 
-def plan_fixture(name: str, source_ids: tuple[str, ...] = ()) -> dict:
-    """Load a plan fixture, wiring real ledger ids or stripping citations entirely."""
+#: The claim link the committed fixture carries: a sentence from the default recorded page in
+#: ``FakeSearch``, so the fixture's `sourced` objective is honest against a real excerpt. A caller
+#: that supplies different research hands `plan_fixture` the words it will actually be given.
+_DEFAULT_FIXTURE_QUOTE = "Standard polite forms are the safe default"
+
+
+def plan_fixture(name: str, source_ids: tuple[str, ...] = (), source_quote: str = "") -> dict:
+    """Load a plan fixture, wiring real ledger ids or stripping citations entirely.
+
+    CP-015g/D1-F1: a `sourced` objective now carries a verbatim `source_quote` from the cited
+    excerpt. The fixture's own quote is copied from the default recorded page; a caller whose
+    research differs passes the words its ledger actually contains.
+    """
     document = fixture(name)
     if source_ids:
-        document = json.loads(canonical_json(document).replace("SRC_ALPHA", source_ids[0]))
+        text = canonical_json(document).replace("SRC_ALPHA", source_ids[0])
+        if source_quote:
+            text = text.replace(_DEFAULT_FIXTURE_QUOTE, source_quote)
+        document = json.loads(text)
         return document
     document["source_ids"] = []
     for objective in document.get("objectives") or []:
         objective.pop("source_ids", None)
+        objective.pop("source_quote", None)
         objective["support"] = "unverified"
     for section in document.get("sections") or []:
         section["source_ids"] = []
     return document
+
+
+def excerpt_quote_from(request: gen.LLMRequest, length: int = 60) -> str:
+    """A verbatim word run from the first supplied excerpt, for the fixture's claim link.
+
+    The recorded fixture cannot know what the research seam will hand it, so the claim link is
+    taken from the request the pipeline actually built — the same text the live author is told to
+    copy.
+    """
+    payload = json.loads(request.input_text)
+    for source in payload.get("sources") or []:
+        text = " ".join(str(source.get("untrusted_excerpt") or "").split())
+        text = text.replace(gen.UNTRUSTED_SOURCE_BEGIN, " ")
+        text = text.replace(gen.UNTRUSTED_SOURCE_END, " ")
+        text = " ".join(text.split())
+        if len(text) >= length:
+            return text[:length]
+    return ""
+
 
 
 def lesson_fixture(name: str, source_ids: tuple[str, ...] = ()) -> dict:
@@ -197,7 +231,13 @@ def source_ids_from(request: gen.LLMRequest) -> tuple[str, ...]:
 
 def plan_from_fixture(name: str = "plan_ja"):
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
-        return response(plan_fixture(name, source_ids_from(request)))
+        return response(
+            plan_fixture(
+                name,
+                source_ids_from(request),
+                source_quote=excerpt_quote_from(request),
+            )
+        )
 
     return build
 
@@ -760,8 +800,19 @@ class PlanJobTest(GenerationTestBase):
             FakeLLM(
                 {
                     "coursebook.plan.generate": lambda request: gen.LLMResponse(
-                        text=json.dumps(plan_fixture("plan_ja", source_ids_from(request)), ensure_ascii=False),
-                        parsed=plan_fixture("plan_ja", source_ids_from(request)),
+                        text=json.dumps(
+                            plan_fixture(
+                                "plan_ja",
+                                source_ids_from(request),
+                                source_quote=excerpt_quote_from(request),
+                            ),
+                            ensure_ascii=False,
+                        ),
+                        parsed=plan_fixture(
+                            "plan_ja",
+                            source_ids_from(request),
+                            source_quote=excerpt_quote_from(request),
+                        ),
                         provider="fake",
                         model="fake-model",
                         input_tokens=None,
@@ -1889,7 +1940,7 @@ class SourceTrustTest(GenerationTestBase):
     def test_ledger_url_title_and_publisher_pass_the_lint(self) -> None:
         run = research.run_research("greetings", recipe="committed", search=FakeSearch(), now=NOW)
         source = run.sources[0]
-        plan = plan_fixture("plan_ja", (source.source_id,))
+        plan = plan_fixture("plan_ja", (source.source_id,), source_quote=source.excerpt[:60])
         plan["learner_outcome"] = (
             f"Read {source.title} at {source.url}, published by {source.publisher}."
         )
