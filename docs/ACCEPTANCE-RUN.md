@@ -123,7 +123,7 @@ The build that could bind a chat (`8f10ae0f`) is **reproducible** from a committ
 dirty tree:
 
 ```
-$ git -C /tmp/cb-wt-4efebd14 show -s --format=%H%n%s 4efebd14
+$ git -C ~/.hermes/cache/scratch/release-4efebd14 show -s --format=%H%n%s 4efebd14
 4efebd1408345ac11c7a8f7dba4f336b876937ec
 Merge remote-tracking branch 'origin/master' into wt/vq009-capture-door
 $ python3 scripts/build_plugin.py --check
@@ -144,7 +144,7 @@ The rig was moved onto the branch tree so that both halves match and the code is
 | Half | Now |
 |---|---|
 | window module | `8f10ae0f…a1a4`, reproducible from `4efebd14` (`build_plugin.py --check` matched) |
-| backend `plugin_root` | `/tmp/cb-wt-4efebd14` (branch tree), `cb.rpc` v26, `127.0.0.1:44219`, pid restarted |
+| backend `plugin_root` | `~/.hermes/cache/scratch/release-4efebd14` (branch tree; moved off `/tmp` so the rig survives a reboot), `cb.rpc` v26, `127.0.0.1:44219` |
 | installs | all three plugin paths hold `8f10ae0f…a1a4` |
 
 The frames and film above were captured **earlier**, on `98400108` (`172b61aa` + `82a0866a`) with the
