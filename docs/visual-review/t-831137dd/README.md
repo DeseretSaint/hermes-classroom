@@ -80,8 +80,41 @@ was attempted; it did not produce a usable frame, and the reason is now known pr
    operator's own sessions. The renderer also resets any `#/coursebook` hash to `#/`, so the plugin
    route cannot be opened without a connection that serves it.
 
-Net: no frame in this card shows the kit composition under an installed plugin. The composition
-evidence remains the generated 1344x768 proof (`home-scene-1344-proof.png`), which
-`python3 scripts/gen-home-proof.py --check` ties byte-for-byte to `desktop/plugin.js`
-(`71d940ce…`). The ruling that a proof render may substitute for a host frame is the UI director's;
-it is raised on the card rather than assumed here.
+Net: no frame in this card shows the kit composition under an installed plugin.
+
+## Ruling (D-010) and what this packet claims
+
+Owner ruling **D-010** (2026-11-11, board unblock at 12:58 MST; recorded in
+`docs/launch/UI-DECISIONS.md` at `70cdb6b6`, not yet on this branch) accepts the **module-rendered
+proof** as this card's composition evidence. So the composition claim rests on
+`home-scene-1344-proof.png` — `design/home-scene.html`, generated from `desktop/plugin.js` by
+`scripts/gen-home-proof.py` — and `python3 scripts/gen-home-proof.py --check` ties that page
+byte-for-byte to the shipped module (`71d940ce…`). The 1344x768 proof shows, in one frame: the
+hero plate full bleed, the ink question and subline on the token scrim, the filled primary and quiet
+secondary, four painted kit covers with no letter plate, plank one with its lip, the kraft tag,
+plank two with its face, the kit clock and the painted clock-pose fox standing on plank two.
+
+What this packet does **not** claim: a live install of that composition. No host frame exists
+(rig window -> configured backend binding defect, `t_92878d65`), and per D-010 none is owed for
+this card. The two `home-*-light.png` frames are honestly labelled: right size, right scope,
+read-back attached — but they photograph the rig's empty-library Home and are **not** composition
+evidence. Release docs must not cite the proof as a live capture.
+
+**Cover mix in the proof, stated rather than inferred.** The proof's four cards are the reference's
+fictional titles with no pack identity (the generator's documented limitation), so `cb3KitCoverFor`
+matches only `Japanese Cafe Basics`; that card reads `japanese-cover-3x2` and the other three take
+the kit's lesson-room fallback (`data-cb-home-scene-cover="kit"` 1 / `"lesson"` 3, no letter plate).
+The **product** mapping is what the tests pin, not the fixture: `TestHomeSceneGeometry.
+test_each_card_reads_the_plate_for_its_own_course` asserts technical -> `technical-cover-3x2`,
+Japanese -> `japanese-cover-3x2`, parent -> `parent-cover-3x2`, unmapped -> lesson room, and
+`test_every_scene_cover_is_an_approved_kit_plate` asserts every cover `src` is an approved
+`field_atlas@2` row starting `data:image/webp` with no `data-cb-cover-kind="letter"`.
+
+## Known composition gap, routed not fixed here
+
+The proof page mounts the scene without app chrome. In the host the 768 px stage sits under the
+route header, so the bottom of the stage (plank two, tag, fox feet and clock base) can fall below
+the 768 px window edge, and at 900 the 16:9 band puts the shelf under the fold. That is a stage-fit
+defect (authored 1344x768 canvas vs the real route box), not a kit-wiring defect, and it is already
+routed as **t_7407749a [UI-K7] Home composition: shelf below the fold, heading has no scrim**.
+This card leaves the authored geometry exactly as the 11:10 scope override specifies.
