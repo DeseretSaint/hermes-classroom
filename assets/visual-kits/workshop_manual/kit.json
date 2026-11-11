@@ -39,9 +39,61 @@
   "illustration_role": "orientation only; never a torque value, clearance, part number or sequence",
   "cannot_do": "show a torque value, clearance or sequence as art",
   "provider_free": true,
+  "manifest_shape": {
+    "based_on": "field_atlas@2",
+    "loader_contract": "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/source=curated_kit, every path relative and inside the kit directory, PNG. `resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. Shared-kernel rows are references, not roles: they live in kernel.assets with their repo-relative path and sha256 and must be resolved through kernel.assets, never mounted as a kit-local plate.",
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here rather than inlined",
+    "divergences": [
+      "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+      "covers are two aspects of one generic display cover, not per-course covers",
+      "generation_log is a pinned sidecar, not an inlined list",
+      "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates"
+    ]
+  },
+  "ocr_policy": {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
+    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught by the recorded vision pass on each plate instead",
+    "calibrated_on": [
+      "docs/concept-parity/refs/home.png",
+      "docs/concept-parity/refs/classroom.png"
+    ]
+  },
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "note": "the reference mockup(s) the accepted plates were generated against; mockups, not a source of course titles",
+    "other": [
+      {
+        "path": "docs/concept-parity/refs/classroom.png",
+        "sha256": "ee0c1a664a7317aef2daafc0cfb6ae86464d2f9d9c04ca9dd5ee6016d93695c5"
+      }
+    ],
+    "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3"
+  },
+  "specimens": {
+    "contact_sheet": {
+      "path": "docs/visual-review/vq-008/workshop_manual-contact-sheet.png",
+      "size": [
+        1260,
+        2810
+      ],
+      "sha256": "f83cf70bc32336118faf3e055b7398adcf1eee26e73bc836bfafc44d446a8102",
+      "bytes": 5955005,
+      "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; every shipped plate, the shared kernel rows and this grammar's art direction"
+    }
+  },
+  "supersedes": null,
+  "generation_log": {
+    "path": "generation.json",
+    "rows": 8,
+    "bytes": 14055,
+    "sha256": "469fafb522fd794fce074213472194e90c7f8513842c8908bd2afb761d1a102e",
+    "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept"
+  },
   "kernel": {
     "kit_id": "coursebook-kernel@1",
-    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them. These rows are references, not kit-local plates: resolve each through this block, never mount it as a role.",
     "groups": {
       "frame": [
         "assets/masters/objects/medallion-rim.svg",
@@ -70,303 +122,8 @@
         "assets/fox/fox-wave-256.webp",
         "assets/fox/fox-sleep-256.webp"
       ]
-    }
-  },
-  "roles": {
-    "hero": [
-      {
-        "id": "service-bay",
-        "role": "hero",
-        "path": "hero/service-bay.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "f5f2be193176bc18428f11738620710c616cf9bbf0f99e9219da36116589df8d",
-        "bytes": 1331149,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21232/rXdbUblQGOarOZmjWHfBv_zsvOmU1w.png",
-          "raw_path": ".vq-raw/vq008/workshop_manual/service-bay.raw.png",
-          "raw_sha256": "a2b782cbd3f31e1b8746bfef8f723acbaea5e3b3c27871f7fa4ed709385a1c58",
-          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a small vehicle workshop service bay, seen straight on at standing eye level. BACKGROUND: warm ochre-stained timber plank wall on the right and warm cream plaster on the left; a wide roller door open onto a warm sunlit earth yard, and behind it, soft and pale, the flat side of a plain unbadged van and a wooden fence. MIDGROUND: a heavy ochre wooden workbench across the frame with a plain dark-iron bench vice, a row of open wooden component trays with blank compartments, and a tall ochre pegboard of iron hooks holding hammers, spanners and a hacksaw in flat rounded shapes; the pegboard runs off the right edge. FOREGROUND: warm ochre-stained timber floor boards running off the bottom edge, a low wooden stool with a terracotta cushion, a folded terracotta shop rag, a coil of terracotta hose, four plain ochre-painted tins with blank lids.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": null,
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#D6C6AF",
-            "black_minima": 0.03922,
-            "cool_share": 0.0,
-            "neutral_share": 0.02499,
-            "quiet_field": {
-              "x": 800,
-              "y": 120,
-              "w": 544,
-              "h": 220,
-              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
-              "contrast_p5_on_cream": 9.5,
-              "best_contrast": 9.5,
-              "type_tone": "cream",
-              "percentile_5": 62,
-              "percentile_25": 137,
-              "median": 165,
-              "contrast_p5": 1.67,
-              "contrast_median": 7.25,
-              "detail_energy": 0.0413
-            }
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "full-bleed bay, three depth planes, pegboard of plain iron tools, bench vice, component trays, no lettering on any tool or tin, upper band is plain warm wall",
-            "residual": "the van beyond the roller door is pale and unbadged but its tail lamp cluster is fine detail; the bench vice reads dark blue-grey iron rather than warm"
-          },
-          "derivation": "raw 2688x1536 resized 50% to the required 1344x768",
-          "source_frame": {
-            "path": "hero/service-bay@2x.png",
-            "size": [
-              2688,
-              1536
-            ],
-            "scale": 2.0,
-            "provider_frame": [
-              2688,
-              1536
-            ],
-            "native_2x": true,
-            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
-          }
-        }
-      }
-    ],
-    "cover": [
-      {
-        "id": "bench-3x2",
-        "role": "cover",
-        "path": "cover/bench-3x2.png",
-        "size": [
-          1200,
-          800
-        ],
-        "sha256": "a3ee364b7d37a00e40cbd44614cde8bac1e20cebad1e96f1db5c64cdefb8257a",
-        "bytes": 1229739,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21237/vfi7JACnDct9awikuAiNe_gXj7PeKA.png",
-          "raw_path": ".vq-raw/vq008/workshop_manual/bench-3x2.raw.png",
-          "raw_sha256": "256d13677811c17978d506e8175b3f5d6a1f35dc113f86242f53cfb438c0880a",
-          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the same service bay, tighter on the bench, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the ochre pegboard of plain iron hand tools and a strip of warm plaster wall with one small window onto a sunlit yard. MIDGROUND: the ochre workbench with a bench vice, a stack of blank component trays and a folded shop rag. FOREGROUND: the bench edge and the timber floor running off the bottom and side edges, a plain tin and a coil of hose.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette paragraph extended with 'Every metal object is warm ochre-painted tin, warm brass or dark iron: no galvanised grey bin, no grey steel drum, no chrome, no blue, no grey concrete floor, no blue tool handle.'",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#AA8B6E",
-            "black_minima": 0.07196,
-            "cool_share": 0.0,
-            "neutral_share": 0.03605
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "bench across the middle, pegboard of blank tools, blank component tray stack, hose coil, no readable text",
-            "residual": "the stacked component trays are brushed grey metal, so the plate carries a neutral mass the warm-pigment rule does not want; the model returned grey for this object on both attempts"
-          },
-          "derivation": "raw 2688x1536 centre crop 2304x1536, resized to 1200x800; the 4:5 is a 1228x1536 centre crop of the same frame, not a second generation",
-          "source_frame": {
-            "path": null,
-            "size": [
-              2304,
-              1536
-            ],
-            "scale": 3.84,
-            "ratios": {
-              "shipped_vs_render": 2.0,
-              "natural_vs_shipped": 1.92,
-              "natural_vs_render": 3.84
-            },
-            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 2304x1536 natural crop is 1.92x the shipped plate and 3.84x the render"
-          },
-          "crop_4x5": {
-            "size": [
-              1228,
-              1536
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      },
-      {
-        "id": "bench-4x5",
-        "role": "cover",
-        "path": "cover/bench-4x5.png",
-        "size": [
-          640,
-          800
-        ],
-        "sha256": "e684255482b3984c47d4625e085e4a882aadc2b071e231c67505c8d971c09c2f",
-        "bytes": 622796,
-        "textless": true,
-        "source": "curated_kit",
-        "derived_from": "bench-3x2",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21237/vfi7JACnDct9awikuAiNe_gXj7PeKA.png",
-          "raw_path": ".vq-raw/vq008/workshop_manual/bench-3x2.raw.png",
-          "raw_sha256": "256d13677811c17978d506e8175b3f5d6a1f35dc113f86242f53cfb438c0880a",
-          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the same service bay, tighter on the bench, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the ochre pegboard of plain iron hand tools and a strip of warm plaster wall with one small window onto a sunlit yard. MIDGROUND: the ochre workbench with a bench vice, a stack of blank component trays and a folded shop rag. FOREGROUND: the bench edge and the timber floor running off the bottom and side edges, a plain tin and a coil of hose.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette paragraph extended with 'Every metal object is warm ochre-painted tin, warm brass or dark iron: no galvanised grey bin, no grey steel drum, no chrome, no blue, no grey concrete floor, no blue tool handle.'",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#A88A6E",
-            "black_minima": 0.0924
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "bench across the middle, pegboard of blank tools, blank component tray stack, hose coil, no readable text",
-            "residual": "the stacked component trays are brushed grey metal, so the plate carries a neutral mass the warm-pigment rule does not want; the model returned grey for this object on both attempts"
-          },
-          "derivation": "centre crop of the bench-3x2 natural 2304x1536 frame to 1152x1440, resized to 640x800; derived from the same generation, not a second attempt",
-          "crop_4x5": {
-            "size": [
-              1228,
-              1536
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      }
-    ],
-    "section": [
-      {
-        "id": "tool-wall",
-        "role": "section",
-        "path": "section/tool-wall.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "3f0ee65598791267f74df1220c67ecd46d4832a009481431741b3f369d90b506",
-        "bytes": 1203008,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/classroom.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21237/Tr17zndTHufWPuKDoUxyg_1ZxHT4GF.png",
-          "raw_path": ".vq-raw/vq008/workshop_manual/tool-wall.raw.png",
-          "raw_sha256": "b504359207315191b3f9ee40b7cd9035698a706393efad5359aa607aca2bf697",
-          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the tool wall itself, seen slightly from the left so the bench recedes. BACKGROUND: warm plaster wall and the roller door opening onto a bright yard at the left edge. MIDGROUND: the ochre pegboard carrying plain iron hammers, spanners, files and a hacksaw as flat rounded silhouettes on plain hooks, every hole plain; beneath it the bench edge with open component trays. FOREGROUND: the near corner of the bench running off the bottom edge, a folded rag and one plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette paragraph extended with 'Every tool handle is plain warm ochre wood or dark iron; no blue handle, no red plastic grip, no galvanised grey tin, no chrome, no steel, no grey, no blue.'",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#CAB8A1",
-            "black_minima": 0.04005,
-            "cool_share": 0.0,
-            "neutral_share": 0.03974
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "pegboard dominates, plain iron hammers and spanners, open component trays, roller door onto a warm yard, no lettering",
-            "residual": "the saw blade is steel grey by nature; every handle is ochre wood and the blue handle of attempt 1 is gone"
-          }
-        }
-      }
-    ],
-    "lesson_scene": [
-      {
-        "id": "bench-lesson",
-        "role": "lesson_scene",
-        "path": "lesson-scene/bench-lesson.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "8f09ebe7415b9965759428d1b355a81761cd3ccda23281267a022fb3023422d8",
-        "bytes": 1138543,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/classroom.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21231/fF2tEiaRhnSrjil5az8DM_z8enKEeI.png",
-          "raw_path": ".vq-raw/vq008/workshop_manual/bench-lesson.raw.png",
-          "raw_sha256": "2d33823d24d1e3ddffaf0a9ed1a1e0c416a7036483c120667a0f5aca6f246b0f",
-          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a clear workbench where someone has just set down their work, seen at a slight three-quarter angle. BACKGROUND: warm timber wall, a shuttered window and the open roller door beyond, softer in the distance. MIDGROUND: the bench with a thick closed blank manual lying flat, a tray of blank parts compartments, an iron vice and a shop rag. FOREGROUND: the bench front running off the bottom edge, a low stool and a plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": null,
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#6D5546",
-            "black_minima": 0.0669,
-            "cool_share": 0.0,
-            "neutral_share": 0.06892
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "clear bench with a closed blank manual, shuttered window, roller door, stool, no people and no lettering",
-            "residual": "a small grey tin at the lower right edge; the manual's cover is completely blank"
-          }
-        }
-      }
-    ],
-    "frame": [
+    },
+    "assets": [
       {
         "id": "medallion-rim",
         "role": "frame",
@@ -404,9 +161,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "badge": [
+      },
       {
         "id": "tag",
         "role": "badge",
@@ -444,9 +199,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "object": [
+      },
       {
         "id": "clock",
         "role": "object",
@@ -503,9 +256,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "material": [
+      },
       {
         "id": "grain-paper",
         "role": "material",
@@ -562,9 +313,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "fox": [
+      },
       {
         "id": "fox-read-256",
         "role": "fox",
@@ -700,6 +449,427 @@
       }
     ]
   },
+  "roles": {
+    "hero": [
+      {
+        "id": "service-bay",
+        "role": "hero",
+        "path": "hero/service-bay.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "f5f2be193176bc18428f11738620710c616cf9bbf0f99e9219da36116589df8d",
+        "bytes": 1331149,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21232/rXdbUblQGOarOZmjWHfBv_zsvOmU1w.png",
+          "raw_path": ".vq-raw/vq008/workshop_manual/service-bay.raw.png",
+          "raw_sha256": "a2b782cbd3f31e1b8746bfef8f723acbaea5e3b3c27871f7fa4ed709385a1c58",
+          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a small vehicle workshop service bay, seen straight on at standing eye level. BACKGROUND: warm ochre-stained timber plank wall on the right and warm cream plaster on the left; a wide roller door open onto a warm sunlit earth yard, and behind it, soft and pale, the flat side of a plain unbadged van and a wooden fence. MIDGROUND: a heavy ochre wooden workbench across the frame with a plain dark-iron bench vice, a row of open wooden component trays with blank compartments, and a tall ochre pegboard of iron hooks holding hammers, spanners and a hacksaw in flat rounded shapes; the pegboard runs off the right edge. FOREGROUND: warm ochre-stained timber floor boards running off the bottom edge, a low wooden stool with a terracotta cushion, a folded terracotta shop rag, a coil of terracotta hose, four plain ochre-painted tins with blank lids.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#D6C6AF",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.02499,
+            "quiet_field": {
+              "x": 800,
+              "y": 120,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 9.5,
+              "best_contrast": 9.5,
+              "type_tone": "cream",
+              "percentile_5": 62,
+              "percentile_25": 137,
+              "median": 165,
+              "contrast_p5": 1.67,
+              "contrast_median": 7.25,
+              "detail_energy": 0.0413
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "full-bleed bay, three depth planes, pegboard of plain iron tools, bench vice, component trays, no lettering on any tool or tin, upper band is plain warm wall",
+            "residual": "the van beyond the roller door is pale and unbadged but its tail lamp cluster is fine detail; the bench vice reads dark blue-grey iron rather than warm"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "hero/service-bay@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "bench-3x2",
+        "role": "cover",
+        "path": "cover/bench-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "a3ee364b7d37a00e40cbd44614cde8bac1e20cebad1e96f1db5c64cdefb8257a",
+        "bytes": 1229739,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21237/vfi7JACnDct9awikuAiNe_gXj7PeKA.png",
+          "raw_path": ".vq-raw/vq008/workshop_manual/bench-3x2.raw.png",
+          "raw_sha256": "256d13677811c17978d506e8175b3f5d6a1f35dc113f86242f53cfb438c0880a",
+          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the same service bay, tighter on the bench, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the ochre pegboard of plain iron hand tools and a strip of warm plaster wall with one small window onto a sunlit yard. MIDGROUND: the ochre workbench with a bench vice, a stack of blank component trays and a folded shop rag. FOREGROUND: the bench edge and the timber floor running off the bottom and side edges, a plain tin and a coil of hose.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette paragraph extended with 'Every metal object is warm ochre-painted tin, warm brass or dark iron: no galvanised grey bin, no grey steel drum, no chrome, no blue, no grey concrete floor, no blue tool handle.'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#AA8B6E",
+            "black_minima": 0.07196,
+            "cool_share": 0.0,
+            "neutral_share": 0.03605
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "bench across the middle, pegboard of blank tools, blank component tray stack, hose coil, no readable text",
+            "residual": "the stacked component trays are brushed grey metal, so the plate carries a neutral mass the warm-pigment rule does not want; the model returned grey for this object on both attempts"
+          },
+          "derivation": "raw 2688x1536 centre crop 2304x1536, resized to 1200x800; the 4:5 is a 1228x1536 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              2304,
+              1536
+            ],
+            "scale": 3.84,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.92,
+              "natural_vs_render": 3.84
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 2304x1536 natural crop is 1.92x the shipped plate and 3.84x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "bench-4x5",
+        "role": "cover",
+        "path": "cover/bench-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "e684255482b3984c47d4625e085e4a882aadc2b071e231c67505c8d971c09c2f",
+        "bytes": 622796,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "bench-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21237/vfi7JACnDct9awikuAiNe_gXj7PeKA.png",
+          "raw_path": ".vq-raw/vq008/workshop_manual/bench-3x2.raw.png",
+          "raw_sha256": "256d13677811c17978d506e8175b3f5d6a1f35dc113f86242f53cfb438c0880a",
+          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the same service bay, tighter on the bench, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the ochre pegboard of plain iron hand tools and a strip of warm plaster wall with one small window onto a sunlit yard. MIDGROUND: the ochre workbench with a bench vice, a stack of blank component trays and a folded shop rag. FOREGROUND: the bench edge and the timber floor running off the bottom and side edges, a plain tin and a coil of hose.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette paragraph extended with 'Every metal object is warm ochre-painted tin, warm brass or dark iron: no galvanised grey bin, no grey steel drum, no chrome, no blue, no grey concrete floor, no blue tool handle.'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#A88A6E",
+            "black_minima": 0.0924
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "bench across the middle, pegboard of blank tools, blank component tray stack, hose coil, no readable text",
+            "residual": "the stacked component trays are brushed grey metal, so the plate carries a neutral mass the warm-pigment rule does not want; the model returned grey for this object on both attempts"
+          },
+          "derivation": "centre crop of the bench-3x2 natural 2688x1536 frame to 1228x1536 (4:5), resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          },
+          "source_frame": {
+            "path": null,
+            "referent": "bench-3x2",
+            "frame": [
+              2688,
+              1536
+            ],
+            "crop": [
+              1228,
+              1536
+            ],
+            "size": [
+              1228,
+              1536
+            ],
+            "shipped": [
+              640,
+              800
+            ],
+            "scale_vs_render": 3.8375,
+            "note": "the 1228x1536 centre crop of the 2688x1536 provider frame, resized to the shipped 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "tool-wall",
+        "role": "section",
+        "path": "section/tool-wall.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "3f0ee65598791267f74df1220c67ecd46d4832a009481431741b3f369d90b506",
+        "bytes": 1203008,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21237/Tr17zndTHufWPuKDoUxyg_1ZxHT4GF.png",
+          "raw_path": ".vq-raw/vq008/workshop_manual/tool-wall.raw.png",
+          "raw_sha256": "b504359207315191b3f9ee40b7cd9035698a706393efad5359aa607aca2bf697",
+          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the tool wall itself, seen slightly from the left so the bench recedes. BACKGROUND: warm plaster wall and the roller door opening onto a bright yard at the left edge. MIDGROUND: the ochre pegboard carrying plain iron hammers, spanners, files and a hacksaw as flat rounded silhouettes on plain hooks, every hole plain; beneath it the bench edge with open component trays. FOREGROUND: the near corner of the bench running off the bottom edge, a folded rag and one plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette paragraph extended with 'Every tool handle is plain warm ochre wood or dark iron; no blue handle, no red plastic grip, no galvanised grey tin, no chrome, no steel, no grey, no blue.'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#CAB8A1",
+            "black_minima": 0.04005,
+            "cool_share": 0.0,
+            "neutral_share": 0.03974
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "pegboard dominates, plain iron hammers and spanners, open component trays, roller door onto a warm yard, no lettering",
+            "residual": "the saw blade is steel grey by nature; every handle is ochre wood and the blue handle of attempt 1 is gone"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "bench-lesson",
+        "role": "lesson_scene",
+        "path": "lesson-scene/bench-lesson.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "8f09ebe7415b9965759428d1b355a81761cd3ccda23281267a022fb3023422d8",
+        "bytes": 1138543,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21231/fF2tEiaRhnSrjil5az8DM_z8enKEeI.png",
+          "raw_path": ".vq-raw/vq008/workshop_manual/bench-lesson.raw.png",
+          "raw_sha256": "2d33823d24d1e3ddffaf0a9ed1a1e0c416a7036483c120667a0f5aca6f246b0f",
+          "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a clear workbench where someone has just set down their work, seen at a slight three-quarter angle. BACKGROUND: warm timber wall, a shuttered window and the open roller door beyond, softer in the distance. MIDGROUND: the bench with a thick closed blank manual lying flat, a tray of blank parts compartments, an iron vice and a shop rag. FOREGROUND: the bench front running off the bottom edge, a low stool and a plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#6D5546",
+            "black_minima": 0.0669,
+            "cool_share": 0.0,
+            "neutral_share": 0.06892
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "clear bench with a closed blank manual, shuttered window, roller door, stool, no people and no lettering",
+            "residual": "a small grey tin at the lower right edge; the manual's cover is completely blank"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "lesson-scene/bench-lesson@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "collectible": []
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "hero/service-bay@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "d4367825c98dd6fe8186741f731ac42b9641a418bf00b7c64d64b488f8751839",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "lesson-scene/bench-lesson@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "e5e3206dddd27b0818676fbb4074a3af2eefe406b0a644c88fb431f7a45d11d6",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "section": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": null,
+      "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, so a loader must not expect one"
+    },
+    "cover": {
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0,
+        "natural": {
+          "size": [
+            2304,
+            1536
+          ],
+          "frame": [
+            2688,
+            1536
+          ],
+          "scale_vs_plate": 1.92,
+          "scale_vs_render": 3.84
+        }
+      },
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      }
+    }
+  },
   "fallbacks": {
     "lesson_scene": [
       "section",
@@ -714,9 +884,7 @@
     ],
     "section": [
       "background"
-    ],
-    "object": [],
-    "fox": []
+    ]
   },
   "generation_budget": {
     "attempts_allowed": 50,

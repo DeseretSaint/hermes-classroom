@@ -39,9 +39,61 @@
   "illustration_role": "orientation only; a sky image is never a measurement",
   "cannot_do": "use an AI sky image as a measurement",
   "provider_free": true,
+  "manifest_shape": {
+    "based_on": "field_atlas@2",
+    "loader_contract": "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/source=curated_kit, every path relative and inside the kit directory, PNG. `resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. Shared-kernel rows are references, not roles: they live in kernel.assets with their repo-relative path and sha256 and must be resolved through kernel.assets, never mounted as a kit-local plate.",
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here rather than inlined",
+    "divergences": [
+      "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+      "covers are two aspects of one generic display cover, not per-course covers",
+      "generation_log is a pinned sidecar, not an inlined list",
+      "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates"
+    ]
+  },
+  "ocr_policy": {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
+    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught by the recorded vision pass on each plate instead",
+    "calibrated_on": [
+      "docs/concept-parity/refs/home.png",
+      "docs/concept-parity/refs/classroom.png"
+    ]
+  },
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "note": "the reference mockup(s) the accepted plates were generated against; mockups, not a source of course titles",
+    "other": [
+      {
+        "path": "docs/concept-parity/refs/classroom.png",
+        "sha256": "ee0c1a664a7317aef2daafc0cfb6ae86464d2f9d9c04ca9dd5ee6016d93695c5"
+      }
+    ],
+    "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3"
+  },
+  "specimens": {
+    "contact_sheet": {
+      "path": "docs/visual-review/vq-008/observatory-contact-sheet.png",
+      "size": [
+        1260,
+        2810
+      ],
+      "sha256": "754fb37d1ad3987ba2d281a62d96b5e640406ea7774d8591d156681d3f95512d",
+      "bytes": 5337794,
+      "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; every shipped plate, the shared kernel rows and this grammar's art direction"
+    }
+  },
+  "supersedes": null,
+  "generation_log": {
+    "path": "generation.json",
+    "rows": 8,
+    "bytes": 3984,
+    "sha256": "f8304bbdff525c3301e6c4599af8574a0cb5a6f2520891fa880ddf6ec345a194",
+    "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept"
+  },
   "kernel": {
     "kit_id": "coursebook-kernel@1",
-    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them. These rows are references, not kit-local plates: resolve each through this block, never mount it as a role.",
     "groups": {
       "frame": [
         "assets/masters/objects/medallion-rim.svg",
@@ -70,368 +122,8 @@
         "assets/fox/fox-wave-256.webp",
         "assets/fox/fox-sleep-256.webp"
       ]
-    }
-  },
-  "roles": {
-    "hero": [
-      {
-        "id": "dome-slit",
-        "role": "hero",
-        "path": "hero/dome-slit.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "ccd2cde24f4be4ac5b3640b1b23c652f834ad45d18de20124b3f6ee9126b8212",
-        "bytes": 1309262,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab2124b/NH-myevGhpdFfBploAPyL_HolTSmdw.png",
-          "raw_path": ".vq-raw/vq008/observatory/dome-slit.raw.png",
-          "raw_sha256": "e917cee67eacbfbe97788332dd007bd4a51be96fb77cc64cb4614b9b348fe291",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the inside of a small domed observatory at night, seen at standing eye level. BACKGROUND: the curved timber ribs of the dome and a wide open dome slit onto a deep field-green night sky studded with small flat painted stars of a few sizes, softly painted and low-contrast; the far horizon of dark hills at the bottom of the slit. MIDGROUND: a low brass-and-ochre instrument bench under the slit carrying a plain brass telescope on a simple yoke mount, a rolled star chart on a table beside it and an open blank observation log. FOREGROUND: warm ochre floorboards running off the bottom edge, a plain wooden stool, a coiled measuring cord and a flat leather case.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette line extended with: \"The night sky is deep warm field green, never blue, never navy, never black; no grey, no steel, no chrome.\"",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#444736",
-            "black_minima": 0.03922,
-            "cool_share": 0.0,
-            "neutral_share": 0.06202,
-            "quiet_field": {
-              "x": 0,
-              "y": 0,
-              "w": 544,
-              "h": 220,
-              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
-              "contrast_p5_on_cream": 13.96,
-              "best_contrast": 13.96,
-              "type_tone": "cream",
-              "percentile_5": 35,
-              "percentile_25": 51,
-              "median": 78,
-              "contrast_p5": 1.14,
-              "contrast_median": 2.15,
-              "detail_energy": 0.0126
-            }
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "domed interior, wide slit onto a deep field-green sky with flat stars, plain brass refractor on a yoke, stool, hose coil, case; no lettering on any instrument",
-            "residual": "the sky is dark, so the headline band must be set in cream rather than ink; the measured quiet field records type_tone"
-          },
-          "derivation": "raw 2688x1536 resized 50% to the required 1344x768",
-          "source_frame": {
-            "path": "hero/dome-slit@2x.png",
-            "size": [
-              2688,
-              1536
-            ],
-            "scale": 2.0,
-            "provider_frame": [
-              2688,
-              1536
-            ],
-            "native_2x": true,
-            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
-          }
-        }
-      }
-    ],
-    "cover": [
-      {
-        "id": "instrument-3x2",
-        "role": "cover",
-        "path": "cover/instrument-3x2.png",
-        "size": [
-          1200,
-          800
-        ],
-        "sha256": "7e730d229e49b29f5945b0ec104b451743ade401341762775405dc3fba32ca56",
-        "bytes": 1249593,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21255/ESqgSK2UY_yxACfG8Exbc_1q3ibXsw.png",
-          "raw_path": ".vq-raw/vq008/observatory/instrument-3x2.raw.png",
-          "raw_sha256": "2a1a31d7e0a40508cc82e54b3d50b416c41d2c60cc5767da6db293351802d854",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the instrument bench and dome slit, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the dome ribs and the open slit onto a deep field-green sky with sparse flat painted stars. MIDGROUND: the brass telescope on its yoke, a rolled chart and a stack of blank log sheets. FOREGROUND: the ochre bench edge running off the bottom and side edges, a brass eyepiece cap and a folded cloth.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph replaced by the blank-paper and unengraved-tool version",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#324A39",
-            "black_minima": 0.07054,
-            "cool_share": 0.0,
-            "neutral_share": 0.019
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "brass refractor across the bench, dome ribs, green star sky, a pile of blank sheets, blank log pages, a cloth",
-            "residual": "the rolled chart beside the sheet stack keeps a faint drafting grid; the sheet stack itself is plain"
-          },
-          "derivation": "raw 2688x1536 centre crop 2304x1536, resized to 1200x800; the 4:5 is a 1228x1536 centre crop of the same frame, not a second generation",
-          "source_frame": {
-            "path": null,
-            "size": [
-              2304,
-              1536
-            ],
-            "scale": 3.84,
-            "ratios": {
-              "shipped_vs_render": 2.0,
-              "natural_vs_shipped": 1.92,
-              "natural_vs_render": 3.84
-            },
-            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 2304x1536 natural crop is 1.92x the shipped plate and 3.84x the render"
-          },
-          "crop_4x5": {
-            "size": [
-              1228,
-              1536
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      },
-      {
-        "id": "instrument-4x5",
-        "role": "cover",
-        "path": "cover/instrument-4x5.png",
-        "size": [
-          640,
-          800
-        ],
-        "sha256": "04f997126bb502dec41286f2a40ccb23f2a42ee29a4c4ed4c382b651b34e98c1",
-        "bytes": 704422,
-        "textless": true,
-        "source": "curated_kit",
-        "derived_from": "instrument-3x2",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/home.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21255/ESqgSK2UY_yxACfG8Exbc_1q3ibXsw.png",
-          "raw_path": ".vq-raw/vq008/observatory/instrument-3x2.raw.png",
-          "raw_sha256": "2a1a31d7e0a40508cc82e54b3d50b416c41d2c60cc5767da6db293351802d854",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the instrument bench and dome slit, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the dome ribs and the open slit onto a deep field-green sky with sparse flat painted stars. MIDGROUND: the brass telescope on its yoke, a rolled chart and a stack of blank log sheets. FOREGROUND: the ochre bench edge running off the bottom and side edges, a brass eyepiece cap and a folded cloth.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph replaced by the blank-paper and unengraved-tool version",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "x W . i \\4 s \\C || S A AN s . 3 z >",
-            "max_conf": 90.14,
-            "tokens": [
-              {
-                "text": "x",
-                "conf": 56.09
-              },
-              {
-                "text": "W",
-                "conf": 50.83
-              },
-              {
-                "text": ".",
-                "conf": 88.44
-              },
-              {
-                "text": "i",
-                "conf": 23.05
-              },
-              {
-                "text": "\\4",
-                "conf": 81.61
-              },
-              {
-                "text": "s",
-                "conf": 40.85
-              },
-              {
-                "text": "\\C",
-                "conf": 81.2
-              },
-              {
-                "text": "||",
-                "conf": 42.22
-              },
-              {
-                "text": "S",
-                "conf": 15.48
-              },
-              {
-                "text": "A",
-                "conf": 69.2
-              },
-              {
-                "text": "AN",
-                "conf": 10.54
-              },
-              {
-                "text": "s",
-                "conf": 36.81
-              },
-              {
-                "text": ".",
-                "conf": 55.78
-              },
-              {
-                "text": "3",
-                "conf": 87.25
-              },
-              {
-                "text": "z",
-                "conf": 56.12
-              },
-              {
-                "text": ">",
-                "conf": 90.14
-              }
-            ],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#324A39",
-            "black_minima": 0.07054
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "brass refractor across the bench, dome ribs, green star sky, a pile of blank sheets, blank log pages, a cloth",
-            "residual": "the rolled chart beside the sheet stack keeps a faint drafting grid; the sheet stack itself is plain"
-          },
-          "derivation": "centre crop of the instrument-3x2 natural 2304x1536 frame to 1152x1440, resized to 640x800; derived from the same generation, not a second attempt",
-          "crop_4x5": {
-            "size": [
-              1228,
-              1536
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      }
-    ],
-    "section": [
-      {
-        "id": "chart-table",
-        "role": "section",
-        "path": "section/chart-table.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "f10a3ed260bbc42fb48ae1e9072d161647a3a709607ffd4021b7d80d9f9c013c",
-        "bytes": 1120349,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/classroom.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21264/_8VGVmCUXvw03UH4Ca0UT_4RZJlHpo.png",
-          "raw_path": ".vq-raw/vq008/observatory/chart-table.raw.png",
-          "raw_sha256": "3f2b64e8dc5b0d0e0ee9806fab12cb4b8e31f52b05dfe48619d3c9e3e73ae4e4",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a chart table under the dome, seen from above at a slight angle. BACKGROUND: the dome wall and one narrow slit of deep field-green sky at the upper left. MIDGROUND: the ochre table with a large plain unmarked star chart sheet held flat by brass weights, a plain brass astrolabe disc with no markings, and a row of blank log sheets. FOREGROUND: the table edge running off the bottom edge, a brass divider and a pencil.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "chart stage rewritten: no chart sheet at all, three plain brass weights, a pile of blank sheets, one plain unmarked brass disc; textless paragraph carries the unengraved-tool clause",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#534B40",
-            "black_minima": 0.04172,
-            "cool_share": 0.0,
-            "neutral_share": 0.2136
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "table with blank cream sheets, blank cards, plain brass weights and a plain brass disc, pencil; no drawing and no engraving",
-            "residual": "the dome wall behind the table reads grey-green rather than a warm tint"
-          }
-        }
-      }
-    ],
-    "lesson_scene": [
-      {
-        "id": "observation-desk",
-        "role": "lesson_scene",
-        "path": "lesson-scene/observation-desk.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "f7d579ad64bfb614f84afb69d108483a364110c09591cdae22beb7de7473f406",
-        "bytes": 1242355,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
-          "reference_image": "docs/concept-parity/refs/classroom.png",
-          "media_url": "https://v3b.fal.media/files/b/0ab21255/W20fFBvKWRrdTWrv4_owf_EI8QGyc7.png",
-          "raw_path": ".vq-raw/vq008/observatory/observation-desk.raw.png",
-          "raw_sha256": "290cba978bd4d74f43a434c53ceab3b81d0db79f72788f538b56c89ced70f379",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: an observation desk lit warm, empty of people, seen straight on. BACKGROUND: a timber observatory wall with a small shuttered window and a dark green sky beyond. MIDGROUND: the desk with an open blank observation log, a plain brass lamp with a cream shade, a small brass telescope model and a cup. FOREGROUND: the desk front running off the bottom edge, a wooden chair back and a folded blanket.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph carries the blank-paper and unengraved-tool clause",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#424133",
-            "black_minima": 0.03922,
-            "cool_share": 0.0,
-            "neutral_share": 0.02401
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "timber observatory room, green star sky through a shuttered window, brass lamp with cream shade, open book with two blank pages, small telescope, cup",
-            "residual": "the open book pages are blank but their edges are softly modelled; no mark on any page"
-          }
-        }
-      }
-    ],
-    "frame": [
+    },
+    "assets": [
       {
         "id": "medallion-rim",
         "role": "frame",
@@ -469,9 +161,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "badge": [
+      },
       {
         "id": "tag",
         "role": "badge",
@@ -509,9 +199,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "object": [
+      },
       {
         "id": "clock",
         "role": "object",
@@ -568,9 +256,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "material": [
+      },
       {
         "id": "grain-night",
         "role": "material",
@@ -627,9 +313,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "fox": [
+      },
       {
         "id": "fox-read-256",
         "role": "fox",
@@ -765,6 +449,492 @@
       }
     ]
   },
+  "roles": {
+    "hero": [
+      {
+        "id": "dome-slit",
+        "role": "hero",
+        "path": "hero/dome-slit.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "ccd2cde24f4be4ac5b3640b1b23c652f834ad45d18de20124b3f6ee9126b8212",
+        "bytes": 1309262,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab2124b/NH-myevGhpdFfBploAPyL_HolTSmdw.png",
+          "raw_path": ".vq-raw/vq008/observatory/dome-slit.raw.png",
+          "raw_sha256": "e917cee67eacbfbe97788332dd007bd4a51be96fb77cc64cb4614b9b348fe291",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the inside of a small domed observatory at night, seen at standing eye level. BACKGROUND: the curved timber ribs of the dome and a wide open dome slit onto a deep field-green night sky studded with small flat painted stars of a few sizes, softly painted and low-contrast; the far horizon of dark hills at the bottom of the slit. MIDGROUND: a low brass-and-ochre instrument bench under the slit carrying a plain brass telescope on a simple yoke mount, a rolled star chart on a table beside it and an open blank observation log. FOREGROUND: warm ochre floorboards running off the bottom edge, a plain wooden stool, a coiled measuring cord and a flat leather case.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with: \"The night sky is deep warm field green, never blue, never navy, never black; no grey, no steel, no chrome.\"",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#444736",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.06202,
+            "quiet_field": {
+              "x": 0,
+              "y": 0,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 13.96,
+              "best_contrast": 13.96,
+              "type_tone": "cream",
+              "percentile_5": 35,
+              "percentile_25": 51,
+              "median": 78,
+              "contrast_p5": 1.14,
+              "contrast_median": 2.15,
+              "detail_energy": 0.0126
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "domed interior, wide slit onto a deep field-green sky with flat stars, plain brass refractor on a yoke, stool, hose coil, case; no lettering on any instrument",
+            "residual": "the sky is dark, so the headline band must be set in cream rather than ink; the measured quiet field records type_tone"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "hero/dome-slit@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "instrument-3x2",
+        "role": "cover",
+        "path": "cover/instrument-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "7e730d229e49b29f5945b0ec104b451743ade401341762775405dc3fba32ca56",
+        "bytes": 1249593,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21255/ESqgSK2UY_yxACfG8Exbc_1q3ibXsw.png",
+          "raw_path": ".vq-raw/vq008/observatory/instrument-3x2.raw.png",
+          "raw_sha256": "2a1a31d7e0a40508cc82e54b3d50b416c41d2c60cc5767da6db293351802d854",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the instrument bench and dome slit, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the dome ribs and the open slit onto a deep field-green sky with sparse flat painted stars. MIDGROUND: the brass telescope on its yoke, a rolled chart and a stack of blank log sheets. FOREGROUND: the ochre bench edge running off the bottom and side edges, a brass eyepiece cap and a folded cloth.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph replaced by the blank-paper and unengraved-tool version",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#324A39",
+            "black_minima": 0.07054,
+            "cool_share": 0.0,
+            "neutral_share": 0.019
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "brass refractor across the bench, dome ribs, green star sky, a pile of blank sheets, blank log pages, a cloth",
+            "residual": "the rolled chart beside the sheet stack keeps a faint drafting grid; the sheet stack itself is plain"
+          },
+          "derivation": "raw 2688x1536 centre crop 2304x1536, resized to 1200x800; the 4:5 is a 1228x1536 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              2304,
+              1536
+            ],
+            "scale": 3.84,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.92,
+              "natural_vs_render": 3.84
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 2304x1536 natural crop is 1.92x the shipped plate and 3.84x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "instrument-4x5",
+        "role": "cover",
+        "path": "cover/instrument-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "04f997126bb502dec41286f2a40ccb23f2a42ee29a4c4ed4c382b651b34e98c1",
+        "bytes": 704422,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "instrument-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/home.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21255/ESqgSK2UY_yxACfG8Exbc_1q3ibXsw.png",
+          "raw_path": ".vq-raw/vq008/observatory/instrument-3x2.raw.png",
+          "raw_sha256": "2a1a31d7e0a40508cc82e54b3d50b416c41d2c60cc5767da6db293351802d854",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the instrument bench and dome slit, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the dome ribs and the open slit onto a deep field-green sky with sparse flat painted stars. MIDGROUND: the brass telescope on its yoke, a rolled chart and a stack of blank log sheets. FOREGROUND: the ochre bench edge running off the bottom and side edges, a brass eyepiece cap and a folded cloth.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph replaced by the blank-paper and unengraved-tool version",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "x W . i \\4 s \\C || S A AN s . 3 z >",
+            "max_conf": 90.14,
+            "tokens": [
+              {
+                "text": "x",
+                "conf": 56.09
+              },
+              {
+                "text": "W",
+                "conf": 50.83
+              },
+              {
+                "text": ".",
+                "conf": 88.44
+              },
+              {
+                "text": "i",
+                "conf": 23.05
+              },
+              {
+                "text": "\\4",
+                "conf": 81.61
+              },
+              {
+                "text": "s",
+                "conf": 40.85
+              },
+              {
+                "text": "\\C",
+                "conf": 81.2
+              },
+              {
+                "text": "||",
+                "conf": 42.22
+              },
+              {
+                "text": "S",
+                "conf": 15.48
+              },
+              {
+                "text": "A",
+                "conf": 69.2
+              },
+              {
+                "text": "AN",
+                "conf": 10.54
+              },
+              {
+                "text": "s",
+                "conf": 36.81
+              },
+              {
+                "text": ".",
+                "conf": 55.78
+              },
+              {
+                "text": "3",
+                "conf": 87.25
+              },
+              {
+                "text": "z",
+                "conf": 56.12
+              },
+              {
+                "text": ">",
+                "conf": 90.14
+              }
+            ],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#324A39",
+            "black_minima": 0.07054
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "brass refractor across the bench, dome ribs, green star sky, a pile of blank sheets, blank log pages, a cloth",
+            "residual": "the rolled chart beside the sheet stack keeps a faint drafting grid; the sheet stack itself is plain"
+          },
+          "derivation": "centre crop of the instrument-3x2 natural 2688x1536 frame to 1228x1536 (4:5), resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              1228,
+              1536
+            ],
+            "frame": [
+              2688,
+              1536
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          },
+          "source_frame": {
+            "path": null,
+            "referent": "instrument-3x2",
+            "frame": [
+              2688,
+              1536
+            ],
+            "crop": [
+              1228,
+              1536
+            ],
+            "size": [
+              1228,
+              1536
+            ],
+            "shipped": [
+              640,
+              800
+            ],
+            "scale_vs_render": 3.8375,
+            "note": "the 1228x1536 centre crop of the 2688x1536 provider frame, resized to the shipped 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "chart-table",
+        "role": "section",
+        "path": "section/chart-table.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "f10a3ed260bbc42fb48ae1e9072d161647a3a709607ffd4021b7d80d9f9c013c",
+        "bytes": 1120349,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21264/_8VGVmCUXvw03UH4Ca0UT_4RZJlHpo.png",
+          "raw_path": ".vq-raw/vq008/observatory/chart-table.raw.png",
+          "raw_sha256": "3f2b64e8dc5b0d0e0ee9806fab12cb4b8e31f52b05dfe48619d3c9e3e73ae4e4",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a chart table under the dome, seen from above at a slight angle. BACKGROUND: the dome wall and one narrow slit of deep field-green sky at the upper left. MIDGROUND: the ochre table with a large plain unmarked star chart sheet held flat by brass weights, a plain brass astrolabe disc with no markings, and a row of blank log sheets. FOREGROUND: the table edge running off the bottom edge, a brass divider and a pencil.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "chart stage rewritten: no chart sheet at all, three plain brass weights, a pile of blank sheets, one plain unmarked brass disc; textless paragraph carries the unengraved-tool clause",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#534B40",
+            "black_minima": 0.04172,
+            "cool_share": 0.0,
+            "neutral_share": 0.2136
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "table with blank cream sheets, blank cards, plain brass weights and a plain brass disc, pencil; no drawing and no engraving",
+            "residual": "the dome wall behind the table reads grey-green rather than a warm tint"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "observation-desk",
+        "role": "lesson_scene",
+        "path": "lesson-scene/observation-desk.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "f7d579ad64bfb614f84afb69d108483a364110c09591cdae22beb7de7473f406",
+        "bytes": 1242355,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "reference-guided: the reference mockup was passed in reference_image_urls, with the host upscale pass on",
+          "reference_image": "docs/concept-parity/refs/classroom.png",
+          "media_url": "https://v3b.fal.media/files/b/0ab21255/W20fFBvKWRrdTWrv4_owf_EI8QGyc7.png",
+          "raw_path": ".vq-raw/vq008/observatory/observation-desk.raw.png",
+          "raw_sha256": "290cba978bd4d74f43a434c53ceab3b81d0db79f72788f538b56c89ced70f379",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: an observation desk lit warm, empty of people, seen straight on. BACKGROUND: a timber observatory wall with a small shuttered window and a dark green sky beyond. MIDGROUND: the desk with an open blank observation log, a plain brass lamp with a cream shade, a small brass telescope model and a cup. FOREGROUND: the desk front running off the bottom edge, a wooden chair back and a folded blanket.\n\nComposition: a dark sky over a low instrument bench; the upper half stays quiet for the headline, the horizon line anchors the composition.\n\nGrammar motifs: night sky, star chart table, brass instrument, observation log, dome slit.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, lamp, ochre. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No chart numbers, no coordinates, no dial markings, no constellation glyphs, no lettering on any instrument, no scale, no measurement, no equation. The sky is painted mood and is never a measurement or a real star chart.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "palette line extended with the green-sky sentence; textless paragraph carries the blank-paper and unengraved-tool clause",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#424133",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.02401
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "timber observatory room, green star sky through a shuttered window, brass lamp with cream shade, open book with two blank pages, small telescope, cup",
+            "residual": "the open book pages are blank but their edges are softly modelled; no mark on any page"
+          },
+          "derivation": "raw 2688x1536 resized to the required 1344x768; the 2688x1536 sibling beside it is that frame kept un-resized",
+          "source_frame": {
+            "path": "lesson-scene/observation-desk@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2688,
+              1536
+            ],
+            "native_2x": true,
+            "note": "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame carried through the print-safety lift"
+          }
+        }
+      }
+    ],
+    "collectible": []
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "hero/dome-slit@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "ac25e0fe2549622d3afb4acb5c756bfe960bff66f219191babf6b23319015bdc",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "lesson-scene/observation-desk@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "9efb65eb5f789ace45380b9447b4baff3d08c293077acffb864cd3503ae50b12",
+        "scale": 2.0,
+        "method": "provider return at 2688x1536, kept un-resized",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "section": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": null,
+      "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, so a loader must not expect one"
+    },
+    "cover": {
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0,
+        "natural": {
+          "size": [
+            2304,
+            1536
+          ],
+          "frame": [
+            2688,
+            1536
+          ],
+          "scale_vs_plate": 1.92,
+          "scale_vs_render": 3.84
+        }
+      },
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      }
+    }
+  },
   "fallbacks": {
     "lesson_scene": [
       "section",
@@ -779,9 +949,7 @@
     ],
     "section": [
       "background"
-    ],
-    "object": [],
-    "fox": []
+    ]
   },
   "generation_budget": {
     "attempts_allowed": 50,

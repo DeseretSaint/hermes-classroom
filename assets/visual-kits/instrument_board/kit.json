@@ -39,9 +39,54 @@
   "illustration_role": "quiet and optional; never an AI illustration of a symbolic concept",
   "cannot_do": "make an AI illustration a required lesson visual",
   "provider_free": true,
+  "manifest_shape": {
+    "based_on": "field_atlas@2",
+    "loader_contract": "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/source=curated_kit, every path relative and inside the kit directory, PNG. `resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. Shared-kernel rows are references, not roles: they live in kernel.assets with their repo-relative path and sha256 and must be resolved through kernel.assets, never mounted as a kit-local plate.",
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here rather than inlined",
+    "divergences": [
+      "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+      "covers are two aspects of one generic display cover, not per-course covers",
+      "generation_log is a pinned sidecar, not an inlined list",
+      "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates"
+    ]
+  },
+  "ocr_policy": {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted line art on these plates scores 12-52",
+    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught by the recorded vision pass on each plate instead",
+    "calibrated_on": [
+      "docs/concept-parity/refs/home.png",
+      "docs/concept-parity/refs/classroom.png"
+    ]
+  },
+  "reference": {
+    "path": null,
+    "note": "no reference mockup was passed to any accepted generation; every plate is text-only after reference-image leakage was rejected at review"
+  },
+  "specimens": {
+    "contact_sheet": {
+      "path": "docs/visual-review/vq-008/instrument_board-contact-sheet.png",
+      "size": [
+        1260,
+        2810
+      ],
+      "sha256": "539fe08c44ec71f6bfb719c841ddde0ee881e673375a99ebfa45a8fe2288806b",
+      "bytes": 5922364,
+      "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; every shipped plate, the shared kernel rows and this grammar's art direction"
+    }
+  },
+  "supersedes": null,
+  "generation_log": {
+    "path": "generation.json",
+    "rows": 6,
+    "bytes": 2794,
+    "sha256": "735ecc94da91268b815c4560ef13d75c25355c27f8e7afe1baad53d05fe18518",
+    "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept"
+  },
   "kernel": {
     "kit_id": "coursebook-kernel@1",
-    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them. These rows are references, not kit-local plates: resolve each through this block, never mount it as a role.",
     "groups": {
       "frame": [
         "assets/masters/objects/medallion-rim.svg",
@@ -70,303 +115,8 @@
         "assets/fox/fox-wave-256.webp",
         "assets/fox/fox-sleep-256.webp"
       ]
-    }
-  },
-  "roles": {
-    "hero": [
-      {
-        "id": "drafting-board",
-        "role": "hero",
-        "path": "hero/drafting-board.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "1cb515e95612f271be1efc30ff7930ed8abd35bd5918bd36c1bc79323011b8ba",
-        "bytes": 1332109,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
-          "reference_image": null,
-          "media_url": "https://v3b.fal.media/files/b/0ab21293/vplyD-7vwtujphziFJHIk_kzQA1cNF.png",
-          "raw_path": ".vq-raw/vq008/instrument_board/drafting-board.raw.png",
-          "raw_sha256": "619ded7373ad10f7607e7952dbb3246d0432c7262df2ab20e98d94a8ea929471",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a wide drafting board seen at a slight angle, an open quiet surface across the upper two thirds. BACKGROUND: the warm wall behind the board, a low shelf with rolled paper tubes and a tall window at the right onto soft daylight. MIDGROUND: the board with a plain unmarked surface that fades into warm wall toward the top, brass dividers, a plain wooden set square with no markings, a ruled straightedge with no figures and a chalk tray holding plain white chalk sticks. FOREGROUND: the board edge running off the bottom edge, a wooden stool and a rolled sheet of paper.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": null,
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#E1CDB7",
-            "black_minima": 0.03922,
-            "cool_share": 0.0,
-            "neutral_share": 0.06799,
-            "quiet_field": {
-              "x": 400,
-              "y": 120,
-              "w": 544,
-              "h": 220,
-              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
-              "contrast_p5_on_cream": 9.65,
-              "best_contrast": 9.65,
-              "type_tone": "cream",
-              "percentile_5": 61,
-              "percentile_25": 151,
-              "median": 195,
-              "contrast_p5": 1.64,
-              "contrast_median": 10.13,
-              "detail_energy": 0.012
-            }
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "tilted drafting board with a plain unmarked surface, brass dividers, a plain triangle, chalk in a tray, rolled paper on a shelf, warm wall and window",
-            "residual": "the board fades into warm wall across the upper third, which is the quiet field; no grid or figure is painted"
-          },
-          "derivation": "raw 2048x1152 resized 50% to the required 1344x768",
-          "source_frame": {
-            "path": "hero/drafting-board@2x.png",
-            "size": [
-              2688,
-              1536
-            ],
-            "scale": 2.0,
-            "provider_frame": [
-              2048,
-              1152
-            ],
-            "native_2x": false,
-            "note": "the provider returned a 2048x1152 frame (1.5x of the plate), so the 2688x1536 file beside the plate is a resampled 2x frame, not a native provider return; Gate 2 sees a 2x asset but the provenance says which it is"
-          }
-        }
-      }
-    ],
-    "cover": [
-      {
-        "id": "instruments-3x2",
-        "role": "cover",
-        "path": "cover/instruments-3x2.png",
-        "size": [
-          1200,
-          800
-        ],
-        "sha256": "a6aef73c2d75617b69eb5b1939b03d0cb907635aca21c379f6cd8db233062e89",
-        "bytes": 1182778,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
-          "reference_image": null,
-          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
-          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
-          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#E5D7C4",
-            "black_minima": 0.04339,
-            "cool_share": 0.0,
-            "neutral_share": 0.08625
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
-            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
-          },
-          "derivation": "raw 2048x1152 centre crop 1728x1152, resized to 1200x800; the 4:5 is a 921x1152 centre crop of the same frame, not a second generation",
-          "source_frame": {
-            "path": null,
-            "size": [
-              1728,
-              1152
-            ],
-            "scale": 2.88,
-            "ratios": {
-              "shipped_vs_render": 2.0,
-              "natural_vs_shipped": 1.44,
-              "natural_vs_render": 2.88
-            },
-            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 1728x1152 natural crop is 1.44x the shipped plate and 2.88x the render"
-          },
-          "crop_4x5": {
-            "size": [
-              921,
-              1152
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      },
-      {
-        "id": "instruments-4x5",
-        "role": "cover",
-        "path": "cover/instruments-4x5.png",
-        "size": [
-          640,
-          800
-        ],
-        "sha256": "092b467afa12b453f96287e115fa86fb891d365752be4ceae518abbc603883a6",
-        "bytes": 618264,
-        "textless": true,
-        "source": "curated_kit",
-        "derived_from": "instruments-3x2",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
-          "reference_image": null,
-          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
-          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
-          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#EBE1D2",
-            "black_minima": 0.04422
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
-            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
-          },
-          "derivation": "centre crop of the instruments-3x2 natural 2304x1536 frame to 1152x1440, resized to 640x800; derived from the same generation, not a second attempt",
-          "crop_4x5": {
-            "size": [
-              921,
-              1152
-            ],
-            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
-          }
-        }
-      }
-    ],
-    "section": [
-      {
-        "id": "grid-board",
-        "role": "section",
-        "path": "section/grid-board.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "9a5730800b1dcbdba2bc71715e25af6525bbe805e5964a146a409a08c5d6c646",
-        "bytes": 1244436,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
-          "reference_image": null,
-          "media_url": "https://v3b.fal.media/files/b/0ab21294/XVKu--zJAzqFEWBi4xZHC_rPeHbFSp.png",
-          "raw_path": ".vq-raw/vq008/instrument_board/grid-board.raw.png",
-          "raw_sha256": "aaaaf696701bb38fbc2da1050a0e7189e920c4f8f5657177b366b6df75d60340",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board seen from above, a plain unmarked surface. BACKGROUND: the board surface and the warm wall beyond. MIDGROUND: brass dividers, a plain set square, a pair of plain compasses and a chalk tray with plain chalk sticks, no figures on any instrument. FOREGROUND: the board edge running off the bottom edge, a cloth eraser and a rolled sheet.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": null,
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#C7986C",
-            "black_minima": 0.04702,
-            "cool_share": 0.0,
-            "neutral_share": 0.15427
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "board seen from above with a plain unmarked surface, a wooden triangle, brass dividers, a chalk tray and a cloth eraser",
-            "residual": "none observed on the board surface"
-          }
-        }
-      }
-    ],
-    "lesson_scene": [
-      {
-        "id": "chalk-tray",
-        "role": "lesson_scene",
-        "path": "lesson-scene/chalk-tray.png",
-        "size": [
-          1344,
-          768
-        ],
-        "sha256": "194b0ce47f0bc4a5c3ed79b6fb76d0edf567bf1e63ccfd60b3619e2c8a201c3e",
-        "bytes": 1379964,
-        "textless": true,
-        "source": "curated_kit",
-        "provenance": {
-          "origin": "generated",
-          "provider": "host image_generate seam",
-          "model_id": "not reported by the seam",
-          "generated_on": "2026-11-11",
-          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
-          "reference_image": null,
-          "media_url": "https://v3b.fal.media/files/b/0ab21294/oKQtxpGfiIu2tkGvLIDof_Bba3KVYu.png",
-          "raw_path": ".vq-raw/vq008/instrument_board/chalk-tray.raw.png",
-          "raw_sha256": "f14e625aa570bba732fe58a93f7568fc34f4d67cb5a05c010af12454e46e2c25",
-          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board with a stool, seen straight on, empty of people. BACKGROUND: the warm wall, a shelf of rolled paper and a window at the left. MIDGROUND: the board with a plain unmarked surface, brass dividers, a plain set square and a chalk tray. FOREGROUND: the board front running off the bottom edge, the stool and a cloth eraser.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
-          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
-          "prompt_delta": null,
-          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
-          "ocr": {
-            "raw": "",
-            "max_conf": 0.0,
-            "tokens": [],
-            "readable": []
-          },
-          "measured": {
-            "dominant": "#E7D6C5",
-            "black_minima": 0.03922,
-            "cool_share": 0.0,
-            "neutral_share": 0.15513
-          },
-          "vision": {
-            "reviewed_on": "2026-11-11",
-            "checks": "drafting board seen straight on with a plain surface, brass dividers, a triangle and a cloth eraser, rolled paper on a shelf, stool below",
-            "residual": "the board is entirely unmarked, so it can never act as a worked example"
-          }
-        }
-      }
-    ],
-    "frame": [
+    },
+    "assets": [
       {
         "id": "medallion-rim",
         "role": "frame",
@@ -404,9 +154,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "badge": [
+      },
       {
         "id": "tag",
         "role": "badge",
@@ -444,9 +192,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "object": [
+      },
       {
         "id": "clock",
         "role": "object",
@@ -503,9 +249,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "material": [
+      },
       {
         "id": "grain-paper",
         "role": "material",
@@ -562,9 +306,7 @@
           "kit_id": "coursebook-kernel@1",
           "note": "shared visual kernel; one set of bytes every grammar kit points at"
         }
-      }
-    ],
-    "fox": [
+      },
       {
         "id": "fox-read-256",
         "role": "fox",
@@ -700,6 +442,427 @@
       }
     ]
   },
+  "roles": {
+    "hero": [
+      {
+        "id": "drafting-board",
+        "role": "hero",
+        "path": "hero/drafting-board.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "1cb515e95612f271be1efc30ff7930ed8abd35bd5918bd36c1bc79323011b8ba",
+        "bytes": 1332109,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21293/vplyD-7vwtujphziFJHIk_kzQA1cNF.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/drafting-board.raw.png",
+          "raw_sha256": "619ded7373ad10f7607e7952dbb3246d0432c7262df2ab20e98d94a8ea929471",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a wide drafting board seen at a slight angle, an open quiet surface across the upper two thirds. BACKGROUND: the warm wall behind the board, a low shelf with rolled paper tubes and a tall window at the right onto soft daylight. MIDGROUND: the board with a plain unmarked surface that fades into warm wall toward the top, brass dividers, a plain wooden set square with no markings, a ruled straightedge with no figures and a chalk tray holding plain white chalk sticks. FOREGROUND: the board edge running off the bottom edge, a wooden stool and a rolled sheet of paper.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E1CDB7",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.06799,
+            "quiet_field": {
+              "x": 400,
+              "y": 120,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 9.65,
+              "best_contrast": 9.65,
+              "type_tone": "cream",
+              "percentile_5": 61,
+              "percentile_25": 151,
+              "median": 195,
+              "contrast_p5": 1.64,
+              "contrast_median": 10.13,
+              "detail_energy": 0.012
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "tilted drafting board with a plain unmarked surface, brass dividers, a plain triangle, chalk in a tray, rolled paper on a shelf, warm wall and window",
+            "residual": "the board fades into warm wall across the upper third, which is the quiet field; no grid or figure is painted"
+          },
+          "derivation": "raw 2048x1152 resized to the required 1344x768; the 2688x1536 sibling beside it is the same frame resampled to 2688x1536 (not a native 2x return)",
+          "source_frame": {
+            "path": "hero/drafting-board@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2048,
+              1152
+            ],
+            "native_2x": false,
+            "note": "the provider returned a 2048x1152 frame, so the 2688x1536 file beside the plate is a resampled 2x frame, not a native provider return; Gate 2 sees a 2x asset but the provenance says which it is"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "instruments-3x2",
+        "role": "cover",
+        "path": "cover/instruments-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "a6aef73c2d75617b69eb5b1939b03d0cb907635aca21c379f6cd8db233062e89",
+        "bytes": 1182778,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
+          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E5D7C4",
+            "black_minima": 0.04339,
+            "cool_share": 0.0,
+            "neutral_share": 0.08625
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
+            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
+          },
+          "derivation": "raw 2048x1152 centre crop 1728x1152, resized to 1200x800; the 4:5 is a 921x1152 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              1728,
+              1152
+            ],
+            "scale": 2.88,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.44,
+              "natural_vs_render": 2.88
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 1728x1152 natural crop is 1.44x the shipped plate and 2.88x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "frame": [
+              2048,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "instruments-4x5",
+        "role": "cover",
+        "path": "cover/instruments-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "092b467afa12b453f96287e115fa86fb891d365752be4ceae518abbc603883a6",
+        "bytes": 618264,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "instruments-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
+          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#EBE1D2",
+            "black_minima": 0.04422
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
+            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
+          },
+          "derivation": "centre crop of the instruments-3x2 natural 2048x1152 frame to 921x1152 (4:5), resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "frame": [
+              2048,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          },
+          "source_frame": {
+            "path": null,
+            "referent": "instruments-3x2",
+            "frame": [
+              2048,
+              1152
+            ],
+            "crop": [
+              921,
+              1152
+            ],
+            "size": [
+              921,
+              1152
+            ],
+            "shipped": [
+              640,
+              800
+            ],
+            "scale_vs_render": 2.8781,
+            "note": "the 921x1152 centre crop of the 2048x1152 provider frame, resized to the shipped 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "grid-board",
+        "role": "section",
+        "path": "section/grid-board.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "9a5730800b1dcbdba2bc71715e25af6525bbe805e5964a146a409a08c5d6c646",
+        "bytes": 1244436,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21294/XVKu--zJAzqFEWBi4xZHC_rPeHbFSp.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/grid-board.raw.png",
+          "raw_sha256": "aaaaf696701bb38fbc2da1050a0e7189e920c4f8f5657177b366b6df75d60340",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board seen from above, a plain unmarked surface. BACKGROUND: the board surface and the warm wall beyond. MIDGROUND: brass dividers, a plain set square, a pair of plain compasses and a chalk tray with plain chalk sticks, no figures on any instrument. FOREGROUND: the board edge running off the bottom edge, a cloth eraser and a rolled sheet.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#C7986C",
+            "black_minima": 0.04702,
+            "cool_share": 0.0,
+            "neutral_share": 0.15427
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "board seen from above with a plain unmarked surface, a wooden triangle, brass dividers, a chalk tray and a cloth eraser",
+            "residual": "none observed on the board surface"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "chalk-tray",
+        "role": "lesson_scene",
+        "path": "lesson-scene/chalk-tray.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "194b0ce47f0bc4a5c3ed79b6fb76d0edf567bf1e63ccfd60b3619e2c8a201c3e",
+        "bytes": 1379964,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21294/oKQtxpGfiIu2tkGvLIDof_Bba3KVYu.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/chalk-tray.raw.png",
+          "raw_sha256": "f14e625aa570bba732fe58a93f7568fc34f4d67cb5a05c010af12454e46e2c25",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board with a stool, seen straight on, empty of people. BACKGROUND: the warm wall, a shelf of rolled paper and a window at the left. MIDGROUND: the board with a plain unmarked surface, brass dividers, a plain set square and a chalk tray. FOREGROUND: the board front running off the bottom edge, the stool and a cloth eraser.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E7D6C5",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.15513
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "drafting board seen straight on with a plain surface, brass dividers, a triangle and a cloth eraser, rolled paper on a shelf, stool below",
+            "residual": "the board is entirely unmarked, so it can never act as a worked example"
+          },
+          "derivation": "raw 2048x1152 resized to the required 1344x768; the 2688x1536 sibling beside it is the same frame resampled to 2688x1536 (not a native 2x return)",
+          "source_frame": {
+            "path": "lesson-scene/chalk-tray@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2048,
+              1152
+            ],
+            "native_2x": false,
+            "note": "the provider returned a 2048x1152 frame, so the 2688x1536 file beside the plate is a resampled 2x frame, not a native provider return; Gate 2 sees a 2x asset but the provenance says which it is"
+          }
+        }
+      }
+    ],
+    "collectible": []
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "hero/drafting-board@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "0f0a329a4578eeaa308e50520f169e4b7574264d4e295000f8086464a02e6203",
+        "scale": 2.0,
+        "method": "resampled from the provider's 2048x1152 return to 2688x1536",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": {
+        "path": "lesson-scene/chalk-tray@2x.png",
+        "size": [
+          2688,
+          1536
+        ],
+        "sha256": "6fa742a8cf4afccb540a8500a2a5aa167e77cfc5bc813420630226cd8d1464ca",
+        "scale": 2.0,
+        "method": "resampled from the provider's 2048x1152 return to 2688x1536",
+        "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside it is the shipped fallback"
+      }
+    },
+    "section": {
+      "size": [
+        1344,
+        768
+      ],
+      "source": null,
+      "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, so a loader must not expect one"
+    },
+    "cover": {
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0,
+        "natural": {
+          "size": [
+            1728,
+            1152
+          ],
+          "frame": [
+            2048,
+            1152
+          ],
+          "scale_vs_plate": 1.44,
+          "scale_vs_render": 2.88
+        }
+      },
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      }
+    }
+  },
   "fallbacks": {
     "lesson_scene": [
       "section",
@@ -714,9 +877,7 @@
     ],
     "section": [
       "background"
-    ],
-    "object": [],
-    "fox": []
+    ]
   },
   "generation_budget": {
     "attempts_allowed": 50,

@@ -17,7 +17,9 @@ the cannot-do fence — is imported from :mod:`coursebook.world` so a kit cannot
 policy table. This script never edits `coursebook`; it only reads it.
 
 `--check` is the acceptance run. It recomputes sha256, pixel size, OCR text, role coverage, the
-hero size, the cover aspect arithmetic, the quiet-field contrast, the palette ground, the
+hero size, the hero's quiet-field measurement (the whole band is re-measured from the shipped
+pixels, not read), the cover aspect arithmetic for both the 3:2 master and the derived 4:5 row,
+the 2x source declaration each full-bleed role carries in `resolution`, the palette ground, the
 no-pure-black rule, the shared-kernel bytes, the fallback chain, the generation budget and the
 absence of placeholder or Press Plate bytes. Exit 0 is the acceptance run.
 
@@ -31,6 +33,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import re
 import shutil
 import subprocess
 import sys
@@ -57,15 +60,66 @@ CONTRACT_INK = (0x1A, 0x17, 0x13)
 ATTEMPTS_ALLOWED = 50
 PER_ASSET_MAX = 4
 
-#: The 3:2 cover: the natural crop is 2304x1536, the shipped plate 1200x800, the render 600x400.
+#: The 3:2 cover: the shipped plate is 1200x800, the render 600x400. The natural crop is a
+#: centre crop of whatever frame the provider returned (2304x1536 on a 2688x1536 return,
+#: 1728x1152 on a 2048x1152 return), never a fixed constant — see `cover_crop`.
 COVER_3X2_NATURAL = (2304, 1536)
 COVER_3X2_SHIPPED = (1200, 800)
 COVER_3X2_RENDERED = (600, 400)
-COVER_4X5_NATURAL = (1152, 1440)
 COVER_4X5_SHIPPED = (640, 800)
 COVER_4X5_RENDERED = (320, 400)
 
+#: The cream paper a quiet field is measured against as well as contract ink (ART-BIBLE §2).
+CREAM = (0xF7, 0xF1, 0xE4)
+
+#: The OCR rule, carried verbatim into every kit so a loader reads the policy rather than a comment.
+OCR_POLICY = {
+    "tool": "tesseract default page segmentation on the shipped plate",
+    "fail_rule": "a token of >= 3 alphanumeric characters at confidence >= 60",
+    "calibration": "real UI strings on refs/home.png and refs/classroom.png score 74-95; painted "
+                   "line art on these plates scores 12-52",
+    "limitation": "painted pseudo-lettering is not readable enough for OCR to score; it is caught "
+                  "by the recorded vision pass on each plate instead",
+    "calibrated_on": [
+        "docs/concept-parity/refs/home.png",
+        "docs/concept-parity/refs/classroom.png",
+    ],
+}
+
+#: The loader contract, stated in every kit. `resolution[role].source` is what the in-tree
+#: reader (`scripts/build_cb_assets.py` `kit_plates`) reads for a full-bleed 2x plate; `roles[]`
+#: carries the shipped path and its hash. A loader reads both, never a guessed path.
+MANIFEST_SHAPE = {
+    "based_on": "field_atlas@2",
+    "loader_contract": (
+            "roles[] holds only kit-local display plates: id/role/path/size/sha256/textless=true/"
+            "source=curated_kit, every path relative and inside the kit directory, PNG. "
+            "`resolution[role].source` names the 2x sibling a full-bleed plate is encoded from. "
+            "Shared-kernel rows are references, not roles: they live in kernel.assets with their "
+            "repo-relative path and sha256 and must be resolved through kernel.assets, never "
+            "mounted as a kit-local plate."
+        ),
+
+    "generation_log": "the generation.json sidecar beside this manifest, pinned by sha256 here "
+                      "rather than inlined",
+    "divergences": [
+        "a `section` role is VQ-008's own; field_atlas@2 has none, and the section ships no 2x sibling",
+        "covers are two aspects of one generic display cover, not per-course covers",
+        "generation_log is a pinned sidecar, not an inlined list",
+        "field_atlas@2 copies its kernel bytes into the kit and lists them as roles; these kits keep one shared kernel and declare it as references in kernel.assets, so roles stay kit-local plates",
+    ],
+}
+
 PLATE_SIZES = {"hero": (1344, 768), "section": (1344, 768), "lesson_scene": (1344, 768)}
+
+#: The role vocabulary a display-kit loader accepts (`coursebook/visual_kits.KIT_ROLES` on the
+#: VQ-004 branch). A kit may not invent a role name: a loader refuses an unknown one rather than
+#: guessing what to mount. Shared-kernel rows are references, not roles — see `kernel.assets`.
+KIT_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible", "object", "fox")
+
+#: Roles whose rows must be a kit-local PNG a loader can open and hash. The kernel rows are the
+#: only rows allowed to point outside the kit, and they are not roles.
+KIT_LOCAL_ROLES = ("hero", "cover", "section", "lesson_scene", "collectible")
 
 TEMPER = "magick -modulate 105,75,100, applied to the provider raw before any crop or resize"
 LIFT = "magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)"
@@ -77,8 +131,6 @@ FALLBACKS = {
     "cover": ["course-master", "background"],
     "hero": ["background"],
     "section": ["background"],
-    "object": [],
-    "fox": [],
 }
 ALLOWED_FALLBACKS = frozenset({"section", "background", "course-master"})
 FORBIDDEN_FALLBACK_TOKENS = ("pack", "press")
@@ -662,7 +714,7 @@ def best_quiet_band(path: Path, height: int = 220) -> dict:
     the manifest is a measurement of the shipped bytes.
     """
     width, h = dims(path)
-    cream = (0xF7, 0xF1, 0xE4)
+    cream = CREAM
     best = None
     for y in range(0, int(h * 0.45) - height + 1, 20):
         for x in (0, (width - 544) // 4, (width - 544) // 2, (width - 544) * 3 // 4, width - 544):
@@ -712,7 +764,7 @@ def _raw_path(grammar: str, asset_id: str) -> Path:
     return RAW_DIR / grammar / f"{asset_id}.raw.png"
 
 
-def asset_entry(grammar: str, rel: str, role: str, quiet: dict | None = None) -> dict:
+def asset_entry(grammar: str, rel: str, role: str) -> dict:
     path = kit_dir(grammar) / rel
     entry = {
         "id": Path(rel).stem,
@@ -763,12 +815,17 @@ def asset_entry(grammar: str, rel: str, role: str, quiet: dict | None = None) ->
             "residual": _vision_row(grammar, Path(rel).stem).get("residual", ""),
         },
     }
-    if role == "hero":
+    if role in ("hero", "lesson_scene"):
         provenance = entry["provenance"]
         raw = _raw_path(grammar, Path(rel).stem)
         raw_size = list(dims(raw)) if raw.exists() else [2688, 1536]
         native = raw_size[0] >= 2688
-        provenance["derivation"] = "raw " + "x".join(map(str, raw_size)) + " resized 50% to the required 1344x768"
+        provenance["derivation"] = (
+            f"raw {raw_size[0]}x{raw_size[1]} resized to the required 1344x768; the 2688x1536 "
+            "sibling beside it is "
+            + ("that frame kept un-resized" if native else
+               f"the same frame resampled to 2688x1536 (not a native 2x return)")
+        )
         provenance["source_frame"] = {
             "path": str(Path(rel).with_name(Path(rel).stem + "@2x.png")),
             "size": [2688, 1536],
@@ -778,7 +835,7 @@ def asset_entry(grammar: str, rel: str, role: str, quiet: dict | None = None) ->
             "note": (
                 "the provider returned a 2x frame; the 2688x1536 file beside the plate is that frame "
                 "carried through the print-safety lift" if native else
-                f"the provider returned a {raw_size[0]}x{raw_size[1]} frame (1.5x of the plate), so the "
+                f"the provider returned a {raw_size[0]}x{raw_size[1]} frame, so the "
                 "2688x1536 file beside the plate is a resampled 2x frame, not a native provider "
                 "return; Gate 2 sees a 2x asset but the provenance says which it is"
             ),
@@ -810,6 +867,7 @@ def asset_entry(grammar: str, rel: str, role: str, quiet: dict | None = None) ->
         }
         entry["provenance"]["crop_4x5"] = {
             "size": list(nat45),
+            "frame": [raw_size[0], raw_size[1]],
             "note": f"centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)",
         }
     if role == "hero":
@@ -825,10 +883,29 @@ def derived_entry(grammar: str, rel: str, role: str, master: dict) -> dict:
     path = kit_dir(grammar) / rel
     provenance = dict(master["provenance"])
     provenance.pop("source_frame", None)
+    crop = master["provenance"]["crop_4x5"]
+    frame = tuple(crop["frame"])
+    csize = tuple(crop["size"])
+    # The sentence is composed from the crop that was actually taken, so it cannot name a frame
+    # the master did not use: `check_cover_arithmetic` re-derives both numbers from these fields.
     provenance["derivation"] = (
-        f"centre crop of the {master['id']} natural 2304x1536 frame to 1152x1440, resized to "
-        f"640x800; derived from the same generation, not a second attempt"
+        f"centre crop of the {master['id']} natural {frame[0]}x{frame[1]} frame to "
+        f"{csize[0]}x{csize[1]} (4:5), resized to 640x800; derived from the same generation, "
+        f"not a second attempt"
     )
+    provenance["source_frame"] = {
+        "path": None,
+        "referent": master["id"],
+        "frame": list(frame),
+        "crop": list(csize),
+        "size": list(csize),
+        "shipped": list(COVER_4X5_SHIPPED),
+        "scale_vs_render": round(csize[0] / COVER_4X5_RENDERED[0], 4),
+        "note": (
+            f"the {csize[0]}x{csize[1]} centre crop of the {frame[0]}x{frame[1]} provider frame, "
+            f"resized to the shipped 640x800 (2x of a 320x400 render)"
+        ),
+    }
     provenance["measured"] = {"dominant": dominant(path)[0], "black_minima": round(gray_minima(path), 5)}
     provenance["ocr"] = ocr_tokens(path)
     return {
@@ -873,22 +950,141 @@ def kernel_entries(grammar: str) -> dict[str, list[dict]]:
     return out
 
 
+def _repo_rel(path: Path) -> str:
+    return str(path).replace(str(ROOT) + "/", "")
+
+
+def resolution_block(grammar: str, roles: dict) -> dict:
+    """The per-role 2x source a full-bleed loader reads — `field_atlas@2`'s shape.
+
+    `scripts/build_cb_assets.py` reads `resolution[role]["source"]["path"|"sha256"|"size"]` and
+    stops when it is absent, so every kit declares it rather than relying on a naming convention.
+    """
+    out: dict = {}
+    for role in ("hero", "lesson_scene"):
+        rows = roles.get(role) or []
+        if not rows:
+            continue
+        row = rows[0]
+        rel2x = row["path"][:-4] + "@2x.png"
+        p2 = kit_dir(grammar) / rel2x
+        sf = row["provenance"].get("source_frame") or {}
+        frame = sf.get("provider_frame") or [2688, 1536]
+        out[role] = {
+            "size": list(row["size"]),
+            "source": {
+                "path": rel2x,
+                "size": list(dims(p2)),
+                "sha256": sha256(p2),
+                "scale": 2.0,
+                "method": (
+                    f"provider return at {frame[0]}x{frame[1]}, kept un-resized"
+                    if sf.get("native_2x") else
+                    f"resampled from the provider's {frame[0]}x{frame[1]} return to 2688x1536"
+                ),
+                "note": "the source a full-bleed plate is encoded from; the 1344x768 plate beside "
+                        "it is the shipped fallback",
+            },
+        }
+    for row in roles.get("section") or []:
+        out["section"] = {
+            "size": list(row["size"]),
+            "source": None,
+            "note": "the section plate ships at its rendered 1344x768 only; no 2x sibling exists, "
+                    "so a loader must not expect one",
+        }
+    masters = [p for p in roles.get("cover") or [] if "derived_from" not in p]
+    if masters:
+        prov = masters[0]["provenance"]
+        nat = tuple(prov["source_frame"]["size"])
+        crop45 = tuple(prov["crop_4x5"]["size"])
+        out["cover"] = {
+            "3x2": {
+                "size": list(COVER_3X2_SHIPPED),
+                "rendered": list(COVER_3X2_RENDERED),
+                "scale": 2.0,
+                "natural": {
+                    "size": list(nat),
+                    "frame": list(prov["crop_4x5"]["frame"]),
+                    "scale_vs_plate": round(nat[0] / COVER_3X2_SHIPPED[0], 4),
+                    "scale_vs_render": round(nat[0] / COVER_3X2_RENDERED[0], 4),
+                },
+            },
+            "4x5": {
+                "size": list(COVER_4X5_SHIPPED),
+                "rendered": list(COVER_4X5_RENDERED),
+                "scale": 2.0,
+            },
+        }
+    return out
+
+
+def reference_block(grammar: str, roles: dict) -> dict:
+    used: set[str] = set()
+    for rows in roles.values():
+        for row in rows:
+            ref = (row.get("provenance") or {}).get("reference_image")
+            if ref:
+                used.add(ref)
+    if not used:
+        return {
+            "path": None,
+            "note": "no reference mockup was passed to any accepted generation; every plate is "
+                    "text-only after reference-image leakage was rejected at review",
+        }
+    block: dict = {"path": None, "note": "the reference mockup(s) the accepted plates were "
+                                        "generated against; mockups, not a source of course titles"}
+    for ref in sorted(used):
+        entry = {"path": ref, "sha256": sha256(ROOT / ref)}
+        if ref.endswith("home.png"):
+            block["path"] = ref
+            block["sha256"] = entry["sha256"]
+        else:
+            block.setdefault("other", []).append(entry)
+    return block
+
+
+def specimens_block(grammar: str) -> dict:
+    p = ROOT / "docs" / "visual-review" / "vq-008" / f"{grammar}-contact-sheet.png"
+    if not p.exists():
+        return {}
+    return {
+        "contact_sheet": {
+            "path": _repo_rel(p),
+            "size": list(dims(p)),
+            "sha256": sha256(p),
+            "bytes": p.stat().st_size,
+            "note": "rebuilt by `python3 scripts/vq008-kits.py --contact docs/visual-review/vq-008`; "
+                    "every shipped plate, the shared kernel rows and this grammar's art direction",
+        }
+    }
+
+
+def generation_log_block(grammar: str) -> dict:
+    p = kit_dir(grammar) / "generation.json"
+    rows = json.loads(p.read_text())
+    return {
+        "path": "generation.json",
+        "rows": len(rows),
+        "bytes": p.stat().st_size,
+        "sha256": sha256(p),
+        "note": "the attempt log is a sidecar pinned here by hash; every rejected attempt is kept",
+    }
+
+
 def build_kit(grammar: str) -> dict:
     rec = GRAMMARS[grammar]
-    roles: dict[str, list[dict]] = {"hero": [], "cover": [], "section": [], "lesson_scene": []}
+    roles: dict[str, list[dict]] = {"hero": [], "cover": [], "section": [], "lesson_scene": [],
+                                    "collectible": []}
     cover_master = None
     for role, rel, rawkind in PLATE_TABLE[grammar]:
-        quiet = None
-        if role == "hero":
-            quiet = {"x": 400, "y": 20, "w": 544, "h": 220,
-                     "note": "the painted quiet band in the upper third, where the display title sits"}
-        entry = asset_entry(grammar, rel, role, quiet)
+        entry = asset_entry(grammar, rel, role)
         roles[role].append(entry)
         if role == "cover":
             cover_master = entry
             crop = "cover/" + rel.split("/")[-1].replace("-3x2", "-4x5")
             roles["cover"].append(derived_entry(grammar, crop, "cover", cover_master))
-    roles.update(kernel_entries(grammar))
+    kernel_rows = kernel_entries(grammar)
     # lesson scenes point at the section plate before the generic background (GAME-MODE §5).
     return {
         "grammar": grammar,
@@ -908,14 +1104,23 @@ def build_kit(grammar: str) -> dict:
         "illustration_role": rec.illustration_role,
         "cannot_do": rec.cannot_do,
         "provider_free": True,
+        "manifest_shape": MANIFEST_SHAPE,
+        "ocr_policy": OCR_POLICY,
+        "reference": reference_block(grammar, roles),
+        "specimens": specimens_block(grammar),
+        "supersedes": None,
+        "generation_log": generation_log_block(grammar),
         "kernel": {
             "kit_id": "coursebook-kernel@1",
             "note": "shared objects, frames, badges, materials and fox poses are referenced from "
-                    "one kernel; a kit does not copy new bytes for them",
-            "groups": {k: [str(ROOT / p).replace(str(ROOT) + "/", "") for p in v]
+                    "one kernel; a kit does not copy new bytes for them. These rows are references, "
+                    "not kit-local plates: resolve each through this block, never mount it as a role.",
+            "groups": {k: [_repo_rel(ROOT / p) for p in v]
                        for k, v in kernel_for(grammar).items()},
+            "assets": [row for rows in kernel_rows.values() for row in rows],
         },
         "roles": roles,
+        "resolution": resolution_block(grammar, roles),
         "fallbacks": FALLBACKS,
         "generation_budget": {
             "attempts_allowed": ATTEMPTS_ALLOWED,
@@ -974,9 +1179,22 @@ def check_plate(grammar: str, plate: dict, required_role: str) -> None:
         qf = plate["provenance"].get("measured", {}).get("quiet_field")
         if not qf:
             fail(f"{where}: hero has no measured quiet field")
-        elif qf.get("best_contrast", qf.get("contrast_p5", 0)) < 4.5:
-            fail(f"{where}: quiet field contrast is {qf.get('best_contrast')} < 4.5 against both "
-                 f"contract ink and cream paper")
+        else:
+            # Re-derive the band from the shipped pixels. The manifest records a measurement, so
+            # the acceptance run recomputes it instead of trusting the number it is given.
+            found = best_quiet_band(path)
+            for key in ("x", "y", "w", "h", "percentile_5", "percentile_25", "median",
+                        "detail_energy", "contrast_p5_on_cream", "best_contrast", "type_tone"):
+                if qf.get(key) != found.get(key):
+                    fail(f"{where}: quiet field {key} declared {qf.get(key)!r}, pixels give "
+                         f"{found.get(key)!r}")
+            if found.get("best_contrast", 0) < 4.5:
+                fail(f"{where}: quiet field contrast is {found.get('best_contrast')} < 4.5 against "
+                     f"both contract ink and cream paper")
+            x, y, w, h = found["x"], found["y"], found["w"], found["h"]
+            width, height = dims(path)
+            if x < 0 or y < 0 or x + w > width or y + h > height:
+                fail(f"{where}: quiet field {(x, y, w, h)} is not inside the {width}x{height} plate")
         sf = plate["provenance"].get("source_frame") or {}
         p2 = path.with_name(path.stem + "@2x.png")
         if not p2.exists():
@@ -1014,19 +1232,229 @@ def check_cover_arithmetic(grammar: str, plates: list[dict]) -> None:
     if f"{natural[0]}x{natural[1]}" not in note:
         fail(f"{grammar}: cover note does not name its own crop size {natural[0]}x{natural[1]}")
 
+    # The derived 4:5 row is the same arithmetic and is checked here, not left to trust.
+    derived = [p for p in plates if "derived_from" in p]
+    if len(derived) != 1:
+        fail(f"{grammar}: expected exactly one derived 4:5 cover, found {len(derived)}"); return
+    d = derived[0]
+    if d["derived_from"] != master["id"]:
+        fail(f"{grammar}: 4:5 cover derives from {d['derived_from']!r}, not the master "
+             f"{master['id']!r}")
+    if tuple(d["size"]) != COVER_4X5_SHIPPED:
+        fail(f"{grammar}: 4:5 cover must be 640x800, is {d['size']}")
+    crop = master["provenance"].get("crop_4x5") or {}
+    frame = tuple(crop.get("frame") or ())
+    csize = tuple(crop.get("size") or ())
+    if len(frame) != 2 or len(csize) != 2:
+        fail(f"{grammar}: cover master declares no 4:5 crop frame/size"); return
+    want = cover_crop(frame, (4, 5))
+    if csize != want:
+        fail(f"{grammar}: 4:5 crop {csize[0]}x{csize[1]} is not the {want[0]}x{want[1]} centre "
+             f"crop of the {frame[0]}x{frame[1]} frame")
+    if abs(csize[0] / csize[1] - 4 / 5) > 0.01:
+        fail(f"{grammar}: 4:5 crop {csize[0]}x{csize[1]} is not a 4:5 rectangle")
+    if frame[0] < csize[0] or frame[1] < csize[1]:
+        fail(f"{grammar}: 4:5 crop {csize} is larger than its frame {frame}")
+    dsf = d["provenance"].get("source_frame") or {}
+    if tuple(dsf.get("frame") or ()) != frame:
+        fail(f"{grammar}: 4:5 row names frame {dsf.get('frame')}, master used {list(frame)}")
+    if tuple(dsf.get("crop") or dsf.get("size") or ()) != csize:
+        fail(f"{grammar}: 4:5 row names crop {dsf.get('crop') or dsf.get('size')}, master took "
+             f"{list(csize)}")
+    if dsf.get("referent") != master["id"]:
+        fail(f"{grammar}: 4:5 row referent is {dsf.get('referent')!r}, not {master['id']!r}")
+    sentence = (f"centre crop of the {master['id']} natural {frame[0]}x{frame[1]} frame to "
+                f"{csize[0]}x{csize[1]} (4:5), resized to 640x800")
+    derivation = d["provenance"].get("derivation") or ""
+    if not derivation.startswith(sentence):
+        fail(f"{grammar}: 4:5 derivation does not state the crop actually taken: {derivation!r}")
+    allowed = {frame, csize, COVER_4X5_SHIPPED, tuple(d["size"])}
+    for a, b in re.findall(r"(\d{2,5})x(\d{2,5})", derivation):
+        if (int(a), int(b)) not in allowed:
+            fail(f"{grammar}: 4:5 derivation names a frame it never used: {a}x{b}")
+
+
+def check_resolution(grammar: str, kit: dict) -> None:
+    """Every full-bleed role declares the 2x source a loader reads, `field_atlas@2`'s shape."""
+    res = kit.get("resolution")
+    if not isinstance(res, dict):
+        fail(f"{grammar}: no resolution block — a full-bleed loader has no declared 2x source")
+        return
+    roles = kit.get("roles") or {}
+    for role in ("hero", "section", "lesson_scene"):
+        rows = roles.get(role) or []
+        block = res.get(role)
+        if not isinstance(block, dict):
+            fail(f"{grammar}: resolution.{role} is missing"); continue
+        if not rows:
+            fail(f"{grammar}: resolution.{role} has no role row to point at"); continue
+        if tuple(block.get("size") or ()) != tuple(rows[0]["size"]):
+            fail(f"{grammar}: resolution.{role}.size {block.get('size')} != role size "
+                 f"{rows[0]['size']}")
+        source = block.get("source")
+        if source is None:
+            if role != "section":
+                fail(f"{grammar}: resolution.{role}.source is null — a full-bleed plate must "
+                     f"declare its 2x source")
+            elif "no 2x sibling" not in (block.get("note") or ""):
+                fail(f"{grammar}: resolution.section declares no source but does not say why")
+            continue
+        for key in ("path", "sha256", "size"):
+            if not source.get(key):
+                fail(f"{grammar}: resolution.{role}.source has no {key}")
+        if not source.get("path"):
+            continue
+        p = kit_dir(grammar) / source["path"]
+        if not p.exists():
+            fail(f"{grammar}: resolution.{role}.source {source['path']} is missing"); continue
+        if sha256(p) != source.get("sha256"):
+            fail(f"{grammar}: resolution.{role}.source sha256 is stale")
+        if list(dims(p)) != list(source.get("size") or []):
+            fail(f"{grammar}: resolution.{role}.source size {source.get('size')} != bytes "
+                 f"{list(dims(p))}")
+        if tuple(dims(p)) != (2688, 1536):
+            fail(f"{grammar}: resolution.{role}.source is {dims(p)}, not a 2688x1536 2x frame")
+        if source.get("scale") != 2.0:
+            fail(f"{grammar}: resolution.{role}.source scale {source.get('scale')} != 2.0")
+        if source["path"] != rows[0]["path"][:-4] + "@2x.png":
+            fail(f"{grammar}: resolution.{role}.source does not name the @2x sibling of "
+                 f"{rows[0]['path']}")
+    cover = res.get("cover") or {}
+    for aspect, size, rendered in (("3x2", COVER_3X2_SHIPPED, COVER_3X2_RENDERED),
+                                   ("4x5", COVER_4X5_SHIPPED, COVER_4X5_RENDERED)):
+        block = cover.get(aspect) or {}
+        if tuple(block.get("size") or ()) != size:
+            fail(f"{grammar}: resolution.cover.{aspect}.size {block.get('size')} != "
+                 f"{list(size)}")
+        if tuple(block.get("rendered") or ()) != rendered:
+            fail(f"{grammar}: resolution.cover.{aspect}.rendered {block.get('rendered')} != "
+                 f"{list(rendered)}")
+        if block.get("scale") != round(size[0] / rendered[0], 4):
+            fail(f"{grammar}: resolution.cover.{aspect}.scale {block.get('scale')} != "
+                 f"{round(size[0] / rendered[0], 4)}")
+    masters = [p for p in roles.get("cover") or [] if "derived_from" not in p]
+    if masters:
+        nat = (cover.get("3x2") or {}).get("natural") or {}
+        frame = tuple((masters[0]["provenance"].get("source_frame") or {}).get("size") or ())
+        if tuple(nat.get("size") or ()) != frame:
+            fail(f"{grammar}: resolution.cover.3x2.natural.size {nat.get('size')} is not the "
+                 f"master's natural crop {list(frame)}")
+        for key, ref in (("scale_vs_plate", COVER_3X2_SHIPPED[0]),
+                         ("scale_vs_render", COVER_3X2_RENDERED[0])):
+            if frame and nat.get(key) != round(frame[0] / ref, 4):
+                fail(f"{grammar}: resolution.cover.3x2.natural.{key} {nat.get(key)} != "
+                     f"{round(frame[0] / ref, 4)}")
+
+
+def check_manifest_shape(grammar: str, kit: dict) -> None:
+    """The non-image claims the field-atlas shape carries: policy, sidecars, pins."""
+    shape = kit.get("manifest_shape") or {}
+    if shape.get("based_on") != "field_atlas@2":
+        fail(f"{grammar}: manifest_shape.based_on is {shape.get('based_on')!r}")
+    if "resolution[role].source" not in (shape.get("loader_contract") or ""):
+        fail(f"{grammar}: manifest_shape does not state the resolution loader contract")
+    if kit.get("ocr_policy") != OCR_POLICY:
+        fail(f"{grammar}: ocr_policy drifted from the declared textless rule")
+    log = kit.get("generation_log") or {}
+    log_path = kit_dir(grammar) / (log.get("path") or "")
+    if not log.get("path") or not log_path.exists():
+        fail(f"{grammar}: generation_log sidecar is missing")
+    else:
+        if sha256(log_path) != log.get("sha256"):
+            fail(f"{grammar}: generation_log sha256 is stale")
+        if log.get("rows") != len(json.loads(log_path.read_text())):
+            fail(f"{grammar}: generation_log row count is stale")
+    spec = (kit.get("specimens") or {}).get("contact_sheet") or {}
+    if not spec.get("path"):
+        fail(f"{grammar}: no pinned contact sheet in specimens")
+    else:
+        sp = ROOT / spec["path"]
+        if not sp.exists():
+            fail(f"{grammar}: specimens contact sheet {spec['path']} is missing")
+        elif sha256(sp) != spec.get("sha256"):
+            fail(f"{grammar}: specimens contact sheet sha256 is stale")
+    ref = kit.get("reference") or {}
+    refs = ([{"path": ref["path"], "sha256": ref.get("sha256")}] if ref.get("path") else [])
+    refs += list(ref.get("other") or [])
+    for entry in refs:
+        rp = ROOT / entry["path"]
+        if not rp.exists():
+            fail(f"{grammar}: reference {entry['path']} is missing")
+        elif sha256(rp) != entry.get("sha256"):
+            fail(f"{grammar}: reference {entry['path']} sha256 is stale")
+    if "collectible" not in (kit.get("roles") or {}):
+        fail(f"{grammar}: roles.collectible is not declared")
+    # The loader's structural rules, enforced here so "the shape" is not a claim in prose: a kit
+    # it accepts has a matching kit_id, the display lane, a non-rejected status, and roles that are
+    # every one a kit-local PNG plate. Kernel references are checked under `kernel.assets`.
+    version = kit.get("version")
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        fail(f"{grammar}: version {version!r} is not a positive integer")
+    elif kit.get("kit_id") != f"{grammar}@{version}":
+        fail(f"{grammar}: kit_id {kit.get('kit_id')!r} is not {grammar}@{version}")
+    if kit.get("lane") != "display_plate":
+        fail(f"{grammar}: lane {kit.get('lane')!r} is not 'display_plate' (D-006)")
+    if str(kit.get("status") or "").startswith(("rejected", "superseded")):
+        fail(f"{grammar}: status {kit.get('status')!r} is not a consumer kit")
+    root = kit_dir(grammar).resolve()
+    for role, rows in (kit.get("roles") or {}).items():
+        if role not in KIT_ROLES:
+            fail(f"{grammar}: role {role!r} is not in the loader vocabulary {KIT_ROLES}")
+        for row in rows:
+            where = f"{grammar}/{role}/{row.get('id')}"
+            for field in ("id", "role", "path", "size", "sha256"):
+                if not row.get(field):
+                    fail(f"{where}: roles row has no {field}")
+            if row.get("role") != role:
+                fail(f"{where}: row declares role {row.get('role')!r}")
+            if row.get("textless") is not True:
+                fail(f"{where}: row does not record textless=true")
+            if row.get("source") != "curated_kit":
+                fail(f"{where}: row does not record source=curated_kit")
+            rel = str(row.get("path") or "")
+            if not rel or Path(rel).is_absolute():
+                fail(f"{where}: path must be relative to the kit directory")
+                continue
+            target = (root / rel).resolve()
+            if root not in target.parents:
+                fail(f"{where}: path {rel} resolves outside its own kit directory")
+                continue
+            if not target.is_file():
+                fail(f"{where}: {rel} is not on disk")
+            elif target.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+                fail(f"{where}: {rel} is not a PNG a display plate may ship")
+
 
 def check_kernel(grammar: str, kit: dict) -> None:
+    """The shared kernel is a set of references: every one resolves and hashes, and none of them
+    is mounted as a role — a loader that reads `roles` must never meet an out-of-kit path."""
     groups = kernel_for(grammar)
+    kernel_rows = (kit.get("kernel") or {}).get("assets")
+    if not isinstance(kernel_rows, list):
+        fail(f"{grammar}: kernel.assets is missing — the shared kernel is not declared")
+        return
+    if set(kit["roles"]) - set(KIT_ROLES):
+        fail(f"{grammar}: roles declare names a loader refuses: "
+             f"{sorted(set(kit['roles']) - set(KIT_ROLES))}")
+    kernel_roles = set(groups)
+    for role in kit["roles"]:
+        if role in kernel_roles:
+            fail(f"{grammar}: role {role!r} is a shared-kernel group and must not be a role")
+    by_role: dict[str, list[dict]] = {}
+    for row in kernel_rows:
+        by_role.setdefault(str(row.get("role") or ""), []).append(row)
     for role, paths in groups.items():
-        rows = kit["roles"].get(role) or []
+        rows = by_role.get(role) or []
         if len(rows) != len(paths):
-            fail(f"{grammar}: kernel role {role} has {len(rows)} rows, expected {len(paths)}")
+            fail(f"{grammar}: kernel role {role} has {len(rows)} refs, expected {len(paths)}")
         for row in rows:
             path = ROOT / row["path"]
             if not path.exists():
                 fail(f"{grammar}: kernel {row['path']} missing"); continue
             if sha256(path) != row["sha256"]:
                 fail(f"{grammar}: kernel {row['path']} sha256 is stale")
+            if list(dims(path)) != list(row["size"]):
+                fail(f"{grammar}: kernel {row['path']} size is stale")
 
 
 def check_fallbacks(grammar: str, kit: dict) -> None:
@@ -1122,6 +1550,8 @@ def check_kit(grammar: str) -> int:
         return 0 if not FAILS else 1
 
     check_grammar_consistency(grammar, kit)
+    check_manifest_shape(grammar, kit)
+    check_resolution(grammar, kit)
     check_fallbacks(grammar, kit)
     check_kernel(grammar, kit)
     check_budget(grammar, kit)
@@ -1136,17 +1566,6 @@ def check_kit(grammar: str) -> int:
         fail(f"{grammar}: expected a 3:2 and a 4:5 cover, found {len(covers)}")
     sections = roles.get("section") or []
     lessons = roles.get("lesson_scene") or []
-
-    if grammar == "field_atlas":
-        # VQ-002's approved kit: judged by its own role list, not by the VQ-008 shape.
-        for role, rows in roles.items():
-            for row in rows:
-                p = kit_dir(grammar) / row["path"] if not row.get("shared_kernel") else ROOT / row["path"]
-                if not p.exists():
-                    fail(f"{grammar}: {row['path']} missing"); continue
-                if sha256(p) != row["sha256"]:
-                    fail(f"{grammar}: {row['path']} sha256 is stale")
-        return 0 if not FAILS else 1
 
     if len(sections) < 1:
         fail(f"{grammar}: no section plate")
@@ -1205,7 +1624,7 @@ def contact_sheets(out_dir: Path) -> int:
             for row in kit["roles"].get(role) or []:
                 tiles.append((kit_dir(grammar) / row["path"], f"{role} · {row['id']} · {row['size'][0]}x{row['size'][1]}"))
         for role in ("object", "frame", "badge", "material", "fox"):
-            for row in kit["roles"].get(role) or []:
+            for row in [r for r in (kit.get("kernel") or {}).get("assets") or [] if r.get("role") == role]:
                 tiles.append((ROOT / row["path"], f"{role} · {row['id']} (shared kernel)"))
         rows = [tiles[i:i + 3] for i in range(0, len(tiles), 3)]
         row_files = []
@@ -1249,6 +1668,14 @@ def contact_sheets(out_dir: Path) -> int:
         )
         sheet = out_dir / f"{grammar}-contact-sheet.png"
         subprocess.run(["magick", str(header), *[str(p) for p in row_files], "-append", str(sheet)], check=True)
+        # The manifest pins this file by sha256, so the bytes must be reproducible: ImageMagick
+        # writes a png:tIME chunk from the wall clock, and two runs of identical pixels would
+        # otherwise hash differently. Strip it and re-encode in place.
+        subprocess.run(
+            ["magick", str(sheet), "-define", "png:exclude-chunks=date,time",
+             "+set", "date:create", "+set", "date:modify", str(sheet)],
+            check=True,
+        )
         for p in row_files + [header]:
             p.unlink()
         print(f"wrote {sheet}")
