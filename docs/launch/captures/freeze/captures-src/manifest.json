@@ -1,0 +1,53 @@
+{
+  "captured_at": "2026-11-11T13:36:14-07:00",
+  "window": "1920x1080",
+  "git": {
+    "checkout_commit": "fc6ec7b7480094638e75f92d66d0ec103edb894d",
+    "worktree": "/tmp/cb-live-capture/src (git worktree --detach fc6ec7b7)"
+  },
+  "module_sha256": "71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8",
+  "installed_module_sha256": "0d98d60635704e0ef09d449e04c83189f8b016bc3f2d60b9dec7d258a8b152a7",
+  "note": "Module-rendered proof of the checkout (D-010 composition evidence), NOT a capture of the installed plugin: the running Desktop holds stale module 0d98d606. Home renders CoursebookHome with four seeded enrollments; course/lesson/workshop render shipped components with the harness fixtures named below.",
+  "files": [
+    {
+      "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/live/home.png",
+      "surface": "Home / field library",
+      "method": "a",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "4dc86cee29bc6d317f1fe56bafb5e11661ca1ad10ac84df7159447c65d0ea63e",
+      "command": "python3 scripts/gen-home-proof.py (1920x1080 variant) then headless Chromium viewport 1920x1080 via node /tmp/cb-live-capture/shoot2.mjs",
+      "fixture": "design: CoursebookHome inside CbV3Scope, four seeded enrollments"
+    },
+    {
+      "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/live/course.png",
+      "surface": "Course plan outline (approved plan, sections, Generate lessons)",
+      "method": "a",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "79dca347ab96de9543b69f426ee22f314a21719d415eab435950a6125d1249ee",
+      "command": "python3 scripts/frame-more.py --surface plan-sections --width 1920 --out /tmp/cb-live-capture/extra then Chromium 1920x1080",
+      "fixture": "surface StudioPlanView, learner"
+    },
+    {
+      "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/live/lesson.png",
+      "surface": "Lesson teaching document (Japanese dialogue, romaji, English; teaching notes)",
+      "method": "a",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "69f6283267447f1c11e401327d53548c762b866bfe120e1e3435808fa7980828",
+      "command": "python3 scripts/cb-frame.py --component lesson-textbook --width 1920 --out docs/launch/captures/live then Chromium 1920x1080",
+      "fixture": "surface LessonDocumentView textbook"
+    },
+    {
+      "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/live/workshop.png",
+      "surface": "Workshop / Discover (featured pack + all packs grid)",
+      "method": "a",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "16d40e9f4163189879914b04aee7e27a7b136afdf92cc86e58b22720620fd8b7",
+      "command": "python3 scripts/frame-more.py --surface discover --width 1920 1080 --out docs/launch/captures/live then Chromium 1920x1080",
+      "fixture": "surface WorkshopDiscoverV3"
+    }
+  ]
+}
