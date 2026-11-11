@@ -37,10 +37,10 @@ the goal text alone and `enforce_plan_rules` refusing a performance goal with no
 line — when the brief declared no domain and the goal names one, the author is told
 `Subject domain: <domain> (inferred from the goal; the brief declared none)` — plus its rule that a
 named orthography or metalanguage goal is a language goal. The validation prompt advances to
-`validation-prompt.v11` because the plan-validation payload carries the typed `performance` block
-and the resolved domain with its `domain_source` (declared, inferred or default), so the validator
-judges the plan against the same profile the author was given; its instruction text is unchanged by
-either card.
+`validation-prompt.v12`: the plan-validation payload carries the typed `performance` block and the
+resolved domain with its `domain_source` (declared, inferred or default), so the validator judges
+the plan against the same profile the author was given, and the instruction text states the
+`source_support` rule below.
 
 The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
 prompts now state the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage
@@ -548,7 +548,7 @@ claim presented to the learner as established fact with no support; and a claim 
 excerpts contradict (which is also a `factual_correctness` defect). A claim the artifact itself
 marks `unverified`, with no source ids, is a *declared gap*: recorded, disclosed at approval,
 never refused. The distinction is stated to the validator before it answers — `_PLAN_SUPPORT_RULE`
-in every plan-validation pass, under `validation-prompt.v7`.
+in every plan-validation pass, under the current validation label (§1's table).
 
 **The kernel enforces the same rule, so a model slip cannot attribute it to the author.**
 `plan_declared_gaps()` reads the plan's own `support: "unverified"` / no-ids objectives;
