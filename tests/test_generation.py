@@ -448,7 +448,13 @@ class ResearchTest(GenerationTestBase):
         source = run.sources[0]
         self.assertTrue(source.truncated)
         self.assertEqual(source.excerpt_state, "recorded")
-        self.assertEqual(len(source.excerpt), 100)
+        # CP-015a's rule: the window ends on the last sentence boundary at or before the ceiling,
+        # so a 100-character ceiling on this repeated sentence stops at 70 (the first full
+        # sentence) rather than cutting mid-sentence. The bound is a ceiling, not a target.
+        self.assertLessEqual(len(source.excerpt), 100)
+        self.assertEqual(source.excerpt, prose[:len(source.excerpt)])
+        self.assertTrue(source.excerpt.endswith("."))
+        self.assertEqual(len(source.excerpt), 70)
         self.assertEqual(source.content_hash, research.sha256_of_text(prose[:600]))
 
     def test_a_page_of_chrome_is_an_honest_no_excerpt(self) -> None:
