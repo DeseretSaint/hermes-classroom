@@ -215,6 +215,250 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
     border: 1px solid CanvasText;
   }
 }
+
+/* CP-053 — the wide Home is a room: one canvas, a shelf of collectible cards, a lower ledge.
+   Every position is a pixel on the binding reference frame (1344x768), so this block is authored
+   geometry while the paint and type still come from the token contract. Nothing here may carry a
+   raw colour, a shadow outside the elevation tokens, or a font size outside the type scale. */
+[data-cb-v3] [data-cb-home-scene] {
+  position: relative;
+  width: 100%;
+  max-width: 1344px;
+  height: 768px;
+  margin: 0 auto;
+  overflow: hidden;
+  /* The room paints its own canvas. The scope's material layers sit under the content wrapper, and
+     its vignette tile composites as a dark centre at this canvas size, so the scene keeps the
+     token canvas colour flat; texture is the token canvas, not the route vignette. */
+  background-color: var(--cb3-canvas);
+}
+
+[data-cb-v3] [data-cb-home-scene-hero] {
+  position: absolute;
+  top: 128px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 4;
+}
+
+[data-cb-v3] [data-cb-home-scene-question] {
+  margin: 0;
+  font-family: var(--cb3-font-display);
+  font-size: var(--cb3-text-display);
+  line-height: var(--cb3-leading-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--cb3-forest);
+}
+
+[data-cb-v3] [data-cb-home-scene-subline] {
+  margin: 24px 0 0;
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-heading);
+  line-height: var(--cb3-leading-heading);
+  font-weight: 500;
+  color: var(--cb3-ink);
+}
+
+[data-cb-v3] [data-cb-home-scene-cta] {
+  margin-top: 26px;
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+
+[data-cb-v3] [data-cb-home-scene-cta] button {
+  border: 0;
+  border-radius: var(--cb3-radius-pill);
+  height: 48px;
+  padding: 0 22px;
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-body);
+  font-weight: 600;
+  color: var(--cb3-on-terracotta);
+  background-color: var(--cb3-terracotta);
+  box-shadow: var(--cb3-elev-1);
+  cursor: pointer;
+}
+
+/* One filled primary per surface: the browse door is the quiet warm field that carries ink. */
+[data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-secondary] {
+  color: var(--cb3-ink);
+  background-color: var(--cb3-terracotta-quiet);
+}
+
+[data-cb-v3] [data-cb-home-scene-cards] {
+  position: absolute;
+  top: 384px;
+  left: 273px;
+  height: 175px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-end;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-cb-v3] [data-cb-home-scene-card] {
+  width: 176px;
+  height: 175px;
+  flex: 0 0 176px;
+  background-color: var(--cb3-card-stock);
+  border-radius: var(--cb3-radius-soft);
+  box-shadow: var(--cb3-elev-1);
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--cb3-ink);
+  transform-origin: 50% 100%;
+}
+
+[data-cb-v3] [data-cb-home-scene-card]:nth-child(1) { transform: rotate(-1.6deg); }
+[data-cb-v3] [data-cb-home-scene-card]:nth-child(2) { transform: rotate(0.8deg); }
+[data-cb-v3] [data-cb-home-scene-card]:nth-child(3) { transform: rotate(-0.6deg); }
+[data-cb-v3] [data-cb-home-scene-card]:nth-child(4) { transform: rotate(1.4deg); }
+
+[data-cb-v3] [data-cb-home-scene-card] img,
+[data-cb-v3] [data-cb-home-scene-cover] {
+  display: block;
+  width: 100%;
+  height: 106px;
+  object-fit: cover;
+}
+
+[data-cb-v3] [data-cb-home-scene-cover] {
+  display: grid;
+  place-items: center;
+  background-color: var(--cb3-terracotta-quiet);
+  font-family: var(--cb3-font-display);
+  font-size: var(--cb3-text-heading);
+  color: var(--cb3-forest);
+}
+
+[data-cb-v3] [data-cb-home-scene-body] {
+  padding: 8px 10px 10px;
+}
+
+[data-cb-v3] [data-cb-home-scene-title] {
+  margin: 0;
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-meta);
+  line-height: var(--cb3-leading-meta);
+  font-weight: 600;
+  color: inherit;
+}
+
+[data-cb-v3] [data-cb-home-scene-progress] {
+  margin-top: 9px;
+  height: 5px;
+  border-radius: var(--cb3-radius-pill);
+  background-color: var(--cb3-rule);
+  overflow: hidden;
+}
+
+[data-cb-v3] [data-cb-home-scene-progress] > i {
+  display: block;
+  height: 100%;
+  background-color: var(--cb3-gold);
+}
+
+/* The reference card carries a title and a progress bar, not a second line of 12 px type. The
+   section pair stays in the document for a screen reader and every copy oracle; it is not painted. */
+[data-cb-v3] [data-cb-home-scene-meta] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+[data-cb-v3] [data-cb-home-scene-plank-one] {
+  position: absolute;
+  left: 219px;
+  top: 545px;
+  width: 870px;
+  height: 20px;
+  /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
+  z-index: 1;
+  background-color: var(--cb3-wood);
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  border-bottom: 1px solid var(--cb3-wood-edge);
+  box-shadow: var(--cb3-elev-2);
+}
+
+[data-cb-v3] [data-cb-home-scene-plank-one] > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20px;
+  height: 10px;
+  background-color: var(--cb3-rule);
+  border-bottom: 1px solid var(--cb3-wood-edge);
+}
+
+[data-cb-v3] [data-cb-home-scene-plank-two] {
+  position: absolute;
+  left: 115px;
+  top: 681px;
+  width: 1165px;
+  height: 34px;
+  z-index: 1;
+  background-color: var(--cb3-wood);
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+}
+
+[data-cb-v3] [data-cb-home-scene-plank-two] > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  height: 26px;
+  background-color: var(--cb3-wood);
+  border-bottom: 1px solid var(--cb3-wood-edge);
+  box-shadow: var(--cb3-elev-2);
+}
+
+[data-cb-v3] [data-cb-home-scene-tag] {
+  position: absolute;
+  left: 884px;
+  top: 616px;
+  width: 164px;
+  height: 88px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  transform: rotate(-3deg);
+  background-color: var(--cb3-card-stock);
+  border: 1px solid var(--cb3-ink);
+  font-family: var(--cb3-font-display);
+  font-size: var(--cb3-text-lead);
+  color: var(--cb3-ink);
+  box-shadow: var(--cb3-elev-1);
+}
+
+[data-cb-v3] [data-cb-home-scene-clock] {
+  position: absolute;
+  left: 1050px;
+  top: 596px;
+  width: 112px;
+  height: 112px;
+  z-index: 4;
+}
+
+[data-cb-v3] [data-cb-home-scene-fox] {
+  position: absolute;
+  left: 1090px;
+  top: 486px;
+  z-index: 5;
+}
 `
 
 /** One mode answer for the palette and the material tiles. */

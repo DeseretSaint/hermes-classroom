@@ -7,9 +7,9 @@ explanation, the screen is the thing to fix.
 
 | # | Ask | The reader should say | Where the screen says it |
 |---|---|---|---|
-| 1 | What is this screen for? | "It's my course library — I pick what to learn." | `What will you learn next?` / `Pick a course, or chart a new one.` |
+| 1 | What is this screen for? | "It's my course library — I pick what to learn." | `Your field library` / `Choose a course or start a new expedition.` |
 | 2 | What is the first thing I can do? | "Start a new course." | the only filled button in the invitation band |
-| 3 | What if I don't want to write one? | "Browse the library." | the text link directly under the primary |
+| 3 | What if I don't want to write one? | "Browse the library." | `Browse library` beside the primary |
 | 4 | What are those objects along the shelf? | "Courses I already have." | `Your courses`, six titled cards, each with its real next step. A Game/Textbook badge appears only when `world.read` reports a mode; this rig reports none and the page says so instead of inventing one. |
 | 5 | Where is my lesson / Continue? | "Not here — open a course." | no Continue plate exists on this screen; the card is the door |
 | 6 | How do I see everything? | "See all." | the quiet link beside `Your courses` |

@@ -37,9 +37,14 @@ HARNESS = r"""
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import fs from 'node:fs'
-import { CoursebookHome } from './plugin.js'
 
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+// CP-053: the route width must be pinned before the plugin module (and the SDK stub it imports)
+// evaluates, or the stub's 1280 px default mounts the wide room scene instead of the hub. The
+// import is dynamic on purpose: a static import is hoisted above this line.
+globalThis.__CB_TEST_WIDTH__ = String(payload.width || 1049)
+const { CoursebookHome } = await import('./plugin.js')
+
 const lib = (rows, overrides = {}) => ({
   items: rows,
   next_cursor: null,
@@ -275,6 +280,36 @@ class HomeV3SurfaceTest(Base):
 
 
 @unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")
+class HomeSceneWideTest(Base):
+    """CP-053 — the wide Home scene paints the binding reference's own copy.
+
+    The scene is the `route >= 1200` branch only. Its six visible strings are the owner's reference
+    frame (typos corrected); the hub below 1200 keeps the v3 hub copy untouched.
+    """
+
+    def test_scene_paints_the_reference_strings(self) -> None:
+        html = self.home(width=1344, rows=[row(1), row(2)])
+        self.assertIn('data-cb-home-scene=""', html)
+        text = painted(html)
+        self.assertIn("Your field library", text)
+        self.assertIn("Choose a course or start a new expedition.", text)
+        self.assertIn("Start a new course", text)
+        self.assertIn("Browse library", text)
+        self.assertIn("New course", text)
+
+    def test_scene_keeps_one_filled_primary(self) -> None:
+        html = self.home(width=1344, rows=[row(1), row(2)])
+        self.assertEqual(html.count("data-cb-home-scene-primary"), 1, "the scene repeated the create action")
+        self.assertEqual(html.count("data-cb-home-scene-secondary"), 1)
+
+    def test_narrow_home_does_not_paint_the_scene_copy(self) -> None:
+        html = self.home(width=1049, rows=[row(1), row(2)])
+        self.assertNotIn("data-cb-home-scene", html)
+        self.assertIn('data-cb-home-card=""', html, "the narrow Home keeps its hub shelf")
+        self.assertIn("Your courses", painted(html))
+
+
+@unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")
 class HomeV3StatesTest(Base):
     def test_first_run_is_the_start_plate_on_the_plank(self) -> None:
         html = self.home(status="ready", rows=[])
@@ -445,6 +480,8 @@ class HomeV3StatesTest(Base):
             # An overflowing shelf: `See all` is only visible with a fifth course, so the matrix
             # must render it or the string is never checked.
             dict(rows=[row(index) for index in range(1, 7)]),
+            # CP-053 — the wide scene band paints its own reference copy; it is part of Home.
+            dict(width=1344, rows=[row(1), row(2)]),
         ]
         rendered: list[str] = []
         for payload in payloads:
@@ -454,6 +491,9 @@ class HomeV3StatesTest(Base):
             for segment in re.findall(r">([^<>]+)<", html):
                 text = segment.strip()
                 if not text:
+                    continue
+                # A single capital is the deterministic typographic cover mark, not copy.
+                if len(text) == 1:
                     continue
                 # A composed paragraph is allowed when every unit it is built from is.
                 if allowed(text, values) or composable(text, values):

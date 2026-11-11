@@ -617,3 +617,26 @@ baseline still passes V-04…V-12.
   contract); §5.1 documents this reading so CP-020a is not misled. It is a deliberate interpretation
   of the card's "equals the contract byte for byte" wording, not an accidental weakening.
 
+
+## CP-053 — the six `test_desktop_gm002_home` gates after the wide scene
+
+Card: **CP-053**, branch `wt/cp-053-home-scene`. Master reverted `471e7c96` because these six gates
+answered a compact-Home question with the wide scene's markup: the static harness never pinned a
+viewport, so the route saw the SDK stub's default 1280 px and mounted the scene above the 1200 px
+breakpoint. The fix is a re-point, not a deletion: the static harness now chooses the compact band
+before `plugin.js` is evaluated (`globalThis.__CB_TEST_WIDTH__`, dynamic import), and the wide scene
+gets its own home in `tests/test_desktop_home_scene_geometry.py`.
+
+| v2 gate (kept, re-pointed) | v2 region it now reads | v3 counterpart |
+|---|---|---|
+| `test_shelf_shows_four_to_six_authored_cards_and_see_all` | compact shelf at 1049 px | `HomeSceneTest.test_narrow_home_keeps_its_shelf_and_see_all` |
+| `test_shelf_row_declares_its_mask_state` | compact shelf mask | `HomeSceneTest.test_the_scene_is_used_only_at_the_wide_breakpoint` |
+| `test_card_shows_real_next_step_and_mode_badge` | compact card | `HomeSceneTest.test_the_four_visible_titles_are_the_reference_strings` |
+| `test_card_does_not_repeat_its_title_as_the_goal` | compact card | `HomeSceneTest.test_a_card_bar_reads_sections_not_a_rating` |
+| `test_card_does_not_repeat_the_next_step_as_a_goal` | compact card | `HomeSceneTest.test_a_card_bar_reads_sections_not_a_rating` |
+| `test_offline_says_so_without_inventing_courses` | compact empty/offline shelf | `HomeSceneTest.test_a_card_without_progress_says_so_and_invents_nothing` |
+
+Nothing was dropped: each v2 assertion still runs on the compact band, and each wide-scene claim is
+carried by a named v3 test. The scene's own paint claims are not tested here — they are the
+`test_desktop_tokens`, `test_desktop_tokens_v3`, `test_desktop_type_scale`, `test_desktop_h152_motion`
+and `test_desktop_gate_scope` gates, which pass unchanged on the same branch.

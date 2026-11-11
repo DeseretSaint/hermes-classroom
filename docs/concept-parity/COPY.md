@@ -61,7 +61,7 @@ omits the row when none is.
 | id | Text | Source | Cap | Where |
 |---|---|---|---|---|
 | `home.title` | Your field library | deck | 24 | H2 |
-| `home.sub` | Pick a course, or start a new one. | deck | 48 | H2 |
+| `home.sub` | Choose a course or start a new expedition. | deck | 48 | H2 |
 | `home.primary` | Start a course | deck | 24 | H3 filled |
 | `home.secondary` | Browse library | deck | 24 | H3 outline |
 | `home.settings` | Settings | deck | 12 | H7 |

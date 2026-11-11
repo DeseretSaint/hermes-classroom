@@ -85,7 +85,7 @@ Wide (≥1049), top to bottom:
 | Band | Height | Content | Rule |
 |---|---|---|---|
 | Header | 64px | brand mark (20px seal ring + wordmark) at the left; nav `Home · Courses · Workshop · Parent Studio`; settings (icon + label) at the right | one 1px `rule` under the header, full bleed; no filled control in the header |
-| Invitation | 320px | display serif `What will you learn next?`, max 20ch, centred; one `lead` line `Pick a course, or chart a new one.`; gap 24px; primary `Start a new course`; `Browse the library` as a text link 12px under it | centred within the 1120px content column; no illustration inside the invitation band |
+| Invitation | 320px | display serif `Your field library`, max 20ch, centred; one `lead` line `Choose a course or start a new expedition.`; gap 24px; primary `Start a new course`; `Browse library` beside it | centred within the 1120px content column; no illustration inside the invitation band |
 | Shelf head | 40px | `Your courses` (`heading`, sentence case) at the left; `See all` (`meta` link) at the right, aligned to the shelf's right edge | one uppercase element per region only — none here |
 | Shelf | card + 48px ledge | 4–6 cards, horizontally scrolling, bottom-aligned on the ledge; fox at the right end | geometry in §2.3 |
 | Footer space | — | nothing | the first viewport ends at the ledge; no stat strip, no second shelf |

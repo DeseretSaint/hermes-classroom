@@ -158,7 +158,9 @@ function useCourseModes(courseIds) {
  */
 const CB_HOME_V3_COPY = Object.freeze({
   title: 'Your field library',
-  sub: 'Pick a course, or start a new one.',
+  // CP-053: the owner's binding Home reference (R-HOME) wins on this line. The deck row keeps its
+  // id; only its text follows the reference, so no unregistered copy is introduced.
+  sub: 'Choose a course or start a new expedition.',
   primary: 'Start a new course',
   secondary: 'Browse library',
   shelfLabel: 'Your courses',
@@ -506,6 +508,141 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  * `docs/concept-parity/COPY.md` §2 is the copy deck; every card fact is a CP-005 `library_item`
  * field, so no number is computed by the UI.
  */
+
+/* ── Home scene (wide) ────────────────────────────────────────────────────────────────────────
+ * The owner's approved Home is a room, not a dashboard: a centred invitation, one wooden shelf of
+ * collectible cards, and a lower ledge with the mascot, the clock and the new-course tag. This
+ * layer is used only on a route at least 1200 px wide; every narrower layout (and jsdom, which
+ * reports width 0) keeps the existing compact Home, so the scene never degrades into a list.
+ * Geometry is authored at 1344x768 — the reference canvas — and the block is centred on wider
+ * routes. Art comes from the shipped object kit and each card's real cover artifact; no rating is
+ * invented, the row under a title is the course's own section progress.
+ */
+/* CP-053 — the scene's authored geometry, measured off the binding reference frame
+ * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
+ * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
+ * from this module by `scripts/gen-home-proof.mjs` and `tests/test_desktop_home_scene_parity.py`
+ * fails if the committed page differs from a fresh render, so the proof cannot drift from the
+ * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
+ * because the reference is a lit room, not the desk's flat paper.
+ */
+const CB_HOME_SCENE = Object.freeze({
+  canvas: Object.freeze({ width: 1344, height: 768 }),
+  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
+  cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
+  shelf: Object.freeze({ left: 219, width: 870, top: 545, height: 20, lip: 10 }),
+  ledge: Object.freeze({ left: 115, width: 1165, top: 681, height: 34, face: 26 }),
+  tag: Object.freeze({ left: 884, top: 616, width: 164, height: 88, font: 23 }),
+  clock: Object.freeze({ left: 1050, top: 596, size: 112 }),
+  fox: Object.freeze({ left: 1090, top: 486, size: 220 })
+})
+
+function HomeSceneCard({ slot, index, onOpen }) {
+  const row = (slot && slot.row) || {}
+  const media = cbCoverMedia(row)
+  const preview = useArtifactPreview(media ? media.artifact_id : null)
+  const art = media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url ? preview.data_url : null
+  const title = (slot && (slot.title || slot.name)) || 'Untitled course'
+  const total = Number(row.sections_total) || 0
+  const done = Number(row.sections_done) || 0
+  const ratio = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0
+  return jsxs('article', {
+    'data-cb-home-scene-card': '',
+    role: 'listitem',
+    onClick: () => onOpen && onOpen(slot),
+    children: [
+      art
+        ? jsx('img', { 'data-cb-home-scene-cover': 'art', src: art, alt: media.caption || '' }, 'art')
+        : jsx('div', {
+            'data-cb-home-scene-cover': 'type',
+            children: (title.match(/[A-Za-z]/) || ['C'])[0].toUpperCase()
+          }, 'cover'),
+      jsxs('div', {
+        'data-cb-home-scene-body': '',
+        children: [
+          jsx('h3', { 'data-cb-home-scene-title': '', children: title }, 'title'),
+          jsx('div', {
+            'data-cb-home-scene-progress': '',
+            'aria-hidden': 'true',
+            children: jsx('i', { style: { width: `${Math.round(ratio * 100)}%` } }, 'fill')
+          }, 'progress'),
+          jsx('p', {
+            'data-cb-home-scene-meta': '',
+            children: total > 0 ? `${done} of ${total} sections done` : 'Not started'
+          }, 'meta')
+        ]
+      }, 'body')
+    ]
+  })
+}
+
+function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCourse }) {
+  const wood = cb3ObjectSource('shelf-plank')
+  const clock = cb3ObjectSource('clock')
+  const woodImage = wood ? { backgroundImage: `url(${wood})` } : undefined
+  return jsxs('div', {
+    'data-cb-home': 'scene',
+    'data-cb-home-scene': '',
+    children: [
+      jsxs('div', {
+        'data-cb-home-scene-hero': '',
+        children: [
+          jsx('h1', {
+            'data-cb-home-question': '',
+            'data-cb-home-scene-question': '',
+            children: CB_HOME_V3_COPY.title
+          }, 'question'),
+          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
+          jsxs('div', {
+            'data-cb-home-scene-cta': '',
+            children: [
+              canCreate
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-home-scene-primary': '',
+                    onClick: onStartCreate,
+                    children: CB_HOME_V3_COPY.primary
+                  }, 'create')
+                : null,
+              jsx('button', {
+                type: 'button',
+                'data-cb-home-scene-secondary': '',
+                onClick: onBrowseLibrary,
+                children: CB_HOME_V3_COPY.secondary
+              }, 'browse')
+            ]
+          }, 'cta')
+        ]
+      }, 'hero'),
+      jsx('div', {
+        'data-cb-home-scene-cards': '',
+        role: 'list',
+        'aria-label': CB_HOME_COPY.shelf,
+        children: slots.slice(0, 4).map((slot, index) =>
+          jsx(HomeSceneCard, { slot, index, onOpen: onOpenCourse }, (slot && slot.course_id) || `scene-${index}`)
+        )
+      }, 'cards'),
+      jsx('div', {
+        'data-cb-home-scene-plank-one': '',
+        'aria-hidden': 'true',
+        style: woodImage,
+        children: jsx('i', {})
+      }, 'plank-one'),
+      jsx('div', { 'data-cb-home-scene-tag': '', children: CB_HOME_V3_COPY.tagNew }, 'tag'),
+      clock
+        ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
+        : null,
+      jsx('div', { 'data-cb-home-scene-fox': '', children: jsx(FoxPose, { pose: 'clock', size: CB_HOME_SCENE.fox.size }, 'fox') }, 'fox-wrap'),
+      jsx('div', {
+        'data-cb-home-scene-plank-two': '',
+        'aria-hidden': 'true',
+        style: woodImage,
+        children: jsx('i', {})
+      }, 'plank-two')
+    ]
+  })
+}
+
 function CoursebookHome({
   library,
   modes,
@@ -955,6 +1092,19 @@ function CoursebookHome({
           : null
       ]
     }, 'shelf')
+  }
+
+  // CP-053 — the wide Home is the room scene: a centred invitation, one shelf of collectible cards
+  // and a lower ledge. It owns the route width >= 1200 band only. Every narrower layout, and every
+  // loading / error / empty state, keeps the v3 hub below exactly as the seam wrote it.
+  if (width >= 1200 && status === 'ready' && hub.total > 0) {
+    return jsx(HomeScene, {
+      slots,
+      canCreate,
+      onStartCreate,
+      onBrowseLibrary,
+      onOpenCourse
+    }, 'scene')
   }
 
   return jsxs('div', {
