@@ -78,8 +78,8 @@
       "title": "Reading a pack before you install it"
     },
     {
-      "archive_sha256": "sha256:a176162f036dd7c381ad4b065689bca1c3b39ca884c086ebf0d6f03a3d2d9d54",
-      "content_hash": "sha256:37d2d5026d33c02ce3c55047183102903afbd1a2aacfd1122ac74e741caefb47",
+      "archive_sha256": "sha256:beb6f7e3338d2c24d315ff3685eaebd8e2fd5b1b224014be5ae9a1d9ee3eb35e",
+      "content_hash": "sha256:b4f47f122e2d1dd09c617f69a5ead787b09f66d91843ff4d8a7f412b6a5bd1f1",
       "contributors": [
         {
           "name": "Course author",
@@ -94,10 +94,10 @@
       "objectives": 2,
       "origin": "community",
       "pack_id": "authored-crs-55cae4a7e71042b6a52c1acaf818a595",
-      "pack_version": "1.0.0",
+      "pack_version": "1.0.1",
       "path": "store/packs/authored-crs-55cae4a7e71042b6a52c1acaf818a595.zip",
       "recipe": "committed",
-      "redistribution": "local_only",
+      "redistribution": "allowed",
       "subtitle": "",
       "title": "Braising at home"
     }
