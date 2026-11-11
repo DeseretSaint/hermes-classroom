@@ -53,7 +53,7 @@ CP-049 audit re-pin and CP-044 merge); the release tree
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
 live Desktop window has driven this exact tree, and the operator publication gate
-in §0 is closed. Open gates: 7, 12, 13, 14, 15. Partial: 5, 6. Gate 9 (license) closed on
+in §0 is closed. Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (license) closed on
 2026-11-10: MIT, `LICENSE` at `0d17824`. Gate 10 (public repository) is met by measurement on
 2026-11-10: the repository is public and an anonymous clone of `master` resolves.
 
@@ -98,11 +98,11 @@ invalidates the earlier evidence.
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The draft pull request exists: `NousResearch/hermes-agent#152920`, opened 2026-11-10, pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading, and it stays draft until gates 5 and 7 close | [x] |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
-| 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
-| 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
-| 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
+| 13 | Demo recorded and approved | Harbor, DeseretSaint | `docs/launch/coursebook-demo-90s.mp4`: `Ran`-free measurement in `docs/launch/QC.md` — 51.000000 s, 1920x1080, 30/1 CFR, h264 High, yuv420p, 1530 frames, 2,099,849 B, zero audio streams, sha256 `3d7a1d8126b58fd475931415cd2c5293c869ac395dc6eab9f1d4e0c741c77aa4`; frame provenance in `docs/launch/CREDITS.md`. Recorded and measured; **the owner's approval block in QC.md is empty** | [~] |
+| 14 | X post published | DeseretSaint | post URL, tags @NousResearch; copy, alt text and the 258-character count are in `docs/launch/POST.md` §1. Nothing has been posted | [ ] |
+| 15 | Contest form submitted | DeseretSaint | confirmation; the answer table for `https://form.typeform.com/to/FwJLvOln` is in `docs/launch/POST.md` §2 | [ ] |
 
-Open gates: 7, 12, 13, 14, 15. Partial: 5, 6. Gate 9 (MIT license) and gate 10 (repository measured
+Open gates: 7, 12, 14, 15. Partial: 5, 6, 13. Gate 9 (MIT license) and gate 10 (repository measured
 public, anonymous clone of `master` resolves) are closed as of 2026-11-10.
 
 Gate 5 moved back from `[ ]` to `[~]` on this tree because the plugin defect underneath it is
