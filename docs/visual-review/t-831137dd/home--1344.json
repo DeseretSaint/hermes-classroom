@@ -1,0 +1,45 @@
+{
+  "schema": "vq.capture.v1",
+  "cell": {
+    "name": "home--1344",
+    "destination": "home",
+    "width": 1344,
+    "height": 768
+  },
+  "captured_at": "2026-11-11T18:42:40.197Z",
+  "run": null,
+  "window": {
+    "cdp_port": 9435,
+    "plugin": {
+      "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_831137dd/desktop/plugin.js",
+      "bytes": 4147528,
+      "sha256": "3cdfa1d004687a1a0e74d2e78509eff001ee6d758da2799e796c9f7627e94283"
+    }
+  },
+  "route": null,
+  "surface": {
+    "requested": "home",
+    "resolved": null,
+    "control": "[data-cb-nav-item=\"home\"]",
+    "missing": null
+  },
+  "screenshot": {
+    "file": "home--1344.png",
+    "sha256": "b765733c51c5fb07e1c5aec06e02355c0154a4ca5e2e915343945ddb9f5c253d",
+    "bytes": 103859,
+    "clip": null
+  },
+  "images": [],
+  "backgrounds": [],
+  "page": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "protocol": "http:",
+    "proof_script": false
+  },
+  "error": "TypeError: Cannot read properties of null (reading 'getBoundingClientRect')\n    at <anonymous>:1:81",
+  "lazy": {
+    "scroller": "html.dark",
+    "scroll_height": 1030,
+    "client_height": 1030
+  }
+}

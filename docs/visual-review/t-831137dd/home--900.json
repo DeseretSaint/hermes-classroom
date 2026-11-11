@@ -1,0 +1,341 @@
+{
+  "schema": "vq.capture.v1",
+  "cell": {
+    "name": "home--900",
+    "destination": "home",
+    "width": 900,
+    "height": 768
+  },
+  "captured_at": "2026-11-11T18:41:32.677Z",
+  "run": null,
+  "window": {
+    "cdp_port": 9435,
+    "plugin": {
+      "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_831137dd/desktop/plugin.js",
+      "bytes": 4147528,
+      "sha256": "3cdfa1d004687a1a0e74d2e78509eff001ee6d758da2799e796c9f7627e94283"
+    }
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "present": true,
+    "marker": "/coursebook",
+    "destination": "home",
+    "scope": "dark",
+    "motion": "full",
+    "v3_ready": true,
+    "v3_textures": "ready",
+    "width": 900,
+    "height": 714,
+    "scroll_height": 714,
+    "top": 34,
+    "left": 260,
+    "window_width": 1160,
+    "window_height": 768,
+    "fonts_status": "loaded",
+    "fonts_ok": true,
+    "page_title": "Home",
+    "course_home": null,
+    "lesson_view": null,
+    "scene": null,
+    "surfaces_probed": [
+      {
+        "selector": "[data-cb-home-card]",
+        "present": true
+      },
+      {
+        "selector": "[data-cb-home-invitation]",
+        "present": true
+      },
+      {
+        "selector": "[data-cb-desk]",
+        "present": false
+      }
+    ],
+    "render_error_markers": [],
+    "proof_markers": []
+  },
+  "surface": {
+    "requested": "home",
+    "resolved": "home",
+    "control": "[data-cb-nav-item=\"home\"]",
+    "missing": null
+  },
+  "screenshot": {
+    "file": "home--900.png",
+    "sha256": "37841447009094273cb7d3dee7026b29c138218171183cbdf91366ecda626dd5",
+    "bytes": 498009,
+    "clip": {
+      "x": 260,
+      "y": 34,
+      "width": 900,
+      "height": 714,
+      "scale": 1
+    }
+  },
+  "images": [
+    {
+      "selector": "[data-cb-home-hero-band] [data-cb-home=\"ready\"] > img",
+      "markers": [
+        "data-cb-home-hero-band=\"\"",
+        "data-cb-home=ready",
+        "data-cb-home-layout=wide",
+        "data-cb-main=\"\"",
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook"
+      ],
+      "kind": "unknown",
+      "src_attr": "data:image/webp;base64,UklGRkjqAwBXRUJQVlA4IDzqAwCQ6hSdASqACgAGPpVEnUslo6+vJdHb+fASiWduCifdHjH+rzSe/f7Tob+7/x83r/j9K1hP/H+63/S91L6p/wf2V6lD/z6gPg3/q9Xn8L/3Prn8pP1L1j5yfMai/YcFxUe9Rj6/5n7a8B/vv++/a/oMa",
+      "current_src": "data:image/webp;base64,UklGRkjqAwBXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 2688,
+        "height": 1536
+      },
+      "rendered": {
+        "width": 837.13,
+        "height": 470.88
+      },
+      "scale_ratio": 3.21,
+      "sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+      "sha_error": null,
+      "bytes": 256592,
+      "bundled_asset": {
+        "key": "cb.asset.kit.field_atlas.home-hero",
+        "path": "assets/kit/field_atlas-home-hero.webp",
+        "role": "kit.hero.home-hero",
+        "group": "kit"
+      },
+      "alt": "",
+      "complete": true,
+      "evidence": {
+        "file": "evidence/8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481.webp",
+        "sha256": "8f3f81c875a355b6dc9041aca55ae0297b65359dda3de464fa75c36b08531481",
+        "bytes": 256592
+      }
+    },
+    {
+      "selector": "[data-cb-home-cover-kind=\"kit\"] [data-cb3-cover=\"art\"] > img",
+      "markers": [
+        "data-cb-home-cover-kind=kit",
+        "data-cb3-cover=art",
+        "data-cb-home-cover-plate=\"\"",
+        "data-cb-home-card=\"\"",
+        "data-cb-home-card-index=0",
+        "data-cb-course-id=crs_d5c45367e33549309f9456387e681a76"
+      ],
+      "kind": "cover_plate",
+      "src_attr": "data:image/webp;base64,UklGRggoAQBXRUJQVlA4IPwnAQAwLwWdASqwBCADPm0ylEgkIqkpo/KMgTANiWdtOMnbb5/EX/f6nf6X7G77fyv9Vxr5EPKvRh/I/LWzV6QfxHnd/+HqN/3P+D6fP/PMjJFpsfSTXbl/U+Ez2S87b1o/6/vcO8/6v9qPgJ/qn+F9ST+n5",
+      "current_src": "data:image/webp;base64,UklGRggoAQBXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 1200,
+        "height": 800
+      },
+      "rendered": {
+        "width": 237,
+        "height": 158
+      },
+      "scale_ratio": 5.06,
+      "sha256": "a579ff4fd1bacc27eee854dc1d8ace7c08d97292bc47ca538e04ece8db1da91d",
+      "sha_error": null,
+      "bytes": 75792,
+      "bundled_asset": {
+        "key": "cb.asset.kit.field_atlas.technical-cover-3x2",
+        "path": "assets/kit/field_atlas-technical-cover-3x2.webp",
+        "role": "kit.cover.technical-cover-3x2",
+        "group": "kit"
+      },
+      "alt": "",
+      "complete": true,
+      "evidence": {
+        "file": "evidence/a579ff4fd1bacc27eee854dc1d8ace7c08d97292bc47ca538e04ece8db1da91d.webp",
+        "sha256": "a579ff4fd1bacc27eee854dc1d8ace7c08d97292bc47ca538e04ece8db1da91d",
+        "bytes": 75792
+      }
+    },
+    {
+      "selector": "[data-cb-home-cover-kind=\"kit\"] [data-cb3-cover=\"art\"] > img",
+      "markers": [
+        "data-cb-home-cover-kind=kit",
+        "data-cb3-cover=art",
+        "data-cb-home-cover-plate=\"\"",
+        "data-cb-home-card=\"\"",
+        "data-cb-home-card-index=1",
+        "data-cb-course-id=crs_829e1674a9034ca7badfbac0233fca19"
+      ],
+      "kind": "cover_plate",
+      "src_attr": "data:image/webp;base64,UklGRjYTAQBXRUJQVlA4ICoTAQDwwwSdASqwBCADPm0ylUgkIqSno/H8OPANiWdt549cvxLFJ+05rO5R+nzKf9DxtyZ+X+R/x5/69oPz9/hfmE+kryOf68hPl6pEyUJq7s4/Xb/5P7M+aefr/1PAS8V/y/YH8vf9v5582b04/y7/kdFbw",
+      "current_src": "data:image/webp;base64,UklGRjYTAQBXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 1200,
+        "height": 800
+      },
+      "rendered": {
+        "width": 237,
+        "height": 158
+      },
+      "scale_ratio": 5.06,
+      "sha256": "b41901038d9c9c3caa177c1823a484c2db188fde76c54ee21d5a0819ba234e3d",
+      "sha_error": null,
+      "bytes": 70462,
+      "bundled_asset": {
+        "key": "cb.asset.kit.field_atlas.japanese-cover-3x2",
+        "path": "assets/kit/field_atlas-japanese-cover-3x2.webp",
+        "role": "kit.cover.japanese-cover-3x2",
+        "group": "kit"
+      },
+      "alt": "",
+      "complete": true,
+      "evidence": {
+        "file": "evidence/b41901038d9c9c3caa177c1823a484c2db188fde76c54ee21d5a0819ba234e3d.webp",
+        "sha256": "b41901038d9c9c3caa177c1823a484c2db188fde76c54ee21d5a0819ba234e3d",
+        "bytes": 70462
+      }
+    },
+    {
+      "selector": "[data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img",
+      "markers": [
+        "data-cb3-fox=clock",
+        "data-cb3-fox-safe=16px",
+        "data-cb3-fox-export=128",
+        "data-cb-home-ledge=\"\"",
+        "data-cb-home-shelf-frame=\"\"",
+        "data-cb-home-shelf=ready"
+      ],
+      "kind": "fox_pose",
+      "src_attr": "data:image/webp;base64,UklGRgIVAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSCAHAAABoEVtmyFJilnbtm3btm3be2Xbtm3btjWeRlU1ykpGvBcZFZld/S8uI2IC1P/K04i0zLtj71irO2Y+9afBRyR6D+DZpUZuuouGAfaRZy0wBsJLpxuh3cdhfV6ei4jKT",
+      "current_src": "data:image/webp;base64,UklGRsQxAABXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 128,
+        "height": 128
+      },
+      "rendered": {
+        "width": 128,
+        "height": 128
+      },
+      "scale_ratio": 1,
+      "sha256": "f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245",
+      "sha_error": null,
+      "bytes": 12748,
+      "bundled_asset": {
+        "key": "cb.asset.fox.clock.256",
+        "path": "assets/fox/fox-clock-256.webp",
+        "role": "mascot.pose.clock@256",
+        "group": "fox"
+      },
+      "alt": "",
+      "complete": true,
+      "evidence": {
+        "file": "evidence/f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245.webp",
+        "sha256": "f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245",
+        "bytes": 12748
+      }
+    }
+  ],
+  "backgrounds": [
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRtwAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 900,
+        "height": 714
+      },
+      "background_repeat": "repeat",
+      "background_size": "auto",
+      "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+      "bundled_asset": {
+        "key": "cb.asset.material.grain-night",
+        "path": "assets/material/grain-night.webp",
+        "role": "material.tile.grain-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    },
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRpAAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 900,
+        "height": 714
+      },
+      "background_repeat": "no-repeat",
+      "background_size": "cover",
+      "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+      "bundled_asset": {
+        "key": "cb.asset.material.vignette-night",
+        "path": "assets/material/vignette-night.webp",
+        "role": "material.tile.vignette-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    },
+    {
+      "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
+      "url": "data:image/webp;base64,UklGRmxFAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 256,
+        "height": 256
+      },
+      "rendered": {
+        "width": 837.13,
+        "height": 12
+      },
+      "background_repeat": "repeat-x",
+      "background_size": "auto 100%",
+      "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+      "bundled_asset": {
+        "key": "cb.asset.object.shelf-plank",
+        "path": "assets/objects/shelf-plank.webp",
+        "role": "object.shelf-plank",
+        "group": "objects"
+      },
+      "marks": [
+        "data-cb3-shelf=\"\"",
+        "data-cb-home-shelf-frame=\"\"",
+        "data-cb-home-shelf=ready",
+        "data-cb-home-shelf-state=ready"
+      ]
+    }
+  ],
+  "page": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "protocol": "http:",
+    "proof_script": false
+  },
+  "error": null,
+  "lazy": {
+    "scroller": "html.dark",
+    "scroll_height": 1030,
+    "client_height": 1030
+  },
+  "route_request": {
+    "requested": 900,
+    "route_width": 900,
+    "viewport_width": 1160,
+    "chrome": 260
+  }
+}
