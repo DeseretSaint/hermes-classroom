@@ -185,16 +185,17 @@ const CB_REDUCED_MOTION_OPTIONS = Object.freeze([
 /**
  * H-156 — the child-safe floor and the session length a parent can set.
  *
- * The four rules are fixed facts about this build, not switches: Coursebook has no reminder
- * scheduler, no ranking, no random reward and no XP or streak store to turn on. They are listed
- * with their state so a parent can read the floor, and a test scans the shipped copy so the
- * floors cannot regress into a feature quietly.
+ * The rules are fixed facts about this build, not switches: Coursebook has no reminder
+ * scheduler, no public ranking, no random reward and no streak. The one play layer is Game
+ * mode's XP and levels, which are cosmetic feedback the Game feedback switch can hide — never a
+ * score, a streak or a gate. A test scans the shipped copy so the floor cannot regress quietly.
  */
 const CB_CHILD_SAFE_RULES = Object.freeze([
   { id: 'reminders', label: 'Loss-framed reminders', state: 'Never' },
   { id: 'leaderboard', label: 'Public leaderboard', state: 'Never' },
   { id: 'rewards', label: 'Loot or random rewards', state: 'Never' },
-  { id: 'xp', label: 'XP and streaks', state: 'Never' }
+  { id: 'streaks', label: 'Streaks', state: 'Never' },
+  { id: 'xp', label: 'XP and levels', state: 'Game only' }
 ])
 const CB_SESSION_OPTIONS = Object.freeze([
   { id: '10', label: '10 min' },
@@ -7215,7 +7216,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               id: 'child-safe',
               title: 'Child-safe defaults',
               description:
-                'For any lesson a child uses. These four do not exist in Coursebook, and they do not exist to be switched on later.',
+                'For any lesson a child uses. No reminder scheduler, no public ranking, no random rewards and no streaks. XP and levels are cosmetic Game feedback only, and the Game feedback switch below hides them here.',
               resetLabel: 'Reset the session length to 15 minutes',
               atDefault: prefs.sessionMinutes === CB_HOME_PREF_DEFAULTS.sessionMinutes,
               onReset: () => onReset('sessionMinutes'),
@@ -7233,12 +7234,17 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
                       flexDirection: 'column',
                       gap: '0.3rem'
                     },
-                    children: CB_CHILD_SAFE_RULES.map((rule) =>
-                      jsxs(
+                    children: CB_CHILD_SAFE_RULES.map((rule) => {
+                      // UX-2: the same sheet says XP does not exist and then offers the switch
+                      // that shows it. The rule names what is true: XP and levels are Game-mode
+                      // feedback only, and this device's switch reports whether it is hidden here.
+                      const state =
+                        rule.id === 'xp' && prefs.gameFeedback === false ? 'Hidden here' : rule.state
+                      return jsxs(
                         'li',
                         {
                           'data-cb-child-safe-rule': rule.id,
-                          'data-cb-child-safe-state': rule.state.toLowerCase(),
+                          'data-cb-child-safe-state': state.toLowerCase().replace(/\s+/g, '-'),
                           style: {
                             display: 'flex',
                             alignItems: 'baseline',
@@ -7252,13 +7258,13 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
                             jsx('span', { children: rule.label }),
                             jsx('strong', {
                               style: { color: 'var(--cb-ink)', fontWeight: 600, whiteSpace: 'nowrap' },
-                              children: rule.state
+                              children: state
                             })
                           ]
                         },
                         rule.id
                       )
-                    )
+                    })
                   }),
                   jsxs('div', {
                     style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
@@ -7390,7 +7396,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               id: 'game-feedback',
               title: 'Game feedback',
               description:
-                'XP, the cosmetic level and the Game progress bar in Game mode. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
+                'XP, the cosmetic level and the Game progress bar in Game mode, earned by finished checks — never by opening the app or checking in. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
               resetLabel: 'Reset Game feedback to shown',
               atDefault: prefs.gameFeedback === CB_HOME_PREF_DEFAULTS.gameFeedback,
               onReset: () => onReset('gameFeedback'),
@@ -7485,7 +7491,7 @@ function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
     children: [
       jsx('span', {
         style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks'
+        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no streaks · XP is cosmetic Game feedback'
       }),
       jsx('span', {
         style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
@@ -15694,6 +15700,18 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   gameXp: '{n} XP',
   challengeTitle: 'Field Challenge',
   challengeStart: 'Try it yourself',
+  // WIRE-8: the challenge card used to print the check already on screen as its prompt and its
+  // action left the section. These rows describe the real thing instead: `progression.challenge_out`
+  // supersedes the open check with an unused audited variant, so the prompt is a promise about a
+  // second question, never a copy of the first one. COPY.md §4 has no row for these strings (like
+  // `answerLabel` above); the deck gap is reported in the review summary rather than invented
+  // elsewhere.
+  challengePrompt: 'A fresh, unseen question on this section: same skill, a different check, answered right here.',
+  challengeOpening: 'Opening a fresh challenge…',
+  challengeOpen: 'Challenge open: a different question is in the check now.',
+  challengeNone: 'No fresh challenge is available for this section yet.',
+  challengeError: 'The fresh challenge could not be opened. Nothing about this section changed; try again.',
+  challengeUnavailable: 'This build cannot open a fresh challenge.',
   // SPEC-V3 §5.3 C7 does not name this label and the deck has no row for it (ruling 2026-11-10):
   // the visible words stay identical and the missing row is reported in the review summary,
   // never invented here as a second copy source.
@@ -16424,6 +16442,8 @@ function ClassroomV3({
   stimulusError = null,
   mode = 'guided',
   engagement = null,
+  challenge = null,
+  award = null,
   scene = null,
   state = 'default',
   chatAvailable = true,
@@ -16439,7 +16459,8 @@ function ClassroomV3({
   onPlayLine,
   onRetry,
   onRetryStimulus,
-  onCommitted
+  onCommitted,
+  onStartChallenge
 }) {
   const width = useCbViewportWidth()
   const wide = width >= 1000
@@ -16453,10 +16474,42 @@ function ClassroomV3({
   const [verdict, setVerdict] = useState(null)
   const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
   const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
+  // WIRE-8: the Field Challenge is its own served question, opened by `progression.challenge_out`,
+  // not the check already on screen. The presentational surface reads only this state and the
+  // copy row it names; it never borrows the visible stimulus as the challenge prompt.
+  const challengeStatus = challenge && challenge.status ? challenge.status : 'idle'
+  const challengePrompt =
+    challengeStatus === 'starting'
+      ? CB3_CLASSROOM_COPY.challengeOpening
+      : challengeStatus === 'started'
+        ? CB3_CLASSROOM_COPY.challengeOpen
+        : challengeStatus === 'error'
+          ? (challenge && challenge.message) || CB3_CLASSROOM_COPY.challengeError
+          : challengeStatus === 'unsupported'
+            ? CB3_CLASSROOM_COPY.challengeUnavailable
+            : CB3_CLASSROOM_COPY.challengePrompt
+  // A control exists only when the wire can serve the challenge. While it is opening the action is
+  // withdrawn (the card states that it is opening), so a second click cannot race the first.
+  const challengeAction =
+    (challengeStatus === 'idle' || challengeStatus === 'error') && typeof onStartChallenge === 'function'
+      ? CB3_CLASSROOM_COPY.challengeStart
+      : null
+  // WIRE-9: the award sentence is the backend's own points plus, when the backend supplies one,
+  // its own `basis` sentence. Nothing here computes a number. With no basis the line is the
+  // number and `XP` only — never a manufactured explanation — and a refused award is `null`,
+  // which renders nothing at all.
+  const awardPoints = award && Number(award.points) > 0 ? Number(award.points) : 0
+  const awardLine = awardPoints
+    ? award.basis
+      ? `${classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: awardPoints })}: ${award.basis}`
+      : classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: awardPoints })
+    : null
 
   const handleVerdict = useCallback(
     (value) => {
-      setVerdict(value)
+      // `ClassroomCheckCard` reports the whole graded result through `onCommitted`; the fox reads
+      // the verdict word, not the object, so a pass cheers and a miss thinks.
+      setVerdict(value && value.verdict ? value.verdict : value)
       if (onCommitted) onCommitted(value)
     },
     [onCommitted]
@@ -16531,6 +16584,20 @@ function ClassroomV3({
             : null
         ]
       }),
+      game && awardLine
+        ? jsx('p', {
+            'data-cb3-award': String(awardPoints),
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft'),
+              maxWidth: '70ch'
+            },
+            children: awardLine
+          }, 'award')
+        : null,
       section
         ? jsx('p', {
             'data-cb3-classroom-section': '',
@@ -16648,7 +16715,7 @@ function ClassroomV3({
           onCommitted: handleVerdict,
           onNextSection,
           busyLabel: CB3_CLASSROOM_COPY.loading
-        }, 'check')
+        }, check && check.check_id ? `check-${check.check_id}` : 'check')
       : null
 
   const aside = jsxs('aside', {
@@ -16662,10 +16729,10 @@ function ClassroomV3({
       game
         ? jsx(ChallengeCard, {
             title: CB3_CLASSROOM_COPY.challengeTitle,
-            prompt: check && check.stimulus && check.stimulus.prompt ? check.stimulus.prompt : null,
+            prompt: challengePrompt,
             recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
-            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
-            onStart: onNextSection
+            actionLabel: challengeAction,
+            onStart: onStartChallenge
           }, 'challenge')
         : null,
       game && Array.isArray(gameRows) && gameRows.length > 0
@@ -16807,6 +16874,11 @@ function ClassroomV3Surface({
   onPlayLine
 }) {
   const courseId = row && row.course_id ? row.course_id : null
+  // GM-010/UX-2: the device switch the settings sheet names must be the one the classroom obeys.
+  // Reading the same preference here keeps the copy honest: with Game feedback off the XP chip,
+  // the level and the award line disappear (the ledger row is still written by the backend), and
+  // the Field Challenge — gameplay, not feedback — stays.
+  const [homePrefs] = useCbHomePrefs()
   const outline = useRpcQuery(
     'course.outline',
     { enrollment_id: enrollmentId },
@@ -16831,7 +16903,23 @@ function ClassroomV3Surface({
     `cb3-classroom-engagement-${courseId}-${enrollmentId}`,
     mode === 'game' && Boolean(courseId) && Boolean(enrollmentId) && backendSupports('engagement.read')
   )
-  const revision = page.data ? page.data.revision : modelRevision(row)
+  const feedbackVisible =
+    typeof cbGameFeedbackVisible === 'function' ? cbGameFeedbackVisible(homePrefs, engagement.data) : true
+  const [revisionFloor, setRevisionFloor] = useState(0)
+  const [challenge, setChallenge] = useState({ status: 'idle', message: null })
+  const [award, setAward] = useState(null)
+  // A new section starts with no award line from the previous section.
+  useEffect(() => {
+    setAward(null)
+  }, [objectiveId])
+  // WIRE-8: `progression.challenge_out` bumps the enrollment revision and supersedes the open
+  // check. The page read that follows can still carry the older revision for one render, so this
+  // surface keeps the newest revision it was told about and fences the next check/attempt with it.
+  const revision = Math.max(
+    page.data ? Number(page.data.revision) || 0 : 0,
+    modelRevision(row),
+    revisionFloor
+  )
   const check = useOpenCheck({
     enrollmentId,
     objectiveId,
@@ -16839,6 +16927,86 @@ function ClassroomV3Surface({
     enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
     implemented: backendWire.implemented
   })
+  const reloadCheck = check.reload
+  const reloadEngagement = engagement.reload
+  // WIRE-9: one XP event per committed passing attempt. `check_submitted` is the contract's own
+  // action kind and `attempt_id` is the real committed row the backend prices — never a click, a
+  // page view or a check-in. Idempotency is doubled: this envelope key and the backend's own
+  // `(enrollment_id, action_kind, action_id)` row, so a re-render cannot pay twice. The award
+  // response's own `points` and (when present) `basis` are what the surface paints; nothing here
+  // computes XP, and the chip re-reads `engagement.read` so the total is the backend's too.
+  const awardCheck = useCallback(
+    (graded) => {
+      if (!graded || graded.verdict !== 'pass' || !graded.attempt_id) return
+      if (mode !== 'game' || !courseId || !enrollmentId) return
+      if (!backendSupports('engagement.award')) return
+      rpc(
+        'engagement.award',
+        {
+          course_id: courseId,
+          enrollment_id: enrollmentId,
+          action_kind: 'check_submitted',
+          action_id: String(graded.attempt_id)
+        },
+        { idempotencyKey: `cb-award-${enrollmentId}-${graded.attempt_id}` }
+      )
+        .then((response) => {
+          // Rule from the owner: a typed refusal (no real action) or an already-awarded replay
+          // is silence — no sentence and no animation. Only a real award paints the backend's own
+          // points, plus its own basis sentence when it supplies one.
+          if (!response || !response.ok) return
+          const result = response.result || {}
+          if (result.awarded !== true) return
+          const points = Number(result.points)
+          if (!Number.isFinite(points) || points <= 0) return
+          setAward({
+            points,
+            basis:
+              typeof result.basis === 'string' && result.basis.trim() ? result.basis.trim() : null
+          })
+          if (reloadEngagement) reloadEngagement()
+        })
+        .catch(() => {})
+    },
+    [mode, courseId, enrollmentId, reloadEngagement]
+  )
+  const canChallenge =
+    mode === 'game' &&
+    Boolean(courseId) &&
+    Boolean(enrollmentId) &&
+    Boolean(objectiveId) &&
+    backendSupports('progression.challenge_out')
+  // WIRE-8: "Try it yourself" opens a different audited check in place. `progression.challenge_out`
+  // is the existing contract method for exactly this (the Plan and Quizzes surfaces already use
+  // it); it returns the new revision, the open check is re-read, and the learner answers the new
+  // question without leaving the section.
+  const startChallenge = useCallback(async () => {
+    if (!canChallenge) return
+    setChallenge({ status: 'starting', message: null })
+    const response = await rpc(
+      'progression.challenge_out',
+      { enrollment_id: enrollmentId, objective_id: objectiveId },
+      {
+        expectedRevision: revision,
+        idempotencyKey: `cb-challenge-${enrollmentId}-${objectiveId}-${newOperationId('challenge')}`
+      }
+    )
+    if (!response.ok) {
+      const reason = response.error && response.error.details ? response.error.details.reason : null
+      setChallenge({
+        status: 'error',
+        message:
+          reason === 'no_varied_challenge_available'
+            ? CB3_CLASSROOM_COPY.challengeNone
+            : CB3_CLASSROOM_COPY.challengeError
+      })
+      return
+    }
+    const nextRevision = Number(response.result && response.result.revision)
+    if (Number.isFinite(nextRevision) && nextRevision > 0) setRevisionFloor(nextRevision)
+    setChallenge({ status: 'started', message: null })
+    reloadCheck()
+  }, [canChallenge, enrollmentId, objectiveId, revision, reloadCheck])
   const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
   const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
   const state =
@@ -16855,7 +17023,9 @@ function ClassroomV3Surface({
     stimulusStatus: check.stimulusStatus,
     stimulusError: check.stimulusError,
     mode,
-    engagement: engagement.data,
+    engagement: mode === 'game' && feedbackVisible ? engagement.data : null,
+    challenge: mode === 'game' ? (canChallenge ? challenge : { status: 'unsupported', message: null }) : null,
+    award: mode === 'game' && feedbackVisible ? award : null,
     scene,
     state,
     chatAvailable: Boolean(page.data && page.data.runtime && page.data.runtime.binding_status === 'active'),
@@ -16868,15 +17038,17 @@ function ClassroomV3Surface({
     onStartChat,
     onAskTutor,
     onPlayLine,
+    onStartChallenge: canChallenge ? startChallenge : undefined,
     onRetry: () => {
       page.reload()
       outline.reload()
       check.reload()
     },
     onRetryStimulus: check.reload,
-    onCommitted: () => {
+    onCommitted: (graded) => {
       page.reload()
       outline.reload()
+      awardCheck(graded)
     }
   })
 }

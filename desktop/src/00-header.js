@@ -185,16 +185,17 @@ const CB_REDUCED_MOTION_OPTIONS = Object.freeze([
 /**
  * H-156 — the child-safe floor and the session length a parent can set.
  *
- * The four rules are fixed facts about this build, not switches: Coursebook has no reminder
- * scheduler, no ranking, no random reward and no XP or streak store to turn on. They are listed
- * with their state so a parent can read the floor, and a test scans the shipped copy so the
- * floors cannot regress into a feature quietly.
+ * The rules are fixed facts about this build, not switches: Coursebook has no reminder
+ * scheduler, no public ranking, no random reward and no streak. The one play layer is Game
+ * mode's XP and levels, which are cosmetic feedback the Game feedback switch can hide — never a
+ * score, a streak or a gate. A test scans the shipped copy so the floor cannot regress quietly.
  */
 const CB_CHILD_SAFE_RULES = Object.freeze([
   { id: 'reminders', label: 'Loss-framed reminders', state: 'Never' },
   { id: 'leaderboard', label: 'Public leaderboard', state: 'Never' },
   { id: 'rewards', label: 'Loot or random rewards', state: 'Never' },
-  { id: 'xp', label: 'XP and streaks', state: 'Never' }
+  { id: 'streaks', label: 'Streaks', state: 'Never' },
+  { id: 'xp', label: 'XP and levels', state: 'Game only' }
 ])
 const CB_SESSION_OPTIONS = Object.freeze([
   { id: '10', label: '10 min' },

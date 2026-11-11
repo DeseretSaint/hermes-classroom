@@ -8,7 +8,8 @@ Two kinds of proof:
   bar is labelled as play progress and never as mastery, and the collectible cards are stamped only
   by recorded evidence;
 * the module source is scanned for the two things a render cannot show: the play layer is mounted
-  only behind a Game-course gate, and the renderer never computes XP or calls ``engagement.award``.
+  only behind a Game-course gate, and the one `engagement.award` caller is the classroom's
+  committed passing attempt (WIRE-9), priced from the backend's own attempt id.
 
 What this does not prove: pixels against the approved concept frames, or the live packet. The
 isolated rig and ``docs/visual-review/gm-010/`` carry those.
@@ -245,7 +246,18 @@ class GameEngagementUiTests(unittest.TestCase):
         )
         self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 3)
         self.assertIn("mode === 'game' && Boolean(courseId) && Boolean(enrollmentId)", self.source)
-        self.assertNotIn("engagement.award", self.source)
+        # WIRE-9: XP now has exactly one caller — the classroom's committed-attempt seam. A pass
+        # is priced from the backend's own `attempt_id`, never from a click or a timer, and the
+        # chip re-reads `engagement.read` after the award so the number visibly moves.
+        self.assertEqual(self.source.count("'engagement.award'"), 2)
+        self.assertIn("action_kind: 'check_submitted'", self.source)
+        self.assertIn("action_id: String(graded.attempt_id)", self.source)
+        self.assertIn("awardCheck(graded)", self.source)
+        # The surface never owns an XP price: no point table, no numeric award, and the basis is
+        # whatever the backend sends (or nothing).
+        self.assertNotIn("XP_POINTS", self.source)
+        self.assertIsNone(re.search(r"points\s*:\s*\d", self.source), "the surface hardcodes an XP price")
+        self.assertIn("result.basis", self.source)
         # The FieldDeskHome mount is unconditional inside `gameCourse`, and the CourseDetail mount
         # adds the view gate: overview only.
         self.assertIn("const gameCourse = cbGameCourse(desk.row, courseMode)", self.source)
@@ -297,6 +309,15 @@ class GameEngagementUiTests(unittest.TestCase):
         self.assertIn('data-cb-settings-toggle-row="on"', on)
         off = self.rig.render({"kind": "settings", "prefs": {"gameFeedback": False}})
         self.assertIn('data-cb-settings-toggle-row="off"', off)
+        # UX-2: one voice. The child-safe rules state XP's real scope, and when this device hides
+        # Game feedback the same row says so instead of claiming XP never exists.
+        self.assertIn("XP and levels", on)
+        self.assertIn("Game only", on)
+        self.assertIn('data-cb-child-safe-state="game-only"', on)
+        self.assertIn("Hidden here", off)
+        self.assertIn('data-cb-child-safe-state="hidden-here"', off)
+        self.assertNotIn("These four do not exist", on)
+        self.assertNotIn("XP and streaks", on)
 
         # The SDK switch is a black box that paints only its on/off colour, and the host reset
         # clears the UA ring. The wrapper therefore owns the keyboard ring: assert the row tracks

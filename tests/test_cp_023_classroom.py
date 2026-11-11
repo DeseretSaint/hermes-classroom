@@ -99,6 +99,7 @@ const base = payload.base
 // JSON cannot carry a function: a truthy flag in the fixture means "this surface has the door".
 if (base.onPlayLine) base.onPlayLine = () => {}
 if (base.onAskTutor) base.onAskTutor = () => {}
+if (base.onStartChallenge) base.onStartChallenge = () => {}
 const cases = {}
 for (const entry of payload.cases) {
   cases[entry.name] = render({ ...base, ...entry.props })
@@ -361,6 +362,7 @@ def base_props() -> dict:
         "revision": 7,
         "onPlayLine": "play",
         "onAskTutor": "tutor",
+        "onStartChallenge": "start",
     }
 
 
@@ -552,6 +554,16 @@ class ClassroomV3RenderTest(unittest.TestCase):
         self.assertIn("data-cb3-challenge", game, "Game mode has no Field Challenge")
         self.assertIn("Field Challenge", game)
         self.assertIn("Try it yourself", game)
+        # WIRE-8: the challenge is a different served question, not the check already on screen.
+        # Isolate the challenge card from the rest of the aside and prove it does not repeat the
+        # visible prompt (the prompt also appears once as the answer group's own aria-label).
+        challenge_html = game.split("data-cb3-challenge", 1)[1].split('data-cb3-surface="evidence"', 1)[0]
+        self.assertNotIn(
+            "Which line is the romantic confession?",
+            challenge_html,
+            "the Field Challenge repeats the visible check as its prompt",
+        )
+        self.assertIn("A fresh, unseen question", challenge_html, "the challenge card does not describe a fresh check")
         # The challenge's action is quiet: the check keeps the screen's only fill.
         self.assertEqual(game.count('data-cb3-pill="primary"'), 1,
                          "the Game layer added a second filled control")

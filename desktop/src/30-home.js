@@ -4112,7 +4112,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               id: 'child-safe',
               title: 'Child-safe defaults',
               description:
-                'For any lesson a child uses. These four do not exist in Coursebook, and they do not exist to be switched on later.',
+                'For any lesson a child uses. No reminder scheduler, no public ranking, no random rewards and no streaks. XP and levels are cosmetic Game feedback only, and the Game feedback switch below hides them here.',
               resetLabel: 'Reset the session length to 15 minutes',
               atDefault: prefs.sessionMinutes === CB_HOME_PREF_DEFAULTS.sessionMinutes,
               onReset: () => onReset('sessionMinutes'),
@@ -4130,12 +4130,17 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
                       flexDirection: 'column',
                       gap: '0.3rem'
                     },
-                    children: CB_CHILD_SAFE_RULES.map((rule) =>
-                      jsxs(
+                    children: CB_CHILD_SAFE_RULES.map((rule) => {
+                      // UX-2: the same sheet says XP does not exist and then offers the switch
+                      // that shows it. The rule names what is true: XP and levels are Game-mode
+                      // feedback only, and this device's switch reports whether it is hidden here.
+                      const state =
+                        rule.id === 'xp' && prefs.gameFeedback === false ? 'Hidden here' : rule.state
+                      return jsxs(
                         'li',
                         {
                           'data-cb-child-safe-rule': rule.id,
-                          'data-cb-child-safe-state': rule.state.toLowerCase(),
+                          'data-cb-child-safe-state': state.toLowerCase().replace(/\s+/g, '-'),
                           style: {
                             display: 'flex',
                             alignItems: 'baseline',
@@ -4149,13 +4154,13 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
                             jsx('span', { children: rule.label }),
                             jsx('strong', {
                               style: { color: 'var(--cb-ink)', fontWeight: 600, whiteSpace: 'nowrap' },
-                              children: rule.state
+                              children: state
                             })
                           ]
                         },
                         rule.id
                       )
-                    )
+                    })
                   }),
                   jsxs('div', {
                     style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
@@ -4287,7 +4292,7 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
               id: 'game-feedback',
               title: 'Game feedback',
               description:
-                'XP, the cosmetic level and the Game progress bar in Game mode. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
+                'XP, the cosmetic level and the Game progress bar in Game mode, earned by finished checks — never by opening the app or checking in. Play progress only: hiding it never deletes your play history, and no check, source or lesson depends on it.',
               resetLabel: 'Reset Game feedback to shown',
               atDefault: prefs.gameFeedback === CB_HOME_PREF_DEFAULTS.gameFeedback,
               onReset: () => onReset('gameFeedback'),
@@ -4382,7 +4387,7 @@ function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
     children: [
       jsx('span', {
         style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks'
+        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no streaks · XP is cosmetic Game feedback'
       }),
       jsx('span', {
         style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },

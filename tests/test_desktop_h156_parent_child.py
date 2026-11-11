@@ -137,21 +137,37 @@ class LearnerHomeTest(Harness):
         self.assertIn("Child-safe defaults", first["homeDefaultsText"])
         self.assertIn("Session · 15 min", first["homeDefaultsText"])
 
-    def test_the_settings_sheet_lists_the_four_rules_and_the_session_choice(self):
+    def test_the_settings_sheet_lists_the_five_rules_and_the_session_choice(self):
         result = self.mount([{"kind": "open"}])
         opened = result["steps"][1]
         self.assertIn("child-safe", opened["sections"])
         self.assertEqual(
             [rule["id"] for rule in opened["childSafeRules"]],
-            ["reminders", "leaderboard", "rewards", "xp"],
+            ["reminders", "leaderboard", "rewards", "streaks", "xp"],
         )
         for rule in opened["childSafeRules"]:
-            self.assertEqual(rule["state"], "never", rule)
-            self.assertIn("Never", rule["text"])
+            if rule["id"] == "xp":
+                # UX-2: XP is real Game-mode feedback, and this sheet says so instead of
+                # denying it beside the Game feedback switch.
+                self.assertEqual(rule["state"], "game-only", rule)
+                self.assertIn("Game only", rule["text"])
+            else:
+                self.assertEqual(rule["state"], "never", rule)
+                self.assertIn("Never", rule["text"])
         self.assertEqual(opened["controls"]["session-length"], "15")
         html = result["sheetHtml"]
-        for label in ("Loss-framed reminders", "Public leaderboard", "Loot or random rewards", "XP and streaks"):
+        for label in (
+            "Loss-framed reminders",
+            "Public leaderboard",
+            "Loot or random rewards",
+            "Streaks",
+            "XP and levels",
+        ):
             self.assertIn(label, html)
+        # One voice: the section no longer says XP does not exist while the sheet offers the
+        # switch that shows it.
+        self.assertNotIn("These four do not exist", html)
+        self.assertIn("cosmetic Game feedback", html)
 
     def test_session_length_applies_at_once_and_resets_to_fifteen(self):
         result = self.mount(
@@ -244,9 +260,20 @@ class ChildSafeCopyTest(unittest.TestCase):
             self.assertNotIn(phrase, lowered, phrase)
 
     def test_the_child_safe_rules_are_stated_as_never(self):
-        for label in ("Loss-framed reminders", "Public leaderboard", "Loot or random rewards", "XP and streaks"):
+        for label in (
+            "Loss-framed reminders",
+            "Public leaderboard",
+            "Loot or random rewards",
+            "Streaks",
+            "XP and levels",
+        ):
             self.assertIn(label, PLUGIN_TEXT)
+        # UX-2: four mechanics are Never. XP and levels are real cosmetic Game feedback, so the
+        # sheet states their honest scope instead of counting them among the things that never
+        # exist.
         self.assertEqual(PLUGIN_TEXT.count("state: 'Never'"), 4)
+        self.assertIn("state: 'Game only'", PLUGIN_TEXT)
+        self.assertNotIn("XP and streaks", PLUGIN_TEXT)
 
     def test_parent_studio_copy_names_preparing_not_chatting(self):
         self.assertIn("Prepare a lesson for a child", PLUGIN_TEXT)

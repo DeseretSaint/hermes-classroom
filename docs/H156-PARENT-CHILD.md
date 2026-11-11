@@ -52,8 +52,9 @@ Interaction, from the same run:
 - Settings trigger: `aria-haspopup="dialog"`, `aria-label="Open Coursebook settings"`, **44 px**.
 - Sheet sections in order: `appearance, default-view, classroom, child-safe, sound, haptics,
   reduced-motion`; every `aria-labelledby` resolves to its own `h3` id; every section Reset **44 px**.
-- Child-safe rules: `reminders, leaderboard, rewards, xp`, each `data-cb-child-safe-state="never"`
-  and reading *Never*; no colour-only state.
+- Child-safe rules: `reminders, leaderboard, rewards, streaks, xp`; the first four read
+  `data-cb-child-safe-state="never"` and *Never*, and `xp` reads *Game only* (`game-only`, or
+  *Hidden here* / `hidden-here` when the Game feedback switch is off); no colour-only state.
 - Session control: four options (10/15/20/30 min) measured **40 px** high, all four inside the
   419 px control at the 460 CSS pane with no wrap or clip.
 - Session change: `session-length` 15 → 20 writes
@@ -80,7 +81,7 @@ Interaction, from the same run:
     profile with zero slots but `rowTotal > 0`;
   - Home renders the learner classroom and not the parent plan; a parent-only profile gets the
     Parent Studio state;
-  - the child-safe section, its four rules and the session choice; the session change and Reset;
+  - the child-safe section, its rules and the session choice; the session change and Reset;
   - Parent Studio copy, its child-safe line, the Settings sheet from Studio with focus return, and
     the evidence-not-points line on a real plan;
   - a copy scan that refuses loss/leaderboard/loot/XP phrasing and "chat as the child".
@@ -101,9 +102,10 @@ Interaction, from the same run:
 - The session length is a stored intention shown on Home and in Parent Studio; no lesson timer,
   lock or automatic stop reads it. That is deliberate — a countdown would be pressure, and the
   card asked for a default, not a gate.
-- The four rules are unswitchable facts, so "child-safe defaults" is not a mode that can be turned
-  off. Turning it off would not restore a leaderboard that does not exist, and offering the switch
-  would be the lie.
+- The four "Never" rules are unswitchable facts, so "child-safe defaults" is not a mode that can
+  be turned off. Turning it off would not restore a leaderboard that does not exist, and offering
+  the switch would be the lie. XP and levels are the one play layer: cosmetic, Game-mode only, and
+  hidden by the Game feedback switch rather than switched off at the source.
 - The M4 visual-audit pins are not re-derived here; any card that changes `desktop/plugin.js`
   leaves the pin test stale until `python3 scripts/m4v-audit.py` runs. That pass belongs to the
   evidence card.
