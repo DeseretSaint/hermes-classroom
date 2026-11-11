@@ -164,6 +164,36 @@ class UndeclaredLanguageGoalTest(unittest.TestCase):
         self.assertEqual(resolved["inferred_from"], "goal_language_without_locale")
         self.assertIn("no locale", resolved["note"])
 
+    def test_a_named_orthography_is_a_language_goal(self) -> None:
+        # A Japanese L0 brief declares the locale and says what to learn; naming the script is
+        # naming the subject, so the goal must not resolve to `general` just because the language
+        # is not spelled out.
+        for goal in (
+            "Learn to read hiragana",
+            "Practice reading kana",
+            "Memorise 100 kanji",
+            "Learn romaji before kana",
+        ):
+            resolved = curriculum.resolve_domain(goal=goal, domain=None, locale="ja-JP")
+            self.assertEqual(resolved["domain"], "language", goal)
+            self.assertEqual(resolved["source"], "inferred", goal)
+            self.assertEqual(resolved["inferred_from"], "goal_language", goal)
+            self.assertEqual(resolved["target_language"], "Japanese", goal)
+
+    def test_the_metalanguage_of_a_language_course_is_a_language_goal(self) -> None:
+        for goal in (
+            "Improve my vocabulary for the SAT",
+            "Learn grammar rules for formal writing",
+            "Practise Spanish pronunciation",
+        ):
+            resolved = curriculum.resolve_domain(goal=goal, domain=None, locale="en-US")
+            self.assertEqual(resolved["domain"], "language", goal)
+
+    def test_a_named_orthography_still_needs_a_locale(self) -> None:
+        resolved = curriculum.resolve_domain(goal="Learn to read hiragana", domain=None, locale=None)
+        self.assertEqual(resolved["domain"], "general")
+        self.assertEqual(resolved["inferred_from"], "goal_language_without_locale")
+
 
 class LanguageIsNeverTheOmissionDefaultTest(unittest.TestCase):
     def test_a_locale_alone_does_not_make_a_language_course(self) -> None:
