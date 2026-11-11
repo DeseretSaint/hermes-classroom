@@ -268,7 +268,7 @@ def grade_exact(reference: dict[str, Any], text: str) -> tuple[bool, str]:
         return False, "no accepted answer is configured for this check"
     if observed in accepted:
         return True, "matches an accepted answer"
-    return False, "does not match an accepted answer"
+    return False, "Your answer does not match an accepted answer."
 
 
 def grade_numeric(reference: dict[str, Any], text: str) -> tuple[bool, str]:
