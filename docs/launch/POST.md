@@ -4,31 +4,26 @@ Prepared 2026-11-11 during the 13:00–14:00 MST freeze, for the contest that cl
 **15:00 MST / 17:00 EST**. Nothing in this file has been posted or submitted. The post and the form are
 DeseretSaint's actions under `docs/SUBMISSION.md` §0.
 
-The film to post is `docs/launch/coursebook-walkthrough.mp4` — **42.4 s**, measured, not estimated
-(`QC.md` carries the command output). It is a 42.4 s cut with an **optional narration track** and
-burned-in type, so it reads with sound off, which is how X autoplays. The picture-only master is
-`coursebook-demo-90s.mp4`, which has no audio stream; the earlier `coursebook-demo-voiced.mp4` mux is
-superseded by the walkthrough.
+The film to post is `docs/launch/coursebook-launch-30s.mp4` — **30.4 s**, measured (see `QC.md`).
+1920x1080, 30 fps, H.264 High level 4.0, yuv420p, closed 2 s GOP, AAC LC stereo 48 kHz, `+faststart`,
+5,609,771 B, sha256 `d46b46d17d0df2a3e5d...`. Plates are the film3 set at 1344 route width dpr 2 from
+module `0cb478ec` (composition evidence, not a live install, D-010) plus the owner's `home-full` render.
+The film carries a single narration track and no music. No per-beat captions: the words are spoken.
 
-## 1. The X post — 258 characters raw, 241 weighted
+## 1. The X post — 267 characters raw
 
 ```
 Coursebook, learn anything. 📚 Pick a topic and it writes the whole course: lessons, practice, a tutor beside every page, and a game mode that turns it into a world. Built with Hermes Agent from @NousResearch. MIT. 30 seconds ↓ github.com/DeseretSaint/hermes-classroom
 ```
 
-Length, counted on the string above exactly as it sits inside the fence:
+Length, counted on the string above exactly as it sits:
 
 ```
-$ git show origin/master:docs/launch/POST.md | sed -n '14,15p' | wc -m
-259
-$ git show origin/master:docs/launch/POST.md | sed -n '14,15p' | awk '{print NR": "length($0)}'
-1: 217
-2: 40
+$ python3 -c "print(len(open('cap.txt').read().strip()))"
+267
 ```
 
-217 + 40 + **one line break** = **258 characters**. X's weighted count is **241**, because the bare URL
-is charged 23 regardless of its 40 rendered characters (258 − 40 + 23). Both are under X's 280 limit,
-with the line break counted. Tags `@NousResearch`. Links the public repository. Makes no efficacy,
+**267 characters**, under X's 280 limit, counted with the emoji as one character. Tags `@NousResearch`. Links the public repository. Makes no efficacy,
 mastery, benchmark, COPPA or child-safety claim.
 
 - Attach `coursebook-walkthrough.mp4` to the post — **42.4 s**, narrated, **−14.8 LUFS** measured (inside
