@@ -12,6 +12,10 @@ builds the course around that instead.
 
 ![Coursebook Home: your field library, four courses on the shelf, the fox at the bench](docs/assets/github/home.jpg)
 
+[![The 30-second launch cut: title, Home, create, plan, a course page](docs/assets/github/launch.gif)](docs/launch/coursebook-launch-30s.mp4)
+
+*Thirty seconds, start to finish. The still frames below are from the same tree.*
+
 | Create | Plan |
 |---|---|
 | ![Create: a topic, a length, a starting level](docs/assets/github/create.jpg) | ![Plan: the units and objectives before you approve them](docs/assets/github/plan.jpg) |
