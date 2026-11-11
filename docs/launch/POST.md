@@ -4,7 +4,7 @@ Prepared 2026-11-11 during the 13:00–14:00 MST freeze, for the contest that cl
 **15:00 MST / 17:00 EST**. Nothing in this file has been posted or submitted. The post and the form are
 DeseretSaint's actions under `docs/SUBMISSION.md` §0.
 
-The film is `docs/launch/coursebook-demo-90s.mp4` — **51.0 s**, measured, not estimated
+The film to post is `docs/launch/coursebook-walkthrough.mp4` (picture-only masters: `coursebook-demo-v2.mp4`, `coursebook-demo-90s.mp4`) — **51.0 s**, measured, not estimated
 (`QC.md` carries the command output). It is silent by design; every beat carries its message as
 on-screen type so the file reads with sound off, which is how X autoplays.
 
@@ -19,7 +19,7 @@ github.com/DeseretSaint/hermes-classroom
   rendered length, so the effective count is lower).
 - Tags `@NousResearch`. Links the public repository. Makes no efficacy, mastery, benchmark, COPPA or
   child-safety claim.
-- Attach `coursebook-demo-90s.mp4` to the post.
+- Attach `coursebook-walkthrough.mp4` to the post — 51.0 s, narrated, −14.9 LUFS, sha256 `693037676af045f2319278dbcd545f4bbbb6b928a0fe41be12fdacec151e08fa`.
 
 **Alt text** (paste into X's media description):
 

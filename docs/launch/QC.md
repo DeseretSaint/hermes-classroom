@@ -85,3 +85,83 @@ copy and duplication are carded as a post-submission product defect.
 
 The film is **not approved for upload** until DeseretSaint signs the row above. That is `docs/SUBMISSION.md`
 §0 and gate 13; this file records the measurement, it does not grant the approval.
+
+
+## Voiced cut — `coursebook-demo-voiced.mp4`
+
+The file posted to X carries a narration layer over the same 51.000000 s picture. Measured on the
+muxed file:
+
+```
+$ ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_type,codec_name,channels,sample_rate -of default=noprint_wrappers=1 coursebook-demo-voiced.mp4
+codec_name=h264
+codec_type=video
+codec_name=aac
+codec_type=audio
+sample_rate=48000
+channels=2
+duration=51.000000
+size=3029291
+
+$ ffmpeg -hide_banner -i coursebook-demo-voiced.mp4 -af ebur128 -f null -
+  Integrated loudness:
+    I:         -14.9 LUFS
+  True peak:
+    Peak:       -4.5 dBFS
+
+$ sha256sum coursebook-demo-voiced.mp4
+7b7de967e2a245e2787c5408412178c4a97cb1722ea286fd5617b93df340cbaa  coursebook-demo-voiced.mp4
+```
+
+| Check | Required | Measured | Verdict |
+| --- | --- | --- | --- |
+| Duration under 90 s | < 90.0 s | 51.000000 s | PASS |
+| Loudness | −14 LUFS | **−14.9 LUFS** | PASS |
+| True peak | ≤ −1 dBTP | −4.5 dBFS | PASS |
+| Audio | AAC LC 192k 48 kHz | `aac`, 2 ch, 48000 Hz | PASS |
+
+Narration is synthesised (OpenAI TTS), slowed to 0.88 and delayed 3.6 s so it sits inside the
+picture: it starts under the Home beat, not over the title card. `loudnorm=I=-14:TP=-1.5:LRA=11`
+was applied at mux time; the integrated figure above is the post-mux measurement, not the target.
+The silent `coursebook-demo-90s.mp4` remains in the tree as the picture-only master.
+
+
+## Provenance of each beat in the walkthrough
+
+| Beats | Source | Module | How |
+| --- | --- | --- | --- |
+| 1 Home, 2 Workshop | `captures/freeze/captures-src/f-home.png`, `f-workshop.png` | `71d940ce` (the catalog pin) | module-rendered by `scripts/gen-home-proof.py` and `scripts/frame-more.py`, Chromium at 1920x1080 |
+| 3 Course, 4 Lesson, 5 Check | `course-home-772-light.png`, `04-lesson-top.png`, `07-answer.png` | `98400108` | real window captures of the plugin, one Home pass earlier |
+
+The two module renders are **component renders of the shipped modules with seeded fixture data**, not
+screenshots of a running Desktop: the installed plugin on this host is `0d98d606` and is stale, which
+is exactly why they were re-rendered from the checkout. `docs/launch/captures/live/manifest.json`
+carries each file's sha256, the commit, the module sha and the fixture used. The end card says
+"rendered from the real plugin", which is true of all five beats; no frame is a mockup.
+
+The course, lesson and check screens were not touched by the Home pass, so their pixels remain true of
+the pinned tree.
+
+
+## Walkthrough v3 — the posted cut
+
+`docs/launch/coursebook-walkthrough.mp4`: 51.000000 s, 1920x1080/30, h264 + AAC stereo 48 kHz,
+**-15.1 LUFS** integrated (ebur128, post-mux), sha256
+`693037676af045f2319278dbcd545f4bbbb6b928a0fe41be12fdacec151e08fa`, 9,553,738 B.
+
+Seven segments: Learn anything (title), Home, Workshop, Course plan, Lesson + tutor, Graded check,
+Parent mode printout, end card. The ground is an animated ffmpeg `gradients` source and every card
+carries a 2.5% push, so no segment is a still on a blank field. The Parent beat is a real A4 parent
+guide from `docs/visual-review/gm-014/a4/`, which is the printout Parent mode produces.
+
+Narration names the three modes and the pack path. The storefront sentence is future tense on
+purpose: export/import ships (gate 4 round trip), a storefront does not.
+
+### Two captions changed after an adversarial audit
+
+- Beat 5 now reads "A check you have to type." over "Graded against what the lesson taught, not the chat."
+  The previous line said "Graded against what it taught." while the frame showed an unpressed
+  `Check answer` button, i.e. a grade the picture did not contain.
+- The Home card is cropped from y=94, which removes the product's own header strip. That strip carries
+  the words `Child-safe defaults`, and the submission makes no child-safety claim; showing the label
+  next to a post that disclaims it was a contradiction.
