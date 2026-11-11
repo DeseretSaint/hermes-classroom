@@ -164,13 +164,27 @@ def _counts(conn: sqlite3.Connection, sql: str) -> dict[str, int]:
 # --------------------------------------------------------------------------------------
 
 
-def _job_course(job: dict) -> str | None:
+def _job_course(job: dict, plan_course: dict[str, str] | None = None) -> str | None:
+    """The course a job belongs to.
+
+    A plan job's brief names ``course_id``; a lessons or unit-sections job names
+    ``enrollment_id`` and ``plan_id`` only. Those rows used to be dropped as unattributed, which
+    made the record refuse the whole projection the moment a course reached lessons (CP-015b).
+    The plan's own row is the authority, so the brief's ``plan_id`` resolves through it.
+    """
     try:
         brief = json.loads(job.get("brief_json") or "{}")
     except (TypeError, ValueError):
         return None
     value = brief.get("course_id")
-    return str(value) if value else None
+    if value:
+        return str(value)
+    plan_id = brief.get("plan_id")
+    if plan_id and plan_course:
+        resolved = plan_course.get(str(plan_id))
+        if resolved:
+            return str(resolved)
+    return None
 
 
 def _error(job: dict) -> dict:
@@ -223,10 +237,13 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
     objectives = snapshot.get("objectives") or {}
 
     # ---- jobs: every row, attributed to its course ---------------------------------------------
+    plan_course: dict[str, str] = {
+        str(plan["id"]): str(plan.get("course_id") or "") for plan in plans
+    }
     jobs: list[dict] = []
     unattributed: list[str] = []
     for job in snapshot.get("jobs") or []:
-        course_id = _job_course(job)
+        course_id = _job_course(job, plan_course)
         error = _error(job)
         raw_details = error.get("details")
         details: dict = raw_details if isinstance(raw_details, dict) else {}
@@ -526,25 +543,39 @@ def _reason_text(rejection: dict) -> str:
 
 
 def _last_error(entry: dict, jobs: list[dict], attempts: list[dict]) -> str | None:
-    """The stopping condition for this course, named from the rows (never paraphrased)."""
+    """The stopping condition for this course, named from the rows (never paraphrased).
+
+    It is the *latest* thing that happened, not the worst. An approved course whose last attempt
+    passed used to keep reporting an earlier reject as its "last error", which reads as a failure
+    the course did not have (CP-015b: Sourdough approved, record still naming the 04:51 reject).
+    """
     course_jobs = [job for job in jobs if job["id"] in set(entry["job_ids"])]
-    rejected = [attempt for attempt in attempts
-                if attempt["course_id"] == entry["course_id"] and attempt["validated"]
-                and attempt["verdict"] == "reject"]
-    unvalidated = [attempt for attempt in attempts
-                   if attempt["course_id"] == entry["course_id"] and not attempt["validated"]]
-    if rejected:
-        last = max(rejected, key=lambda item: parse_ts(item["created_at"]))
-        count = len(last["reasons"])
-        return f"plan {last['plan_id']} rejected by the validator with {count} reason(s)"
-    if unvalidated:
-        last = max(unvalidated, key=lambda item: parse_ts(item["created_at"]))
-        return f"plan {last['plan_id']} authored, validation never produced a verdict"
-    failing = [job for job in course_jobs if job["state"] in FAILURE_STATES]
-    if failing:
-        last = max(failing, key=lambda job: parse_ts(job["updated_at"]))
-        code = f" ({last['error_code']})" if last.get("error_code") else ""
-        return f"plan job {last['id']} ended {last['state']}{code}"
+    course_attempts = [attempt for attempt in attempts
+                       if attempt.get("course_id") == entry["course_id"]]
+    latest_attempt = (max(course_attempts, key=lambda item: parse_ts(item["created_at"]))
+                      if course_attempts else None)
+    latest_job = (max(course_jobs, key=lambda job: parse_ts(job["updated_at"]))
+                  if course_jobs else None)
+
+    def _attempt_line(attempt: dict) -> str:
+        if not attempt["validated"]:
+            return f"plan {attempt['plan_id']} authored, validation never produced a verdict"
+        if attempt["verdict"] == "pass":
+            return f"plan {attempt['plan_id']} passed validation ({attempt.get('validation_id')})"
+        return (f"plan {attempt['plan_id']} rejected by the validator with "
+                f"{len(attempt.get('reasons') or [])} reason(s)")
+
+    attempt_at = parse_ts(latest_attempt["created_at"]) if latest_attempt else None
+    job_at = parse_ts(latest_job["updated_at"]) if latest_job else None
+    if latest_attempt is not None and attempt_at is not None and (
+            job_at is None or attempt_at >= job_at):
+        if latest_attempt["validated"] and latest_attempt["verdict"] == "pass" \
+                and entry["plan_approved"]:
+            return None
+        return _attempt_line(latest_attempt)
+    if latest_job is not None and latest_job["state"] in FAILURE_STATES:
+        code = f" ({latest_job['error_code']})" if latest_job.get("error_code") else ""
+        return f"{latest_job['id']} ended {latest_job['state']}{code}"
     return None
 
 
