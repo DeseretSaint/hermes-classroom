@@ -40,9 +40,10 @@ evidence. DeepSeek V4.1 Flash is multimodal, but its vision caps a frame at 1,02
 crops, not thumbnails.
 
 The fox is the proof case: the reference renders `assets/art/fox/fox-clock-256.png` at 208×208, while
-the product's `FoxPose` only ships 128/64 WebP exports. A 128 export upscaled to 208 goes soft, and a
-CSS-drawn fox is not the character. Use the SVG master in `assets/masters/fox/` or a 256/512 export,
-pin the hash, and never accept "a fox is present" as quality.
+the product's `FoxPose` only ships 128/64 WebP exports derived from the procedural SVG masters. A 128
+export upscaled to 208 goes soft, and a CSS-drawn fox is not the character. Use the painted A1 export
+at `assets/art/fox/` (256 or 512), pin the hash, and never accept "a fox is present" as quality. The
+SVG master under `assets/masters/fox/` is the placeholder, not the character.
 
 ## What "done" means for one screen
 

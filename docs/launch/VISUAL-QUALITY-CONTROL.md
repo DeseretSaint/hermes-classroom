@@ -36,9 +36,10 @@ The reference fox is **an asset**, not a drawing. `design/home-scene.html` rende
 upscaled 1.6× and goes soft; if a worker instead draws a fox in CSS or SVG, it will not match the
 character sheet at all. Either way, a checklist that asks "is a fox present?" passes.
 
-The SVG master exists at `assets/masters/fox/fox-clock.svg`. The correct fix is an asset export,
-not an illustration task: render the master at 256/512, pin the hash, and use it at Home. A character
-is never redrawn by a code worker.
+The painted A1 master exists at `assets/art/fox/fox-clock.png` (660×660, RGBA). The correct fix is
+an asset export, not an illustration task: encode 256/512 from the painted master, pin the hash, and
+use it at Home. The SVG master at `assets/masters/fox/fox-clock.svg` is the procedural placeholder
+and must not be used.
 
 ## 3. The quality framework
 
@@ -69,9 +70,9 @@ same palette. Each answer cites the region. Vague "looks good" is rejected.
 critical dimension scores below 4, regardless of the average. A beautiful layout cannot average out
 a bad mascot.
 
-**Owner art sign-off, once.** Put the reference crop and the render crop in a 2-up sheet at 2×. The
-owner approves the character once; after that, the asset hash is locked. This is the only art
-judgement that is not delegated.
+**Owner art sign-off, recorded.** The owner approved the painted A1 set on 2026-11-10
+(`docs/launch/FOX-SIGNOFF.md`); the asset hash is locked. The final contact sheet is a quality check,
+not a second character approval. Do not re-open the character.
 
 **Mask policy.** Masked SSIM may exclude copy, star ratings and host chrome only. It may never mask
 the character or illustration region. Masking the fox is how a bad fox passes.
@@ -109,8 +110,9 @@ ratings and host chrome.
 whose shipped art is approved; it is not acceptable for a missing mascot. Characters are blockers,
 not divergences.
 
-**The prompt assumes the shipped fox poses are usable at any size.** They are not: only 128/64 are in
-the product. Add the 256/512 export from the master before Home's fox is judged.
+**The live product ships the wrong fox source.** Only 128/64 procedural WebP are in the segment; the
+painted 512 is in `assets/art/fox/` but not wired. The asset-adoption card must land before Home's
+fox is judged.
 
 ## 5. Changes carried into the program prompt
 
@@ -118,6 +120,6 @@ the product. Add the 256/512 export from the master before Home's fox is judged.
   profile.
 - Characters and covers are assets; no CSS/SVG approximation; hash and natural-size checks.
 - Signature elements per screen, with a non-compensatory critical-dimension gate.
-- Crop-level feature checklist against R-SYS, owner art sign-off once, asset lock.
+- Crop-level feature checklist against A1, recorded owner approval, adopted painted asset.
 - Mask policy limited to copy/ratings/chrome.
 - Missing character asset blocks the screen and spawns an export card; it is not a divergence.

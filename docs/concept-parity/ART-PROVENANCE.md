@@ -14,9 +14,10 @@ All eight pass a tesseract text check (no readable lettering), carry no pure-bla
 (≤ 0.078 % of opaque pixels), and are clean cutouts with zero magenta-contaminated pixels. Four
 generations were discarded before shipping: model sheet round 1, clock round 1, point round 1
 (quadruped) and point round 2 (bipedal, but both arms hung at the side so the plate carried no
-gesture). The model sheet has **not** been signed by the owner yet, and the poses were produced
-against it before approval — that order is recorded as a defect of this card, not hidden. Any pose
-is regenerable from the same sheet if the sheet is rejected.
+gesture). The model sheet was unsigned when the poses were produced — that order is recorded as a
+defect of this card, not hidden. **Owner approval was recorded on 2026-11-10
+(`docs/launch/FOX-SIGNOFF.md`): the painted A1 set is canonical. The defect is closed; no
+regeneration is needed.**
 
 ## How each plate was made
 

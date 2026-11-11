@@ -1,93 +1,90 @@
-# Fox asset audit — the approved character does not exist in the repo
+# Fox asset audit — canonical art exists; the live UI is wired to the placeholder
 
-Evidence image: `docs/concept-parity/art/fox-audit-three-up.png` (left to right: Home concept,
-R-SYS character sheet, shipped asset).
+Corrected 2026-11-10 after the owner's sign-off. The earlier version of this memo compared the live
+128 px WebP to the painted 512 and concluded the art was missing. That was wrong: the painted A1 set
+is in the repo and on master. The product simply never adopted it.
 
-## What the three images show
+Approved references: `docs/concept-parity/art/fox-signoff-2up.png` (M1 model sheet + A1 seven-pose
+sheet) and `docs/concept-parity/art/home-reference.png`. Owner's decision: the painted A1 fox is
+canonical and will appear throughout the product.
 
-- **Home concept (R-HOME):** a painted fox sitting in side/three-quarter view beside a separate
-  mantel clock. Soft shading, bushy white-tipped tail, long muzzle, dark lower legs, white chest.
-- **R-SYS character sheet:** the same character family. Sitting/waving fox in three-quarter view,
-  bushy tail, same face, ears, chest and leg markings; a second standing fox with hands clasped and
-  a detached tail study.
-- **Shipped asset (`assets/art/fox/fox-clock-512.png`, `...-256.png`, and the SVG master):** a
-  different design. Front-facing, larger round head, shorter muzzle, different ear interiors,
-  different tail, dark gloves, holding a pocket watch. Flat vector shading, not the painted style.
+## What is canonical
 
-The design file `design/home-scene.html` renders the shipped vector at 208×208. That is why the
-composition can score 0.866 on a grey metric and still look wrong: the character is wrong.
+- `assets/art/fox/fox-model-sheet-512.png` — M1: front, three-quarter, side, back.
+- `assets/art/fox/fox-<pose>.png` — 660×660 RGBA masters for the seven poses.
+- `assets/art/fox/fox-<pose>-{512,256,128,64}.png` — alpha-preserving exports.
+- Poses and their assigned surfaces, per the A1 sheet: `wave` Home trailhead, `point` Discover
+  feature, `clock` Home/New course, `read` Classroom lesson, `cheer` check correct, `think` wrong
+  answer (kind), `sleep` empty/offline.
+- CP-010 is merged: `git merge-base --is-ancestor 68da9251 master` returns 0. The source hashes are
+  recorded in `docs/concept-parity/ART-PROVENANCE.md`.
 
-## Asset facts
+## What the live product uses
 
-| file | size | sha256 (head) | role |
-|---|---|---|---|
-| `assets/art/fox/fox-clock-256.png` | 256×256 | `32312f0504cd2eea` | used by the design file at 208 |
-| `assets/art/fox/fox-clock-512.png` | 512×512 | `9186a7c3f3acd0e4` | same vector design |
-| `assets/fox/fox-clock-128.webp` | 128×128 | `3d057e10d4138a08` | product FoxPose export |
-| `assets/masters/fox/fox-clock.svg` | 512×512 | `18a9cc8675b6caa3` | vector master of the wrong design |
+The brand-asset segment does not read the painted set.
 
-There is no production asset of the painted character shown in R-SYS or R-HOME. The SVG masters are
-the flat vector design; the painted fox exists only inside the reference images, at roughly 200–250
-px tall. It cannot be upscaled to 208 at 2× without visible loss, and it has no alternate poses.
+- `scripts/build_cb_assets.py:255` defines `_fox_svg`; the fox branch at `:655-705` reads
+  `assets/masters/fox/fox-<pose>.svg` and encodes `assets/fox/fox-<pose>-{64,128}.webp`.
+- `assets/fox/manifest.json` records every fox `source` as `authored:assets/masters/fox/...svg`.
+- `desktop/cb-assets.generated.js:58,70` ships `assets/fox/fox-clock-128.webp` and `...-64.webp`;
+  the other six poses are the same.
+- `desktop/src/85-v3-primitives.js:73-80` caps the fox at 128: `const want = Number(size) >= 128 ?
+  128 : 64`. `FoxPose` at `:725-750` therefore never requests 256 or 512.
+- Home asks for 128 at wide and 112 below 900: `desktop/src/30-home.js:870` (`wave`) and `:944`
+  (`clock`). The reference renders the painted clock pose at 208.
+
+So the live mascot is a flat procedural SVG derivative, capped at 128 and displayed at 112–128,
+while the approved reference is a painted 660 px master displayed at 208. That is the entire
+quality gap.
+
+Evidence: `docs/concept-parity/art/fox-canonical-vs-live-2up.png` — left, the canonical 512 painted
+export; right, the live 128 WebP upscaled. Same pose, different animal.
+
+## Why it slipped
+
+`assets/README.md:62-64` says the fox WebPs are still drawn from the procedural SVG masters and that
+wiring the painted fox into the segment is CP-020a's card. CP-020a is marked done on the board, but
+the fox branch was never switched. The done stamp measured scope, fonts and materials, not the fox
+source. No test asserts that the segment's fox comes from `assets/art/fox/`.
 
 ## Consequence
 
-No amount of UI code, token compliance, DOM geometry or model direction turns the right-hand vector
-into the left-hand painted character. This is an art-production gap, not a layout gap. Until it is
-closed, any Home "parity" claim is false, and any checklist that says "fox present" passes a
-different character.
+There is no art production left for the fox. The owner has approved the character and all seven
+poses. The remaining work is asset adoption: point the segment builder at the painted masters,
+regenerate the registry, lift `FoxPose` past 128, render Home at 208, and lock it with a source/hash
+test. No new generation, no second sign-off.
 
-## Art brief (the correct Home fox)
+## Home pose note
 
-Sitting fox, side/three-quarter view facing the hero or the clock, bushy white-tipped tail curled
-behind, long muzzle, dark lower legs, white chest, soft painted shading with visible fur texture.
-No pocket watch, no gloves; the clock is a separate object on the shelf. Render at 512 or 1024,
-alpha, with a clean cutout.
+The Home mockup shows a sitting fox beside a separate mantel clock. The A1 `clock` pose is standing
+with a pocket watch, and the sheet labels it for Home/New course. Use the approved `clock` pose at
+208 on the ledge (and `wave` on the empty shelf); do not invent a sitting variant for the UI. If the
+owner wants the mockup's exact sitting composition later, that is a scene plate, not a UI asset and
+not a reason to block the screen.
 
-## Pose matrix (proposed)
+## Adoption card — exact work
 
-| surface | pose | angle | state |
-|---|---|---|---|
-| Home hero | sit beside clock, tail curled | side / 3-4 | default |
-| Home empty | sleep, curled | side | empty |
-| Discover / Workshop | point toward the card grid | 3-4 front | default |
-| Course home | wave or stand-clasp | 3-4 front | default |
-| Classroom lesson | read (book) or think (hand to chin) | 3-4 front | default |
-| Lesson complete | cheer, arms up | front | success |
-| Parent Studio | stand-clasp, attentive | 3-4 front | default |
-| Rail / compact | head-and-tail peek, or none | side | optional |
+1. **Source.** In `scripts/build_cb_assets.py`, read `assets/art/fox/fox-<pose>.png` (660×660 RGBA)
+   as the fox master instead of `assets/masters/fox/*.svg`. Preserve alpha; encode WebP/AVIF at 512,
+   256, 128 and 64. The SVG path stays only as a fallback for a pose with no painted master, and
+   none of the seven has one.
+2. **Registry.** Regenerate `assets/fox/manifest.json`, `desktop/cb-assets.generated.js` and
+   `desktop/plugin.js`. Every fox entry's `source` is `assets/art/fox/fox-<pose>.png`; no fox entry
+   may name `assets/masters/fox`.
+3. **Primitive.** `cb3FoxSource` selects 512 at ≥416 px, 256 at ≥208, 128 at ≥128, else 64; emit a
+   `srcSet` for 1x/2x. `FoxPose` accepts 208 and 512.
+4. **Home.** Ledge `clock` at 208, empty shelf `wave` at 208 (or the design's accepted size, never
+   112/128 for a 208 reference). Natural size must be ≥ rendered size.
+5. **Tests.** Extend `tests/test_cp010_fox_assets.py` with a segment test: every fox asset's source
+   is the painted PNG, the encoded bytes/hash match the derivative, `FoxPose` `currentSrc` resolves
+   to a painted derivative, and no `assets/masters/fox` path is reachable for the seven poses.
+6. **Visual gate.** Home crop at 2× against the A1 clock pose: ears, muzzle, eyes, chest, legs, tail,
+   palette, line weight. Asset hash and natural size recorded. A "fox present" check is not a pass.
 
-Rules: one pose per surface, no repeated pose in the same viewport, no arbitrary mirroring that
-breaks the tail or lighting, no CSS-drawn substitute. State changes may crossfade between poses in
-150 ms; continuous idle animation is forbidden by the motion tokens (no loops).
+## Acceptance
 
-## Feasibility test (run 2026-11-10)
-
-Two generations were made from the R-SYS and Home crops with the configured image model.
-
-- **Pass 1** produced the right character family and painted style, but with a duplicated tail
-  (two tails). That is a hard fail and exactly the sort of drift a presence check misses.
-- **Pass 2**, with "exactly one tail, no second tail" in the prompt, produced a clean sitting
-  three-quarter fox: one bushy white-tipped tail, the right face, ears, chest and leg markings,
-  painted shading. It still needs cleanup: the output is 992×1024 RGB with a baked checkerboard,
-  not alpha; the ears are slightly tall; the palette needs a nudge toward the sheet.
-
-Evidence: `docs/concept-parity/art/fox-art-test-1.png` and `fox-art-test-2.png`.
-
-Conclusion: the art pipeline is viable in hours, not weeks, but it is not one-shot without review.
-The pose sheet needs a feature check (tails, ears, markings, palette) and a keying/cleanup pass
-before any hash is locked.
-
-## Production route
-
-1. Build a high-resolution model sheet from the R-SYS and R-HOME crops: front 3-4, side, face
-   close-up, palette, markings.
-2. Generate the missing poses with an image model using the sheet as reference (max three
-   references), on a flat chroma background; key to alpha and inspect edges at 200%.
-3. Compare every pose to the sheet on the feature checklist: ears, muzzle, eyes, chest, legs, tail,
-   palette, line weight. Reject drift.
-4. Owner approves one contact sheet of all poses; then hash-lock the exports at 512/1024.
-5. UI cards place the locked assets; they never draw a character.
-
-If generation cannot hold the character after two passes, drop the pose from the release or
-commission it. Do not ship a bad fox to keep a date.
+- The live fox at Home is the painted A1 character, 208 px, natural size ≥ rendered.
+- All seven poses come from `assets/art/fox/`; the procedural SVG fox is unreachable.
+- Home, Discover, Classroom, correct/wrong, and empty states each use their assigned pose, with no
+  repeated pose in one viewport.
+- No new art generation and no owner re-approval: the A1 sheet is signed.

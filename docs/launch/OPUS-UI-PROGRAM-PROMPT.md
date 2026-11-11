@@ -1,8 +1,8 @@
 # Coursebook UI program — single handoff to Opus
 
 Attach the six ratified frames from `docs/concept-parity/refs/` (home, discover, map, classroom,
-system, board) plus the current live screenshot of Home. The hashes and roles are in
-`docs/concept-parity/refs/REFS.md`.
+system, board), the fox sign-off 2-up (`docs/concept-parity/art/fox-signoff-2up.png`), and the
+current live screenshot of Home. The hashes and roles are in `docs/concept-parity/refs/REFS.md`.
 
 ---
 
@@ -30,8 +30,9 @@ ten-line report. Nothing in between.
 | R-BOARD | `refs/board.png` | 2400×1700 | four panels; Discover, Classroom and Design System ratified; its Home panel is not |
 
 Attach all six. The owner's words: "outside of the home page, these images were ratified." R-SYS is
-the character and component authority: use the shipped fox poses and the card anatomy shown there;
-do not invent a pose or a badge.
+the character and component authority: the approved fox is the painted A1 set at `assets/art/fox/`
+(`fox-signoff-2up.png` shows the model sheet and seven poses); use those poses and the card anatomy
+shown there, and do not invent a pose or a badge.
 
 ## 2. Scope and order
 
@@ -71,19 +72,19 @@ furniture; the design system's card anatomy and badges.
 
 **Characters and covers are assets, never drawings.** The writer may position, scale and crop an
 approved asset. It may not approximate a character with CSS shapes, emoji or a hand-built SVG. If a
-pose or size is missing, the card is blocked and the art-lock card produces it. A missing character
-asset is a blocker, never a divergence.
+pose or size is missing, the card is blocked; it is never a divergence.
 
-**The shipped fox is not the character.** The 512/256/128 assets and the SVG master are a flat,
-front-facing vector holding a pocket watch; the ratified R-SYS/R-HOME fox is painted, sitting in
-three-quarter view with a bushy tail and a separate clock. Treat the vector as a placeholder. Do not
-claim Home parity, and do not lock a hash, until the art-lock card has produced the approved
-character. See `FOX-ASSET-AUDIT.md`.
+**The painted A1 fox is canonical.** The approved character is the painted set at
+`assets/art/fox/`: the M1 model sheet and seven poses (`wave`, `point`, `clock`, `read`, `cheer`,
+`think`, `sleep`), 660×660 RGBA masters with 512/256/128/64 exports. The owner approved it on
+2026-11-10. The `assets/fox/*.webp` and `assets/masters/fox/*.svg` fox are the procedural
+placeholder; the live product still renders them, capped at 128. Do not generate a new character,
+do not ask for another sign-off, and do not call the placeholder canonical. Adoption is section 5b.
 
 **Resolution and identity.** The rendered CSS size may not exceed the asset's natural size. Home's
-208 px fox requires a 512/1024 export from the approved art-lock master; the existing 128/256/512
-vector is not the character. The audit records the rendered `currentSrc` hash and the
-natural-vs-rendered size; a CSS-drawn substitute fails even if it looks fox-like.
+208 px fox requires the 256 or 512 painted export from `assets/art/fox/`; the live 128 WebP is the
+placeholder and is too small. The audit records the rendered `currentSrc` hash, its painted source,
+and the natural-vs-rendered size; a CSS-drawn substitute fails even if it looks fox-like.
 
 **Character fidelity.** On a 600×600 crop, answer specific binary questions against the approved
 model sheet, not the shipped vector: same ear shape, muzzle, eye style, chest and leg markings, tail
@@ -134,30 +135,32 @@ without relitigating the rest.
   do **not** use literals: the design system's "six steps and no seventh" is law, and the reference
   is a concept, not a spec. Log the hero delta in the divergence ledger. If the hero reads weak,
   adjust measure and leading within the tokens, not the size.
-- **Assets:** the character canon is R-SYS and R-HOME. The existing fox vector is a different
-  design and is a placeholder; it cannot pass a Home parity gate. Shipped pack covers, clock and
-  object kit are canonical only where they match the ratified frame; record every mismatch.
+- **Assets:** the character canon is the painted A1 set at `assets/art/fox/` (M1 + seven poses),
+  approved by the owner. The `assets/fox/*.webp` and `assets/masters/fox/*.svg` fox are the
+  procedural placeholder and cannot pass a Home parity gate. Shipped pack covers, clock and object
+  kit are canonical only where they match the ratified frame; record every mismatch.
 - **Data:** stars become `sections_done/sections_total`. No invented ratings, counts or learners.
 
-## 5b. Art lock — before any Home parity claim
+## 5b. Canonical asset adoption — before any Home parity claim
 
-The approved character has no production asset. This is the critical path, not a UI detail.
+The owner has approved the A1 painted fox. It is in the repo; the segment builder never adopted it.
+This is the critical path, not a UI detail.
 
-1. **Model sheet.** Build a high-resolution sheet from the R-SYS and R-HOME crops: three-quarter
-   front, side, face close-up, palette, chest/leg/tail markings.
-2. **Pose matrix.** Home sit-beside-clock (side/3-4); Discover point; Course home wave or stand-clasp;
-   Classroom read or think; complete cheer; empty sleep; Studio stand-clasp. One pose per surface,
-   no repeats in a viewport.
-3. **Production.** Home's sitting pose first: it is the only pose on the release's critical path.
-   Generate from the sheet with a reference-image model, on a flat chroma background; key to alpha;
-   inspect edges at 200%. The test run needed two passes (the first duplicated the tail), so check
-   tail count, ears, markings and palette on every pass. If a pose drifts after two passes, drop it
-   from the release or commission it. Never let a worker draw the character in CSS. The rest of the
-   pose matrix follows after Home lands.
-4. **Approval.** One owner contact sheet of all poses at 2×; approve or reject. Then export 512/1024,
-   hash-pin and lock. This is the owner's only art touchpoint.
-5. **Swap.** UI cards place the locked assets. If a pose is missing, that surface is blocked; it does
-   not ship with a different character.
+1. **Source.** In `scripts/build_cb_assets.py`, read `assets/art/fox/fox-<pose>.png` (660×660 RGBA)
+   as the fox master instead of `assets/masters/fox/*.svg`. Preserve alpha and encode WebP/AVIF at
+   512, 256, 128 and 64. The SVG path is fallback only; none of the seven poses needs it.
+2. **Registry.** Regenerate `assets/fox/manifest.json`, `desktop/cb-assets.generated.js` and
+   `desktop/plugin.js`. Every fox entry's `source` is `assets/art/fox/fox-<pose>.png`; no fox entry
+   may name `assets/masters/fox`.
+3. **Primitive.** `cb3FoxSource` selects 512 at ≥416 px, 256 at ≥208, 128 at ≥128, else 64, and emits
+   a 1x/2x `srcSet`. `FoxPose` accepts 208 and 512. Home's ledge renders the `clock` pose at 208;
+   the empty shelf renders `wave` at 208. Never 112/128 for a 208 reference.
+4. **Tests.** Extend `tests/test_cp010_fox_assets.py` with a segment test: every fox asset's source
+   is the painted PNG, the encoded bytes/hash match the derivative, `FoxPose` `currentSrc` resolves
+   to a painted derivative, and no `assets/masters/fox` path is reachable for the seven poses.
+5. **Acceptance.** Home crop at 2× against the A1 `clock` pose: ears, muzzle, eyes, chest, legs, tail,
+   palette, line weight; hash and natural size recorded. A "fox present" check is not a pass. The
+   owner has already approved the character; do not regenerate it or ask for another sign-off.
 
 ## 6. Per-screen loop
 
@@ -219,8 +222,8 @@ asset-export card.
 - Two failed passes on one dimension: rewrite the card once with the delta list. Third failure:
   escalate that screen's writer to `claude-sonnet-5.5` for one pass. Still below the rubric: stop
   the screen and report.
-- Two failed character-crop passes: stop illustrating and export the required size from the master.
-  A worker never redraws the mascot to clear a gate.
+- Two failed character-crop passes: stop illustrating and export the required size from the painted
+  A1 master at `assets/art/fox/`. A worker never redraws the mascot to clear a gate.
 - A reference ambiguity gets one question with two options, and only if it changes what the user
   sees. Otherwise choose the ratified reading and log it.
 - No new screen while one is unlanded. No fifth card. No parallel writers on one screen.
@@ -230,7 +233,8 @@ asset-export card.
 No status pings. When the program is done — or a stop rule fires — send one report:
 
 - screens landed, with rubric averages, critical-dimension scores and masked SSIM;
-- character fidelity evidence: asset hash, natural size, crop comparison and the owner's sign-off;
+- character fidelity evidence: asset hash, painted source, natural size and a crop comparison
+  against A1; the character itself is already approved;
 - gate results and the installed-build capture;
 - the divergence ledger;
 - spend against the caps;
@@ -244,6 +248,6 @@ Read `docs/launch/UI-MANAGER-BRIEF.md`, `docs/launch/VISION-ROUTE-RESEARCH.md`,
 `docs/launch/UI-CONTEXT-PACK.md`, `docs/concept-parity/refs/REFS.md`, and the generated pack.
 
 Write `docs/launch/UI-PROGRAM.md` (screens, order, cards, caps) and `docs/launch/UI-DECISIONS.md`
-(the Gate 0 defaults). Create the art-lock card first, then the Home spec and the type-mapping card.
-Start Home only when the pose it needs is locked. Do not ask for approval, do not write an
-introduction, and do not produce a project plan longer than one page.
+(the Gate 0 defaults). Create the asset-adoption card first, then the Home spec and the type-mapping
+card. Start Home only when the painted fox is wired and the source test passes. Do not ask for
+approval, do not write an introduction, and do not produce a project plan longer than one page.

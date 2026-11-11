@@ -6,77 +6,91 @@ For **layout and code**, yes. DeepSeek V4.1 Flash is a strong coding model and i
 enough to read a spec, a diff and a crop. With Opus writing exact boxes, tokens, assets and states,
 it can build the screens.
 
-For **the character and the art**, no. Neither model draws the painted fox. The approved character
-has no production asset in the repo, and the shipped vector is a different design. No amount of
-direction, iteration or token compliance closes that gap. The quality ceiling is art, then spec,
-then QA, then model choice — in that order.
+For **the art**, the question is already settled: the owner has approved the painted A1 fox, and the
+660 px masters with 512/256/128/64 exports are in `assets/art/fox/` on master (CP-010). The art is
+not missing and does not need another generation pass. The live product is simply still wired to the
+procedural SVG placeholder: `scripts/build_cb_assets.py` encodes `assets/fox/*.webp` from
+`assets/masters/fox/*.svg`, `cb3FoxSource` caps at 128, and Home asks for 128/112 while the reference
+renders the painted fox at 208. That is the entire visual gap, and it is a one-card wiring fix.
 
-The current plan fails adversarially on exactly this point: it treats the shipped assets as
-canonical, so it will build a technically correct frame around the wrong fox and call it parity.
+So the quality ceiling is now **asset adoption**, then spec, then QA, then model choice. Not art.
 
 ## Evidence
 
+- The approved references: `docs/concept-parity/art/fox-signoff-2up.png` (M1 + A1 seven poses) and
+  `docs/concept-parity/art/home-reference.png`. The owner's 2026-11-10 message makes the painted A1
+  set canonical.
+- Canonical assets: `assets/art/fox/fox-<pose>.png` (660×660 RGBA) and the 512/256/128/64 exports.
+  `git merge-base --is-ancestor 68da9251 master` returns 0; CP-010 is merged.
+- Live path: `scripts/build_cb_assets.py:255,655-705` reads the SVG masters; `assets/fox/manifest.json`
+  names `authored:assets/masters/fox/*.svg`; `desktop/cb-assets.generated.js:58,70` ships 128/64 WebP;
+  `desktop/src/85-v3-primitives.js:73-80` caps at 128; `desktop/src/30-home.js:870,944` asks for
+  128/112. The painted 512 is never requested.
+- The 2-up `docs/concept-parity/art/fox-canonical-vs-live-2up.png` shows the difference: same pose,
+  painted character on the left, flat procedural derivative on the right.
 - DeepSeek V4.1 Flash is multimodal, but its vision caps an image at 1,024 tokens and its base
-  MMMU-Pro is 56.5. It sees a thumbnail of a 1344×768 page; it is a layout reader, not an art judge.
-- The fox audit (`FOX-ASSET-AUDIT.md`): Home concept and R-SYS show a painted, bushy-tailed fox;
-  the shipped 512/256/128 assets and the SVG master are a flat, front-facing vector with a pocket
-  watch. Same slot, different character. The design file uses the vector at 208 px.
+  MMMU-Pro is 56.5. It reads layout; it is not the art judge. The art is fixed, so that is acceptable
+  for the build lane.
 - The board's gates (CP-053, GM-016) measure tokens, geometry, capture and presence. They do not
-  measure likeness. A green board can still ship the wrong character.
+  assert the fox's source or hash. A green board can still ship the placeholder.
 
 ## Findings against the plan
 
-**1. Asset canon is wrong (fatal).** The prompt says shipped covers, fox sprites and object kit are
-canonical. For the fox, the canon is R-SYS/R-HOME, and the production asset does not exist. Fix:
-art lock before any Home parity claim; the shipped vector is a placeholder, not the character.
+**1. The prompt's asset canon is inverted (fatal).** It calls the shipped fox sprites canonical and
+calls the concept differences accepted divergences. The truth is the reverse: the A1 painted set is
+canonical; `assets/fox/*.webp` and `assets/masters/fox/*.svg` are the placeholder. If this stands,
+the writer will faithfully build around the wrong fox and call it parity.
 
-**2. "Owner signs once" is in the wrong place.** The plan signs the final screen. The character must
-be signed before UI work: one model-sheet/pose contact sheet, then hash-lock. Otherwise every screen
-inherits an unapproved mascot.
+**2. CP-020a's done stamp missed the fox source.** The card is done for scope, fonts and materials,
+but the README still says wiring the painted fox is CP-020a's job, and the builder still reads SVG.
+The gate measured the card's scope, not the segment's source. Fix: a source/hash test, not another
+visual score.
 
-**3. Character fidelity by crop SSIM cannot fix a wrong asset.** If the asset is the vector, the crop
-score fails forever and the loop grinds. The gate is correct to fail; the fix is upstream art, not
-another pass.
+**3. `FoxPose` caps at 128.** Even a perfect registry would still render 128 because
+`cb3FoxSource` maps everything ≥128 to 128. Home's 208 reference is displayed at 112–128. This is why
+the mascot looks small and soft, independent of the art.
 
-**4. "One handoff" cannot include taste.** Opus can art-direct and reject, but it cannot decide what
-the owner's mascot should look like. One 10-minute owner approval of the pose sheet is unavoidable.
-Everything else can be delegated.
+**4. Presence checks pass the placeholder.** "A fox is present" is true of the flat SVG. The
+acceptance list must require the painted source, natural size ≥ rendered, and the A1 feature check.
 
-**5. Pose coverage is missing.** The ratified sheet shows two poses; the UI needs six to eight
-surfaces. The seven shipped vector poses are the wrong character. Without a pose matrix, the worker
-will paste one fox everywhere or invent poses in CSS. Fix: pose matrix, one pose per surface, no
-repeats in a viewport.
+**5. The owner sign-off is already given; do not build an art-lock phase.** The A1 sheet is
+approved. A plan that asks for another model sheet, pose generation or owner contact sheet wastes the
+critical path and re-opens a closed decision.
 
-**6. "Not static/copy-paste" conflicts with the motion tokens.** The design system forbids looping
-animation. A living character therefore means state-driven pose swaps (read → cheer on completion,
-sleep on empty), not an idle loop. If continuous motion is wanted, it is a design-system amendment,
-not a worker decision.
+**6. The pose map is now explicit.** `wave` Home trailhead, `point` Discover, `clock` Home/New
+course, `read` Classroom, `cheer` correct, `think` wrong answer, `sleep` empty/offline. One pose per
+surface, no repeat in a viewport, state-driven crossfade only; loops remain forbidden by the motion
+tokens.
 
-**7. Native vision is on, but it is not art judgment.** DeepSeek sees thumbnails; review crops.
-Opus is the art judge at gates; the owner is the final judge of the mascot. Do not let the writer
-certify its own character.
+**7. The Home mockup's sitting fox is not the `clock` pose.** The mockup shows a sitting fox beside a
+mantel clock; the A1 `clock` pose is standing with a pocket watch, and the sheet labels it for
+Home/New course. Use the approved `clock` pose at 208 on the ledge and `wave` on the empty shelf. If
+the owner later wants the exact sitting composition, that is a scene plate, not a UI asset; do not
+invent a pose in the UI.
 
-**8. The plan has no art-production card, only UI cards.** A screen that needs a missing pose will
-block forever. Fix: an art-lock card before the Home spec, with generation/cleanup, a contact sheet,
-and a fallback (drop the pose or commission it).
+**8. Native vision is a layout tool, not an art judge.** DeepSeek sees thumbnails; review crops.
+Opus can judge the crop against A1, but the character decision is closed. Do not let the writer
+certify its own asset.
 
-**9. The deadline and the art critical path collide.** It is 23:48; CP-053's checkpoint is 03:00.
-Art lock plus Home implementation cannot be guaranteed in three hours. The honest options: Home ships
-with the correct fox only if the art lock completes by roughly 02:30; otherwise Home drops from this
-release, as the supervisor already planned. Shipping the vector and calling it parity is worse than
-dropping the screen.
+**9. The board needs a source gate.** Add to the Home/visual gate: the rendered fox's `currentSrc`
+must resolve to a painted derivative under `assets/fox/` whose `source` is `assets/art/fox/...png`,
+and no `assets/masters/fox` path may be reachable for the seven poses. A green CP-053 without that
+is not a visual pass.
 
-**10. The plan still measures presence somewhere.** "Element checklist present" survives in the
-acceptance list. For characters, replace it entirely with asset identity, natural size, pose-map
-compliance and the feature checklist. "Present" is how a bad fox passes.
+**10. The deadline is now feasible.** It is 23:55; CP-053's checkpoint is 03:00. Adoption is a build
++ registry + primitive + test change, not hours of art generation. If the adoption card lands first,
+Home can ship with the correct fox; if it does not, Home drops rather than shipping the placeholder.
 
 ## Revised one-shot plan
 
-**Phase A — Character lock (parallel, time-boxed 90 minutes).**
-A1. Extract the ratified views: Home fox, R-SYS sitting fox, standing fox, tail study.
-A2. Build a high-resolution model sheet (front 3-4, side, face, palette, markings).
-A3. Generate the pose matrix from the sheet; key to alpha; inspect at 200%.
-A4. Owner approves one contact sheet; hash-lock 512/1024 exports. No UI parity claim before this.
+**Phase A — Asset adoption (one card, first).**
+A1. Switch the fox branch in `scripts/build_cb_assets.py` to `assets/art/fox/fox-<pose>.png` as the
+master; encode 512/256/128/64 WebP/AVIF with alpha.
+A2. Regenerate `assets/fox/manifest.json`, `desktop/cb-assets.generated.js`, `desktop/plugin.js`;
+every fox `source` is the painted PNG, no SVG source.
+A3. Lift `cb3FoxSource` to 512/256/128/64 with a 1x/2x `srcSet`; `FoxPose` accepts 208/512; Home
+renders the `clock` pose at 208 and `wave` at 208 on the empty shelf.
+A4. Add the source/hash/`currentSrc` test; no UI parity claim before it passes.
 
 **Phase B — UI implementation (writer: DeepSeek; director: Opus).**
 B1. Opus writes the exact spec: boxes, tokens, assets, states, pose per surface.
@@ -86,13 +100,13 @@ B4. Land each screen with the installed-build capture.
 
 **Phase C — Quality gate.**
 C1. Critical dimensions: character, typography, material; below 4 fails, no averaging.
-C2. Character feature checklist against the model sheet; asset hash; natural size; crop comparison.
-C3. Owner sees one final contact sheet; then done.
+C2. Character checklist against A1; asset hash; natural size; crop comparison; `currentSrc` source.
+C3. Owner sees one final contact sheet; the character itself is already approved.
 
 ## The narrow answer
 
-DeepSeek with native images plus Opus direction is sufficient **for the build**, not for the **art**.
-If the character is produced and locked first, and Opus's spec is machine-precise, the plan can be
-one shot. If the plan continues to treat the shipped vector as the fox, no amount of model power
-will save it — the output will be a clean layout with the wrong mascot, which is exactly what the
-owner has been seeing.
+DeepSeek with native images plus Opus direction is sufficient for the build, and the art is already
+approved and in the repo. The one-shot plan is realistic **once the painted fox is wired into the
+segment and `FoxPose` stops capping at 128**. Without that adoption, the output will be a clean
+layout around the flat placeholder — exactly the disappointment the owner has been seeing, and no
+amount of model power will fix it.
