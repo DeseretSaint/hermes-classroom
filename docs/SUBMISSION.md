@@ -8,16 +8,23 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
-Release tree: **`b9f4a197e42e4f033298d94608fcb5b63640b094`** (the H-210-R2 merge over `df052ea`: the
-live pack round trip that closed gate 4 plus its capture under
-`audit/adversarial/h210r2-pack-roundtrip/`; the diff from `df052ea` is `docs/` and `audit/` only).
-`desktop/plugin.js` there is `cd862140…c516`, so the M4 audit pin remains valid for that tree; the
-committed audit has since been regenerated for the module this tree ships, `4087908c…`
-(2026-11-10, via CP-020a/CP-020b/CP-043), with every measurement reproduced, and re-pinning the record
-to it is the freeze step. `master` has advanced past it; the
-suite count below is measured on `master` `07976d8` and names that tree.
-Every current-tree number in this file is re-derived there and checked by
-`python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
+Release tree: **`42fcd0f5`** — the tree this submission's catalog entry pins, measured 2026-11-11 at
+the 14:05 MST freeze. `desktop/plugin.js` there is `71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8`
+(`python3 scripts/build_plugin.py --check` reports the match against `desktop/src`), `node --check
+desktop/plugin.js` is clean, and `bash scripts/validate-plugin.sh` reports **4/4 runtime contracts:
+PASS** with `Release gate passed: 4/4 checks`. The full suite measured on the commit below it,
+`fc6ec7b7`, is `Ran 4031 tests in 1475.218s … OK (skipped=12)`, exit 0; the three commits between
+`fc6ec7b7` and the release tree change only `docs/` and `coursebook/workshop.py`, and the workshop's
+focused pair (`tests.test_workshop`, `tests.test_cp_021_workshop_v3`) is `Ran 26 tests in 17.373s …
+OK` on the release tree itself. `python3 scripts/check-docs-truth.py` passes on it.
+
+The **H-212 tree `b9f4a197e42e4f033298d94608fcb5b63640b094`** remains the previous record: the
+H-210-R2 merge over `df052ea` (the live pack round trip that closed gate 4 plus its capture under
+`audit/adversarial/h210r2-pack-roundtrip/`, a `docs/`-and-`audit/`-only diff from its parent).
+`desktop/plugin.js` there is `cd862140…c516`. The earlier suite count `Ran 3523 tests in 951.634s …
+OK (skipped=11)` at `b1913af7`, and the `2747` at `b9f4a19`, are kept as previous-record history, not
+as this tree's numbers. Every current-tree number in this file is re-derived on the release tree and
+checked by `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
 The tree carries `cb.rpc` v25 (93 declared methods, 93 handlers) and `cb.db` v14 (schema v14,
