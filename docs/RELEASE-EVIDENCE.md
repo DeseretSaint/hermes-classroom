@@ -277,3 +277,13 @@ file):
 
 Every defect this pass fixed has its own focused test named in
 `docs/ADVERSARIAL-BACKEND-REVIEW.md` §1.
+
+### Install-path measurement (same day, after the portability pass)
+
+| Fact | Value | Command |
+| --- | --- | --- |
+| Fresh-home git install, no override | blocked, `caution` verdict, 1,183 findings (almost all LOW) from committed test fixtures and audit captures | `hermes plugins install https://github.com/DeseretSaint/hermes-classroom --ref 172b61aa --yes-deps --enable` |
+| Fresh-home git install with the report read | installed, dependencies prepared, plugin enabled | same command plus `--force` |
+| Desktop half on that fresh home | materialized at the app root by `hermes_cli/desktop_plugin_halves.py` on reconcile, sha256 equal to the package's `desktop/plugin.js` | `reconcile_desktop_halves_report(...)` |
+| Default home (the machine's own profile) | `install_check --provisioning` exit 0: agent half OK, Desktop half matches `984001084553…`, 2 skills, 8 contracts (`cb.pack v3`), deps import, 3 packs verify, database schema v14 | `python3 -m coursebook.install_check --home ~/.hermes --source . --provisioning` |
+| Catalog entry pin | `172b61aa`, updated in `NousResearch/hermes-agent#152920` (draft, head `3e3a593`) | `gh pr view 152920` |
