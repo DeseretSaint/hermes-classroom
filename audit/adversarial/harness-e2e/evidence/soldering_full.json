@@ -3127,7 +3127,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5522,
+            "input_tokens": 5510,
             "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3186,7 +3186,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5517,
+            "input_tokens": 5504,
             "output_tokens": 538,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3245,7 +3245,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5505,
+            "input_tokens": 5491,
             "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3304,7 +3304,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5512,
+            "input_tokens": 5499,
             "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3363,7 +3363,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5515,
+            "input_tokens": 5500,
             "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3422,7 +3422,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5532,
+            "input_tokens": 5522,
             "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false

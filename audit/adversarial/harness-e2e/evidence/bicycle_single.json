@@ -843,7 +843,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1049,
+            "input_tokens": 1047,
             "output_tokens": 465,
             "unknown_calls": 0,
             "unknown_cost": false

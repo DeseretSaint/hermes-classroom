@@ -19,15 +19,16 @@ Three different calls, three different prompts, three different schemas:
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v12` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v13` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v8` | `VALIDATION_SCHEMA` |
+| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v8` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v8` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v13` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v12` otherwise. The v12/v13 bump
 adds the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage and
-check-covers-criteria rules to both plan authors; the validator prompt text is unchanged, so
-`validation-prompt.v5` stands.
+check-covers-criteria rules to both plan authors. The validator text is versioned separately:
+`validation-prompt.v8` is the current label, and each pass states the rubric it is judged by.
 
 The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
 prompts now state the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage
@@ -43,6 +44,16 @@ The labels in that table are not hand-copied. They are the constants in
 or prose reference names a retired label. A prompt label is part of every stored validation binding
 and the idempotency fingerprint, so a different instruction text under a reused label is never
 silently accepted.
+
+**A unit pass is scoped to its unit** (`t_332351b0`, CP-015g). The unit-sections validator is handed
+one unit's objectives, one unit's checks and the unit's own `goal` as `plan_brief.unit_goal`; it is
+never handed the plan's whole-course `learner_outcome`. Before this, the brief carried the course
+outcome beside a `check_plan` filtered to the unit, so unit 1 of an approved multi-unit plan was
+refused under `objective_alignment` for not delivering unit 2's share — a structural refusal no
+authoring could fix. The pass instructions state the matching rule (`_UNIT_ALIGNMENT_RULE`): a
+capability another unit delivers is that unit's obligation, and only a capability named by *this*
+unit's goal or objectives that no section or check delivers is a rejection. The whole-course
+outcome is still judged at the plan stage, against all units.
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
 generation schema, or the generation prompt version. The validation record stores both prompt
@@ -85,8 +96,8 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 **not** treated as a refusal — no second authoring call, no validation record, no plan document.
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
-whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v5`, so it is a stated contract rather than an unstated schema trap (the H-191
+whenever the second attempt passed. The rule is stated in the validation pass instructions, so it
+is a stated contract rather than an unstated schema trap (the H-191
 lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
 `docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
 its H-182/D1 repair loop, and its stored reasons come from the rejections, then the failed
