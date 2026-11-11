@@ -28,6 +28,7 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import {
   CourseCover,
+  cb3KitSource,
   cbCourseGoalLine,
   cbCourseMonogram,
   cbCoursePathCaption,
@@ -85,7 +86,16 @@ if (payload.mode === 'pure') {
       )
     )
   )
-  process.stdout.write(JSON.stringify({ ...summary, html }))
+  process.stdout.write(JSON.stringify({
+    ...summary,
+    html,
+    kit: {
+      japanese: cb3KitSource('japanese-cover-3x2'),
+      parent: cb3KitSource('parent-cover-3x2'),
+      technical: cb3KitSource('technical-cover-3x2'),
+      lessonRoom: cb3KitSource('field-atlas-lesson-room')
+    }
+  }))
 }
 """
 
@@ -408,6 +418,64 @@ class CourseShelfTest(unittest.TestCase):
         html = result["html"]
         self.assertEqual(html.count('data-cb-course-cover="'), 2)
         self.assertEqual(html.count("<button"), 2, "one action per shelf object, never a duplicate primary")
+
+    # ── D-007: the Courses card reads the approved display cover ─────────────────────────
+
+    @staticmethod
+    def cover_block(html: str, title: str) -> str:
+        """The cover field of the article whose title is `title` (the field precedes the heading)."""
+        article = html.rindex("<article", 0, html.index(title))
+        return html[article : html.index(title)]
+
+    def test_courses_card_serves_the_seeded_packs_own_plate(self) -> None:
+        rows = [
+            shelf_row(
+                enrollment_id="enr_jp",
+                course_id="crs_jp",
+                title="Japanese: the two ways to say it",
+                provenance={"source": "bundled", "pack_id": "japanese-affection-context-l0", "pack_version": "2.2.0"},
+            ),
+            shelf_row(
+                enrollment_id="enr_parent",
+                course_id="crs_parent",
+                title="Measuring at the kitchen table",
+                provenance={"source": "bundled", "pack_id": "parent-measurement-practice", "pack_version": "2.0.0"},
+            ),
+            shelf_row(
+                enrollment_id="enr_tech",
+                course_id="crs_tech",
+                title="What a pack manifest declares",
+                provenance={"source": "bundled", "pack_id": "technical-pack-literacy", "pack_version": "2.1.0"},
+            ),
+        ]
+        result = self.run_harness({"mode": "render", "rows": rows})
+        html = result["html"]
+        expected = {
+            "Japanese: the two ways to say it": ("japanese-cover-3x2", result["kit"]["japanese"]),
+            "Measuring at the kitchen table": ("parent-cover-3x2", result["kit"]["parent"]),
+            "What a pack manifest declares": ("technical-cover-3x2", result["kit"]["technical"]),
+        }
+        for title, (plate_id, plate_src) in expected.items():
+            block = self.cover_block(html, title)
+            with self.subTest(title=title):
+                self.assertIn('data-cb-cover-kind="kit"', block, "the course card rendered no kit cover")
+                self.assertIn(f'src="{plate_src}"', block, "the card does not serve the pack's own approved plate")
+                self.assertIn(f'data-cb-cover-plate="{plate_id}"', block)
+                self.assertIn("object-fit:cover", block)
+        self.assertNotIn('data-cb-cover-kind="letter"', html, "a letter plate stands in for the cover")
+
+    def test_courses_card_without_a_mapped_plate_reads_the_lesson_room(self) -> None:
+        result = self.run_harness(
+            {
+                "mode": "render",
+                "rows": [shelf_row(title="Sourdough starter", provenance={"source": "authored", "pack_id": None})],
+            }
+        )
+        block = self.cover_block(result["html"], "Sourdough starter")
+        self.assertIn('data-cb-cover-kind="kit"', block)
+        self.assertIn(f'src="{result["kit"]["lessonRoom"]}"', block)
+        self.assertIn('data-cb-cover-plate="field-atlas-lesson-room"', block)
+        self.assertNotIn('data-cb-cover-kind="letter"', result["html"])
 
 
 class LibraryActionTest(unittest.TestCase):

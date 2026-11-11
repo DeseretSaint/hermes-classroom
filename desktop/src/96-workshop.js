@@ -237,12 +237,17 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
   const preview = useArtifactPreview(cover.kind === 'artifact' ? cover.artifact_id : null)
   const tone = workshopTone(item && item.pack_id)
   const image = cover.kind === 'artifact' && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact always wins. With no ready artifact the approved field_atlas@2 display cover
+  // for this pack is the plate (D-007), so a mapped pack never falls back to a typographic cover.
+  // `cb3KitCoverFor` answers the full asset key; `cb3Asset` is the one lookup that reads it.
+  const kit = image ? null : cb3KitCoverFor(item)
+  const kitImage = kit ? cb3Asset(kit.id3x2) : null
   const ratio = hero ? '16 / 9' : '3 / 2'
   const alt = (cover.alt && String(cover.alt)) || (item && item.title) || 'Pack cover'
   const failed = cover.kind === 'artifact' && preview.state === 'text'
   return jsxs('figure', {
     'data-cb-workshop-cover': (item && item.pack_id) || 'none',
-    'data-cb-workshop-cover-kind': image ? 'artifact' : 'typographic',
+    'data-cb-workshop-cover-kind': image ? 'artifact' : kitImage ? 'kit' : 'typographic',
     style: {
       margin: 0,
       display: 'flex',
@@ -288,6 +293,24 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
                   width: '100%',
                   height: '100%',
                   objectFit: 'contain',
+                  objectPosition: 'center',
+                  background: 'var(--cb-paper)'
+                }
+              })
+            : kitImage
+            ? jsx('img', {
+                alt,
+                src: kitImage,
+                loading: hero ? 'eager' : 'lazy',
+                'data-cb-workshop-cover-image': '',
+                'data-cb-workshop-cover-plate': kit.id3x2.split('.').pop(),
+                style: {
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  // A display plate is mechanically cropped into its box, on the hero band as
+                  // well as on a store card; the pack never gets a letter standing in for art.
+                  objectFit: 'cover',
                   objectPosition: 'center',
                   background: 'var(--cb-paper)'
                 }
@@ -1285,11 +1308,23 @@ function cb3PackSubject(item) {
   return null
 }
 
-/** One cover resolver for the Store card, the pack detail and the Library tab's same row. */
+/**
+ * One cover resolver for the Store card, the pack detail and the Library tab's same row.
+ *
+ * A pack's own cover artifact always wins. When it has none — or its bytes have not arrived yet —
+ * the approved field_atlas@2 display cover for that pack is the plate (D-007), so no pack ever
+ * resolves to a typographic cover. The plate id comes from `cb3KitCoverFor`, which already answers
+ * the full `cb.asset.kit.field_atlas.*` asset key; `cb3Asset` is the one lookup that reads it.
+ */
 function cb3PackCover(item) {
   const cover = (item && item.cover) || {}
   const artifactId = cover.kind === 'artifact' && typeof cover.artifact_id === 'string' ? cover.artifact_id : null
-  return { artifactId, title: (item && item.title) || 'Untitled pack' }
+  const kit = cb3KitCoverFor(item)
+  return {
+    artifactId,
+    title: (item && item.title) || 'Untitled pack',
+    kitSrc: kit ? cb3Asset(kit.id3x2) : null
+  }
 }
 
 /**
@@ -1348,7 +1383,9 @@ function WorkshopDiscoverHead({ line }) {
 function WorkshopDiscoverFeature({ item, layout, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const compact = layout.columns === 1
   const pad = layout.wide ? '2rem' : layout.columns === 3 ? '1.75rem' : '1.25rem'
   return jsxs('section', {
@@ -1459,7 +1496,9 @@ function cb3DiscoverOpenKey(event, item, onOpen) {
 function WorkshopDiscoverCard({ item, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const rejected = cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified')
   return jsx(CollectibleCard, {
     'data-cb3-pack': item.pack_id,
@@ -1482,7 +1521,9 @@ function WorkshopDiscoverCard({ item, onOpen }) {
 function WorkshopDiscoverRow({ item, onOpen }) {
   const cover = cb3PackCover(item)
   const preview = useArtifactPreview(cover.artifactId)
-  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  // A real artifact's bytes win; before they arrive, or when the pack has none, the approved
+  // display cover is the plate (D-007). A pack never falls back to a typographic cover.
+  const art = (cover.artifactId && preview.state === 'ready' ? preview.data_url : null) || cover.kitSrc
   const subject = cb3PackSubject(item)
   return jsxs('article', {
     'data-cb3-pack': item.pack_id,
