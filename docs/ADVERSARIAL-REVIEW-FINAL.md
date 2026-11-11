@@ -121,5 +121,7 @@ re-recording the proof, and none by relaxing a gate. The twelfth was the same cl
 the same way.
 
 One live consequence to know before judging: `store_verify` now refuses a pack whose licence does
-not grant redistribution, so the `store` workflow reports **red** on `master` until pull request #2
-(superseding the fixture pack with a `1.0.1` whose licence says `allowed`) is merged.
+not grant redistribution. The fixture pack merged earlier says `local_only`, so pull request #2
+supersedes it with a `1.0.1` whose licence says `allowed`. That pull request is **green and
+mergeable**; once merged the shelf complies with its own rule. Until then the check would fail on
+that one pack, which is the honest state.
