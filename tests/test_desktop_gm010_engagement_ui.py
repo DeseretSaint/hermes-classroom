@@ -230,13 +230,17 @@ class GameEngagementUiTests(unittest.TestCase):
         html = self.header(engagement=engagement())
         self.assertIn('data-cb-game="ready"', html)
         self.assertIn("Game progress", html)
-        # The play layer is mounted in exactly three places, and the source gates all of them on
-        # the course's durable mode: the course home (FieldDeskHome), the Game overview
-        # (CourseDetail), and the v3 classroom's Game rail (ClassroomV3Surface, CP-023). There is
-        # no fourth mount a textbook surface could reach, and the classroom mount re-reads
-        # `mode === 'game'` beside its own read.
+        # The play layer is READ in three places and MOUNTED in two. Three surfaces call
+        # `engagement.read`: the course home (FieldDeskHome), the v3 classroom's Game rail
+        # (ClassroomV3Surface, CP-023) and the course detail (CourseDetail). Only two of them
+        # render GameHeader: the course home and CourseDetail's Game overview. The classroom rail
+        # reads the engagement row for its own challenge/XP block and never mounts this header,
+        # and CourseDetail's mount is gated on `view === 'overview'`, so no textbook surface can
+        # reach it.
         mounts = re.findall(r"jsxs?\(\s*GameHeader,", self.source)
-        self.assertEqual(len(mounts), 2, "GameHeader must be mounted exactly twice")
+        self.assertEqual(
+            len(mounts), 2, "GameHeader must be mounted in two places and read in three"
+        )
         self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 3)
         self.assertIn("mode === 'game' && Boolean(courseId) && Boolean(enrollmentId)", self.source)
         self.assertNotIn("engagement.award", self.source)

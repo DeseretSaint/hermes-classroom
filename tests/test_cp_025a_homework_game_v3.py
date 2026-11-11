@@ -11,8 +11,11 @@ Two kinds of proof:
   on the homework panel, one progress bar in the Game band, one paper object for the journal, and
   stamps only where `objective.independent` is true.
 
-What this does not prove: pixels or the live capture matrix. The stamped frames belong to CP-040
-(`scripts/cp-capture.mjs`); this card claims source + render evidence only.
+Pixels: this card carries eleven live frames in `docs/visual-review/cp-025a/`, each with its
+`scripts/cp-capture.mjs` stamp pinning the module sha under review, and the cells they prove are
+listed in that folder's `MANIFEST.md`. They are the Game band/journal and the homework studio,
+sheet and narrow sheet — not the full parity matrix: the union capture across every route and
+state still belongs to CP-040.
 """
 
 from __future__ import annotations

@@ -22,7 +22,7 @@ the parts CP-025b did not own (sheet card/actions/record/list/empty state, the m
 | `game--course-home--1349--light--100` | same | 1349×1166 | light | wide composition |
 | `game--course-home--1049--forced-colors` | same | 1049×1166 | forced colours | band survives forced-colours mode |
 | `game--journal--1049--light--100` | same, scrolled to the journal | 1049×1166 | light | the Field journal is one paper object with a hairline list and the honest line "No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page." |
-| `game--textbook--1049--light--100` | same course, Textbook view | 1049×1166 | light | no Game band, no XP on the Textbook view |
+| `game--textbook--1049--light--100` | same course `crs_b4b56fc2…`, Textbook view (`See the plan` → `Learn`) | 1049×1166 | light | `data-cb-course-detail="textbook"` with **zero** `data-cb-game*` markers: no Game band, no XP, no level, no journal on the Textbook view |
 | `homework--studio--1049--light--100` | `#/coursebook` → studio → Homework tab | 1049×1166 | light | Parent Studio → Homework: one row per recorded task, paper state chip, quiet `Show the sheet` |
 | `homework--sheet--1049--light--100` | studio → Homework → `Show the sheet` | 1049×1166 | light | one-page field card (target + romaji + meaning, Where and when, Do this, Done when, sources) with three quiet actions and "Local only. Nothing is sent." |
 | `homework--sheet--460--light--100` | same | 460×1166 | light | the card and its quiet actions stack at the narrow width with no clipping |
@@ -30,7 +30,20 @@ the parts CP-025b did not own (sheet card/actions/record/list/empty state, the m
 PNGs are 2× device pixels (2098×2332 for a 1049-wide route). Commands: the cells were produced with
 `scripts/cp-capture.mjs --destination "#/course/<id>"` (Game) and
 `--destination studio --click "[data-cb3-tab=\"homework\"]" [--click "[data-cb-homework-record-action=\"toggle-sheet\"]"]`
-(homework). `--require-v3` was passed on every cell.
+(homework). The Textbook cell is the same Game course driven two clicks further on the course home:
+
+```
+node scripts/cp-capture.mjs --name game--textbook--1049--light--100 --out docs/visual-review/cp-025a \
+  --cdp-port 9371 --state "$HOME/.hermes/coursebook-test-gm010" --plugin desktop/plugin.js \
+  --destination "#/course/crs_b4b56fc2fd7046c18349353d4d49e1d6" --route-width 1049 --require-v3 \
+  --appearance light \
+  --click '[data-cb-trailhead-see-plan]' --click '[data-cb-learning-tabs] [data-cb-tab="learn"]'
+```
+
+`--require-v3` was passed on every cell. The gate behind that cell is source, not a screenshot
+alone: `desktop/src/90-course.js:2499` enables the `engagement.read` query only on
+`view === 'overview'`, and the two mount sites (`90-course.js:2781`, `:2796`) both carry
+`courseGame && view === 'overview'`, so a Textbook view has no engagement row to paint.
 
 Side-by-side boards (render | reference | diff) are committed beside the frames:
 `sbs-game-course-home-1349-vs-map.png`, `sbs-homework-studio-1049-vs-system.png`,
@@ -81,6 +94,7 @@ are composite crops from the door. The parity verdict therefore belongs to CP-04
 | The band keeps a loading and an error state with one quiet action instead of collapsing | `::test_game_header_states_keep_the_band` |
 | The journal is one `PaperCard` with a hairline list, `data-cb-game-card` per section, and an earned/total count from recorded evidence only | `::test_game_journal_is_one_paper_object_with_real_stamps`; frame `game--journal--1049--light--100` |
 | `data-cb-game*` markers, counts and aria are unchanged from GM-010, and the band mounts only in Game mode with a real engagement row | `tests/test_desktop_gm010_engagement_ui.py` (10 tests, incl. the 2-mount / 3-reader guard and the `mode === 'game'` gate) |
+| The Game band is absent from the Textbook view of the same Game course | frame `game--textbook--1049--light--100` (`data-cb-course-detail="textbook"`, zero `data-cb-game*` nodes, stamp destination `#/course/crs_b4b56fc2…`); source gate `90-course.js:2499` (`engagement.read` enabled only when `view === 'overview'`) and the two mount sites `90-course.js:2781`/`:2796` |
 | The homework action stays one quiet control in the shared section footer with `data-variant="text"` and `aria-expanded`, and no dialog | `tests/test_desktop_gm008_homework_ui.py`; `::test_homework_action_is_one_quiet_control`; frame `homework--sheet--1049--light--100` shows the placed panel |
 | The sheet is one page: one target, one context, at most three steps, one `Done when`, marked Japanese, three quiet actions and no filled control | `::test_homework_sheet_keeps_one_task_and_the_v3_material`; frames `homework--sheet--1049--light--100`, `…--460--light--100` |
 | A take-home card claims no XP, grade, score, mastery or answer | `::test_homework_sheet_keeps_one_task_and_the_v3_material` (forbidden-word scan) |
