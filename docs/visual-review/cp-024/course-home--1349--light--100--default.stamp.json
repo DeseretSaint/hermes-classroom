@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "course-home--1349--light--100--default",
-  "captured_at": "2026-11-11T01:53:14.070Z",
+  "captured_at": "2026-11-11T02:37:19.816Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -38,11 +38,11 @@
     "marker": "/coursebook",
     "destination": "courses",
     "width": 1349,
-    "height": 1817,
-    "window_width": 1405,
-    "window_height": 1891,
+    "height": 1166,
+    "window_width": 1377,
+    "window_height": 1220,
     "theme": "light",
-    "text_scale_root_px": "32px",
+    "text_scale_root_px": "16px",
     "motion": "full",
     "reduced_motion": false,
     "forced_colors": false,
@@ -86,7 +86,7 @@
     "v3_textures": "ready",
     "style_sheet_count": 19,
     "css_rule_count": 1629,
-    "host_slots": 34,
+    "host_slots": 33,
     "host_shell": true,
     "heading_font_family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
     "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
@@ -109,12 +109,12 @@
       "bottom": 0
     },
     "content_width": 1349,
-    "content_height": 1817,
+    "content_height": 1166,
     "content_rect": {
-      "x": 56,
+      "x": 28,
       "y": 34,
       "width": 1349,
-      "height": 1817
+      "height": 1166
     },
     "course_home": null,
     "course_detail": "overview",
@@ -123,7 +123,7 @@
     "scroll_y": 0,
     "word_wraps": [],
     "plate_title": {
-      "font_size": "51.89px",
+      "font_size": "32.69px",
       "client_height": 188,
       "scroll_height": 188,
       "clipped_vertically": false
@@ -237,18 +237,18 @@
   },
   "capture": {
     "file": "course-home--1349--light--100--default.png",
-    "sha256": "5f006f233c5559e64770162de801d945f8783ddbcfd903f6d53d3f2f2302a04e",
-    "bytes": 1408590,
+    "sha256": "27605092184684b7dd08befd5e34513f6292a2f476a33e503a70660523abd69d",
+    "bytes": 1022167,
     "crop_mode": "route",
     "clip": {
-      "x": 56,
+      "x": 28,
       "y": 34,
       "width": 1349,
-      "height": 1817
+      "height": 1166
     },
     "pixel_check": {
       "ok": true,
-      "sampled": 111878,
+      "sampled": 112892,
       "host_bg_pixels": 0,
       "host_bg_fraction": 0,
       "html_bg": "13, 16, 21, 1",
@@ -256,7 +256,11 @@
       "distinct_backgrounds": true
     },
     "driver": "docs/visual-review/cp-024/drive-course-home.js",
-    "reloaded": false
+    "reloaded": false,
+    "root_font": {
+      "requested": "16px",
+      "prior_inline": null
+    }
   },
   "page_url": "http://127.0.0.1:5174/#/coursebook"
 }

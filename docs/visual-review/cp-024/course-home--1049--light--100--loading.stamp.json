@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "course-home--1049--light--100--loading",
-  "captured_at": "2026-11-11T01:54:00.117Z",
+  "captured_at": "2026-11-11T02:38:07.872Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -214,7 +214,11 @@
       "distinct_backgrounds": true
     },
     "driver": "docs/visual-review/cp-024/drive-course-home.js",
-    "reloaded": false
+    "reloaded": false,
+    "root_font": {
+      "requested": "16px",
+      "prior_inline": null
+    }
   },
   "page_url": "http://127.0.0.1:5174/#/coursebook"
 }
