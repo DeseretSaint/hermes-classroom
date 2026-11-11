@@ -196,7 +196,8 @@ class GameXpRulesTest(GameEngagementCase):
                 components["evidence_class"],
             ),
         )
-        self.assertIn("XP:", first["result"]["basis"])
+        self.assertNotIn("XP", first["result"]["basis"])
+        self.assertIn("check", first["result"]["basis"])
         self.assertGreater(first["result"]["points"], 0)
 
         # A replay with a fresh envelope key must not duplicate the ledger row.

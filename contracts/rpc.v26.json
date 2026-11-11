@@ -6998,7 +6998,7 @@
               "basis": {
                 "type": "string",
                 "maxLength": 200,
-                "description": "One sentence naming what the award measured, built from the same facts as the number."
+                "description": "The reason the award paid what it paid, built from the same facts as the number. The points are returned separately; this sentence does not repeat them."
               },
               "basis_components": {
                 "type": "object",

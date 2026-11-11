@@ -66,13 +66,14 @@ class XpBasisTest(unittest.TestCase):
         text = engagement.xp_basis("procedure", "pass", "cold")
         self.assertIn("procedure", text)
         self.assertIn("without help", text)
-        self.assertIn(str(engagement.xp_for_evidence("procedure", "pass", "cold")), text)
+        # The reason never repeats the number: the points are a separate field.
+        self.assertNotIn("XP", text)
 
     def test_a_hinted_basis_says_so_and_a_failure_says_there_is_no_xp(self) -> None:
         self.assertIn("with a hint", engagement.xp_basis("recall", "pass", "hinted"))
         self.assertIn("partial credit", engagement.xp_basis("recall", "partial", "cold"))
         self.assertEqual(
-            engagement.xp_basis("recall", "not_yet", "cold"), "no XP: the check did not pass"
+            engagement.xp_basis("recall", "not_yet", "cold"), "the check did not pass"
         )
 
 

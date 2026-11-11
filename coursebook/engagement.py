@@ -104,7 +104,7 @@ def xp_basis(target: str, verdict: str, evidence_class: str) -> str:
 
     points = xp_for_evidence(target, verdict, evidence_class)
     if points <= 0:
-        return "no XP: the check did not pass"
+        return "the check did not pass"
     shown = {
         "cold": "without help",
         "hinted": "with a hint",
@@ -115,7 +115,9 @@ def xp_basis(target: str, verdict: str, evidence_class: str) -> str:
     }.get(str(evidence_class), str(evidence_class))
     if verdict == "partial":
         shown += ", partial credit"
-    return f"{points} XP: {target} check {shown}"
+    # The reason only. The points are a separate field, so a surface composes the two and no
+    # sentence can disagree with the number beside it.
+    return f"{target} check {shown}"
 
 #: Cosmetic level width. A level is a label, never a gate: nothing in the course reads this.
 XP_PER_LEVEL = 100
