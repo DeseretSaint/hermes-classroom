@@ -63,24 +63,20 @@ STATE_DECK_ROWS = (
 BANNED = ("xp", "streak", "★", "☆", "rating", "review_count", "%", "proofs", "learner_count")
 
 #: Test-only export block appended to the *staged copy* of `desktop/plugin.js`. CP-024 owns
-#: `desktop/src/90-course.js` only; the module export seam belongs to CP-040's step 2. Importing a
-#: name that the module does not define fails at module evaluation, so this shim cannot hide a
-#: missing symbol — it only makes the card's own names reachable without editing `99-tutor.js`.
+#: `desktop/src/90-course.js` only. **CP-040's seam now exports the course-home names itself**, so
+#: re-exporting them here is a `SyntaxError: Duplicate export` at module evaluation (which is what
+#: this shim used to do after the union). Only a name the module does *not* export may be added;
+#: importing a name the module does not define still fails at evaluation, so the shim cannot hide a
+#: missing symbol.
 EXPORT_SHIM = """
 
 // --- CP-024 test export shim (staged copy only; the repo module is not edited) ---
+// CP-040 moved CourseHomeV3, CourseRouteList, CourseRouteMapNode, CB3_COURSE_COPY, cb3CourseNodes,
+// cb3CourseRoutePlan, cb3CoursePlateAnchors, cb3CourseHeroPlate, cb3CourseWorldPosture and
+// cb3CourseEvidenceLine into the module's single export block. `CourseDetail` is the one name the
+// composite screen mounts that the seam does not export, so it is the only one staged here.
 export {
-  CourseHomeV3,
-  CourseDetail,
-  CourseRouteList,
-  CourseRouteMapNode,
-  CB3_COURSE_COPY,
-  cb3CourseNodes,
-  cb3CourseRoutePlan,
-  cb3CoursePlateAnchors,
-  cb3CourseHeroPlate,
-  cb3CourseWorldPosture,
-  cb3CourseEvidenceLine
+  CourseDetail
 };
 """
 

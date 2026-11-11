@@ -4,7 +4,8 @@
 Card: CP-040 (t_5403e4a1)     Branch: wt/cp-040-seam
 Owner: harbor                  Reviewer: atlas
 Union head: 0a2c4c8 (six branches merged), seam commit b5b9002e, audit re-pin c86b46a8
-Module sha256: c52b864bb3bd43b3b4110cd2d9e59e24e4eec1aa1f4b731e22e555c71e744c02
+Module sha256: c52b864b…4c02 at the seam head (the pin the four stamped frames carry); the residual
+card t_7c255559 rebuilt the module for the three a11y fixes and regenerated the M4 pin (§4.1)
 Frames produced: 4 stamped cells + 1 stamped refusal (of the 7 destinations the card names)
 Freeze: nothing pushed, nothing published, no catalog entry touched
 ```
@@ -118,11 +119,22 @@ node scripts/cp-capture.mjs --name cp040-course-1049 --out docs/visual-review/cp
 
 | Gate | Result |
 |---|---|
-| `python3 -m unittest discover -s tests` | **Ran 3528 tests in 984.094s — FAILED (failures=24, errors=4, skipped=11)** on `8f5c4df2`. The failures are the v2 UI/accessibility gates the v3 wave replaced and never migrated (headings/landmarks/skip-link/wordmark/Home-title cases across the a11y, H-14x and home-hub modules) plus `test_lesson_skills` and `test_conversation_practice` errors and two `setUpClass` errors; they are not the seam's own tests, which are green (below) |
+| `python3 -m unittest discover -s tests` (at `8f5c4df2`) | **Ran 3528 tests in 984.094s — FAILED (failures=24, errors=4, skipped=11)**. The failures were the v2 UI/accessibility gates the v3 wave replaced and never migrated (headings/landmarks/skip-link/wordmark/Home-title cases across the a11y and home-hub modules) plus `test_lesson_skills` and `test_conversation_practice` errors and two `setUpClass` errors; they were not the seam's own tests. Committed as `full-suite-8f5c4df2.log`; migrated by t_7c255559 (§4.1) |
+| `python3 -m unittest discover -s tests` (after §4.1) | **Ran 3585 tests in 834.891s — OK (skipped=11)**. The 57 extra tests are the two loader-blocked modules now importing (`test_lesson_skills` 28, `test_conversation_practice` 22) and the two CP-024 `setUpClass` suites that the duplicate-export shim had aborted. Committed as `full-suite-t_7c255559.log` |
 | targeted seam suites | `test_plugin_build`, `test_cp_021_workshop_v3`, `test_cp_022_home_v3`, `test_cp_022_geometry`, `test_cp_023_classroom`, `test_cp_025a_homework_game_v3`, `test_cp_025b_v3_studio`, `test_desktop_h149_lesson_player`, `test_desktop_h178_field_stop`, `test_desktop_contracts`, `test_desktop_h151_action_type`, `test_desktop_h147_home_settings`, `test_desktop_field_quest`, `test_desktop_lesson_views`, `test_desktop_h174_empty_textbook`, `test_desktop_gm002_home`, `test_desktop_gm010_engagement_ui`, `test_desktop_tokens_v3`, `test_v3_scope`, `test_v3_primitives` → **278 OK** (67 s) |
-| `bash scripts/validate-plugin.sh` | **Release gate passed: 4/4** on `c86b46a8…` (4222 files) |
-| `python3 scripts/check-docs-truth.py --skip-tests` | **docs-truth: PASS** |
-| `python3 -m unittest tests.test_m4_visual_audit` | 14 OK, pin `c52b864b…` |
+| `bash scripts/validate-plugin.sh` | **Release gate passed: 4/4** on `c86b46a8…` (4222 files); re-run 4/4 `--worktree` after §4.1 (4233 files) |
+| `python3 scripts/check-docs-truth.py --skip-tests` | **docs-truth: PASS** (before and after §4.1) |
+| `python3 -m unittest tests.test_m4_visual_audit` | 14 OK, pin `c52b864b…` at the seam head; regenerated for §4.1 on the rebuilt module (15 claims PASS) |
+
+### 4.1 The residual the union left open (t_7c255559)
+
+The union's 28 red gates were migrated, not deleted; three were genuine v3 regressions and were fixed
+in `desktop/src/70-learning.js` (the classroom title was an `h1` under the shell's page-title `h1`,
+its `aside` had no name, and its reading column did not carry the marker the skip link follows). The
+per-assertion record with the v3 counterpart for each is
+`docs/concept-parity/GATE-MIGRATION.md` §4.2. The module was rebuilt and the M4 pin regenerated on
+the rebuilt module, so the four stamped frames in §3 still name the build they were captured from
+(`c52b864b…4c02`) and are not re-stamped.
 
 ## 5. What this packet does not claim
 

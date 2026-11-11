@@ -14,7 +14,10 @@ import unittest
 
 from coursebook import api, bindings, db, domain, generation, grading, practice, turn, validators
 
-from .kernel_support import KernelCase, criteria_with, request
+# ``discover -s tests`` imports this module top-level (no parent package), so the relative form
+# raises ImportError there and the suite counts a loader error as a failure. The package form is
+# used, as every other module in ``tests/`` does.
+from tests.kernel_support import KernelCase, criteria_with, request
 
 
 def practice_declaration(*, visible: bool = True, turns=(3, 5), angle: str = "language_production"):

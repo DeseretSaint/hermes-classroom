@@ -15788,8 +15788,12 @@ function ClassroomV3({
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.75rem' },
         children: [
-          jsx('h1', {
+          jsx('h2', {
             'data-cb3-classroom-title': '',
+            // CP-040 residual: the route shell prints the page title as the surface's only `h1`
+            // (`Course` for an open course); every region under it is an `h2`. The classroom's own
+            // title was an `h1`, so the section shipped two page titles and its heading order was
+            // 1, 1, 3. The type role is unchanged; only the level is corrected.
             style: {
               margin: 0,
               fontFamily: 'var(--cb3-font-display)',
@@ -15946,6 +15950,10 @@ function ClassroomV3({
 
   const aside = jsxs('aside', {
     'data-cb3-aside': '',
+    // A complementary landmark must carry a name (the v2 Field rail is "Section details"). The
+    // classroom's aside is the same region under the new composition: evidence, the next real stop
+    // and the tutor door.
+    'aria-label': 'Section details',
     style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
     children: [
       game
@@ -16034,6 +16042,11 @@ function ClassroomV3({
           jsx('div', { 'data-cb3-stepper-column': wide ? 'wide' : 'flow', style: { minWidth: 0 }, children: stepper }, 'stepper'),
           jsxs('div', {
             'data-cb3-reading': '',
+            // CP-040 residual: the shell's skip path lands on the reading column when the surface
+            // has one. This is that column under the v3 composition, so it carries the shared
+            // marker the skip link already looks for; without it the skip link fell back to `main`
+            // and a keyboard user had to tab past the stepper and the header to reach the lesson.
+            'data-cb-reading-column': '',
             style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
             children: [
               jsx(ClassroomScene, {

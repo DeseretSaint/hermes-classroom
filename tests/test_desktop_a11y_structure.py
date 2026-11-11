@@ -255,9 +255,18 @@ const clickText = async (selector, wanted) => {
   await flush(120)
 }
 
-// Back to the section index, then each course surface the tabs can reach. H-149 moved the exit
-// control into the player header (`Exit`), so the harness accepts either and proves the real one.
-await clickText('button', byText('button', 'Exit') ? 'Exit' : 'Back to the section index')
+// CP-040 — the section a path row opens is the v3 classroom when the learner's presentation mode is
+// Guided or Game (the v2 reader is mounted only in Textbook mode). Its exit is the `Back to
+// {course}` control the classroom renders first; the v2 reader keeps the player-header `Exit`
+// (H-149) and the section-index control. The harness takes whichever surface mounted and proves the
+// control that is actually there — it never assumes the v2 composition.
+const sectionExit =
+  document.querySelector('[data-cb-classroom] button') ||
+  byText('button', 'Exit') ||
+  byText('button', 'Back to the section index')
+if (!sectionExit) throw new Error('the section surface rendered no exit control')
+await act(async () => { sectionExit.click() })
+await flush(200)
 for (const tab of ['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']) {
   const control = byText('button', tab)
   if (!control) continue
@@ -267,9 +276,14 @@ for (const tab of ['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']) {
 }
 
 // The list mode and the create flow are destinations of the same route.
-// H-146: "All courses" inside Course Detail returns Home; the catalog is its own destination,
-// and it carries the search/manage controls and the New course action.
-await clickText('button', 'All courses')
+// H-146: "All courses" inside Course Detail returns Home; the catalog is its own destination, and
+// it carries the search/manage controls and the New course action. The v3 course home's own back is
+// "Back to Home", so the v2 control is clicked only when the mounted composition offers it.
+const allCourses = byText('button', 'All courses')
+if (allCourses) {
+  await act(async () => { allCourses.click() })
+  await flush(120)
+}
 await navTo('courses')
 surfaces.push(await snapshot('courses-list'))
 await clickText('button', 'New course')
