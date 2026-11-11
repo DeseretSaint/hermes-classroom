@@ -1,14 +1,14 @@
 # Credits and provenance — Coursebook launch film
 
 Every product pixel in the posted film, `coursebook-walkthrough.mp4`, renders shipped Coursebook code.
-Nothing is redrawn, mocked, or invented. The film was composed with `ffmpeg` from five source images;
-the build script is `captures/freeze/build-v2.sh`, and the narration track was muxed onto it afterwards
+Nothing is redrawn, mocked, or invented. The film was composed with `ffmpeg` from six source images;
+the build script is `captures/freeze/build-v4.sh`, and the narration track was muxed onto it afterwards
 (`QC.md` records the delivered file's measurements).
 
 Composition: `ffmpeg n9.0.2`, GPL build (`--enable-gpl --enable-libx264`), x264, on Omarchy 7.2.15.
 The film carries no third-party footage, no music and no stock imagery.
 
-## The posted take — five sources, two methods
+## The posted take — six sources, three methods
 
 | Beat | Source | Module | Method |
 | --- | --- | --- | --- |
@@ -17,6 +17,7 @@ The film carries no third-party footage, no music and no stock imagery.
 | 3 Course page | `captures/freeze/captures-src/course-home-772-light.png` | `98400108` | real window capture |
 | 4 Lesson | `captures/freeze/captures-src/04-lesson-top.png` | `98400108` | real window capture, no stamp |
 | 5 Typed check | `captures/freeze/captures-src/07-answer.png` | `98400108` | real window capture, no stamp |
+| 6 Parent mode | `captures/freeze/captures-src/parent-guide.png` | current product output | an A4 parent guide the plugin prints, reproduced as a printout |
 
 The two Home-side beats are **not screenshots of a running Desktop.** They were rendered from checkout
 `fc6ec7b7` at module `71d940ce` because the plugin installed on the capture host was stale module
@@ -113,11 +114,11 @@ release of Arial.
 **No music.** There is no bed, no sound effect and no stock audio, so there is no third-party track
 licence to carry.
 
-The posted film does carry a **narration track**: AAC LC, 48 kHz, stereo, 43.600000 s against the
-51.000000 s picture, integrated −14.90 LUFS and true peak −4.45 dBTP (`QC.md` pastes the commands and
-outputs). The track starts at 3.64 s and ends at 43.02 s, so it sits inside the picture and leaves the
-title card and end card clear. It is an optional aid, not the carrier of the message: every beat is
-written on screen and the film is reviewed with sound off.
+The posted film does carry a **narration track**: AAC LC, 48 kHz, stereo, 50.700000 s against the
+51.000000 s picture, integrated **−15.12 LUFS** and true peak −4.48 dBTP (`QC.md` pastes the commands and
+outputs; the loudness figure misses the plan's −15.0 floor and is recorded there as a fail). The track
+starts at 3.36 s, so the title card is clear. It is an optional aid, not the carrier of the message:
+every beat is written on screen and the film is reviewed with sound off.
 
 The narration is synthesised speech. `docs/launch/QC.md` at `61771289` records it as synthesised with
 OpenAI TTS, slowed to 0.88 and delayed 3.6 s; the synthesis step is not in this repository, and no human
