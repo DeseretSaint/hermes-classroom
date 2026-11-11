@@ -71,6 +71,23 @@ Rerun: `docs/visual-review/cp-024/capture.sh` (no argument = all 13; each cell i
 Every cell is `capture.reloaded: false` on a window restarted on this module, so the stamp names the
 module the window evaluated.
 
+**Rig left live for the reviewer** (disposable state, not the operator's): state
+`~/.hermes/coursebook-test-cp024-r2` (`home/`, `userdata/`), backend `hermes serve --isolated` on
+`127.0.0.1:44427` (token `cp024-test-token`), window CDP `127.0.0.1:9361` (dev Electron, class
+`hermes`, installed module = checkout = `6aaa9c39…b3c0`). Rerun with:
+
+```bash
+COURSEBOOK_TEST_STATE=$HOME/.hermes/coursebook-test-cp024-r2 \
+CB013_CDP_PORT=9361 CB013_BACKEND_URL=http://127.0.0.1:44427 \
+  docs/visual-review/cp-024/capture.sh
+```
+
+Teardown: `scripts/cb013-live-window.sh --stop` and `scripts/cb013-live-backend.sh --stop` with
+`COURSEBOOK_TEST_STATE`/`COURSEBOOK_TEST_HOME` pointing at that state. The older
+`coursebook-test-cp024` state was taken over by another profile's Desktop run (its installed module
+became `6b9d0818…` at 17:22), so this card moved to a fresh copy of the same home rather than
+fighting it for the window.
+
 ## Map mode: NOT live in this tree — a contract gap, not a render bug
 
 The card asks for nodes on anchors "stored as normalised coordinates in the plate manifest". No
@@ -107,7 +124,7 @@ Results — full detail in `docs/visual-review/cp-024/VISUAL-GATE.md`:
 - **pixel diff vs baseline**: not measurable on this rig — the stored baseline is 1101 × 1336 and
   this window renders 1517 × 1891 (`ratio 1.0`, reason `size 1101x1336 -> 1517x1891`), so the diff
   is a geometry mismatch, not content drift. Recorded as such, not as a pass.
-- **similarity vs the approved reference** (`map.png`, 1344 × 768): **0.6829** (RMSE 0.317132) on
+- **similarity vs the approved reference** (`map.png`, 1344 × 768): **0.6830** (RMSE 0.316998) on
   the 1049-light frame, scaled to equal height. The reference is landscape concept art and the
   frame is a portrait route crop, so this is a composition/material comparison, not parity.
 - **Other destinations** (Courses, Workshop, Parent Studio) show pre-existing serious axe findings

@@ -44,8 +44,8 @@ portrait route crop.
 ```
 render:    course-home--1049--light--100--default.png (810x900 after equal-height scaling)
 reference: docs/concept-parity/refs/map.png (1575x900 after equal-height scaling)
-rmse:      0.317132
-similarity: 0.6829
+rmse:      0.316998
+similarity: 0.6830
 sheet:     docs/visual-review/cp-024/compare/course-home-1049-light-sheet.png
 diff:      docs/visual-review/cp-024/compare/course-home-1049-light-diff.png
 ```

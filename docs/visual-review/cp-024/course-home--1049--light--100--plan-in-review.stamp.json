@@ -3,7 +3,7 @@
   "tool": "scripts/cp-capture.mjs",
   "mode": "live",
   "name": "course-home--1049--light--100--plan-in-review",
-  "captured_at": "2026-11-10T23:41:37.434Z",
+  "captured_at": "2026-11-11T00:45:41.432Z",
   "ok": true,
   "gates": {
     "plugin_sha_match": true,
@@ -20,12 +20,12 @@
   "plugin": {
     "expected_sha256": "6aaa9c3909bd75a8791347ac9f5f53c5b619c20aecf16b6f19421384c846b3c0",
     "window_sha256": "6aaa9c3909bd75a8791347ac9f5f53c5b619c20aecf16b6f19421384c846b3c0",
-    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp024/home/desktop-plugins/coursebook/plugin.js",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-cp024-r2/home/desktop-plugins/coursebook/plugin.js",
     "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_41d66170/desktop/plugin.js",
     "bytes": 2306757
   },
   "backend": {
-    "url": "http://127.0.0.1:44417",
+    "url": "http://127.0.0.1:44427",
     "wire_contract": "cb.rpc",
     "wire_version": 25,
     "contract_methods": 93,
@@ -39,7 +39,7 @@
     "destination": "courses",
     "width": 1049,
     "height": 1166,
-    "window_width": 1309,
+    "window_width": 1077,
     "window_height": 1220,
     "theme": "light",
     "text_scale_root_px": "16px",
@@ -86,7 +86,7 @@
     "v3_textures": "ready",
     "style_sheet_count": 19,
     "css_rule_count": 1629,
-    "host_slots": 266,
+    "host_slots": 34,
     "host_shell": true,
     "heading_font_family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
     "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
@@ -111,7 +111,7 @@
     "content_width": 1049,
     "content_height": 1166,
     "content_rect": {
-      "x": 260,
+      "x": 28,
       "y": 34,
       "width": 1049,
       "height": 1166
@@ -179,10 +179,10 @@
   "appearance": null,
   "scroll": null,
   "zoom": {
-    "original_percent": 53,
+    "original_percent": 100,
     "capture_percent": 100,
     "bridge_available": true,
-    "restored_percent": 53
+    "restored_percent": 100
   },
   "emulated_media": null,
   "console": {
@@ -233,11 +233,11 @@
   },
   "capture": {
     "file": "course-home--1049--light--100--plan-in-review.png",
-    "sha256": "180f6d39722c94890f30b979faff7e2d9f7200492fff926178d5430306f1c4de",
-    "bytes": 846666,
+    "sha256": "179a46128a9a80b13cee051397b65593ab2fb6973accbdc8d957d2d78e3dba27",
+    "bytes": 838270,
     "crop_mode": "route",
     "clip": {
-      "x": 260,
+      "x": 28,
       "y": 34,
       "width": 1049,
       "height": 1166
