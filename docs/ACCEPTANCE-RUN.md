@@ -121,6 +121,19 @@ only in the local worktree `wt/vq009-capture-door`; it has now been **pushed to 
 
 
 
+## Current rig state (after this report's measurements)
+
+The rig was moved onto the branch tree so that both halves match and the code is on GitHub:
+
+| Half | Now |
+|---|---|
+| window module | `8f10ae0f…a1a4`, reproducible from `4efebd14` (`build_plugin.py --check` matched) |
+| backend `plugin_root` | `/tmp/cb-wt-4efebd14` (branch tree), `cb.rpc` v26, `127.0.0.1:44219`, pid restarted |
+| installs | all three plugin paths hold `8f10ae0f…a1a4` |
+
+The frames and film above were captured **earlier**, on `98400108` (`172b61aa` + `82a0866a`) with the
+backend on that same tree. Both are on GitHub; the film names the module it came from in its end card.
+
 ## Scenario results
 
 | # | Scenario | Result | Observable |

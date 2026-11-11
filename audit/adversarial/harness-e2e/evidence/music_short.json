@@ -598,7 +598,7 @@
               {
                 "id": "c1",
                 "met": false,
-                "observed": "does not match an accepted answer"
+                "observed": "Your answer does not match an accepted answer."
               }
             ],
             "evidence_class": "cold",
