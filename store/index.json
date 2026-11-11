@@ -1,5 +1,5 @@
 {
-  "pack_count": 3,
+  "pack_count": 4,
   "packs": [
     {
       "archive_sha256": null,
@@ -76,6 +76,30 @@
       "redistribution": "allowed",
       "subtitle": "Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
       "title": "Reading a pack before you install it"
+    },
+    {
+      "archive_sha256": "sha256:a176162f036dd7c381ad4b065689bca1c3b39ca884c086ebf0d6f03a3d2d9d54",
+      "content_hash": "sha256:37d2d5026d33c02ce3c55047183102903afbd1a2aacfd1122ac74e741caefb47",
+      "contributors": [
+        {
+          "name": "Course author",
+          "role": "author"
+        }
+      ],
+      "level_label": null,
+      "license": "all-rights-reserved",
+      "locale": "en-US",
+      "minimum_coursebook_version": "0.1.0",
+      "mode": "game",
+      "objectives": 2,
+      "origin": "community",
+      "pack_id": "authored-crs-55cae4a7e71042b6a52c1acaf818a595",
+      "pack_version": "1.0.0",
+      "path": "store/packs/authored-crs-55cae4a7e71042b6a52c1acaf818a595.zip",
+      "recipe": "committed",
+      "redistribution": "local_only",
+      "subtitle": "",
+      "title": "Braising at home"
     }
   ],
   "schema": 1
