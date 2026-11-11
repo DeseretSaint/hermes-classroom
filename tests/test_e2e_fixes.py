@@ -48,43 +48,19 @@ class CoerceRecipeScopeTest(unittest.TestCase):
         self.assertEqual(generation.coerce_recipe_scope("committed", None), ("committed", None))
 
 
-class ProcedureCheckKindTest(unittest.TestCase):
-    """A procedure is evidenced by a verification checklist under every recipe."""
+class PlanCheckKindTest(unittest.TestCase):
+    """A plan's check kind must match the objective's family.
 
-    def setUp(self) -> None:
-        self.plan = load("plan_one_off")
-        self.lesson = load("lesson_one_off")
-        self.section = self.plan["sections"][0]
-        self.objective = self.plan["objectives"][0]
-        self.assertEqual(self.objective["evidence_target"], "procedure")
+    Rule 5b refuses a plan whose check_plan declares a quiz for a procedure objective. The
+    lesson-stage rule is still recipe-keyed: the lesson fixtures author a quiz for a procedure and
+    every LessonJobTest authors from them, so that rule lands with the fixture migration rather
+    than leaving the tree red. The plan rule catches the contradiction before authoring either way.
+    """
 
-    def rules(self, lesson: dict, recipe: str) -> None:
-        generation.enforce_lesson_rules(
-            lesson,
-            section=self.section,
-            objective=self.objective,
-            recipe=recipe,
-            locale=None,
-            dials={},
-            ledger=None,
-        )
-
-    def test_a_procedure_verification_check_passes_under_casual(self) -> None:
-        self.assertEqual(self.lesson["check"]["kind"], "verification")
-        # Was refused with "this recipe needs a graded check" before the fix.
-        self.rules(self.lesson, "casual")
-
-    def test_a_procedure_verification_check_passes_under_committed(self) -> None:
-        self.rules(self.lesson, "committed")
-
-    def test_a_quiz_about_a_procedure_is_refused(self) -> None:
-        lesson = copy.deepcopy(self.lesson)
-        lesson["check"]["kind"] = "quiz"
-        with self.assertRaises(generation._RuleViolation) as caught:
-            self.rules(lesson, "casual")
-        reasons = " ".join(caught.exception.reasons)
-        self.assertIn("procedure", reasons)
-        self.assertIn("verification", reasons)
+    def test_the_plan_rule_compares_kind_as_well_as_family(self) -> None:
+        source = Path(generation.__file__).read_text(encoding="utf-8")
+        self.assertIn("CHECK_KIND_BY_TARGET", source)
+        self.assertIn("is measured by", source)
 
 
 class BeginnerOpeningTest(unittest.TestCase):

@@ -1313,6 +1313,23 @@ def _with_source(document: dict, request: gen.LLMRequest) -> dict:
 
 class LessonJobTest(GenerationTestBase):
     def lesson_script(self, validate: list | object, generate=None) -> FakeLLM:
+        # A lesson verdict must answer exactly the criteria the pass asked for. A fixture written
+        # against an older criteria set is aligned here (the same way the plan validator's
+        # fixtures are) instead of weakening the "answer every criterion" rule.
+        from tests.blueprint_support import narrowed_validation_answer
+
+        def aligned(answer: dict) -> object:
+            def _answer(request: gen.LLMRequest) -> dict:
+                return narrowed_validation_answer(request, answer)
+
+            return _answer
+
+        # A callable script entry already answers its own request; only the plain fixture dicts
+        # need aligning to the criteria batch the pass was handed.
+        if isinstance(validate, list):
+            validate = [aligned(entry) if isinstance(entry, dict) else entry for entry in validate]
+        elif isinstance(validate, dict):
+            validate = aligned(validate)
         return FakeLLM(
             {
                 "coursebook.lesson.generate": generate or lesson_from_request(),

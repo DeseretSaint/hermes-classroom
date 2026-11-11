@@ -105,3 +105,25 @@ at auto repair.
 - `dogfood` and `requesting-code-review` for the finding shape and the adversarial stance.
 - `coursebook-course-generation` for the generation contract; `coursebook-visual-production` for the surface rules.
 - Repository instruments: `contracts/rpc.v26.json` enumeration, `scripts/validate_plugin.sh`, `tests/adversarial/attack_state.py`, `scripts/build_plugin.py --check`.
+
+## Fix status (first pass)
+
+Landed on `wt/e2e-fixes`:
+
+- CREATE-1: `coerce_recipe_scope` in generation and domain, mirrored in the create form. A one-off
+  brief now follows its size instead of being refused on every attempt.
+- WIRE-6: the classroom resolver reads `world.assets` (it read `kit.plates`, which the backend never
+  serves) and falls back to the world's own hero.
+- WIRE-1: the syllabus primary no longer requires the review that only the primary can record, and
+  the empty decision set the backend accepts is sent.
+- GEN-3 (beginner half): plan rule 1b refuses a plan whose first objective is a procedure or a
+  transfer when the learner declared none/beginner/novice/L0/A1.
+
+Partly landed:
+
+- GEN-7: the plan rule compares check kind against the objective's family, so a contradictory plan
+  is refused before authoring. The lesson-stage rule is still recipe-keyed: the lesson fixtures
+  author a quiz for a procedure objective and every `LessonJobTest` authors from them, so changing
+  the lesson rule alone turns 7 tests red. It lands with the fixture migration, in one commit.
+
+Not started: GEN-1, GEN-5, GEN-6, CREATE-2, CREATE-4, CREATE-6, MEDIA-1, MEDIA-3, WIRE-8, WIRE-9.

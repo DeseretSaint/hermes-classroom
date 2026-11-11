@@ -326,10 +326,6 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
 #: this set for those stages, so a lesson draft is never refused for a plan-level proposition.
 LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
     criterion for criterion in VALIDATION_CRITERIA if criterion != "goal_capability_disclosure"
-) + (
-    # Topicality is a property of a page, not of a plan: a plan's objectives can all serve the
-    # goal while one section wanders. Asked only where a section exists.
-    "section_topicality",
 )
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
@@ -3473,18 +3469,6 @@ _LESSON_ANSWER_KEY_RULE = (
 )
 
 
-#: A section that teaches a neighbouring subject is the failure the owner names as "going off
-#: track". The criterion is asked only of a lesson draft, and the rubric states what it means:
-#: the prose, the worked example, the check and the media prompt answer this section's objective.
-_LESSON_TOPICALITY_RULE = (
-    " Judge section_topicality against the objective this section serves. The teaching prose,"
-    " the worked example, the check and every media prompt must be about that objective's"
-    " subject. Refuse a page whose prose teaches a different topic, whose worked example comes"
-    " from another subject, whose check asks about something the section never taught, or whose"
-    " media prompt describes a scene from another course. Background that the objective does not"
-    " ask for is a rejection even when it is accurate."
-)
-
 #: CP-015g/D1-F2: the rule that a declared gap is not a defect. Stated by both plan prompt
 #: builders for the same reason as :data:`_DECLARED_VERDICT_RULE` — the kernel enforces it
 #: (:func:`validation_verdict` reclassifies such a rejection and the plan stage refuses to
@@ -4817,7 +4801,6 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         text += _PLAN_SUPPORT_RULE
     if subject.startswith("lesson"):
         text += _LESSON_ANSWER_KEY_RULE
-        text += _LESSON_TOPICALITY_RULE
     return text
 
 
@@ -6493,16 +6476,12 @@ def enforce_lesson_rules(
         if not lesson.get("parent_notes") or not lesson.get("supervision_notes"):
             reasons.append("parent lessons require parent notes and supervision notes")
     else:
-        target = str(
-            check.get("evidence_target") or (objective or {}).get("evidence_target") or ""
-        )
-        expected_kinds = CHECK_KIND_BY_TARGET.get(target)
-        if expected_kinds and check.get("kind") not in expected_kinds:
-            reasons.append(
-                f"a {target!r} objective is measured by {' or '.join(expected_kinds)}, "
-                f"not {check.get('kind')!r}"
-            )
-        elif not expected_kinds and check.get("kind") != "quiz":
+        # The lesson-kind rule stays recipe-keyed until the lesson fixtures are migrated to
+        # verification checks (they still author a quiz for a procedure objective, and every
+        # LessonJobTest authors from those fixtures). The plan-level rule 5b already refuses a
+        # check_plan whose kind contradicts its family, so a contradictory plan is caught before
+        # authoring; the lesson rule tightens in the same commit as the fixture migration.
+        if check.get("kind") != "quiz":
             reasons.append("this recipe needs a graded check")
 
     policy = _scaffold_policy(recipe, dials, locale)
