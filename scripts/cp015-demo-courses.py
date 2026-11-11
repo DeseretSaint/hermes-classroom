@@ -541,10 +541,18 @@ def render_lesson(slug: str, flow: dict, *, after_world: bool = False) -> dict:
         "lesson.page",
         {"enrollment_id": flow["enrollment_id"], "objective_id": first["id"]},
     )
-    blocks = page.get("blocks") or page.get("segments") or []
+    # `lesson.page` serves an authored page as `document.blocks` (the learner's textbook) and
+    # materialises media as `segments`; a run with no chat turns has zero segments but a complete
+    # document. Count both, and keep the state from whichever store answered.
+    document = page.get("document") or {}
+    blocks = page.get("blocks") or page.get("segments") or document.get("blocks") or []
     suffix = "_after_world" if after_world else ""
     flow[f"lesson_run_id{suffix}"] = begun.get("lesson_run_id")
-    flow[f"lesson_page_state{suffix}"] = page.get("state") or (page.get("page") or {}).get("state")
+    flow[f"lesson_page_state{suffix}"] = (
+        page.get("state") or document.get("state") or (page.get("page") or {}).get("state")
+    )
+    flow[f"lesson_page_document{suffix}"] = document.get("content_hash")
+    flow[f"lesson_page_check{suffix}"] = document.get("check_id") or page.get("check")
     flow[f"lesson_page_blocks{suffix}"] = len(blocks)
     flow[f"lesson_page_media{suffix}"] = len(page.get("media") or [])
     flow[f"lesson_check{suffix}"] = bool(page.get("check"))
