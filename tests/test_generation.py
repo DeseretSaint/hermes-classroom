@@ -297,6 +297,53 @@ def validation_from_fixture(name: str = "validation_pass"):
 
 
 
+def check_for_objective(lesson: dict, objective: dict) -> dict:
+    """Author the check shape the objective's evidence target can honestly be measured by.
+
+    GEN-7: the lesson rule makes ``check.kind`` follow the evidence target instead of the
+    recipe, so a fixture authored as a selection quiz cannot stand in for a ``procedure``, a
+    ``production`` or a ``transfer``. The migration is a real verification checklist — kind and
+    stimulus format are ``verification``, the items carry ``id``/``label`` and are copied from
+    the objective's own declared evidence criteria — not a quiz whose ``kind`` was renamed. The
+    fixture's recorded answer key stays as the reference (it is the recorded model response the
+    leak gates scan against), so this only changes the evidence shape.
+    """
+
+    check = lesson["check"]
+    target = str(objective.get("evidence_target") or "")
+    if not target:
+        return lesson
+    check["evidence_target"] = target
+    permitted = gen.CHECK_KIND_BY_TARGET.get(target) or ()
+    # Only a quiz fixture is migrated: a parent observation check belongs to its recipe's own
+    # rule (parent delivery is always an observation) and is never rewritten here.
+    if "quiz" in permitted or str(check.get("kind") or "") != "quiz":
+        return lesson
+    labels = [
+        str(criterion).strip()
+        for criterion in objective.get("evidence_criteria") or []
+        if str(criterion).strip()
+    ]
+    title = str(objective.get("title") or "").strip().rstrip(".")
+    if not labels:
+        labels = [f"{title or 'the objective'} demonstrated"]
+    check["kind"] = "verification"
+    check["stimulus"] = {
+        "prompt": f"Tick each step you completed for: {title or 'this objective'}.",
+        "format": "verification",
+        "choices": [],
+        "items": [
+            {"id": f"item_{index}", "label": label}
+            for index, label in enumerate(labels, start=1)
+        ],
+    }
+    check["learner_instructions"] = (
+        "Tick each item only after you have done it. This is a self-report of what you did, "
+        "never an independently verified pass."
+    )
+    return lesson
+
+
 def lesson_from_request(name: str = "lesson_ja"):
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
         payload = json.loads(request.input_text)
@@ -304,8 +351,7 @@ def lesson_from_request(name: str = "lesson_ja"):
         objective = payload.get("objective") or {}
         lesson = lesson_fixture(name, source_ids_from(request))
         lesson["section_title"] = section.get("title") or lesson["section_title"]
-        if objective.get("evidence_target"):
-            lesson["check"]["evidence_target"] = objective["evidence_target"]
+        check_for_objective(lesson, objective)
         return response(lesson, model="fake-author")
 
     return build
@@ -715,6 +761,58 @@ class ResearchTest(GenerationTestBase):
 # ── Plan job ───────────────────────────────────────────────────────────────
 
 
+class UnsourcedPlanIsNotIndependentTest(GenerationTestBase):
+    """GEN-1: independence says who checked; grounding says what it was checked against."""
+
+    def _run(self, source_ids: bool) -> dict:
+        from tests.blueprint_support import narrowed_validation_answer
+
+        def author(request: gen.LLMRequest) -> gen.LLMResponse:
+            document = (
+                plan_fixture("plan_ja", source_ids_from(request)) if source_ids
+                else plan_fixture("plan_ja", ())
+            )
+            return response(document, model="author-model")
+
+        def judge(request: gen.LLMRequest) -> gen.LLMResponse:
+            answer = fixture("validation_pass")
+            if not source_ids:
+                # The plan cites nothing, so no claim can be linked to the ledger: the only
+                # honest verdict per claim is `unverified`.
+                answer["claim_verdicts"] = []
+            return response(narrowed_validation_answer(request, answer), model="judge-model")
+
+        return gen.run_plan_job(
+            self.connection,
+            plan_job(),
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": author,
+                    "coursebook.plan.validate": judge,
+                }
+            ),
+            FakeSearch(),
+            now=NOW,
+        )
+
+    def test_a_plan_with_no_sources_cannot_be_independently_validated(self) -> None:
+        result = self._run(source_ids=False)
+        # The identities differ, so the pass *is* independent...
+        self.assertEqual(result["validation"]["independence"], "independent")
+        # ...but with every objective `unverified` and no linked claim there is nothing it was
+        # checked against, so the honest label is the weaker one and the gap is recorded.
+        self.assertEqual(result["validation"]["outcome"], gen.OUTCOME_MODEL_ASSESSED)
+        self.assertTrue(result["validation"]["facts_unverified"])
+        self.assertEqual(result["status"], "needs_review")
+
+    def test_a_sourced_objective_keeps_the_independent_label(self) -> None:
+        result = self._run(source_ids=True)
+        self.assertEqual(result["validation"]["independence"], "independent")
+        self.assertEqual(result["validation"]["outcome"], gen.OUTCOME_INDEPENDENT)
+        self.assertFalse(result["validation"]["facts_unverified"])
+        self.assertEqual(result["status"], "draft")
+
+
 class PlanJobTest(GenerationTestBase):
     def test_fixture_goal_produces_a_validated_draft_plan_with_no_network(self) -> None:
         result = gen.run_plan_job(
@@ -960,7 +1058,11 @@ class PlanJobTest(GenerationTestBase):
             FakeSearch({"https://example.org/kitchen": {"title": "Kitchen safety", "content": "Keep hot water out of reach."}}),
             now=NOW,
         )
-        self.assertEqual(result["status"], "draft")
+        # The fixture cites nothing, so no objective is `sourced`: a pass over it is a proposal
+        # for review, never an independently validated draft (GEN-1).
+        self.assertEqual(result["status"], "needs_review")
+        self.assertEqual(result["validation"]["outcome"], "model_assessed")
+        self.assertTrue(result["validation"]["facts_unverified"])
         document = json.loads(self.rows("SELECT document_json FROM gen_plan_documents")[0]["document_json"])
         self.assertEqual(document["plan"]["delivery"], "parent_led")
         self.assertTrue(document["plan"]["parent"]["supervision_notes"])
@@ -1778,6 +1880,84 @@ class LessonJobTest(GenerationTestBase):
 def first_section_id(connection: sqlite3.Connection) -> str:
     row = connection.execute("SELECT id FROM gen_plan_sections ORDER BY ordinal LIMIT 1").fetchone()
     return str(row["id"])
+
+
+class LessonCheckKindFollowsEvidenceTargetTest(unittest.TestCase):
+    """GEN-7: the lesson check's kind follows the evidence target, not the recipe.
+
+    The else-branch used to require ``check.kind == "quiz"`` for every recipe except one_off and
+    parent, so a procedure objective could only be evidenced by a quiz *about* the procedure.
+    A quiz for a procedure/production/transfer target is now refused, and the fixture migration
+    authors a real verification checklist instead of renaming the kind.
+    """
+
+    def test_a_quiz_cannot_evidence_a_procedure_objective(self) -> None:
+        plan = fixture("plan_ja")
+        quiz = lesson_fixture("lesson_ja")
+        quiz["check"]["evidence_target"] = "procedure"
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_lesson_rules(
+                quiz,
+                section=plan["sections"][0],
+                objective={**plan["objectives"][0], "evidence_target": "procedure"},
+                recipe="committed",
+                locale=None,
+                dials={},
+            )
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("'procedure' check is measured by verification", reasons)
+        self.assertIn("'quiz'", reasons)
+
+    def test_a_real_verification_checklist_evidences_a_procedure_objective(self) -> None:
+        plan = fixture("plan_one_off")
+        gen.enforce_lesson_rules(
+            fixture("lesson_one_off"),
+            section=plan["sections"][0],
+            objective=plan["objectives"][0],
+            recipe="committed",
+            locale=None,
+            dials={},
+        )
+
+    def test_the_migrated_fixture_is_a_checklist_not_a_renamed_quiz(self) -> None:
+        plan = fixture("plan_ja")
+        lesson = check_for_objective(lesson_fixture("lesson_ja"), plan["objectives"][1])
+        check = lesson["check"]
+        self.assertEqual(check["kind"], "verification")
+        self.assertEqual(check["stimulus"]["format"], "verification")
+        self.assertEqual(check["stimulus"]["choices"], [])
+        self.assertEqual(
+            [item["label"] for item in check["stimulus"]["items"]],
+            plan["objectives"][1]["evidence_criteria"],
+        )
+        self.assertTrue(all(item["id"] for item in check["stimulus"]["items"]))
+        gen.enforce_lesson_rules(
+            lesson,
+            section=plan["sections"][1],
+            objective=plan["objectives"][1],
+            recipe="committed",
+            locale=None,
+            dials={},
+        )
+
+    def test_a_verification_check_is_refused_for_a_quiz_target(self) -> None:
+        plan = fixture("plan_ja")
+        checklist = fixture("lesson_one_off")
+        checklist["check"]["evidence_target"] = "discrimination"
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_lesson_rules(
+                checklist,
+                section=plan["sections"][0],
+                objective={**plan["objectives"][0], "evidence_target": "discrimination"},
+                recipe="committed",
+                locale=None,
+                dials={},
+            )
+        self.assertTrue(
+            any("'discrimination' check is measured by quiz" in reason
+                for reason in caught.exception.reasons),
+            caught.exception.reasons,
+        )
 
 
 class ProviderDeadlineTest(unittest.TestCase):

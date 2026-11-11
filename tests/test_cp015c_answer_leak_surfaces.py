@@ -38,6 +38,7 @@ from tests.test_generation import (
     FakeLLM,
     GenerationTestBase,
     NOW,
+    check_for_objective,
     lesson_fixture,
     response,
     source_ids_from,
@@ -202,6 +203,51 @@ class CheckPayloadLeakGateTest(unittest.TestCase):
         self.assertIn("learner_instructions", page["check"])
 
 
+class MediaSpecAnswerLeakTest(unittest.TestCase):
+    """MEDIA-3: the media spec is a generation prompt, not a place to park the answer.
+
+    ``media[].spec`` never reaches the learner page, so the narrative scan cannot see it; but the
+    artifact is generated *from* that text, so an answer named there is baked into the picture or
+    clip the learner receives.
+    """
+
+    @staticmethod
+    def media(spec: str, *, role: str = "illustration") -> dict:
+        return {
+            "kind": "visual",
+            "role": role,
+            "purpose": "Show the counter where the greeting is used.",
+            "spec": spec,
+            "text_equivalent": "A café counter with staff looking up as a learner enters.",
+        }
+
+    def test_a_media_spec_that_restates_the_key_is_refused(self) -> None:
+        lesson = lesson_fixture("lesson_ja")
+        lesson["media"] = [self.media(f"Draw the greeting {KEY} lettered above the shop door.")]
+        page = gen._build_learner_page(lesson, {"lesson_intent": "Greet"}, ())
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.assert_no_answer_leak(page, lesson)
+        self.assertTrue(
+            any("media spec" in reason for reason in caught.exception.reasons),
+            caught.exception.reasons,
+        )
+
+    def test_a_media_spec_that_describes_without_the_key_passes(self) -> None:
+        lesson = lesson_fixture("lesson_ja")
+        lesson["media"] = [
+            self.media("A learner entering a café, staff looking up; no lettering on the image.")
+        ]
+        page = gen._build_learner_page(lesson, {"lesson_intent": "Greet"}, ())
+        gen.assert_no_answer_leak(page, lesson)  # no exception
+
+    def test_narration_may_read_the_presenting_segment_it_is_a_voice_for(self) -> None:
+        # The narration is the audio of the model segment: presenting the target is its job.
+        lesson = taught_then_checked_lesson()
+        lesson["media"] = [self.media(f"Read the model segment aloud, including {KEY}.", role="narration")]
+        page = gen._build_learner_page(lesson, {"lesson_intent": "Greet"}, ())
+        gen.assert_no_answer_leak(page, lesson)  # no exception
+
+
 class LessonValidationPayloadSplitTest(unittest.TestCase):
     """The key is authoring material and travels in its own block, stated by validation-prompt.v9."""
 
@@ -274,10 +320,7 @@ class AuthoringPathParksTheRealShapesTest(GenerationTestBase):
                 )
                 lesson["sources"] = list(ids)
             lesson["section_title"] = (payload.get("section") or {}).get("title") or lesson["section_title"]
-            lesson["check"]["evidence_target"] = (
-                (payload.get("objective") or {}).get("evidence_target")
-                or lesson["check"]["evidence_target"]
-            )
+            check_for_objective(lesson, payload.get("objective") or {})
             mutate(lesson)
             return response(lesson, model="fake-author")
 

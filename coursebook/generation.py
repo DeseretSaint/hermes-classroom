@@ -3816,6 +3816,34 @@ def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
     return {**expectation, "scope": key}
 
 
+#: Review sections are the one section kind not owned by an objective: a unit may carry up to
+#: two on top of its owner sections, and a course carries at most eight
+#: (docs/COURSE-BLUEPRINT.md §1, the "review sections" column). They are not a scope dial — the
+#: objective and unit dials in ``SCOPE_EXPECTATIONS`` bound the owned work, and these two its
+#: review allowance.
+REVIEW_SECTIONS_PER_UNIT = 2
+REVIEW_SECTIONS_PER_COURSE = 8
+
+
+def _section_caps(expectation: Mapping[str, Any]) -> tuple[int, int]:
+    """(sections per unit, sections in the course) for a declared scope.
+
+    Derived from the scope's own objective and unit dials plus the blueprint's review allowance:
+    every objective owns exactly one section, so the owner sections are the objective cap, and a
+    review section sits on top of them (docs/COURSE-BLUEPRINT.md §1: none for ``single``, 0-2 in a
+    ``short`` course, 0-2 per unit with at most 8 in a ``full`` course). The documented bands work
+    out as single 1, short 8 and full 48.
+    """
+    per_high = int(expectation["unit_objectives"][1])
+    obj_high = int(expectation["blueprint_objectives"][1])
+    if str(expectation.get("scope") or "") == "single":
+        # One objective, one unit, one authored section; a single-session course has no review.
+        return per_high, obj_high
+    if str(expectation.get("scope") or "") == "short":
+        return per_high + REVIEW_SECTIONS_PER_UNIT, obj_high + REVIEW_SECTIONS_PER_UNIT
+    return per_high + REVIEW_SECTIONS_PER_UNIT, obj_high + REVIEW_SECTIONS_PER_COURSE
+
+
 def _domain_provenance(
     *, goal: str | None = None, subject_domain: str | None, locale: str | None
 ) -> dict[str, Any]:
@@ -4128,14 +4156,29 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
                 f"- image: {capability.image}; {required} visual item with role "
                 f"{image_roles[0]!r}. {image_reason}".rstrip()
             )
-    if not audio_roles:
-        lines.append(f"- audio: none. Emit no audio media item. {audio_reason}".rstrip())
-    else:
+    if audio_roles:
+        first_role = str(audio_roles[0])
+        extra_roles = [str(role) for role in audio_roles[1:]]
         required = "at least one" if capability.audio == "required" else "at most one optional"
-        lines.append(
-            f"- audio: {capability.audio}; {required} audio item with role {audio_roles[0]!r}. "
-            f"{audio_reason}".rstrip()
-        )
+        if extra_roles:
+            # The same shape as the image branch: the first role is the item the policy requires
+            # (or permits once), and every further role is an optional extra. Naming only
+            # ``audio_roles[0]`` told a lesson permitted narration plus a pronunciation clip
+            # about one of them, so the extra permission was dead code.
+            extras = ", ".join(repr(role) for role in extra_roles)
+            lines.append(
+                f"- audio: {capability.audio}; {required} audio item with role "
+                f"{first_role!r}, and at most one optional item with role {extras} "
+                f"(a reference recording beside the required audio, never a second text "
+                f"authority). {audio_reason}".rstrip()
+            )
+        else:
+            lines.append(
+                f"- audio: {capability.audio}; {required} audio item with role {first_role!r}. "
+                f"{audio_reason}".rstrip()
+            )
+    else:
+        lines.append(f"- audio: none. Emit no audio media item. {audio_reason}".rstrip())
     lines.append(
         "Any media item outside these permissions is rejected deterministically, and every item "
         "must also pass the media store: complete text equivalent, facts.rows for a schematic, "
@@ -5539,6 +5582,45 @@ def _enforce_plan_tail(
                 f"scope {expectation['scope']!r} caps the plan at {expectation['max_weeks']} "
                 f"week(s); the time estimate says {weeks} week(s)"
             )
+        # Scope cap on sections (GEN-5). Units, objectives and weeks were capped but sections
+        # were not, so a 'short' blueprint could carry 24 sections (three units at the schema's
+        # eight-lesson unit ceiling). A v2 blueprint carries the per-unit `target_lessons` the
+        # unit stage must author exactly; a v1 plan carries its sections directly and has no
+        # units, so its one-section-per-objective list is bounded by the v1 objective band.
+        if plan.get("units"):
+            per_unit_cap, total_cap = _section_caps(expectation)
+            per_unit_counts: dict[int, int] = {}
+            if sections:
+                # An authored section list is the authority once it exists.
+                for section in sections:
+                    unit_ref = int(section.get("unit_ref") or 0)
+                    per_unit_counts[unit_ref] = per_unit_counts.get(unit_ref, 0) + 1
+            else:
+                for unit in plan.get("units") or []:
+                    if not isinstance(unit, dict):
+                        continue
+                    per_unit_counts[int(unit.get("ordinal") or 0)] = int(
+                        unit.get("target_lessons") or 0
+                    )
+            for ordinal, count in sorted(per_unit_counts.items()):
+                if count > per_unit_cap:
+                    reasons.append(
+                        f"scope {expectation['scope']!r} caps a unit at {per_unit_cap} "
+                        f"section(s); unit {ordinal or '(unassigned)'} carries {count}"
+                    )
+            total = sum(per_unit_counts.values())
+            if total > total_cap:
+                reasons.append(
+                    f"scope {expectation['scope']!r} caps the plan at {total_cap} section(s); "
+                    f"it carries {total}"
+                )
+        elif sections:
+            section_cap = int(expectation["v1_objectives"][1])
+            if len(sections) > section_cap:
+                reasons.append(
+                    f"scope {expectation['scope']!r} caps the plan at {section_cap} section(s); "
+                    f"it carries {len(sections)}"
+                )
 
     # Provenance: never cite a source the ledger does not contain (AUDIT R7).
     ledger_ids = {source.source_id for source in ledger}
@@ -6489,13 +6571,25 @@ def enforce_lesson_rules(
         if not lesson.get("parent_notes") or not lesson.get("supervision_notes"):
             reasons.append("parent lessons require parent notes and supervision notes")
     else:
-        # The lesson-kind rule stays recipe-keyed until the lesson fixtures are migrated to
-        # verification checks (they still author a quiz for a procedure objective, and every
-        # LessonJobTest authors from those fixtures). The plan-level rule 5b already refuses a
-        # check_plan whose kind contradicts its family, so a contradictory plan is caught before
-        # authoring; the lesson rule tightens in the same commit as the fixture migration.
-        if check.get("kind") != "quiz":
-            reasons.append("this recipe needs a graded check")
+        # The check kind follows the evidence target, never the recipe: a procedure is a
+        # performance checklist, a transfer is a recorded attempt or an observation, and only
+        # recall/comprehension/discrimination are a quiz. Keying this on the recipe left every
+        # hands-on lesson un-authorable under casual/committed and let the author prove a
+        # procedure with a quiz about it. The plan-level rule 5b enforces the same map over
+        # ``check_plan``, so a contradictory plan is refused before authoring.
+        expected_kinds = CHECK_KIND_BY_TARGET.get(declared_target)
+        declared_kind = str(check.get("kind") or "")
+        if expected_kinds is None:
+            reasons.append(
+                f"the check declares evidence target {declared_target or 'none'!r}, which has no "
+                "check kind; a lesson check must measure one of "
+                f"{', '.join(sorted(CHECK_KIND_BY_TARGET))}"
+            )
+        elif declared_kind not in expected_kinds:
+            reasons.append(
+                f"a {declared_target!r} check is measured by {' or '.join(expected_kinds)}, "
+                f"not {declared_kind or 'no kind'!r}"
+            )
 
     policy = _scaffold_policy(recipe, dials, locale)
     try:
@@ -6634,13 +6728,32 @@ def _narrative_text(page: dict[str, Any]) -> str:
     return _normalize_answer("\n".join(parts))
 
 
+def _media_spec_text(page: Mapping[str, Any], lesson: Mapping[str, Any]) -> str:
+    """The authored media ``spec`` strings — the prompt an image or audio worker is handed.
+
+    The spec never reaches the learner page (``_build_learner_page`` drops it), so the narrative
+    scan cannot see it; but it is the text an artifact is generated *from*, and a spec that names
+    the checked answer bakes that answer into the picture or the clip. A narration spec is
+    excluded for the same reason its ``purpose``/``text_equivalent`` are: reading the model
+    segment aloud is presentation, not an announcement.
+    """
+    parts: list[str] = []
+    for item in list(page.get("media") or []) + list(lesson.get("media") or []):
+        if not isinstance(item, Mapping) or _is_presenting_media(item):
+            continue
+        parts.append(str(item.get("spec") or ""))
+    return _normalize_answer("\n".join(parts))
+
+
 def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     """A reference answer must not be *announced* on the non-presenting learner surfaces.
 
     The rule is not "the target string may never appear": a lesson has to be able to teach the
     item it checks. The model segment (and the narration that reads it) is presentation; every
     other learner surface is answer-adjacent and is scanned. See
-    ``docs/DECISION-TAUGHT-TARGET.md``.
+    ``docs/DECISION-TAUGHT-TARGET.md``. The authored media ``spec`` is scanned with the same
+    secrets: it is the generation prompt for an artifact the learner will see, so an answer in it
+    is a leak even though the page projection never carries the field.
     """
     narrative = _narrative_text(page)
     check = lesson.get("check") or {}
@@ -6654,6 +6767,14 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     leaked = [secret for secret in secrets if secret and _normalize_answer(secret) in narrative]
     if leaked:
         raise _RuleViolation(["learner-facing narrative contains the check reference answer or a keyed answer"])
+    specs = _media_spec_text(page, lesson)
+    leaked_specs = [secret for secret in secrets if secret and _normalize_answer(secret) in specs]
+    if leaked_specs:
+        raise _RuleViolation([
+            "media spec restates the check reference answer or a keyed answer: a spec is the "
+            "generation prompt for an artifact the learner sees, so it must describe the visual "
+            "or the clip without naming the graded answer"
+        ])
     rubric_terms = [str(item.get("description") or "") for item in check.get("rubric") or []]
     leaked_rubric = [term for term in rubric_terms if term and _normalize_answer(term) in narrative]
     if leaked_rubric:
@@ -7154,6 +7275,40 @@ def plan_declared_gaps(plan: Mapping[str, Any]) -> dict[str, str]:
     return gaps
 
 
+def _ledger_source_index(ledger: Sequence[SourceRecord]) -> dict[str, SourceRecord]:
+    return {str(source.source_id): source for source in ledger or ()}
+
+
+def grounded_validation(
+    *,
+    objectives: Sequence[Mapping[str, Any]] | None,
+    claim_verdicts: Sequence[Mapping[str, Any]],
+    ledger: Sequence[SourceRecord],
+) -> bool:
+    """Whether a passing pass has any grounding at all (GEN-1).
+
+    Independence is a claim about *who* checked the artifact; it says nothing about whether
+    there was anything to check against. A plan with zero sources whose every objective is
+    ``unverified`` could be stored ``independently_validated`` with ``facts_unverified: false``
+    because both halves read only the validator's own report. Grounding is either an objective
+    the plan itself marks ``sourced`` or a claim verdict whose support is ``supported`` and whose
+    source id plus verbatim quote resolve against the ledger that was actually fetched; neither
+    is a model's opinion of itself.
+    """
+
+    for objective in objectives or ():
+        if isinstance(objective, Mapping) and str(objective.get("support") or "") == "sourced":
+            return True
+    index = _ledger_source_index(ledger)
+    for entry in claim_verdicts or ():
+        if str(entry.get("support") or "") != "supported":
+            continue
+        source = index.get(str(entry.get("source_id") or ""))
+        if research_mod.claim_verdict_link_problem(dict(entry), source) is None:
+            return True
+    return False
+
+
 def validation_verdict(
     report: dict[str, Any],
     *,
@@ -7162,6 +7317,7 @@ def validation_verdict(
     independence: str = INDEPENDENCE_UNIDENTIFIED,
     criteria: Sequence[str] = VALIDATION_CRITERIA,
     declared_gaps: Mapping[str, str] | None = None,
+    objectives: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Turn a validator report into an outcome the pipeline can act on.
 
@@ -7179,6 +7335,15 @@ def validation_verdict(
     ``independence`` is the *observed* model identity comparison (see
     :func:`validation_independence`). A pass from the author's own model is stored as
     ``model_assessed`` and is never reported as independent validation.
+
+    ``objectives`` is the artifact's own claim-bearing rows, when the caller can supply them
+    (the plan stage does). An independent outcome then also needs grounding
+    (:func:`grounded_validation`): at least one objective marked ``sourced``, or a claim verdict
+    linked to the fetched ledger. Without it the outcome is the weaker honest label already used
+    for unverified plans, ``model_assessed``, and ``facts_unverified`` is true — a pass over zero
+    sources is not a fact-checked pass no matter whose model answered it. A caller that does not
+    assess grounding (an artifact with no objectives of its own) passes nothing and keeps the
+    research-status rule.
 
     The declared verdict is honoured, never recomputed into a pass: an artifact is not approvable
     because its criteria happened to read well when the validator said ``reject``. The one
@@ -7259,7 +7424,12 @@ def validation_verdict(
             "[provenance flagged: the cited provenance is not in the ledger] "
             + str(entry.get("reason") or "")
         )[:VALIDATION_REASON_MAX_CHARS]
-    facts_unverified = research_status == "unavailable"
+    facts_unverified = research_status == "unavailable" or (
+        objectives is not None
+        and not grounded_validation(
+            objectives=objectives, claim_verdicts=claim_verdicts, ledger=ledger
+        )
+    )
     # A cited source that contradicts the lesson is a rejection even when every rubric criterion
     # was met: the claim was checked against someone else's words and lost. Counting only the
     # declared verdict let a "pass" ride on top of a recorded contradiction.
@@ -9759,6 +9929,8 @@ def run_plan_job(
                 # gaps, not unsupported claims. Passing them here is what keeps a validator
                 # complaint about one out of the author's repair list.
                 declared_gaps=plan_declared_gaps(candidate),
+                # GEN-1: the plan's own support values are the grounding half of the outcome.
+                objectives=candidate.get("objectives") or [],
             )
             if verdict["verdict"] == "pass":
                 plan = candidate

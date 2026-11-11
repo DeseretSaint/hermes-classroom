@@ -46,6 +46,7 @@ def blueprint_plan(
     unit_rows: list[dict[str, Any]] = []
     objective_rows: list[dict[str, Any]] = []
     check_rows: list[dict[str, Any]] = []
+    target = "procedure" if recipe == "one_off" else "comprehension"
     ordinal = 1
     for unit_ordinal in range(1, units + 1):
         review_count = int(reviews[unit_ordinal - 1]) if unit_ordinal - 1 < len(reviews) else 0
@@ -64,7 +65,10 @@ def blueprint_plan(
                     "ordinal": ordinal,
                     "unit_ref": unit_ordinal,
                     "title": f"Objective {ordinal}: do the observable thing",
-                    "evidence_target": "comprehension",
+                    # A one-off brief is one verifiable task, and its check is a verification
+                    # checklist; the evidence target has to be the act itself, not a quiz about
+                    # it (the plan rule compares the two).
+                    "evidence_target": target,
                     "evidence_criteria": [
                         "Shows the behaviour in a fresh example without prompting"
                     ],
@@ -75,7 +79,7 @@ def blueprint_plan(
                 {
                     "objective_ref": ordinal,
                     "kind": check_kind,
-                    "evidence_target": "comprehension",
+                    "evidence_target": target,
                 }
             )
             ordinal += 1

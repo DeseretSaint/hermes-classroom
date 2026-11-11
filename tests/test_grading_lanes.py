@@ -32,6 +32,7 @@ from tests.kernel_support import KernelCase
 from tests.test_generation import (
     FakeLLM,
     FakeSearch,
+    check_for_objective,
     fixture,
     plan_from_fixture,
     plan_job,
@@ -51,8 +52,7 @@ def authored_lesson(name: str = "lesson_ja", mutate=None):
         objective = payload.get("objective") or {}
         lesson = fixture(name)
         lesson["section_title"] = section.get("title") or lesson["section_title"]
-        if objective.get("evidence_target"):
-            lesson["check"]["evidence_target"] = objective["evidence_target"]
+        check_for_objective(lesson, objective)
         if mutate is not None:
             mutate(lesson)
         return response(lesson, model="fake-author")

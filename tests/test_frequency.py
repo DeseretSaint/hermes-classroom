@@ -263,7 +263,11 @@ class PlanJobVocabularyTest(unittest.TestCase):
     def test_a_japanese_plan_takes_its_opening_vocabulary_in_rank_order(self) -> None:
         plan = japanese_plan({1: ["水", "これ"], 2: ["食べる", "私"], 3: ["行く"]})
         result = self.run_plan(plan, brief_with(load()))
-        self.assertEqual(result["status"], "draft")
+        # GEN-1: this fixture cites no fetched source, so the pass is model_assessed and the
+        # plan is parked for review; the vocabulary sequencing below is what this test owns.
+        self.assertEqual(result["status"], "needs_review")
+        self.assertEqual(result["validation"]["outcome"], gen.OUTCOME_MODEL_ASSESSED)
+        self.assertTrue(result["validation"]["facts_unverified"])
         vocabulary = result["vocabulary"]
         self.assertEqual(vocabulary["status"], "inventory")
         self.assertEqual(vocabulary["source_id"], "coursebook-fixture-ja-v1")

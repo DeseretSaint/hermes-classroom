@@ -194,7 +194,11 @@ class LearnerPlanFlowTest(KernelCase):
         finally:
             connection.close()
         self.assertEqual(result["course_id"], flow["course_id"])
-        self.assertEqual(result["status"], "draft")
+        # GEN-1: the fixture plan cites no source, so the pass cannot be independent — the
+        # document is authored and parked for review. It is still the course's one plan.
+        self.assertEqual(result["status"], "needs_review")
+        self.assertEqual(result["validation"]["outcome"], generation.OUTCOME_MODEL_ASSESSED)
+        self.assertTrue(result["validation"]["facts_unverified"])
         # H-190: the authored document lands on the plan id ``course.create`` already returned.
         # Generation must not mint a second plan beside the course's empty draft, because the
         # learner surface approves the id it was handed at creation.
@@ -206,6 +210,9 @@ class LearnerPlanFlowTest(KernelCase):
         )
         outline = self.ok("course.outline", {"enrollment_id": flow["enrollment_id"]})["result"]
         self.assertEqual(outline["plan"]["plan_id"], flow["draft_plan_id"])
+        # The review-row state is the approval lifecycle, not the generation verdict: the plan is
+        # still the course's one draft (approvable), and the honest provenance travels in
+        # `generation_state` on the stored document.
         self.assertEqual(outline["plan"]["state"], "draft")
         self.assertGreater(len(outline["objectives"]), 0)
         # The id the caller holds is approvable, and a read on it carries the authored

@@ -51,16 +51,34 @@ class CoerceRecipeScopeTest(unittest.TestCase):
 class PlanCheckKindTest(unittest.TestCase):
     """A plan's check kind must match the objective's family.
 
-    Rule 5b refuses a plan whose check_plan declares a quiz for a procedure objective. The
-    lesson-stage rule is still recipe-keyed: the lesson fixtures author a quiz for a procedure and
-    every LessonJobTest authors from them, so that rule lands with the fixture migration rather
-    than leaving the tree red. The plan rule catches the contradiction before authoring either way.
+    Rule 5b refuses a plan whose check_plan declares a quiz for a procedure objective, and the
+    lesson-stage rule now reads the same ``CHECK_KIND_BY_TARGET`` map: a lesson check's kind
+    follows the evidence target, so a procedure is a verification checklist, a transfer is a
+    recorded attempt or an observation, and only recall/comprehension/discrimination are a quiz.
+    The plan rule still catches the contradiction before authoring.
     """
 
     def test_the_plan_rule_compares_kind_as_well_as_family(self) -> None:
         source = Path(generation.__file__).read_text(encoding="utf-8")
         self.assertIn("CHECK_KIND_BY_TARGET", source)
         self.assertIn("is measured by", source)
+
+    def test_the_lesson_rule_reads_the_same_map(self) -> None:
+        lesson = load("lesson_ja")
+        lesson["check"]["evidence_target"] = "procedure"
+        with self.assertRaises(generation._RuleViolation) as caught:
+            generation.enforce_lesson_rules(
+                lesson,
+                section={},
+                objective={"evidence_target": "procedure"},
+                recipe="committed",
+                locale=None,
+                dials={},
+            )
+        self.assertTrue(
+            any("is measured by verification" in reason for reason in caught.exception.reasons),
+            caught.exception.reasons,
+        )
 
 
 class BeginnerOpeningTest(unittest.TestCase):

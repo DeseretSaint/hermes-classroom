@@ -184,7 +184,16 @@ MATRIX = {
 
 
 def check_kind(row: dict) -> str:
-    return {"one_off": "verification", "parent": "observation"}.get(row["recipe"], "quiz")
+    """The check kind the row's evidence target can honestly be measured by.
+
+    GEN-7: the kind follows the target, not the recipe — a procedure/production/transfer objective
+    is a verification checklist (a parent lesson stays an observation), and only the quiz family
+    is a quiz. The plan's check_plan and the lesson's check both read this one function.
+    """
+    if row["recipe"] == "parent":
+        return "observation"
+    permitted = gen.CHECK_KIND_BY_TARGET.get(str(row["target"])) or ("quiz",)
+    return "quiz" if "quiz" in permitted else permitted[0]
 
 
 def plan_document(row: dict) -> dict:

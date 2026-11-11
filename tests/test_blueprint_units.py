@@ -110,6 +110,49 @@ class PlanSchemaV2RulesTest(unittest.TestCase):
         self.assertIn("unit 1 cannot declare", reasons)
 
 
+class ScopeSectionCapTest(unittest.TestCase):
+    """GEN-5: scope caps sections the way it caps units, objectives and weeks.
+
+    The dials bounded units, objectives and weeks, but a unit's ``target_lessons`` was capped only
+    by the schema (8), so a 'short' plan could declare three units of eight lessons — 24 sections
+    — and pass the plan rules.
+    """
+
+    def test_a_short_plan_cannot_carry_24_sections(self) -> None:
+        plan = blueprint_plan(scope="short", units=3, objectives_per_unit=1, reviews=(7, 7, 7))
+        self.assertEqual([unit["target_lessons"] for unit in plan["units"]], [8, 8, 8])
+        with self.assertRaises(gen._RuleViolation) as caught:
+            _plan_rules(plan, scope="short")
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("caps the plan at 8 section(s)", reasons)
+        self.assertIn("it carries 24", reasons)
+
+    def test_a_short_plan_inside_the_section_cap_passes(self) -> None:
+        # Six owner sections (the short objective cap) plus one review section.
+        plan = blueprint_plan(scope="short", units=3, objectives_per_unit=2, reviews=(0, 0, 1))
+        self.assertEqual(sum(unit["target_lessons"] for unit in plan["units"]), 7)
+        _plan_rules(plan, scope="short")
+
+    def test_a_single_scope_unit_over_its_share_is_named(self) -> None:
+        plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1)
+        plan["units"][0]["target_lessons"] = 3  # inside the schema's 8, outside the scope
+        with self.assertRaises(gen._RuleViolation) as caught:
+            _plan_rules(plan, scope="single")
+        self.assertIn(
+            "caps a unit at 1 section(s)", " ".join(caught.exception.reasons)
+        )
+
+    def test_the_caps_are_derived_from_the_scope_dials(self) -> None:
+        caps = {
+            scope: gen._section_caps({**gen.SCOPE_EXPECTATIONS[scope], "scope": scope})
+            for scope in ("single", "short", "full")
+        }
+        # docs/COURSE-BLUEPRINT.md §1: single 1, short 3-8, full 12-48 authored sections.
+        self.assertEqual(caps["single"], (1, 1))
+        self.assertEqual(caps["short"], (8, 8))
+        self.assertEqual(caps["full"], (8, 48))
+
+
 class UnitStageCase(KernelCase):
     """A migrated profile database plus a seeded, approved blueprint plan."""
 

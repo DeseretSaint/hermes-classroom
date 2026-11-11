@@ -13,6 +13,7 @@ derivation, history source analysis, wiring brief and parent reading lesson
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
 from coursebook import generation as gen
 from coursebook import policy, rubrics
@@ -259,13 +260,20 @@ def request_for(row: dict) -> gen.LLMRequest:
 
 
 def lesson_for(row: dict) -> dict:
+    # GEN-7: the check kind follows the evidence target. A procedure, production or transfer
+    # objective is a verification checklist; a parent lesson is an observation; only the quiz
+    # family is a quiz.
+    if row["recipe"] == "parent":
+        kind, stimulus_format = "observation", "text"
+    elif "quiz" in (gen.CHECK_KIND_BY_TARGET.get(str(row["target"])) or ("quiz",)):
+        kind, stimulus_format = "quiz", "text"
+    else:
+        kind, stimulus_format = "verification", "verification"
     return lesson_body(
         profile=row["profile"],
         target=row["target"],
-        check_kind="verification"
-        if row["recipe"] == "one_off"
-        else ("observation" if row["recipe"] == "parent" else "quiz"),
-        stimulus_format="verification" if row["recipe"] == "one_off" else "text",
+        check_kind=kind,
+        stimulus_format=stimulus_format,
         scaffolds={"romaji": True, "furigana": True, "english_meaning": True}
         if row["locale"]
         else None,
@@ -350,6 +358,58 @@ class PromptPolicyTest(unittest.TestCase):
 
 
 # ── The validator rejects policy-inappropriate media ────────────────────────
+
+
+class AudioRolePromptTest(unittest.TestCase):
+    """A permitted audio set with more than one role names every role, as the image branch does.
+
+    ``permitted_audio_roles`` is the permission authority; the prompt may only describe what it
+    grants. Naming ``audio_roles[0]`` alone told a lesson permitted narration plus a pronunciation
+    clip about one of them, which made the second permission dead code.
+    """
+
+    def capability(self):
+        return gen.lesson_capability_plan(
+            recipe="committed",
+            section={
+                "section_id": "sec_audio",
+                "ordinal": 1,
+                "title": "Greeting",
+                "lesson_intent": "Listen to a shopkeeper greeting a customer, then say it aloud.",
+                "media_need": {
+                    "construct": "listen to and repeat the greeting aloud",
+                    "image": {"level": "none", "role": "none"},
+                    "audio": {"level": "required", "role": "narration"},
+                },
+                "objective_refs": [1],
+                "source_ids": [],
+            },
+            objective=objective("comprehension"),
+            locale="ja-JP",
+            dials={},
+        )
+
+    def audio_lines(self, capability) -> list[str]:
+        return [
+            line for line in gen._capability_prompt_lines(capability)
+            if line.startswith("- audio")
+        ]
+
+    def test_the_single_permitted_role_is_named_without_inventing_a_second(self) -> None:
+        lines = self.audio_lines(self.capability())
+        self.assertEqual(len(lines), 1)
+        self.assertIn("audio item with role 'narration'", lines[0])
+        self.assertNotIn("at most one optional item with role", lines[0])
+
+    def test_every_permitted_audio_role_is_named(self) -> None:
+        with mock.patch.object(
+            policy, "permitted_audio_roles",
+            return_value=("narration", "pronunciation_reference"),
+        ):
+            lines = self.audio_lines(self.capability())
+        self.assertEqual(len(lines), 1)
+        self.assertIn("at least one audio item with role 'narration'", lines[0])
+        self.assertIn("at most one optional item with role 'pronunciation_reference'", lines[0])
 
 
 class ValidatorMediaPolicyTest(unittest.TestCase):
