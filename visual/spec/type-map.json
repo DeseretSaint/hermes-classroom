@@ -1,0 +1,226 @@
+{
+  "schema": "cb.ui.type-map.v1",
+  "screen": "home",
+  "generated_by": "scripts/gen-ui-spec.py",
+  "source": {
+    "pack": {
+      "path": "docs/launch/UI-CONTEXT-PACK.generated.md",
+      "reference_path": "design/home-scene.html",
+      "reference_commit": "a07b99ea01c2c3f0080d966709f6c4abd6d73162",
+      "content_hash": "216c7998d4db4960"
+    },
+    "contract": {
+      "path": "contracts/cb.tokens.v3.json",
+      "version": 3
+    },
+    "route_width_px": 1344,
+    "cqi_px": 13.44,
+    "root_font_px": 16.0
+  },
+  "steps": {
+    "caption": {
+      "token": "caption",
+      "css": "0.75rem",
+      "px_at_1344": 12.0,
+      "line_height_token": "caption",
+      "line_height": 1.35
+    },
+    "meta": {
+      "token": "meta",
+      "css": "0.875rem",
+      "px_at_1344": 14.0,
+      "line_height_token": "meta",
+      "line_height": 1.4
+    },
+    "body": {
+      "token": "body",
+      "css": "1rem",
+      "px_at_1344": 16.0,
+      "line_height_token": "body",
+      "line_height": 1.5
+    },
+    "lead": {
+      "token": "lead",
+      "css": "1.25rem",
+      "px_at_1344": 20.0,
+      "line_height_token": "lead",
+      "line_height": 1.35
+    },
+    "heading": {
+      "token": "heading",
+      "css": "clamp(1.5rem, 1.2rem + 1cqi, 2.25rem)",
+      "px_at_1344": 32.64,
+      "line_height_token": "heading",
+      "line_height": 1.15
+    },
+    "display": {
+      "token": "display",
+      "css": "clamp(2.5rem, 1.5rem + 3cqi, 4rem)",
+      "px_at_1344": 64.0,
+      "line_height_token": "display",
+      "line_height": 1.02
+    }
+  },
+  "roles": [
+    {
+      "role": "hero-h1",
+      "reference_selector": ".hero h1",
+      "a1_px": 72,
+      "a1_px_source": "pack",
+      "rendered": "display",
+      "step": "display",
+      "step_px_at_1344": 64.0,
+      "delta_px": -8.0,
+      "line_height_token": "display",
+      "line_height": 1.02,
+      "family_token": "display",
+      "family": "\"CB Display\", \"Fraunces\", ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+      "weight": 600,
+      "weight_source": "pack",
+      "note": "Ledger L-03: the 72 px reference headline resolves to the 64 px display ceiling at 1344."
+    },
+    {
+      "role": "subline",
+      "reference_selector": ".hero p",
+      "a1_px": 32,
+      "a1_px_source": "pack",
+      "rendered": "heading",
+      "step": "heading",
+      "step_px_at_1344": 32.64,
+      "delta_px": 0.64,
+      "line_height_token": "heading",
+      "line_height": 1.15,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 500,
+      "weight_source": "pack",
+      "note": "The handoff's 32 px target assumed a static step; the heading clamp resolves to 32.64 px at 1344."
+    },
+    {
+      "role": "brand",
+      "reference_selector": ".brand",
+      "a1_px": 34,
+      "a1_px_source": "pack",
+      "rendered": "heading",
+      "step": "heading",
+      "step_px_at_1344": 32.64,
+      "delta_px": -1.36,
+      "line_height_token": "heading",
+      "line_height": 1.15,
+      "family_token": "display",
+      "family": "\"CB Display\", \"Fraunces\", ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+      "weight": 600,
+      "weight_source": "pack",
+      "note": "Wordmark at the heading step, not a separate brand size: no seventh step."
+    },
+    {
+      "role": "tag",
+      "reference_selector": ".tag",
+      "a1_px": 23,
+      "a1_px_source": "pack",
+      "rendered": "lead",
+      "step": "lead",
+      "step_px_at_1344": 20.0,
+      "delta_px": -3.0,
+      "line_height_token": "lead",
+      "line_height": 1.35,
+      "family_token": "display",
+      "family": "\"CB Display\", \"Fraunces\", ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+      "weight": 400,
+      "weight_source": "contract",
+      "note": "Kraft tag label at the lead step."
+    },
+    {
+      "role": "nav",
+      "reference_selector": "nav a",
+      "a1_px": 17,
+      "a1_px_source": "pack",
+      "rendered": "body",
+      "step": "body",
+      "step_px_at_1344": 16.0,
+      "delta_px": -1.0,
+      "line_height_token": "body",
+      "line_height": 1.5,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 400,
+      "weight_source": "contract",
+      "note": "Navigation links sit at body, the reading size."
+    },
+    {
+      "role": "studio",
+      "reference_selector": ".studio",
+      "a1_px": 17,
+      "a1_px_source": "pack",
+      "rendered": "body",
+      "step": "body",
+      "step_px_at_1344": 16.0,
+      "delta_px": -1.0,
+      "line_height_token": "body",
+      "line_height": 1.5,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 400,
+      "weight_source": "contract",
+      "note": "Parent Studio door sits at body."
+    },
+    {
+      "role": "button",
+      "reference_selector": ".btn",
+      "a1_px": 16,
+      "a1_px_source": "pack",
+      "rendered": "body",
+      "step": "body",
+      "step_px_at_1344": 16.0,
+      "delta_px": 0.0,
+      "line_height_token": "body",
+      "line_height": 1.5,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 600,
+      "weight_source": "pack",
+      "note": "Both pills label at body; the primary/quiet split is a fill decision, not a size."
+    },
+    {
+      "role": "card-title",
+      "reference_selector": ".card h3",
+      "a1_px": 15,
+      "a1_px_source": "pack",
+      "rendered": "meta",
+      "step": "meta",
+      "step_px_at_1344": 14.0,
+      "delta_px": -1.0,
+      "line_height_token": "meta",
+      "line_height": 1.4,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 600,
+      "weight_source": "pack",
+      "note": "Shelf card title at meta."
+    },
+    {
+      "role": "card-meta",
+      "reference_selector": null,
+      "a1_px": null,
+      "a1_px_source": "absent-from-a1",
+      "rendered": "caption",
+      "step": "caption",
+      "step_px_at_1344": 12.0,
+      "delta_px": null,
+      "line_height_token": "caption",
+      "line_height": 1.35,
+      "family_token": "ui",
+      "family": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+      "weight": 400,
+      "weight_source": "contract",
+      "note": "No painted A1 text: the sections pair is a caption-step copy node behind the progress bar."
+    }
+  ],
+  "rules": [
+    "Six steps and no seventh: every role names one of the six v3 steps.",
+    "No role carries a literal pixel as its rendered value; the rendered value is a step name.",
+    "step_px_at_1344 is resolved from the contract clamp against the route container (1 cqi = 13.44 px).",
+    "The A1 pixels are read from the generated pack, never hand-copied.",
+    "If the hero reads weak, adjust measure, leading and tracking within the tokens, never the size."
+  ]
+}

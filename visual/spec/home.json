@@ -1,0 +1,1958 @@
+{
+  "schema": "cb.ui.screen.v1",
+  "screen": "home",
+  "generated_by": "scripts/gen-ui-spec.py",
+  "viewport": {
+    "width": 1344,
+    "height": 768,
+    "route": "full-window plugin route (G0-1)"
+  },
+  "source": {
+    "pack": {
+      "path": "docs/launch/UI-CONTEXT-PACK.generated.md",
+      "reference_path": "design/home-scene.html",
+      "reference_commit": "a07b99ea01c2c3f0080d966709f6c4abd6d73162",
+      "content_hash": "216c7998d4db4960"
+    },
+    "contract": {
+      "path": "contracts/cb.tokens.v3.json",
+      "version": 3
+    },
+    "type_map": "visual/spec/type-map.json",
+    "reference_css": {
+      "path": "design/home-scene.html",
+      "commit": "a07b99ea",
+      "note": "z-order and the few positions the pack does not declare"
+    },
+    "reference_image": "docs/concept-parity/refs/home.png"
+  },
+  "palette": {
+    "canvas": "#f5e3c8",
+    "card-stock": "#f4ecd9",
+    "ink": "#1a1713",
+    "ink-soft": "#5c5347",
+    "rule": "#cdb894",
+    "terracotta": "#b4532f",
+    "on-terracotta": "#fffaf1",
+    "terracotta-quiet": "#f0d5c1",
+    "gold": "#a1741f",
+    "wood": "#a5763f",
+    "wood-edge": "#7d5529",
+    "focus": "#2a813f"
+  },
+  "z_order": [
+    {
+      "z": 0,
+      "layer": "canvas"
+    },
+    {
+      "z": 1,
+      "layer": "grain, vignette, brackets"
+    },
+    {
+      "z": 2,
+      "layer": "planks"
+    },
+    {
+      "z": 3,
+      "layer": "shelf and cards"
+    },
+    {
+      "z": 4,
+      "layer": "hero, tag, clock"
+    },
+    {
+      "z": 5,
+      "layer": "header, fox"
+    }
+  ],
+  "tree": {
+    "id": "home",
+    "kind": "element",
+    "live_selector": "[data-cb-home-scene]",
+    "index": null,
+    "reference_selector": "body",
+    "type_role": null,
+    "paint": {
+      "fill": "canvas",
+      "color": "ink"
+    },
+    "box": {
+      "left": {
+        "value": 0.0,
+        "source": "route"
+      },
+      "top": {
+        "value": 0.0,
+        "source": "route"
+      },
+      "width": {
+        "value": 1344.0,
+        "source": "route"
+      },
+      "height": {
+        "value": 768.0,
+        "source": "route"
+      }
+    },
+    "z": 0,
+    "asset": null,
+    "rendered": null,
+    "natural": null,
+    "natural_min": null,
+    "text": null,
+    "painted": true,
+    "children": [
+      {
+        "id": "grain",
+        "kind": "material",
+        "live_selector": ".cb3-material-grain",
+        "index": null,
+        "reference_selector": ".grain",
+        "type_role": null,
+        "paint": {
+          "material": "grain",
+          "opacity": 0.1
+        },
+        "box": {
+          "left": {
+            "value": 0.0,
+            "source": "route"
+          },
+          "top": {
+            "value": 0.0,
+            "source": "route"
+          },
+          "width": {
+            "value": 1344.0,
+            "source": "route"
+          },
+          "height": {
+            "value": 768.0,
+            "source": "route"
+          }
+        },
+        "z": 1,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": [],
+        "note": "aria-hidden, pointer-events none, never above text."
+      },
+      {
+        "id": "vignette",
+        "kind": "material",
+        "live_selector": ".cb3-material-vignette",
+        "index": null,
+        "reference_selector": ".vignette",
+        "type_role": null,
+        "paint": {
+          "material": "vignette",
+          "opacity": 0.55
+        },
+        "box": {
+          "left": {
+            "value": 0.0,
+            "source": "route"
+          },
+          "top": {
+            "value": 0.0,
+            "source": "route"
+          },
+          "width": {
+            "value": 1344.0,
+            "source": "route"
+          },
+          "height": {
+            "value": 768.0,
+            "source": "route"
+          }
+        },
+        "z": 1,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": []
+      },
+      {
+        "id": "header",
+        "kind": "element",
+        "live_selector": null,
+        "index": null,
+        "reference_selector": "header",
+        "type_role": null,
+        "paint": {
+          "fill": "canvas"
+        },
+        "box": {
+          "left": {
+            "value": 0.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 0.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": null,
+            "source": null
+          },
+          "height": {
+            "value": 86.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": 0.0,
+            "source": "pack"
+          }
+        },
+        "z": 5,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": [
+          {
+            "id": "brand",
+            "kind": "text",
+            "live_selector": null,
+            "index": null,
+            "reference_selector": ".brand",
+            "type_role": "brand",
+            "paint": {
+              "color": "ink"
+            },
+            "box": {
+              "left": {
+                "value": 94.0,
+                "source": "pack"
+              },
+              "top": {
+                "value": 30.0,
+                "source": "pack"
+              },
+              "width": {
+                "value": null,
+                "source": null
+              },
+              "height": {
+                "value": null,
+                "source": null
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 5,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": "Coursebook",
+            "painted": true,
+            "children": []
+          },
+          {
+            "id": "nav",
+            "kind": "element",
+            "live_selector": null,
+            "index": null,
+            "reference_selector": "nav",
+            "type_role": null,
+            "paint": {},
+            "box": {
+              "left": {
+                "value": 388.0,
+                "source": "pack"
+              },
+              "top": {
+                "value": 42.0,
+                "source": "pack"
+              },
+              "width": {
+                "value": null,
+                "source": null
+              },
+              "height": {
+                "value": null,
+                "source": null
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 5,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "nav-home",
+                "kind": "text",
+                "live_selector": null,
+                "index": null,
+                "reference_selector": "nav a.active",
+                "type_role": "nav",
+                "paint": {
+                  "color": "ink",
+                  "mark": "terracotta"
+                },
+                "box": {},
+                "z": 5,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": "Home",
+                "painted": true,
+                "children": []
+              },
+              {
+                "id": "nav-discover",
+                "kind": "text",
+                "live_selector": null,
+                "index": null,
+                "reference_selector": "nav a",
+                "type_role": "nav",
+                "paint": {
+                  "color": "ink"
+                },
+                "box": {},
+                "z": 5,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": "Discover Library",
+                "painted": true,
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "studio",
+            "kind": "element",
+            "live_selector": null,
+            "index": null,
+            "reference_selector": ".studio",
+            "type_role": null,
+            "paint": {},
+            "box": {
+              "left": {
+                "value": 1102.0,
+                "source": "pack"
+              },
+              "top": {
+                "value": 40.0,
+                "source": "pack"
+              },
+              "width": {
+                "value": null,
+                "source": null
+              },
+              "height": {
+                "value": null,
+                "source": null
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 5,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "studio-mark",
+                "kind": "element",
+                "live_selector": null,
+                "index": null,
+                "reference_selector": ".studio i",
+                "type_role": null,
+                "paint": {
+                  "fill": "canvas",
+                  "border": "ink",
+                  "radius": "pill"
+                },
+                "box": {},
+                "z": 5,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": null,
+                "painted": true,
+                "children": [],
+                "note": "Initial in a ring: iconography, not a text step."
+              },
+              {
+                "id": "studio-label",
+                "kind": "text",
+                "live_selector": null,
+                "index": null,
+                "reference_selector": ".studio",
+                "type_role": "studio",
+                "paint": {
+                  "color": "ink"
+                },
+                "box": {},
+                "z": 5,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": "Studio",
+                "painted": true,
+                "children": []
+              }
+            ]
+          }
+        ],
+        "note": "The 86 px band belongs to the route, not host chrome (G0-1)."
+      },
+      {
+        "id": "hero",
+        "kind": "element",
+        "live_selector": "[data-cb-home-scene-hero]",
+        "index": null,
+        "reference_selector": ".hero",
+        "type_role": null,
+        "paint": {},
+        "box": {
+          "left": {
+            "value": 0.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 128.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": null,
+            "source": null
+          },
+          "height": {
+            "value": null,
+            "source": null
+          },
+          "right": {
+            "value": 0.0,
+            "source": "pack"
+          }
+        },
+        "z": 4,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": [
+          {
+            "id": "hero-h1",
+            "kind": "text",
+            "live_selector": "[data-cb-home-scene-question]",
+            "index": null,
+            "reference_selector": ".hero h1",
+            "type_role": "hero-h1",
+            "paint": {
+              "color": "ink"
+            },
+            "box": {},
+            "z": 4,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": "Your field library",
+            "painted": true,
+            "children": []
+          },
+          {
+            "id": "subline",
+            "kind": "text",
+            "live_selector": "[data-cb-home-scene-subline]",
+            "index": null,
+            "reference_selector": ".hero p",
+            "type_role": "subline",
+            "paint": {
+              "color": "ink-soft"
+            },
+            "box": {},
+            "z": 4,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": "Choose a course or start a new expedition.",
+            "painted": true,
+            "children": []
+          },
+          {
+            "id": "cta",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-cta]",
+            "index": null,
+            "reference_selector": ".cta",
+            "type_role": null,
+            "paint": {},
+            "box": {},
+            "z": 4,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "button-primary",
+                "kind": "control",
+                "live_selector": "[data-cb-home-scene-primary]",
+                "index": null,
+                "reference_selector": ".btn.primary",
+                "type_role": "button",
+                "paint": {
+                  "fill": "terracotta",
+                  "color": "on-terracotta",
+                  "shadow": "elev-1",
+                  "radius": "pill"
+                },
+                "box": {},
+                "z": 4,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": "Start a new course",
+                "painted": true,
+                "children": [],
+                "note": "The one filled primary on this surface (L-06)."
+              },
+              {
+                "id": "button-secondary",
+                "kind": "control",
+                "live_selector": "[data-cb-home-scene-secondary]",
+                "index": null,
+                "reference_selector": ".btn.secondary",
+                "type_role": "button",
+                "paint": {
+                  "fill": "terracotta-quiet",
+                  "color": "ink",
+                  "radius": "pill"
+                },
+                "box": {},
+                "z": 4,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": "Browse library",
+                "painted": true,
+                "children": [],
+                "note": "Quiet warm field carrying ink, not a second terracotta fill (L-06)."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "shelf",
+        "kind": "element",
+        "live_selector": "[data-cb-home-scene-cards]",
+        "index": null,
+        "reference_selector": ".shelf.cards",
+        "type_role": null,
+        "paint": {},
+        "box": {
+          "left": {
+            "value": 273.0,
+            "source": "measured: .shelf left"
+          },
+          "top": {
+            "value": 384.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 776.0,
+            "source": "derived: 4 x .card width + 3 x reference gap"
+          },
+          "height": {
+            "value": 175.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": null,
+            "source": null
+          }
+        },
+        "z": 3,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": [
+          {
+            "id": "card-1",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-card]",
+            "index": 0,
+            "reference_selector": ".card",
+            "type_role": null,
+            "paint": {
+              "fill": "card-stock",
+              "border": "rule",
+              "shadow": "elev-1",
+              "radius": "soft"
+            },
+            "box": {
+              "left": {
+                "value": null,
+                "source": null
+              },
+              "top": {
+                "value": null,
+                "source": null
+              },
+              "width": {
+                "value": 176.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 175.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 3,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "cover-1",
+                "kind": "image",
+                "live_selector": "[data-cb-home-scene-cover]",
+                "index": 0,
+                "reference_selector": ".card .cover",
+                "type_role": null,
+                "paint": {},
+                "box": {
+                  "left": {
+                    "value": null,
+                    "source": null
+                  },
+                  "top": {
+                    "value": null,
+                    "source": null
+                  },
+                  "width": {
+                    "value": 176.0,
+                    "source": "derived: 100% of .card width"
+                  },
+                  "height": {
+                    "value": 106.0,
+                    "source": "pack"
+                  },
+                  "right": {
+                    "value": null,
+                    "source": null
+                  }
+                },
+                "z": 3,
+                "asset": "bundled/packs/japanese-affection-context-l0/content/cover-4x5.png",
+                "rendered": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "natural": {
+                  "width": 460,
+                  "height": 575
+                },
+                "natural_min": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "text": null,
+                "painted": true,
+                "children": [],
+                "note": "A painted, text-free cover artifact; titles are DOM, never baked in."
+              },
+              {
+                "id": "card-body-1",
+                "kind": "element",
+                "live_selector": "[data-cb-home-scene-body]",
+                "index": 0,
+                "reference_selector": ".card .body",
+                "type_role": null,
+                "paint": {},
+                "box": {},
+                "z": 3,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": null,
+                "painted": true,
+                "children": [
+                  {
+                    "id": "card-title-1",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-title]",
+                    "index": 0,
+                    "reference_selector": ".card h3",
+                    "type_role": "card-title",
+                    "paint": {
+                      "color": "ink"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": []
+                  },
+                  {
+                    "id": "card-progress-1",
+                    "kind": "element",
+                    "live_selector": "[data-cb-home-scene-progress]",
+                    "index": 0,
+                    "reference_selector": ".bar",
+                    "type_role": null,
+                    "paint": {
+                      "fill": "rule",
+                      "radius": "pill"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": [
+                      {
+                        "id": "card-progress-fill-1",
+                        "kind": "element",
+                        "live_selector": "[data-cb-home-scene-progress] > i",
+                        "index": 0,
+                        "reference_selector": ".bar i",
+                        "type_role": null,
+                        "paint": {
+                          "fill": "gold",
+                          "radius": "pill"
+                        },
+                        "box": {},
+                        "z": 3,
+                        "asset": null,
+                        "rendered": null,
+                        "natural": null,
+                        "natural_min": null,
+                        "text": null,
+                        "painted": true,
+                        "children": []
+                      }
+                    ],
+                    "note": "sections_done/sections_total only; no ratings, counts or learners."
+                  },
+                  {
+                    "id": "card-meta-1",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-meta]",
+                    "index": 0,
+                    "reference_selector": null,
+                    "type_role": "card-meta",
+                    "paint": {
+                      "color": "ink-soft"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": "n of m sections done",
+                    "painted": false,
+                    "children": [],
+                    "note": "Copy node for the accessible sections pair; not painted, matching A1."
+                  }
+                ]
+              }
+            ],
+            "note": "Card stock sits on the canvas; rotation per the reference stack, not a token value."
+          },
+          {
+            "id": "card-2",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-card]",
+            "index": 1,
+            "reference_selector": ".card",
+            "type_role": null,
+            "paint": {
+              "fill": "card-stock",
+              "border": "rule",
+              "shadow": "elev-1",
+              "radius": "soft"
+            },
+            "box": {
+              "left": {
+                "value": null,
+                "source": null
+              },
+              "top": {
+                "value": null,
+                "source": null
+              },
+              "width": {
+                "value": 176.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 175.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 3,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "cover-2",
+                "kind": "image",
+                "live_selector": "[data-cb-home-scene-cover]",
+                "index": 1,
+                "reference_selector": ".card .cover",
+                "type_role": null,
+                "paint": {},
+                "box": {
+                  "left": {
+                    "value": null,
+                    "source": null
+                  },
+                  "top": {
+                    "value": null,
+                    "source": null
+                  },
+                  "width": {
+                    "value": 176.0,
+                    "source": "derived: 100% of .card width"
+                  },
+                  "height": {
+                    "value": 106.0,
+                    "source": "pack"
+                  },
+                  "right": {
+                    "value": null,
+                    "source": null
+                  }
+                },
+                "z": 3,
+                "asset": "assets/art/scenes/course-map.png",
+                "rendered": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "natural": {
+                  "width": 1024,
+                  "height": 576
+                },
+                "natural_min": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "text": null,
+                "painted": true,
+                "children": [],
+                "note": "A painted, text-free cover artifact; titles are DOM, never baked in."
+              },
+              {
+                "id": "card-body-2",
+                "kind": "element",
+                "live_selector": "[data-cb-home-scene-body]",
+                "index": 1,
+                "reference_selector": ".card .body",
+                "type_role": null,
+                "paint": {},
+                "box": {},
+                "z": 3,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": null,
+                "painted": true,
+                "children": [
+                  {
+                    "id": "card-title-2",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-title]",
+                    "index": 1,
+                    "reference_selector": ".card h3",
+                    "type_role": "card-title",
+                    "paint": {
+                      "color": "ink"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": []
+                  },
+                  {
+                    "id": "card-progress-2",
+                    "kind": "element",
+                    "live_selector": "[data-cb-home-scene-progress]",
+                    "index": 1,
+                    "reference_selector": ".bar",
+                    "type_role": null,
+                    "paint": {
+                      "fill": "rule",
+                      "radius": "pill"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": [
+                      {
+                        "id": "card-progress-fill-2",
+                        "kind": "element",
+                        "live_selector": "[data-cb-home-scene-progress] > i",
+                        "index": 1,
+                        "reference_selector": ".bar i",
+                        "type_role": null,
+                        "paint": {
+                          "fill": "gold",
+                          "radius": "pill"
+                        },
+                        "box": {},
+                        "z": 3,
+                        "asset": null,
+                        "rendered": null,
+                        "natural": null,
+                        "natural_min": null,
+                        "text": null,
+                        "painted": true,
+                        "children": []
+                      }
+                    ],
+                    "note": "sections_done/sections_total only; no ratings, counts or learners."
+                  },
+                  {
+                    "id": "card-meta-2",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-meta]",
+                    "index": 1,
+                    "reference_selector": null,
+                    "type_role": "card-meta",
+                    "paint": {
+                      "color": "ink-soft"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": "n of m sections done",
+                    "painted": false,
+                    "children": [],
+                    "note": "Copy node for the accessible sections pair; not painted, matching A1."
+                  }
+                ]
+              }
+            ],
+            "note": "Card stock sits on the canvas; rotation per the reference stack, not a token value."
+          },
+          {
+            "id": "card-3",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-card]",
+            "index": 2,
+            "reference_selector": ".card",
+            "type_role": null,
+            "paint": {
+              "fill": "card-stock",
+              "border": "rule",
+              "shadow": "elev-1",
+              "radius": "soft"
+            },
+            "box": {
+              "left": {
+                "value": null,
+                "source": null
+              },
+              "top": {
+                "value": null,
+                "source": null
+              },
+              "width": {
+                "value": 176.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 175.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 3,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "cover-3",
+                "kind": "image",
+                "live_selector": "[data-cb-home-scene-cover]",
+                "index": 2,
+                "reference_selector": ".card .cover",
+                "type_role": null,
+                "paint": {},
+                "box": {
+                  "left": {
+                    "value": null,
+                    "source": null
+                  },
+                  "top": {
+                    "value": null,
+                    "source": null
+                  },
+                  "width": {
+                    "value": 176.0,
+                    "source": "derived: 100% of .card width"
+                  },
+                  "height": {
+                    "value": 106.0,
+                    "source": "pack"
+                  },
+                  "right": {
+                    "value": null,
+                    "source": null
+                  }
+                },
+                "z": 3,
+                "asset": "bundled/packs/parent-measurement-practice/content/cover-4x5.png",
+                "rendered": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "natural": {
+                  "width": 460,
+                  "height": 575
+                },
+                "natural_min": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "text": null,
+                "painted": true,
+                "children": [],
+                "note": "A painted, text-free cover artifact; titles are DOM, never baked in."
+              },
+              {
+                "id": "card-body-3",
+                "kind": "element",
+                "live_selector": "[data-cb-home-scene-body]",
+                "index": 2,
+                "reference_selector": ".card .body",
+                "type_role": null,
+                "paint": {},
+                "box": {},
+                "z": 3,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": null,
+                "painted": true,
+                "children": [
+                  {
+                    "id": "card-title-3",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-title]",
+                    "index": 2,
+                    "reference_selector": ".card h3",
+                    "type_role": "card-title",
+                    "paint": {
+                      "color": "ink"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": []
+                  },
+                  {
+                    "id": "card-progress-3",
+                    "kind": "element",
+                    "live_selector": "[data-cb-home-scene-progress]",
+                    "index": 2,
+                    "reference_selector": ".bar",
+                    "type_role": null,
+                    "paint": {
+                      "fill": "rule",
+                      "radius": "pill"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": [
+                      {
+                        "id": "card-progress-fill-3",
+                        "kind": "element",
+                        "live_selector": "[data-cb-home-scene-progress] > i",
+                        "index": 2,
+                        "reference_selector": ".bar i",
+                        "type_role": null,
+                        "paint": {
+                          "fill": "gold",
+                          "radius": "pill"
+                        },
+                        "box": {},
+                        "z": 3,
+                        "asset": null,
+                        "rendered": null,
+                        "natural": null,
+                        "natural_min": null,
+                        "text": null,
+                        "painted": true,
+                        "children": []
+                      }
+                    ],
+                    "note": "sections_done/sections_total only; no ratings, counts or learners."
+                  },
+                  {
+                    "id": "card-meta-3",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-meta]",
+                    "index": 2,
+                    "reference_selector": null,
+                    "type_role": "card-meta",
+                    "paint": {
+                      "color": "ink-soft"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": "n of m sections done",
+                    "painted": false,
+                    "children": [],
+                    "note": "Copy node for the accessible sections pair; not painted, matching A1."
+                  }
+                ]
+              }
+            ],
+            "note": "Card stock sits on the canvas; rotation per the reference stack, not a token value."
+          },
+          {
+            "id": "card-4",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-card]",
+            "index": 3,
+            "reference_selector": ".card",
+            "type_role": null,
+            "paint": {
+              "fill": "card-stock",
+              "border": "rule",
+              "shadow": "elev-1",
+              "radius": "soft"
+            },
+            "box": {
+              "left": {
+                "value": null,
+                "source": null
+              },
+              "top": {
+                "value": null,
+                "source": null
+              },
+              "width": {
+                "value": 176.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 175.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 3,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": [
+              {
+                "id": "cover-4",
+                "kind": "image",
+                "live_selector": "[data-cb-home-scene-cover]",
+                "index": 3,
+                "reference_selector": ".card .cover",
+                "type_role": null,
+                "paint": {},
+                "box": {
+                  "left": {
+                    "value": null,
+                    "source": null
+                  },
+                  "top": {
+                    "value": null,
+                    "source": null
+                  },
+                  "width": {
+                    "value": 176.0,
+                    "source": "derived: 100% of .card width"
+                  },
+                  "height": {
+                    "value": 106.0,
+                    "source": "pack"
+                  },
+                  "right": {
+                    "value": null,
+                    "source": null
+                  }
+                },
+                "z": 3,
+                "asset": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+                "rendered": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "natural": {
+                  "width": 864,
+                  "height": 576
+                },
+                "natural_min": {
+                  "width": 176.0,
+                  "height": 106.0
+                },
+                "text": null,
+                "painted": true,
+                "children": [],
+                "note": "A painted, text-free cover artifact; titles are DOM, never baked in."
+              },
+              {
+                "id": "card-body-4",
+                "kind": "element",
+                "live_selector": "[data-cb-home-scene-body]",
+                "index": 3,
+                "reference_selector": ".card .body",
+                "type_role": null,
+                "paint": {},
+                "box": {},
+                "z": 3,
+                "asset": null,
+                "rendered": null,
+                "natural": null,
+                "natural_min": null,
+                "text": null,
+                "painted": true,
+                "children": [
+                  {
+                    "id": "card-title-4",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-title]",
+                    "index": 3,
+                    "reference_selector": ".card h3",
+                    "type_role": "card-title",
+                    "paint": {
+                      "color": "ink"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": []
+                  },
+                  {
+                    "id": "card-progress-4",
+                    "kind": "element",
+                    "live_selector": "[data-cb-home-scene-progress]",
+                    "index": 3,
+                    "reference_selector": ".bar",
+                    "type_role": null,
+                    "paint": {
+                      "fill": "rule",
+                      "radius": "pill"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": null,
+                    "painted": true,
+                    "children": [
+                      {
+                        "id": "card-progress-fill-4",
+                        "kind": "element",
+                        "live_selector": "[data-cb-home-scene-progress] > i",
+                        "index": 3,
+                        "reference_selector": ".bar i",
+                        "type_role": null,
+                        "paint": {
+                          "fill": "gold",
+                          "radius": "pill"
+                        },
+                        "box": {},
+                        "z": 3,
+                        "asset": null,
+                        "rendered": null,
+                        "natural": null,
+                        "natural_min": null,
+                        "text": null,
+                        "painted": true,
+                        "children": []
+                      }
+                    ],
+                    "note": "sections_done/sections_total only; no ratings, counts or learners."
+                  },
+                  {
+                    "id": "card-meta-4",
+                    "kind": "text",
+                    "live_selector": "[data-cb-home-scene-meta]",
+                    "index": 3,
+                    "reference_selector": null,
+                    "type_role": "card-meta",
+                    "paint": {
+                      "color": "ink-soft"
+                    },
+                    "box": {},
+                    "z": 3,
+                    "asset": null,
+                    "rendered": null,
+                    "natural": null,
+                    "natural_min": null,
+                    "text": "n of m sections done",
+                    "painted": false,
+                    "children": [],
+                    "note": "Copy node for the accessible sections pair; not painted, matching A1."
+                  }
+                ]
+              }
+            ],
+            "note": "Card stock sits on the canvas; rotation per the reference stack, not a token value."
+          }
+        ],
+        "note": "Height 175 px from .shelf.cards; left edge measured from .shelf, not a pack number."
+      },
+      {
+        "id": "planks",
+        "kind": "element",
+        "live_selector": "[data-cb-home-scene-plank-one]",
+        "index": null,
+        "reference_selector": ".plank.one",
+        "type_role": null,
+        "paint": {
+          "fill": "wood",
+          "border": "wood-edge"
+        },
+        "box": {
+          "left": {
+            "value": 219.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 559.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 915.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 18.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": null,
+            "source": null
+          }
+        },
+        "z": 2,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": [
+          {
+            "id": "plank-one",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-plank-one]",
+            "index": null,
+            "reference_selector": ".plank.one",
+            "type_role": null,
+            "paint": {
+              "fill": "wood",
+              "border": "wood-edge"
+            },
+            "box": {
+              "left": {
+                "value": 219.0,
+                "source": "pack"
+              },
+              "top": {
+                "value": 559.0,
+                "source": "pack"
+              },
+              "width": {
+                "value": 915.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 18.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 2,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": []
+          },
+          {
+            "id": "plank-two",
+            "kind": "element",
+            "live_selector": "[data-cb-home-scene-plank-two]",
+            "index": null,
+            "reference_selector": ".plank.two",
+            "type_role": null,
+            "paint": {
+              "fill": "wood",
+              "border": "wood-edge"
+            },
+            "box": {
+              "left": {
+                "value": 130.0,
+                "source": "pack"
+              },
+              "top": {
+                "value": 684.0,
+                "source": "pack"
+              },
+              "width": {
+                "value": 1150.0,
+                "source": "pack"
+              },
+              "height": {
+                "value": 30.0,
+                "source": "pack"
+              },
+              "right": {
+                "value": null,
+                "source": null
+              }
+            },
+            "z": 2,
+            "asset": null,
+            "rendered": null,
+            "natural": null,
+            "natural_min": null,
+            "text": null,
+            "painted": true,
+            "children": []
+          }
+        ],
+        "note": "Wood is a prop: no label sits on it. The lip is wood-edge."
+      },
+      {
+        "id": "bracket-left",
+        "kind": "element",
+        "live_selector": null,
+        "index": null,
+        "reference_selector": ".bracket.l",
+        "type_role": null,
+        "paint": {
+          "fill": "wood-edge"
+        },
+        "box": {
+          "top": {
+            "value": 736.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 54.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 32.0,
+            "source": "pack"
+          },
+          "left": {
+            "value": 210.0,
+            "source": "measured: .bracket.l left"
+          }
+        },
+        "z": 1,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": []
+      },
+      {
+        "id": "bracket-right",
+        "kind": "element",
+        "live_selector": null,
+        "index": null,
+        "reference_selector": ".bracket.r",
+        "type_role": null,
+        "paint": {
+          "fill": "wood-edge"
+        },
+        "box": {
+          "top": {
+            "value": 736.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 54.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 32.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": 210.0,
+            "source": "measured: .bracket.r right"
+          }
+        },
+        "z": 1,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": null,
+        "painted": true,
+        "children": []
+      },
+      {
+        "id": "tag",
+        "kind": "text",
+        "live_selector": "[data-cb-home-scene-tag]",
+        "index": null,
+        "reference_selector": ".tag",
+        "type_role": "tag",
+        "paint": {
+          "fill": "terracotta-quiet",
+          "color": "ink",
+          "border": "rule",
+          "shadow": "elev-1",
+          "radius": "square"
+        },
+        "box": {
+          "left": {
+            "value": 880.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 606.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 164.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 88.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": null,
+            "source": null
+          }
+        },
+        "z": 4,
+        "asset": null,
+        "rendered": null,
+        "natural": null,
+        "natural_min": null,
+        "text": "New course",
+        "painted": true,
+        "children": []
+      },
+      {
+        "id": "clock",
+        "kind": "image",
+        "live_selector": "[data-cb-home-scene-clock]",
+        "index": null,
+        "reference_selector": ".clock",
+        "type_role": null,
+        "paint": {},
+        "box": {
+          "left": {
+            "value": 1042.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 588.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 118.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 118.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": null,
+            "source": null
+          }
+        },
+        "z": 4,
+        "asset": "assets/art/objects/clock.png",
+        "rendered": {
+          "width": 118.0,
+          "height": 118.0
+        },
+        "natural": {
+          "width": 256,
+          "height": 256
+        },
+        "natural_min": {
+          "width": 118.0,
+          "height": 118.0
+        },
+        "text": null,
+        "painted": true,
+        "children": [],
+        "note": "Object-kit alarm clock holds A1's slot (D-002, ledger L-05)."
+      },
+      {
+        "id": "fox",
+        "kind": "image",
+        "live_selector": "[data-cb-home-scene-fox] img",
+        "index": null,
+        "reference_selector": ".fox",
+        "type_role": null,
+        "paint": {},
+        "box": {
+          "left": {
+            "value": 1088.0,
+            "source": "pack"
+          },
+          "top": {
+            "value": 526.0,
+            "source": "pack"
+          },
+          "width": {
+            "value": 208.0,
+            "source": "pack"
+          },
+          "height": {
+            "value": 208.0,
+            "source": "pack"
+          },
+          "right": {
+            "value": null,
+            "source": null
+          }
+        },
+        "z": 5,
+        "asset": "assets/art/fox/fox-clock-256.png",
+        "rendered": {
+          "width": 208.0,
+          "height": 208.0
+        },
+        "natural": {
+          "width": 256,
+          "height": 256
+        },
+        "natural_min": {
+          "width": 208.0,
+          "height": 208.0
+        },
+        "text": null,
+        "painted": true,
+        "children": [],
+        "note": "Painted 256 export at 208 px; natural must be >= rendered (D-001)."
+      }
+    ],
+    "note": "One canvas, one vignette, one grain. The route measures 1344x768."
+  },
+  "signature_elements": [
+    {
+      "id": "fox",
+      "nodes": [
+        "fox"
+      ],
+      "box": {
+        "left": 1088.0,
+        "top": 526.0,
+        "width": 208.0,
+        "height": 208.0,
+        "right": null
+      },
+      "count": 1
+    },
+    {
+      "id": "clock",
+      "nodes": [
+        "clock"
+      ],
+      "box": {
+        "left": 1042.0,
+        "top": 588.0,
+        "width": 118.0,
+        "height": 118.0,
+        "right": null
+      },
+      "count": 1
+    },
+    {
+      "id": "shelf",
+      "nodes": [
+        "shelf"
+      ],
+      "box": {
+        "left": 273.0,
+        "top": 384.0,
+        "width": 776.0,
+        "height": 175.0
+      },
+      "count": 1,
+      "note": "left and width measured from the reference shelf band, not pack numbers"
+    },
+    {
+      "id": "planks",
+      "nodes": [
+        "plank-one",
+        "plank-two"
+      ],
+      "box": {
+        "left": 219.0,
+        "top": 559.0,
+        "width": 915.0,
+        "height": 18.0,
+        "right": null
+      },
+      "count": 2
+    },
+    {
+      "id": "tag",
+      "nodes": [
+        "tag"
+      ],
+      "box": {
+        "left": 880.0,
+        "top": 606.0,
+        "width": 164.0,
+        "height": 88.0,
+        "right": null
+      },
+      "count": 1
+    },
+    {
+      "id": "covers",
+      "nodes": [
+        "cover-1",
+        "cover-2",
+        "cover-3",
+        "cover-4"
+      ],
+      "box": {
+        "left": 273.0,
+        "top": 384.0,
+        "width": 776.0,
+        "height": 175.0
+      },
+      "count": 4,
+      "note": "the four covers as one signature band, same box as the shelf"
+    }
+  ],
+  "states": {
+    "default": {
+      "summary": "The room at rest: canvas, grain, vignette, hero, shelf, planks, tag, fox, clock.",
+      "rules": [
+        "One filled terracotta primary; the second door is terracotta-quiet with ink.",
+        "No shadow on text, rules, the rail or the ground.",
+        "Card stock uses elev-1 OR a 1 px rule, never both."
+      ],
+      "tokens": {
+        "elevation": "elev-1",
+        "radius": [
+          "square",
+          "soft",
+          "round",
+          "pill"
+        ]
+      }
+    },
+    "hover": {
+      "summary": "Pointer feedback on the two doors and the four cards.",
+      "rules": [
+        "Cards lift: transform translateY(-2px) and elev-2, over lift (150 ms).",
+        "Doors lift: transform translateY(-1px) over lift; no colour change (colour is not animatable).",
+        "Text and rules never move."
+      ],
+      "tokens": {
+        "duration": 150,
+        "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "properties": [
+          "transform",
+          "opacity"
+        ],
+        "elevation": "elev-2"
+      }
+    },
+    "focus-visible": {
+      "summary": "Keyboard ring on every interactive control: two doors, four cards, two nav links, the Studio door.",
+      "rules": [
+        "outline 2 px solid focus, offset 2 px, on the ground the control sits on.",
+        "The ring is never clipped by the shelf overflow.",
+        "Focus is the only state that paints the focus role."
+      ],
+      "tokens": {
+        "width": "2px",
+        "offset": "2px",
+        "style": "solid",
+        "role": "focus"
+      }
+    },
+    "loading": {
+      "summary": "The shell is up and the library read is in flight.",
+      "rules": [
+        "The hero, both doors, the shelf band, planks, tag, fox and clock stay: the room does not blank.",
+        "Four card placeholders in card-stock with a rule outline; no shimmer, pulse or loop.",
+        "A single body sentence, 'Loading your library', at ink-soft; no spinner.",
+        "No invented counts, ratings or progress."
+      ],
+      "tokens": {
+        "fill": "card-stock",
+        "border": "rule",
+        "text": "ink-soft",
+        "type_role": "body"
+      }
+    },
+    "empty": {
+      "summary": "No enrolled courses: the shelf is empty, the room is not.",
+      "rules": [
+        "One heading sentence, 'No courses yet', at the heading step in ink.",
+        "One body sentence naming both ways forward, at body in ink-soft.",
+        "One filled primary, 'Start a new course'; the quiet second door is absent or disabled with its reason.",
+        "No placeholder cards, no zeroed counts, no empty progress bars."
+      ],
+      "tokens": {
+        "heading_role": "heading",
+        "body_role": "body",
+        "primary_fill": "terracotta",
+        "primary_label": "on-terracotta"
+      }
+    },
+    "reduced_motion": {
+      "summary": "prefers-reduced-motion: transitions are removed, not shortened.",
+      "rules": [
+        "transition: none on lift and press; the state change still happens on the next frame.",
+        "No transform on :active under reduced motion.",
+        "Fox, clock, tag and planks are static; nothing loops."
+      ],
+      "tokens": {
+        "transition": "none",
+        "duration": 0
+      }
+    }
+  },
+  "type_map_steps": {
+    "caption": 12.0,
+    "meta": 14.0,
+    "body": 16.0,
+    "lead": 20.0,
+    "heading": 32.64,
+    "display": 64.0
+  },
+  "rules": [
+    "A text node names a role in type-map.json; a painted node names a colour role in the v3 contract.",
+    "Images are assets with a natural size at or above their rendered size.",
+    "Signature elements are fox, clock, shelf, planks, tag and the four covers.",
+    "The five states and reduced motion are specified here; the audit measures the default state."
+  ]
+}

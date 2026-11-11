@@ -1,0 +1,2900 @@
+{
+  "schema": "cb.ui.audit.v1",
+  "screen": "home",
+  "spec": "visual/spec/home.json",
+  "generated_by": "scripts/audit-screen.mjs",
+  "mode": "html",
+  "source": "design/home-scene.html",
+  "viewport": {
+    "width": 1344,
+    "height": 768,
+    "observed": "1344x768"
+  },
+  "safety": "offscreen Chromium; the owner window was not touched",
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "available": true,
+    "note": null
+  },
+  "plate": {
+    "path": "visual/audit/home/home-current-plate.png",
+    "sha256": "71689b468e9480fe3b4ebce4d64ed9813db07a3f0f04b9df0ef582fb1ce1810f"
+  },
+  "summary": {
+    "nodes": 54,
+    "absent": 10,
+    "mismatched": 12,
+    "checks": 107,
+    "deltas": 39,
+    "out_of_tolerance": 39,
+    "largest": [
+      {
+        "node": "fox",
+        "field": "image.naturalWidth",
+        "target": 208,
+        "current": 128,
+        "delta": -80,
+        "abs": 80,
+        "verdict": "out",
+        "unit": "px"
+      },
+      {
+        "node": "fox",
+        "field": "image.naturalHeight",
+        "target": 208,
+        "current": 128,
+        "delta": -80,
+        "abs": 80,
+        "verdict": "out",
+        "unit": "px"
+      },
+      {
+        "node": "planks",
+        "field": "box.width",
+        "target": 915,
+        "current": 870,
+        "delta": -45,
+        "abs": 45,
+        "verdict": "out",
+        "unit": "px"
+      },
+      {
+        "node": "plank-one",
+        "field": "box.width",
+        "target": 915,
+        "current": 870,
+        "delta": -45,
+        "abs": 45,
+        "verdict": "out",
+        "unit": "px"
+      },
+      {
+        "node": "fox",
+        "field": "box.top",
+        "target": 526,
+        "current": 486,
+        "delta": -40,
+        "abs": 40,
+        "verdict": "out",
+        "unit": "px"
+      }
+    ]
+  },
+  "signatures": [
+    {
+      "id": "fox",
+      "nodes": [
+        "fox"
+      ],
+      "targetBox": {
+        "left": 1088,
+        "top": 526,
+        "width": 208,
+        "height": 208,
+        "right": null
+      },
+      "crop": {
+        "x": 744,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/fox-current.png",
+        "reference": "visual/audit/home/fox-reference.png"
+      },
+      "currentSha256": "d53f02c3667b4983b9f5d9ddab84562eef3a9885fb26edd350d321873c8cf8c7",
+      "referenceSha256": "366bc2df5f0cf8ce42c6be04fde61af3c117efeca98833a7e3e802e5762550c6",
+      "meanAbsDiff": 30.268
+    },
+    {
+      "id": "clock",
+      "nodes": [
+        "clock"
+      ],
+      "targetBox": {
+        "left": 1042,
+        "top": 588,
+        "width": 118,
+        "height": 118,
+        "right": null
+      },
+      "crop": {
+        "x": 744,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/clock-current.png",
+        "reference": "visual/audit/home/clock-reference.png"
+      },
+      "currentSha256": "d53f02c3667b4983b9f5d9ddab84562eef3a9885fb26edd350d321873c8cf8c7",
+      "referenceSha256": "366bc2df5f0cf8ce42c6be04fde61af3c117efeca98833a7e3e802e5762550c6",
+      "meanAbsDiff": 30.268
+    },
+    {
+      "id": "shelf",
+      "nodes": [
+        "shelf"
+      ],
+      "targetBox": {
+        "left": 273,
+        "top": 384,
+        "width": 776,
+        "height": 175
+      },
+      "crop": {
+        "x": 361,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/shelf-current.png",
+        "reference": "visual/audit/home/shelf-reference.png"
+      },
+      "currentSha256": "862f98b3e895aee0222ba85189e360ca6c316d7963a0c38c06abdb33b0f8ebed",
+      "referenceSha256": "84255de8dd230e0515e5918dc4d1cfc7d37db163fe3ea474fa66028514618d50",
+      "meanAbsDiff": 40.024
+    },
+    {
+      "id": "planks",
+      "nodes": [
+        "plank-one",
+        "plank-two"
+      ],
+      "targetBox": {
+        "left": 219,
+        "top": 559,
+        "width": 915,
+        "height": 18,
+        "right": null
+      },
+      "crop": {
+        "x": 377,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/planks-current.png",
+        "reference": "visual/audit/home/planks-reference.png"
+      },
+      "currentSha256": "40f184b6af6df56baa9930e64bdcbd51b9278d892f2238a43f53c19511a4f785",
+      "referenceSha256": "2c2138b2d36deb5b6e384b667937e895b089a8489bcad1eefc3b88244600545f",
+      "meanAbsDiff": 40.024
+    },
+    {
+      "id": "tag",
+      "nodes": [
+        "tag"
+      ],
+      "targetBox": {
+        "left": 880,
+        "top": 606,
+        "width": 164,
+        "height": 88,
+        "right": null
+      },
+      "crop": {
+        "x": 662,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/tag-current.png",
+        "reference": "visual/audit/home/tag-reference.png"
+      },
+      "currentSha256": "3ae18e39497bbd73059ea1a12530bfb08de7a40ec19f2d8eb38909af5a9a0965",
+      "referenceSha256": "531dc579f7d401286f74cc2ca67b9cf2cb2a918ac05db568dd986ae9f5b9e20f",
+      "meanAbsDiff": 34.965
+    },
+    {
+      "id": "covers",
+      "nodes": [
+        "cover-1",
+        "cover-2",
+        "cover-3",
+        "cover-4"
+      ],
+      "targetBox": {
+        "left": 273,
+        "top": 384,
+        "width": 776,
+        "height": 175
+      },
+      "crop": {
+        "x": 361,
+        "y": 168,
+        "width": 600,
+        "height": 600
+      },
+      "files": {
+        "current": "visual/audit/home/covers-current.png",
+        "reference": "visual/audit/home/covers-reference.png"
+      },
+      "currentSha256": "862f98b3e895aee0222ba85189e360ca6c316d7963a0c38c06abdb33b0f8ebed",
+      "referenceSha256": "84255de8dd230e0515e5918dc4d1cfc7d37db163fe3ea474fa66028514618d50",
+      "meanAbsDiff": 40.024
+    }
+  ],
+  "nodes": [
+    {
+      "id": "home",
+      "depth": 0,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene]",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.width",
+          "target": 1344,
+          "current": 1344,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 768,
+          "current": 768,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 0,
+        "right": 1344,
+        "bottom": 768,
+        "width": 1344,
+        "height": 768
+      },
+      "selector_used": "[data-cb-home-scene]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(245, 227, 200)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Your field library Choose a course or start a new expedition. Start a new course Browse library A Auto Repair Fundamenta",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "grain",
+      "depth": 1,
+      "kind": "material",
+      "type_role": null,
+      "selector": ".cb3-material-grain",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.width",
+          "target": 1344,
+          "current": 1344,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 768,
+          "current": 768,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 0,
+        "right": 1344,
+        "bottom": 768,
+        "width": 1344,
+        "height": 768
+      },
+      "selector_used": ".cb3-material-grain",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "0.1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "vignette",
+      "depth": 1,
+      "kind": "material",
+      "type_role": null,
+      "selector": ".cb3-material-vignette",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.width",
+          "target": 1344,
+          "current": 1344,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 768,
+          "current": 768,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 0,
+        "right": 1344,
+        "bottom": 768,
+        "width": 1344,
+        "height": 768
+      },
+      "selector_used": ".cb3-material-vignette",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "0.55",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "header",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": "header",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "brand",
+      "depth": 2,
+      "kind": "text",
+      "type_role": "brand",
+      "selector": ".brand",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "nav",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "nav",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "nav-home",
+      "depth": 3,
+      "kind": "text",
+      "type_role": "nav",
+      "selector": "nav a.active",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "nav-discover",
+      "depth": 3,
+      "kind": "text",
+      "type_role": "nav",
+      "selector": "nav a",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "studio",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": ".studio",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "studio-mark",
+      "depth": 3,
+      "kind": "element",
+      "type_role": null,
+      "selector": ".studio i",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "studio-label",
+      "depth": 3,
+      "kind": "text",
+      "type_role": "studio",
+      "selector": ".studio",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "hero",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-hero]",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 128,
+          "current": 128,
+          "pass": true
+        },
+        {
+          "field": "box.right",
+          "target": 0,
+          "current": 0,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 128,
+        "right": 1344,
+        "bottom": 328.796875,
+        "width": 1344,
+        "height": 200.796875
+      },
+      "selector_used": "[data-cb-home-scene-hero]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Your field library Choose a course or start a new expedition. Start a new course Browse library",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "hero-h1",
+      "depth": 2,
+      "kind": "text",
+      "type_role": "hero-h1",
+      "selector": "[data-cb-home-scene-question]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 64,
+          "current": 64,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB Display",
+          "current": "CB Display",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#0d281b",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 128,
+        "right": 1344,
+        "bottom": 193.265625,
+        "width": 1344,
+        "height": 65.265625
+      },
+      "selector_used": "[data-cb-home-scene-question]",
+      "style": {
+        "fontSize": "64px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "600",
+        "color": "rgb(13, 40, 27)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Your field library",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "subline",
+      "depth": 2,
+      "kind": "text",
+      "type_role": "subline",
+      "selector": "[data-cb-home-scene-subline]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 32.64,
+          "current": 32.64,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 500,
+          "current": 500,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#5c5347",
+          "current": "#1a1713",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 0,
+        "top": 217.265625,
+        "right": 1344,
+        "bottom": 254.796875,
+        "width": 1344,
+        "height": 37.53125
+      },
+      "selector_used": "[data-cb-home-scene-subline]",
+      "style": {
+        "fontSize": "32.64px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "500",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Choose a course or start a new expedition.",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "cta",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cta]",
+      "index": null,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 0,
+        "top": 280.796875,
+        "right": 1344,
+        "bottom": 328.796875,
+        "width": 1344,
+        "height": 48
+      },
+      "selector_used": "[data-cb-home-scene-cta]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Start a new course Browse library",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "button-primary",
+      "depth": 3,
+      "kind": "control",
+      "type_role": "button",
+      "selector": "[data-cb-home-scene-primary]",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 16,
+          "current": 16,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#fffaf1",
+          "current": "#fffaf1",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 503.03125,
+        "top": 280.796875,
+        "right": 673.234375,
+        "bottom": 328.796875,
+        "width": 170.203125,
+        "height": 48
+      },
+      "selector_used": "[data-cb-home-scene-primary]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(255, 250, 241)",
+        "backgroundColor": "rgb(180, 83, 47)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Start a new course",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "button-secondary",
+      "depth": 3,
+      "kind": "control",
+      "type_role": "button",
+      "selector": "[data-cb-home-scene-secondary]",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 16,
+          "current": 16,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 697.234375,
+        "top": 280.796875,
+        "right": 840.953125,
+        "bottom": 328.796875,
+        "width": 143.71875,
+        "height": 48
+      },
+      "selector_used": "[data-cb-home-scene-secondary]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(240, 213, 193)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Browse library",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "shelf",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cards]",
+      "index": null,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 273,
+          "current": 273,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 384,
+          "current": 384,
+          "pass": true
+        },
+        {
+          "field": "box.width",
+          "target": 776,
+          "current": 776,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 175,
+          "current": 175,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 273,
+        "top": 384,
+        "right": 1049,
+        "bottom": 559,
+        "width": 776,
+        "height": 175
+      },
+      "selector_used": "[data-cb-home-scene-cards]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "flex",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "A Auto Repair Fundamentals 5 of 8 sections done J Japanese Cafe Basics 2 of 4 sections done A Astronomy 1 of 6 sections ",
+      "matches": 1,
+      "pass": true
+    },
+    {
+      "id": "card-1",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-card]",
+      "index": 0,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 175,
+          "current": 175,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 268.14801025390625,
+        "top": 381.6111145019531,
+        "right": 448.9656982421875,
+        "bottom": 561.4570922851562,
+        "width": 180.81768798828125,
+        "height": 179.84597778320312
+      },
+      "selector_used": "[data-cb-home-scene-card]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(244, 236, 217)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "A Auto Repair Fundamentals 5 of 8 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "cover-1",
+      "depth": 3,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cover]",
+      "index": 0,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 106,
+          "current": 106,
+          "pass": true
+        },
+        {
+          "field": "image.present",
+          "target": "<img>",
+          "current": "absent",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 268.14801025390625,
+        "top": 381.6111145019531,
+        "right": 447.0390930175781,
+        "bottom": 492.4840087890625,
+        "width": 178.89108276367188,
+        "height": 110.87289428710938
+      },
+      "selector_used": "[data-cb-home-scene-cover]",
+      "style": {
+        "fontSize": "32.64px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "400",
+        "color": "rgb(13, 40, 27)",
+        "backgroundColor": "rgb(240, 213, 193)",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "A",
+      "matches": 4,
+      "pass": false
+    },
+    {
+      "id": "card-body-1",
+      "depth": 3,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-body]",
+      "index": 0,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 271.10772705078125,
+        "top": 487.5697937011719,
+        "right": 449.0267639160156,
+        "bottom": 563.6437377929688,
+        "width": 177.91903686523438,
+        "height": 76.07394409179688
+      },
+      "selector_used": "[data-cb-home-scene-body]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Auto Repair Fundamentals 5 of 8 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-title-1",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-title",
+      "selector": "[data-cb-home-scene-title]",
+      "index": 0,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 14,
+          "current": 14,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 281.3271789550781,
+        "top": 495.84588623046875,
+        "right": 438.36053466796875,
+        "bottom": 539.3739013671875,
+        "width": 157.03335571289062,
+        "height": 43.52801513671875
+      },
+      "selector_used": "[data-cb-home-scene-title]",
+      "style": {
+        "fontSize": "14px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Auto Repair Fundamentals",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-1",
+      "depth": 4,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress]",
+      "index": 0,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 282.67266845703125,
+        "top": 544.0145874023438,
+        "right": 438.75146484375,
+        "bottom": 553.368408203125,
+        "width": 156.07879638671875,
+        "height": 9.35382080078125
+      },
+      "selector_used": "[data-cb-home-scene-progress]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(205, 184, 148)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-fill-1",
+      "depth": 5,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress] > i",
+      "index": 0,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 282.67266845703125,
+        "top": 545.6266479492188,
+        "right": 381.0395812988281,
+        "bottom": 553.368408203125,
+        "width": 98.36691284179688,
+        "height": 7.74176025390625
+      },
+      "selector_used": "[data-cb-home-scene-progress] > i",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(161, 116, 31)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-meta-1",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-meta",
+      "selector": "[data-cb-home-scene-meta]",
+      "index": 0,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 282.8122863769531,
+        "top": 553.3405151367188,
+        "right": 283.8398132324219,
+        "bottom": 554.3680419921875,
+        "width": 1.02752685546875,
+        "height": 1.02752685546875
+      },
+      "selector_used": "[data-cb-home-scene-meta]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "5 of 8 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-2",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-card]",
+      "index": 1,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 175,
+          "current": 175,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 473.0085754394531,
+        "top": 382.78839111328125,
+        "right": 651.434814453125,
+        "bottom": 560.2286376953125,
+        "width": 178.42623901367188,
+        "height": 177.44024658203125
+      },
+      "selector_used": "[data-cb-home-scene-card]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(244, 236, 217)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "J Japanese Cafe Basics 2 of 4 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "cover-2",
+      "depth": 3,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cover]",
+      "index": 1,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 106,
+          "current": 106,
+          "pass": true
+        },
+        {
+          "field": "image.present",
+          "target": "<img>",
+          "current": "absent",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 473.97198486328125,
+        "top": 382.78839111328125,
+        "right": 651.434814453125,
+        "bottom": 491.23541259765625,
+        "width": 177.46282958984375,
+        "height": 108.447021484375
+      },
+      "selector_used": "[data-cb-home-scene-cover]",
+      "style": {
+        "fontSize": "32.64px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "400",
+        "color": "rgb(13, 40, 27)",
+        "backgroundColor": "rgb(240, 213, 193)",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "J",
+      "matches": 4,
+      "pass": false
+    },
+    {
+      "id": "card-body-2",
+      "depth": 3,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-body]",
+      "index": 1,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 473.2515869140625,
+        "top": 488.7780456542969,
+        "right": 649.954833984375,
+        "bottom": 542.8240966796875,
+        "width": 176.7032470703125,
+        "height": 54.046051025390625
+      },
+      "selector_used": "[data-cb-home-scene-body]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Japanese Cafe Basics 2 of 4 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-title-2",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-title",
+      "selector": "[data-cb-home-scene-title]",
+      "index": 1,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 14,
+          "current": 14,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 483.5857238769531,
+        "top": 496.9169006347656,
+        "right": 639.8441162109375,
+        "bottom": 518.6868286132812,
+        "width": 156.25839233398438,
+        "height": 21.769927978515625
+      },
+      "selector_used": "[data-cb-home-scene-title]",
+      "style": {
+        "fontSize": "14px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Japanese Cafe Basics",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-2",
+      "depth": 4,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress]",
+      "index": 1,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 483.3902587890625,
+        "top": 525.5078735351562,
+        "right": 639.44482421875,
+        "bottom": 532.6854858398438,
+        "width": 156.0545654296875,
+        "height": 7.1776123046875
+      },
+      "selector_used": "[data-cb-home-scene-progress]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(205, 184, 148)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-fill-2",
+      "depth": 5,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress] > i",
+      "index": 1,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 483.3902587890625,
+        "top": 525.5078735351562,
+        "right": 561.4524536132812,
+        "bottom": 531.596435546875,
+        "width": 78.06219482421875,
+        "height": 6.08856201171875
+      },
+      "selector_used": "[data-cb-home-scene-progress] > i",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(161, 116, 31)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-meta-2",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-meta",
+      "selector": "[data-cb-home-scene-meta]",
+      "index": 1,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 483.37628173828125,
+        "top": 530.5073852539062,
+        "right": 484.39013671875,
+        "bottom": 531.521240234375,
+        "width": 1.01385498046875,
+        "height": 1.01385498046875
+      },
+      "selector_used": "[data-cb-home-scene-meta]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "2 of 4 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-3",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-card]",
+      "index": 2,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 175,
+          "current": 175,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 671.1722412109375,
+        "top": 383.08807373046875,
+        "right": 848.9951782226562,
+        "bottom": 559.9215087890625,
+        "width": 177.82293701171875,
+        "height": 176.83343505859375
+      },
+      "selector_used": "[data-cb-home-scene-card]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(244, 236, 217)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "A Astronomy 1 of 6 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "cover-3",
+      "depth": 3,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cover]",
+      "index": 2,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 106,
+          "current": 106,
+          "pass": true
+        },
+        {
+          "field": "image.present",
+          "target": "<img>",
+          "current": "absent",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 671.1722412109375,
+        "top": 383.08807373046875,
+        "right": 848.2726440429688,
+        "bottom": 490.92529296875,
+        "width": 177.10040283203125,
+        "height": 107.83721923828125
+      },
+      "selector_used": "[data-cb-home-scene-cover]",
+      "style": {
+        "fontSize": "32.64px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "400",
+        "color": "rgb(13, 40, 27)",
+        "backgroundColor": "rgb(240, 213, 193)",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "A",
+      "matches": 4,
+      "pass": false
+    },
+    {
+      "id": "card-body-3",
+      "depth": 3,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-body]",
+      "index": 2,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 672.2822265625,
+        "top": 489.082275390625,
+        "right": 848.8129272460938,
+        "bottom": 542.5162353515625,
+        "width": 176.53070068359375,
+        "height": 53.4339599609375
+      },
+      "selector_used": "[data-cb-home-scene-body]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Astronomy 1 of 6 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-title-3",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-title",
+      "selector": "[data-cb-home-scene-title]",
+      "index": 2,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 14,
+          "current": 14,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 682.365478515625,
+        "top": 497.1865539550781,
+        "right": 838.5621337890625,
+        "bottom": 518.412841796875,
+        "width": 156.1966552734375,
+        "height": 21.226287841796875
+      },
+      "selector_used": "[data-cb-home-scene-title]",
+      "style": {
+        "fontSize": "14px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Astronomy",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-3",
+      "depth": 4,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress]",
+      "index": 2,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 682.6649169921875,
+        "top": 525.7787475585938,
+        "right": 838.708740234375,
+        "bottom": 532.4120483398438,
+        "width": 156.0438232421875,
+        "height": 6.63330078125
+      },
+      "selector_used": "[data-cb-home-scene-progress]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(205, 184, 148)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-fill-3",
+      "depth": 5,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress] > i",
+      "index": 2,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 682.6649169921875,
+        "top": 527.1346435546875,
+        "right": 709.2314453125,
+        "bottom": 532.4120483398438,
+        "width": 26.5665283203125,
+        "height": 5.27740478515625
+      },
+      "selector_used": "[data-cb-home-scene-progress] > i",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(161, 116, 31)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-meta-3",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-meta",
+      "selector": "[data-cb-home-scene-meta]",
+      "index": 2,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 682.71728515625,
+        "top": 532.401611328125,
+        "right": 683.7276611328125,
+        "bottom": 533.4119873046875,
+        "width": 1.0103759765625,
+        "height": 1.0103759765625
+      },
+      "selector_used": "[data-cb-home-scene-meta]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "1 of 6 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-4",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-card]",
+      "index": 3,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 175,
+          "current": 175,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 873.0262451171875,
+        "top": 381.9022216796875,
+        "right": 1053.2493896484375,
+        "bottom": 561.1500244140625,
+        "width": 180.22314453125,
+        "height": 179.247802734375
+      },
+      "selector_used": "[data-cb-home-scene-card]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(244, 236, 217)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "S Sourdough 0 of 3 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "cover-4",
+      "depth": 3,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-cover]",
+      "index": 3,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.width",
+          "target": 176,
+          "current": 176,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 106,
+          "current": 106,
+          "pass": true
+        },
+        {
+          "field": "image.present",
+          "target": "<img>",
+          "current": "absent",
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 874.7120971679688,
+        "top": 381.9022216796875,
+        "right": 1053.2493896484375,
+        "bottom": 492.1706237792969,
+        "width": 178.53729248046875,
+        "height": 110.26840209960938
+      },
+      "selector_used": "[data-cb-home-scene-cover]",
+      "style": {
+        "fontSize": "32.64px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "400",
+        "color": "rgb(13, 40, 27)",
+        "backgroundColor": "rgb(240, 213, 193)",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "S",
+      "matches": 4,
+      "pass": false
+    },
+    {
+      "id": "card-body-4",
+      "depth": 3,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-body]",
+      "index": 3,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 873.4515380859375,
+        "top": 487.8705749511719,
+        "right": 1050.6595458984375,
+        "bottom": 543.7489624023438,
+        "width": 177.2080078125,
+        "height": 55.878387451171875
+      },
+      "selector_used": "[data-cb-home-scene-body]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Sourdough 0 of 3 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-title-4",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-title",
+      "selector": "[data-cb-home-scene-title]",
+      "index": 3,
+      "status": "ok",
+      "checks": [
+        {
+          "field": "font-size",
+          "target": 14,
+          "current": 14,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB UI",
+          "current": "CB UI",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 600,
+          "current": 600,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 884.034912109375,
+        "top": 496.11248779296875,
+        "right": 1040.467041015625,
+        "bottom": 519.5118408203125,
+        "width": 156.43212890625,
+        "height": 23.39935302734375
+      },
+      "selector_used": "[data-cb-home-scene-title]",
+      "style": {
+        "fontSize": "14px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "600",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "Sourdough",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-4",
+      "depth": 4,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress]",
+      "index": 3,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 883.69287109375,
+        "top": 524.6976928710938,
+        "right": 1039.7685546875,
+        "bottom": 533.5076293945312,
+        "width": 156.07568359375,
+        "height": 8.8099365234375
+      },
+      "selector_used": "[data-cb-home-scene-progress]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(205, 184, 148)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-progress-fill-4",
+      "depth": 5,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-progress] > i",
+      "index": 3,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 883.69287109375,
+        "top": 524.6976928710938,
+        "right": 883.8150634765625,
+        "bottom": 529.6962280273438,
+        "width": 0.1221923828125,
+        "height": 4.99853515625
+      },
+      "selector_used": "[data-cb-home-scene-progress] > i",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(161, 116, 31)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "card-meta-4",
+      "depth": 4,
+      "kind": "text",
+      "type_role": "card-meta",
+      "selector": "[data-cb-home-scene-meta]",
+      "index": 3,
+      "status": "ok",
+      "checks": [],
+      "rect": {
+        "left": 883.66845703125,
+        "top": 529.6962280273438,
+        "right": 884.6925659179688,
+        "bottom": 530.7203369140625,
+        "width": 1.02410888671875,
+        "height": 1.02410888671875
+      },
+      "selector_used": "[data-cb-home-scene-meta]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "0 of 3 sections done",
+      "matches": 4,
+      "pass": true
+    },
+    {
+      "id": "planks",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-plank-one]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 219,
+          "current": 219,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 559,
+          "current": 545,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 915,
+          "current": 870,
+          "pass": false
+        },
+        {
+          "field": "box.height",
+          "target": 18,
+          "current": 20,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 219,
+        "top": 545,
+        "right": 1089,
+        "bottom": 565,
+        "width": 870,
+        "height": 20
+      },
+      "selector_used": "[data-cb-home-scene-plank-one]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(165, 118, 63)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "plank-one",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-plank-one]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 219,
+          "current": 219,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 559,
+          "current": 545,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 915,
+          "current": 870,
+          "pass": false
+        },
+        {
+          "field": "box.height",
+          "target": 18,
+          "current": 20,
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 219,
+        "top": 545,
+        "right": 1089,
+        "bottom": 565,
+        "width": 870,
+        "height": 20
+      },
+      "selector_used": "[data-cb-home-scene-plank-one]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(165, 118, 63)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "plank-two",
+      "depth": 2,
+      "kind": "element",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-plank-two]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 130,
+          "current": 115,
+          "pass": false
+        },
+        {
+          "field": "box.top",
+          "target": 684,
+          "current": 681,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 1150,
+          "current": 1165,
+          "pass": false
+        },
+        {
+          "field": "box.height",
+          "target": 30,
+          "current": 34,
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 115,
+        "top": 681,
+        "right": 1280,
+        "bottom": 715,
+        "width": 1165,
+        "height": 34
+      },
+      "selector_used": "[data-cb-home-scene-plank-two]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(165, 118, 63)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "bracket-left",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": ".bracket.l",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "bracket-right",
+      "depth": 1,
+      "kind": "element",
+      "type_role": null,
+      "selector": ".bracket.r",
+      "index": null,
+      "status": "absent",
+      "checks": [],
+      "matches": 0
+    },
+    {
+      "id": "tag",
+      "depth": 1,
+      "kind": "text",
+      "type_role": "tag",
+      "selector": "[data-cb-home-scene-tag]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 880,
+          "current": 884,
+          "pass": false
+        },
+        {
+          "field": "box.top",
+          "target": 606,
+          "current": 616,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 164,
+          "current": 164,
+          "pass": true
+        },
+        {
+          "field": "box.height",
+          "target": 88,
+          "current": 88,
+          "pass": true
+        },
+        {
+          "field": "font-size",
+          "target": 20,
+          "current": 20,
+          "pass": true
+        },
+        {
+          "field": "font-family",
+          "target": "CB Display",
+          "current": "CB Display",
+          "pass": true
+        },
+        {
+          "field": "font-weight",
+          "target": 400,
+          "current": 400,
+          "pass": true
+        },
+        {
+          "field": "color",
+          "target": "#1a1713",
+          "current": "#1a1713",
+          "pass": true
+        }
+      ],
+      "rect": {
+        "left": 881.8095703125,
+        "top": 611.7687377929688,
+        "right": 1050.1904296875,
+        "bottom": 708.2312622070312,
+        "width": 168.380859375,
+        "height": 96.4625244140625
+      },
+      "selector_used": "[data-cb-home-scene-tag]",
+      "style": {
+        "fontSize": "20px",
+        "fontFamily": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgb(244, 236, 217)",
+        "display": "grid",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "New course",
+      "matches": 1,
+      "pass": false
+    },
+    {
+      "id": "clock",
+      "depth": 1,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-clock]",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 1042,
+          "current": 1050,
+          "pass": false
+        },
+        {
+          "field": "box.top",
+          "target": 588,
+          "current": 596,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 118,
+          "current": 112,
+          "pass": false
+        },
+        {
+          "field": "box.height",
+          "target": 118,
+          "current": 112,
+          "pass": false
+        },
+        {
+          "field": "image.naturalWidth",
+          "target": 118,
+          "current": 256,
+          "pass": true
+        },
+        {
+          "field": "image.naturalHeight",
+          "target": 118,
+          "current": 256,
+          "pass": true
+        },
+        {
+          "field": "image.rendered.width",
+          "target": 118,
+          "current": 112,
+          "pass": false
+        },
+        {
+          "field": "image.rendered.height",
+          "target": 118,
+          "current": 112,
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 1050,
+        "top": 596,
+        "right": 1162,
+        "bottom": 708,
+        "width": 112,
+        "height": 112
+      },
+      "selector_used": "[data-cb-home-scene-clock]",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "image": {
+        "currentSrc": "data:image/webp;base64,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",
+        "naturalWidth": 256,
+        "naturalHeight": 256,
+        "renderedWidth": 112,
+        "renderedHeight": 112,
+        "complete": true,
+        "assetPath": "assets/art/objects/clock.png",
+        "assetSha256": "e734ab1231be48cd803219c5de710cb8f2cf32025d8de7e693d97f77931861a8",
+        "assetNatural": {
+          "width": 256,
+          "height": 256
+        },
+        "currentSrcSha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+        "currentSrcBytes": 26566
+      },
+      "pass": false
+    },
+    {
+      "id": "fox",
+      "depth": 1,
+      "kind": "image",
+      "type_role": null,
+      "selector": "[data-cb-home-scene-fox] img",
+      "index": null,
+      "status": "mismatch",
+      "checks": [
+        {
+          "field": "box.left",
+          "target": 1088,
+          "current": 1090,
+          "pass": true
+        },
+        {
+          "field": "box.top",
+          "target": 526,
+          "current": 486,
+          "pass": false
+        },
+        {
+          "field": "box.width",
+          "target": 208,
+          "current": 220,
+          "pass": false
+        },
+        {
+          "field": "box.height",
+          "target": 208,
+          "current": 220,
+          "pass": false
+        },
+        {
+          "field": "image.naturalWidth",
+          "target": 208,
+          "current": 128,
+          "pass": false
+        },
+        {
+          "field": "image.naturalHeight",
+          "target": 208,
+          "current": 128,
+          "pass": false
+        },
+        {
+          "field": "image.rendered.width",
+          "target": 208,
+          "current": 220,
+          "pass": false
+        },
+        {
+          "field": "image.rendered.height",
+          "target": 208,
+          "current": 220,
+          "pass": false
+        }
+      ],
+      "rect": {
+        "left": 1090,
+        "top": 486,
+        "right": 1310,
+        "bottom": 706,
+        "width": 220,
+        "height": 220
+      },
+      "selector_used": "[data-cb-home-scene-fox] img",
+      "style": {
+        "fontSize": "16px",
+        "fontFamily": "\"CB UI\", \"Source Sans 3\", system-ui, \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif",
+        "fontWeight": "400",
+        "color": "rgb(26, 23, 19)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "display": "block",
+        "visibility": "visible",
+        "opacity": "1",
+        "transitionDuration": "0s"
+      },
+      "text": "",
+      "matches": 1,
+      "image": {
+        "currentSrc": "data:image/webp;base64,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",
+        "naturalWidth": 128,
+        "naturalHeight": 128,
+        "renderedWidth": 220,
+        "renderedHeight": 220,
+        "complete": true,
+        "assetPath": "assets/art/fox/fox-clock-256.png",
+        "assetSha256": "32312f0504cd2eeaaaa2b9831520fab0e48dd50b3cfa9d258ca4689c6bf75261",
+        "assetNatural": {
+          "width": 256,
+          "height": 256
+        },
+        "currentSrcSha256": "3d057e10d4138a084ba97e81f5d5f05b4f74b744d664d89c2e371d03f1247854",
+        "currentSrcBytes": 3244
+      },
+      "pass": false
+    }
+  ],
+  "deltas": [
+    {
+      "node": "header",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "brand",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "nav",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "nav-home",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "nav-discover",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "studio",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "studio-mark",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "studio-label",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "hero-h1",
+      "field": "color",
+      "target": "#1a1713",
+      "current": "#0d281b",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "subline",
+      "field": "color",
+      "target": "#5c5347",
+      "current": "#1a1713",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "cover-1",
+      "field": "image.present",
+      "target": "<img>",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "cover-2",
+      "field": "image.present",
+      "target": "<img>",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "cover-3",
+      "field": "image.present",
+      "target": "<img>",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "cover-4",
+      "field": "image.present",
+      "target": "<img>",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "planks",
+      "field": "box.top",
+      "target": 559,
+      "current": 545,
+      "delta": -14,
+      "abs": 14,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "planks",
+      "field": "box.width",
+      "target": 915,
+      "current": 870,
+      "delta": -45,
+      "abs": 45,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-one",
+      "field": "box.top",
+      "target": 559,
+      "current": 545,
+      "delta": -14,
+      "abs": 14,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-one",
+      "field": "box.width",
+      "target": 915,
+      "current": 870,
+      "delta": -45,
+      "abs": 45,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-two",
+      "field": "box.left",
+      "target": 130,
+      "current": 115,
+      "delta": -15,
+      "abs": 15,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-two",
+      "field": "box.top",
+      "target": 684,
+      "current": 681,
+      "delta": -3,
+      "abs": 3,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-two",
+      "field": "box.width",
+      "target": 1150,
+      "current": 1165,
+      "delta": 15,
+      "abs": 15,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "plank-two",
+      "field": "box.height",
+      "target": 30,
+      "current": 34,
+      "delta": 4,
+      "abs": 4,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "bracket-left",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "bracket-right",
+      "field": "presence",
+      "target": "present",
+      "current": "absent",
+      "delta": null,
+      "abs": null,
+      "verdict": "differs",
+      "unit": null
+    },
+    {
+      "node": "tag",
+      "field": "box.left",
+      "target": 880,
+      "current": 884,
+      "delta": 4,
+      "abs": 4,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "tag",
+      "field": "box.top",
+      "target": 606,
+      "current": 616,
+      "delta": 10,
+      "abs": 10,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "box.left",
+      "target": 1042,
+      "current": 1050,
+      "delta": 8,
+      "abs": 8,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "box.top",
+      "target": 588,
+      "current": 596,
+      "delta": 8,
+      "abs": 8,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "box.width",
+      "target": 118,
+      "current": 112,
+      "delta": -6,
+      "abs": 6,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "box.height",
+      "target": 118,
+      "current": 112,
+      "delta": -6,
+      "abs": 6,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "image.rendered.width",
+      "target": 118,
+      "current": 112,
+      "delta": -6,
+      "abs": 6,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "clock",
+      "field": "image.rendered.height",
+      "target": 118,
+      "current": 112,
+      "delta": -6,
+      "abs": 6,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "box.top",
+      "target": 526,
+      "current": 486,
+      "delta": -40,
+      "abs": 40,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "box.width",
+      "target": 208,
+      "current": 220,
+      "delta": 12,
+      "abs": 12,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "box.height",
+      "target": 208,
+      "current": 220,
+      "delta": 12,
+      "abs": 12,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "image.naturalWidth",
+      "target": 208,
+      "current": 128,
+      "delta": -80,
+      "abs": 80,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "image.naturalHeight",
+      "target": 208,
+      "current": 128,
+      "delta": -80,
+      "abs": 80,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "image.rendered.width",
+      "target": 208,
+      "current": 220,
+      "delta": 12,
+      "abs": 12,
+      "verdict": "out",
+      "unit": "px"
+    },
+    {
+      "node": "fox",
+      "field": "image.rendered.height",
+      "target": 208,
+      "current": 220,
+      "delta": 12,
+      "abs": 12,
+      "verdict": "out",
+      "unit": "px"
+    }
+  ]
+}
