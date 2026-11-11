@@ -1081,6 +1081,19 @@ function CoursebookHome({
     }, 'shelf')
   }
 
+  // CP-053 — the wide Home is the room scene: a centred invitation, one shelf of collectible cards
+  // and a lower ledge. It owns the route width >= 1200 band only. Every narrower layout, and every
+  // loading / error / empty state, keeps the v3 hub below exactly as the seam wrote it.
+  if (width >= 1200 && status === 'ready' && hub.total > 0) {
+    return jsx(HomeScene, {
+      slots,
+      canCreate,
+      onStartCreate,
+      onBrowseLibrary,
+      onOpenCourse
+    }, 'scene')
+  }
+
   return jsxs('div', {
     'data-cb-home': status === 'ready' && hub.total === 0 ? 'empty' : status,
     'data-cb-home-layout': compact ? 'stacked' : 'wide',

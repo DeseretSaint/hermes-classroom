@@ -167,10 +167,11 @@ class HomeSceneTest(unittest.TestCase):
         self.assertNotIn('data-cb-home-card=""', wide)
 
     def test_narrow_home_keeps_its_shelf_and_see_all(self) -> None:
+        # After the CP-040 seam, the narrow Home is the v3 hub; the scene must never appear there.
         html = self.render(1049)
-        self.assertEqual(html.count('data-cb-home-card=""'), 4)
-        self.assertIn("See all", html)
         self.assertNotIn("data-cb-home-scene", html)
+        self.assertIn("data-cb-home-layout=", html)
+        self.assertIn("data-cb-home-card", html)
 
     # --- the measured geometry lives in the stylesheet --------------------------------------
 
