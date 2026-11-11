@@ -20,8 +20,11 @@ contact-sheet.png              every captured frame on one labelled sheet
   bundled-asset path when the bytes match `desktop/cb-assets.generated.js`, and whether the row is a
   placeholder or a Press Plate (matched by sha256 against the bundled pack covers);
 - the same for every `background-image` layer, plus `background-repeat` and `background-size`, so a
-  tiling decoration is distinguishable from an upscaled illustration. A layer that tiles is not held
-  to the 2x ratio; no background layer satisfies a display role.
+  tiling decoration is distinguishable from an upscaled illustration. The 2x rule is applied per
+  axis: an axis is exempt only when the layer repeats on it and paints it at the file's own size
+  (`auto` or a length), so a `repeat` + `auto` grain tile is decoration, a `repeat-x` + `auto 100%`
+  plank is judged on height only, and a `repeat` + `cover` layer is still an upscale. No background
+  layer satisfies a display role.
 
 ## What this packet is not
 
@@ -31,7 +34,7 @@ contact-sheet.png              every captured frame on one labelled sheet
 - `manifest.json` separates **passed**, **failed** (a frame exists and the judge refused it) and
   **never captured** (no frame at all). A failed frame is never reported as a missing one.
 
-## 2026-11-11 baseline — captured at `80a81fd7`, plugin `251a3948…`
+## 2026-11-11 baseline — captured at `a78ce220`, plugin `251a3948…`
 
 16 of 24 matrix cells captured (Home, Discover, Course home, Design System × 1344/1049/900/460),
 0 pass, 16 failed, 8 never captured. Classroom and World Studio were not captured from this library:
@@ -46,8 +49,9 @@ harness does not fabricate one.
 | design-system ×4 | the installed plugin mounts no Design System surface (VQ-003 has not landed) |
 | classroom, world-studio | never captured — no approved Game world in the seeded library |
 
-The grain and shelf-plank background layers tile (`repeat`, `repeat-x`) and are exempt from the 2x
-ratio; only the no-repeat vignette is flagged.
+The grain background layer tiles at its own 96 px (`repeat` + `auto`) and is exempt from the 2x
+ratio; the five `repeat-x` + `auto 100%` shelf planks are judged on height only (256 px of source for
+12–34 px of paint, a downscale that passes); only the `cover` vignette is flagged, on both axes.
 
 ## Driver coverage (not evidence)
 

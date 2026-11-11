@@ -1,8 +1,8 @@
 {
   "schema": "vq.manifest.v1",
   "tool": "scripts/vq-manifest.py",
-  "generated_at": "2026-11-11T09:39:38+00:00",
-  "commit": "80a81fd78b9673d2d6d0876591608acd1862f9b2",
+  "generated_at": "2026-11-11T09:54:54+00:00",
+  "commit": "a78ce220a34080521cdd55509d452fa1b4902650",
   "plugin_sha256": [
     "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
   ],
@@ -39,7 +39,7 @@
       "problems": [
         "required image missing: course_map 0/1",
         "required image missing: fox_pose 0/1",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -86,7 +86,9 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -115,9 +117,14 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1049.00px"
+            "natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
           ]
         }
       ],
@@ -137,8 +144,8 @@
       },
       "screenshot": {
         "file": "course-home--1049.png",
-        "declared": "1fff401578b012f3b6a5a143ddf65e039670f5c1c4b496cf0882440be1e91078",
-        "measured": "1fff401578b012f3b6a5a143ddf65e039670f5c1c4b496cf0882440be1e91078",
+        "declared": "e5e39fd0225448119892d8b4dd74a4f2e44964a3efcfd7a4d4bf629106a2d69c",
+        "measured": "e5e39fd0225448119892d8b4dd74a4f2e44964a3efcfd7a4d4bf629106a2d69c",
         "ok": true
       }
     },
@@ -150,7 +157,7 @@
       "problems": [
         "required image missing: course_map 0/1",
         "required image missing: fox_pose 0/1",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -197,7 +204,9 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -226,9 +235,14 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1344.00px"
+            "natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
           ]
         }
       ],
@@ -248,8 +262,8 @@
       },
       "screenshot": {
         "file": "course-home--1344.png",
-        "declared": "028bae33be46b075f492571c39d82d73aa0a52a6d2e146e9752d91a7736fce1e",
-        "measured": "028bae33be46b075f492571c39d82d73aa0a52a6d2e146e9752d91a7736fce1e",
+        "declared": "2c3e7450e7bf42d53127349bb7faaa311ea866072cd75f253da05e81f46807a7",
+        "measured": "2c3e7450e7bf42d53127349bb7faaa311ea866072cd75f253da05e81f46807a7",
         "ok": true
       }
     },
@@ -260,7 +274,7 @@
       "ok": false,
       "problems": [
         "required image missing: course_map 0/1",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -308,7 +322,9 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -337,9 +353,14 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 460.00px"
+            "natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
           ]
         }
       ],
@@ -359,8 +380,8 @@
       },
       "screenshot": {
         "file": "course-home--460.png",
-        "declared": "1e52dd773402921c89fc0f3a9dc229b8def422ba0d147f80700bc5411b4e29b5",
-        "measured": "1e52dd773402921c89fc0f3a9dc229b8def422ba0d147f80700bc5411b4e29b5",
+        "declared": "81eec57b470a092dfbddf446d9cf7ba39ea63409d1b0d53552e939886ab56be1",
+        "measured": "81eec57b470a092dfbddf446d9cf7ba39ea63409d1b0d53552e939886ab56be1",
         "ok": true
       }
     },
@@ -372,7 +393,7 @@
       "problems": [
         "required image missing: course_map 0/1",
         "required image missing: fox_pose 0/1",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -419,7 +440,9 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -448,9 +471,14 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 900.00px"
+            "natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
           ]
         }
       ],
@@ -470,8 +498,8 @@
       },
       "screenshot": {
         "file": "course-home--900.png",
-        "declared": "3f0747f0d3a8657a8e58b06625060c3c1ba1c400bb542ead9e29007969bbd012",
-        "measured": "3f0747f0d3a8657a8e58b06625060c3c1ba1c400bb542ead9e29007969bbd012",
+        "declared": "a52e915ba15ddbfe7d14d382b6e098a4c54425904b42738aa4188ae51fb55b03",
+        "measured": "a52e915ba15ddbfe7d14d382b6e098a4c54425904b42738aa4188ae51fb55b03",
         "ok": true
       }
     },
@@ -633,7 +661,7 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px",
-        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -797,7 +825,9 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -826,9 +856,14 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1049.00px"
+            "natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
           ]
         }
       ],
@@ -867,7 +902,7 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px",
-        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -1031,7 +1066,9 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -1060,9 +1097,14 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1344.00px"
+            "natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
           ]
         }
       ],
@@ -1099,7 +1141,7 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
-        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -1236,7 +1278,9 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -1265,9 +1309,14 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 460.00px"
+            "natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
           ]
         }
       ],
@@ -1306,7 +1355,7 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 88.00px",
-        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -1470,7 +1519,9 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -1499,9 +1550,14 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 900.00px"
+            "natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
           ]
         }
       ],
@@ -1536,7 +1592,7 @@
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
         "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
         "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 128.00px",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -1655,7 +1711,9 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -1684,9 +1742,14 @@
             "group": "material"
           },
           "scale_ratio": 0.092,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1049.00px"
+            "natural 96x96px is below 2x rendered 1049.00x714.00px (both axes)"
           ]
         },
         {
@@ -1715,7 +1778,11 @@
             "group": "objects"
           },
           "scale_ratio": 0.262,
-          "ratio_judged": false,
+          "scale_ratio_y": 21.333,
+          "ratio_judged": true,
+          "judged_axes": [
+            "y"
+          ],
           "problems": []
         }
       ],
@@ -1748,7 +1815,7 @@
       "problems": [
         "required image missing: display_cover 0/4",
         "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 220.00px",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -1848,7 +1915,9 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -1877,9 +1946,14 @@
             "group": "material"
           },
           "scale_ratio": 0.071,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 1344.00px"
+            "natural 96x96px is below 2x rendered 1344.00x714.00px (both axes)"
           ]
         },
         {
@@ -1908,7 +1982,11 @@
             "group": "objects"
           },
           "scale_ratio": 0.294,
-          "ratio_judged": false,
+          "scale_ratio_y": 12.8,
+          "ratio_judged": true,
+          "judged_axes": [
+            "y"
+          ],
           "problems": []
         },
         {
@@ -1937,7 +2015,11 @@
             "group": "objects"
           },
           "scale_ratio": 0.22,
-          "ratio_judged": false,
+          "scale_ratio_y": 7.529,
+          "ratio_judged": true,
+          "judged_axes": [
+            "y"
+          ],
           "problems": []
         }
       ],
@@ -1971,7 +2053,7 @@
         "required image missing: display_cover 0/4",
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
         "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -2064,7 +2146,9 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -2093,9 +2177,14 @@
             "group": "material"
           },
           "scale_ratio": 0.209,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 460.00px"
+            "natural 96x96px is below 2x rendered 460.00x714.00px (both axes)"
           ]
         },
         {
@@ -2124,7 +2213,11 @@
             "group": "objects"
           },
           "scale_ratio": 0.596,
-          "ratio_judged": false,
+          "scale_ratio_y": 21.333,
+          "ratio_judged": true,
+          "judged_axes": [
+            "y"
+          ],
           "problems": []
         }
       ],
@@ -2159,7 +2252,7 @@
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
         "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
         "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 128.00px",
-        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
       ],
       "warnings": [],
       "requirements": [
@@ -2278,7 +2371,9 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": false,
+          "judged_axes": [],
           "problems": []
         },
         {
@@ -2307,9 +2402,14 @@
             "group": "material"
           },
           "scale_ratio": 0.107,
+          "scale_ratio_y": 0.134,
           "ratio_judged": true,
+          "judged_axes": [
+            "x",
+            "y"
+          ],
           "problems": [
-            "natural 96px is below 2x rendered 900.00px"
+            "natural 96x96px is below 2x rendered 900.00x714.00px (both axes)"
           ]
         },
         {
@@ -2338,7 +2438,11 @@
             "group": "objects"
           },
           "scale_ratio": 0.306,
-          "ratio_judged": false,
+          "scale_ratio_y": 21.333,
+          "ratio_judged": true,
+          "judged_axes": [
+            "y"
+          ],
           "problems": []
         }
       ],

@@ -6,7 +6,7 @@
     "width": 460,
     "height": 768
   },
-  "captured_at": "2026-11-11T09:39:01.766Z",
+  "captured_at": "2026-11-11T09:54:44.901Z",
   "window": {
     "cdp_port": 9396,
     "plugin": {
@@ -55,8 +55,8 @@
   },
   "screenshot": {
     "file": "course-home--460.png",
-    "sha256": "1e52dd773402921c89fc0f3a9dc229b8def422ba0d147f80700bc5411b4e29b5",
-    "bytes": 69443,
+    "sha256": "81eec57b470a092dfbddf446d9cf7ba39ea63409d1b0d53552e939886ab56be1",
+    "bytes": 69384,
     "clip": {
       "x": 260,
       "y": 34,
