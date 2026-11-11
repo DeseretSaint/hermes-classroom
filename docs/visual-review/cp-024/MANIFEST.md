@@ -149,14 +149,21 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
 6. The visual gate has **no stored baseline** for the course-home route (`visual/baselines/` holds
    Home, Courses, Workshop, Studio only), so the gate's pixel-diff field is recorded as
    not-applicable rather than as a pass.
+7. Frame-reading note: the disposable rig holds two Japanese courses with near-identical titles
+   ("…an L0 demonstration classroom" and "…a Sample L0 classroom"). They are **different course
+   ids**, and the aside filters by id — verified live on the rig, current `crs_6500…`, others
+   `crs_97ee…`, `crs_9fa5…`, `crs_a96e…`. A frame whose aside appears to list "the course you are
+   on" is showing the twin course, not a self row.
 
 ## Verification run on this tree
 
 - `python3 scripts/build_plugin.py --check` → matches `desktop/src` (`31c8bc94…42dc`).
 - `tests.test_plugin_build` + `tests.test_cp_024_course_home_v3` → 20 tests OK (the three card-named
   tests, the composed overview, the new DOM-order and title-wrap tests).
+- Targeted regression group (`plugin_build`, `cp_024`, `m4_visual_audit`, `visual_gate_tools`,
+  `desktop_tokens_v3`, `v3_primitives`, `a11y_structure`, `home_hub`, `gate_scope`, `cp_shelf_facts`,
+  `lesson_views`) → **Ran 160, OK (skipped=2)**.
+- Full suite on `e1a5289` → **Ran 3495 tests in 1363.820s, OK (skipped=11)**.
+- `bash scripts/validate-plugin.sh` on `e1a5289` → **release gate passed 4/4** (4147 files).
 - `docs/visual-review/cp-024/verify_stamps.py` → 15 stamps, 0 problems.
 - `scripts/m4v-audit.py` regenerated on this module (15/15 claims PASS) + `test_m4_visual_audit` → 14 OK.
-- Targeted regression group (tokens_v3, v3_primitives, a11y_structure, home_hub, gate_scope,
-  cp_shelf_facts, lesson_views, gm010, cp_capture_stamp, visual_gate_tools) → see review summary.
-- Full suite and `scripts/validate-plugin.sh` → see review summary.
