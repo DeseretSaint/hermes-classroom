@@ -1,13 +1,21 @@
-"""GM-002 — the global Home launcher and the course-home split.
+"""GM-002 — the global Home launcher and the course-home split (v3 Home, CP-022).
 
 Global Home answers one question ("what do I want to learn now?") and is a library, not a course
 page. The selected course's home keeps the trailhead and Continue and is reached only from Home by
 opening that course. These tests render the shipped module through React:
 
-  * `CoursebookHome` (static render) for the shelf, the one create action, the honest empty and
-    failed-read states, and the absence of every invented metric the card refuses;
+  * `CoursebookHome` (static render) — CP-022 replaced the composition with the v3 Home
+    (SPEC-V3 §5.1): one threshold band, one filled `Start a new course` pill plus one quiet
+    `Browse library` pill, a `ShelfPlank` of four card-fact courses with `See all`, and the copy
+    deck's own strings (`docs/concept-parity/COPY.md` §2). The static cases below therefore assert
+    the v3 shape, not the retired v2 card (six cards, a goal paragraph, `Browse the library`);
   * the real route in jsdom for the Home -> course home -> back walkthrough, so "global Home never
     silently becomes a course home" is a behaviour, not a comment.
+
+The migration of this module is recorded per assertion in
+`docs/concept-parity/GATE-MIGRATION.md` §4 (class V2/S, where it reads now, v3 counterpart). The
+behavioural `HomeSplitRouteTest` and the focus-ring case are unchanged by that migration: they
+assert behaviour, not composition.
 
 What this does not prove: that a live backend returns these rows or that the pixels match the
 concept frame. The live rig and `docs/visual-review/gm-002/` carry those.
@@ -327,12 +335,17 @@ class CoursebookHomeTest(Base):
         self.assertNotIn("CONTINUE THE TRAIL", html)
 
     def test_empty_home_has_one_create_action(self) -> None:
+        # v3 (SPEC-V3 §5.1 H3, SPEC §3.10): one filled pill and one quiet pill. The quiet pill is
+        # the copy deck's `home.secondary` ("Browse library"); the v2 wording "Browse the library"
+        # was never a deck row and is retired with the six-card shelf.
         html = self.home(status="ready", rows=[])
         self.assertIn('data-cb-home="empty"', html)
         self.assertEqual(html.count("Start a new course"), 1, "the empty home repeated its create action")
         self.assertNotIn(">New course<", html, "the shelf carried a second create control")
         self.assertIn("No courses yet.", html)
-        self.assertIn("Browse the library", html)
+        self.assertIn("Browse library", html)
+        self.assertNotIn("Browse the library", html, "the v2 secondary label survived beside the deck row")
+        self.assertEqual(html.count('data-cb-home-secondary=""'), 1, "the quiet pill is one control")
 
     def test_home_has_no_fake_rating_or_xp(self) -> None:
         html = self.home(rows=[row(1), row(2), row(3)])
@@ -340,12 +353,17 @@ class CoursebookHomeTest(Base):
         for banned in (r"\bstars?\b", r"\brating", "recently played", r"\bxp\b", "streak", "mastery", r"\blevel\b"):
             self.assertIsNone(re.search(banned, lowered), f"global Home invented a {banned!r} claim")
 
-    def test_shelf_shows_four_to_six_authored_cards_and_see_all(self) -> None:
+    def test_shelf_shows_four_authored_cards_and_see_all(self) -> None:
+        # SPEC-V3 §3.3 / §5.1 H5: the shelf is the first viewport, four cards at wide, and a fifth
+        # course moves behind `See all`. The four are the newest rows (hub order); the older rows
+        # are reached from Courses, so their titles are not painted here.
         html = self.home(rows=[row(index) for index in range(1, 8)])
-        self.assertEqual(html.count('data-cb-home-card=""'), 6, "the shelf must cap at six cards")
+        self.assertEqual(html.count('data-cb-home-card=""'), 4, "the v3 shelf holds four cards")
+        self.assertIn('data-cb-home-see-all=""', html, "an overflowing shelf must offer See all")
         self.assertIn("See all", html)
         self.assertIn("Course number 7", html)
-        self.assertNotIn("Course number 1", html, "the oldest course belongs behind See all")
+        self.assertIn("Course number 4", html, "the fourth card of the four-card shelf was dropped")
+        self.assertNotIn("Course number 3", html, "the oldest courses belong behind See all")
 
     def mask(self, scroll_left: float, client_width: float, scroll_width: float) -> dict:
         payload = json.loads(
@@ -400,14 +418,26 @@ class CoursebookHomeTest(Base):
                          "the shelf card printed its next step twice")
 
     def test_card_does_not_repeat_its_title_as_the_goal(self) -> None:
-        # Authored rows often carry `subtitle` equal to `title`. Printing both paints the same
-        # sentence twice on the card, so the goal paragraph is suppressed when it adds nothing.
+        # GM-002's card built a goal paragraph from `subtitle`, which repainted the title when the
+        # two were equal. SPEC-V3 §3.6 replaces that with one metadata pattern — title, one subject
+        # chip, one evidence line, the backend's next step — so the v3 card has no goal element and
+        # no render path for `subtitle`. The claim survives as three assertions: the retired marker
+        # never returns, a title-equal subtitle cannot repaint the title, and a real subject prints
+        # exactly once.
         repeated = self.home(rows=[row(1, title="Engine diagnostics", subtitle="Engine diagnostics")])
         self.assertNotIn("data-cb-home-card-goal", repeated,
-                         "the shelf card painted its own title a second time as the goal line")
+                         "the retired v2 goal paragraph returned to the v3 card")
+        painted = re.sub(r"<[^>]*>", " ", repeated)
+        self.assertEqual(painted.count("Engine diagnostics"), 1,
+                         "the v3 card painted its title twice")
         distinct = self.home(rows=[row(1, title="Engine diagnostics", subtitle="Find the misfire fast")])
-        self.assertIn("data-cb-home-card-goal", distinct, "a real subtitle was dropped")
-        self.assertIn("Find the misfire fast", distinct)
+        self.assertNotIn("data-cb-home-card-goal", distinct, "the v3 card has no goal paragraph")
+        self.assertNotIn("Find the misfire fast", distinct,
+                         "the v3 card must not paint `subtitle`; the subject chip is `subject_label`")
+        subject = self.home(rows=[row(1, title="Engine diagnostics", subject_label="Small engines")])
+        self.assertEqual(subject.count('data-cb3-chip="subject"'), 1,
+                         "the card must carry exactly one subject chip")
+        self.assertIn("Small engines", subject)
 
     def test_card_prints_its_title_once(self) -> None:
         # The card paints its title as an <h3>. The typographic paper cover used to print the same
@@ -442,9 +472,14 @@ class CoursebookHomeTest(Base):
         self.assertNotIn("No courses yet.", html)
 
     def test_offline_says_so_without_inventing_courses(self) -> None:
+        # SPEC-V3 §4: the banner speaks the copy deck's `home.offline.title` ("You are offline"),
+        # not the v2 literal "Offline". The marker and the word are both pinned: the strip must
+        # exist, and it must carry the deck's own sentence rather than a bare adjective.
         html = self.home(online=False, rows=[row(1)])
         self.assertIn("data-cb-home-offline", html)
-        self.assertIn("Offline", html)
+        self.assertIn('data-cb-home-offline-word=""', html)
+        self.assertIn("You are offline", html)
+        self.assertIn("Your shelf is here. New lessons wait until you reconnect.", html)
 
 
 @unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")

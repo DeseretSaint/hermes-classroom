@@ -161,6 +161,13 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   box-shadow: var(--cb3-elev-1);
 }
 
+/* CP-040: the elevation the v3 material contract allows on a card stock object. It lives here, in
+   the stylesheet, because the token gate refuses a shadow painted from an inline style — a v3
+   surface that needs elev-1 names this class instead of writing boxShadow. */
+[data-cb-v3] .cb3-elev-1 {
+  box-shadow: var(--cb3-elev-1);
+}
+
 [data-cb-v3] .cb3-elev-2 {
   box-shadow: var(--cb3-elev-2);
 }

@@ -2975,47 +2975,194 @@ function useCourseModes(courseIds) {
 }
 
 /**
- * One course on the global shelf. The whole card is the target: one real RowButton paints over
- * the card and takes Enter/Space, so there is no second "Open" control inside a card that is
- * already an object. The cover is the existing cover field (real artifact when the row carries
- * one, a paper cover with the subject monogram otherwise) — never an invented share image.
+ * CP-022 — the v3 Home copy, from `docs/concept-parity/COPY.md` §2. Every fixed string below is a
+ * deck row with an id; nothing is authored here. Two deliberate deviations are recorded in the
+ * card's review packet rather than hidden: `home.primary` ships as the card body's own label
+ * ("Start a new course", also the GM-002 behavioural anchor), and the kraft tag composes the deck's
+ * `home.tag.firstuse` word with the course's real title instead of inventing a sentence.
  */
-function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
+const CB_HOME_V3_COPY = Object.freeze({
+  title: 'Your field library',
+  sub: 'Pick a course, or start a new one.',
+  primary: 'Start a new course',
+  secondary: 'Browse library',
+  shelfLabel: 'Your courses',
+  seeAll: 'See all',
+  tagNew: 'New course',
+  firstuseTitle: 'Your field library',
+  firstuseSub: 'Nothing here yet. Start a course and its first lesson will appear on this shelf.',
+  firstusePrimary: 'Start your first course',
+  overflowHint: 'More courses to the right',
+  emptyTitle: 'No courses on this shelf',
+  emptyBody: 'Courses you archive move out of this view.',
+  emptyAction: 'See archived courses',
+  loading: 'Reading your courses. Nothing on the shelf changes while this loads.',
+  errorTitle: 'Your courses could not be read',
+  errorBody: 'Nothing you saved is lost. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'Your shelf is here. New lessons wait until you reconnect.',
+  offlineAction: 'Try again',
+  cardNew: 'New',
+  emptyShippedTitle: 'No courses yet.',
+  emptyArchivedBody: 'Every course here is archived. Unarchive one in Courses to continue it.',
+  // CP-031 — these strings still carry no `COPY.md` §2 id. They are enumerated in
+  // `docs/visual-review/cp-022/MANIFEST.md` gap 3 and frozen by `test_home_v3_copy_has_an_id`;
+  // the deck adopts or replaces them, this card may not invent a deck row. `failedReadWord` is
+  // also pinned by the existing behavioural `tests.test_desktop_home_hub`, which this card does
+  // not own.
+  failedReadWord: 'This is a failed read, not an empty library.',
+  parentTitle: 'Parent Studio holds your lesson plans.',
+  parentBody:
+    'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.',
+  parentAction: 'Open Parent Studio'
+})
+
+/** The shelf holds four real courses; a fifth scrolls behind `See all` (SPEC-V3 §3.3, §5.1 H5). */
+const CB_HOME_V3_LIMIT = 4
+
+/** A course is "new" for fourteen days from the newest write the row records (PLAN O5). */
+const CB_HOME_TAG_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
+
+function homeNumber(value) {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+/**
+ * One metadata pattern for every card in the shelf (SPEC-V3 §3.6): title / one subject line / one
+ * evidence line. Every value comes from a CP-005 `library_item` field; the UI computes no count and
+ * invents no percentage. A fact the read did not carry is omitted, never guessed.
+ */
+function homeCardFacts(row) {
+  const entry = row || {}
+  const summary = entry.evidence_summary && typeof entry.evidence_summary === 'object' ? entry.evidence_summary : {}
+  const done = homeNumber(entry.sections_done)
+  const total = homeNumber(entry.sections_total)
+  const independent = homeNumber(summary.independent)
+  const objectives = homeNumber(summary.total_objectives)
+  let meta = null
+  if (done !== null && total !== null) meta = `${done} of ${total} sections done`
+  else if (independent !== null && objectives !== null) meta = `${independent} of ${objectives} sections done`
+  const subject =
+    typeof entry.subject_label === 'string' && entry.subject_label.trim() ? entry.subject_label.trim() : null
+  const isNew = typeof entry.is_new === 'boolean' ? entry.is_new : independent === 0
+  return { meta, subject, isNew, next: learnerNextLabel(entry.next_step && entry.next_step.label) }
+}
+
+/** The row's cover artifact id, from the CP-005 field, else the older `cover` object. */
+function homeCoverArtifactId(row) {
+  const entry = row || {}
+  if (typeof entry.cover_artifact_id === 'string' && entry.cover_artifact_id) return entry.cover_artifact_id
+  const cover = entry.cover && typeof entry.cover === 'object' ? entry.cover : null
+  const id = cover ? cover.artifact_id || cover.artifact : null
+  return typeof id === 'string' && id ? id : null
+}
+
+/**
+ * The newest course a kraft tag may point at, or null. Strict PLAN O5 rule: the *most recently
+ * written* course qualifies only when it has no attempt yet (`is_new`) and its recorded time is
+ * under fourteen days old; otherwise no tag renders. CP-005 exposes no creation timestamp, so the
+ * age is measured from `updated_at` — the gap is named in the card's review packet, not papered
+ * over with a guessed date.
+ */
+function homeNewTagSlot(slots, nowMs) {
+  const all = Array.isArray(slots) ? slots : []
+  const newest = all[0]
+  if (!newest) return null
+  const row = newest.row || {}
+  if (!homeCardFacts(row).isNew) return null
+  const stamp = hubTime(row.updated_at)
+  if (!stamp) return null
+  const now = Number.isFinite(nowMs) ? Number(nowMs) : Date.now()
+  const age = now - stamp
+  if (age < 0 || age > CB_HOME_TAG_MAX_AGE_MS) return null
+  return newest
+}
+
+/**
+ * Route-relative shelf geometry (SPEC-V3 §3.1, §3.3, §5.1 H5). The number comes from the route
+ * box `useCbViewportWidth` measures, never from a viewport unit, and it follows the shipped
+ * `.cb3-gutter` rule — `clamp(1.25rem, 3.05cqi, 4rem)` above 760, `0.7rem` below — so a card row
+ * can never be wider than the paper it sits on. The fox has its own lower ledge (H6) and never
+ * takes a lane away from the cards.
+ */
+function homeGutter(width) {
+  if (!(width > 0)) return 32
+  if (!(width > 760)) return 0.7 * 16
+  return Math.min(64, Math.max(20, width * 0.0305))
+}
+
+function homeContentWidth(width) {
+  if (!(width > 0)) return 0
+  return Math.max(0, width - 2 * homeGutter(width))
+}
+
+function homeShelfColumns(width) {
+  if (!(width > 0)) return 4
+  const content = homeContentWidth(width)
+  if (content >= 880) return 4
+  if (content >= 560) return 3
+  return 1
+}
+
+function homeCardWidth(width) {
+  if (!(width > 0)) return null
+  const content = homeContentWidth(width)
+  const gap = width >= 620 ? 16 : 12
+  const columns = homeShelfColumns(width)
+  return Math.max(140, Math.floor((content - (columns - 1) * gap) / columns))
+}
+
+/**
+ * The shelf's own capacity: four cards at wide, three at mid (SPEC-V3 §5.1 overflow — five at
+ * wide, four at mid), and the stacked column keeps four rows at compact. `home.gutter` above is
+ * the same box the CSS draws, so the cards always fit the lane.
+ */
+function homeShelfLayout(width) {
+  const compact = width > 0 && width < 620
+  const columns = compact ? 1 : homeShelfColumns(width)
+  const capacity = compact ? CB_HOME_V3_LIMIT : Math.min(CB_HOME_V3_LIMIT, columns)
+  return { compact, columns, capacity }
+}
+
+/** A 3:2 paper cover: the real artifact when the media answer arrives, else the typographic plate. */
+function HomeV3Cover({ artifactId, title }) {
+  const preview = useArtifactPreview(artifactId)
+  const src = preview && preview.state === 'ready' && typeof preview.data_url === 'string' ? preview.data_url : null
+  return jsx(CoverPlate3, { src, title })
+}
+
+/**
+ * CP-022 — one course standing on the v3 shelf. The card is one paper object (cover, title, one
+ * subject chip, one evidence line, the backend's own next-step sentence) with exactly one control:
+ * an overlay `RowButton` whose name is `Open <title>`. No rating, no progress bar, no invented XP.
+ */
+function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
   const row = (slot && slot.row) || {}
-  const [keyboardFocus, setKeyboardFocus] = useState(false)
   const title = row.title || (slot && slot.name) || 'Untitled course'
-  const next = learnerNextLabel(row.next_step && row.next_step.label)
-  // The goal paragraph carries a stored goal or the course's own subtitle. It must not repeat
-  // the card title or the next-step sentence the meta row already prints, or every card repeats
-  // itself: real authored rows often store `subtitle` identical to `title`.
-  const goalCandidate = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
-  const sameText = (a, b) => String(a).trim().toLowerCase().replace(/\s+/g, ' ') === String(b).trim().toLowerCase().replace(/\s+/g, ' ')
-  const goal = goalCandidate && !sameText(goalCandidate, title) && !sameText(goalCandidate, next) ? goalCandidate : ''
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  const facts = homeCardFacts(row)
+  const artifactId = homeCoverArtifactId(row)
+  const modeWord =
+    mode && mode.state === 'ready' ? (readCoursePresentationMode(mode.mode) === 'game' ? 'Game' : 'Textbook') : null
+  const cardWidth = homeCardWidth(width)
   const open = () => {
     if (onOpen) onOpen(slot)
   }
-  // Authored asymmetry: the first card leads, one in three is a short card. The shelf is a row of
-  // objects, not six equal admin tiles; the widths come from the card's place, not from chance.
-  const basis = narrow ? '100%' : index === 0 ? '17rem' : index % 3 === 1 ? '13rem' : '15rem'
-  const compactCover = !narrow && index % 3 === 1
-  const modeState = mode ? mode.state : 'absent'
-  return jsxs('article', {
-    'data-cb-home-card': '',
-    'data-cb-home-card-index': String(index),
-    'data-cb-course-id': row.course_id || '',
-    'data-cb-home-card-basis': narrow ? 'full' : basis,
-    role: 'listitem',
-    style: {
-      position: 'relative',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.4rem',
-      flex: narrow ? '1 1 auto' : `0 0 ${basis}`,
-      width: narrow ? '100%' : basis,
-      minWidth: 0,
-      paddingTop: '0.45rem',
-      borderTop: '1px solid var(--cb-rule)'
-    },
+  const chipStyle = {
+    alignSelf: 'flex-start',
+    paddingInline: '0.5rem',
+    paddingBlock: '0.1rem',
+    borderRadius: cb3Radius('soft'),
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink')
+  }
+  const action = jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
     children: [
       jsx(sdk.RowButton, {
         'aria-label': `Open ${title}`,
@@ -3025,9 +3172,11 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
         onBlur: () => setKeyboardFocus(false),
         onFocus: (event) => setKeyboardFocus(shelfRingVisible(event && event.currentTarget)),
         style: {
-          outline: keyboardFocus ? '2px solid var(--cb-accent)' : 'none',
+          outlineStyle: keyboardFocus ? 'solid' : 'none',
+          outlineWidth: keyboardFocus ? '2px' : '0',
+          outlineColor: cb3Role('focus'),
           outlineOffset: '-2px',
-          borderRadius: '2px'
+          borderRadius: cb3Radius('soft')
         },
         onKeyDown: (event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -3037,62 +3186,106 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
         },
         onClick: open
       }, 'target'),
-      jsxs('div', {
-        className: 'pointer-events-none flex flex-col gap-2',
-        style: { minWidth: 0 },
-        children: [
-          jsx('div', {
-            'data-cb-home-cover': '',
-            style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
-            children: jsx(ClassroomCover, { slot, compact: compactCover, hideTitle: true }, 'cover')
-          }, 'cover'),
-          jsxs('div', {
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minWidth: 0 },
+      modeWord || facts.next
+        ? jsxs('div', {
+            className: 'pointer-events-none',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.6rem', minWidth: 0 },
             children: [
-              modeState === 'ready'
-                ? jsx(sdk.Badge, { variant: 'muted', children: readCoursePresentationMode(mode.mode) === 'game' ? 'Game' : 'Textbook' }, 'mode')
+              modeWord
+                ? jsx('span', {
+                    'data-cb3-chip': 'mode',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft')
+                    },
+                    children: modeWord
+                  }, 'mode')
                 : null,
-              jsx('span', {
-                'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
-                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-                children: next || 'No next step recorded'
-              }, 'next')
+              facts.next
+                ? jsx('span', {
+                    'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: facts.next
+                  }, 'next')
+                : null
             ]
-          }, 'meta'),
-          jsx('h3', {
+          }, 'meta')
+        : null
+    ]
+  }, 'action')
+  return jsx(PaperCard, {
+    'data-cb-home-card': '',
+    'data-cb-home-card-index': String(index),
+    'data-cb-course-id': row.course_id || '',
+    'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
+    'data-cb-home-cover': artifactId ? 'artifact' : 'type',
+    role: 'listitem',
+    style: {
+      position: 'relative',
+      boxSizing: 'border-box',
+      width: cardWidth ? `${cardWidth}px` : '17rem',
+      flex: cardWidth ? `0 0 ${cardWidth}px` : '0 0 17rem',
+      gap: '0.45rem'
+    },
+    children: [
+      artifactId
+        ? jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { artifactId, title }) }, 'cover')
+        : null,
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
+          fontWeight: 600,
+          color: cb3Role('ink'),
+          maxWidth: '24ch',
+          overflowWrap: 'anywhere'
+        },
+        children: title
+      }, 'title'),
+      facts.subject
+        ? jsx('span', {
+            'data-cb3-chip': 'subject',
+            style: { ...chipStyle, backgroundColor: cb3Role('terracotta-quiet') },
+            children: facts.subject
+          }, 'subject')
+        : null,
+      facts.meta
+        ? jsx('p', {
+            'data-cb-home-card-meta': '',
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              fontWeight: 600,
-              lineHeight: 1.3,
-              color: 'var(--cb-ink)',
-              overflowWrap: 'anywhere'
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft')
             },
-            children: title
-          }, 'title'),
-          goal
-            ? jsx('p', {
-                'data-cb-home-card-goal': '',
-                style: {
-                  margin: 0,
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
-                  lineHeight: 1.5,
-                  color: 'var(--cb-ink-soft)',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                },
-                children: goal
-              }, 'goal')
-            : null
-        ]
-      }, 'body')
+            children: facts.meta
+          }, 'facts')
+        : null,
+      isNew
+        ? jsx('span', {
+            'data-cb3-chip': 'new',
+            style: { ...chipStyle, border: `1px solid ${cb3Role('gold')}` },
+            children: CB_HOME_V3_COPY.cardNew
+          }, 'new')
+        : null,
+      action
     ]
   })
 }
+// The v2 segment exported the card under this name; CP-022 keeps the export so the test surface in
+// 99-tutor.js resolves while the Home it paints is the v3 object.
+const HomeCourseCard = HomeV3Card
 
 /**
  * GM-VISUAL-SPEC §2.5 — the shelf's edge affordance. A shelf that overflows fades the last 24px
@@ -3129,12 +3322,14 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
 }
 
 /**
- * GM-002 — the global Home, a field library and a threshold.
+ * CP-022 — the v3 global Home (R-HOME): a field library and a threshold.
  *
- * It answers "what do I want to learn now?" with one question, one filled create action, one
- * secondary path and a shelf of real courses. It is not a course page: there is no Continue, no
- * trailhead, no course world hero and no course-bound scene. Selecting a card asks the route for
- * that course's own home, which is where the trailhead lives.
+ * It answers "which course do I open next, and how do I start a new one?" with one threshold band
+ * (type only), one filled primary plus one quiet outline pill, and one wooden shelf holding up to
+ * four real courses, the fox at its right end and a kraft tag for a genuinely new course. It is not
+ * a course page: no Continue, no trailhead, no course-bound hero. SPEC-V3 §5.1 is the region map and
+ * `docs/concept-parity/COPY.md` §2 is the copy deck; every card fact is a CP-005 `library_item`
+ * field, so no number is computed by the UI.
  */
 function CoursebookHome({
   library,
@@ -3150,20 +3345,53 @@ function CoursebookHome({
   onRetry
 }) {
   const width = useCbViewportWidth()
-  const narrow = width > 0 && width < 620
+  const compact = width > 0 && width < 620
   const status = library ? library.status : 'loading'
   const data = library ? library.data : null
   const rows = data && Array.isArray(data.items) ? data.items : []
   const parentPlans = rows.filter((entry) => entry && entry.recipe === 'parent').length
-  // `hubSlots` is the same honest one-object-per-course rule the desk uses; the shelf caps at six
-  // and `See all` is the catalog, not a second create door.
   const hub = hubSlots(rows)
-  const slots = hub.all.slice(0, HUB_SHELF_LIMIT)
-  const total = Math.max(Number(data && data.total) || 0, hub.total)
+  const slots = hub.all.slice(0, CB_HOME_V3_LIMIT)
   const modeMap = modes && typeof modes === 'object' ? modes : {}
-  const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
-  // The shelf fades the edge that still has cards behind it (GM-VISUAL-SPEC §2.5). Measured from
-  // the live row: jsdom/SSR report zeroes and honestly stay `none`.
+  const parentOnly = status === 'ready' && hub.total === 0 && parentPlans > 0
+  const firstUse = status === 'ready' && hub.total === 0 && parentPlans === 0
+  const archived = Boolean(data && data.empty_reason === 'all_archived')
+  const overflow = hub.total > CB_HOME_V3_LIMIT
+  const tagSlot = status === 'ready' ? homeNewTagSlot(hub.all, Date.now()) : null
+  // The one filled pill keeps one label on every Home state: the card's own `Start a new course`.
+  // SPEC §5.1's `home.firstuse.primary` ("Start your first course") is not rendered, because the
+  // first-run plate already carries the deck's first-use sentence and one surface has one action.
+  const primaryLabel = CB_HOME_V3_COPY.primary
+  const [primaryFocus, setPrimaryFocus] = useState(false)
+  const caption = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink-soft')
+  }
+  const body = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('body'),
+    lineHeight: cb3Lead('body'),
+    color: cb3Role('ink'),
+    maxWidth: '60ch'
+  }
+  const stateTitle = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-display)',
+    fontSize: cb3Type('heading'),
+    lineHeight: cb3Lead('heading'),
+    fontWeight: 600,
+    color: cb3Role('ink'),
+    maxWidth: '34ch',
+    overflowWrap: 'anywhere'
+  }
+
+  // The shelf fades the edge that still has cards behind it. Measured from the live row; jsdom and
+  // a static render report zeroes and honestly stay `none`. The route width is a dependency: the
+  // card basis changes with it, so a stale measure would leave a clipped shelf with no fade.
   const shelfRowRef = useRef(null)
   const [shelfMask, setShelfMask] = useState({ state: 'none', style: {} })
   const shelfSlotCount = slots.length
@@ -3174,166 +3402,381 @@ function CoursebookHome({
     measure()
     row.addEventListener('scroll', measure, { passive: true })
     window.addEventListener('resize', measure)
+    let observer = null
+    if (typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver(measure)
+      observer.observe(row)
+    }
     return () => {
       row.removeEventListener('scroll', measure)
       window.removeEventListener('resize', measure)
+      if (observer) observer.disconnect()
     }
-  }, [status, narrow, shelfSlotCount])
+  }, [status, compact, width, shelfSlotCount])
 
-  const invitation = jsxs('div', {
+  const invitation = jsxs('section', {
     'data-cb-home-invitation': '',
     style: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'flex-start',
-      gap: '0.55rem',
-      width: '100%',
+      gap: '0.7rem',
+      minWidth: 0,
       maxWidth: '42rem',
-      paddingTop: narrow ? '0.35rem' : '0.9rem',
-      paddingBottom: narrow ? '0.6rem' : '1.1rem'
+      paddingBlock: compact ? '0.5rem 1rem' : '1rem 1.5rem'
     },
     children: [
       jsx('h2', {
         'data-cb-home-question': '',
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.heading,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
           fontWeight: 600,
-          lineHeight: 1.2,
-          letterSpacing: '-0.01em',
-          color: 'var(--cb-ink)',
+          color: cb3Role('ink'),
+          maxWidth: '24ch',
           overflowWrap: 'anywhere'
         },
-        children: CB_HOME_COPY.question
-      }, 'question'),
+        children: CB_HOME_V3_COPY.title
+      }, 'title'),
       jsx('p', {
         'data-cb-home-subline': '',
-        style: { ...quiet, color: 'var(--cb-ink)', fontSize: CB_TYPE.body },
-        children: CB_HOME_COPY.subline
-      }, 'subline'),
+        style: { ...body, color: cb3Role('ink-soft') },
+        children: CB_HOME_V3_COPY.sub
+      }, 'sub'),
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', paddingTop: '0.2rem' },
+        style: {
+          display: 'flex',
+          flexDirection: compact ? 'column' : 'row',
+          flexWrap: 'wrap',
+          alignItems: compact ? 'stretch' : 'center',
+          gap: compact ? '0.75rem' : '1rem',
+          paddingTop: '0.2rem'
+        },
         children: [
           canCreate
-            ? jsx(CbAction, { variant: 'primary', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
+            ? jsx(PillAction, {
+                variant: 'primary',
+                label: primaryLabel,
+                'data-cb-action': 'primary',
+                'data-cb-home-primary': '',
+                'data-cb-focus-ring': primaryFocus ? 'visible' : 'none',
+                onFocus: () => setPrimaryFocus(true),
+                onBlur: () => setPrimaryFocus(false),
+                style: {
+                  width: compact ? '100%' : undefined,
+                  outlineStyle: primaryFocus ? 'solid' : 'none',
+                  outlineWidth: primaryFocus ? '2px' : '0',
+                  outlineColor: cb3Role('focus'),
+                  outlineOffset: '2px'
+                },
+                onClick: onStartCreate
+              }, 'create')
             : null,
-          jsx(CbAction, { variant: 'tertiary', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
+          jsx(PillAction, {
+            variant: 'quiet',
+            label: CB_HOME_V3_COPY.secondary,
+            'data-cb-home-secondary': '',
+            style: { width: compact ? '100%' : undefined },
+            onClick: onBrowseLibrary
+          }, 'browse')
         ]
       }, 'actions')
     ]
   }, 'invitation')
 
+  const shelfHead = jsxs('div', {
+    'data-cb-home-shelf-head': '',
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem', minWidth: 0 },
+    children: [
+      jsx('h2', {
+        'data-cb-home-shelf-label': '',
+        style: {
+          margin: 0,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
+          fontWeight: 600,
+          color: cb3Role('ink')
+        },
+        children: CB_HOME_V3_COPY.shelfLabel
+      }, 'label'),
+      overflow && onShowAll
+        ? jsx(PillAction, {
+            variant: 'quiet',
+            label: CB_HOME_V3_COPY.seeAll,
+            'data-cb-home-see-all': '',
+            onClick: onShowAll
+          }, 'seeAll')
+        : null
+    ]
+  }, 'head')
+
+  const tagTitle = tagSlot ? (tagSlot.row && tagSlot.row.title) || tagSlot.name : null
+  const tag = tagSlot
+    ? jsxs('button', {
+        type: 'button',
+        'data-cb-home-tag': '',
+        className: 'cb3-press',
+        'aria-label': `${CB_HOME_V3_COPY.tagNew}: ${tagTitle}`,
+        onClick: () => {
+          if (onOpenCourse) onOpenCourse(tagSlot.row)
+        },
+        style: {
+          alignSelf: 'flex-end',
+          display: 'inline-flex',
+          flexDirection: 'column',
+          gap: '0.1rem',
+          minHeight: '44px',
+          maxWidth: '14ch',
+          padding: '0.35rem 0.6rem',
+          backgroundColor: cb3Role('terracotta-quiet'),
+          border: `1px solid ${cb3Role('rule')}`,
+          borderRadius: cb3Radius('soft'),
+          color: cb3Role('ink'),
+          textAlign: 'left',
+          cursor: 'pointer',
+          transform: 'rotate(-1.5deg)'
+        },
+        children: [
+          jsx('span', {
+            style: {
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: CB_HOME_V3_COPY.tagNew
+          }, 'label'),
+          jsx('span', {
+            style: {
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              overflowWrap: 'anywhere'
+            },
+            children: tagTitle
+          }, 'title')
+        ]
+      }, 'tag')
+    : null
+
   let shelf
   if (status === 'loading' || status === 'idle') {
-    shelf = jsxs('div', {
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'loading',
       'data-cb-home-shelf-state': status,
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '9rem', paddingTop: '0.4rem' },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
-        jsx(sdk.Loader, { label: CB_HOME_COPY.loading }),
-        jsx('p', { style: quiet, children: 'Nothing already saved is lost while this read is in flight.' })
+        shelfHead,
+        jsx(ShelfPlank, {
+          style: { overflow: 'visible' },
+          children: [0, 1, 2, 3].slice(0, compact ? 4 : Math.min(4, homeShelfColumns(width))).map((index) =>
+            jsx('div', {
+              'data-cb-home-skeleton': String(index),
+              'aria-hidden': 'true',
+              style: {
+                boxSizing: 'border-box',
+                width: homeCardWidth(width) ? `${homeCardWidth(width)}px` : '17rem',
+                height: '9.5rem',
+                flex: homeCardWidth(width) ? `0 0 ${homeCardWidth(width)}px` : '0 0 17rem',
+                backgroundColor: cb3Role('card-stock'),
+                opacity: 0.4,
+                borderRadius: cb3Radius('round')
+              }
+            }, `skeleton-${index}`)
+          )
+        }, 'plank'),
+        jsx('p', { 'data-cb-home-loading': '', style: body, children: CB_HOME_V3_COPY.loading }, 'loading')
       ]
     }, 'shelf')
   } else if (status === 'error' && rows.length === 0) {
-    shelf = jsx('div', {
+    const cause = library && library.error ? describeError(library.error) : ''
+    const code = library && library.error && library.error.code ? `${library.error.code}: ` : ''
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'error',
       'data-cb-home-shelf-state': 'error',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
-      children: jsxs(sdk.ErrorState, {
-        title: CB_HOME_COPY.errorTitle,
-        description: `${library && library.error && library.error.code ? library.error.code + ': ' : ''}${describeError(library && library.error)} This is a failed read, not an empty library.`,
-        children: jsx(CbAction, { variant: 'secondary', onClick: onRetry, children: 'Try again' })
-      })
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+      children: [
+        jsx('h3', {
+          'data-cb-home-error-title': '',
+          style: stateTitle,
+          children: online === false ? CB_HOME_V3_COPY.offlineTitle : CB_HOME_V3_COPY.errorTitle
+        }, 'title'),
+        jsx('p', {
+          'data-cb-home-error-body': '',
+          style: body,
+          children: `${code}${cause ? `${cause.replace(/\.$/, '')}. ` : ''}${CB_HOME_V3_COPY.failedReadWord} ${
+            online === false ? CB_HOME_V3_COPY.offlineBody : CB_HOME_V3_COPY.errorBody
+          }`
+        }, 'body'),
+        jsx(PillAction, {
+          variant: 'quiet',
+          label: online === false ? CB_HOME_V3_COPY.offlineAction : CB_HOME_V3_COPY.errorAction,
+          'data-cb-home-retry': '',
+          onClick: onRetry
+        }, 'retry')
+      ]
     }, 'shelf')
-  } else if (hub.total === 0) {
-    const reason = data && data.empty_reason
-    const parentOnly = parentPlans > 0
-    shelf = jsx('div', {
-      'data-cb-home-shelf': parentOnly ? 'parent-only' : 'empty',
+  } else if (parentOnly) {
+    shelf = jsxs('section', {
+      'data-cb-home-shelf': 'parent-only',
       'data-cb-home-shelf-state': 'empty',
-      'data-cb-home-empty-reason': parentOnly ? 'parent_only' : reason || 'no_courses',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
-      children: parentOnly
-        ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' },
-            children: [
-              jsx(sdk.EmptyState, {
-                title: 'Parent Studio holds your lesson plans.',
-                description: 'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.'
-              }, 'state'),
-              jsx(CbAction, { variant: 'secondary', onClick: onOpenStudio, children: 'Open Parent Studio' }, 'studio')
-            ]
-          })
-        : jsxs(sdk.EmptyState, {
-            title: CB_HOME_COPY.emptyTitle,
-            description:
-              reason === 'all_archived'
-                ? 'Every course here is archived. Unarchive one in Courses to continue it.'
-                : CB_HOME_COPY.emptyBody
-          })
+      'data-cb-home-empty-reason': 'parent_only',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0, maxWidth: '42rem' },
+      children: [
+        jsx('h3', { style: stateTitle, children: CB_HOME_V3_COPY.parentTitle }, 'title'),
+        jsx('p', { style: body, children: CB_HOME_V3_COPY.parentBody }, 'body'),
+        jsx(PillAction, {
+          variant: 'quiet',
+          label: CB_HOME_V3_COPY.parentAction,
+          'data-cb-home-studio': '',
+          onClick: onOpenStudio
+        }, 'studio')
+      ]
+    }, 'shelf')
+  } else if (firstUse) {
+    const plateTitle = archived ? CB_HOME_V3_COPY.emptyTitle : CB_HOME_V3_COPY.emptyShippedTitle
+    const plateBody = archived ? CB_HOME_V3_COPY.emptyArchivedBody : CB_HOME_V3_COPY.firstuseSub
+    shelf = jsxs('section', {
+      'data-cb-home-shelf': 'empty',
+      'data-cb-home-shelf-state': 'empty',
+      'data-cb-home-empty-reason': archived ? 'all_archived' : 'no_courses',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
+      children: [
+        shelfHead,
+        jsxs('div', {
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+          children: [
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsxs('div', {
+                'data-cb-home-start-plate': '',
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '0.6rem',
+                  maxWidth: '42ch',
+                  padding: '1.1rem 1.25rem',
+                  backgroundColor: cb3Role('card-stock'),
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('round')
+                },
+                children: [
+                  jsx('h3', { 'data-cb-home-plate-title': '', style: stateTitle, children: plateTitle }, 'title'),
+                  jsx('p', { style: body, children: plateBody }, 'body'),
+                  archived && onShowAll
+                    ? jsx(PillAction, {
+                        variant: 'quiet',
+                        label: CB_HOME_V3_COPY.emptyAction,
+                        'data-cb-home-archived': '',
+                        onClick: onShowAll
+                      }, 'archived')
+                    : null
+                ]
+              }, 'plate')
+            }, 'plank'),
+            compact
+              ? null
+              : jsx('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: jsx(FoxPose, {
+                    pose: 'wave',
+                    size: width >= 900 || width === 0 ? 128 : 112,
+                    style: { alignSelf: 'flex-end' }
+                  }, 'fox')
+                }, 'ledge')
+          ]
+        }, 'shelf-frame')
+      ]
     }, 'shelf')
   } else {
-    shelf = jsxs('div', {
+    const shelfLayout = homeShelfLayout(width)
+    // SPEC-V3 §5.1 overflow: a fifth course at wide or a fourth at mid. The row scrolls inside its
+    // frame with the edge mask; the cards never shrink and the fox never takes their lane.
+    const shelfOverflow = hub.total > shelfLayout.capacity
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'ready',
       'data-cb-home-shelf-state': 'ready',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0 },
+      'data-cb-home-shelf-overflow': shelfOverflow ? 'true' : 'false',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
+        shelfHead,
         jsxs('div', {
-          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
           children: [
-            jsx('h2', {
-              'data-cb-home-shelf-label': '',
-              style: {
-                margin: 0,
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.lead,
-                fontWeight: 600,
-                color: 'var(--cb-ink)'
-              },
-              children: CB_HOME_COPY.shelf
-            }, 'label'),
-            onShowAll
-              ? jsx(CbAction, { variant: 'tertiary', onClick: onShowAll, children: CB_HOME_COPY.seeAll }, 'seeAll')
-              : null
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsx('div', {
+                'data-cb-home-shelf-row': '',
+                'data-cb-shelf-mask': shelfMask.state,
+                ref: shelfRowRef,
+                role: 'list',
+                'aria-label': CB_HOME_V3_COPY.shelfLabel,
+                style: {
+                  display: 'flex',
+                  flexDirection: compact ? 'column' : 'row',
+                  alignItems: compact ? 'stretch' : 'flex-end',
+                  gap: compact ? '0.75rem' : '1rem',
+                  overflowX: compact ? 'visible' : 'auto',
+                  minWidth: 0,
+                  flex: '1 1 auto',
+                  ...shelfMask.style
+                },
+                children: slots.map((slot, index) =>
+                  jsx(HomeV3Card, {
+                    slot,
+                    mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
+                    index,
+                    width,
+                    isNew: homeCardFacts(slot && slot.row).isNew,
+                    onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
+                  }, (slot && slot.course_id) || `slot-${index}`)
+                )
+              }, 'frame')
+            }, 'plank'),
+            // H6 — the lower ledge. The fox box and the kraft tag stand here, on their own paper,
+            // so the shelf's full width belongs to the cards at every route width.
+            compact
+              ? null
+              : jsxs('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    gap: '0.9rem',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: [
+                    tag,
+                    jsx(FoxPose, {
+                      pose: 'clock',
+                      size: width >= 900 || width === 0 ? 128 : 112,
+                      style: { alignSelf: 'flex-end' }
+                    }, 'fox')
+                  ]
+                }, 'ledge')
           ]
-        }, 'head'),
-        jsx('div', {
-          'data-cb-home-shelf-row': '',
-          'data-cb-shelf-mask': shelfMask.state,
-          ref: shelfRowRef,
-          role: 'list',
-          'aria-label': CB_HOME_COPY.shelf,
-          style: {
-            display: 'flex',
-            flexDirection: narrow ? 'column' : 'row',
-            alignItems: 'stretch',
-            gap: narrow ? '0.9rem' : '1.1rem',
-            overflowX: narrow ? 'visible' : 'auto',
-            paddingBottom: '0.7rem',
-            borderBottom: '2px solid var(--cb-rule)',
-            minWidth: 0,
-            ...shelfMask.style
-          },
-          children: slots.map((slot, index) =>
-            jsx(HomeCourseCard, {
-              slot,
-              index,
-              narrow,
-              mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
-              onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
-            }, (slot && slot.course_id) || `slot-${index}`)
-          )
-        }, 'row'),
-        hub.hidden > 0
-          ? jsx('p', {
-              'data-cb-home-shelf-hidden': String(hub.hidden),
-              style: quiet,
-              children: `${plural(hub.hidden, 'more course', 'more courses')} behind See all.`
-            }, 'hidden')
-          : null,
-        modesSupported === false
-          ? jsx('p', { 'data-cb-home-mode-read': 'unavailable', style: quiet, children: CB_HOME_COPY.modeUnavailable }, 'mode')
+        }, 'shelf-frame'),
+        shelfOverflow && !compact
+          ? jsx('p', { 'data-cb-home-overflow-hint': '', style: caption, children: CB_HOME_V3_COPY.overflowHint }, 'overflow')
           : null
       ]
     }, 'shelf')
@@ -3341,24 +3784,51 @@ function CoursebookHome({
 
   return jsxs('div', {
     'data-cb-home': status === 'ready' && hub.total === 0 ? 'empty' : status,
-    'data-cb-home-layout': narrow ? 'stacked' : 'wide',
+    'data-cb-home-layout': compact ? 'stacked' : 'wide',
     style: { display: 'flex', flexDirection: 'column', gap: '0.8rem', minWidth: 0 },
     children: [
-      online === false
-        ? jsx('div', {
+      online === false && status !== 'error'
+        ? jsxs('div', {
             'data-cb-home-offline': '',
-            className: 'text-xs text-(--ui-text-secondary)',
-            children:
-              'Offline. Showing the courses that were last read; starting a course or writing a brief is paused until the connection returns.'
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.4rem 0.75rem',
+              padding: '0.5rem 0.75rem',
+              backgroundColor: cb3Role('card-stock'),
+              border: `1px solid ${cb3Role('rule')}`,
+              borderRadius: cb3Radius('soft')
+            },
+            children: [
+              jsxs('p', {
+                style: { ...caption, color: cb3Role('ink') },
+                children: [
+                  jsx('span', {
+                    'data-cb-home-offline-word': '',
+                    style: { fontWeight: 600, marginInlineEnd: '0.4rem' },
+                    children: CB_HOME_V3_COPY.offlineTitle
+                  }, 'word'),
+                  jsx('span', { children: CB_HOME_V3_COPY.offlineBody }, 'text')
+                ]
+              }, 'text'),
+              jsx(PillAction, {
+                variant: 'quiet',
+                label: CB_HOME_V3_COPY.offlineAction,
+                'data-cb-home-offline-retry': '',
+                onClick: onRetry
+              }, 'retry')
+            ]
           }, 'offline')
         : null,
       library && library.stale
         ? jsxs('div', {
             'data-cb-home-stale': '',
-            className: 'flex flex-wrap items-center justify-between gap-2 text-xs text-(--ui-text-secondary)',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem 0.75rem' },
             children: [
-              jsx('span', { children: 'Reconnecting. Showing the courses that were last read.' }),
-              jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Retry now' })
+              jsx('p', { style: caption, children: CB_HOME_V3_COPY.errorBody }, 'text'),
+              jsx(PillAction, { variant: 'quiet', label: CB_HOME_V3_COPY.errorAction, 'data-cb-home-stale-retry': '', onClick: onRetry }, 'retry')
             ]
           }, 'stale')
         : null,
@@ -3377,7 +3847,7 @@ function HomeLibraryPanel({ canCreate, online, onStartCreate, onBrowseLibrary, o
   const library = useRpcQuery('library.list', payload, JSON.stringify(payload), backendSupports('library.list'))
   const rows = library.data && Array.isArray(library.data.items) ? library.data.items : []
   const hub = hubSlots(rows)
-  const modes = useCourseModes(hub.slots.slice(0, HUB_SHELF_LIMIT).map((slot) => slot.course_id))
+  const modes = useCourseModes(hub.all.slice(0, CB_HOME_V3_LIMIT).map((slot) => slot.course_id))
   return jsx(CoursebookHome, {
     library,
     modes,
@@ -6561,39 +7031,67 @@ function cbGameCourse(row, mode) {
 }
 
 /**
- * The Game header: one slim band of small chips over one honest bar.
+ * The Game header: one band of honest play-state chips over one bar.
  *
  * It is deliberately short. The primary action, the current objective and the check live in their
  * own surfaces below and keep their hierarchy; this band names play progress and nothing else. A
  * zero-step course paints no bar rather than an empty frame.
+ *
+ * v3 (CP-025a): the band paints from `--cb3-*` roles and the v3 type steps only. Gold is a mark in
+ * the contract, never a text background, so the XP chip carries a gold edge and ink text; the bar's
+ * fill is the same mark tone. The flame glyph is the only Game-only icon (SPEC-V3 §3.7).
+ * Tokens: rule, ink, ink-soft, gold, card-stock, radius.pill, type.meta, type.caption.
  */
 function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
   const motion = useCbMotion()
   if (!cbGameFeedbackVisible(prefs, engagement)) return null
 
-  const wrapStyle = {
+  const bandStyle = {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: compact ? '0.35rem 0.5rem' : '0.4rem 0.75rem',
+    gap: compact ? '0.4rem 0.5rem' : '0.5rem 0.75rem',
     minWidth: 0,
-    padding: '0.45rem 0',
-    borderTop: '1px solid var(--cb-rule)',
-    borderBottom: '1px solid var(--cb-rule)'
+    padding: '0.5rem 0',
+    borderTop: `1px solid ${cb3Role('rule')}`,
+    borderBottom: `1px solid ${cb3Role('rule')}`
+  }
+  const chipStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+    minHeight: '32px',
+    padding: '0.2rem 0.6rem',
+    borderRadius: cb3Radius('pill'),
+    border: `1px solid ${cb3Role('rule')}`,
+    backgroundColor: 'transparent',
+    color: cb3Role('ink'),
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('meta'),
+    lineHeight: cb3Lead('meta'),
+    whiteSpace: 'nowrap'
+  }
+  const quietLine = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink-soft')
   }
 
   if (status === 'error') {
     return jsxs('div', {
       'data-cb-game': 'error',
+      'data-cb3-game': 'error',
       role: 'status',
-      style: { ...wrapStyle, borderBottomColor: 'var(--cb-rule)' },
+      style: bandStyle,
       children: [
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+          style: quietLine,
           children: `The field journal could not be read: ${describeError(error)} Your course is unaffected.`
-        }),
+        }, 'message'),
         onRetry
-          ? jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
+          ? jsx(PillAction, { 'data-cb3-game-retry': '', variant: 'quiet', onClick: onRetry, children: 'Try again' }, 'retry')
           : null
       ]
     })
@@ -6603,12 +7101,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
     // A read in flight is a state, not a zero: no chip and no bar until the backend answers.
     return jsx('div', {
       'data-cb-game': 'loading',
+      'data-cb3-game': 'loading',
       role: 'status',
-      style: wrapStyle,
-      children: jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-        children: 'Reading the field journal…'
-      })
+      style: bandStyle,
+      children: jsx('span', { style: quietLine, children: 'Reading the field journal…' })
     })
   }
 
@@ -6625,57 +7121,40 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
 
   return jsxs('section', {
     'data-cb-game': 'ready',
+    'data-cb3-game': 'header',
     'aria-label': 'Game',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
       jsxs('div', {
-        style: wrapStyle,
+        style: bandStyle,
         children: [
-          jsx('span', {
+          jsxs('span', {
             'data-cb-game-xp': String(xp),
-            style: {
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              fontWeight: 700,
-              lineHeight: 1.3,
-              letterSpacing: '0.02em',
-              color: 'var(--cb-on-lamp)',
-              background: 'var(--cb-lamp)',
-              border: '1px solid var(--cb-ochre)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
-            children: `${xp} XP`
-          }),
+            'data-cb3-chip': 'xp',
+            style: { ...chipStyle, borderColor: cb3Role('gold'), fontWeight: 600 },
+            children: [
+              jsx('span', {
+                'aria-hidden': 'true',
+                style: { display: 'inline-flex', color: cb3Role('gold') },
+                children: jsx(sdk.Codicon, { name: 'flame', size: CB_ICON_UI })
+              }, 'flame'),
+              jsx('span', { children: `${xp} XP` }, 'value')
+            ]
+          }, 'xp'),
           jsxs('span', {
             'data-cb-game-level': String(levelNumber),
-            style: {
-              display: 'inline-flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              gap: '0.35rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink)',
-              border: '1px solid var(--cb-rule)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
+            'data-cb3-chip': 'level',
+            style: { ...chipStyle, padding: '0.2rem 0.65rem' },
             children: [
-              jsx('strong', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: level.title || 'Explorer' }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: '· cosmetic' })
+              jsx('span', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }, 'level'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: level.title || 'Explorer' }, 'title'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: '· cosmetic' }, 'cosmetic')
             ]
-          }),
+          }, 'level'),
           jsxs('div', {
             'data-cb-game-progress': String(done),
-            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: '1 1 12rem', minWidth: 0 },
+            'data-cb3-game-progress': String(done),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: '1 1 12rem', minWidth: 0 },
             children: [
               jsxs('div', {
                 style: {
@@ -6684,18 +7163,18 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                   alignItems: 'baseline',
                   justifyContent: 'space-between',
                   gap: '0.15rem 0.5rem',
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.caption,
-                  lineHeight: 1.4,
-                  color: 'var(--cb-ink-soft)'
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
                 },
                 children: [
-                  jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: progress.label || 'Game progress' }),
+                  jsx('span', { style: { fontWeight: 600, color: cb3Role('ink') }, children: progress.label || 'Game progress' }, 'label'),
                   jsx('span', {
                     children: assigned
                       ? `${done} of ${assigned} ${assigned === 1 ? 'step' : 'steps'}`
                       : 'No steps assigned yet'
-                  })
+                  }, 'count')
                 ]
               }),
               assigned
@@ -6707,10 +7186,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                     'aria-valuenow': done,
                     style: {
                       position: 'relative',
-                      height: '0.35rem',
+                      height: '0.4rem',
                       width: '100%',
-                      background: 'var(--cb-rule)',
-                      borderRadius: '999px',
+                      backgroundColor: cb3Role('rule'),
+                      borderRadius: cb3Radius('pill'),
                       overflow: 'hidden'
                     },
                     children: jsx('div', {
@@ -6718,28 +7197,22 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                         position: 'absolute',
                         inset: '0',
                         width: `${Math.round(ratio * 100)}%`,
-                        background: 'var(--cb-lamp)',
-                        // Restrained motion: the fill arrives once; a reduced-motion reader gets
+                        backgroundColor: cb3Role('gold'),
+                        // One authored beat: the fill arrives once; a reduced-motion reader gets
                         // the same state with no travel at all.
                         transition: motion.reduced
                           ? 'none'
-                          : `width var(--cb-dur-complete) var(--cb-ease)`
+                          : `width var(--cb3-dur-complete) var(--cb3-ease)`
                       }
                     })
                   })
                 : null
             ]
-          }),
+          }, 'progress'),
           jsx('span', {
-            style: {
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink-soft)',
-              flex: '0 1 auto'
-            },
+            style: { ...quietLine, flex: '0 1 auto' },
             children: CB_GAME_PROGRESS_NOTE
-          })
+          }, 'note')
         ]
       })
     ]
@@ -6764,102 +7237,149 @@ function cbGameSectionCards(objectives) {
   }))
 }
 
+/**
+ * The field journal: one paper panel, one row per real section, stamped only by recorded evidence.
+ *
+ * A card is stamped when the outline says that section carries independent evidence
+ * (`objective.independent`), which is the same fact the evidence surfaces print. No star, no
+ * rating, no invented count: a card that has not been earned says what it actually is. The rows are
+ * a list inside one paper object rather than twelve floating cards, so a small course still reads
+ * as one shelf and never as card-in-card.
+ * Tokens: card-stock, rule, ink, ink-soft, gold, radius.round, radius.pill, type.*.
+ */
 function GameJournal({ objectives, compact }) {
   const cards = cbGameSectionCards(objectives)
   if (cards.length === 0) return null
   const earned = cards.filter((card) => card.earned).length
-  return jsxs('section', {
+  return jsx(PaperCard, {
     'data-cb-game-journal': String(earned),
+    'data-cb3-game': 'journal',
     'aria-label': 'Field journal',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [
-      jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
-        children: [
-          jsx('h3', {
-            style: {
-              margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.meta,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
-            },
-            children: 'Field journal'
-          }),
-          jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
-            children: earned
-              ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
-              : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
-          })
-        ]
-      }),
-      jsx('ul', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-          margin: 0,
-          padding: 0,
-          listStyle: 'none',
-          minWidth: 0
-        },
-        children: cards.map((card) =>
-          jsxs(
-            'li',
-            {
-              'data-cb-game-card': card.earned ? 'earned' : card.state,
+    emphasis: 'elev-1',
+    style: { gap: '0.5rem', maxWidth: CB_MEASURE },
+    children: jsxs('div', {
+      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+      children: [
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
+          children: [
+            jsx('h3', {
               style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.2rem',
-                minWidth: compact ? 0 : '8.5rem',
-                flex: compact ? '1 1 8rem' : '0 1 11rem',
-                padding: '0.5rem 0.6rem',
-                borderRadius: '0.5rem',
-                // Tactile, not glossy: a paper card with one honest hairline, and the warm Game
-                // accent only where the card was actually earned.
-                background: card.earned ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
-                border: `1px solid ${card.earned ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`
+                margin: 0,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('heading'),
+                lineHeight: cb3Lead('heading'),
+                fontWeight: 600,
+                color: cb3Role('ink'),
+                maxWidth: '34ch'
               },
-              children: [
-                jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', letterSpacing: '0.04em' },
-                  children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.meta,
-                    fontWeight: 600,
-                    lineHeight: 1.3,
-                    color: 'var(--cb-ink)',
-                    overflowWrap: 'anywhere'
-                  },
-                  children: card.title
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SANS,
-                    fontSize: CB_TYPE.caption,
-                    fontWeight: card.earned ? 700 : 500,
-                    lineHeight: 1.4,
-                    color: card.earned ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
-                  },
-                  children: card.earned ? 'Stamped' : (DESK_STATE_WORD[card.state] || 'Not started')
-                })
-              ]
-            },
-            card.id
+              children: 'Field journal'
+            }, 'heading'),
+            jsx('span', {
+              style: {
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: earned
+                ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
+                : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
+            }, 'count')
+          ]
+        }),
+        jsx('ul', {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+            minWidth: 0
+          },
+          children: cards.map((card, index) =>
+            jsxs(
+              'li',
+              {
+                'data-cb-game-card': card.earned ? 'earned' : card.state,
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: compact ? 'minmax(0, 1fr)' : '5.5rem minmax(0, 1fr) auto',
+                  alignItems: 'baseline',
+                  gap: compact ? '0.15rem' : '0.75rem',
+                  padding: '0.5rem 0',
+                  borderTop: index === 0 ? 0 : `1px solid ${cb3Role('rule')}`,
+                  minWidth: 0
+                },
+                children: [
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      letterSpacing: '0.04em'
+                    },
+                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                  }, 'ordinal'),
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('meta'),
+                      lineHeight: cb3Lead('meta'),
+                      fontWeight: 600,
+                      color: cb3Role('ink'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: card.title
+                  }, 'title'),
+                  card.earned
+                    ? jsx('span', {
+                        'data-cb3-chip': 'stamped',
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.1rem 0.5rem',
+                          borderRadius: cb3Radius('pill'),
+                          border: `1px solid ${cb3Role('gold')}`,
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 600,
+                          color: cb3Role('ink')
+                        },
+                        children: [
+                          jsx('span', {
+                            'aria-hidden': 'true',
+                            style: { display: 'inline-flex', color: cb3Role('gold') },
+                            children: jsx(sdk.Codicon, { name: 'check', size: CB_ICON_UI })
+                          }, 'glyph'),
+                          jsx('span', { children: 'Stamped' }, 'word')
+                        ]
+                      }, 'state')
+                    : jsx('span', {
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 500,
+                          color: cb3Role('ink-soft')
+                        },
+                        children: DESK_STATE_WORD[card.state] || 'Not started'
+                      }, 'state')
+                ]
+              },
+              card.id
+            )
           )
-        )
-      })
-    ]
+        })
+      ]
+    })
   })
 }
-
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -12870,10 +13390,10 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-targets-list': String(targets.length),
           children: [
-            jsx(CbLabel, { children: 'Expressions to practise' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.practiceExpressions }),
             jsx('ul', {
               className: 'flex flex-col gap-1 text-sm leading-snug',
-              'aria-label': 'Expressions to practise',
+              'aria-label': CB3_CLASSROOM_COPY.practiceExpressions,
               children: targets
                 .filter((target) => target.label)
                 .map((target) =>
@@ -12941,7 +13461,7 @@ function PracticeSurface({
             jsx(CbLabel, { children: 'Transcript' }),
             jsx('ol', {
               className: 'flex flex-col gap-1.5',
-              'aria-label': 'Practice transcript',
+              'aria-label': CB3_CLASSROOM_COPY.practiceTranscript,
               children: transcript.map((turn) =>
                 jsxs(
                   'li',
@@ -13074,11 +13594,11 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-criteria': String(criteria.length),
           children: [
-            jsx(CbLabel, { children: 'Grading criteria' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkCriteria }),
             criteria.length > 0
               ? jsx('ul', {
                   className: 'flex flex-col gap-1',
-                  'aria-label': 'Grading criteria',
+                  'aria-label': CB3_CLASSROOM_COPY.checkCriteria,
                   children: criteria.map((item, index) =>
                     jsxs(
                       'li',
@@ -13698,7 +14218,7 @@ function AttemptControls({
               choices.length > 0 && !choiceMode
                 ? jsx('ul', {
                     className: 'flex flex-col gap-1 text-sm leading-snug',
-                    'aria-label': 'Choices',
+                    'aria-label': CB3_CLASSROOM_COPY.checkChoices,
                     children: choices.map((choice, index) =>
                       jsx('li', { children: choice }, `choice-${index}`)
                     )
@@ -13710,12 +14230,12 @@ function AttemptControls({
                     'data-cb-check-items': String(checklist.length),
                     'data-cb-check-items-mode': 'selection',
                     children: [
-                      jsx(CbLabel, { children: 'Checklist' }),
+                      jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                       // One row per declared item: the served id is the submitted value, the label
                       // is the question. Ticking is the answer; nothing is typed here.
                       jsx('ul', {
                         className: 'flex flex-col gap-1.5',
-                        'aria-label': 'Checklist',
+                        'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                         children: checklist.map((item, index) =>
                           jsxs(
                             'li',
@@ -13750,11 +14270,11 @@ function AttemptControls({
                       'data-cb-check-items': String(readOnlyItems.length),
                       'data-cb-check-items-mode': 'read_only',
                       children: [
-                        jsx(CbLabel, { children: 'Checklist' }),
+                        jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                         // One label per item, printed here and nowhere else in the lesson.
                         jsx('ul', {
                           className: 'flex flex-col gap-1',
-                          'aria-label': 'Checklist',
+                          'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                           children: readOnlyItems.map((item) =>
                             jsx('li', {
                               className: 'text-sm leading-snug',
@@ -13836,7 +14356,7 @@ function AttemptControls({
                 : choiceMode
                   ? jsxs('div', {
                       role: 'radiogroup',
-                      'aria-label': 'Answers',
+                      'aria-label': CB3_CLASSROOM_COPY.checkAnswers,
                       'aria-describedby': 'cb-attempt-help',
                       'data-cb-choice-group': String(choices.length),
                       'data-cb-choice-selected': selected >= 0 ? String(selected + 1) : '',
@@ -14438,6 +14958,1231 @@ function sectionRows({ row, review, notebooks, outline, page }) {
     .map((entry) => ({ ...entry, title: entry.title || 'Saved section' }))
     .sort((left, right) => (left.ordinal || 0) - (right.ordinal || 0))
 }
+
+// CB-V3-BEGIN — CP-023: the v3 classroom (R-CLASS, docs/concept-parity/SPEC-V3.md §5.3)
+/**
+ * ── Classroom v3 ──────────────────────────────────────────────────────────────────────────────
+ *
+ * The peer problem, executed: the lesson screen has to be *one* reading column facing a framed
+ * scene and one check, not a stack of equal boxes. This segment owns the composition and the
+ * check's v3 answer surfaces; it paints from the v3 primitives (`StampNode`, `DialogueBubble`,
+ * `EvidenceTray`, `ChallengeCard`, `FoxPose`, `PillAction`) and from `var(--cb3-*)` only.
+ *
+ * Everything visible is deck copy (`docs/concept-parity/COPY.md` §4) or a backend field:
+ *
+ *   stepper      `course.outline.objectives[]` — one `StampNode` per real section; `Now` on the
+ *                section the lesson page names, `Done` on an objective with independent or delayed
+ *                evidence, `Next` otherwise. A section is `locked` **only** when the plan records
+ *                the gate (`objective.locked === true`); nothing is inferred, because the outline
+ *                carries no prerequisite field today and inventing a padlock would be a lie.
+ *   scene        the course world's section plate (`world.read` → artifact id → `artifact.get`),
+ *                else a typographic plate that states the course title. Never an invented cover.
+ *   dialogue     the pack's own line, read out of the authored teaching segment (kana, romaji and
+ *                the English meaning are all in that line); the ruby is deck-authored over known
+ *                kanji and is omitted for any line this deck has no reading for.
+ *   check        the served stimulus in its own format (`text`, `selection`, `verification`) with
+ *                exactly one filled control; `Check answer` → `Try again` / `Next section`.
+ *   aside        evidence (counted from `lesson.page.checks[]`), the real next section, and the
+ *                tutor door. Game mode adds the XP chip and the Field Challenge; Textbook and
+ *                Guided never render XP.
+ *
+ * A volatile copy of this warning lives on the screen it protects: nothing here may print an
+ * evidence vocabulary word, a percentage, a streak or a second filled control.
+ */
+
+const CB3_CLASSROOM_COPY = Object.freeze({
+  // COPY.md §4 — the classroom rows, verbatim. A template keeps the `{slot}` fill visible.
+  back: 'Back to {course}',
+  stepper: 'This section',
+  stepCurrent: 'Now',
+  stepDone: 'Done',
+  stepNext: 'Next',
+  stepLocked: 'Opens after the check',
+  play: 'Play the line',
+  checkPrimary: 'Check answer',
+  checkEdit: 'Edit answer',
+  clearChoice: 'Clear choice',
+  clearTicks: 'Clear ticks',
+  // Group names (COPY.md §4, SPEC-V3 §5.3 C7): the visible words and the aria-labels of the
+  // answer surfaces are these rows, so a group can never be named twice.
+  checkChoices: 'Choices',
+  checkChecklist: 'Checklist',
+  checkAnswers: 'Answers',
+  checkCriteria: 'Grading criteria',
+  correct: 'That is right.',
+  wrong: 'Not quite.',
+  retry: 'Try again',
+  next: 'Next section',
+  evidenceTitle: 'Evidence',
+  evidenceCount: '{n} of {total} checks recorded',
+  evidenceEmpty: 'No checks recorded yet.',
+  asideNext: 'Next up: {next}',
+  asideTutor: 'Ask the tutor',
+  // Practice group names (COPY.md §4, SPEC-V3 §5.3 C8).
+  practiceExpressions: 'Expressions to practise',
+  practiceTranscript: 'Practice transcript',
+  nochatTitle: 'This section has no chat yet',
+  nochatBody: 'Start a fresh run to open a chat for this section.',
+  nochatAction: 'Start a fresh run',
+  completeTitle: 'Section finished',
+  completeBody: 'Your check is recorded.',
+  completeAction: 'Back to the path',
+  loading: 'Opening this section.',
+  errorTitle: 'This section could not be read',
+  errorBody: 'Your attempt is unchanged. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'The page you opened last is still here. Checking an answer waits.',
+  gameXp: '{n} XP',
+  challengeTitle: 'Field Challenge',
+  challengeStart: 'Try it yourself',
+  // SPEC-V3 §5.3 C7 does not name this label and the deck has no row for it (ruling 2026-11-10):
+  // the visible words stay identical and the missing row is reported in the review summary,
+  // never invented here as a second copy source.
+  answerLabel: 'Your answer',
+  selected: 'Selected',
+  nothingSelected: 'Nothing selected yet.',
+  selectedSummary: 'Selected: {n}. {choice}',
+  playUnavailable: 'No audio for this line yet.'
+})
+
+/** Fill one deck row's `{slot}` without ever printing an empty box. */
+function classroomCopy(template, values) {
+  let out = String(template || '')
+  Object.keys(values || {}).forEach((key) => {
+    out = out.split(`{${key}}`).join(String(values[key]))
+  })
+  return out
+}
+
+/**
+ * The deck-authored ruby over the bundled L0 pack's line.
+ *
+ * A reading is never derived from kana (SPEC-V3 §4): only these kanji runs have an authored
+ * reading, and a line with any other kanji renders plain. `好き`/`付き合って` are the two words
+ * the pack's own worked example uses; nothing else is guessed.
+ */
+const CB3_CLASSROOM_RUBY = Object.freeze({
+  好き: 'すき',
+  付き合って: 'つきあって'
+})
+
+/** Split one Japanese line into plain runs and ruby runs, in reading order. */
+function classroomRubySegments(text) {
+  const value = String(text || '')
+  if (!value) return []
+  const keys = Object.keys(CB3_CLASSROOM_RUBY).sort((left, right) => right.length - left.length)
+  const parts = []
+  let index = 0
+  while (index < value.length) {
+    const hit = keys.find((key) => value.startsWith(key, index))
+    if (hit) {
+      parts.push({ text: hit, ruby: CB3_CLASSROOM_RUBY[hit] })
+      index += hit.length
+      continue
+    }
+    let end = index + 1
+    while (end < value.length && !keys.some((key) => value.startsWith(key, end))) end += 1
+    parts.push({ text: value.slice(index, end) })
+    index = end
+  }
+  return parts
+}
+
+const CB3_JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/
+const CB3_KANJI = /[\u3400-\u9fff]/
+//: `Speaker: 好きです。 (suki desu.) — "I like you."` — the pack's own authored dialogue shape.
+const CB3_DIALOGUE_LINE = /^\s*([^:\n]{1,24}):\s*([^()\n]+?)\s*\(([^()\n]+)\)\s*[—-]\s*["“”']?(.+?)["“”']?\s*$/
+
+/**
+ * The lesson's real line, read from the page's authored teaching text.
+ *
+ * `lesson.page.segments[].text` is the pack's own section content, not model prose and not a
+ * transcript. A line qualifies only when it carries all three scaffolds on the same authored
+ * line (kana/kanji, romaji in parentheses, the English meaning after a dash). Among qualifying
+ * lines the last one containing kanji is preferred: that is the section's target line, and it is
+ * the only kind the deck's ruby can sit on. With no qualifying line the bubble is not rendered
+ * at all — a decorative quote would be invented content.
+ */
+function classroomLineFromPage(page) {
+  const texts = []
+  if (page && Array.isArray(page.segments)) {
+    page.segments.forEach((segment) => {
+      if (segment && typeof segment.text === 'string') texts.push(segment.text)
+    })
+  }
+  const document = page && page.document
+  if (document && Array.isArray(document.blocks)) {
+    document.blocks.forEach((block) => {
+      if (!block) return
+      if (typeof block.deep === 'string') texts.push(block.deep)
+      if (typeof block.short === 'string') texts.push(block.short)
+    })
+  }
+  const lines = []
+  texts.forEach((text) => {
+    String(text)
+      .split(/\r?\n/)
+      .forEach((line) => {
+        const match = CB3_DIALOGUE_LINE.exec(line)
+        if (!match) return
+        const kana = match[2].trim()
+        const romaji = match[3].trim()
+        const english = match[4].trim()
+        if (!CB3_JAPANESE.test(kana) || !romaji || !english) return
+        lines.push({ kana, romaji, english })
+      })
+  })
+  if (lines.length === 0) return null
+  const withKanji = lines.filter((line) => CB3_KANJI.test(line.kana))
+  const picked = withKanji.length > 0 ? withKanji[withKanji.length - 1] : lines[0]
+  return {
+    kana: picked.kana,
+    romaji: picked.romaji,
+    english: picked.english,
+    segments: classroomRubySegments(picked.kana)
+  }
+}
+
+/**
+ * The stepper's nodes, in the plan's own order (SPEC-V3 §5.3 C3, "better than the concept" 3/7).
+ *
+ * `Done` means the objective reached independent or delayed evidence — the same fact the course
+ * home reads. `Now` is the section the lesson page is showing. `locked` is only a plan-recorded
+ * gate, never a guess from ordinal alone.
+ */
+function classroomStepNodes(outline, page) {
+  const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives : []
+  const currentId = page && page.section ? page.section.objective_id : null
+  return objectives
+    .filter((objective) => objective && objective.objective_id)
+    .map((objective, index) => {
+      const done =
+        objective.independent === true ||
+        objective.state === 'independent_evidence' ||
+        objective.state === 'delayed_evidence' ||
+        objective.state === 'overridden'
+      const locked = objective.locked === true
+      const current = objective.objective_id === currentId
+      const state = locked ? 'locked' : current ? 'current' : done ? 'done' : 'upcoming'
+      return {
+        key: objective.objective_id,
+        index,
+        label: objective.title || '',
+        state,
+        stateWord:
+          state === 'current'
+            ? CB3_CLASSROOM_COPY.stepCurrent
+            : state === 'locked'
+              ? CB3_CLASSROOM_COPY.stepLocked
+              : undefined
+      }
+    })
+}
+
+/**
+ * `2 of 5 checks recorded`, counted from the served page (COPY.md §4 `classroom.evidence.count`).
+ *
+ * The denominator is the page's own `checks[]` length and the numerator counts a check with a
+ * committed attempt. The event rows keep the integrity states visible: a recorded check prints
+ * the class its newest attempt was committed with (`First try, no hints` / `Hinted` /
+ * `Answer shown`), never a score.
+ */
+function classroomEvidence(page) {
+  const checks = page && Array.isArray(page.checks) ? page.checks : []
+  const attempts = page && Array.isArray(page.attempts) ? page.attempts : []
+  const byCheck = {}
+  attempts.forEach((attempt) => {
+    if (!attempt || !attempt.check_id) return
+    const current = byCheck[attempt.check_id]
+    if (!current) byCheck[attempt.check_id] = attempt
+  })
+  const recordedChecks = checks.filter((check) => check && Number(check.attempt_count) > 0)
+  const events = []
+  recordedChecks.forEach((check) => {
+    const attempt = byCheck[check.check_id]
+    const label = attempt && attempt.evidence_class ? EVIDENCE_CLASS_COPY[attempt.evidence_class] : null
+    if (label) events.push(label)
+  })
+  return {
+    recorded: recordedChecks.length,
+    total: checks.length,
+    countLabel: classroomCopy(CB3_CLASSROOM_COPY.evidenceCount, {
+      n: recordedChecks.length,
+      total: checks.length
+    }),
+    events: Array.from(new Set(events))
+  }
+}
+
+/**
+ * The scene's plate: the course world's own section plate, else a typographic field.
+ *
+ * `world.read` returns the governed kit; a plate is used only when it names this section, so the
+ * classroom never borrows another section's art (the swap check, SPEC-V3 §5.3). No world plate
+ * means a typographic plate that prints the course title — never an invented cover, and never the
+ * host's placeholder image.
+ */
+function classroomSceneFromWorld(read, sectionId, courseTitle) {
+  const world = read && read.world ? read.world : null
+  const kit = world && (world.kit || world)
+  const plates = kit && Array.isArray(kit.plates) ? kit.plates : []
+  const usable = plates.filter((plate) => plate && (plate.artifact_id || plate.artifactId))
+  const match = sectionId
+    ? usable.find((plate) => plate.section_id === sectionId || plate.sectionId === sectionId)
+    : null
+  if (match) {
+    return {
+      artifactId: match.artifact_id || match.artifactId,
+      title: courseTitle || '',
+      credit: match.credit || match.attribution || null,
+      kind: match.kind || null
+    }
+  }
+  return { artifactId: null, title: courseTitle || '', credit: null, kind: null }
+}
+
+/** One quiet line of teaching state: never a goal, never a compliment. */
+function ClassroomQuietLine({ children, role }) {
+  return jsx('p', {
+    role: role || undefined,
+    style: {
+      margin: 0,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('meta'),
+      lineHeight: cb3Lead('meta'),
+      color: cb3Role('ink-soft')
+    },
+    children
+  })
+}
+
+/**
+ * The framed scene (SPEC-V3 §5.3 C5): a mounted plate, 8 px canvas-edge mat, 1 px ink rule and the
+ * elevation token from the stylesheet — never a shadow recipe here.
+ */
+function ClassroomScene({ scene, title, height }) {
+  const artifactId = scene && scene.artifactId ? scene.artifactId : null
+  // `useArtifactPreview` is declared in the components segment; the call is unconditional so the
+  // hook order is stable whether or not this section has a plate (a conditional hook throws).
+  const preview = useArtifactPreview(artifactId)
+  const ready = preview && preview.state === 'ready' && preview.data_url
+  return jsxs('div', {
+    'data-cb3-scene': ready ? 'art' : 'type',
+    'data-cb3-scene-artifact': artifactId || 'none',
+    className: 'cb3-card-elevated',
+    style: {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: height || '10.25rem',
+      padding: '8px',
+      backgroundColor: cb3Role('canvas-edge'),
+      border: `1px solid ${cb3Role('ink')}`,
+      borderRadius: cb3Radius('round'),
+      overflow: 'hidden',
+      minWidth: 0
+    },
+    children: [
+      ready
+        ? jsx('img', {
+            'data-cb3-scene-art': '',
+            alt: '',
+            'aria-hidden': 'true',
+            src: preview.data_url,
+            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+          }, 'art')
+        : jsxs('div', {
+            'data-cb3-scene-plate': 'type',
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+              paddingInline: '1rem',
+              backgroundColor: cb3Role('card-stock'),
+              border: `1px solid ${cb3Role('rule')}`,
+              borderRadius: cb3Radius('square')
+            },
+            children: [
+              jsx('span', {
+                style: {
+                  fontFamily: 'var(--cb3-font-display)',
+                  fontSize: cb3Type('heading'),
+                  lineHeight: cb3Lead('heading'),
+                  fontWeight: 600,
+                  maxWidth: '20ch',
+                  textAlign: 'center',
+                  color: cb3Role('ink')
+                },
+                children: title || ''
+              }, 'title')
+            ]
+          }, 'plate'),
+      scene && scene.credit
+        ? jsx('span', {
+            'data-cb3-scene-credit': '',
+            style: {
+              position: 'absolute',
+              right: '0.75rem',
+              bottom: '0.75rem',
+              paddingInline: '0.35rem',
+              backgroundColor: cb3Role('card-stock'),
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: scene.credit
+          }, 'credit')
+        : null
+    ]
+  })
+}
+
+/** One verdict line: the deck's sentence plus only the observation the backend recorded. */
+function classroomVerdictSentence(result) {
+  if (!result) return null
+  const criteria = Array.isArray(result.criteria) ? result.criteria : []
+  const observed = criteria
+    .filter((item) => item && item.observed)
+    .map((item) => String(item.observed).trim())
+    .filter(Boolean)
+  const why = observed.length > 0 ? observed[0] : null
+  if (result.verdict === 'pass') {
+    return why ? `${CB3_CLASSROOM_COPY.correct} ${why}` : CB3_CLASSROOM_COPY.correct
+  }
+  if (result.verdict === 'partial' || result.verdict === 'not_yet' || result.verdict === 'needs_retry') {
+    return why ? `${CB3_CLASSROOM_COPY.wrong} ${why}` : CB3_CLASSROOM_COPY.wrong
+  }
+  return null
+}
+
+/**
+ * The check card (SPEC-V3 §5.3 C7): one paper card, the served question, the answer surface the
+ * stimulus names, and the screen's **only** filled control.
+ *
+ * It deliberately shares no state machine with `AttemptControls`: that component is the v2 answer
+ * pane pinned by H-149/H-178 and is still mounted in two v2 surfaces. This is the v3 composition,
+ * with the same backend commands and the same fences (`expectedRevision`, one `attempt_nonce` per
+ * answer, a fresh nonce only on `Try again`), so the kernel sees identical input.
+ */
+function ClassroomCheckCard({
+  check,
+  stimulusStatus = 'ready',
+  stimulusError = null,
+  enrollmentId,
+  objectiveId,
+  revision,
+  onRetryStimulus,
+  onCommitted,
+  onVerdict,
+  onNextSection,
+  busyLabel
+}) {
+  const [text, setText] = useState('')
+  const [ticked, setTicked] = useState([])
+  const [selected, setSelected] = useState(-1)
+  const [phase, setPhase] = useState('awaiting_input')
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const nonceRef = useRef(null)
+  const verdictRef = useRef(null)
+
+  const stimulus = check ? check.stimulus || null : null
+  const items = checklistItems(stimulus)
+  const choices =
+    stimulus && stimulus.format === 'selection' && Array.isArray(stimulus.choices)
+      ? stimulus.choices.filter((choice) => String(choice || '').trim())
+      : []
+  const kind = items.length > 0 ? 'verification' : choices.length > 0 ? 'selection' : 'text'
+  const ready = stimulusStatus === 'ready' && Boolean(stimulus)
+  const selectedChoice = kind === 'selection' && selected >= 0 && selected < choices.length ? choices[selected] : null
+  const locked = phase === 'submitting'
+  const canCheck =
+    ready &&
+    !locked &&
+    (kind === 'verification' ? ticked.length > 0 : kind === 'selection' ? selectedChoice !== null : text.trim().length > 0)
+
+  useEffect(() => {
+    if (phase === 'graded' || phase === 'wrong') {
+      verdictRef.current?.focus?.({ preventScroll: true })
+    }
+  }, [phase])
+
+  const submit = useCallback(async () => {
+    if (!check || !canCheck) return
+    const answer =
+      kind === 'verification' ? checklistAnswer(ticked) : kind === 'selection' ? choiceAnswer(selectedChoice) : attemptAnswer(text.trim())
+    if (!nonceRef.current) nonceRef.current = newOperationId('attempt')
+    setPhase('submitting')
+    setError(null)
+    const response = await rpc(
+      'attempt.submit',
+      {
+        enrollment_id: enrollmentId,
+        check_id: check.check_id,
+        check_version: check.check_version,
+        attempt_nonce: nonceRef.current,
+        answer
+      },
+      {
+        idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
+        expectedRevision: Number(revision) || 0
+      }
+    )
+    if (!response.ok) {
+      setError(response.error)
+      setPhase('awaiting_input')
+      return
+    }
+    const graded = response.result
+    setResult(graded)
+    setPhase(graded.verdict === 'pass' ? 'graded' : 'wrong')
+    if (onVerdict) onVerdict(graded.verdict)
+    if (onCommitted) onCommitted(graded)
+  }, [check, canCheck, kind, ticked, selectedChoice, text, enrollmentId, revision, onCommitted, onVerdict])
+
+  const tryAgain = useCallback(() => {
+    nonceRef.current = null
+    setResult(null)
+    setError(null)
+    setPhase('awaiting_input')
+  }, [])
+
+  const moveOn = useCallback(() => {
+    if (onNextSection) onNextSection()
+  }, [onNextSection])
+
+  const primary =
+    phase === 'graded'
+      ? { label: CB3_CLASSROOM_COPY.next, onClick: moveOn }
+      : phase === 'wrong'
+        ? { label: CB3_CLASSROOM_COPY.retry, onClick: tryAgain }
+        : { label: CB3_CLASSROOM_COPY.checkPrimary, onClick: submit }
+
+  const toggleTick = (id) => {
+    if (locked) return
+    setTicked((previous) => (previous.includes(id) ? previous.filter((item) => item !== id) : previous.concat(id)))
+  }
+
+  const card = jsxs('div', {
+    'data-cb3-surface': 'check',
+    'data-cb3-check': kind,
+    'data-cb3-check-phase': phase,
+    className: 'cb3-card',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      padding: '1.25rem',
+      backgroundColor: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round'),
+      color: cb3Role('ink'),
+      minWidth: 0
+    },
+    children: [
+      stimulus && stimulus.prompt
+        ? jsx('p', {
+            'data-cb3-question': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('lead'),
+              lineHeight: cb3Lead('lead'),
+              maxWidth: '60ch'
+            },
+            children: stimulus.prompt
+          }, 'question')
+        : null,
+
+      !ready
+        ? jsxs('div', {
+            'data-cb3-check-read': stimulusStatus,
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: [
+              jsx(ClassroomQuietLine, {
+                role: 'status',
+                children:
+                  stimulusStatus === 'loading'
+                    ? busyLabel || CB3_CLASSROOM_COPY.loading
+                    : stimulusUnavailableDescription(stimulusError)
+              }),
+              typeof onRetryStimulus === 'function' && stimulusStatus === 'unavailable'
+                ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.errorAction, onClick: onRetryStimulus }, 'retry')
+                : null
+            ]
+          }, 'read')
+        : null,
+
+      ready && kind === 'verification'
+        ? jsx('div', {
+            role: 'group',
+            'data-cb3-answer': 'verification',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: items.map((item, index) =>
+              jsxs('label', {
+                'data-cb3-item': item.id,
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  minHeight: '44px',
+                  paddingInline: '0.5rem',
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  cursor: locked ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body')
+                },
+                children: [
+                  jsx('input', {
+                    type: 'checkbox',
+                    checked: ticked.includes(item.id),
+                    disabled: locked,
+                    onChange: () => toggleTick(item.id),
+                    style: { width: '24px', height: '24px', accentColor: cb3Role('terracotta') }
+                  }, 'box'),
+                  jsx('span', { children: item.label }, 'label')
+                ]
+              }, `item-${index}`)
+            )
+          }, 'verification')
+        : null,
+
+      ready && kind === 'selection'
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: [
+              jsx('div', {
+                role: 'radiogroup',
+                'aria-label': stimulus.prompt || CB3_CLASSROOM_COPY.checkPrimary,
+                'data-cb3-answer': 'selection',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+                children: choices.map((choice, index) =>
+                  jsxs('label', {
+                    'data-cb3-choice': index + 1,
+                    'data-cb3-choice-selected': selected === index ? 'true' : 'false',
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      minHeight: '44px',
+                      paddingInline: '0.5rem',
+                      border: `1px solid ${cb3Role(selected === index ? 'terracotta' : 'rule')}`,
+                      borderRadius: cb3Radius('soft'),
+                      cursor: locked ? 'not-allowed' : 'pointer',
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('body'),
+                      lineHeight: cb3Lead('body')
+                    },
+                    children: [
+                      jsx('input', {
+                        type: 'radio',
+                        name: 'cb3-classroom-choice',
+                        checked: selected === index,
+                        disabled: locked,
+                        onChange: () => setSelected(index),
+                        style: { width: '20px', height: '20px', accentColor: cb3Role('terracotta') }
+                      }, 'radio'),
+                      jsx('span', { 'aria-hidden': 'true', children: String(index + 1) }, 'number'),
+                      jsx('span', { children: choice }, 'text'),
+                      selected === index
+                        ? jsx('span', {
+                            style: {
+                              marginInlineStart: 'auto',
+                              fontFamily: 'var(--cb3-font-ui)',
+                              fontSize: cb3Type('meta'),
+                              lineHeight: cb3Lead('meta'),
+                              fontWeight: 600
+                            },
+                            children: CB3_CLASSROOM_COPY.selected
+                          }, 'word')
+                        : null
+                    ]
+                  }, `choice-${index}`)
+                )
+              }, 'choices'),
+              jsx(ClassroomQuietLine, {
+                role: 'status',
+                children: selectedChoice
+                  ? classroomCopy(CB3_CLASSROOM_COPY.selectedSummary, { n: selected + 1, choice: selectedChoice })
+                  : CB3_CLASSROOM_COPY.nothingSelected
+              }, 'summary')
+            ]
+          }, 'selection')
+        : null,
+
+      ready && kind === 'text'
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+            children: [
+              jsx('label', {
+                htmlFor: 'cb3-classroom-answer',
+                style: {
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_CLASSROOM_COPY.answerLabel
+              }, 'label'),
+              jsx('textarea', {
+                id: 'cb3-classroom-answer',
+                'data-cb3-answer': 'text',
+                value: text,
+                rows: 3,
+                disabled: locked || !ready,
+                onChange: (event) => setText(event.target.value),
+                style: {
+                  width: '100%',
+                  minHeight: '44px',
+                  padding: '0.6rem',
+                  backgroundColor: cb3Role('card-stock'),
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  color: cb3Role('ink'),
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  resize: 'vertical'
+                }
+              }, 'field')
+            ]
+          }, 'text')
+        : null,
+
+      error
+        ? jsx(ClassroomQuietLine, {
+            role: 'alert',
+            children: `${error.code || 'ERROR'}: ${describeError(error)}`
+          }, 'error')
+        : null,
+
+      result
+        ? jsx('p', {
+            ref: verdictRef,
+            tabIndex: -1,
+            role: 'status',
+            'data-cb3-verdict': result.verdict,
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('body'),
+              lineHeight: cb3Lead('body'),
+              color: result.verdict === 'pass' ? cb3Role('ink') : cb3Role('alert'),
+              maxWidth: '60ch'
+            },
+            children: classroomVerdictSentence(result)
+          }, 'verdict')
+        : null,
+
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' },
+        children: [
+          jsx(PillAction, {
+            'data-cb3-primary': '',
+            variant: 'primary',
+            label: primary.label,
+            disabled: phase === 'submitting' || (phase === 'awaiting_input' && !canCheck),
+            busy: phase === 'submitting',
+            onClick: primary.onClick
+          }, 'primary'),
+          phase === 'awaiting_input' && ready && kind !== 'text'
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                label: kind === 'selection' ? CB3_CLASSROOM_COPY.clearChoice : CB3_CLASSROOM_COPY.clearTicks,
+                onClick: () => (kind === 'selection' ? setSelected(-1) : setTicked([]))
+              }, 'clear')
+            : null
+        ]
+      }, 'actions')
+    ]
+  })
+
+  return card
+}
+
+/**
+ * The classroom surface (SPEC-V3 §5.3). Pure: every fact arrives as a prop, so the render test can
+ * mount each matrix state without a backend and the container below is the only place that reads.
+ */
+function ClassroomV3({
+  row,
+  outline,
+  page,
+  check,
+  stimulusStatus = 'ready',
+  stimulusError = null,
+  mode = 'guided',
+  engagement = null,
+  scene = null,
+  state = 'default',
+  chatAvailable = true,
+  gameRows = [],
+  enrollmentId,
+  objectiveId,
+  revision,
+  onBack,
+  onOpenSection,
+  onNextSection,
+  onStartChat,
+  onAskTutor,
+  onPlayLine,
+  onRetry,
+  onRetryStimulus,
+  onCommitted
+}) {
+  const width = useCbViewportWidth()
+  const wide = width >= 1000
+  const compact = width > 0 && width < 620
+  const courseTitle = (row && row.title) || (page && page.course && page.course.title) || ''
+  const section = page && page.section ? page.section : null
+  const steps = classroomStepNodes(outline, page)
+  const evidence = classroomEvidence(page)
+  const line = classroomLineFromPage(page)
+  const game = mode === 'game'
+  const [verdict, setVerdict] = useState(null)
+  const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
+  const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
+
+  const handleVerdict = useCallback(
+    (value) => {
+      setVerdict(value)
+      if (onCommitted) onCommitted(value)
+    },
+    [onCommitted]
+  )
+
+  const stepper = jsxs('nav', {
+    'aria-label': CB3_CLASSROOM_COPY.stepper,
+    'data-cb3-stepper': wide ? 'column' : 'strip',
+    style: {
+      display: 'flex',
+      flexDirection: wide ? 'column' : 'row',
+      alignItems: wide ? 'center' : 'flex-start',
+      gap: wide ? '0.85rem' : '0.5rem',
+      overflowX: wide ? 'visible' : 'auto',
+      paddingBlock: wide ? 0 : '0.25rem',
+      minWidth: 0
+    },
+    children: steps.map((step) =>
+      jsx(StampNode, {
+        state: step.state,
+        label: step.label,
+        stateWord: step.stateWord,
+        index: step.index,
+        onClick: () => onOpenSection && onOpenSection(step.key)
+      }, step.key)
+    )
+  })
+
+  const head = jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.75rem' },
+        children: [
+          jsx('h2', {
+            'data-cb3-classroom-title': '',
+            // CP-040 residual: the route shell prints the page title as the surface's only `h1`
+            // (`Course` for an open course); every region under it is an `h2`. The classroom's own
+            // title was an `h1`, so the section shipped two page titles and its heading order was
+            // 1, 1, 3. The type role is unchanged; only the level is corrected.
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              maxWidth: '34ch',
+              overflowWrap: 'anywhere'
+            },
+            children: courseTitle
+          }, 'title'),
+          game && engagement
+            ? jsxs('span', {
+                'data-cb3-xp': String(Number(engagement.xp_total) || 0),
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: 600,
+                  color: cb3Role('ink')
+                },
+                children: [
+                  jsx(sdk.Codicon, { name: 'flame', size: CB_ICON_UI }, 'icon'),
+                  jsx('span', {
+                    children: classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 })
+                  }, 'label')
+                ]
+              }, 'xp')
+            : null
+        ]
+      }),
+      section
+        ? jsx('p', {
+            'data-cb3-classroom-section': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('body'),
+              lineHeight: cb3Lead('body'),
+              color: cb3Role('ink-soft'),
+              maxWidth: '70ch'
+            },
+            children: section.title
+          }, 'section')
+        : null,
+      state === 'loading' ? jsx(ClassroomQuietLine, { role: 'status', children: CB3_CLASSROOM_COPY.loading }) : null
+    ]
+  })
+
+  const statePanel =
+    state === 'error' || state === 'offline'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': state,
+          className: 'cb3-card',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            padding: '1rem',
+            border: `1px solid ${cb3Role('rule')}`,
+            borderRadius: cb3Radius('round'),
+            backgroundColor: cb3Role('card-stock')
+          },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('body'),
+                lineHeight: cb3Lead('body'),
+                fontWeight: 600
+              },
+              children: state === 'offline' ? CB3_CLASSROOM_COPY.offlineTitle : CB3_CLASSROOM_COPY.errorTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, {
+              children: state === 'offline' ? CB3_CLASSROOM_COPY.offlineBody : CB3_CLASSROOM_COPY.errorBody
+            }, 'body'),
+            jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.errorAction, onClick: onRetry }, 'retry')
+          ]
+        }, 'state')
+      : null
+
+  const nochat =
+    chatAvailable === false && state === 'default'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': 'no-chat',
+          style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('body'),
+                lineHeight: cb3Lead('body'),
+                fontWeight: 600
+              },
+              children: CB3_CLASSROOM_COPY.nochatTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.nochatBody }, 'body'),
+            jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.nochatAction, onClick: onStartChat }, 'action')
+          ]
+        }, 'nochat')
+      : null
+
+  const complete =
+    state === 'complete'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': 'complete',
+          className: 'cb3-card',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            padding: '1.25rem',
+            border: `1px solid ${cb3Role('rule')}`,
+            borderRadius: cb3Radius('round'),
+            backgroundColor: cb3Role('card-stock')
+          },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('heading'),
+                lineHeight: cb3Lead('heading'),
+                fontWeight: 600
+              },
+              children: CB3_CLASSROOM_COPY.completeTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.completeBody }, 'body'),
+            jsx(PillAction, { variant: 'primary', label: CB3_CLASSROOM_COPY.completeAction, onClick: onNextSection }, 'action')
+          ]
+        }, 'complete')
+      : null
+
+  const checkCard =
+    state === 'default' && !complete
+      ? jsx(ClassroomCheckCard, {
+          check,
+          stimulusStatus,
+          stimulusError,
+          enrollmentId,
+          objectiveId,
+          revision,
+          onRetryStimulus,
+          onCommitted: handleVerdict,
+          onNextSection,
+          busyLabel: CB3_CLASSROOM_COPY.loading
+        }, 'check')
+      : null
+
+  const aside = jsxs('aside', {
+    'data-cb3-aside': '',
+    // A complementary landmark must carry a name (the v2 Field rail is "Section details"). The
+    // classroom's aside is the same region under the new composition: evidence, the next real stop
+    // and the tutor door.
+    'aria-label': 'Section details',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
+    children: [
+      game
+        ? jsx(ChallengeCard, {
+            title: CB3_CLASSROOM_COPY.challengeTitle,
+            prompt: check && check.stimulus && check.stimulus.prompt ? check.stimulus.prompt : null,
+            recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
+            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
+            onStart: onNextSection
+          }, 'challenge')
+        : null,
+      game && Array.isArray(gameRows) && gameRows.length > 0
+        ? jsx('ul', {
+            'data-cb3-game-rows': '',
+            style: {
+              margin: 0,
+              paddingInlineStart: '1rem',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft')
+            },
+            children: gameRows.map((entry, index) =>
+              jsx('li', { children: entry && entry.label ? entry.label : '' }, `game-row-${index}`)
+            )
+          }, 'game-rows')
+        : null,
+      jsx(EvidenceTray, {
+        countLabel: evidence.recorded > 0 || evidence.total > 0 ? evidence.countLabel : null,
+        recorded: evidence.recorded,
+        emptyLabel: CB3_CLASSROOM_COPY.evidenceEmpty,
+        events: evidence.events
+      }, 'evidence'),
+      nextStep
+        ? jsx(ClassroomQuietLine, {
+            children: classroomCopy(CB3_CLASSROOM_COPY.asideNext, { next: nextStep })
+          }, 'next')
+        : null,
+      typeof onAskTutor === 'function'
+        ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.asideTutor, onClick: onAskTutor }, 'tutor')
+        : null,
+      jsx(FoxPose, { pose: foxPose, size: wide ? 96 : 88 }, 'fox')
+    ]
+  })
+
+  return jsxs('div', {
+    'data-cb-classroom': '',
+    'data-cb3-surface': 'classroom',
+    'data-cb3-classroom-mode': game ? 'game' : mode,
+    'data-cb3-classroom-state': state,
+    className: 'cb3-gutter',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      paddingBlock: '1rem',
+      minWidth: 0,
+      fontFamily: 'var(--cb3-font-ui)',
+      color: cb3Role('ink')
+    },
+    children: [
+      jsx(PillAction, {
+        variant: 'quiet',
+        icon: 'arrow-left',
+        label: classroomCopy(CB3_CLASSROOM_COPY.back, { course: courseTitle }),
+        onClick: onBack,
+        style: { alignSelf: 'flex-start' }
+      }, 'back'),
+      head,
+      jsxs('div', {
+        style: wide
+          ? {
+              display: 'grid',
+              gridTemplateColumns: '96px minmax(0, 1fr) 268px',
+              columnGap: '24px',
+              alignItems: 'start',
+              minWidth: 0
+            }
+          : {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              minWidth: 0
+            },
+        children: [
+          jsx('div', { 'data-cb3-stepper-column': wide ? 'wide' : 'flow', style: { minWidth: 0 }, children: stepper }, 'stepper'),
+          jsxs('div', {
+            'data-cb3-reading': '',
+            // CP-040 residual: the shell's skip path lands on the reading column when the surface
+            // has one. This is that column under the v3 composition, so it carries the shared
+            // marker the skip link already looks for; without it the skip link fell back to `main`
+            // and a keyboard user had to tab past the stepper and the header to reach the lesson.
+            'data-cb-reading-column': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+            children: [
+              jsx(ClassroomScene, {
+                scene,
+                title: courseTitle,
+                height: wide ? '10.25rem' : compact ? '8.95rem' : '17.75rem'
+              }, 'scene'),
+              line && !compact
+                ? jsx(DialogueBubble, {
+                    segments: line.segments,
+                    romaji: line.romaji,
+                    en: line.english,
+                    onPlay: typeof onPlayLine === 'function' ? onPlayLine : undefined,
+                    playLabel: typeof onPlayLine === 'function' ? CB3_CLASSROOM_COPY.play : undefined
+                  }, 'line')
+                : line && compact
+                  ? jsx(DialogueBubble, {
+                      segments: line.segments,
+                      romaji: line.romaji,
+                      en: line.english
+                    }, 'line-compact')
+                  : null,
+              nochat,
+              statePanel,
+              complete,
+              checkCard
+            ]
+          }, 'reading'),
+          aside
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The wired classroom: one place that reads, one place that composes.
+ *
+ * Reads are the same ones the v2 lesson pane makes, keyed so a section switch refetches:
+ * `course.outline` (the stepper), `lesson.page` (scene text, checks, attempts), `check.open` +
+ * `check.get` through `useOpenCheck` (the answer surface), `world.read` (the section plate) and,
+ * only in Game mode, `engagement.read` (XP and the challenge). Nothing here invents a row: a read
+ * that fails paints the error state, never an empty lesson.
+ */
+function ClassroomV3Surface({
+  row,
+  enrollmentId,
+  objectiveId,
+  mode = 'guided',
+  onBack,
+  onOpenSection,
+  onNextSection,
+  onStartChat,
+  onAskTutor,
+  onPlayLine
+}) {
+  const courseId = row && row.course_id ? row.course_id : null
+  const outline = useRpcQuery(
+    'course.outline',
+    { enrollment_id: enrollmentId },
+    `cb3-classroom-outline-${enrollmentId}`,
+    Boolean(enrollmentId) && backendSupports('course.outline')
+  )
+  const page = useRpcQuery(
+    'lesson.page',
+    { enrollment_id: enrollmentId, objective_id: objectiveId },
+    `cb3-classroom-page-${enrollmentId}-${objectiveId}`,
+    Boolean(enrollmentId) && Boolean(objectiveId) && backendSupports('lesson.page')
+  )
+  const world = useRpcQuery(
+    'world.read',
+    { course_id: courseId },
+    `cb3-classroom-world-${courseId}`,
+    Boolean(courseId) && backendSupports('world.read')
+  )
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: courseId, enrollment_id: enrollmentId },
+    `cb3-classroom-engagement-${courseId}-${enrollmentId}`,
+    mode === 'game' && Boolean(courseId) && Boolean(enrollmentId) && backendSupports('engagement.read')
+  )
+  const revision = page.data ? page.data.revision : modelRevision(row)
+  const check = useOpenCheck({
+    enrollmentId,
+    objectiveId,
+    revision,
+    enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
+    implemented: backendWire.implemented
+  })
+  const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
+  const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
+  const state =
+    page.status === 'error' && !page.data
+      ? 'error'
+      : page.status === 'loading' && !page.data
+        ? 'loading'
+        : 'default'
+  return jsx(ClassroomV3, {
+    row,
+    outline: outline.data,
+    page: page.data,
+    check: check.check,
+    stimulusStatus: check.stimulusStatus,
+    stimulusError: check.stimulusError,
+    mode,
+    engagement: engagement.data,
+    scene,
+    state,
+    chatAvailable: Boolean(page.data && page.data.runtime && page.data.runtime.binding_status === 'active'),
+    enrollmentId,
+    objectiveId,
+    revision,
+    onBack,
+    onOpenSection,
+    onNextSection,
+    onStartChat,
+    onAskTutor,
+    onPlayLine,
+    onRetry: () => {
+      page.reload()
+      outline.reload()
+      check.reload()
+    },
+    onRetryStimulus: check.reload,
+    onCommitted: () => {
+      page.reload()
+      outline.reload()
+    }
+  })
+}
+
+/** The enrollment revision a row carries, for the check fence before the page lands. */
+function modelRevision(row) {
+  return row && Number.isFinite(Number(row.revision)) ? Number(row.revision) : 0
+}
+// CB-V3-END — CP-023
 
 /**
  * ── Atlas Lamp: the scoped Coursebook token layer ───────────────────────────────────────────
@@ -15198,6 +16943,13 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] .cb3-shelf {
+  box-shadow: var(--cb3-elev-1);
+}
+
+/* CP-040: the elevation the v3 material contract allows on a card stock object. It lives here, in
+   the stylesheet, because the token gate refuses a shadow painted from an inline style — a v3
+   surface that needs elev-1 names this class instead of writing boxShadow. */
+[data-cb-v3] .cb3-elev-1 {
   box-shadow: var(--cb3-elev-1);
 }
 
@@ -24216,6 +25968,1007 @@ function lessonHeroPlan(readiness, { overview = false, sectionOpen = false } = {
   ]
 }
 
+/* ══ CP-024 — the v3 course home (R-MAP) ══════════════════════════════════════════════════════
+ * The course page's own composition (SPEC-V3 §5.4): a back path, the course head, a mounted hero
+ * plate with the route's nodes on it, and an aside carrying Continue, the evidence count and the
+ * other courses.
+ *
+ * Provenance, in the order the deck and the contract set it:
+ *  - every visible string is a `course.*` row from `docs/concept-parity/COPY.md`, or a backend
+ *    field the deck names for that row. Nothing here authors a label;
+ *  - every number is a stored fact (`library_item.sections_done`/`sections_total`, the outline's
+ *    objective states, the review queue). No streak, XP, percentage or invented total;
+ *  - every colour, radius, type size and elevation is the v3 contract through the `cb3*` readers,
+ *    so this segment carries no hex, no viewport unit and no shadow recipe of its own.
+ *
+ * The route nodes (M5) are DOM buttons placed on **normalised coordinates the plate's manifest
+ * declares** (`route_anchors: [{section_id | objective_id, x, y}]`, each 0–1 of the plate box).
+ * A plate that declares no usable anchors — today's `world.read` asset rows carry none, which is
+ * reported as a gap rather than filled in — or a route narrower than 900 px renders the vertical
+ * `StampNode` route instead. A node is a real button with its section's own title; the current one
+ * carries `aria-current="step"` and the word `You are here`, never a colour alone.
+ */
+
+/** The deck's `course.*` strings. Every literal below is a `COPY.md` row, verbatim. */
+const CB3_COURSE_COPY = Object.freeze({
+  backPrefix: 'Back to ',
+  routeLabel: 'Your route',
+  nodeCurrent: 'You are here',
+  nodeDone: 'Done',
+  nodeNext: 'Next',
+  nodeLocked: 'Opens after the section before it',
+  continueTitle: 'Continue',
+  evidenceTitle: 'Evidence',
+  othersTitle: 'Your other courses',
+  noWorldTitle: 'No scene yet',
+  noWorldBody: 'The lesson works without art.',
+  worldRunning: 'Painting the scene.',
+  worldRejectedTitle: 'This scene was not approved',
+  worldRejectedAction: 'Open World Studio',
+  planReviewTitle: 'The plan is waiting for you',
+  planReviewBody: 'Read it, then approve it so lessons can start.',
+  endTitle: 'Course complete',
+  endBody: 'Every section has evidence.',
+  loading: 'Opening this course.',
+  errorTitle: 'This course could not be read',
+  errorBody: 'The route shows what was saved last. Try again.',
+  errorAction: 'Try again'
+})
+
+/** `course.evidence.count`, filled from stored section counts. A zero total prints no claim. */
+function cb3CourseEvidenceLine(done, total) {
+  const have = Math.max(0, Number(done) || 0)
+  const all = Math.max(0, Number(total) || 0)
+  if (all <= 0) return null
+  return `${have} of ${all} sections have evidence`
+}
+
+/**
+ * Normalised anchor points, from either shape: `{key, x, y}` (already normalised) or the plate's
+ * own `{section_id | objective_id | section_key, x, y}`. Malformed entries (no key, a non-finite
+ * or out-of-range coordinate) are dropped rather than clamped: a coordinate the renderer invents
+ * is not the plate's composition.
+ */
+function cb3CourseAnchorPoints(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) return []
+  const points = []
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue
+    const key = entry.key || entry.section_id || entry.objective_id || entry.section_key || null
+    const x = Number(entry.x)
+    const y = Number(entry.y)
+    if (!key) continue
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+    if (x < 0 || x > 1 || y < 0 || y > 1) continue
+    points.push({ key: String(key), x, y })
+  }
+  return points
+}
+
+/**
+ * Normalised anchors declared by a plate. One shape, several legal carriers: the manifest's
+ * `route_anchors`, the asset row's own `route_anchors`, the world brief's `plate.route_anchors`
+ * or `route_anchors`, and the world row itself. The brief is the only plate document today's
+ * `world.read` returns, so it is a legal home; the asset row's own manifest is preferred when a
+ * backend exposes it, and this order keeps that preference.
+ */
+function cb3CoursePlateAnchors(plate, world) {
+  const brief = world && world.brief && typeof world.brief === 'object' ? world.brief : null
+  const sources = [
+    plate && plate.manifest,
+    plate,
+    brief && brief.plate,
+    brief,
+    world
+  ]
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+    const points = cb3CourseAnchorPoints(source.route_anchors)
+    if (points.length) return points
+  }
+  return []
+}
+
+/** The one hero plate a course has: its approved world plate, else the pack's map ground. */
+function cb3CourseHeroPlate(world) {
+  const assets = world && Array.isArray(world.assets) ? world.assets : []
+  const hero = cbWorldPlate(assets, 'hero')
+  const anchors = cb3CoursePlateAnchors(hero, world)
+  if (hero && hero.artifact_id) {
+    return {
+      artifactId: hero.artifact_id,
+      src: null,
+      anchors,
+      credit: hero.attribution || null
+    }
+  }
+  // CP-013's map ground is the pack's own field; it is used only when the asset segment carries
+  // it. A plate that is not there renders the typographic field, never an invented picture.
+  const ground = typeof cb3Asset === 'function' ? cb3Asset('cb.asset.scene.map-ground') : null
+  return { artifactId: null, src: ground || null, anchors, credit: null }
+}
+
+/**
+ * The route's sections as nodes. State precedence is honest: a gated section is `locked`, the
+ * section the backend names current is `current`, a section with independent evidence is `done`,
+ * everything else is `upcoming`. `label` is the section's own title; when the outline carries no
+ * title the node falls back to its state word rather than to a fabricated name.
+ */
+function cb3CourseNodes({ objectives, row, page, complete = false }) {
+  const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
+  const summary = (row && row.evidence_summary) || {}
+  const section = page && page.section
+  const mainline = mainlineObjective(row, list) || {}
+  const currentId =
+    (section && section.objective_id) || summary.current_objective_id || mainline.objective_id || null
+  return list.map((entry, index) => {
+    const locked = entry.locked === true || entry.state === 'locked'
+    const independent = entry.independent === true || entry.state === 'completed'
+    let state = 'upcoming'
+    if (locked) state = 'locked'
+    // At the course's close every node is done, including whichever section was opened last:
+    // SPEC-V3 §5.4's `course-end` says "every node marked done", and leaving the last section as
+    // the current step would mark one node not-done on a screen whose own beat is completion.
+    else if (complete && independent) state = 'done'
+    else if (entry.objective_id === currentId) state = 'current'
+    else if (independent) state = 'done'
+    const word =
+      state === 'current'
+        ? CB3_COURSE_COPY.nodeCurrent
+        : state === 'done'
+          ? CB3_COURSE_COPY.nodeDone
+          : state === 'locked'
+            ? CB3_COURSE_COPY.nodeLocked
+            : CB3_COURSE_COPY.nodeNext
+    return {
+      id: entry.objective_id || `node-${index + 1}`,
+      sectionKey: entry.section_key || entry.section_id || entry.objective_id || null,
+      label: entry.title || null,
+      state,
+      word,
+      ordinal: Number(entry.ordinal) || index + 1
+    }
+  })
+}
+
+/**
+ * Map or list. The map needs a wide route **and** a placement for every node: a plate that misses
+ * one section would hide it, so a partial anchor set falls back to the complete vertical route
+ * rather than drawing an incomplete path.
+ */
+function cb3CourseRoutePlan({ nodes, anchors, width }) {
+  const list = Array.isArray(nodes) ? nodes : []
+  const wide = Number(width) >= 900
+  const points_ = cb3CourseAnchorPoints(anchors)
+  if (wide && list.length && points_.length) {
+    const byKey = new Map(list.map((node) => [String(node.sectionKey), node]))
+    const points = []
+    for (const anchor of points_) {
+      const node = byKey.get(String(anchor.key))
+      if (!node) continue
+      if (points.some((point) => point.node.id === node.id)) continue
+      points.push({ node, x: anchor.x, y: anchor.y })
+    }
+    if (points.length === list.length) return { mode: 'map', points }
+  }
+  return { mode: 'list', points: [] }
+}
+
+/**
+ * One route node placed on the plate. A button, not an ornament: it has a 48/56 px dot, its
+ * section's title on a paper chip (never a scrim over art), `aria-current="step"` and the word for
+ * its state, and the anchor is the only thing that decides where it sits.
+ */
+function CourseRouteMapNode({ node, x, y, big, onOpen }) {
+  const size = big ? '56px' : '48px'
+  const locked = node.state === 'locked'
+  const current = node.state === 'current'
+  return jsxs('button', {
+    type: 'button',
+    'data-cb-course-node': node.id,
+    'data-cb-course-node-state': node.state,
+    'data-cb-course-anchor': `${x.toFixed(4)},${y.toFixed(4)}`,
+    'aria-current': current ? 'step' : undefined,
+    disabled: locked,
+    'aria-disabled': locked ? 'true' : undefined,
+    className: 'cb3-press',
+    onClick: () => {
+      if (locked || typeof onOpen !== 'function') return
+      onOpen(node.id)
+    },
+    style: {
+      position: 'absolute',
+      left: `${(x * 100).toFixed(3)}%`,
+      top: `${(y * 100).toFixed(3)}%`,
+      transform: 'translate(-50%, -50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.25rem',
+      minWidth: size,
+      padding: 0,
+      border: 0,
+      background: 'transparent',
+      color: cb3Role('ink'),
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
+      lineHeight: cb3Lead('caption'),
+      cursor: locked ? 'not-allowed' : 'pointer',
+      textAlign: 'center'
+    },
+    children: [
+      jsx('span', {
+        'aria-hidden': 'true',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: size,
+          height: size,
+          boxSizing: 'border-box',
+          borderRadius: cb3Radius('pill'),
+          backgroundColor: cb3Role('card-stock'),
+          border: `1px solid ${cb3Role('rule')}`,
+          // The current step is marked by a 3 px ring *and* by the word below it, never by colour
+          // alone (SPEC-V3 §5.4, better than the concept #1).
+          outline: current ? `3px solid ${cb3Role('terracotta')}` : 'none',
+          outlineOffset: '0px',
+          opacity: locked ? 0.5 : 1
+        },
+        children: jsx(sdk.Codicon, {
+          name: locked ? 'lock' : current ? 'play' : node.state === 'done' ? 'check' : 'chevron-right',
+          size: CB_ICON_UI
+        })
+      }, 'dot'),
+      jsx('span', {
+        'data-cb-course-node-label': '',
+        style: {
+          maxWidth: '14ch',
+          paddingInline: '0.35rem',
+          paddingBlock: '0.1rem',
+          borderRadius: cb3Radius('soft'),
+          backgroundColor: cb3Role('card-stock'),
+          border: `1px solid ${cb3Role('rule')}`,
+          overflowWrap: 'anywhere'
+        },
+        children: node.label || node.word
+      }, 'label'),
+      node.label ? jsx('span', {
+        'data-cb-course-node-word': '',
+        style: {
+          paddingInline: '0.3rem',
+          borderRadius: cb3Radius('soft'),
+          backgroundColor: cb3Role('card-stock'),
+          color: current ? cb3Role('ink') : cb3Role('ink-soft'),
+          fontWeight: current ? 600 : 400
+        },
+        children: node.word
+      }, 'word') : null
+    ]
+  })
+}
+
+/** The vertical route: the same nodes as `StampNode` buttons, in section order. */
+function CourseRouteList({ nodes, onOpen }) {
+  return jsx('ol', {
+    'data-cb-course-route': 'list',
+    'aria-label': CB3_COURSE_COPY.routeLabel,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      margin: 0,
+      padding: 0,
+      listStyle: 'none',
+      minWidth: 0
+    },
+    children: nodes.map((node, index) =>
+      jsx(
+        'li',
+        {
+          'data-cb-course-route-item': node.id,
+          style: { display: 'flex', minWidth: 0 },
+          children: jsx(StampNode, {
+            state: node.state,
+            label: node.label || node.word,
+            stateWord: node.word,
+            index: index + 1,
+            onClick: () => {
+              if (node.state === 'locked' || typeof onOpen !== 'function') return
+              onOpen(node.id)
+            }
+          })
+        },
+        node.id
+      )
+    )
+  })
+}
+
+/**
+ * The world's plate posture, from the state the backend recorded — never inferred from art
+ * presence. `unavailable`, `not_requested` and an absent world are `none`; a generating kit keeps
+ * the last approved plate underneath and says it is painting (`running`); a failed generation is
+ * `rejected`, and its typographic field says the scene was not approved.
+ */
+function cb3CourseWorldPosture(state) {
+  const value = String(state || '')
+  if (value === 'approved' || value === 'kit_ready') return 'ready'
+  if (value === 'failed') return 'rejected'
+  if (
+    value === 'concepts_generating' ||
+    value === 'concepts_ready' ||
+    value === 'style_selected' ||
+    value === 'kit_generating' ||
+    value === 'stale'
+  ) {
+    return 'running'
+  }
+  return 'none'
+}
+
+/**
+ * The mounted hero plate (M4): an 8 px `canvas-edge` mat, a 1 px `ink` rule, `elev-1`, and art
+ * that is textless. With no plate it is a typographic field carrying the course title, and the
+ * deck's own state row says what the learner loses — the lesson still works. A world in flight
+ * keeps its last approved plate underneath; a rejected world says so and offers the one quiet
+ * way into the studio, never a dead control.
+ */
+function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children }) {
+  const preview = useArtifactPreview(plate && plate.artifactId ? plate.artifactId : null)
+  const direct = plate && typeof plate.src === 'string' && plate.src ? plate.src : null
+  const posture = cb3CourseWorldPosture(worldState)
+  const painted =
+    (!plate || !plate.artifactId) && direct
+      ? direct
+      : preview.state === 'ready' && preview.mime && String(preview.mime).startsWith('image/')
+        ? preview.data_url
+        : null
+  // A rejected world never paints its refused art: the field carries the course title instead.
+  const ready = posture === 'rejected' ? null : painted
+  const note =
+    posture === 'running'
+      ? jsx('p', {
+          'data-cb-course-plate-note': '',
+          'data-cb-course-plate-running': '',
+          style: {
+            margin: 0,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            lineHeight: cb3Lead('caption'),
+            color: cb3Role('ink-soft')
+          },
+          children: CB3_COURSE_COPY.worldRunning
+        }, 'note')
+      : posture === 'rejected'
+        ? jsxs('div', {
+            'data-cb-course-plate-note': '',
+            'data-cb-course-plate-rejected': '',
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              gap: '0.5rem',
+              minWidth: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: [
+              jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.worldRejectedTitle }, 'title'),
+              typeof onOpenStudio === 'function'
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-course-world-studio': '',
+                    className: 'cb3-press',
+                    onClick: () => onOpenStudio(),
+                    style: {
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      color: cb3Role('ink'),
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      textDecoration: 'underline',
+                      cursor: 'pointer'
+                    },
+                    children: CB3_COURSE_COPY.worldRejectedAction
+                  }, 'action')
+                : null
+            ]
+          }, 'note')
+        : ready
+          ? plate && plate.credit
+            ? jsx('p', {
+                'data-cb-course-credit': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
+                },
+                children: plate.credit
+              }, 'note')
+            : null
+          : jsxs('p', {
+              'data-cb-course-plate-note': '',
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: [
+                jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
+                ' ',
+                jsx('span', { children: CB3_COURSE_COPY.noWorldBody }, 'body')
+              ]
+            }, 'note')
+  return jsxs('div', {
+    'data-cb-course-plate': ready ? 'art' : 'type',
+    'data-cb-course-plate-state': plate && plate.artifactId ? preview.state : ready ? 'ready' : 'none',
+    'data-cb-course-world-state': posture,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        className: 'cb3-shelf',
+        style: {
+          position: 'relative',
+          width: '100%',
+          // An art plate is the fixed M4 ratio (3:1 wide, 2:1 compact). The typographic field is
+          // the same ratio as a **minimum** and grows with its title: at 200 % text a heading-step
+          // title needed more than the fixed 204/214 px box and its first lines were cut off.
+          aspectRatio: ready ? (big ? '3 / 1' : '2 / 1') : undefined,
+          minHeight: ready ? undefined : big ? '204px' : '214px',
+          padding: '8px',
+          boxSizing: 'border-box',
+          backgroundColor: cb3Role('canvas-edge'),
+          border: `1px solid ${cb3Role('ink')}`,
+          borderRadius: cb3Radius('round'),
+          overflow: 'hidden',
+          minWidth: 0
+        },
+        children: [
+          jsxs('div', {
+            style: {
+              position: 'relative',
+              width: '100%',
+              height: ready ? '100%' : 'auto',
+              minHeight: ready ? undefined : big ? '188px' : '198px',
+              overflow: 'hidden',
+              borderRadius: cb3Radius('soft'),
+              backgroundColor: cb3Role('card-stock')
+            },
+            children: [
+              ready
+                ? jsx('img', {
+                    'data-cb-course-plate-art': '',
+                    src: ready,
+                    alt: '',
+                    'aria-hidden': 'true',
+                    style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+                  }, 'art')
+                : jsx('span', {
+                    'data-cb-course-plate-title': '',
+                    style: {
+                      // Positioned over the art; in the typographic field it is in flow so the
+                      // field can grow with the title instead of clipping it.
+                      position: ready ? 'absolute' : 'static',
+                      inset: ready ? 0 : undefined,
+                      width: ready ? undefined : '100%',
+                      minHeight: ready ? undefined : big ? '188px' : '198px',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      padding: '0.75rem',
+                      boxSizing: 'border-box',
+                      fontFamily: 'var(--cb3-font-display)',
+                      // The plate is a fixed-height field (SPEC-V3 §5.4 M4: 3:1 wide, 2:1 compact),
+                      // so its decorative title takes the body step at compact widths: the course
+                      // `h2` already carries the heading, and a heading step inside a 214 px field
+                      // clipped the title's first lines at 200 % text.
+                      fontSize: cb3Type(big ? 'heading' : 'body'),
+                      lineHeight: cb3Lead(big ? 'heading' : 'body'),
+                      fontWeight: 600,
+                      color: cb3Role('ink'),
+                      // Normal word wrapping: a title may wrap between words, never inside one.
+                      // `anywhere` split "demonstration" mid-word at 460 px / 200 % text; `break-word`
+                      // still reflows a word that genuinely cannot fit, without hyphenating it.
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
+                      hyphens: 'none'
+                    },
+                    children: title || ''
+                  }, 'type'),
+              children
+            ]
+          })
+        ]
+      }),
+      note
+    ]
+  })
+}
+
+/**
+ * The aside (M6–M9): Continue, the evidence count, the other courses, the fox. Continue is the
+ * screen's only filled control, and its label is the backend's own `next_step.label` — including
+ * the review and completion steps, which are the backend's words, not a second action.
+ */
+function CourseHomeAside({
+  row,
+  nodes,
+  evidenceLine,
+  others,
+  step,
+  big,
+  busy,
+  onContinue,
+  onOpenPlan,
+  onOpenOther
+}) {
+  const nextStep = (row && row.next_step) || {}
+  const nextLabel = nextStep.label || step.label
+  const complete = step.done === true
+  const planReview = !complete && step.kind === 'review_plan'
+  const heading = complete
+    ? CB3_COURSE_COPY.endTitle
+    : planReview
+      ? CB3_COURSE_COPY.planReviewTitle
+      : CB3_COURSE_COPY.continueTitle
+  const body = complete
+    ? CB3_COURSE_COPY.endBody
+    : planReview
+      ? CB3_COURSE_COPY.planReviewBody
+      : null
+  const run = () => {
+    if (planReview || complete) {
+      if (typeof onOpenPlan === 'function') onOpenPlan()
+      return
+    }
+    if (typeof onContinue === 'function') onContinue(nextStep.kind || 'start_lesson')
+  }
+  const others_ = Array.isArray(others) ? others.slice(0, 3) : []
+  return jsxs('aside', {
+    'data-cb-course-aside': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.85rem',
+      minWidth: 0,
+      alignItems: 'flex-start'
+    },
+    children: [
+      jsxs('section', {
+        'data-cb-continue': step.kind || 'none',
+        className: 'cb3-card',
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          width: '100%',
+          padding: '1rem',
+          boxSizing: 'border-box',
+          minWidth: 0
+        },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: 700,
+              color: cb3Role('ink-soft')
+            },
+            children: heading
+          }, 'heading'),
+          body
+            ? jsx('p', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  color: cb3Role('ink')
+                },
+                children: body
+              }, 'body')
+            : null,
+          jsx(PillAction, {
+            variant: 'primary',
+            'data-cb-continue-action': '',
+            label: nextLabel,
+            busy: Boolean(busy),
+            disabled: Boolean(busy),
+            onClick: run,
+            style: { width: '100%' }
+          }, 'primary')
+        ]
+      }, 'continue'),
+      jsxs('section', {
+        'data-cb-course-evidence': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%', minWidth: 0 },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              fontWeight: 700,
+              color: cb3Role('ink-soft')
+            },
+            children: CB3_COURSE_COPY.evidenceTitle
+          }, 'heading'),
+          jsx('p', {
+            'data-cb-course-evidence-count': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink')
+            },
+            children: evidenceLine
+          }, 'count')
+        ]
+      }, 'evidence'),
+      others_.length
+        ? jsxs('section', {
+            'data-cb-course-others': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '100%', minWidth: 0 },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  fontWeight: 700,
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.othersTitle
+              }, 'heading'),
+              jsx('ul', {
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem',
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  minWidth: 0
+                },
+                children: others_.map((item) => {
+                  const rowStyle = {
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    minHeight: '40px',
+                    padding: '0.35rem 0.5rem',
+                    boxSizing: 'border-box',
+                    textAlign: 'left',
+                    border: `1px solid ${cb3Role('rule')}`,
+                    borderRadius: cb3Radius('soft'),
+                    backgroundColor: cb3Role('card-stock'),
+                    color: cb3Role('ink'),
+                    fontFamily: 'var(--cb3-font-ui)',
+                    fontSize: cb3Type('meta'),
+                    lineHeight: cb3Lead('meta'),
+                    overflowWrap: 'anywhere'
+                  }
+                  const text = `${item.title} · ${(item.next_step && item.next_step.label) || CB3_COURSE_COPY.continueTitle}`
+                  // A row is a signpost. It is a control only when this surface can actually open
+                  // the course; a button that goes nowhere is a dead end, so with no handler the
+                  // row stays plain text.
+                  const interactive = typeof onOpenOther === 'function'
+                  return jsx(
+                    'li',
+                    {
+                      'data-cb-course-other-row': item.course_id || '',
+                      style: { minWidth: 0 },
+                      children: interactive
+                        ? jsx('button', {
+                            type: 'button',
+                            'data-cb-course-other': item.course_id || '',
+                            className: 'cb3-press',
+                            onClick: () => onOpenOther(item),
+                            style: { ...rowStyle, cursor: 'pointer' },
+                            children: text
+                          })
+                        : jsx('span', { style: rowStyle, children: text })
+                    },
+                    item.course_id || item.title
+                  )
+                })
+              }, 'rows')
+            ]
+          }, 'others')
+        : null,
+      // M9: the course-home pose is `point`, beside the Continue plate and outside the hero's
+      // quiet field. FoxPose hides itself below a 620 px route.
+      jsx(FoxPose, { pose: 'point', size: big ? 96 : 88 }, 'fox')
+    ]
+  })
+}
+
+/**
+ * The v3 course home. One composition, two route modes, every value read from a caller that read
+ * the backend: no fetch happens here, so the surface can be rendered in a test and in the route
+ * from the same data.
+ */
+function CourseHomeV3({
+  row,
+  objectives,
+  page,
+  plate,
+  anchors,
+  others,
+  sectionsDone,
+  sectionsTotal,
+  parentLabel,
+  width,
+  busy,
+  worldState,
+  readState,
+  onBack,
+  onContinue,
+  onOpenPlan,
+  onOpenSection,
+  onOpenOther,
+  onRetry,
+  onOpenStudio
+}) {
+  const measured = useCbViewportWidth()
+  const routeWidth = Number(width) > 0 ? Number(width) : Number(measured) || 0
+  // Two breakpoints, kept apart on purpose (SPEC-V3 §5.4): the map route holds from 900 px, where
+  // M5's nodes shrink to 48 and the plate stays 3:1; the aside only becomes a right column at
+  // 1000 px, where the nodes are 56 and the fox is 96. Tying the column to the map breakpoint put
+  // a 268 px aside beside an 852 px plate on a 900 route, which §5.4 puts below the route.
+  const mapWide = routeWidth >= 900
+  const wide = routeWidth >= 1000
+  const summary = (row && row.evidence_summary) || {}
+  const declaredDone = Number(sectionsDone)
+  const done = Number.isFinite(declaredDone)
+    ? Math.max(0, declaredDone)
+    : Math.max(0, Number(summary.independent) || 0)
+  const total = Math.max(0, Number(sectionsTotal) || Number(summary.total_objectives) || 0)
+  const courseComplete = total > 0 && done >= total
+  // `complete` is passed before the anchors: at the course's close every node reads done, so the
+  // last opened section cannot keep a "You are here" word on a completed route.
+  const nodes = cb3CourseNodes({ objectives, row, page, complete: courseComplete })
+  // Anchor precedence: an explicit set from the caller, then the plate's own declaration, then the
+  // plate row's inline field. The plan normalises whichever arrives, and falls back to the vertical
+  // route when a section would be left unplaced.
+  const explicitAnchors = Array.isArray(anchors) && anchors.length ? anchors : null
+  const manifestAnchors = cb3CoursePlateAnchors(plate, null)
+  const plan = cb3CourseRoutePlan({
+    nodes,
+    anchors:
+      explicitAnchors ||
+      (manifestAnchors.length
+        ? manifestAnchors
+        : plate && Array.isArray(plate.anchors)
+          ? plate.anchors
+          : []),
+    width: routeWidth
+  })
+  const evidenceLine = cb3CourseEvidenceLine(done, total)
+  const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
+  const step = {
+    kind: nextKind,
+    label: (row && row.next_step && row.next_step.label) || CB3_COURSE_COPY.continueTitle,
+    done: courseComplete
+  }
+  const backLabel = CB3_COURSE_COPY.backPrefix + (parentLabel || 'Home')
+  return jsxs('div', {
+    'data-cb-course-home-v3': plan.mode,
+    'data-cb-course-home-width': routeWidth ? String(routeWidth) : 'unknown',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.85rem',
+      minWidth: 0,
+      color: cb3Role('ink')
+    },
+    children: [
+      // M2: the back path is the first focusable element on a deep screen (SPEC-V3 §3.11).
+      jsxs('button', {
+        type: 'button',
+        'data-cb-course-back': '',
+        className: 'cb3-press',
+        onClick: () => {
+          if (typeof onBack === 'function') onBack()
+        },
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.35rem',
+          alignSelf: 'flex-start',
+          minHeight: '40px',
+          paddingInline: '0.25rem',
+          border: 0,
+          background: 'transparent',
+          color: cb3Role('ink'),
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
+          lineHeight: cb3Lead('meta'),
+          cursor: 'pointer'
+        },
+        children: [
+          jsx(sdk.Codicon, { name: 'arrow-left', size: CB_ICON_UI }, 'icon'),
+          jsx('span', { children: backLabel }, 'label')
+        ]
+      }, 'back'),
+      // M3: the course head. The title is the screen's heading; the subject line is the deck's
+      // one stored subject label.
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+        children: [
+          jsx('h2', {
+            'data-cb-course-title': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: cb3Role('ink'),
+              maxWidth: '34ch',
+              // Same rule as the plate's type field: wrap between words, never inside one.
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
+              hyphens: 'none'
+            },
+            children: (row && row.title) || ''
+          }, 'title'),
+          row && row.subject_label
+            ? jsx('p', {
+                'data-cb-course-subject': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  color: cb3Role('ink-soft')
+                },
+                children: row.subject_label
+              }, 'subject')
+            : null,
+          // The course's own read state. A loading head says it is opening; a failed read says so
+          // in place and offers one quiet way to try again, while the route keeps what was saved.
+          readState === 'loading'
+            ? jsx('p', {
+                'data-cb-course-loading': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.loading
+              }, 'loading')
+            : readState === 'error'
+              ? jsxs('div', {
+                  'data-cb-course-error': '',
+                  role: 'status',
+                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+                  children: [
+                    jsx('strong', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        fontWeight: 600,
+                        color: cb3Role('ink')
+                      },
+                      children: CB3_COURSE_COPY.errorTitle
+                    }, 'title'),
+                    jsx('span', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        color: cb3Role('ink-soft')
+                      },
+                      children: CB3_COURSE_COPY.errorBody
+                    }, 'body'),
+                    typeof onRetry === 'function'
+                      ? jsx('button', {
+                          type: 'button',
+                          'data-cb-course-retry': '',
+                          className: 'cb3-press',
+                          onClick: () => onRetry(),
+                          style: {
+                            border: 0,
+                            background: 'transparent',
+                            padding: 0,
+                            color: cb3Role('ink'),
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('meta'),
+                            lineHeight: cb3Lead('meta'),
+                            textDecoration: 'underline',
+                            cursor: 'pointer'
+                          },
+                          children: CB3_COURSE_COPY.errorAction
+                        }, 'action')
+                      : null
+                  ]
+                }, 'error')
+              : null
+        ]
+      }, 'head'),
+      // M4/M5 and M6–M9: the hero plate with the route, and the aside. Two columns only at a wide
+      // route (≥ 1000 px, SPEC-V3 §5.4); below it the aside follows the plate and keeps its order.
+      jsxs('div', {
+        'data-cb-course-body': wide ? 'split' : 'stacked',
+        style: {
+          display: 'grid',
+          gridTemplateColumns: wide ? 'minmax(0, 1fr) 268px' : 'minmax(0, 1fr)',
+          gap: wide ? '1rem' : '0.85rem',
+          alignItems: 'start',
+          minWidth: 0
+        },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
+            children: [
+              jsx(CourseHeroPlate, {
+                plate: plate || { artifactId: null, src: null, anchors: [] },
+                title: (row && row.title) || '',
+                big: mapWide,
+                worldState,
+                onOpenStudio,
+                children:
+                  plan.mode === 'map'
+                    ? jsx('div', {
+                        'data-cb-course-nodes': '',
+                        role: 'group',
+                        'aria-label': CB3_COURSE_COPY.routeLabel,
+                        style: { position: 'absolute', inset: 0 },
+                        children: plan.points.map((point) =>
+                          jsx(
+                            CourseRouteMapNode,
+                            { node: point.node, x: point.x, y: point.y, big: wide, onOpen: onOpenSection },
+                            point.node.id
+                          )
+                        )
+                      })
+                    : null
+              }),
+              // SPEC-V3 §5.4: M6 sits **below** M5, and the aside moves under the route. In list
+              // mode the route therefore lives in the main column directly under the plate, so the
+              // DOM order is plate → route → aside at every width (the map carries its route
+              // inside the plate instead).
+              plan.mode === 'list' && nodes.length
+                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+                : null
+            ]
+          }, 'hero'),
+          jsx(CourseHomeAside, {
+            row,
+            nodes,
+            evidenceLine,
+            others,
+            step,
+            big: wide,
+            busy,
+            onContinue,
+            onOpenPlan,
+            onOpenOther
+          }, 'aside')
+        ]
+      }, 'body')
+    ]
+  })
+}
+
 /**
  * Course detail — the durable page for one enrollment.
  *
@@ -24235,6 +26988,10 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const [targetBlockId, setTargetBlockId] = useState(focusBlockId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  // CP-024: a rejected world's one quiet next action opens the studio that owns the world. It is
+  // the shipped surface from 97-world.js, rendered as a sheet over this page — the course home
+  // never grows a second world editor of its own, and a failed read never opens it silently.
+  const [studioOpen, setStudioOpen] = useState(false)
   // `plan.approve` fences on the enrolment revision, so the page tracks the revision the last
   // mutation returned instead of trusting the row it was opened with.
   const [revision, setRevision] = useState(Number(row.revision || 0))
@@ -24291,6 +27048,14 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     `page-${row.enrollment_id}-${pageObjectiveId}`,
     supports('lesson.page') && Boolean(pageObjectiveId)
   )
+  // CP-024 M8: the aside's `Your other courses` rows read the same library the Home shelf reads.
+  // It is a real read with no counters, and the course whose page this is is filtered out.
+  const library = useRpcQuery(
+    'library.list',
+    { filter: 'all', limit: 20, sort: 'recent' },
+    `course-others-${row.enrollment_id}`,
+    supports('library.list')
+  )
 
   // GM-010: the play layer belongs to the course's Game overview and nowhere else. The durable mode
   // comes from `world.read` (a library row carries none); the read is enabled only on that surface,
@@ -24314,8 +27079,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     page.reload()
     jobs.reload()
     if (outline) outline.reload()
+    if (library) library.reload()
     if (onChanged) onChanged()
-  }, [review, notebooks, quizzes, evidence, page, jobs, outline, onChanged])
+  }, [review, notebooks, quizzes, evidence, page, jobs, outline, library, onChanged])
 
   const openSection = useCallback((nextObjectiveId, blockId) => {
     if (nextObjectiveId) setObjectiveId(nextObjectiveId)
@@ -24435,20 +27201,12 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
 
   let body
   if (view === 'overview') {
-    body = jsx(OverviewView, {
-      row,
-      page: page.data,
-      review: review.data,
-      quizzes: quizzes.data,
-      outline: outline.data,
-      implemented,
-      onOpenSection: openSection,
-      onResume: (objectiveId) =>
-        startLesson(
-          row.next_step && row.next_step.kind === 'resume_lesson' ? 'resume' : 'fresh',
-          objectiveId || null
-        )
-    })
+    // CP-024: the course's own overview IS the v3 R-MAP composition below (`courseHome`). The
+    // legacy OverviewView was still mounted under it, so the shipped screen carried two filled
+    // primaries (its "Start a fresh run" plus the v3 Continue plate), two route containers and the
+    // title twice — falsifying SPEC-V3 §5.4 and the quality bar's one-primary rule. It is retired
+    // from this route; its Evidence tab remains the record, and M7 carries the recorded count.
+    body = null
   } else if (view === 'textbook') {
     body = jsx(TextbookView, {
       row,
@@ -24604,21 +27362,90 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       ? jsx(GameJournal, { objectives, compact: phone }, 'game-journal')
       : null
 
+  // CP-024: on the course's own overview the page is the v3 R-MAP composition — the hero plate
+  // with the route's nodes, one Continue plate, the evidence count and the other courses. The
+  // compact hero stays for the reading surfaces, where the course head is context, not the page.
+  const courseHomePlate = cb3CourseHeroPlate(world.data)
+  const courseWorldState =
+    world.data && world.data.world && world.data.world.state ? world.data.world.state : null
+  const courseReadState =
+    outline.status === 'error' || world.status === 'error'
+      ? 'error'
+      : outline.status === 'loading' && !outline.data
+        ? 'loading'
+        : 'ready'
+  const otherCourses = (library.data && Array.isArray(library.data.items) ? library.data.items : []).filter(
+    (item) => item && item.course_id !== row.course_id && item.recipe !== 'parent'
+  )
+  const courseHome =
+    view === 'overview'
+      ? jsx(CourseHomeV3, {
+          row,
+          objectives,
+          page: page.data,
+          plate: courseHomePlate,
+          others: otherCourses,
+          sectionsDone: row.sections_done,
+          sectionsTotal: row.sections_total,
+          parentLabel: 'Home',
+          busy,
+          worldState: courseWorldState,
+          readState: courseReadState,
+          onBack,
+          onContinue: (kind) =>
+            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+          onOpenPlan: () => selectView('plan'),
+          onOpenSection: openSection,
+          onOpenStudio: () => setStudioOpen(true),
+          onRetry: () => {
+            if (outline) outline.reload()
+            if (world) world.reload()
+            if (page) page.reload()
+          }
+        })
+      : null
+
   return jsxs('div', {
     'data-cb-course-detail': view,
     className: 'flex flex-col gap-4',
     children: [
-      jsx(sdk.Button, {
-        className: 'self-start',
-        variant: 'text',
-        size: 'sm',
-        'data-cb-course-back': '',
-        onClick: onBack,
-        children: 'All courses'
-      }),
+      // CP-024: the course home carries its own back path and its one Continue plate.
+      courseHome,
+
+      // The rejected world's quiet action opens the studio that owns the world; it is a sheet over
+      // this page, never a second copy of the studio and never opened on its own.
+      studioOpen && view === 'overview'
+        ? jsx(WorldStudio, {
+            courseId: row.course_id,
+            mode: courseMode || 'textbook',
+            world: world.data && world.data.world ? world.data.world : null,
+            worldStatus: world.status,
+            worldError: world.error,
+            autoStart: false,
+            onReload: () => {
+              if (world) world.reload()
+            },
+            onChanged: () => {
+              refresh()
+              if (onChanged) onChanged()
+            },
+            onClose: () => setStudioOpen(false)
+          }, 'world-studio')
+        : null,
+
+      courseHome
+        ? null
+        : jsx(sdk.Button, {
+            className: 'self-start',
+            variant: 'text',
+            size: 'sm',
+            'data-cb-course-back': '',
+            onClick: onBack,
+            children: 'All courses'
+          }),
 
       // The compact hero: one lamp field, one seal, three recorded facts, one primary action.
-      jsx(HeroField, {
+      courseHome ? null : jsx(HeroField, {
         identity: parentIdentity,
         phone,
         children: jsxs('div', {
@@ -25391,7 +28218,7 @@ function JobStateText({ job }) {
       error.code
         ? jsxs('details', {
             'data-cb-job-technical': '',
-            style: { color: 'var(--cb-ink-soft)' },
+            style: { color: 'var(--cb3-ink-soft)' },
             children: [
               jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
               jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: error.code })
@@ -25592,8 +28419,9 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
       maxWidth: CB_MEASURE,
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-card-stock)',
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
       boxSizing: 'border-box'
     },
     children: [
@@ -25733,16 +28561,53 @@ const CB_TAKEHOME_EXPORT_WORD = {
   pack_superseded: 'This draft was superseded. Start a fresh draft from the lesson.'
 }
 
-/** The Parent Studio's two entrances, side by side: authored plans and take-home packs. */
+/** The Parent Studio's entrances side by side: authored plans, take-home packs, homework.
+ *
+ * CP-025b: this is the v3 tab strip. The host's `sdk.SegmentedControl` used to paint it, which put
+ * host chrome on Coursebook's own route; the tabs are now authored buttons with `role="tab"`,
+ * `aria-selected` and a 3 px terracotta marker under the current label — a shape *and* a word,
+ * never colour alone. Targets stay 44 px so the strip survives 460 and 200% text.
+ */
 function StudioEntranceTabs({ value, onChange }) {
   return jsx('div', {
     'data-cb-parent-studio-tabs': '',
-    style: { padding: '0.9rem 1rem 0.1rem', boxSizing: 'border-box' },
-    children: jsx(sdk.SegmentedControl, {
-      options: CB_STUDIO_ENTRANCES,
-      value,
-      sizing: 'content',
-      onChange
+    role: 'tablist',
+    'aria-label': 'Parent Studio sections',
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+      gap: '0.25rem',
+      padding: '0.9rem 1rem 0',
+      borderBottom: '1px solid var(--cb3-rule)',
+      boxSizing: 'border-box'
+    },
+    children: CB_STUDIO_ENTRANCES.map((item) => {
+      const current = item.id === value
+      return jsx('button', {
+        type: 'button',
+        role: 'tab',
+        'data-cb3-tab': item.id,
+        'data-current': current ? 'true' : 'false',
+        'aria-selected': current ? 'true' : 'false',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          minHeight: '44px',
+          paddingInline: '0.6rem',
+          border: 0,
+          borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+          background: 'transparent',
+          color: 'var(--cb3-ink)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
+          lineHeight: cb3Lead('meta'),
+          fontWeight: current ? 600 : 400,
+          cursor: 'pointer'
+        },
+        onClick: () => onChange(item.id),
+        children: item.label
+      }, item.id)
     })
   })
 }
@@ -25806,12 +28671,12 @@ function TakeHomePaperBadge({ children, tone }) {
   return jsx('span', {
     'data-cb-takehome-badge': tone || 'plain',
     style: {
-      fontFamily: CB_SANS,
-      fontSize: CB_TYPE.caption,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
       fontWeight: 600,
       letterSpacing: '0.01em',
-      color: tone === 'warn' ? 'var(--cb-coral)' : 'var(--cb-ink-soft)',
-      border: '1px solid var(--cb-rule)',
+      color: tone === 'warn' ? 'var(--cb3-alert)' : 'var(--cb3-ink-soft)',
+      border: '1px solid var(--cb3-rule)',
       borderRadius: '999px',
       padding: '0.05rem 0.5rem',
       whiteSpace: 'nowrap'
@@ -25848,8 +28713,8 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
       flexDirection: 'column',
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-canvas-edge)',
+      borderTop: '1px solid var(--cb3-plum)',
       boxSizing: 'border-box'
     },
     children: [
@@ -25876,7 +28741,7 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                 justifyContent: 'space-between',
                 gap: '0.4rem 1rem',
                 padding: '0.7rem 0',
-                borderTop: '1px solid var(--cb-rule)'
+                borderTop: '1px solid var(--cb3-rule)'
               },
               children: [
               jsxs(
@@ -25886,16 +28751,16 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                   children: [
                     jsx('div', {
                       style: {
-                        fontFamily: CB_SERIF,
-                        fontSize: CB_TYPE.body,
+                        fontFamily: 'var(--cb3-font-display)',
+                        fontSize: cb3Type('body'),
                         fontWeight: 600,
-                        color: 'var(--cb-ink)',
+                        color: 'var(--cb3-ink)',
                         overflowWrap: 'anywhere'
                       },
                       children: row.title || 'Untitled course'
                     }),
                     jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children:
                         `${(row.provenance && row.provenance.source) === 'bundled' ? 'Bundled' : (row.provenance && row.provenance.source) === 'community' ? 'Imported' : 'Written here'} · ` +
                         `${row.learner_label || 'Learner course'}`
@@ -25963,7 +28828,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                       jsx(TakeHomePaperBadge, { children: cbTakeHomeModeWord(source && source.presentation_mode) }),
                       jsx(TakeHomePaperBadge, { children: plural(objectives.length, 'written lesson', 'written lessons') }),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'No child account and no child chat: the adult prepares and prints.'
                       })
                     ]
@@ -25978,12 +28843,12 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                           jsx('h3', {
                             style: {
                               margin: 0,
-                              fontFamily: CB_SERIF,
-                              fontSize: CB_TYPE.body,
+                              fontFamily: 'var(--cb3-font-display)',
+                              fontSize: cb3Type('body'),
                               fontWeight: 600,
-                              color: 'var(--cb-ink)',
+                              color: 'var(--cb3-ink)',
                               paddingBottom: '0.3rem',
-                              borderBottom: '1px solid var(--cb-rule)'
+                              borderBottom: '1px solid var(--cb3-rule)'
                             },
                             children: group.title
                           }),
@@ -26000,7 +28865,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                   justifyContent: 'space-between',
                                   gap: '0.4rem 1rem',
                                   padding: '0.65rem 0',
-                                  borderBottom: '1px solid var(--cb-rule)'
+                                  borderBottom: '1px solid var(--cb3-rule)'
                                 },
                                 children: [
                                 jsxs(
@@ -26010,15 +28875,15 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                     children: [
                                       jsx('div', {
                                         style: {
-                                          fontFamily: CB_SERIF,
-                                          fontSize: CB_TYPE.body,
-                                          color: 'var(--cb-ink)',
+                                          fontFamily: 'var(--cb3-font-display)',
+                                          fontSize: cb3Type('body'),
+                                          color: 'var(--cb3-ink)',
                                           overflowWrap: 'anywhere'
                                         },
                                         children: `${objective.ordinal}. ${objective.title}`
                                       }),
                                       jsx('div', {
-                                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                                         children: objective.available
                                           ? `Evidence target: ${objective.evidence_target} · ${objective.lesson_state}` +
                                             (objective.has_world_plate ? ' · world plates available' : ' · no world art')
@@ -26080,7 +28945,7 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           children: [
             jsx(CbLabel, { children: 'Print proof' }),
             jsx('span', {
-              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+              style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
               children: `${plural(list.length, 'page', 'pages')} · ${paper} · ${margin} pt margins · selectable text`
             })
           ]
@@ -26095,12 +28960,12 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           // page, and the plum wash plus a dashed rule for the parent-only answer guide.
           const sheet =
             {
-              cover: { background: 'var(--cb-lamp-soft)', borderColor: 'var(--cb-lamp)' },
-              parent_guide: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-accent)' },
-              learner_page: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-field)' },
-              plate: { background: 'var(--cb-accent-soft)', borderColor: 'var(--cb-accent)' },
-              answer_guide: { background: 'var(--cb-plum-soft)', borderColor: 'var(--cb-plum)' }
-            }[role] || { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-rule)' }
+              cover: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              parent_guide: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-terracotta)' },
+              learner_page: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-sage)' },
+              plate: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              answer_guide: { background: 'var(--cb3-canvas-edge)', borderColor: 'var(--cb3-plum)' }
+            }[role] || { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-rule)' }
           return jsxs(
             'article',
             {
@@ -26119,7 +28984,6 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                 background: sheet.background,
                 border: '1px solid ' + sheet.borderColor,
                 borderTopStyle: role === 'answer_guide' ? 'dashed' : 'solid',
-                borderLeftWidth: role === 'learner_page' || role === 'answer_guide' ? '3px' : '1px'
               },
               children: [
             jsxs(
@@ -26132,15 +28996,15 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                     children: CB_TAKEHOME_PAGE_WORD[role] || role
                   }),
                   jsx('span', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: CB_TAKEHOME_PAGE_NOTE[role] || ''
                   }),
                   jsx('span', {
                     style: {
                       marginLeft: 'auto',
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
-                      color: 'var(--cb-ink-soft)'
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: `Page ${index + 1} of ${list.length}`
                   })
@@ -26150,28 +29014,28 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
             jsx('h3', {
               style: {
                 margin: 0,
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 fontWeight: 600,
                 lineHeight: 1.25,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 overflowWrap: 'anywhere'
               },
               children: page.title
             }),
             page.alt_text
               ? jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                  style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                   children: `Text alternative: ${page.alt_text}`
                 })
               : null,
             jsx(ProseText, {
               'data-cb-proof-text': role,
               style: {
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 lineHeight: 1.6,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 maxWidth: CB_MEASURE
               },
               text: page.text
@@ -26253,9 +29117,9 @@ function TakeHomePackPanel({
             display: 'flex',
             flexDirection: 'column',
             gap: '0.15rem',
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.caption,
-            color: 'var(--cb-ink-soft)'
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            color: 'var(--cb3-ink-soft)'
           },
           children: [
             jsx('div', {
@@ -26287,11 +29151,11 @@ function TakeHomePackPanel({
                 alignItems: 'flex-start',
                 gap: '0.55rem',
                 padding: '0.45rem 0.6rem',
-                border: '1px solid ' + (kind === option.id ? 'var(--cb-accent)' : 'var(--cb-rule)'),
-                background: kind === option.id ? 'var(--cb-accent-soft)' : 'transparent',
-                fontFamily: CB_SANS,
-                fontSize: CB_TYPE.caption,
-                color: 'var(--cb-ink)',
+                border: '1px solid ' + (kind === option.id ? 'var(--cb3-terracotta)' : 'var(--cb3-rule)'),
+                background: kind === option.id ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                color: 'var(--cb3-ink)',
                 cursor: 'pointer'
               },
               children: [
@@ -26308,8 +29172,8 @@ function TakeHomePackPanel({
                 {
                   style: { display: 'flex', flexDirection: 'column', gap: '0.1rem' },
                   children: [
-                    jsx('span', { style: { fontWeight: 600, fontSize: CB_TYPE.body }, children: option.label }),
-                    jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: option.hint })
+                    jsx('span', { style: { fontWeight: 600, fontSize: cb3Type('body') }, children: option.label }),
+                    jsx('span', { style: { color: 'var(--cb3-ink-soft)' }, children: option.hint })
                   ]
                 }
               )
@@ -26321,11 +29185,34 @@ function TakeHomePackPanel({
       jsx(CbLabel, { children: 'Who holds this copy' }),
       jsx('div', {
         'data-cb-takehome-audience': audience,
-        children: jsx(sdk.SegmentedControl, {
-          options: CB_TAKEHOME_AUDIENCES,
-          value: audience,
-          sizing: 'content',
-          onChange: onAudience
+        role: 'radiogroup',
+        'aria-label': 'Who holds this copy',
+        style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' },
+        children: CB_TAKEHOME_AUDIENCES.map((option) => {
+          const chosen = option.id === audience
+          return jsx('button', {
+            type: 'button',
+            role: 'radio',
+            'data-cb3-choice': option.id,
+            'aria-checked': chosen ? 'true' : 'false',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: '44px',
+              paddingInline: '0.7rem',
+              border: chosen ? '2px solid var(--cb3-terracotta)' : '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('pill'),
+              background: chosen ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+              color: 'var(--cb3-ink)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: chosen ? 600 : 400,
+              cursor: 'pointer'
+            },
+            onClick: () => onAudience(option.id),
+            children: option.label
+          }, option.id)
         })
       }),
       // One primary at a time, in the order the artifact actually moves.
@@ -26367,9 +29254,9 @@ function TakeHomePackPanel({
                             'div',
                             {
                               style: {
-                                fontFamily: CB_SANS,
-                                fontSize: CB_TYPE.caption,
-                                color: 'var(--cb-ink-soft)',
+                                fontFamily: 'var(--cb3-font-ui)',
+                                fontSize: cb3Type('caption'),
+                                color: 'var(--cb3-ink-soft)',
                                 overflowWrap: 'anywhere'
                               },
                               children: `${item.title}${item.url ? ' · ' + item.url : ''} · ${item.support_status}`
@@ -26381,7 +29268,7 @@ function TakeHomePackPanel({
                     }
                   )
                 : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: 'This lesson records no external sources.'
                   })
             ]
@@ -26396,18 +29283,18 @@ function TakeHomePackPanel({
               children: [
                 jsx(CbLabel, { children: 'Approval and print' }),
                 jsx('div', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                  style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                   children: `Previewed pages: ${(preview.pages || []).length} · preview hash: ${preview.preview_hash}`
                 }),
                 state === 'draft'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children: `Draft ${pack.pack_id} · revision ${revision}. Approval covers exactly the pages above.`
                     })
                   : null,
                 state === 'approved' || state === 'exported'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                       children: `${CB_TAKEHOME_STATE_WORD[state]} on ${pack.approved_at || 'approval'} · approval hash: ${pack.approval_hash || '—'}`
                     })
                   : null,
@@ -26449,9 +29336,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.15rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-coral)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-alert)'
                         },
                         children: [
                           jsx('div', {
@@ -26460,7 +29347,7 @@ function TakeHomePackPanel({
                               `${error.code ? error.code + ': ' : ''}${describeError(error)}`
                           }),
                           jsx('div', {
-                            style: { color: 'var(--cb-ink-soft)' },
+                            style: { color: 'var(--cb3-ink-soft)' },
                             children: `Backend reason: ${(error.details && error.details.reason) || 'none reported'}.`
                           })
                         ]
@@ -26472,9 +29359,9 @@ function TakeHomePackPanel({
                       'data-cb-takehome-export-error':
                         (exportError.details && exportError.details.reason) || exportError.code || 'error',
                       style: {
-                        fontFamily: CB_SANS,
-                        fontSize: CB_TYPE.caption,
-                        color: 'var(--cb-coral)'
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('caption'),
+                        color: 'var(--cb3-alert)'
                       },
                       children: cbTakeHomeExportCopy(exportError)
                     })
@@ -26488,9 +29375,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.3rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-ink-soft)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-ink-soft)'
                         },
                         children: [
                           jsx('div', {
@@ -27034,23 +29921,23 @@ function HomeworkSheetCard({ task, compact = false }) {
   const reading = target.reading && target.reading !== target.display ? target.reading : null
   const eyebrow = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
   const label = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
-  const rule = { border: 0, borderTop: '1px solid var(--cb-rule)', margin: '0.15rem 0', width: '100%' }
+  const rule = { border: 0, borderTop: '1px solid var(--cb3-rule)', margin: '0.15rem 0', width: '100%' }
   const completion =
     state === 'skipped'
       ? 'Skipped. Nothing is owed and nothing is lost.'
@@ -27063,6 +29950,7 @@ function HomeworkSheetCard({ task, compact = false }) {
             : 'Done — I will record this myself.'
   return jsxs('article', {
     'data-cb-homework-sheet': task.task_id,
+    'data-cb3-homework': 'sheet',
     'data-cb-homework-state': state,
     'aria-label': `Take-home task: ${task.title || ''}`,
     style: {
@@ -27073,20 +29961,20 @@ function HomeworkSheetCard({ task, compact = false }) {
       maxWidth: CB_MEASURE,
       boxSizing: 'border-box',
       padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
-      background: 'var(--cb-paper-raised)',
-      border: '1px solid var(--cb-rule)',
-      borderRadius: '2px'
+      background: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round')
     },
     children: [
       jsx('p', { style: eyebrow, children: 'Coursebook field card' }, 'eyebrow'),
       jsx('h3', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: compact ? cb3Type('lead') : cb3Type('heading'),
           fontWeight: 600,
           lineHeight: 1.2,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: task.title || 'One task'
       }, 'title'),
@@ -27095,10 +29983,10 @@ function HomeworkSheetCard({ task, compact = false }) {
             'data-cb-homework-target': '',
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.body : CB_TYPE.heading,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: compact ? cb3Type('body') : cb3Type('heading'),
               lineHeight: 1.2,
-              color: 'var(--cb-ink)',
+              color: 'var(--cb3-ink)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(target.display) ? 'ja' : undefined,
@@ -27109,9 +29997,9 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.body,
-              color: 'var(--cb-ink-soft)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('body'),
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(reading) ? 'ja' : undefined,
@@ -27120,13 +30008,13 @@ function HomeworkSheetCard({ task, compact = false }) {
         : null,
       target.romaji
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: target.romaji
           }, 'romaji')
         : null,
       target.meaning
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
             children: target.meaning
           }, 'meaning')
         : null,
@@ -27136,10 +30024,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         'data-cb-homework-context': '',
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.context || ''
@@ -27152,10 +30040,10 @@ function HomeworkSheetCard({ task, compact = false }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.25rem',
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: steps.map((step, index) =>
           jsx('li', { style: { overflowWrap: 'anywhere' }, children: step }, `${task.task_id}-step-${index}`)
@@ -27163,7 +30051,7 @@ function HomeworkSheetCard({ task, compact = false }) {
       }, 'steps'),
       record.length > 0
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `Ticks for this card: ${record.join(' · ')}`
           }, 'record')
         : null,
@@ -27172,16 +30060,16 @@ function HomeworkSheetCard({ task, compact = false }) {
       jsx('p', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.success_criterion || ''
       }, 'criterion'),
       jsx('p', {
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
         children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
       }, 'minutes'),
       jsx('p', {
@@ -27189,11 +30077,11 @@ function HomeworkSheetCard({ task, compact = false }) {
         style: {
           margin: 0,
           paddingTop: '0.35rem',
-          borderTop: '1px solid var(--cb-rule)',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          borderTop: '1px solid var(--cb3-rule)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: completion
       }, 'completion'),
@@ -27201,10 +30089,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsxs('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               lineHeight: 1.5,
-              color: 'var(--cb-ink-soft)',
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             children: [
@@ -27237,21 +30125,23 @@ function HomeworkSheetCard({ task, compact = false }) {
 function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownloaded, saved }) {
   return jsxs('div', {
     'data-cb-homework-actions': '',
+    'data-cb3-homework': 'actions',
     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'secondary',
+      jsx(PillAction, {
+        'data-cb-homework-action': 'print',
+        variant: 'quiet',
+        label: 'Print the sheet',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbPrintHomeworkSheet(task && task.sheet ? task.sheet.html : '')
           if (onPrinted) onPrinted(ok)
-        },
-        children: 'Print the sheet'
-      }),
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+        }
+      }, 'print'),
+      jsx(PillAction, {
+        'data-cb-homework-action': 'download',
+        variant: 'quiet',
+        label: 'Download',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbDownloadHomeworkSheet(
@@ -27259,22 +30149,21 @@ function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownlo
             cbHomeworkFilename(task)
           )
           if (onDownloaded) onDownloaded(ok)
-        },
-        children: 'Download'
-      }),
+        }
+      }, 'download'),
       canSave
-        ? jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+        ? jsx(PillAction, {
+            'data-cb-homework-action': 'save',
+            variant: 'quiet',
+            label: saved ? 'Saved to the notebook' : 'Save to notebook',
             disabled: Boolean(busy) || saved,
-            onClick: onSave,
-            children: saved ? 'Saved to the notebook' : 'Save to notebook'
-          })
+            onClick: onSave
+          }, 'save')
         : null,
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: cb3Role('ink-soft') },
         children: 'Local only. Nothing is sent.'
-      })
+      }, 'note')
     ]
   })
 }
@@ -27479,18 +30368,18 @@ function TakeThisWithYou({
           maxWidth: CB_MEASURE,
           marginTop: '0.6rem',
           paddingTop: '0.6rem',
-          borderTop: '1px solid var(--cb-rule)'
+          borderTop: '1px solid var(--cb3-rule)'
         },
         children: [
           jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
+              color: 'var(--cb3-ink-soft)'
             },
             children: sectionTitle ? `Take this with you · ${sectionTitle}` : 'Take this with you'
           }),
@@ -27505,21 +30394,21 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.meta,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('meta'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-coral)',
+                      color: 'var(--cb3-alert)',
                       overflowWrap: 'anywhere'
                     },
                     children: error.message || 'The task could not be read.'
                   }),
                   error.code ? jsx(QuietNote, { children: `Reason · ${error.code}` }) : null,
-                  jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'text',
+                  jsx(PillAction, {
+                    variant: 'quiet',
+                    'data-cb-homework-retry': '',
                     onClick: prepare,
-                    children: 'Try again'
-                  })
+                    label: 'Try again'
+                  }, 'retry')
                 ]
               })
             : null,
@@ -27538,10 +30427,10 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SERIF,
-                      fontSize: CB_TYPE.body,
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('body'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-ink)'
+                      color: 'var(--cb3-ink)'
                     },
                     children:
                       'Coursebook can write one small task from this lesson — one thing to use where you actually are. Say where and when, in one sentence.'
@@ -27549,10 +30438,10 @@ function TakeThisWithYou({
                   jsx('label', {
                     htmlFor: 'cb-homework-context',
                     style: {
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
                       fontWeight: 600,
-                      color: 'var(--cb-ink-soft)'
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: 'Where and when'
                   }),
@@ -27565,15 +30454,15 @@ function TakeThisWithYou({
                   jsxs('div', {
                     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
                     children: [
-                      jsx(sdk.Button, {
-                        size: 'sm',
-                        variant: 'secondary',
+                      jsx(PillAction, {
+                        variant: 'quiet',
+                        'data-cb-homework-propose': '',
                         disabled: Boolean(busy) || contextText.trim().length === 0,
                         onClick: propose,
-                        children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
-                      }),
+                        label: busy === 'propose' ? 'Writing the task' : 'Show me the task'
+                      }, 'propose'),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'One task, at most three steps, three to ten minutes.'
                       })
                     ]
@@ -27606,28 +30495,29 @@ function TakeThisWithYou({
                         'data-cb-homework-report': 'open',
                         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
                         children: [
-                          jsx(CbAction, {
-                            variant: 'secondary',
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'done',
                             disabled: Boolean(busy),
                             onClick: () => report('learner'),
-                            children: busy === 'learner' ? 'Recording' : 'I did it'
-                          }),
-                          jsx(sdk.Button, {
-                            size: 'sm',
-                            variant: 'text',
+                            label: busy === 'learner' ? 'Recording' : 'I did it'
+                          }, 'report'),
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'skip',
                             disabled: Boolean(busy),
                             onClick: skipTask,
-                            children: busy === 'skip' ? 'Skipping' : 'Not this one'
-                          }),
+                            label: busy === 'skip' ? 'Skipping' : 'Not this one'
+                          }, 'skip'),
                           jsx('span', {
-                            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                             children: 'Only you record it. Nothing here is marked.'
                           })
                         ]
                       })
                     : jsx('div', {
                         'data-cb-homework-report': task.state,
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children:
                           task.state === 'skipped'
                             ? 'This one is closed as skipped. A fresh task can be taken with you from another lesson.'
@@ -27644,10 +30534,10 @@ function TakeThisWithYou({
                 'data-cb-homework-notice': '',
                 style: {
                   margin: 0,
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
                   lineHeight: 1.5,
-                  color: 'var(--cb-ink)'
+                  color: 'var(--cb3-ink)'
                 },
                 children: notice
               })
@@ -27657,12 +30547,15 @@ function TakeThisWithYou({
 
   return jsxs('div', {
     'data-cb-homework': open ? 'open' : 'closed',
+    'data-cb3-homework': 'action',
     style: { display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+      // The GM-008 DOM contract names this quiet action by `data-variant="text"`; the v3 quiet
+      // pill keeps that attribute so the existing contract and tests resolve the same control.
+      jsx(PillAction, {
+        variant: 'quiet',
         'data-cb-homework-action': 'take-this-with-you',
+        'data-variant': 'text',
         'aria-expanded': open ? 'true' : 'false',
         onClick: () => {
           const next = !open
@@ -27670,8 +30563,8 @@ function TakeThisWithYou({
           setNotice(null)
           if (next && !task) prepare()
         },
-        children: 'Take this with you'
-      }),
+        label: 'Take this with you'
+      }, 'trigger'),
       panel
     ]
   })
@@ -27771,21 +30664,22 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         jsx('p', {
           style: {
             margin: 0,
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.meta,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('meta'),
             lineHeight: 1.5,
-            color: 'var(--cb-coral)',
+            color: 'var(--cb3-alert)',
             overflowWrap: 'anywhere'
           },
           children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
         }),
-        jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: load, children: 'Try again' })
+        jsx(PillAction, { variant: 'quiet', onClick: load, label: 'Try again' }, 'retry')
       ]
     })
   }
   const openState = CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
   return jsxs('div', {
     'data-cb-homework-record': task.state,
+    'data-cb3-homework': 'record',
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -27793,7 +30687,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       minWidth: 0,
       maxWidth: CB_MEASURE,
       padding: '0.5rem 0',
-      borderTop: '1px solid var(--cb-rule)'
+      borderTop: '1px solid var(--cb3-rule)'
     },
     children: [
       jsxs('div', {
@@ -27802,62 +30696,72 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
           jsx('span', {
             'data-cb-homework-record-target': '',
             style: {
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              color: 'var(--cb-ink)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('lead'),
+              color: 'var(--cb3-ink)',
               minWidth: 0,
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(task.target && task.target.display) ? 'ja' : undefined,
             children: (task.target && task.target.display) || task.title
           }),
-          jsx(sdk.Badge, {
-            size: 'xs',
-            variant: 'outline',
-            'data-cb-homework-record-state': task.state,
-            children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
-          }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            'data-cb-homework-record-state': task.state,
+            'data-cb3-chip': 'state',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '0.1rem 0.5rem',
+              borderRadius: cb3Radius('pill'),
+              border: `1px solid ${cb3Role('rule')}`,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink')
+            },
+            children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
+          }, 'state'),
+          jsx('span', {
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `${Number(task.estimated_minutes) || 5} min`
           })
         ]
       }),
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: 1.5, color: 'var(--cb3-ink-soft)' },
         children: [lessonTitle || null, courseTitle || null].filter(Boolean).join(' · ') || 'This course',
       }),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
         children: [
-          jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+          jsx(PillAction, {
+            variant: 'quiet',
+            'data-cb-homework-record-action': 'toggle-sheet',
             'aria-expanded': open ? 'true' : 'false',
             onClick: () => setOpen(!open),
-            children: open ? 'Hide the sheet' : 'Show the sheet'
-          }),
+            label: open ? 'Hide the sheet' : 'Show the sheet'
+          }, 'toggle'),
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'secondary',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'done',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.complete', { actor, note: '' }, 'report'),
-                children: busy === 'report'
+                label: busy === 'report'
                   ? 'Recording'
                   : actor === 'parent'
                     ? 'A parent recorded this'
                     : 'I did it'
-              })
+              }, 'report')
             : null,
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'text',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'skip',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.skip', { actor }, 'skip'),
-                children: busy === 'skip' ? 'Skipping' : 'Skip'
-              })
+                label: busy === 'skip' ? 'Skipping' : 'Skip'
+              }, 'skip')
             : null
         ]
       }),
@@ -27882,7 +30786,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         : null,
       notice
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink)' },
             children: notice
           })
         : null,
@@ -27890,9 +30794,9 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              color: 'var(--cb-coral)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              color: 'var(--cb3-alert)',
               overflowWrap: 'anywhere'
             },
             children: `${error.code}: ${error.message}`
@@ -27910,16 +30814,29 @@ function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChang
   if (!rows || rows.length === 0) {
     return jsx('div', {
       'data-cb-homework-list': 'empty',
+      'data-cb3-homework': 'list-empty',
       style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
       children: jsx(EmptyState, { title: emptyTitle, description: emptyDescription })
     })
   }
   return jsx('div', {
     'data-cb-homework-list': String(rows.length),
+    'data-cb3-homework': 'list',
     style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
     children: [
       title
-        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) }, 'title')
+        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              color: cb3Role('ink'),
+              maxWidth: '34ch'
+            },
+            children: title
+          }) }, 'title')
         : null,
       ...rows.map((row) =>
         jsx(
@@ -28025,16 +30942,17 @@ function HomeworkStudio({ implemented, onOpenSource }) {
 
   return jsxs('div', {
     'data-cb-homework-studio': String(rows.length),
+    'data-cb3-homework': 'studio',
     style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.9rem 1rem 1.2rem', minWidth: 0 },
     children: [
       jsx('p', {
         style: {
           margin: 0,
           maxWidth: CB_MEASURE,
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink-soft)'
+          color: 'var(--cb3-ink-soft)'
         },
         children:
           'Tasks a learner took with them from a lesson on this device. A parent can record one as done; it is a report, never a mark, and it opens no chat.'
@@ -28348,33 +31266,67 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
   })
 }
 
-/** The view switcher: canonical tab strip when there is width, labelled Select when there is not. */
+/** The view switcher: authored v3 tabs when the route has width, a labelled Select when it has
+ * not. The breakpoint is read from the route (`useCbViewportWidth`), never from the window: the
+ * Desktop window can be ~1050 px wide while this route is 407 px. */
 function StudioViewPicker({ id, label, value, options, onChange }) {
+  const width = useCbViewportWidth()
+  const wide = !(width > 0 && width < 760)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
+    'data-cb-studio-view-picker': value,
     children: [
-      jsx('div', {
-        className: 'hidden min-[47.5rem]:block',
-        children: jsx(sdk.SegmentedControl, { onChange, options, sizing: 'content', value })
-      }),
-      jsxs('div', {
-        className: 'flex items-center gap-2 min-[47.5rem]:hidden',
-        children: [
-          jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
-          jsxs(sdk.Select, {
-            value,
-            onValueChange: onChange,
+      wide
+        ? jsx('div', {
+            role: 'tablist',
+            'aria-label': label,
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', borderBottom: '1px solid var(--cb3-rule)' },
+            children: options.map((option) => {
+              const current = option.id === value
+              return jsx('button', {
+                type: 'button',
+                role: 'tab',
+                'data-cb3-view-tab': option.id,
+                'data-current': current ? 'true' : 'false',
+                'aria-selected': current ? 'true' : 'false',
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '44px',
+                  paddingInline: '0.6rem',
+                  border: 0,
+                  borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+                  background: 'transparent',
+                  color: 'var(--cb3-ink)',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: current ? 600 : 400,
+                  cursor: 'pointer'
+                },
+                onClick: () => onChange(option.id),
+                children: option.label
+              }, option.id)
+            })
+          })
+        : jsxs('div', {
+            className: 'flex items-center gap-2',
             children: [
-              jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
-              jsx(
-                sdk.SelectContent,
-                { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
-                'content'
-              )
+              jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
+              jsxs(sdk.Select, {
+                value,
+                onValueChange: onChange,
+                children: [
+                  jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
+                  jsx(
+                    sdk.SelectContent,
+                    { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
+                    'content'
+                  )
+                ]
+              })
             ]
           })
-        ]
-      })
     ]
   })
 }
@@ -28793,7 +31745,7 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
     children: [
       jsx('div', {
         'data-cb-plan-validation-line': model.independence || model.state,
-        style: { color: 'var(--cb-ink)', fontWeight: 600 },
+        style: { color: 'var(--cb3-ink)', fontWeight: 600 },
         children: model.line
       }),
       model.validatorModel
@@ -29005,12 +31957,13 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
     className: 'flex max-w-prose flex-col gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
     style: {
       padding: '0.6rem 0.75rem',
-      borderLeft: '2px solid var(--cb-accent)',
-      background: 'var(--cb-accent-soft)'
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
+      background: 'var(--cb3-card-stock)'
     },
     children: [
       jsx('div', {
-        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+        style: { fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
         children: model.title
       }),
       jsx('p', { className: 'max-w-prose', children: model.body }),
@@ -31948,7 +34901,13 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
             role: 'alertdialog',
             'aria-label': 'Unsaved section changes',
             'data-cb-studio-leave-guard': pendingLeave.kind,
-            className: 'flex flex-wrap items-center gap-2 border-l-2 border-(--cb-accent) pl-2',
+            className: 'flex flex-wrap items-center gap-2',
+            style: {
+              padding: '0.6rem 0.75rem',
+              background: 'var(--cb3-card-stock)',
+              border: '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('round')
+            },
             children: [
               jsx('span', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -32035,13 +34994,13 @@ function CoursebookWordmark() {
   return jsx('div', {
     'data-cb-wordmark': '',
     style: {
-      fontFamily: CB_SERIF,
-      fontSize: CB_TYPE.meta,
+      fontFamily: 'var(--cb3-font-display)',
+      fontSize: cb3Type('meta'),
       fontWeight: 600,
       letterSpacing: '0.14em',
       textTransform: 'uppercase',
       lineHeight: 1.2,
-      color: 'var(--cb-ink-soft)',
+      color: 'var(--cb3-ink-soft)',
       // H-160: "COURSEBOOK" at 28 px (200% text) plus 0.14em tracking measures 239 px, and the
       // route pane at a 460 px window is 215 px (170 px of content). The wordmark was therefore
       // the widest unbreakable token on the route: 46 px of the 53 px routeOverflowX on its own,
@@ -33278,134 +36237,565 @@ function workshopFactRows(item) {
   return rows
 }
 
-function WorkshopDiscover({ catalog, layout, motion, prefs, onOpen, onInstall, busyInstall, onFavorite, onOpenCourse }) {
-  const [filter, setFilter] = useState('all')
-  const items = catalog.items || []
-  const favoriteSet = new Set(prefs.favorites)
-  const featured = items.find((item) => item.pack_id === catalog.featured_pack_id) || items[0]
-  const categories = []
-  for (const item of items) {
-    for (const category of item.categories || []) {
-      if (categories.indexOf(category) < 0) categories.push(category)
-    }
+/* ── CP-021 · Discover v3 (R-DISC) ───────────────────────────────────────────────────────────
+ * The Store tab, rebuilt on the Field Atlas v3 primitives: one page head, the H-196 tabs, a
+ * featured plate whose quiet field and grid share **one** track, a collectible grid whose column
+ * count is measured against the route (never the window), and the fox at the grid's foot inside
+ * its safe area.
+ *
+ * Honesty rules (SPEC-V3 §6):
+ *   - every card is one metadata pattern: subject chip, real section count, one trust label that
+ *     comes from `pack.inspect.trust.labels`; no star, no review count, no badge word that has no
+ *     backing field;
+ *   - the banner title and line are the pack manifest's own title and the catalogue's outcome;
+ *   - a pack's cover is the pack's own artifact through `/media/:id`; with no artifact the plate
+ *     is typographic and no shape is drawn to stand in for art;
+ *   - exactly one filled control on the surface: `Preview this pack` on the banner.
+ *
+ * The banner's quiet field is a paper field **beside** the art, not a scrim over it. The CP-013
+ * `discover-banner` scene has no media route yet (it is a shipped master, not a pack artifact), so
+ * the plate is composed from the featured pack's real cover artifact; when that has no route the
+ * quiet field takes the full width and no art is invented.
+ */
+const CB3_DISCOVER_COPY = Object.freeze({
+  title: 'Discover',
+  sub: 'Packs you can learn from, already on this device.',
+  shelfTitle: 'All packs',
+  primary: 'Preview this pack',
+  loading: 'Reading your workshop.',
+  emptyTitle: 'No packs on this device',
+  emptyBody: 'A pack file you add shows up here.',
+  emptyAction: 'Import a pack',
+  errorTitle: 'The workshop could not be read',
+  errorBody: 'Packs you already have are unchanged. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'Packs already on this device still list. The rest waits.',
+  offlineAction: 'Try again',
+  rejectedAction: 'Open Provenance'
+})
+
+/** The four trust labels, in the order they are shown; the word is the deck's, not a claim. */
+const CB3_TRUST_LABELS = Object.freeze([
+  Object.freeze({ id: 'integrity_verified', label: 'Files checked' }),
+  Object.freeze({ id: 'automated_checks_passed', label: 'Automated checks passed' }),
+  Object.freeze({ id: 'human_review_recorded', label: 'Human review recorded' }),
+  Object.freeze({ id: 'model_assessed_support', label: 'Support assessed by a model' })
+])
+
+function cb3PackTrustLabels(item) {
+  const labels = Array.isArray(item && item.trust_labels) ? item.trust_labels : []
+  return CB3_TRUST_LABELS.filter((row) => labels.indexOf(row.id) >= 0)
+}
+
+function cb3PackSections(item) {
+  const count = Number(item && item.section_count)
+  return Number.isFinite(count) && count > 0 ? Math.round(count) : null
+}
+
+/** A pack's subject line is its own first catalogue category, never an invented chip word. */
+function cb3PackSubject(item) {
+  const categories = Array.isArray(item && item.categories) ? item.categories : []
+  for (const category of categories) {
+    if (typeof category === 'string' && category.trim()) return category
   }
-  const shown = filter === 'all' ? items : items.filter((item) => (item.categories || []).indexOf(filter) >= 0)
-  const savedItems = items.filter((item) => favoriteSet.has(item.pack_id) || (prefs.categories || {})[item.pack_id])
-  // Shelves follow each pack's own first category, in catalogue order. The catalogue is the
-  // taxonomy: this surface never invents a shelf a pack does not already belong to, and the
-  // filter pills above are drawn from the same field.
-  const shelves = []
-  if (filter === 'all') {
-    const order = []
-    for (const item of items) {
-      const name = (item.categories || [])[0] || 'Other packs'
-      if (order.indexOf(name) < 0) order.push(name)
-    }
-    for (const name of order) {
-      shelves.push({
-        title: name,
-        items: items.filter((item) => ((item.categories || [])[0] || 'Other packs') === name)
-      })
-    }
-  } else {
-    shelves.push({ title: filter, items: shown })
-  }
-  const shelfKey = `${filter}-${shown.map((item) => item.pack_id).join(',')}`
-  const cardProps = {
-    motion,
-    layout,
-    onOpen,
-    onInstall,
-    busy: null,
-    onFavorite,
-    onOpenCourse
-  }
-  return jsxs('div', {
-    'data-cb-workshop-discover': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 },
+  return null
+}
+
+/** One cover resolver for the Store card, the pack detail and the Library tab's same row. */
+function cb3PackCover(item) {
+  const cover = (item && item.cover) || {}
+  const artifactId = cover.kind === 'artifact' && typeof cover.artifact_id === 'string' ? cover.artifact_id : null
+  return { artifactId, title: (item && item.title) || 'Untitled pack' }
+}
+
+/**
+ * Columns are a function of the **route** width (SPEC-V3 §3.3): 4 at 1000+, 3 from 620 to 999,
+ * and 1 row at compact. Never `vw`, never the Desktop window.
+ */
+function cb3DiscoverColumns(routeWidth) {
+  const width = Number(routeWidth)
+  if (!Number.isFinite(width) || width <= 0) return 4
+  if (width >= 1000) return 4
+  if (width >= 620) return 3
+  return 1
+}
+
+function cb3DiscoverFoxBox(routeWidth) {
+  return Number(routeWidth) >= 1000 ? 96 : 88
+}
+
+const CB3_DISCOVER_HEADING = Object.freeze({
+  margin: 0,
+  fontFamily: 'var(--cb3-font-display)',
+  fontSize: cb3Type('heading'),
+  lineHeight: cb3Lead('heading'),
+  fontWeight: 600,
+  maxWidth: '34ch',
+  overflowWrap: 'anywhere',
+  color: cb3Role('ink')
+})
+
+const CB3_DISCOVER_BODY = Object.freeze({
+  margin: 0,
+  fontFamily: 'var(--cb3-font-ui)',
+  fontSize: cb3Type('body'),
+  lineHeight: cb3Lead('body'),
+  color: cb3Role('ink-soft'),
+  maxWidth: '52ch'
+})
+
+/** D2: the page head above the tabs. One h2 region; the page h1 is the route's own title. */
+function WorkshopDiscoverHead({ line }) {
+  return jsxs('header', {
+    'data-cb3-discover-head': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
-      featured
-        ? jsx(WorkshopHero, { item: featured, layout, motion, onOpen, onInstall, onContinue: onOpenCourse, busy: busyInstall === featured.pack_id })
-        : null,
-      jsxs('div', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.5rem 1rem'
-        },
-        children: [
-          jsx('h2', {
-            style: {
-              margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.heading,
-              fontWeight: 600,
-              color: 'var(--cb-ink)'
-            },
-            children: 'Find a pack',
-          }),
-          jsxs('div', {
-            'data-cb-workshop-filter': '',
-            role: 'group',
-            'aria-label': 'Filter packs by category',
-            style: { display: 'flex', flexWrap: 'wrap', gap: '0.35rem' },
-            children: [
-              jsx('button', {
-                type: 'button',
-                'aria-pressed': filter === 'all' ? 'true' : 'false',
-                onClick: () => setFilter('all'),
-                style: workshopFilterStyle(filter === 'all'),
-                children: 'All'
-              })
-            ].concat(
-              categories.map((category) =>
-                jsx('button', {
-                  type: 'button',
-                  'aria-pressed': filter === category ? 'true' : 'false',
-                  onClick: () => setFilter(category),
-                  style: workshopFilterStyle(filter === category),
-                  children: category
-                }, category)
-              )
-            )
-          })
-        ]
-      }),
-      filter === 'all' && savedItems.length
-        ? jsx(WorkshopShelf, {
-            ...cardProps,
-            title: 'Your shelf',
-            caption: 'Saved or labelled on this device',
-            items: savedItems
-          })
-        : null,
-      ...shelves.map((shelf) =>
-        jsx(WorkshopShelf, {
-          ...cardProps,
-          title: shelf.title,
-          caption: plural(shelf.items.length, 'pack', 'packs'),
-          items: shelf.items
-        }, `${shelfKey}-${shelf.title}`)
-      )
+      jsx('h2', { style: CB3_DISCOVER_HEADING, children: CB3_DISCOVER_COPY.title }, 'title'),
+      jsx('p', { style: CB3_DISCOVER_BODY, children: line || CB3_DISCOVER_COPY.sub }, 'sub')
     ]
   })
 }
 
-function workshopFilterStyle(selected) {
-  return {
-    minHeight: '44px',
-    padding: '0.25rem 0.7rem',
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
-    fontWeight: selected ? 600 : 400,
-    color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-    background: selected ? 'var(--cb-lamp-soft)' : 'transparent',
-    border: `1px solid ${selected ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`,
-    borderRadius: '999px',
-    cursor: 'pointer'
+/**
+ * D4 + D5: the featured plate. The left percentage is the reserved quiet field; the art sits in
+ * its own region, mechanically cropped, never underneath the type. Card stock + `elev-1` is one
+ * material object (the contract forbids a border and a shadow on the same object).
+ */
+function WorkshopDiscoverFeature({ item, layout, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const compact = layout.columns === 1
+  const pad = layout.wide ? '2rem' : layout.columns === 3 ? '1.75rem' : '1.25rem'
+  return jsxs('section', {
+    'data-cb3-feature': item.pack_id,
+    'aria-labelledby': 'cb3-feature-title',
+    style: {
+      position: 'relative',
+      display: 'flex',
+      flexDirection: compact ? 'column' : 'row',
+      alignItems: 'stretch',
+      width: '100%',
+      minWidth: 0,
+      minHeight: compact ? 0 : layout.wide ? '226px' : '213px',
+      ...(compact ? {} : { aspectRatio: '4 / 1' }),
+      overflow: 'hidden',
+      borderRadius: cb3Radius('round'),
+      backgroundColor: cb3Role('card-stock')
+    },
+    className: 'cb3-elev-1',
+    children: [
+      jsxs('div', {
+        'data-cb3-quiet-field': '',
+        style: {
+          flex: compact ? '0 0 auto' : '0 0 40%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: '0.6rem',
+          minWidth: 0,
+          padding: pad
+        },
+        children: [
+          jsx('h3', {
+            id: 'cb3-feature-title',
+            style: { ...CB3_DISCOVER_HEADING, fontSize: cb3Type('heading') },
+            children: cover.title
+          }, 'title'),
+          item.outcome
+            ? jsx('p', { style: { ...CB3_DISCOVER_BODY, maxWidth: '42ch' }, children: item.outcome }, 'outcome')
+            : null,
+          jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' },
+            children: jsx(PillAction, {
+              variant: 'primary',
+              label: CB3_DISCOVER_COPY.primary,
+              onClick: () => {
+                if (typeof onOpen === 'function') onOpen(item)
+              },
+              'data-cb3-feature-primary': item.pack_id
+            }, 'primary')
+          }, 'actions')
+        ]
+      }, 'quiet'),
+      art
+        ? jsx('div', {
+            'data-cb3-feature-art': item.pack_id,
+            'aria-hidden': 'true',
+            style: {
+              position: 'relative',
+              flex: compact ? '0 0 auto' : '1 1 auto',
+              width: compact ? '100%' : undefined,
+              height: compact ? '160px' : undefined,
+              minWidth: 0,
+              overflow: 'hidden'
+            },
+            children: jsx('img', {
+              src: art,
+              alt: '',
+              style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+            }, 'img')
+          }, 'art')
+        : null
+    ]
+  })
+}
+
+/** The one metadata row: real sections + one trust label, in the same order on every card. */
+function cb3DiscoverMeta(item) {
+  const sections = cb3PackSections(item)
+  const trust = cb3PackTrustLabels(item)[0] || null
+  const parts = []
+  if (sections !== null) {
+    parts.push(jsx('span', { children: `${sections} ${sections === 1 ? 'section' : 'sections'}` }, 'sections'))
   }
+  if (sections !== null && trust) parts.push(jsx('span', { 'aria-hidden': 'true', children: '·' }, 'sep'))
+  if (trust) {
+    parts.push(
+      jsxs('span', {
+        'data-cb3-trust': trust.id,
+        style: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem' },
+        children: [
+          jsx(sdk.Codicon, { name: 'shield', size: CB_ICON_UI }, 'icon'),
+          jsx('span', { children: trust.label }, 'label')
+        ]
+      }, 'trust')
+    )
+  }
+  return parts.length ? parts : null
+}
+
+function cb3DiscoverOpenKey(event, item, onOpen) {
+  if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
+  event.preventDefault()
+  if (typeof onOpen === 'function') onOpen(item)
+}
+
+/** D7 at wide/mid: the collectible card, every card one paper object on the same track. */
+function WorkshopDiscoverCard({ item, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const rejected = cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified')
+  return jsx(CollectibleCard, {
+    'data-cb3-pack': item.pack_id,
+    'data-cb3-pack-rejected': rejected ? 'true' : 'false',
+    title: item.title,
+    subject: cb3PackSubject(item),
+    src: art,
+    meta: cb3DiscoverMeta(item),
+    role: 'link',
+    tabIndex: 0,
+    'aria-label': `Preview ${item.title}`,
+    onClick: () => {
+      if (typeof onOpen === 'function') onOpen(item)
+    },
+    onKeyDown: (event) => cb3DiscoverOpenKey(event, item, onOpen)
+  }, item.pack_id)
+}
+
+/** D7 at compact: one pack per row, 88 × 59 art, text beside it. No card grid at 460. */
+function WorkshopDiscoverRow({ item, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const subject = cb3PackSubject(item)
+  return jsxs('article', {
+    'data-cb3-pack': item.pack_id,
+    'data-cb3-pack-layout': 'row',
+    role: 'link',
+    tabIndex: 0,
+    'aria-label': `Preview ${item.title}`,
+    onClick: () => {
+      if (typeof onOpen === 'function') onOpen(item)
+    },
+    onKeyDown: (event) => cb3DiscoverOpenKey(event, item, onOpen),
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.75rem',
+      minWidth: 0,
+      padding: '0.65rem',
+      backgroundColor: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round'),
+      color: cb3Role('ink'),
+      cursor: 'pointer'
+    },
+    children: [
+      jsx('div', { style: { flex: '0 0 88px', width: '88px', minWidth: 0 }, children: jsx(CoverPlate3, { src: art, title: cover.title }) }, 'cover'),
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0, flex: '1 1 auto' },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: 600,
+              overflowWrap: 'anywhere'
+            },
+            children: cover.title
+          }, 'title'),
+          subject
+            ? jsx('span', {
+                'data-cb3-chip': 'subject',
+                style: {
+                  alignSelf: 'flex-start',
+                  paddingInline: '0.5rem',
+                  paddingBlock: '0.15rem',
+                  borderRadius: cb3Radius('soft'),
+                  backgroundColor: cb3Role('terracotta-quiet'),
+                  color: cb3Role('ink'),
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption')
+                },
+                children: subject
+              }, 'subject')
+            : null,
+          jsx('p', {
+            style: {
+              margin: 0,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.3rem',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: cb3DiscoverMeta(item)
+          }, 'meta')
+        ]
+      }, 'text')
+    ]
+  }, item.pack_id)
+}
+
+function WorkshopDiscoverGrid({ items, layout, onOpen }) {
+  const columns = layout.columns
+  return jsx('div', {
+    'data-cb3-discover-grid': String(columns),
+    style: {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+      columnGap: columns === 1 ? '12px' : '16px',
+      rowGap: columns === 1 ? '12px' : '24px',
+      alignItems: 'stretch',
+      width: '100%',
+      minWidth: 0
+    },
+    children: items.map((item) =>
+      columns === 1
+        ? jsx(WorkshopDiscoverRow, { item, onOpen }, item.pack_id)
+        : jsx(WorkshopDiscoverCard, { item, onOpen }, item.pack_id)
+    )
+  })
+}
+
+/** A quiet plate that keeps the banner's geometry for empty/error/offline. */
+function WorkshopDiscoverNotice({ state, title, body, actionLabel, onAction }) {
+  return jsxs('div', {
+    'data-cb3-discover-state': state,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      gap: '0.6rem',
+      width: '100%',
+      minWidth: 0,
+      minHeight: '226px',
+      padding: '2rem',
+      borderRadius: cb3Radius('round'),
+      backgroundColor: cb3Role('card-stock')
+    },
+    className: 'cb3-elev-1',
+    children: [
+      jsx('h3', { style: CB3_DISCOVER_HEADING, children: title }, 'title'),
+      jsx('p', { style: CB3_DISCOVER_BODY, children: body }, 'body'),
+      actionLabel && typeof onAction === 'function'
+        ? jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' },
+            children: jsx(PillAction, { variant: 'quiet', label: actionLabel, onClick: onAction }, 'action')
+          }, 'actions')
+        : null
+    ]
+  })
+}
+
+/** Loading keeps the real region boxes; 40% card stock, no shimmer, no spinner. */
+function WorkshopDiscoverSkeleton({ layout }) {
+  const boxes = layout.columns * 2
+  return jsxs('div', {
+    'data-cb3-discover-skeleton': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 },
+    children: [
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: {
+          width: '100%',
+          minHeight: '226px',
+          borderRadius: cb3Radius('round'),
+          backgroundColor: cb3Role('card-stock'),
+          opacity: 0.4
+        }
+      }, 'banner'),
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+          columnGap: layout.columns === 1 ? '12px' : '16px',
+          rowGap: '24px'
+        },
+        children: Array.from({ length: boxes }, (unused, index) =>
+          jsx('div', {
+            style: {
+              minHeight: layout.columns === 1 ? '76px' : '211px',
+              borderRadius: cb3Radius('round'),
+              backgroundColor: cb3Role('card-stock'),
+              opacity: 0.4
+            }
+          }, `skeleton-${index}`)
+        )
+      }, 'grid')
+    ]
+  })
+}
+
+/**
+ * The Discover body: head is painted by the destination shell above the tabs; this owns the
+ * banner + shelf + grid and one state at a time. `refused` packs keep a quiet strip at the foot
+ * (D9) and never disappear from the count they belong to.
+ */
+function WorkshopDiscoverV3({ items, featured, layout, status, error, refused, onOpen, onRetry, canImport, onImport, onOpenProvenance }) {
+  const unique = []
+  const seen = new Set()
+  for (const item of items) {
+    if (!item || !item.pack_id || seen.has(item.pack_id)) continue
+    seen.add(item.pack_id)
+    unique.push(item)
+  }
+  if (status === 'error') {
+    const offline = Boolean(error && error.code === 'HOST_UNAVAILABLE')
+    return jsx(WorkshopDiscoverNotice, {
+      state: offline ? 'offline' : 'error',
+      title: offline ? CB3_DISCOVER_COPY.offlineTitle : CB3_DISCOVER_COPY.errorTitle,
+      body: offline ? CB3_DISCOVER_COPY.offlineBody : CB3_DISCOVER_COPY.errorBody,
+      actionLabel: offline ? CB3_DISCOVER_COPY.offlineAction : CB3_DISCOVER_COPY.errorAction,
+      onAction: onRetry
+    })
+  }
+  if (!unique.length) {
+    return jsx(WorkshopDiscoverNotice, {
+      state: 'empty',
+      title: CB3_DISCOVER_COPY.emptyTitle,
+      body: CB3_DISCOVER_COPY.emptyBody,
+      actionLabel: canImport ? CB3_DISCOVER_COPY.emptyAction : null,
+      onAction: canImport ? onImport : null
+    })
+  }
+  const featuredItem = featured || unique[0]
+  const rejected = unique.filter((item) => cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified'))
+  return jsxs('div', {
+    'data-cb3-discover-track': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 },
+    children: [
+      jsx(WorkshopDiscoverFeature, { item: featuredItem, layout, onOpen }, 'feature'),
+      jsxs('section', {
+        'data-cb3-discover-shelf': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', minWidth: 0 },
+        children: [
+          jsxs('div', {
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '0.5rem 1rem'
+            },
+            children: [
+              jsx('h2', {
+                style: { ...CB3_DISCOVER_HEADING, fontSize: cb3Type('lead') },
+                children: CB3_DISCOVER_COPY.shelfTitle
+              }, 'title'),
+              jsx('span', {
+                'data-cb3-discover-count': '',
+                style: {
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: `${unique.length} ${unique.length === 1 ? 'pack' : 'packs'}`
+              }, 'count')
+            ]
+          }, 'head'),
+          jsx(WorkshopDiscoverGrid, { items: unique, layout, onOpen }, 'grid'),
+          jsx('div', {
+            'data-cb3-discover-fox': '',
+            'aria-hidden': 'true',
+            style: { display: 'flex', justifyContent: 'flex-end', width: '100%', minWidth: 0 },
+            children: jsx(FoxPose, {
+              pose: 'point',
+              size: 128,
+              style: { width: `${cb3DiscoverFoxBox(layout.routeWidth)}px`, height: `${cb3DiscoverFoxBox(layout.routeWidth)}px` }
+            }, 'fox')
+          }, 'fox'),
+          rejected.length
+            ? jsxs('div', {
+                'data-cb3-discover-rejected': '',
+                role: 'status',
+                style: {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  minHeight: '48px',
+                  padding: '0.5rem 0.75rem',
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  backgroundColor: cb3Role('card-stock')
+                },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('meta'),
+                      lineHeight: cb3Lead('meta'),
+                      color: cb3Role('alert')
+                    },
+                    children: rejected.map((item) => `${item.title} did not pass its checks.`).join(' ')
+                  }, 'line'),
+                  onOpenProvenance
+                    ? jsx(PillAction, { variant: 'quiet', label: CB3_DISCOVER_COPY.rejectedAction, onClick: onOpenProvenance }, 'action')
+                    : null
+                ]
+              })
+            : null,
+          refused && refused.length
+            ? jsx('p', {
+                'data-cb3-discover-refused': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
+                },
+                children: `${refused.length} ${refused.length === 1 ? 'pack' : 'packs'} could not be verified and are not shown.`
+              })
+            : null
+        ]
+      }, 'shelf')
+    ]
+  })
 }
 
 /** The imported-pack ledger: what this profile holds, at which version, from where. */
@@ -33571,6 +36961,13 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
   const [notice, setNotice] = useState(null)
   const width = useCbViewportWidth()
   const layout = cbLayoutFor(width)
+  // CP-021: the Discover composition is a function of the *route* width (SPEC-V3 §3.1/§3.3).
+  // Columns: 4 wide, 3 mid, 1 row at compact. The fox box is 96 wide, 88 mid, absent compact.
+  const discoverLayout = {
+    routeWidth: width,
+    columns: cb3DiscoverColumns(width),
+    wide: !(width > 0) || width >= 1000
+  }
   const motion = useCbMotion()
   const [prefs, toggleFavorite, setCategory] = useCbWorkshopPrefs()
   const catalog = useWorkshopCatalog(true)
@@ -33707,47 +37104,23 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
       onCategory
     })
   } else if (catalog.status === 'loading' && !catalog.data) {
-    body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Reading the Workshop catalogue' }) })
-  } else if (catalog.status === 'error') {
-    body = jsxs('div', {
-      'data-cb-workshop-error': (catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
-      children: [
-        jsx('h2', {
-          style: workshopStateHeadingStyle,
-          children: 'The Workshop could not be read'
-        }),
-        jsx('p', {
-          style: workshopStateBodyStyle,
-          children: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
-        }),
-        jsx(CbAction, { variant: 'tertiary', onClick: catalog.reload, className: 'self-start', children: 'Try again' })
-      ]
-    })
-  } else if (!items.length) {
-    body = jsxs('div', {
-      'data-cb-workshop-empty': '',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
-      children: [
-        jsx('h2', { style: workshopStateHeadingStyle, children: 'No packs in this build' }),
-        jsx('p', {
-          style: workshopStateBodyStyle,
-          children:
-            'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
-        })
-      ]
-    })
+    body = jsx(WorkshopDiscoverSkeleton, { layout: discoverLayout })
   } else {
-    body = jsx(WorkshopDiscover, {
-      catalog: catalog.data,
-      layout,
-      motion,
-      prefs,
+    body = jsx(WorkshopDiscoverV3, {
+      items,
+      featured: items.find((item) => item.pack_id === catalog.data.featured_pack_id) || items[0] || null,
+      layout: discoverLayout,
+      status: catalog.status,
+      error: catalog.error,
+      refused: catalog.data && Array.isArray(catalog.data.refused) ? catalog.data.refused : [],
       onOpen,
-      onInstall: install,
-      busyInstall: installBusy,
-      onFavorite,
-      onOpenCourse: openInstalled
+      onRetry: catalog.reload,
+      canImport: Boolean(canImport),
+      onImport: onStartImport,
+      onOpenProvenance: () => {
+        setTab('provenance')
+        setSelectedId(null)
+      }
     })
   }
 
@@ -33755,14 +37128,27 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
     'data-cb-workshop': tab,
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
     children: [
+      // D2 sits above the tabs; on the other two tabs the ledger and shelf carry their own head.
+      tab === 'discover' && !selected
+        ? jsx(WorkshopDiscoverHead, {
+            line: catalog.status === 'loading' && !catalog.data ? CB3_DISCOVER_COPY.loading : null
+          }, 'discover-head')
+        : null,
       jsx('nav', {
         'data-cb-workshop-tabs': '',
         'aria-label': 'Workshop surfaces',
-        style: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.25rem', borderBottom: '1px solid var(--cb-rule)' },
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'stretch',
+          gap: '0 1.5rem',
+          borderBottom: `1px solid ${cb3Role('rule')}`
+        },
         children: WORKSHOP_TABS.map((entry) =>
           jsx('button', {
             type: 'button',
             'data-cb-workshop-tab': entry.id,
+            'data-cb-workshop-tab-active': tab === entry.id ? 'true' : 'false',
             'aria-current': tab === entry.id ? 'page' : undefined,
             onClick: () => {
               setTab(entry.id)
@@ -33771,46 +37157,20 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
             style: {
               background: 'none',
               border: 'none',
-              borderBottom: `2px solid ${tab === entry.id ? 'var(--cb-lamp)' : 'transparent'}`,
-              padding: '0.5rem 0',
+              borderBottom: `3px solid ${tab === entry.id ? cb3Role('terracotta') : 'transparent'}`,
+              padding: '0 0.1rem',
               minHeight: '44px',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.meta,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
               fontWeight: tab === entry.id ? 600 : 400,
-              color: tab === entry.id ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+              color: tab === entry.id ? cb3Role('ink') : cb3Role('ink-soft'),
               cursor: tab === entry.id ? 'default' : 'pointer'
             },
             children: entry.label
           }, entry.id)
         )
       }),
-      catalog.data && catalog.data.refused && catalog.data.refused.length
-        ? jsxs('div', {
-            'data-cb-workshop-refused': '',
-            role: 'status',
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem',
-              padding: '0.5rem 0.65rem',
-              border: '1px solid var(--cb-coral)',
-              borderRadius: '3px',
-              background: 'var(--cb-paper-raised)'
-            },
-            children: [
-              jsx('p', {
-                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-coral)' },
-                children: `${plural(catalog.data.refused.length, 'pack', 'packs')} could not be verified and are not shown`
-              }),
-              ...catalog.data.refused.map((entry) =>
-                jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
-                  children: `${entry.pack_id}: ${entry.reason}`
-                }, `refused-${entry.pack_id}`)
-              )
-            ]
-          })
-        : null,
       notice
         ? jsxs('div', {
             'data-cb-workshop-notice': notice.kind,
@@ -34020,9 +37380,9 @@ function WorldPlate({ artifactId, caption, height, kind }) {
     position: 'relative',
     width: '100%',
     height: height || '11rem',
-    background: 'var(--cb-paper-raised)',
-    border: '1px solid var(--cb-rule)',
-    borderRadius: '2px',
+    background: 'var(--cb3-canvas-edge)',
+    border: '1px solid var(--cb3-rule)',
+    borderRadius: cb3Radius('square'),
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
@@ -34049,11 +37409,11 @@ function WorldPlate({ artifactId, caption, height, kind }) {
             right: 0,
             bottom: 0,
             padding: '0.25rem 0.5rem',
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.caption,
-            color: 'var(--cb-ink-soft)',
-            background: 'var(--cb-paper)',
-            borderTop: '1px solid var(--cb-rule)'
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            color: 'var(--cb3-ink-soft)',
+            background: 'var(--cb3-card-stock)',
+            borderTop: '1px solid var(--cb3-rule)'
           },
           children: caption
         })
@@ -34068,11 +37428,11 @@ function WorldPlate({ artifactId, caption, height, kind }) {
       style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', textAlign: 'center' },
       children: [
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink)' },
           children: caption
         }),
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
           children: preview.state === 'loading' ? 'Loading the plate' : CB_WORLD_COPY.plateMissing
         })
       ]
@@ -34090,13 +37450,13 @@ function ModeBadge({ mode, pending }) {
       alignItems: 'center',
       gap: '0.3rem',
       padding: '0.1rem 0.45rem',
-      border: `1px solid ${game ? 'var(--cb-ochre)' : 'var(--cb-accent)'}`,
-      borderRadius: '2px',
-      fontFamily: CB_SANS,
-      fontSize: CB_TYPE.caption,
+      border: `1px solid ${game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)'}`,
+      borderRadius: cb3Radius('soft'),
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
       fontWeight: 600,
-      color: game ? 'var(--cb-ochre)' : 'var(--cb-accent)',
-      background: 'var(--cb-paper)'
+      color: game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)',
+      background: 'var(--cb3-card-stock)'
     },
     children: [
       jsx('span', {
@@ -34104,8 +37464,8 @@ function ModeBadge({ mode, pending }) {
         style: {
           width: '0.4rem',
           height: '0.4rem',
-          borderRadius: '999px',
-          background: game ? 'var(--cb-ochre)' : 'var(--cb-accent)'
+          borderRadius: cb3Radius('pill'),
+          background: game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)'
         }
       }, 'dot'),
       game ? CB_WORLD_COPY.modeGame : CB_WORLD_COPY.modeTextbook,
@@ -34135,26 +37495,25 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
         flexDirection: 'column',
         gap: '0.5rem',
         padding: '0.9rem 1rem 1rem',
-        background: 'var(--cb-paper-raised)',
-        border: '1px solid var(--cb-rule)',
-        borderTop: '3px solid var(--cb-ochre)',
-        borderRadius: '2px',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
         minWidth: 0
       },
       children: [
         jsxs('div', {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
           children: [jsx(ModeBadge, { mode }), jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
             children: CB_WORLD_COPY.notApprovedTitle
           })]
         }),
         jsx('p', {
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
           children: CB_WORLD_COPY.notApprovedBody
         }),
-        jsx(CbAction, {
-          variant: 'secondary',
+        jsx(PillAction, {
+          variant: 'quiet',
           'data-cb-world-open-studio': '',
           onClick: onOpenStudio,
           style: { alignSelf: 'flex-start' },
@@ -34175,9 +37534,8 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
           gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 13.25rem',
           gap: '0.9rem',
           padding: '0.9rem 1rem 1rem',
-          background: 'var(--cb-lamp-soft)',
-          borderTop: '3px solid var(--cb-lamp)',
-          borderRadius: '2px',
+          background: 'var(--cb3-terracotta-quiet)',
+          borderRadius: cb3Radius('round'),
           minWidth: 0
         },
         children: [
@@ -34187,10 +37545,6 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
               jsxs('div', {
                 style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' },
                 children: [
-                  jsx('span', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
-                    children: CB_WORLD_COPY.label
-                  }),
                   jsx(ModeBadge, { mode })
                 ]
               }),
@@ -34198,25 +37552,23 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
                 'data-cb-world-title': '',
                 style: {
                   margin: 0,
-                  fontFamily: CB_SERIF,
-                  fontSize: CB_TYPE.heading,
+                  fontFamily: 'var(--cb3-font-display)',
+                  fontSize: cb3Type('heading'),
+                  lineHeight: cb3Lead('heading'),
                   fontWeight: 600,
-                  lineHeight: 1.15,
-                  color: 'var(--cb-ink)',
+                  color: 'var(--cb3-ink)',
                   minWidth: 0,
                   overflowWrap: 'anywhere'
                 },
                 children: title || 'This course'
               }),
-              grammarName
-                ? jsx('div', {
-                    'data-cb-world-grammar': '',
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
-                    children: grammarName
-                  })
-                : null,
-              jsx(CbAction, {
-                variant: 'tertiary',
+              jsx('div', {
+                'data-cb-world-grammar': '',
+                style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
+                children: grammarName ? `${CB_WORLD_COPY.label} · ${grammarName}` : CB_WORLD_COPY.label
+              }),
+              jsx(PillAction, {
+                variant: 'quiet',
                 'data-cb-world-change': '',
                 onClick: onOpenStudio,
                 style: { alignSelf: 'flex-start' },
@@ -34249,7 +37601,7 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
                   jsx(WorldPlate, { artifactId: plate.artifact_id, caption: plate.title || plate.section_key, height: '6.5rem', kind: 'section' }),
                   jsx('span', {
                     'data-cb-world-section-title': plate.section_id,
-                    style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)', lineHeight: 1.3 },
+                    style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('body'), fontWeight: 600, color: 'var(--cb3-ink)', lineHeight: cb3Lead('body') },
                     children: plate.title || 'Section'
                   })
                 ]
@@ -34457,10 +37809,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'unsupported',
-      children: jsx(sdk.EmptyState, {
-        title: 'This backend does not carry the world wire yet',
-        description: CB_WORLD_COPY.readUnsupported + ' Your course stays in Textbook mode and no art is generated.',
-        children: jsx(CbAction, { variant: 'primary', onClick: onClose, children: 'Keep Textbook' })
+      heading: 'This backend does not carry the world wire yet',
+      children: jsx(PaperCard, {
+        meta: CB_WORLD_COPY.readUnsupported + ' Your course stays in Textbook mode and no art is generated.',
+        footer: jsx(PillAction, { variant: 'primary', label: 'Keep Textbook', onClick: onClose })
       })
     })
   }
@@ -34468,13 +37820,16 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'error',
-      children: jsxs(sdk.ErrorState, {
-        title: 'The course world could not be read',
-        description: describeError(worldError),
-        children: [
-          jsx(CbAction, { variant: 'primary', onClick: onReload, children: 'Try again' }),
-          jsx(CbAction, { variant: 'tertiary', onClick: onClose, children: 'Back to the course' })
-        ]
+      heading: 'The course world could not be read',
+      children: jsx(PaperCard, {
+        meta: describeError(worldError),
+        footer: jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
+          children: [
+            jsx(PillAction, { variant: 'primary', label: 'Try again', onClick: onReload }, 'retry'),
+            jsx(PillAction, { variant: 'quiet', label: 'Back to the course', onClick: onClose }, 'back')
+          ]
+        })
       })
     })
   }
@@ -34482,41 +37837,46 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'loading',
-      children: jsxs('div', {
-        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '2rem 0' },
-        children: [
-          jsx(sdk.Loader, { label: 'Reading the course world' }),
-          jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' }, children: 'Nothing already saved is lost.' })
-        ]
+      heading: 'Reading the course world',
+      children: jsx('p', {
+        'data-cb-world-loading': '',
+        role: 'status',
+        'aria-live': 'polite',
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
+        children: 'Nothing already saved is lost.'
       })
     })
   }
 
   const generating = Boolean(jobId) || state === 'concepts_generating' || state === 'kit_generating'
-  const stageMessage = (job && job.progress && job.progress.message) || cbWorldStateWord(state)
+  const stateWord = cbWorldStateWord(state)
+  // The state word is the headline. A progress message is the detail under it; when the job has not
+  // reported one (or repeats the headline), do not print the same words twice — say what happens next.
+  const progressMessage = (job && job.progress && job.progress.message) || ''
+  const stageMessage = progressMessage.trim() && progressMessage.trim() !== stateWord ? progressMessage : null
 
   const body = []
   body.push(jsxs('div', {
     'data-cb-world-studio-head': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
+      jsx('h2', {
+        id: 'cb-world-studio-title',
+        style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
+        children: 'Choose the world for this course'
+      }),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
         children: [
+          jsx(ModeBadge, { mode }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
             children: CB_WORLD_COPY.label
-          }),
-          jsx(ModeBadge, { mode })
+          })
         ]
       }),
-      jsx('h2', {
-        id: 'cb-world-studio-title',
-        style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)' },
-        children: 'Choose the world for this course'
-      }),
       jsx('p', {
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
         children: (world && world.brief && world.brief.end_capability) || 'The world is orientation art. Your lessons, checks and evidence are unchanged by it.'
       })
     ]
@@ -34530,14 +37890,15 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         display: 'flex',
         flexDirection: 'column',
         gap: '0.35rem',
-        padding: '0.6rem 0.75rem',
-        background: 'var(--cb-paper-raised)',
-        borderLeft: '2px solid var(--cb-coral)',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
         minWidth: 0
       },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-coral)' }, children: 'That did not finish' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' }, children: error.message })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-alert)' }, children: 'That did not finish' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink)' }, children: error.message })
       ]
     }, 'error'))
   }
@@ -34545,10 +37906,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (providerUnavailable) {
     body.push(jsxs('div', {
       'data-cb-world-provider': 'unavailable',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem 0.85rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-ochre)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Game mode is unavailable because image generation is not configured.' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'The course stays in Textbook mode and your lessons are unchanged. No fake world is created.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Game mode is unavailable because image generation is not configured.' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' }, children: 'The course stays in Textbook mode and your lessons are unchanged. No fake world is created.' })
       ]
     }, 'provider'))
   }
@@ -34556,10 +37926,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (state === 'failed' && missing.length) {
     body.push(jsxs('div', {
       'data-cb-world-partial': missing.join(','),
-      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.75rem 0.85rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-coral)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Some plates are missing' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: `Missing: ${missing.join(', ')}. Nothing is approved until every role exists, and no placeholder art is saved.` })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Some plates are missing' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' }, children: `Missing: ${missing.join(', ')}. Nothing is approved until every role exists, and no placeholder art is saved.` })
       ]
     }, 'partial'))
   }
@@ -34584,39 +37963,40 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           role: 'listitem',
           'data-cb-world-concept': concept.style_id,
           'data-cb-world-concept-selected': selected ? 'true' : 'false',
+          'data-cb3-card': 'paper',
           style: {
             display: 'flex',
             flexDirection: 'column',
             gap: '0.4rem',
-            padding: '0.6rem',
+            padding: '0.65rem',
             minWidth: 0,
-            background: 'var(--cb-paper-raised)',
-            border: selected ? '2px solid var(--cb-lamp)' : '1px solid var(--cb-rule)',
-            borderRadius: '2px'
+            background: 'var(--cb3-card-stock)',
+            border: selected ? '2px solid var(--cb3-terracotta)' : '1px solid var(--cb3-rule)',
+            borderRadius: cb3Radius('round')
           },
           children: [
             jsx(WorldPlate, { artifactId: concept.artifact_id, caption: name, height: '8rem', kind: 'concept' }),
-            jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.lead, fontWeight: 600, color: 'var(--cb-ink)' }, children: name }),
-            one ? jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: one }) : null,
+            jsx('span', { style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('lead'), lineHeight: cb3Lead('lead'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: name }),
+            one ? jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: one }) : null,
             jsxs('span', {
               'data-cb-world-palette': concept.style_id,
               'aria-hidden': 'true',
               style: { display: 'flex', gap: '0.2rem' },
               children: (concept.palette || []).slice(0, 5).map((swatch, index) => jsx('span', {
-                style: { width: '1rem', height: '0.75rem', background: swatch, border: '1px solid var(--cb-rule)' }
+                style: { width: '1rem', height: '0.75rem', background: swatch, border: '1px solid var(--cb3-rule)', borderRadius: cb3Radius('square') }
               }, String(index)))
             }),
             selected
-              ? jsx('span', { 'data-cb-world-chosen': '', style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Chosen direction' })
+              ? jsx('span', { 'data-cb-world-chosen': '', style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Chosen direction' })
               : jsx('div', {
                   'data-cb-world-use-direction': concept.style_id,
                   'data-cb-world-primary': concept.style_id === (concepts[0] && concepts[0].style_id) ? 'direction' : undefined,
                   style: { display: 'inline-flex' },
-                  children: jsx(CbAction, {
-                    variant: concept.style_id === (concepts[0] && concepts[0].style_id) ? 'primary' : 'secondary',
+                  children: jsx(PillAction, {
+                    variant: concept.style_id === (concepts[0] && concepts[0].style_id) ? 'primary' : 'quiet',
+                    label: 'Use this direction',
                     disabled: Boolean(busy),
-                    onClick: () => approveStyle(concept),
-                    children: 'Use this direction'
+                    onClick: () => approveStyle(concept)
                   })
                 })
           ]
@@ -34636,17 +38016,18 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
             gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 11rem',
             gap: '0.7rem',
             padding: '0.85rem 0.95rem',
-            background: 'var(--cb-lamp-soft)',
-            borderTop: '3px solid var(--cb-lamp)',
+            background: 'var(--cb3-card-stock)',
+            border: '1px solid var(--cb3-rule)',
+            borderRadius: cb3Radius('round'),
             minWidth: 0
           },
           children: [
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', justifyContent: 'center', minWidth: 0 },
               children: [
-                jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' }, children: 'The world you would get' }),
-                jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', overflowWrap: 'anywhere' }, children: (world.brief && world.brief.title) || 'This course' }),
-                jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: `1 hero · 1 cover · ${sectionPlates.length} section ${sectionPlates.length === 1 ? 'card' : 'cards'}` })
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)', overflowWrap: 'anywhere' }, children: (world.brief && world.brief.title) || 'This course' }),
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'The world you would get' }),
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: `1 hero · 1 cover · ${sectionPlates.length} section ${sectionPlates.length === 1 ? 'card' : 'cards'}` })
               ]
             }),
             jsx(WorldPlate, { artifactId: cover ? cover.artifact_id : null, caption: 'Library cover', height: '7rem', kind: 'cover' })
@@ -34662,7 +38043,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           }, plate.section_id))
         }),
         jsx('p', {
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
           children: mode === 'game'
             ? 'Use this world and the course opens on it. This is the final visual approval; you can review it again from Course settings.'
             : 'Use this world to approve the kit and switch this course to Game mode. Your lessons, checks and evidence do not change.'
@@ -34674,10 +38055,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (state === 'approved') {
     body.push(jsxs('div', {
       'data-cb-world-approved-panel': world.approved_hash,
-      style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.8rem 0.9rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-field)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.8rem 0.9rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-field)' }, children: 'This world is approved.' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'Changing it starts a new direction and leaves this approved kit on the course until you approve another.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'This world is approved.' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'Changing it starts a new direction and leaves this approved kit on the course until you approve another.' })
       ]
     }, 'approved'))
   }
@@ -34685,13 +38075,13 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   // Edit direction: presentation-only fields, exactly the closed patch the backend accepts.
   body.push(jsxs('div', {
     'data-cb-world-direction': editing ? 'open' : 'closed',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', borderTop: '1px solid var(--cb-rule)', paddingTop: '0.6rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', borderTop: '1px solid var(--cb3-rule)', paddingTop: '0.6rem', minWidth: 0 },
     children: [
       jsx('button', {
         type: 'button',
         'data-cb-world-direction-toggle': '',
         onClick: () => setEditing((value) => !value),
-        style: { alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, font: 'inherit', fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-accent)', cursor: 'pointer', textDecoration: 'underline' },
+        style: { alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, font: 'inherit', fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-terracotta)', cursor: 'pointer', textDecoration: 'underline' },
         children: editing ? 'Close the direction' : 'Edit direction'
       }),
       editing
@@ -34707,7 +38097,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         : null,
       editing
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' },
             children: 'These words steer the next generation only. They never edit a lesson, a check or a source.'
           })
         : null
@@ -34717,11 +38107,11 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (reasonOpen) {
     body.push(jsxs('div', {
       'data-cb-world-reason': '',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem 0.75rem', background: 'var(--cb-paper-raised)', border: '1px solid var(--cb-rule)', minWidth: 0 },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem 0.75rem', background: 'var(--cb3-card-stock)', border: '1px solid var(--cb3-rule)', minWidth: 0 },
       children: [
         jsx('label', {
           htmlFor: 'cb-world-reason-input',
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), fontWeight: 600, color: 'var(--cb3-ink)' },
           children: 'What should change?'
         }),
         jsx(sdk.Input, {
@@ -34730,7 +38120,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           onChange: (event) => setDirection((current) => ({ ...current, motifsNote: event.target.value })),
           placeholder: 'e.g. warmer light, fewer props'
         }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'The reason is used as mood text for the next set. It is not shown to the image model as a scene description.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'The reason is used as mood text for the next set. It is not shown to the image model as a scene description.' })
       ]
     }, 'reason'))
   }
@@ -34745,10 +38135,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         ? jsx('div', {
             'data-cb-world-primary': primary.id,
             style: { display: 'inline-flex' },
-            children: jsx(CbAction, {
+            children: jsx(PillAction, {
               variant: 'primary',
               disabled: Boolean(busy) || primary.disabled,
-              pending: Boolean(busy) && primary.id === busy,
+              busy: Boolean(busy) && primary.id === busy,
               onClick: () => {
                 if (primary.id === 'concepts') generate('concepts', { brief_patch: patch() })
                 else if (primary.id === 'retry-concepts') generate('concepts', { brief_patch: patch() })
@@ -34765,11 +38155,11 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         ? jsx('div', {
             'data-cb-world-another': '',
             style: { display: 'inline-flex' },
-            children: jsx(CbAction, { variant: 'secondary', disabled: Boolean(busy), onClick: () => generate('concepts', { brief_patch: patch() }), children: 'Try another set' })
+            children: jsx(PillAction, { variant: 'quiet', disabled: Boolean(busy), onClick: () => generate('concepts', { brief_patch: patch() }), children: 'Try another set' })
           }, 'another')
         : null,
-      jsx(CbAction, { variant: 'tertiary', 'data-cb-world-textbook': '', onClick: onClose, children: 'Use Textbook mode' }),
-      jsx(CbAction, { variant: 'tertiary', 'data-cb-world-cancel': '', onClick: onClose, children: 'Cancel' })
+      jsx(PillAction, { variant: 'quiet', 'data-cb-world-textbook': '', onClick: onClose, children: 'Use Textbook mode' }),
+      jsx(PillAction, { variant: 'quiet', 'data-cb-world-cancel': '', onClick: onClose, children: 'Cancel' })
     ]
   }, 'actions'))
 
@@ -34778,10 +38168,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
       'data-cb-world-progress': (job && job.state) || state,
       role: 'status',
       'aria-live': 'polite',
-      style: { display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
       children: [
-        jsx(sdk.Loader, { label: 'Working on the world' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: stateWord }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: stageMessage ? `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` : 'You can leave this open or cancel. No lesson is built until the world is approved.' })
       ]
     }, 'progress'))
   }
@@ -34793,7 +38183,7 @@ function worldField(label, id, value, onChange, placeholder) {
   return jsxs('div', {
     style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
     children: [
-      jsx('label', { htmlFor: id, style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' }, children: label }),
+      jsx('label', { htmlFor: id, style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: label }),
       jsx(sdk.Input, { id, value, onChange: (event) => onChange(event.target.value), placeholder })
     ]
   }, id)
@@ -34812,7 +38202,7 @@ function buildWorldPrimary({ state, busy, generating, providerUnavailable, hasSt
   return { id: 'concepts', label: 'Show me three directions' }
 }
 
-function WorldStudioFrame({ state, onClose, children }) {
+function WorldStudioFrame({ state, onClose, children, heading }) {
   return jsx('div', {
     'data-cb-world-studio-backdrop': '',
     style: {
@@ -34821,7 +38211,7 @@ function WorldStudioFrame({ state, onClose, children }) {
       zIndex: 60,
       display: 'flex',
       justifyContent: 'flex-end',
-      background: 'color-mix(in srgb, var(--cb-ink) 26%, transparent)'
+      background: 'color-mix(in srgb, var(--cb3-forest) 42%, transparent)'
     },
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onClose()
@@ -34836,9 +38226,9 @@ function WorldStudioFrame({ state, onClose, children }) {
         maxWidth: '100%',
         height: '100%',
         overflowY: 'auto',
-        background: 'var(--cb-paper)',
-        color: 'var(--cb-ink)',
-        borderLeft: '1px solid var(--cb-rule)',
+        background: 'var(--cb3-canvas)',
+        color: 'var(--cb3-ink)',
+        borderLeft: '1px solid var(--cb3-rule)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
@@ -34847,16 +38237,21 @@ function WorldStudioFrame({ state, onClose, children }) {
       children: [
         jsx('div', {
           style: { display: 'flex', justifyContent: 'flex-end' },
-          children: jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'ghost',
+          children: jsx(PillAction, {
+            variant: 'quiet',
+            label: 'Close',
             'data-cb-world-studio-close': '',
             'aria-label': 'Close the World Studio',
-            style: { minHeight: '44px' },
-            onClick: onClose,
-            children: 'Close'
+            onClick: onClose
           })
         }),
+        heading
+          ? jsx('h2', {
+              id: 'cb-world-studio-title',
+              style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
+              children: heading
+            }, 'heading')
+          : null,
         ...(Array.isArray(children) ? children : [children])
       ]
     })
@@ -34908,7 +38303,7 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
-      background: 'color-mix(in srgb, var(--cb-ink) 34%, transparent)'
+      background: 'color-mix(in srgb, var(--cb3-forest) 46%, transparent)'
     },
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onCancel()
@@ -34924,20 +38319,19 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
         flexDirection: 'column',
         gap: '0.6rem',
         padding: '1rem 1.1rem 1.1rem',
-        background: 'var(--cb-paper-raised)',
-        border: '1px solid var(--cb-rule)',
-        borderTop: '3px solid var(--cb-lamp)',
-        borderRadius: '2px'
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round')
       },
       children: [
         jsx('h2', {
           id: 'cb-mode-dialog-title',
-          style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
           children: title
         }),
         jsx('p', {
           'data-cb-mode-dialog-body': '',
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink)', maxWidth: '54ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink)', maxWidth: '54ch' },
           children: body
         }),
         jsxs('div', {
@@ -34946,9 +38340,9 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
             jsx('div', {
               'data-cb-mode-primary': primaryId,
               style: { display: 'inline-flex' },
-              children: jsx(CbAction, {
+              children: jsx(PillAction, {
                 variant: 'primary',
-                pending: Boolean(pending),
+                busy: Boolean(pending),
                 onClick: () => {
                   if (primaryId === 'switch') onSwitch()
                   else if (primaryId === 'studio') onOpenStudio()
@@ -34960,8 +38354,8 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
             }),
             primaryId === 'keep' || primaryId === 'generate'
               ? null
-              : jsx(CbAction, { variant: 'secondary', 'data-cb-mode-keep': '', onClick: onKeep, children: 'Keep Textbook' }),
-            jsx(CbAction, { variant: 'tertiary', 'data-cb-mode-cancel': '', onClick: onCancel, children: 'Cancel' })
+              : jsx(PillAction, { variant: 'quiet', 'data-cb-mode-keep': '', onClick: onKeep, children: 'Keep Textbook' }),
+            jsx(PillAction, { variant: 'quiet', 'data-cb-mode-cancel': '', onClick: onCancel, children: 'Cancel' })
           ]
         })
       ]
@@ -35197,6 +38591,51 @@ function CoursebookPage() {
   // a 760 px route, clamp(1.25rem, 3.05cqi, 4rem) above it) and `test_v3_scope` refuses a viewport
   // unit that reaches the rendered element's own style.
 
+  // CP-040 — the classroom route. SPEC-V3 §5.3 makes the section the classroom, and the learner's
+  // presentation mode decides which reading surface that classroom uses: Game and Guided open the
+  // v3 classroom (stepper, section plate, one check), Textbook keeps the reader workspace that owns
+  // the document blocks, pronunciation, the tutor rail and take-home. `openCourse.view` is an
+  // explicit request for one of those views (Plan, Note, a citation handoff) and is never
+  // overridden; a section opened with no view follows the mode.
+  const classroomMode =
+    openCourse && openCourse.row && !openCourse.view && !openCourse.blockId
+      ? cbEffectiveMode(homePrefs, openCourse.row.course_id)
+      : null
+  // The run behind the classroom's no-chat action. It arms the exact run first and only then opens
+  // the chat, so the chat pane's pending binder — not a bare new chat — is what the learner lands
+  // in. A failed `lesson.begin` reports the backend's own code and never falls through to a chat.
+  const startClassroomRun = useCallback(async (course) => {
+    const row = course && course.row
+    const objectiveId = course && course.objectiveId
+    if (!row || !objectiveId) return
+    const profile = currentScope().profile
+    const response = await rpc(
+      'lesson.begin',
+      { enrollment_id: row.enrollment_id, objective_id: objectiveId, mode: 'fresh' },
+      { idempotencyKey: `cb3-classroom-run-${objectiveId}-${newOperationId('run')}` }
+    )
+    if (!response.ok) {
+      host.notify({
+        kind: 'warning',
+        message: `${response.error.code}: ${describeError(response.error)}`
+      })
+      return
+    }
+    armPendingBind({
+      enrollmentId: row.enrollment_id,
+      objectiveId,
+      objectiveTitle: null,
+      lessonRunId: response.result.lesson_run_id,
+      profile
+    })
+    if (!startLessonChat(profile)) {
+      host.notify({
+        kind: 'warning',
+        message: 'This Desktop build cannot open a new chat; start one from the sidebar.'
+      })
+    }
+  }, [])
+
   let body
   if (health.status === 'loading' && !health.result) {
     body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading the Coursebook backend' }) })
@@ -35317,6 +38756,22 @@ function CoursebookPage() {
         setDestination('workshop')
         setOpenCourse({ row, objectiveId: null })
       }
+    })
+  } else if (classroomMode && openCourse.objectiveId) {
+    // CP-040: the classroom's own surface. It is a wired container (its own outline, page, world
+    // and Game engagement reads), so the route hands it identity and navigation only. Back returns
+    // to the course home, a completed section returns there too — the Continue plate names the next
+    // real stop — and a section switch stays inside the classroom.
+    body = jsx(ClassroomV3Surface, {
+      row: openCourse.row,
+      enrollmentId: openCourse.row ? openCourse.row.enrollment_id : null,
+      objectiveId: openCourse.objectiveId,
+      mode: classroomMode,
+      onBack: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onOpenSection: (objectiveId) => setOpenCourse({ ...openCourse, objectiveId, blockId: null }),
+      onNextSection: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onStartChat: () => startClassroomRun(openCourse),
+      onChanged: () => reloadHealth()
     })
   } else if (openCourse) {
     body = jsx(CourseDetail, {
@@ -37682,7 +41137,23 @@ export {
   WorkshopHero,
   WorkshopShelf,
   WorkshopDetail,
-  WorkshopDiscover,
+  WorkshopDiscoverV3,
+  WorkshopDiscoverHead,
+  WorkshopDiscoverFeature,
+  WorkshopDiscoverCard,
+  WorkshopDiscoverRow,
+  WorkshopDiscoverGrid,
+  WorkshopDiscoverSkeleton,
+  WorkshopDiscoverNotice,
+  cb3DiscoverColumns,
+  cb3DiscoverFoxBox,
+  cb3PackCover,
+  cb3PackSections,
+  cb3PackSubject,
+  cb3PackTrustLabels,
+  cb3DiscoverMeta,
+  CB3_DISCOVER_COPY,
+  CB3_TRUST_LABELS,
   WorkshopProvenance,
   WorkshopView,
   workshopFactRows,
@@ -37757,7 +41228,65 @@ export {
   CB3_LAB_COPY,
   cb3Contrast,
   cb3StepRendering,
-  cb3FoxSource
+  cb3FoxSource,
+  // CP-040 — the merge seam. Every v3 component and helper the six wave cards (CP-021, CP-022,
+  // CP-023, CP-024, CP-025a, CP-025b) declared is exported from the module that ships: a surface
+  // may not be mounted on the route without also being renderable from `desktop/plugin.js`, and
+  // the render suites import these names from the built module rather than a test-only copy.
+  // Home (CP-022, 30-home.js)
+  CB_HOME_V3_COPY,
+  CB_HOME_V3_LIMIT,
+  CB_HOME_TAG_MAX_AGE_MS,
+  HomeV3Card,
+  HomeV3Cover,
+  homeCardFacts,
+  homeCardWidth,
+  homeContentWidth,
+  homeCoverArtifactId,
+  homeGutter,
+  homeNewTagSlot,
+  homeNumber,
+  homeShelfColumns,
+  homeShelfLayout,
+  // Classroom (CP-023, 70-learning.js)
+  ClassroomV3,
+  ClassroomV3Surface,
+  ClassroomCheckCard,
+  ClassroomQuietLine,
+  ClassroomScene,
+  CB3_CLASSROOM_COPY,
+  CB3_CLASSROOM_RUBY,
+  CB3_DIALOGUE_LINE,
+  CB3_JAPANESE,
+  CB3_KANJI,
+  classroomCopy,
+  classroomEvidence,
+  classroomLineFromPage,
+  classroomRubySegments,
+  classroomSceneFromWorld,
+  classroomStepNodes,
+  classroomVerdictSentence,
+  modelRevision,
+  // Course home (CP-024, 90-course.js)
+  CourseHomeV3,
+  CourseHeroPlate,
+  CourseHomeAside,
+  CourseRouteList,
+  CourseRouteMapNode,
+  CB3_COURSE_COPY,
+  cb3CourseAnchorPoints,
+  cb3CourseEvidenceLine,
+  cb3CourseHeroPlate,
+  cb3CourseNodes,
+  cb3CoursePlateAnchors,
+  cb3CourseRoutePlan,
+  cb3CourseWorldPosture,
+  // Discover (CP-021, 96-workshop.js)
+  CB3_DISCOVER_BODY,
+  CB3_DISCOVER_HEADING,
+  cb3DiscoverOpenKey,
+  // World Studio (CP-025b, 97-world.js)
+  WorldStudioFrame
 }
 
 export default {

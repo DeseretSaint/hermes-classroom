@@ -1,0 +1,21 @@
+{
+  "stamp_version": 1,
+  "tool": "scripts/cp-capture.mjs",
+  "name": "homework--lesson--1049--light--100",
+  "captured_at": "2026-11-10T23:48:27.270Z",
+  "ok": false,
+  "stage": "destination",
+  "reasons": [
+    "requested destination #/learn/obj_abd7964162db49ad892ee1b3a63adf21 has no addressable control on the current surface ([data-cb-section-row=\"obj_abd7964162db49ad892ee1b3a63adf21\"])"
+  ],
+  "gates": {},
+  "plugin": null,
+  "route": null,
+  "destination": {
+    "requested": "#/learn/obj_abd7964162db49ad892ee1b3a63adf21",
+    "normalized": "learn/obj_abd7964162db49ad892ee1b3a63adf21",
+    "controls": [],
+    "rendered": null,
+    "match": null
+  }
+}

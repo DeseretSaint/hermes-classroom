@@ -20,7 +20,10 @@ from pathlib import Path
 
 from coursebook import bindings, db, hooks, lesson_skills
 
-from .kernel_support import KernelCase
+# ``discover -s tests`` imports this module top-level (no parent package), so the relative form
+# raises ImportError there and the suite counts a loader error as a failure. The package form is
+# used, as every other module in ``tests/`` does.
+from tests.kernel_support import KernelCase
 
 ROOT = Path(__file__).resolve().parent.parent
 
