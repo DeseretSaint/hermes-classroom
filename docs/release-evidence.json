@@ -5,27 +5,33 @@
   "branch": "master",
   "merge_commit": "b9f4a197e42e4f033298d94608fcb5b63640b094",
   "measured_by": "H-212 (t_48394407)",
+  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2880,
-    "skipped": 1,
-    "seconds": 540.226,
-    "verdict": "OK (skipped=1)",
-    "note": "re-measured on the merged GM-005 tree (origin/master 3fb3779, which carries GM-009's engagement methods, GM-011's tutor and GM-014's homework-print tests, plus the GM-005 take-home work, cb.rpc v23 / cb.db v14): Ran 2880 tests, OK (skipped=1). The measured_commit, plugin pin and M4 block below remain the b9f4a19 measurement they describe; the suite count tracks the tree the release gate reads."
+    "measured_commit": "7130109135851ee9dd57b3d4d5cafa09ccccd48c",
+    "measured_commit_short": "7130109",
+    "measured_at": "2026-11-10",
+    "ran": 3486,
+    "skipped": 11,
+    "seconds": 1356.895,
+    "verdict": "OK (skipped=11)",
+    "note": "re-measured on master at 7130109 (the CP-049 audit re-pin plus the CP-044 merge, over 19fec67) for gate 8 (t_12c5410e): Ran 3486 tests in 1356.895s, OK (skipped=11), exit 0. The previous record's 2880 tests / skipped=1 was measured on the merged GM-005 tree over origin/master 3fb3779; the 606-test drift since then is CP-014, CP-020a, CP-020b, CP-030, CP-031, CP-044 and the other merges that added tests, and the skip count grew with them. The commit named here is the code tree that was measured; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count. measured_commit above and the plugin pin and M4 block below remain the b9f4a19 release-tree measurement they describe; this block names its own tree."
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 23,
-    "declared_methods": 83,
-    "handlers": 83,
-    "note": "re-asserted on the merged GM-005 tree (origin/master 3fb3779 carrying GM-009's engagement pair in v21, GM-011's tutor pair in v22, plus the GM-005 take-home work): contracts/rpc.v23.json declares 83 methods (the 77 of published v22 including engagement.read/engagement.award and tutor.ask/tutor.history, plus the six takehome.* methods); coursebook/contracts.py WIRE_CONTRACT_VERSION = 23; coursebook/api.py METHOD_HANDLERS holds 83 after importing every registering module (domain, pack_flow, pronunciation, syllabus, takehome), with no declared method lacking a handler and no handler outside the contract. contracts/rpc.v22.json is byte-identical to origin/master (sha256 c187728add6c508d5643e42225a64766d4b887cfce58250fb45d04707b6eb956) and x-supersedes names it."
+    "version": 25,
+    "measured_commit": "7130109135851ee9dd57b3d4d5cafa09ccccd48c",
+    "declared_methods": 93,
+    "handlers": 93,
+    "note": "re-asserted on master at 7130109 for gate 8 (t_12c5410e): contracts/rpc.v25.json declares 93 methods and `x-supersedes` names contracts/rpc.v24.json; coursebook/contracts.py WIRE_CONTRACT_VERSION = 25; coursebook/api.py METHOD_HANDLERS holds 93 after importing every registering module (domain, pack_flow, pronunciation, syllabus, takehome, world/homework), with no declared method lacking a handler and no handler outside the contract. v25 is one additive amendment over v24 (CP-005): the `library_item` record gains seven required properties (sections_done, sections_total, checks_recorded, is_new, subject_label, cover_artifact_id, last_studied_at) and no method, request shape, existing required key, error code, job kind or vocabulary value moves. v24 is the composed additive amendment over v23 that appends ten methods: GM-004's world.read/world.style.preview/world.generate/world.approve plus course.mode.set, GM-007's homework.read/homework.create/homework.complete/homework.skip, and GM-018's takehome.html. The record's previous 83 methods / v23 was the GM-005 tree; contracts/rpc.v23.json and rpc.v24.json stay on disk as immutable history."
   },
   "db": {
     "contract": "cb.db",
     "version": 14,
+    "measured_commit": "7130109135851ee9dd57b3d4d5cafa09ccccd48c",
     "schema_version": 14,
     "migrations": "0001-0014",
-    "note": "re-asserted on the GM-005 tree (stacked on origin/master 5721389): coursebook/db.py DB_SCHEMA_VERSION = 14; contracts/db.v14.json schema_version 14; migrations 0001_initial.sql through 0014_takehome_pack_revision_scope.sql. v13 carries GM-001's nullable courses.presentation_mode plus eight Game Mode tables; v14 is additive over v13 in inventory and removes exactly one unique key from takehome_packs by drop-and-rename rebuild, with rows and indexes preserved and no backfill. contracts/db.v13.json stays byte-identical and pinned. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
+    "note": "re-asserted on master at 7130109 for gate 8 (t_12c5410e): coursebook/db.py DB_SCHEMA_VERSION = 14; contracts/db.v14.json schema_version 14; migrations 0001_initial.sql through 0014_takehome_pack_revision_scope.sql. v13 carries GM-001's nullable courses.presentation_mode plus eight Game Mode tables; v14 is additive over v13 in inventory and removes exactly one unique key from takehome_packs by drop-and-rename rebuild, with rows and indexes preserved and no backfill. contracts/db.v13.json stays byte-identical and pinned. The suite, module pin and M4 values in this record stay the b9f4a19 measurement; this block tracks the tree the release gate reads."
   },
   "plugin": {
     "path": "desktop/plugin.js",
@@ -43,12 +49,13 @@
     "overflow_px": 0,
     "animated_nodes_reduced": 0,
     "animated_nodes_full": 70,
-    "source": "audit/visual/m4-visual/audit.json regenerated by python3 scripts/m4v-audit.py in the H-203 pass on ab6dc7e, the settled H-209 tree (H-208 union plus H-182/D8, H-182/D6, validator-reject, private test node_modules). The audit is pinned by plugin_sha256 cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516, which is unchanged on the frozen tree b9f4a19, so the pin still names this tree's module and the audit was not regenerated. 15/15 claims PASS, 62 frames, 2120 measured text nodes over the 56 non-forced frames, 298 AX controls over the 32 frames with an accessibility tree, 0 unnamed, worst authored contrast 5.93:1, 0 clipped text, 0 px horizontal overflow. C-08: 0 animated nodes in the four reduced-motion frames against 70 in the full-motion frames."
+    "source": "audit/visual/m4-visual/audit.json, regenerated by python3 scripts/m4v-audit.py in the H-203 pass on ab6dc7e, the settled H-209 tree (H-208 union plus H-182/D8, H-182/D6, validator-reject, private test node_modules). The audit was regenerated after that — for CP-020a 45c7d972 (merge 67ca98b), CP-020b 1aa11577, CP-043 04452231, and the module this tree ships, 4087908c (2026-11-10) — and each regeneration changed only generated_at, the recorded branch and plugin_sha256, so every measurement below reproduced unchanged; the committed audit now names the shipped module. The pin this record carries is the b9f4a19 cd862140 measurement (unchanged from ab6dc7e), and re-pinning it to the shipped module is the remaining freeze step. 15/15 claims PASS, 62 frames, 2120 measured text nodes over the 56 non-forced frames, 298 AX controls over the 32 frames with an accessibility tree, 0 unnamed, worst authored contrast 5.93:1, 0 clipped text, 0 px horizontal overflow. C-08: 0 animated nodes in the four reduced-motion frames against 70 in the full-motion frames."
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
     "plugin_sha256": "cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516",
+    "note": "the reproducibility pair was run at cd862140; the later regenerations (45c7d972, 1aa11577, 04452231, 4087908c) each rewrote only generated_at, branch and the pin, which is the same thing the pair proves across two runs: every measurement and screenshot reproduced unchanged.",
     "reference_time": "2026-11-07T10:00:00.000Z"
   },
   "adversarial_state": {

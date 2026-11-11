@@ -16,7 +16,9 @@ without rendering a browser:
      the module rather than copied from the doc;
   7. every historical plugin pin in release-evidence.json is the real hash at the
      commit the record attributes it to;
-  8. optionally (default on) the suite still reports the recorded test count.
+  8. every 64-hex desktop/plugin.js sha256 a release document quotes is the module's real
+     hash, verified against the commit its passage names (or against module history);
+  9. optionally (default on) the suite still reports the recorded test count.
 
 Usage:
   python3 scripts/check-docs-truth.py              # full check, re-runs the suite
@@ -44,6 +46,8 @@ DOCS = {
     "docs/SUBMISSION.md": REPO / "docs" / "SUBMISSION.md",
     "docs/INSTALL.md": REPO / "docs" / "INSTALL.md",
     "docs/M4-VISUAL-MEDIA-AUDIT.md": REPO / "docs" / "M4-VISUAL-MEDIA-AUDIT.md",
+    "docs/RELEASE-EVIDENCE.md": REPO / "docs" / "RELEASE-EVIDENCE.md",
+    "docs/HARNESS-STATUS.md": REPO / "docs" / "HARNESS-STATUS.md",
 }
 
 # Prompt labels are runtime constants, not prose. The doc must name the labels the module
@@ -116,6 +120,47 @@ def git_blob_sha(path_in_commit: str, commit: str) -> str:
         fail(f"git cat-file failed for {commit}:{path_in_commit}: {shown.stderr.strip()}")
         return ""
     return hashlib.sha256(shown.stdout.encode()).hexdigest()
+
+
+def git_blob_sha_bytes(path_in_commit: str, commit: str) -> str:
+    """sha256 of a blob exactly as git stores it (no text decode/re-encode)."""
+    shown = subprocess.run(
+        ["git", "cat-file", "-p", f"{commit}:{path_in_commit}"],
+        cwd=str(REPO),
+        capture_output=True,
+    )
+    if shown.returncode != 0:
+        return ""
+    return hashlib.sha256(shown.stdout).hexdigest()
+
+
+def resolve_commit(token: str) -> str:
+    """Full 40-hex commit id for a short or full token, or '' when it is not a commit."""
+    shown = run(["git", "rev-parse", "--verify", "--quiet", f"{token}^{{commit}}"])
+    return shown.stdout.strip() if shown.returncode == 0 else ""
+
+
+_PLUGIN_PIN_INDEX: dict[str, str] | None = None
+
+
+def plugin_pin_index() -> dict[str, str]:
+    """Every sha256 desktop/plugin.js has ever had on a reachable commit.
+
+    Built once, lazily: it is only needed for a quoted pin whose passage names no commit
+    that carries it, so an attributed pin costs one `git cat-file` and nothing else.
+    """
+    global _PLUGIN_PIN_INDEX
+    if _PLUGIN_PIN_INDEX is not None:
+        return _PLUGIN_PIN_INDEX
+    index: dict[str, str] = {}
+    history = run(["git", "rev-list", "--all", "--", "desktop/plugin.js"])
+    for commit in history.stdout.split():
+        sha = git_blob_sha_bytes("desktop/plugin.js", commit)
+        if sha:
+            index.setdefault(sha, commit)
+    _PLUGIN_PIN_INDEX = index
+    return index
+
 
 
 def read_evidence() -> dict:
@@ -265,6 +310,72 @@ def check_docs(ev: dict) -> None:
     notes.append("documents quote the recorded values and no stale string")
 
 
+HASH64_RE = re.compile(r"\b[0-9a-f]{64}\b")
+COMMIT_TOKEN_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+
+
+def check_doc_plugin_pins() -> None:
+    """Every 64-hex desktop/plugin.js pin a release document quotes must be the real module.
+
+    A pin's passage (the markdown block it sits in) is the attribution scope. If the
+    passage names a commit whose desktop/plugin.js hashes to the quoted value, the pin is
+    attributed and verified against that commit. A passage that names no such commit (a
+    pin identified by a card id or tree label instead) still has to be a real hash the
+    module has carried on some reachable commit, so a mutated hex digit cannot pass as a
+    historical label. Anything else is a fabricated pin and fails.
+
+    This is the check that the commit-existence rule cannot make: a 64-hex sha256 is not a
+    git object id, so `git cat-file -e <sha>^{commit}` never saw it.
+    """
+    checked = 0
+    attributed = 0
+    for name, path in DOCS.items():
+        if not path.exists():
+            continue
+        for block in re.split(r"\n\s*\n", path.read_text()):
+            if "desktop/plugin.js" not in block:
+                continue
+            commits: list[str] = []
+            for token in COMMIT_TOKEN_RE.findall(block):
+                full = resolve_commit(token)
+                if full and full not in commits:
+                    commits.append(full)
+            for pin in sorted(set(HASH64_RE.findall(block))):
+                carriers = [
+                    c for c in commits
+                    if git_blob_sha_bytes("desktop/plugin.js", c) == pin
+                ]
+                if carriers:
+                    checked += 1
+                    attributed += 1
+                    continue
+                index = plugin_pin_index()
+                if pin in index:
+                    checked += 1
+                    notes.append(
+                        f"{name}: pin {pin[:8]}… names no commit in its passage; it is the "
+                        f"real desktop/plugin.js hash at {index[pin][:7]}"
+                    )
+                    continue
+                named = (
+                    ", ".join(
+                        f"{c[:7]} carries "
+                        f"{git_blob_sha_bytes('desktop/plugin.js', c)[:8]}…"
+                        for c in commits[:4]
+                    )
+                    or "no commit is named in the passage"
+                )
+                fail(
+                    f"{name}: sha256 {pin[:8]}… is quoted as the desktop/plugin.js pin but "
+                    f"is not that file's hash at any reachable commit ({named})"
+                )
+    if checked:
+        notes.append(
+            f"{checked} quoted desktop/plugin.js pin(s) verified "
+            f"({attributed} against the commit their passage names)"
+        )
+
+
 def check_prompt_versions() -> None:
     """docs/GENERATION.md must quote the prompt labels coursebook/generation.py emits.
 
@@ -365,6 +476,7 @@ def main() -> int:
     check_measured_commit(ev)
     check_contracts(ev)
     check_docs(ev)
+    check_doc_plugin_pins()
     check_prompt_versions()
     check_historical_pins(ev)
     if not args.skip_tests:
