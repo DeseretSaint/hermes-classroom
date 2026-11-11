@@ -14,14 +14,14 @@ This is a red result. Nothing here may be described as high quality, and no surf
 | | |
 |---|---|
 | Branch | `wt/cp-015c-ja` |
-| Run commit | `RUN_COMMIT` (evidence, driver, packet, tests) |
-| Head at review | `HEAD_COMMIT` |
+| Run commit | `33f44287` (driver, evidence, packet, tests, regenerated record) |
+| Head at review | `33f44287` plus the packet-only revision that first carries this line |
 | Lineage | CP-015b `ddf32b52` + master `c054f977` + CP-015e `3dd1665a` + CP-015f `8ba13d52`/`39450d2e` + CP-015g `650bc605` + CP-015h `24897ed3` + **CP-015j merged** (`f70591dd` → merge commit below) |
 | Pushed | no |
 | Published | no |
 
 `coursebook/*.py` changes only by merging cinder's fixes (CP-015g, CP-015h, CP-015j); nothing in the
-kernel was authored here. CP-015j was merged at `MERGE_COMMIT`.
+kernel was authored here. CP-015j was merged at `b8d4ad21`.
 
 ## 2. The plan — approved
 
