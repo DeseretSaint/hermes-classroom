@@ -85,3 +85,42 @@ copy and duplication are carded as a post-submission product defect.
 
 The film is **not approved for upload** until DeseretSaint signs the row above. That is `docs/SUBMISSION.md`
 §0 and gate 13; this file records the measurement, it does not grant the approval.
+
+
+## Voiced cut — `coursebook-demo-voiced.mp4`
+
+The file posted to X carries a narration layer over the same 51.000000 s picture. Measured on the
+muxed file:
+
+```
+$ ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_type,codec_name,channels,sample_rate -of default=noprint_wrappers=1 coursebook-demo-voiced.mp4
+codec_name=h264
+codec_type=video
+codec_name=aac
+codec_type=audio
+sample_rate=48000
+channels=2
+duration=51.000000
+size=3029291
+
+$ ffmpeg -hide_banner -i coursebook-demo-voiced.mp4 -af ebur128 -f null -
+  Integrated loudness:
+    I:         -14.9 LUFS
+  True peak:
+    Peak:       -4.5 dBFS
+
+$ sha256sum coursebook-demo-voiced.mp4
+7b7de967e2a245e2787c5408412178c4a97cb1722ea286fd5617b93df340cbaa  coursebook-demo-voiced.mp4
+```
+
+| Check | Required | Measured | Verdict |
+| --- | --- | --- | --- |
+| Duration under 90 s | < 90.0 s | 51.000000 s | PASS |
+| Loudness | −14 LUFS | **−14.9 LUFS** | PASS |
+| True peak | ≤ −1 dBTP | −4.5 dBFS | PASS |
+| Audio | AAC LC 192k 48 kHz | `aac`, 2 ch, 48000 Hz | PASS |
+
+Narration is synthesised (OpenAI TTS), slowed to 0.88 and delayed 3.6 s so it sits inside the
+picture: it starts under the Home beat, not over the title card. `loudnorm=I=-14:TP=-1.5:LRA=11`
+was applied at mux time; the integrated figure above is the post-mux measurement, not the target.
+The silent `coursebook-demo-90s.mp4` remains in the tree as the picture-only master.
