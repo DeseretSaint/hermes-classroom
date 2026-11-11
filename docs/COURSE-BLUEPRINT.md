@@ -630,54 +630,69 @@ tautology (it compares the seven-state set with itself, `tests/test_adversarial_
 and therefore pins nothing beyond the two `_objective_state_after` assertions that follow it; the
 implementing card must replace it with the R5/R7 assertions above rather than treat it as coverage.
 
-## 15. Language goals with no declared locale (H-44, 2026-11-07)
+## 15. Undeclared subject domains: resolved from the goal, never from the locale (H-44, CP-015g/D1-F2)
 
-`docs/GENERIC-ACCEPTANCE-AUDIT.md` finding D4: the goal "Order a meal at a restaurant in
-Spanish", with no `locale` and no `subject_domain`, was authored as `general`. The policy had
-nothing to route on and nothing said so. This section freezes the choice made for H-44.
+`docs/GENERIC-ACCEPTANCE-AUDIT.md` finding D4: the goal "Order a meal at a restaurant in Spanish",
+with no `locale` and no `subject_domain`, was authored as `general`. The policy had nothing to route
+on and nothing said so. H-44 recorded the fallback. CP-015g then found the mirror defect: with a
+`locale` declared and no `subject_domain`, the domain resolved to the locale default `language`, so
+the hands-on goal "Set up a small backyard telescope and find and observe the moons of Jupiter on a
+clear night" was handed a language-course curriculum brief and language-course research queries, and
+the plan author had to ignore both (`docs/cp015g-d1-f1/`). This section freezes the resolution that
+replaces both behaviours.
 
 ### 15.1 The decision
 
-**The authoring rule is unchanged; the fallback is now part of the record.** A brief that declares
-neither `locale` nor `subject_domain` still resolves to `general`. The plan job's result — and the
-`cb.jobs` checkpoint that carries it — now contains `domain_provenance`:
+`curriculum.resolve_domain(goal=…, domain=…, locale=…)` is the one resolver. It returns the
+resolved `domain` (a key of `CURRICULUM_PROFILES`), the `source` of the decision, the declared
+inputs, and — for an inferred or default choice — the machine-readable `inferred_from` and/or a
+human `note`:
 
 | `source` | when | `resolved_domain` |
 |---|---|---|
-| `declared` | the brief declared `subject_domain` | that domain |
-| `declared_locale` | the brief declared `locale`, no domain | `language` |
-| `default` | the brief declared neither | `general` |
+| `declared` | the brief declared `subject_domain` (canonicalised by `policy.normalise_subject_domain`) | that domain |
+| `inferred` | no domain declared; the goal asks the learner to carry out a physical act | `technical_procedure` |
+| `inferred` | no domain declared; the goal asks the learner to learn or use a named target language, and a locale is declared | `language` |
+| `default` | nothing above matches | `general` |
 
-`target_language` is the primary subtag of a declared locale (or `null`), and `locale` is echoed on
-the result. Only `default` carries a human `note`, and the same sentence is appended to the
-result's `warnings`:
+The rule that matters: **`language` is never reachable by omission.** A caller that omits the
+subject domain and never names a target language gets `general`, whatever the locale says. The locale
+is the language of delivery, not the subject of the course.
 
-> no locale and no subject domain were declared, so this course is authored as a general course:
-> the domain is the default, not a content decision. If the goal is a language goal, declare its
-> locale to author a language course.
+The brief and the research pass use this resolver and only this resolver, so the profile the research
+uses and the profile the author is told about are the same profile. The brief carries `domain`,
+`domain_source` and `declared_subject_domain`; the plan prompt states an inferred domain as
+`Subject domain: <domain> (inferred from the goal; the brief declared none)`; the validator receives
+the same brief; `research.derive_queries` derives its subject qualifier from the same resolution. The
+plan job's result and `cb.jobs` checkpoint carry `domain_provenance` (`source`, `resolved_domain`,
+`declared_subject_domain`, `declared_locale`, `target_language`, plus `inferred_from`/`note` where
+they apply). `target_language` stays the locale's primary subtag ("es"), as H-44 defined it.
 
-H-44 deliberately did **not** infer a language from the goal text. The pipeline's standing rule is
-that it never infers a level or a domain from a phrase it does not understand; a regex that turned
-"read Spanish colonial history" into a Spanish course would be a worse defect than the silent
-default. A learner who names Spanish in the goal declares `locale: es-MX` (or `es`) and gets the
-language route, locale scaffolds and audio the capability policy already owns.
+Only the `default` case appends its note to the result's `warnings`; an inferred domain is recorded
+but is not a warning, because the goal named it. A goal that names a language with no declared locale
+resolves to `general` with a note saying a language course needs a declared target language.
 
-### 15.2 What changes for a parent or learner
+### 15.2 Why inference replaced "never infer"
 
-On the run record only: nothing in the authored plan, the plan hash, the lesson pages or the
-approval gate changes. A parent who left the locale blank sees the default sentence on the job
-result instead of discovering later that a language goal became a general course. The Desktop
-copy for this surface is out of scope for H-44 (`plugin.js` is unchanged); the record is the
-contract-side evidence, and a later UI card may render it.
+H-44 declined to infer a language from goal text, on the ground that a regex turning "read Spanish
+colonial history" into a Spanish course would be a worse defect than a silent default. That argument
+against a *language-only* regex is correct and is kept: a goal about a language's history, culture,
+literature, politics, economy, geography or arts is not a language course, and the language-learning
+word list wins only over the content framing, never over a declared domain. But doing nothing left
+the locale as an implicit language switch, and that is the defect CP-015g measured. Inferring a
+*coarse* domain from two positive signals — a performed physical act, or an explicit request to learn
+or use a named language — is bounded, deterministic, replayable, and recorded as inferred rather than
+passed off as the caller's declaration.
 
 ### 15.3 Tests
 
-`tests/test_generation.py::LanguageGoalDomainProvenanceTest`:
+* `tests/test_cp015g_domain_default.py` — undeclared domain + hands-on goal (brief, queries, plan
+  prompt and validator payload); undeclared domain + language goal; a language goal without a locale;
+  a locale alone never producing a language course; "read Spanish colonial history" not becoming a
+  Spanish course; a declared domain unchanged (including the alias table); and a parent brief.
+* `tests/test_generation.py::HandsOnGoalDomainProvenanceTest` — the plan job's run record names the
+  inferred `technical_procedure` domain, writes no declared domain back, and hands the author and the
+  validator the procedure brief.
+* `tests/test_generation.py::LanguageGoalDomainProvenanceTest` — the H-44 cases, updated to the
+  `inferred` source.
 
-1. `test_language_goal_without_locale_records_the_general_default` — the Spanish goal with no
-   locale resolves to `general`, `source = default`, and the note is in `warnings`.
-2. `test_language_goal_with_locale_records_the_declared_locale` — the same goal with `es-MX`
-   resolves to `language`, `source = declared_locale`, `target_language = es`, and no default
-   warning is invented.
-3. `test_the_two_records_differ_in_the_returned_value_not_a_log` — the difference is asserted on
-   the returned record, not on log output.

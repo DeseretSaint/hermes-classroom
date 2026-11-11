@@ -674,11 +674,13 @@ def derive_queries(
     if not base:
         raise ValueError("cannot derive research queries from an empty goal")
     depth = normalize_depth(dials.get("depth"))
-    domain = (
-        policy.normalise_subject_domain(subject_domain, locale)
-        if subject_domain and str(subject_domain).strip()
-        else None
-    )
+    # CP-015g/D1-F2: the research pass resolves the domain with the same function the curriculum
+    # brief uses, from the same goal, so a language query is only ever derived for a course the
+    # author is also told is a language course. An undeclared domain no longer falls through to
+    # the locale's language.
+    resolution = curriculum.resolve_domain(goal=base, domain=subject_domain, locale=locale)
+    domain = resolution["domain"]
+    domain_source = resolution["source"]
     queries = [base]
     if depth != "survey":
         qualifier = _domain_qualifier(domain, level)
@@ -720,8 +722,9 @@ def derive_queries(
     if depth == "deep":
         # A declared non-language domain is never researched as a language question, even
         # when the delivery locale is set. The language query is kept early so a bounded
-        # budget cell can never truncate it away.
-        if locale and (domain is None or domain == "language"):
+        # budget cell can never truncate it away. A brief that declared no domain and named no
+        # subject keeps it too: there the locale is the only routing signal the caller gave.
+        if locale and (domain == "language" or domain_source == "default"):
             queries.append(f"{base} {_language_name(locale)} reference")
         queries.append(f"{base} reference documentation")
         queries.append(f"{base} official guidance")

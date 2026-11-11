@@ -314,7 +314,10 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # v10 (CP-015g/D1-F1): the plan-validation payload carries the curriculum brief's typed
         # ``performance`` block; the instruction text is unchanged, the payload a label is keyed
         # to is not.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v10")
+        # v11 (CP-015g/D1-F2): the payload also carries the resolved subject domain and its
+        # ``domain_source`` (declared, inferred or default), so the validator judges the plan
+        # against the same profile the author was given.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v11")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

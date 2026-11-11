@@ -198,10 +198,12 @@ logger = logging.getLogger("coursebook.generation")
 #: v19 (CP-015g/D1-F1): the evidence-family rule (a check's ``kind`` follows the objective's
 #: evidence target, and only recall/comprehension/discrimination may be evidenced by a quiz), the
 #: casual self-check form rule, and the objective claim-link rule (``source_ids`` are set only
-#: with a verbatim ``source_quote`` copied from a cited excerpt). The rules live in the shared
-#: ``_plan_sourcing_rules`` / plan-instruction text, so both plan labels advance; v18 is the
-#: blueprint prompt's number.
-PLAN_PROMPT_VERSION = "plan-prompt.v19"
+#: with a verbatim ``source_quote`` copied from a cited excerpt).
+#: v21 (CP-015g/D1-F2): the brief may state a subject domain inferred from the goal, with the
+#: source of that decision named, so the author is told the profile the research actually used;
+#: the second D1-F2 rule (a named orthography or metalanguage is a language goal) states the same
+#: shared line. Both are changes to the instruction text, so the label advances twice.
+PLAN_PROMPT_VERSION = "plan-prompt.v21"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -215,9 +217,10 @@ PLAN_PROMPT_VERSION = "plan-prompt.v19"
 #: v14: the ledger-first authoring rule, the short-course rule and the exclusions record (CP-015).
 #: v18 (CP-015a): same exclusions/outcome-integrity rule as the v1 prompt's v17 — the shared
 #: ``_plan_sourcing_rules`` text changed, so both labels advance.
-#: v20 (CP-015g/D1-F1): the same evidence-family, casual-self-check-form and claim-link rules as
-#: the v1 prompt's v19, stated for the blueprint plan. v19 is the v1 prompt's number.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v20"
+#: v20 (CP-015g/D1-F1): the evidence-family, casual-self-check-form and claim-link rules.
+#: v22 (CP-015g/D1-F2): the inferred-subject-domain line and the named-orthography/metalanguage
+#: language-goal rule, the same two shared-text changes as the v1 prompt's v21.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v22"
 #: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
 #: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
 #: rule — an owner section copies its objective's source ids, a review section cites the union of
@@ -281,7 +284,10 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v11"
 #: ``performance`` block (the goal asks the learner to carry out a physical act, so the plan must
 #: evidence the act). The instruction text is unchanged; the payload a version is keyed to is not,
 #: and a label is recorded in stored validation bindings, so the label advances.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v10"
+#: v11 (CP-015g/D1-F2): the plan-validation payload now carries the curriculum brief's resolved
+#: subject domain and its ``domain_source`` (declared, inferred or default), so the validator
+#: judges the plan against the same profile the author was given. Instruction text unchanged.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v11"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -3717,54 +3723,47 @@ def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
 
 
 def _domain_provenance(
-    *, subject_domain: str | None, locale: str | None
+    *, goal: str | None = None, subject_domain: str | None, locale: str | None
 ) -> dict[str, Any]:
-    """How this course's domain was chosen, for the run record (H-44).
+    """How this course's domain was chosen, for the run record (H-44, CP-015g/D1-F2).
 
-    The pre-v10 rule in :func:`policy.normalise_subject_domain` is unchanged: a declared subject
-    domain wins, a declared locale with no domain routes to ``language``, and neither means
-    ``general``. The defect this records is that the ``general`` fallback was indistinguishable
-    from a deliberate general course. ``source`` names which case a caller is looking at:
+    The domain is resolved by :func:`curriculum.resolve_domain`, the same call the curriculum
+    brief and the research pass make, so the record names the profile the run actually used.
+    ``source`` names which case a caller is looking at:
 
     * ``declared`` — the brief declared a subject domain;
-    * ``declared_locale`` — the brief declared a locale and no domain;
-    * ``default`` — the brief declared neither, so the course is authored as ``general``.
+    * ``inferred`` — the brief declared none, so the domain was read from the goal (a performed
+      physical act is ``technical_procedure``; a goal that asks the learner to learn or use a
+      target language, with a declared locale, is ``language``);
+    * ``default`` — nothing in the goal or the brief names a subject, so the course is authored
+      as ``general``.
 
-    Only ``default`` carries a human ``note``; it is also appended to the result's warnings, so a
-    language goal that named no locale is never *silently* authored as a general course.
+    ``inferred`` and ``default`` carry a machine-readable ``inferred_from`` and/or a human
+    ``note``; only ``default`` is appended to the result's warnings, because that is the case the
+    caller may not have intended. A language course is never produced by omitting the domain.
     """
     declared_locale = locale if isinstance(locale, str) and locale.strip() else None
-    resolved = capability_policy.normalise_subject_domain(subject_domain, declared_locale)
-    if subject_domain:
-        return {
-            "resolved_domain": resolved,
-            "declared_subject_domain": subject_domain,
-            "declared_locale": declared_locale,
-            "target_language": (
-                localization.primary_language(declared_locale) if resolved == "language" else None
-            ),
-            "source": "declared",
-        }
-    if declared_locale:
-        return {
-            "resolved_domain": resolved,
-            "declared_subject_domain": None,
-            "declared_locale": declared_locale,
-            "target_language": localization.primary_language(declared_locale),
-            "source": "declared_locale",
-        }
-    return {
-        "resolved_domain": resolved,
-        "declared_subject_domain": None,
-        "declared_locale": None,
-        "target_language": None,
-        "source": "default",
-        "note": (
-            "no locale and no subject domain were declared, so this course is authored as a "
-            "general course: the domain is the default, not a content decision. If the goal is a "
-            "language goal, declare its locale to author a language course."
+    resolved = curriculum.resolve_domain(
+        goal=goal, domain=subject_domain, locale=declared_locale
+    )
+    record: dict[str, Any] = {
+        "resolved_domain": resolved["domain"],
+        "declared_subject_domain": resolved["declared_subject_domain"],
+        "declared_locale": resolved["declared_locale"],
+        # The run record keeps the contract's primary subtag ("es"), not the human name the
+        # curriculum brief uses; a resolved non-language course carries no target language.
+        "target_language": (
+            localization.primary_language(resolved["declared_locale"])
+            if resolved["domain"] == "language" and resolved["declared_locale"]
+            else None
         ),
+        "source": resolved["source"],
     }
+    if resolved.get("inferred_from"):
+        record["inferred_from"] = resolved["inferred_from"]
+    if resolved.get("note"):
+        record["note"] = resolved["note"]
+    return record
 
 
 #: The typed Parent Studio brief fields that reach the plan model. Internal routing keys and the
@@ -4309,15 +4308,20 @@ def _plan_instructions(
         "or listened to. The capability policy re-checks every declaration and rejects a role "
         "this lesson cannot carry."
     )
-    curriculum_domain = (
-        capability_policy.normalise_subject_domain(subject_domain, locale)
-        if subject_domain and str(subject_domain).strip()
-        else None
+    resolved_domain = curriculum.resolve_domain(
+        goal=goal, domain=subject_domain, locale=locale
     )
+    if resolved_domain["source"] == "inferred":
+        # The brief declared no subject domain and the goal named one. State it as inferred so
+        # the author never reads the profile below as the caller's declaration.
+        lines.append(
+            f"Subject domain: {resolved_domain['domain']} (inferred from the goal; the brief "
+            "declared none). This is what the course is about, not the language it is delivered in."
+        )
     lines.extend(
         curriculum.curriculum_prompt_lines(
             curriculum.curriculum_brief(
-                domain=curriculum_domain,
+                domain=subject_domain,
                 locale=locale,
                 level=level,
                 recipe=recipe,
@@ -4496,15 +4500,20 @@ def _plan_instructions_v2(
                     + ", ".join(str(item) for item in materials[:20])
                     + ". Do not require a material the brief did not list."
                 )
-    curriculum_domain = (
-        capability_policy.normalise_subject_domain(subject_domain, locale)
-        if subject_domain and str(subject_domain).strip()
-        else None
+    resolved_domain = curriculum.resolve_domain(
+        goal=goal, domain=subject_domain, locale=locale
     )
+    if resolved_domain["source"] == "inferred":
+        # The brief declared no subject domain and the goal named one. State it as inferred so
+        # the author never reads the profile below as the caller's declaration.
+        lines.append(
+            f"Subject domain: {resolved_domain['domain']} (inferred from the goal; the brief "
+            "declared none). This is what the course is about, not the language it is delivered in."
+        )
     lines.extend(
         curriculum.curriculum_prompt_lines(
             curriculum.curriculum_brief(
-                domain=curriculum_domain,
+                domain=subject_domain,
                 locale=locale,
                 level=level,
                 recipe=recipe,
@@ -7384,28 +7393,30 @@ def build_plan_request(
     # dict is honoured here without ever writing them back into ``dials``.
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
-    normal_domain = (
-        capability_policy.normalise_subject_domain(declared_domain, locale)
-        if declared_domain and str(declared_domain).strip()
-        else None
+    # CP-015g/D1-F2: one resolution decides the domain the brief states, the research pass asks
+    # about and the capability policy gates on. An undeclared domain is inferred from the goal or
+    # falls back to `general`; it never falls through to the locale's `language`.
+    resolved_domain = curriculum.resolve_domain(
+        goal=goal, domain=declared_domain, locale=locale
     )
     curriculum_brief = curriculum.curriculum_brief(
-        domain=normal_domain,
+        domain=declared_domain,
         locale=locale,
         level=declared_level,
         recipe=recipe,
         goal=goal,
     )
     # The plan-time capability decision: the same deterministic function the lesson stage
-    # calls, computed for the plan's own declared inputs. At plan time no lesson intent exists
-    # yet, so the decision refuses media; its reasons tell the author what the domain permits.
+    # calls, computed for the plan's own resolved subject domain. At plan time no lesson intent
+    # exists yet, so the decision refuses media; its reasons tell the author what the domain
+    # permits.
     capability = capability_policy.plan_lesson_capability(
         recipe=recipe,
         evidence_target="comprehension",
         lesson_intent="",
         locale=locale,
         level=declared_level,
-        subject_domain=declared_domain,
+        subject_domain=resolved_domain["domain"],
     )
     pages = desired_pages(parent_brief) if recipe == "parent" else None
     # The blueprint schema is used when the brief declares a scope: the three-scope contract is
@@ -7567,11 +7578,6 @@ def build_plan_validation_requests(
     """
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
-    normal_domain = (
-        capability_policy.normalise_subject_domain(declared_domain, locale)
-        if declared_domain and str(declared_domain).strip()
-        else None
-    )
     payload = {
         "artifact_kind": "plan",
         "goal": goal,
@@ -7581,8 +7587,10 @@ def build_plan_validation_requests(
         "level": declared_level,
         "subject_domain": declared_domain,
         "scope": scope,
+        # CP-015g/D1-F2: the validator is handed the same resolved curriculum brief (and the
+        # same `domain_source`) as the author, so both judge the plan against one profile.
         "curriculum": curriculum.curriculum_brief(
-            domain=normal_domain,
+            domain=declared_domain,
             locale=locale,
             level=declared_level,
             recipe=recipe,
@@ -9206,11 +9214,14 @@ def run_plan_job(
     # values the capability policy, the language scaffold and the research pass read.
     level = _plan_input(brief, "level")
     subject_domain = _plan_input(brief, "subject_domain")
-    # H-44: the domain choice is recorded, not just computed. A brief that declared neither a
-    # locale nor a subject domain is authored as `general`; that fallback is named in the run
-    # record (and in the result's warnings) instead of being indistinguishable from a declared
-    # general course. The authoring rule itself is unchanged.
-    domain_provenance = _domain_provenance(subject_domain=subject_domain, locale=locale)
+    # CP-015g/D1-F2: the domain choice is resolved once and recorded, not left implicit. An
+    # undeclared domain is inferred from the goal (a performed physical act, or a target
+    # language) or falls back to `general`; the record says which, and only the `general` default
+    # is appended to the result's warnings because that is the case a caller may not have meant.
+    # A language course is never produced by omitting the subject domain.
+    domain_provenance = _domain_provenance(
+        goal=goal, subject_domain=subject_domain, locale=locale
+    )
     # H-89: resolve the declared frequency inventory before any provider call. A language course
     # always gets a typed vocabulary status; absence is a warning (the plan proceeds unverified),
     # while a corrupt declared artifact is a typed rejection and is never silently downgraded.
@@ -9616,7 +9627,12 @@ def run_plan_job(
             },
             "warnings": _plan_warnings(recipe, research_run, verdict)
             + list(verdict.get("provenance_flags") or [])
-            + ([domain_provenance["note"]] if domain_provenance.get("note") else [])
+            + (
+                [domain_provenance["note"]]
+                if domain_provenance.get("source") == "default"
+                and domain_provenance.get("note")
+                else []
+            )
             + (
                 [
                     f"{frequency.WARNING_UNAVAILABLE}: {frequency_status.get('detail')}; "
