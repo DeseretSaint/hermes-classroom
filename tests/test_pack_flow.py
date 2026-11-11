@@ -430,6 +430,152 @@ class ExportTest(PackFlowCase):
         self.assertEqual(error["code"], "POLICY_VIOLATION")
         self.assertEqual(error["details"]["reason"], "course_not_pack_backed")
 
+    # ── CP-015g residual: a fine-tuned course must not re-export stale pack bytes ──
+
+    def pack_course(self) -> tuple[dict, dict, dict, dict]:
+        """Import the bundled pack and return (import result, plan row, first objective row, manifest)."""
+        staged_id, manifest = self.grant()
+        imported = self.import_pack(staged_id)["result"]
+        plan = self.rows("SELECT * FROM plans WHERE course_id = ?", (imported["course_id"],))[0]
+        objective = self.rows(
+            "SELECT * FROM objectives WHERE plan_id = ? ORDER BY ordinal LIMIT 1", (plan["id"],)
+        )[0]
+        return imported, plan, objective, manifest
+
+    def edit_objective(self, imported: dict, plan: dict, objective: dict, **edit) -> dict:
+        return self.ok(
+            "plan.edit",
+            {
+                "enrollment_id": imported["enrollment_id"],
+                "plan_id": plan["id"],
+                "expected_plan_hash": plan["plan_hash"],
+                "objective_edits": [{"objective_id": objective["id"], **edit}],
+            },
+            expected_revision=0,
+            idempotency_key="pack-reexport-edit-0001",
+        )["result"]
+
+    def test_a_fine_tuned_course_refuses_to_re_export_the_stale_pack_bytes(self) -> None:
+        """Import -> plan.edit -> pack.export: refuse, name the reason, write nothing.
+
+        Before this fix the export rebuilt the installed pack's stored manifest and bytes, so the
+        archive carried the pre-edit objective under a course that already showed the edit.
+        """
+        imported, plan, objective, manifest = self.pack_course()
+        self.edit_objective(imported, plan, objective, title="EDITED TITLE MARKER")
+
+        # The course on screen carries the edit; the installed pack's bytes do not.
+        self.assertEqual(
+            self.scalar("SELECT title FROM objectives WHERE id = ?", (objective["id"],)),
+            "EDITED TITLE MARKER",
+        )
+        error = self.err("pack.export", {"enrollment_id": imported["enrollment_id"]})
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "course_has_revisions")
+        self.assertEqual(error["details"]["pack_id"], manifest["pack_id"])
+        self.assertIn("objective 1 title", error["details"]["changed"])
+        # Learner-facing copy: the fault and the one recovery step are in the message itself.
+        self.assertIn("Nothing was exported", error["message"])
+        self.assertIn("plan.undo", error["message"])
+
+        # A refusal adopts nothing: no artifact row, no archive on disk.
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'"))), 0)
+        archives = list(pack_flow.export_root().glob("*.zip")) if pack_flow.export_root().exists() else []
+        self.assertEqual(archives, [])
+
+    def test_a_criteria_only_fine_tune_also_blocks_the_export(self) -> None:
+        """The fence compares content, so an objective's criteria count, not just its title."""
+        imported, plan, objective, _manifest = self.pack_course()
+        self.edit_objective(
+            imported,
+            plan,
+            objective,
+            criteria=[{"id": "c1", "description": "A replacement criterion"}],
+        )
+        error = self.err("pack.export", {"enrollment_id": imported["enrollment_id"]})
+        self.assertEqual(error["details"]["reason"], "course_has_revisions")
+        self.assertIn("objective 1 criteria", error["details"]["changed"])
+
+    def test_an_undone_fine_tune_exports_the_published_pack_and_reimports_its_text(self) -> None:
+        """Bookkeeping is not content: an undone edit restores the pack bytes and it exports again."""
+        imported, plan, objective, manifest = self.pack_course()
+        edited = self.edit_objective(imported, plan, objective, title="EDITED TITLE MARKER")
+        self.ok(
+            "plan.undo",
+            {
+                "enrollment_id": imported["enrollment_id"],
+                "plan_id": plan["id"],
+                "expected_plan_hash": edited["plan_hash"],
+                "revision_id": edited["review"]["revision_id"],
+            },
+            expected_revision=edited["revision"],
+            idempotency_key="pack-reexport-undo-0001",
+        )
+        # The undone edit and the undo row stay in the revision ledger at needs_review; the course
+        # itself matches the pack again, which is the fact the export fence reads.
+        self.assertEqual(
+            int(str(self.scalar("SELECT COUNT(*) FROM plan_revisions WHERE state = 'needs_review'"))), 1
+        )
+
+        result = self.ok("pack.export", {"enrollment_id": imported["enrollment_id"]})["result"]
+        self.assertEqual(result["content_hash"], manifest["content_hash"])
+        artifact = self.ok("artifact.get", {"artifact_id": result["artifact_id"]})["result"]
+        path, _mime, _size = pack_flow.open_artifact(artifact["download"]["handle"])
+        with zipfile.ZipFile(path) as bundle:
+            document = json.loads(bundle.read(next(n for n in bundle.namelist() if n.endswith("/pack.json"))))
+        self.assertNotIn("EDITED TITLE MARKER", json.dumps(document))
+        self.assertEqual(
+            [objective["title"] for objective in document["objectives"]],
+            [objective["title"] for objective in sorted(manifest["objectives"], key=lambda item: int(item["ordinal"]))],
+        )
+        # The exported archive is the pack as published: re-importing it shows that text, not an edit.
+        reimported = self.import_pack(self.grant_zip(path), "fresh")["result"]
+        titles = [
+            row["title"]
+            for row in self.rows(
+                "SELECT title FROM objectives WHERE plan_id ="
+                " (SELECT id FROM plans WHERE course_id = ?) ORDER BY ordinal",
+                (reimported["course_id"],),
+            )
+        ]
+        self.assertEqual(titles, [objective["title"] for objective in sorted(
+            manifest["objectives"], key=lambda item: int(item["ordinal"])
+        )])
+
+    def test_a_lesson_revision_on_a_pack_backed_course_blocks_the_export(self) -> None:
+        """The lesson-revision clause, even though `lesson.revise` cannot write one today.
+
+        Pack import materializes a section's text as `lesson_segments`; it writes no
+        `gen_plan_sections`/`gen_lessons` staging, so `lesson.revise` has no section to revise on
+        an imported course. The row is written directly here to prove the fence reads the ledger
+        (and to keep a future revision path from silently reopening the stale-export hole).
+        """
+        imported, plan, objective, _manifest = self.pack_course()
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM gen_plan_sections"))), 0)
+        self.execute(
+            "INSERT INTO lesson_revisions (id, course_id, plan_id, section_id, objective_id,"
+            " from_lesson_id, lesson_id, state, page_hash_before, page_hash_after, diff_json,"
+            " evidence_attempts, confirmed_evidence_consequence, review_revision, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, 'needs_review', ?, ?, '{}', 0, 0, 0, ?)",
+            (
+                "lrv_" + "a" * 32,
+                imported["course_id"],
+                plan["id"],
+                "sec_direct_row",
+                objective["id"],
+                "lsn_before",
+                "lsn_after",
+                "sha256:" + "b" * 64,
+                "sha256:" + "c" * 64,
+                "2026-11-11T00:00:00Z",
+            ),
+        )
+        error = self.err("pack.export", {"enrollment_id": imported["enrollment_id"]})
+        self.assertEqual(error["details"]["reason"], "course_has_revisions")
+        self.assertEqual(error["details"]["lesson_revisions"], 1)
+        self.assertEqual(error["details"]["changed"], [])
+        self.assertEqual(int(str(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'"))), 0)
+
     def test_file_review_lists_every_included_file(self) -> None:
         manifest, files = archive.read_directory(JAPANESE)
         document, exported = packs.build_export(manifest, files)
