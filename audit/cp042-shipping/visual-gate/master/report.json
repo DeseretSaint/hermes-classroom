@@ -1,0 +1,143 @@
+{
+  "generated": "2026-11-10T23:59:11.493Z",
+  "port": 9391,
+  "width": 1440,
+  "frames": [
+    {
+      "route": "home",
+      "label": "Home",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5d477a1b/visual/frames/home.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": false,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "What will you learn next?"
+      ],
+      "axe": {
+        "violations": []
+      },
+      "diff": {
+        "ratio": 0,
+        "changed": 0,
+        "total": 1596736
+      }
+    },
+    {
+      "route": "courses",
+      "label": "Courses",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5d477a1b/visual/frames/courses.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": false,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "All courses",
+        "What do you want to be able to do?"
+      ],
+      "axe": {
+        "violations": []
+      },
+      "diff": {
+        "ratio": 0,
+        "changed": 0,
+        "total": 1596736
+      }
+    },
+    {
+      "route": "workshop",
+      "label": "Workshop",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5d477a1b/visual/frames/workshop.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": false,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [
+        "Japanese register: affection and closeness",
+        "Find a pack",
+        "Languages",
+        "Japanese register: affection and closeness",
+        "For parents",
+        "Measuring together: a kitchen lesson",
+        "Technical",
+        "Reading a pack before you install it"
+      ],
+      "axe": {
+        "violations": [
+          {
+            "id": "label-content-name-mismatch",
+            "impact": "serious",
+            "nodes": 1,
+            "help": "Elements must have their visible text as part of their accessible name"
+          }
+        ]
+      },
+      "diff": {
+        "ratio": 0,
+        "changed": 0,
+        "total": 1596736
+      }
+    },
+    {
+      "route": "studio",
+      "label": "Parent Studio",
+      "route_ready": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5d477a1b/visual/frames/studio.png",
+      "fonts": [
+        {
+          "family": "CB Display",
+          "loaded": false,
+          "present": true
+        },
+        {
+          "family": "CB UI",
+          "loaded": true,
+          "present": true
+        }
+      ],
+      "titles": [],
+      "axe": {
+        "violations": []
+      },
+      "diff": {
+        "ratio": 0,
+        "changed": 0,
+        "total": 1596736
+      }
+    }
+  ],
+  "failures": [
+    "home: font fallback CB Display",
+    "courses: font fallback CB Display",
+    "workshop: axe label-content-name-mismatch",
+    "workshop: font fallback CB Display",
+    "studio: font fallback CB Display"
+  ]
+}

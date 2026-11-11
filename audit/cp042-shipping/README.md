@@ -79,6 +79,31 @@ Two checks hold that rule in `tests/test_pack_shipping_labels.py::CoverArtTests`
 - `tesseract` OCR over each shipped cover must find no alphanumeric character (6 files). The engine
   is present on this host, so the check ran rather than skipping.
 
+No image toolchain is required: the covers are written deterministically by the plugin's own PNG
+writer, so the SVGO/Sharp/pngquant line in `docs/design/TOOLCHAIN-50.md` is stale for this pack set
+and nothing was installed.
+
+## Visual gate (owner-directed, 2026-11-10 18:45)
+
+Run against an isolated live Desktop window on this branch's plugin, never the operator's app and
+never another worker's rig. Full record: `VISUAL-GATE.md`, raw output in `visual-gate/`.
+
+```
+rendered     818 x 488 CSS px (1636 x 976 at 2x), scope light, all four routes v3-ready
+fonts        CB Display false · CB UI true   (all four routes)
+axe          workshop label-content-name-mismatch (serious, 1 node); home/courses/studio none
+pixel diff   0.00 % vs the branch baseline on all four routes
+similarity   workshop vs refs/discover.png 0.6347 · home vs refs/home.png 0.8013
+sheet        audit/cp042-shipping/visual-gate/compare/workshop-discover-sheet.png
+```
+
+The three findings (unloaded `CB Display` and the Workshop accessible-name mismatch) are
+**pre-existing**: the same audit with `origin/master`'s `desktop/plugin.js` in the same rig produced
+the same five failures (`visual-gate/master/report.json`). The pane is narrower than the approved
+1344×768 reference, so the similarity numbers are advisory, not a parity claim. This run establishes
+that CP-042 adds no rendered regression and that the three shipped titles render as DOM text.
+
+
 ## Determinism
 
 Consecutive builder runs over the same tree produced byte-identical files:
@@ -88,10 +113,11 @@ DETERMINISTIC_RUNS_IDENTICAL
 TREE_UNCHANGED_BY_REBUILD
 ```
 
-`find bundled/packs -type f | sort | xargs sha256sum | sha256sum` was compared across three
-consecutive runs: `21c0098fca714d975abb9e3a696b23ab644b97b2bdb9745a881a69ed1447acf6` each time, and
-the tree hash taken before and after a rebuild is identical (the working tree above HEAD carries
-this card's own changes, so `git status` is dirty by design).
+`find bundled/packs -type f ! -path '*__pycache__*' -print0 | sort -z | xargs -0 sha256sum |
+sha256sum` (the tracked pack files; the builder's `__pycache__` bytecode is not evidence) was
+`01570e16175d25a441f91f16866b6e8cfd18e40a0f9072292d9bfba1bb37494a` before and after a rebuild, and
+identical across three consecutive runs. On a clean checkout of the commit that ships this evidence,
+`git status --porcelain bundled/ catalog/` is empty after a rebuild.
 
 ## Install proof, actual output
 
