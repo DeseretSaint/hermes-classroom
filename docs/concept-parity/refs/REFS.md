@@ -9,7 +9,7 @@ Copied 2026-11-10. Paths are repo-relative and stable; sha256 pins the exact byt
 | R-DISC | `docs/concept-parity/refs/discover.png` | `f9ce940f4a0434a6...` | 1344x768 | Discover / Workshop (ratified) |
 | R-CLASS | `docs/concept-parity/refs/classroom.png` | `ee0c1a664a7317ae...` | 1344x768 | Classroom lesson (ratified) |
 | R-SYS | `docs/concept-parity/refs/system.png` | `98a79124ea35b614...` | 1344x768 | fox poses, card anatomy, badges, palette (ratified) |
-| R-MAP | `docs/concept-parity/refs/map.png` | `a834b27bb365e8dd...` | 1344x768 | course home; same bytes as F2 japanese-classroom-reference.png |
+| R-MAP | `docs/concept-parity/refs/map.png` | `a834b27bb365e8dd...` | 1344x768 | course home; same bytes as F2 japanese-classroom-reference.png (ratified) |
 
 Full sha256:
 
