@@ -4111,10 +4111,23 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
         lines.append(f"- image: none. Emit no visual media item. {image_reason}".rstrip())
     else:
         required = "at least one" if capability.image == "required" else "at most one optional"
-        lines.append(
-            f"- image: {capability.image}; {required} visual item with role "
-            f"{image_roles[0]!r}. {image_reason}".rstrip()
-        )
+        if len(image_roles) > 1:
+            # A procedure lesson is permitted its authority visual and, beside it, one optional
+            # illustration for context. The author is told which is which, because only the
+            # authority carries the step table and the measured values.
+            context_roles = [role for role in image_roles[1:]]
+            named = ", ".join(repr(role) for role in context_roles)
+            lines.append(
+                f"- image: {capability.image}; {required} authority visual item with role "
+                f"{image_roles[0]!r}, and at most one optional context item with role {named} "
+                f"(authority: none \u2014 it may never carry the step table, a measured value or "
+                f"a procedure). {image_reason}".rstrip()
+            )
+        else:
+            lines.append(
+                f"- image: {capability.image}; {required} visual item with role "
+                f"{image_roles[0]!r}. {image_reason}".rstrip()
+            )
     if not audio_roles:
         lines.append(f"- audio: none. Emit no audio media item. {audio_reason}".rstrip())
     else:
