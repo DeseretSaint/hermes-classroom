@@ -330,6 +330,41 @@ LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
 EVIDENCE_TARGETS = ("recall", "comprehension", "production", "discrimination", "procedure", "transfer")
+
+# The check kind a node's exit performance can honestly be measured by. The kind follows the
+# evidence target, not the recipe: a procedure is a performance checklist, a transfer is a
+# recorded attempt or an observation, and only recall/comprehension/discrimination are a quiz.
+# Keying this on the recipe (as the lesson rule did) made every hands-on lesson un-authorable
+# under casual/committed and left the author proving a procedure with a quiz about it.
+CHECK_KIND_BY_TARGET: dict[str, tuple[str, ...]] = {
+    "recall": ("quiz",),
+    "comprehension": ("quiz",),
+    "discrimination": ("quiz",),
+    "procedure": ("verification",),
+    "production": ("verification", "observation"),
+    "transfer": ("verification", "observation"),
+}
+
+# A course size implies a default authoring recipe. ``one_off`` is the exception: it is the
+# single-lesson shape and is only legal under scope "single". When a caller pairs it with a
+# larger size the pair is rewritten to the size's default instead of being refused, because a
+# learner who asked for a short course and one task meant the short course.
+SCOPE_RECIPE_DEFAULTS: dict[str, str] = {"single": "one_off", "short": "casual", "full": "committed"}
+
+
+def coerce_recipe_scope(recipe: str, scope: str | None) -> tuple[str, str | None]:
+    """Return a (recipe, scope) pair the plan rules can accept.
+
+    A one-off brief is exactly one unit, one objective and scope "single". Pairing it with a
+    larger scope is a contradiction no control on the create screen can resolve, so it is
+    rewritten here rather than refused downstream.
+    """
+
+    if recipe == "one_off" and scope and scope != "single":
+        return SCOPE_RECIPE_DEFAULTS.get(scope, "casual"), scope
+    if scope == "single" and recipe == "one_off":
+        return "one_off", "single"
+    return recipe, scope
 SUPPORT_VALUES = ("sourced", "unverified")
 
 #: H-195: bounded phrase list for the "generic study skills" drift check. A plan whose objectives
@@ -5845,6 +5880,13 @@ def _enforce_plan_rules_v2(
                 f"check for objective {item.get('objective_ref')} targets "
                 f"{item.get('evidence_target')!r} but that node's check family is {family!r}"
             )
+        expected_kinds = CHECK_KIND_BY_TARGET.get(family)
+        declared_kind = str(item.get("kind") or "")
+        if expected_kinds and declared_kind and declared_kind not in expected_kinds:
+            reasons.append(
+                f"check for objective {item.get('objective_ref')} is {declared_kind!r} but a "
+                f"{family!r} objective is measured by {' or '.join(expected_kinds)}"
+            )
 
     # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds
     # the values; acyclicity and self-reference are properties of the document a reader must
@@ -6393,7 +6435,16 @@ def enforce_lesson_rules(
         if not lesson.get("parent_notes") or not lesson.get("supervision_notes"):
             reasons.append("parent lessons require parent notes and supervision notes")
     else:
-        if check.get("kind") != "quiz":
+        target = str(
+            check.get("evidence_target") or (objective or {}).get("evidence_target") or ""
+        )
+        expected_kinds = CHECK_KIND_BY_TARGET.get(target)
+        if expected_kinds and check.get("kind") not in expected_kinds:
+            reasons.append(
+                f"a {target!r} objective is measured by {' or '.join(expected_kinds)}, "
+                f"not {check.get('kind')!r}"
+            )
+        elif not expected_kinds and check.get("kind") != "quiz":
             reasons.append("this recipe needs a graded check")
 
     policy = _scaffold_policy(recipe, dials, locale)
@@ -7538,6 +7589,7 @@ def build_plan_request(
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
 ) -> LLMRequest:
+    recipe, scope = coerce_recipe_scope(recipe, scope)
     # ``dials`` stays the closed four-dial object the contract spells; the declared plan-brief
     # inputs travel beside it. A legacy caller that still carries level/domains inside its dials
     # dict is honoured here without ever writing them back into ``dials``.

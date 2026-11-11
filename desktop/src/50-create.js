@@ -495,7 +495,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const chooseScope = useCallback(
     (id) => {
       setScope(id)
-      if (!recipeTouched) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
+      // A one-off brief is the single-lesson shape; pairing it with a larger size is a
+      // contradiction the backend refuses, so the size wins over the stale recipe.
+      if (!recipeTouched || (recipe === 'one_off' && id !== 'single')) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
       // H-168: an untouched depth follows the size; an explicit one is raised to the size's floor.
       setDials((current) => {
         const next = depthTouched ? effectiveDepth(current.depth, id) : SCOPE_MIN_DEPTH[id] || current.depth
@@ -521,7 +523,8 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       // suggestion the learner has been reading since step 1, never to an invented name.
       title: title.trim() || suggestedTitle(goal),
       goal: goal.trim(),
-      recipe,
+      // Same rule the backend applies: "One task" only survives under the single-lesson size.
+      recipe: recipe === 'one_off' && scope !== 'single' ? SCOPE_DEFAULT_RECIPE[scope] || 'casual' : recipe,
       dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
       locale: locale.trim() || null,
       level: level.trim() || null,

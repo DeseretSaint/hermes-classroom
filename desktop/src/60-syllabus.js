@@ -617,7 +617,10 @@ function syllabusAlignmentView(alignment) {
     reviewComplete: alignmentRevision > 0 && reviewedRevision === alignmentRevision,
     blocking,
     awaitingReview,
-    approveReady: !stale && blocking.length === 0 && alignmentRevision > 0 && reviewedRevision === alignmentRevision,
+    // The primary press IS the review call, so requiring reviewedRevision here made the only
+    // control that records a review impossible to press. It is ready when the mapping is fresh,
+    // unblocked and exists; the label flips to Approved once reviewedRevision catches up.
+    approveReady: !stale && blocking.length === 0 && alignmentRevision > 0,
     approveBlockedReason: stale
       ? SYLLABUS_COPY.staleLead
       : blocking.length

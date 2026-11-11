@@ -10015,7 +10015,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const chooseScope = useCallback(
     (id) => {
       setScope(id)
-      if (!recipeTouched) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
+      // A one-off brief is the single-lesson shape; pairing it with a larger size is a
+      // contradiction the backend refuses, so the size wins over the stale recipe.
+      if (!recipeTouched || (recipe === 'one_off' && id !== 'single')) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
       // H-168: an untouched depth follows the size; an explicit one is raised to the size's floor.
       setDials((current) => {
         const next = depthTouched ? effectiveDepth(current.depth, id) : SCOPE_MIN_DEPTH[id] || current.depth
@@ -10041,7 +10043,8 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       // suggestion the learner has been reading since step 1, never to an invented name.
       title: title.trim() || suggestedTitle(goal),
       goal: goal.trim(),
-      recipe,
+      // Same rule the backend applies: "One task" only survives under the single-lesson size.
+      recipe: recipe === 'one_off' && scope !== 'single' ? SCOPE_DEFAULT_RECIPE[scope] || 'casual' : recipe,
       dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
       locale: locale.trim() || null,
       level: level.trim() || null,
@@ -11364,7 +11367,10 @@ function syllabusAlignmentView(alignment) {
     reviewComplete: alignmentRevision > 0 && reviewedRevision === alignmentRevision,
     blocking,
     awaitingReview,
-    approveReady: !stale && blocking.length === 0 && alignmentRevision > 0 && reviewedRevision === alignmentRevision,
+    // The primary press IS the review call, so requiring reviewedRevision here made the only
+    // control that records a review impossible to press. It is ready when the mapping is fresh,
+    // unblocked and exists; the label flips to Approved once reviewedRevision catches up.
+    approveReady: !stale && blocking.length === 0 && alignmentRevision > 0,
     approveBlockedReason: stale
       ? SYLLABUS_COPY.staleLead
       : blocking.length
@@ -11918,10 +11924,9 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
       alignmentRevision: view.alignmentRevision,
       decisions: needsDecision.map((row) => ({ item_id: row.itemId, action: decisions[row.itemId] })).filter((row) => row.action)
     })
-    if (payload.decisions.length === 0) {
-      setError({ code: 'SYLLABUS_UNREVIEWED', message: 'Every item already needs no decision. The backend records a review only from an accepted item, so approval cannot be recorded for this mapping.' })
-      return
-    }
+    // An empty decision set is a checked claim, not a shortcut: the backend accepts it only
+    // when no row needs a decision, and refuses it otherwise with the rows that do. Refusing
+    // to send it here made a fully aligned mapping impossible to approve.
     setBusy(true)
     setError(null)
     const response = await rpc('syllabus.alignment.review', payload, { idempotencyKey: newOperationId('syllabus-review') })
@@ -15749,7 +15754,14 @@ function classroomEvidence(page) {
 function classroomSceneFromWorld(read, sectionId, courseTitle) {
   const world = read && read.world ? read.world : null
   const kit = world && (world.kit || world)
-  const plates = kit && Array.isArray(kit.plates) ? kit.plates : []
+  // world.read serves `assets` (role, section_id, section_key, artifact_id); older drafts used
+  // `plates`. Reading only `plates` meant generated world art never reached a lesson and every
+  // game lesson fell back to the kit's generic room. Both shapes are accepted here.
+  const plates = Array.isArray(kit && kit.assets)
+    ? kit.assets
+    : Array.isArray(kit && kit.plates)
+      ? kit.plates
+      : []
   const usable = plates.filter((plate) => plate && (plate.artifact_id || plate.artifactId))
   const match = sectionId
     ? usable.find((plate) => plate.section_id === sectionId || plate.sectionId === sectionId)
@@ -15760,6 +15772,17 @@ function classroomSceneFromWorld(read, sectionId, courseTitle) {
       title: courseTitle || '',
       credit: match.credit || match.attribution || null,
       kind: match.kind || null
+    }
+  }
+  // No plate for this section: the world's own hero is still this course's art, and it is a
+  // better answer than a generic room from another subject. Never another section's plate.
+  const hero = usable.find((plate) => plate.role === 'hero' || plate.role === 'cover')
+  if (hero) {
+    return {
+      artifactId: hero.artifact_id || hero.artifactId,
+      title: courseTitle || '',
+      credit: hero.credit || hero.attribution || null,
+      kind: hero.kind || null
     }
   }
   return { artifactId: null, title: courseTitle || '', credit: null, kind: null }

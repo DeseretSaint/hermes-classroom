@@ -450,10 +450,9 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
       alignmentRevision: view.alignmentRevision,
       decisions: needsDecision.map((row) => ({ item_id: row.itemId, action: decisions[row.itemId] })).filter((row) => row.action)
     })
-    if (payload.decisions.length === 0) {
-      setError({ code: 'SYLLABUS_UNREVIEWED', message: 'Every item already needs no decision. The backend records a review only from an accepted item, so approval cannot be recorded for this mapping.' })
-      return
-    }
+    // An empty decision set is a checked claim, not a shortcut: the backend accepts it only
+    // when no row needs a decision, and refuses it otherwise with the rows that do. Refusing
+    // to send it here made a fully aligned mapping impossible to approve.
     setBusy(true)
     setError(null)
     const response = await rpc('syllabus.alignment.review', payload, { idempotencyKey: newOperationId('syllabus-review') })

@@ -3197,7 +3197,14 @@ function classroomEvidence(page) {
 function classroomSceneFromWorld(read, sectionId, courseTitle) {
   const world = read && read.world ? read.world : null
   const kit = world && (world.kit || world)
-  const plates = kit && Array.isArray(kit.plates) ? kit.plates : []
+  // world.read serves `assets` (role, section_id, section_key, artifact_id); older drafts used
+  // `plates`. Reading only `plates` meant generated world art never reached a lesson and every
+  // game lesson fell back to the kit's generic room. Both shapes are accepted here.
+  const plates = Array.isArray(kit && kit.assets)
+    ? kit.assets
+    : Array.isArray(kit && kit.plates)
+      ? kit.plates
+      : []
   const usable = plates.filter((plate) => plate && (plate.artifact_id || plate.artifactId))
   const match = sectionId
     ? usable.find((plate) => plate.section_id === sectionId || plate.sectionId === sectionId)
@@ -3208,6 +3215,17 @@ function classroomSceneFromWorld(read, sectionId, courseTitle) {
       title: courseTitle || '',
       credit: match.credit || match.attribution || null,
       kind: match.kind || null
+    }
+  }
+  // No plate for this section: the world's own hero is still this course's art, and it is a
+  // better answer than a generic room from another subject. Never another section's plate.
+  const hero = usable.find((plate) => plate.role === 'hero' || plate.role === 'cover')
+  if (hero) {
+    return {
+      artifactId: hero.artifact_id || hero.artifactId,
+      title: courseTitle || '',
+      credit: hero.credit || hero.attribution || null,
+      kind: hero.kind || null
     }
   }
   return { artifactId: null, title: courseTitle || '', credit: null, kind: null }

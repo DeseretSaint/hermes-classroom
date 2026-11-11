@@ -682,13 +682,21 @@ def course_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
                     "this parse needs review (anchor verification failed); re-parse or upload a cleaner file.",
                     reason="needs_review",
                 )
+        # The stored row must match what the planner will be asked for: a one-off brief is the
+        # single-lesson shape, so pairing it with a larger size is rewritten here rather than
+        # stored as a contradiction the plan stage then refuses on every attempt.
+        from .generation import coerce_recipe_scope
+
+        stored_recipe, stored_scope = coerce_recipe_scope(
+            str(payload["recipe"]), _named_input(payload.get("scope"))
+        )
         connection.execute(
             "INSERT INTO courses (id, title, recipe, goal, locale, level, subject_domain, scope,"
             " dials_json, status, pack_id, revision, created_at, updated_at, presentation_mode)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NULL, 0, ?, ?, ?)",
-            (course_id, payload["title"], payload["recipe"], payload["goal"], payload.get("locale"),
+            (course_id, payload["title"], stored_recipe, payload["goal"], payload.get("locale"),
              _named_input(payload.get("level")), _named_input(payload.get("subject_domain")),
-             _named_input(payload.get("scope")), _json_dump(payload.get("dials") or {}), now, now,
+             stored_scope, _json_dump(payload.get("dials") or {}), now, now,
              _creation_presentation_mode(payload.get("presentation_mode"))),
         )
         connection.execute(
