@@ -27073,7 +27073,7 @@ function JobStateText({ job }) {
       error.code
         ? jsxs('details', {
             'data-cb-job-technical': '',
-            style: { color: 'var(--cb-ink-soft)' },
+            style: { color: 'var(--cb3-ink-soft)' },
             children: [
               jsx('summary', { style: { cursor: 'pointer', minHeight: '1.75rem' }, children: 'Technical detail' }),
               jsx('p', { style: { margin: '0.25rem 0 0', overflowWrap: 'anywhere' }, children: error.code })
@@ -27274,8 +27274,9 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
       maxWidth: CB_MEASURE,
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-card-stock)',
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
       boxSizing: 'border-box'
     },
     children: [
@@ -27415,16 +27416,53 @@ const CB_TAKEHOME_EXPORT_WORD = {
   pack_superseded: 'This draft was superseded. Start a fresh draft from the lesson.'
 }
 
-/** The Parent Studio's two entrances, side by side: authored plans and take-home packs. */
+/** The Parent Studio's entrances side by side: authored plans, take-home packs, homework.
+ *
+ * CP-025b: this is the v3 tab strip. The host's `sdk.SegmentedControl` used to paint it, which put
+ * host chrome on Coursebook's own route; the tabs are now authored buttons with `role="tab"`,
+ * `aria-selected` and a 3 px terracotta marker under the current label — a shape *and* a word,
+ * never colour alone. Targets stay 44 px so the strip survives 460 and 200% text.
+ */
 function StudioEntranceTabs({ value, onChange }) {
   return jsx('div', {
     'data-cb-parent-studio-tabs': '',
-    style: { padding: '0.9rem 1rem 0.1rem', boxSizing: 'border-box' },
-    children: jsx(sdk.SegmentedControl, {
-      options: CB_STUDIO_ENTRANCES,
-      value,
-      sizing: 'content',
-      onChange
+    role: 'tablist',
+    'aria-label': 'Parent Studio sections',
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+      gap: '0.25rem',
+      padding: '0.9rem 1rem 0',
+      borderBottom: '1px solid var(--cb3-rule)',
+      boxSizing: 'border-box'
+    },
+    children: CB_STUDIO_ENTRANCES.map((item) => {
+      const current = item.id === value
+      return jsx('button', {
+        type: 'button',
+        role: 'tab',
+        'data-cb3-tab': item.id,
+        'data-current': current ? 'true' : 'false',
+        'aria-selected': current ? 'true' : 'false',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          minHeight: '44px',
+          paddingInline: '0.6rem',
+          border: 0,
+          borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+          background: 'transparent',
+          color: 'var(--cb3-ink)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
+          lineHeight: cb3Lead('meta'),
+          fontWeight: current ? 600 : 400,
+          cursor: 'pointer'
+        },
+        onClick: () => onChange(item.id),
+        children: item.label
+      }, item.id)
     })
   })
 }
@@ -27488,12 +27526,12 @@ function TakeHomePaperBadge({ children, tone }) {
   return jsx('span', {
     'data-cb-takehome-badge': tone || 'plain',
     style: {
-      fontFamily: CB_SANS,
-      fontSize: CB_TYPE.caption,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
       fontWeight: 600,
       letterSpacing: '0.01em',
-      color: tone === 'warn' ? 'var(--cb-coral)' : 'var(--cb-ink-soft)',
-      border: '1px solid var(--cb-rule)',
+      color: tone === 'warn' ? 'var(--cb3-alert)' : 'var(--cb3-ink-soft)',
+      border: '1px solid var(--cb3-rule)',
       borderRadius: '999px',
       padding: '0.05rem 0.5rem',
       whiteSpace: 'nowrap'
@@ -27530,8 +27568,8 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
       flexDirection: 'column',
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
-      background: 'var(--cb-plum-soft)',
-      borderTop: '1px solid var(--cb-plum)',
+      background: 'var(--cb3-canvas-edge)',
+      borderTop: '1px solid var(--cb3-plum)',
       boxSizing: 'border-box'
     },
     children: [
@@ -27558,7 +27596,7 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                 justifyContent: 'space-between',
                 gap: '0.4rem 1rem',
                 padding: '0.7rem 0',
-                borderTop: '1px solid var(--cb-rule)'
+                borderTop: '1px solid var(--cb3-rule)'
               },
               children: [
               jsxs(
@@ -27568,16 +27606,16 @@ function TakeHomeShelf({ rows, status, error, onSelect, onRetry }) {
                   children: [
                     jsx('div', {
                       style: {
-                        fontFamily: CB_SERIF,
-                        fontSize: CB_TYPE.body,
+                        fontFamily: 'var(--cb3-font-display)',
+                        fontSize: cb3Type('body'),
                         fontWeight: 600,
-                        color: 'var(--cb-ink)',
+                        color: 'var(--cb3-ink)',
                         overflowWrap: 'anywhere'
                       },
                       children: row.title || 'Untitled course'
                     }),
                     jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children:
                         `${(row.provenance && row.provenance.source) === 'bundled' ? 'Bundled' : (row.provenance && row.provenance.source) === 'community' ? 'Imported' : 'Written here'} · ` +
                         `${row.learner_label || 'Learner course'}`
@@ -27645,7 +27683,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                       jsx(TakeHomePaperBadge, { children: cbTakeHomeModeWord(source && source.presentation_mode) }),
                       jsx(TakeHomePaperBadge, { children: plural(objectives.length, 'written lesson', 'written lessons') }),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'No child account and no child chat: the adult prepares and prints.'
                       })
                     ]
@@ -27660,12 +27698,12 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                           jsx('h3', {
                             style: {
                               margin: 0,
-                              fontFamily: CB_SERIF,
-                              fontSize: CB_TYPE.body,
+                              fontFamily: 'var(--cb3-font-display)',
+                              fontSize: cb3Type('body'),
                               fontWeight: 600,
-                              color: 'var(--cb-ink)',
+                              color: 'var(--cb3-ink)',
                               paddingBottom: '0.3rem',
-                              borderBottom: '1px solid var(--cb-rule)'
+                              borderBottom: '1px solid var(--cb3-rule)'
                             },
                             children: group.title
                           }),
@@ -27682,7 +27720,7 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                   justifyContent: 'space-between',
                                   gap: '0.4rem 1rem',
                                   padding: '0.65rem 0',
-                                  borderBottom: '1px solid var(--cb-rule)'
+                                  borderBottom: '1px solid var(--cb3-rule)'
                                 },
                                 children: [
                                 jsxs(
@@ -27692,15 +27730,15 @@ function TakeHomeSourcePanel({ courseTitle, source, status, error, onSelectObjec
                                     children: [
                                       jsx('div', {
                                         style: {
-                                          fontFamily: CB_SERIF,
-                                          fontSize: CB_TYPE.body,
-                                          color: 'var(--cb-ink)',
+                                          fontFamily: 'var(--cb3-font-display)',
+                                          fontSize: cb3Type('body'),
+                                          color: 'var(--cb3-ink)',
                                           overflowWrap: 'anywhere'
                                         },
                                         children: `${objective.ordinal}. ${objective.title}`
                                       }),
                                       jsx('div', {
-                                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                                         children: objective.available
                                           ? `Evidence target: ${objective.evidence_target} · ${objective.lesson_state}` +
                                             (objective.has_world_plate ? ' · world plates available' : ' · no world art')
@@ -27762,7 +27800,7 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           children: [
             jsx(CbLabel, { children: 'Print proof' }),
             jsx('span', {
-              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+              style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
               children: `${plural(list.length, 'page', 'pages')} · ${paper} · ${margin} pt margins · selectable text`
             })
           ]
@@ -27777,12 +27815,12 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
           // page, and the plum wash plus a dashed rule for the parent-only answer guide.
           const sheet =
             {
-              cover: { background: 'var(--cb-lamp-soft)', borderColor: 'var(--cb-lamp)' },
-              parent_guide: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-accent)' },
-              learner_page: { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-field)' },
-              plate: { background: 'var(--cb-accent-soft)', borderColor: 'var(--cb-accent)' },
-              answer_guide: { background: 'var(--cb-plum-soft)', borderColor: 'var(--cb-plum)' }
-            }[role] || { background: 'var(--cb-paper-raised)', borderColor: 'var(--cb-rule)' }
+              cover: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              parent_guide: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-terracotta)' },
+              learner_page: { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-sage)' },
+              plate: { background: 'var(--cb3-terracotta-quiet)', borderColor: 'var(--cb3-terracotta)' },
+              answer_guide: { background: 'var(--cb3-canvas-edge)', borderColor: 'var(--cb3-plum)' }
+            }[role] || { background: 'var(--cb3-card-stock)', borderColor: 'var(--cb3-rule)' }
           return jsxs(
             'article',
             {
@@ -27801,7 +27839,6 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                 background: sheet.background,
                 border: '1px solid ' + sheet.borderColor,
                 borderTopStyle: role === 'answer_guide' ? 'dashed' : 'solid',
-                borderLeftWidth: role === 'learner_page' || role === 'answer_guide' ? '3px' : '1px'
               },
               children: [
             jsxs(
@@ -27814,15 +27851,15 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
                     children: CB_TAKEHOME_PAGE_WORD[role] || role
                   }),
                   jsx('span', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: CB_TAKEHOME_PAGE_NOTE[role] || ''
                   }),
                   jsx('span', {
                     style: {
                       marginLeft: 'auto',
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
-                      color: 'var(--cb-ink-soft)'
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: `Page ${index + 1} of ${list.length}`
                   })
@@ -27832,28 +27869,28 @@ function TakeHomeProof({ pages, audience, title, printProfile }) {
             jsx('h3', {
               style: {
                 margin: 0,
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 fontWeight: 600,
                 lineHeight: 1.25,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 overflowWrap: 'anywhere'
               },
               children: page.title
             }),
             page.alt_text
               ? jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                  style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                   children: `Text alternative: ${page.alt_text}`
                 })
               : null,
             jsx(ProseText, {
               'data-cb-proof-text': role,
               style: {
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.body,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('body'),
                 lineHeight: 1.6,
-                color: 'var(--cb-ink)',
+                color: 'var(--cb3-ink)',
                 maxWidth: CB_MEASURE
               },
               text: page.text
@@ -27935,9 +27972,9 @@ function TakeHomePackPanel({
             display: 'flex',
             flexDirection: 'column',
             gap: '0.15rem',
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.caption,
-            color: 'var(--cb-ink-soft)'
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            color: 'var(--cb3-ink-soft)'
           },
           children: [
             jsx('div', {
@@ -27969,11 +28006,11 @@ function TakeHomePackPanel({
                 alignItems: 'flex-start',
                 gap: '0.55rem',
                 padding: '0.45rem 0.6rem',
-                border: '1px solid ' + (kind === option.id ? 'var(--cb-accent)' : 'var(--cb-rule)'),
-                background: kind === option.id ? 'var(--cb-accent-soft)' : 'transparent',
-                fontFamily: CB_SANS,
-                fontSize: CB_TYPE.caption,
-                color: 'var(--cb-ink)',
+                border: '1px solid ' + (kind === option.id ? 'var(--cb3-terracotta)' : 'var(--cb3-rule)'),
+                background: kind === option.id ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                color: 'var(--cb3-ink)',
                 cursor: 'pointer'
               },
               children: [
@@ -27990,8 +28027,8 @@ function TakeHomePackPanel({
                 {
                   style: { display: 'flex', flexDirection: 'column', gap: '0.1rem' },
                   children: [
-                    jsx('span', { style: { fontWeight: 600, fontSize: CB_TYPE.body }, children: option.label }),
-                    jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: option.hint })
+                    jsx('span', { style: { fontWeight: 600, fontSize: cb3Type('body') }, children: option.label }),
+                    jsx('span', { style: { color: 'var(--cb3-ink-soft)' }, children: option.hint })
                   ]
                 }
               )
@@ -28003,11 +28040,34 @@ function TakeHomePackPanel({
       jsx(CbLabel, { children: 'Who holds this copy' }),
       jsx('div', {
         'data-cb-takehome-audience': audience,
-        children: jsx(sdk.SegmentedControl, {
-          options: CB_TAKEHOME_AUDIENCES,
-          value: audience,
-          sizing: 'content',
-          onChange: onAudience
+        role: 'radiogroup',
+        'aria-label': 'Who holds this copy',
+        style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' },
+        children: CB_TAKEHOME_AUDIENCES.map((option) => {
+          const chosen = option.id === audience
+          return jsx('button', {
+            type: 'button',
+            role: 'radio',
+            'data-cb3-choice': option.id,
+            'aria-checked': chosen ? 'true' : 'false',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: '44px',
+              paddingInline: '0.7rem',
+              border: chosen ? '2px solid var(--cb3-terracotta)' : '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('pill'),
+              background: chosen ? 'var(--cb3-terracotta-quiet)' : 'transparent',
+              color: 'var(--cb3-ink)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: chosen ? 600 : 400,
+              cursor: 'pointer'
+            },
+            onClick: () => onAudience(option.id),
+            children: option.label
+          }, option.id)
         })
       }),
       // One primary at a time, in the order the artifact actually moves.
@@ -28049,9 +28109,9 @@ function TakeHomePackPanel({
                             'div',
                             {
                               style: {
-                                fontFamily: CB_SANS,
-                                fontSize: CB_TYPE.caption,
-                                color: 'var(--cb-ink-soft)',
+                                fontFamily: 'var(--cb3-font-ui)',
+                                fontSize: cb3Type('caption'),
+                                color: 'var(--cb3-ink-soft)',
                                 overflowWrap: 'anywhere'
                               },
                               children: `${item.title}${item.url ? ' · ' + item.url : ''} · ${item.support_status}`
@@ -28063,7 +28123,7 @@ function TakeHomePackPanel({
                     }
                   )
                 : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                     children: 'This lesson records no external sources.'
                   })
             ]
@@ -28078,18 +28138,18 @@ function TakeHomePackPanel({
               children: [
                 jsx(CbLabel, { children: 'Approval and print' }),
                 jsx('div', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                  style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                   children: `Previewed pages: ${(preview.pages || []).length} · preview hash: ${preview.preview_hash}`
                 }),
                 state === 'draft'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                       children: `Draft ${pack.pack_id} · revision ${revision}. Approval covers exactly the pages above.`
                     })
                   : null,
                 state === 'approved' || state === 'exported'
                   ? jsx('div', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+                      style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)', overflowWrap: 'anywhere' },
                       children: `${CB_TAKEHOME_STATE_WORD[state]} on ${pack.approved_at || 'approval'} · approval hash: ${pack.approval_hash || '—'}`
                     })
                   : null,
@@ -28131,9 +28191,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.15rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-coral)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-alert)'
                         },
                         children: [
                           jsx('div', {
@@ -28142,7 +28202,7 @@ function TakeHomePackPanel({
                               `${error.code ? error.code + ': ' : ''}${describeError(error)}`
                           }),
                           jsx('div', {
-                            style: { color: 'var(--cb-ink-soft)' },
+                            style: { color: 'var(--cb3-ink-soft)' },
                             children: `Backend reason: ${(error.details && error.details.reason) || 'none reported'}.`
                           })
                         ]
@@ -28154,9 +28214,9 @@ function TakeHomePackPanel({
                       'data-cb-takehome-export-error':
                         (exportError.details && exportError.details.reason) || exportError.code || 'error',
                       style: {
-                        fontFamily: CB_SANS,
-                        fontSize: CB_TYPE.caption,
-                        color: 'var(--cb-coral)'
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('caption'),
+                        color: 'var(--cb3-alert)'
                       },
                       children: cbTakeHomeExportCopy(exportError)
                     })
@@ -28170,9 +28230,9 @@ function TakeHomePackPanel({
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.3rem',
-                          fontFamily: CB_SANS,
-                          fontSize: CB_TYPE.caption,
-                          color: 'var(--cb-ink-soft)'
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          color: 'var(--cb3-ink-soft)'
                         },
                         children: [
                           jsx('div', {
@@ -28716,23 +28776,23 @@ function HomeworkSheetCard({ task, compact = false }) {
   const reading = target.reading && target.reading !== target.display ? target.reading : null
   const eyebrow = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
   const label = {
     margin: 0,
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
     fontWeight: 600,
     letterSpacing: '0.1em',
     textTransform: 'uppercase',
-    color: 'var(--cb-ink-soft)'
+    color: 'var(--cb3-ink-soft)'
   }
-  const rule = { border: 0, borderTop: '1px solid var(--cb-rule)', margin: '0.15rem 0', width: '100%' }
+  const rule = { border: 0, borderTop: '1px solid var(--cb3-rule)', margin: '0.15rem 0', width: '100%' }
   const completion =
     state === 'skipped'
       ? 'Skipped. Nothing is owed and nothing is lost.'
@@ -28755,8 +28815,8 @@ function HomeworkSheetCard({ task, compact = false }) {
       maxWidth: CB_MEASURE,
       boxSizing: 'border-box',
       padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
-      background: 'var(--cb-paper-raised)',
-      border: '1px solid var(--cb-rule)',
+      background: 'var(--cb3-card-stock)',
+      border: '1px solid var(--cb3-rule)',
       borderRadius: '2px'
     },
     children: [
@@ -28764,11 +28824,11 @@ function HomeworkSheetCard({ task, compact = false }) {
       jsx('h3', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: compact ? cb3Type('lead') : cb3Type('heading'),
           fontWeight: 600,
           lineHeight: 1.2,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: task.title || 'One task'
       }, 'title'),
@@ -28777,10 +28837,10 @@ function HomeworkSheetCard({ task, compact = false }) {
             'data-cb-homework-target': '',
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.body : CB_TYPE.heading,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: compact ? cb3Type('body') : cb3Type('heading'),
               lineHeight: 1.2,
-              color: 'var(--cb-ink)',
+              color: 'var(--cb3-ink)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(target.display) ? 'ja' : undefined,
@@ -28791,9 +28851,9 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.body,
-              color: 'var(--cb-ink-soft)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('body'),
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             lang: cbHasJapanese(reading) ? 'ja' : undefined,
@@ -28802,13 +28862,13 @@ function HomeworkSheetCard({ task, compact = false }) {
         : null,
       target.romaji
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: target.romaji
           }, 'romaji')
         : null,
       target.meaning
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
             children: target.meaning
           }, 'meaning')
         : null,
@@ -28818,10 +28878,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         'data-cb-homework-context': '',
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.context || ''
@@ -28834,10 +28894,10 @@ function HomeworkSheetCard({ task, compact = false }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.25rem',
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: steps.map((step, index) =>
           jsx('li', { style: { overflowWrap: 'anywhere' }, children: step }, `${task.task_id}-step-${index}`)
@@ -28845,7 +28905,7 @@ function HomeworkSheetCard({ task, compact = false }) {
       }, 'steps'),
       record.length > 0
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `Ticks for this card: ${record.join(' · ')}`
           }, 'record')
         : null,
@@ -28854,16 +28914,16 @@ function HomeworkSheetCard({ task, compact = false }) {
       jsx('p', {
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.body,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('body'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)',
+          color: 'var(--cb3-ink)',
           overflowWrap: 'anywhere'
         },
         children: task.success_criterion || ''
       }, 'criterion'),
       jsx('p', {
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink-soft)' },
         children: `About ${Number(task.estimated_minutes) || 5} minutes · ${CB_HOMEWORK_KIND_WORD[task.task_kind] || 'Away from the screen'}`
       }, 'minutes'),
       jsx('p', {
@@ -28871,11 +28931,11 @@ function HomeworkSheetCard({ task, compact = false }) {
         style: {
           margin: 0,
           paddingTop: '0.35rem',
-          borderTop: '1px solid var(--cb-rule)',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          borderTop: '1px solid var(--cb3-rule)',
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink)'
+          color: 'var(--cb3-ink)'
         },
         children: completion
       }, 'completion'),
@@ -28883,10 +28943,10 @@ function HomeworkSheetCard({ task, compact = false }) {
         ? jsxs('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               lineHeight: 1.5,
-              color: 'var(--cb-ink-soft)',
+              color: 'var(--cb3-ink-soft)',
               overflowWrap: 'anywhere'
             },
             children: [
@@ -28954,7 +29014,7 @@ function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownlo
           })
         : null,
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
         children: 'Local only. Nothing is sent.'
       })
     ]
@@ -29161,18 +29221,18 @@ function TakeThisWithYou({
           maxWidth: CB_MEASURE,
           marginTop: '0.6rem',
           paddingTop: '0.6rem',
-          borderTop: '1px solid var(--cb-rule)'
+          borderTop: '1px solid var(--cb3-rule)'
         },
         children: [
           jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
+              color: 'var(--cb3-ink-soft)'
             },
             children: sectionTitle ? `Take this with you · ${sectionTitle}` : 'Take this with you'
           }),
@@ -29187,10 +29247,10 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.meta,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('meta'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-coral)',
+                      color: 'var(--cb3-alert)',
                       overflowWrap: 'anywhere'
                     },
                     children: error.message || 'The task could not be read.'
@@ -29220,10 +29280,10 @@ function TakeThisWithYou({
                   jsx('p', {
                     style: {
                       margin: 0,
-                      fontFamily: CB_SERIF,
-                      fontSize: CB_TYPE.body,
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('body'),
                       lineHeight: 1.5,
-                      color: 'var(--cb-ink)'
+                      color: 'var(--cb3-ink)'
                     },
                     children:
                       'Coursebook can write one small task from this lesson — one thing to use where you actually are. Say where and when, in one sentence.'
@@ -29231,10 +29291,10 @@ function TakeThisWithYou({
                   jsx('label', {
                     htmlFor: 'cb-homework-context',
                     style: {
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
                       fontWeight: 600,
-                      color: 'var(--cb-ink-soft)'
+                      color: 'var(--cb3-ink-soft)'
                     },
                     children: 'Where and when'
                   }),
@@ -29255,7 +29315,7 @@ function TakeThisWithYou({
                         children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
                       }),
                       jsx('span', {
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'One task, at most three steps, three to ten minutes.'
                       })
                     ]
@@ -29302,14 +29362,14 @@ function TakeThisWithYou({
                             children: busy === 'skip' ? 'Skipping' : 'Not this one'
                           }),
                           jsx('span', {
-                            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                             children: 'Only you record it. Nothing here is marked.'
                           })
                         ]
                       })
                     : jsx('div', {
                         'data-cb-homework-report': task.state,
-                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children:
                           task.state === 'skipped'
                             ? 'This one is closed as skipped. A fresh task can be taken with you from another lesson.'
@@ -29326,10 +29386,10 @@ function TakeThisWithYou({
                 'data-cb-homework-notice': '',
                 style: {
                   margin: 0,
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
                   lineHeight: 1.5,
-                  color: 'var(--cb-ink)'
+                  color: 'var(--cb3-ink)'
                 },
                 children: notice
               })
@@ -29453,10 +29513,10 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         jsx('p', {
           style: {
             margin: 0,
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.meta,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('meta'),
             lineHeight: 1.5,
-            color: 'var(--cb-coral)',
+            color: 'var(--cb3-alert)',
             overflowWrap: 'anywhere'
           },
           children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
@@ -29475,7 +29535,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       minWidth: 0,
       maxWidth: CB_MEASURE,
       padding: '0.5rem 0',
-      borderTop: '1px solid var(--cb-rule)'
+      borderTop: '1px solid var(--cb3-rule)'
     },
     children: [
       jsxs('div', {
@@ -29484,9 +29544,9 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
           jsx('span', {
             'data-cb-homework-record-target': '',
             style: {
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              color: 'var(--cb-ink)',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('lead'),
+              color: 'var(--cb3-ink)',
               minWidth: 0,
               overflowWrap: 'anywhere'
             },
@@ -29500,13 +29560,13 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
             children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
           }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `${Number(task.estimated_minutes) || 5} min`
           })
         ]
       }),
       jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: 1.5, color: 'var(--cb3-ink-soft)' },
         children: [lessonTitle || null, courseTitle || null].filter(Boolean).join(' · ') || 'This course',
       }),
       jsxs('div', {
@@ -29564,7 +29624,7 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         : null,
       notice
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink)' },
             children: notice
           })
         : null,
@@ -29572,9 +29632,9 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
         ? jsx('p', {
             style: {
               margin: 0,
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              color: 'var(--cb-coral)',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              color: 'var(--cb3-alert)',
               overflowWrap: 'anywhere'
             },
             children: `${error.code}: ${error.message}`
@@ -29713,10 +29773,10 @@ function HomeworkStudio({ implemented, onOpenSource }) {
         style: {
           margin: 0,
           maxWidth: CB_MEASURE,
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
           lineHeight: 1.5,
-          color: 'var(--cb-ink-soft)'
+          color: 'var(--cb3-ink-soft)'
         },
         children:
           'Tasks a learner took with them from a lesson on this device. A parent can record one as done; it is a report, never a mark, and it opens no chat.'
@@ -30030,33 +30090,67 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
   })
 }
 
-/** The view switcher: canonical tab strip when there is width, labelled Select when there is not. */
+/** The view switcher: authored v3 tabs when the route has width, a labelled Select when it has
+ * not. The breakpoint is read from the route (`useCbViewportWidth`), never from the window: the
+ * Desktop window can be ~1050 px wide while this route is 407 px. */
 function StudioViewPicker({ id, label, value, options, onChange }) {
+  const width = useCbViewportWidth()
+  const wide = !(width > 0 && width < 760)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
+    'data-cb-studio-view-picker': value,
     children: [
-      jsx('div', {
-        className: 'hidden min-[47.5rem]:block',
-        children: jsx(sdk.SegmentedControl, { onChange, options, sizing: 'content', value })
-      }),
-      jsxs('div', {
-        className: 'flex items-center gap-2 min-[47.5rem]:hidden',
-        children: [
-          jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
-          jsxs(sdk.Select, {
-            value,
-            onValueChange: onChange,
+      wide
+        ? jsx('div', {
+            role: 'tablist',
+            'aria-label': label,
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem', borderBottom: '1px solid var(--cb3-rule)' },
+            children: options.map((option) => {
+              const current = option.id === value
+              return jsx('button', {
+                type: 'button',
+                role: 'tab',
+                'data-cb3-view-tab': option.id,
+                'data-current': current ? 'true' : 'false',
+                'aria-selected': current ? 'true' : 'false',
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: '44px',
+                  paddingInline: '0.6rem',
+                  border: 0,
+                  borderBottom: current ? '3px solid var(--cb3-terracotta)' : '3px solid transparent',
+                  background: 'transparent',
+                  color: 'var(--cb3-ink)',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: current ? 600 : 400,
+                  cursor: 'pointer'
+                },
+                onClick: () => onChange(option.id),
+                children: option.label
+              }, option.id)
+            })
+          })
+        : jsxs('div', {
+            className: 'flex items-center gap-2',
             children: [
-              jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
-              jsx(
-                sdk.SelectContent,
-                { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
-                'content'
-              )
+              jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
+              jsxs(sdk.Select, {
+                value,
+                onValueChange: onChange,
+                children: [
+                  jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
+                  jsx(
+                    sdk.SelectContent,
+                    { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
+                    'content'
+                  )
+                ]
+              })
             ]
           })
-        ]
-      })
     ]
   })
 }
@@ -30475,7 +30569,7 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
     children: [
       jsx('div', {
         'data-cb-plan-validation-line': model.independence || model.state,
-        style: { color: 'var(--cb-ink)', fontWeight: 600 },
+        style: { color: 'var(--cb3-ink)', fontWeight: 600 },
         children: model.line
       }),
       model.validatorModel
@@ -30687,12 +30781,13 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
     className: 'flex max-w-prose flex-col gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
     style: {
       padding: '0.6rem 0.75rem',
-      borderLeft: '2px solid var(--cb-accent)',
-      background: 'var(--cb-accent-soft)'
+      border: '1px solid var(--cb3-rule)',
+      borderRadius: cb3Radius('round'),
+      background: 'var(--cb3-card-stock)'
     },
     children: [
       jsx('div', {
-        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+        style: { fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
         children: model.title
       }),
       jsx('p', { className: 'max-w-prose', children: model.body }),
@@ -33630,7 +33725,13 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
             role: 'alertdialog',
             'aria-label': 'Unsaved section changes',
             'data-cb-studio-leave-guard': pendingLeave.kind,
-            className: 'flex flex-wrap items-center gap-2 border-l-2 border-(--cb-accent) pl-2',
+            className: 'flex flex-wrap items-center gap-2',
+            style: {
+              padding: '0.6rem 0.75rem',
+              background: 'var(--cb3-card-stock)',
+              border: '1px solid var(--cb3-rule)',
+              borderRadius: cb3Radius('round')
+            },
             children: [
               jsx('span', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -33717,13 +33818,13 @@ function CoursebookWordmark() {
   return jsx('div', {
     'data-cb-wordmark': '',
     style: {
-      fontFamily: CB_SERIF,
-      fontSize: CB_TYPE.meta,
+      fontFamily: 'var(--cb3-font-display)',
+      fontSize: cb3Type('meta'),
       fontWeight: 600,
       letterSpacing: '0.14em',
       textTransform: 'uppercase',
       lineHeight: 1.2,
-      color: 'var(--cb-ink-soft)',
+      color: 'var(--cb3-ink-soft)',
       // H-160: "COURSEBOOK" at 28 px (200% text) plus 0.14em tracking measures 239 px, and the
       // route pane at a 460 px window is 215 px (170 px of content). The wordmark was therefore
       // the widest unbreakable token on the route: 46 px of the 53 px routeOverflowX on its own,
@@ -35702,9 +35803,9 @@ function WorldPlate({ artifactId, caption, height, kind }) {
     position: 'relative',
     width: '100%',
     height: height || '11rem',
-    background: 'var(--cb-paper-raised)',
-    border: '1px solid var(--cb-rule)',
-    borderRadius: '2px',
+    background: 'var(--cb3-canvas-edge)',
+    border: '1px solid var(--cb3-rule)',
+    borderRadius: cb3Radius('square'),
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
@@ -35731,11 +35832,11 @@ function WorldPlate({ artifactId, caption, height, kind }) {
             right: 0,
             bottom: 0,
             padding: '0.25rem 0.5rem',
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.caption,
-            color: 'var(--cb-ink-soft)',
-            background: 'var(--cb-paper)',
-            borderTop: '1px solid var(--cb-rule)'
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            color: 'var(--cb3-ink-soft)',
+            background: 'var(--cb3-card-stock)',
+            borderTop: '1px solid var(--cb3-rule)'
           },
           children: caption
         })
@@ -35750,11 +35851,11 @@ function WorldPlate({ artifactId, caption, height, kind }) {
       style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', textAlign: 'center' },
       children: [
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), color: 'var(--cb3-ink)' },
           children: caption
         }),
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
           children: preview.state === 'loading' ? 'Loading the plate' : CB_WORLD_COPY.plateMissing
         })
       ]
@@ -35772,13 +35873,13 @@ function ModeBadge({ mode, pending }) {
       alignItems: 'center',
       gap: '0.3rem',
       padding: '0.1rem 0.45rem',
-      border: `1px solid ${game ? 'var(--cb-ochre)' : 'var(--cb-accent)'}`,
-      borderRadius: '2px',
-      fontFamily: CB_SANS,
-      fontSize: CB_TYPE.caption,
+      border: `1px solid ${game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)'}`,
+      borderRadius: cb3Radius('soft'),
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
       fontWeight: 600,
-      color: game ? 'var(--cb-ochre)' : 'var(--cb-accent)',
-      background: 'var(--cb-paper)'
+      color: game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)',
+      background: 'var(--cb3-card-stock)'
     },
     children: [
       jsx('span', {
@@ -35786,8 +35887,8 @@ function ModeBadge({ mode, pending }) {
         style: {
           width: '0.4rem',
           height: '0.4rem',
-          borderRadius: '999px',
-          background: game ? 'var(--cb-ochre)' : 'var(--cb-accent)'
+          borderRadius: cb3Radius('pill'),
+          background: game ? 'var(--cb3-gold)' : 'var(--cb3-terracotta)'
         }
       }, 'dot'),
       game ? CB_WORLD_COPY.modeGame : CB_WORLD_COPY.modeTextbook,
@@ -35817,26 +35918,25 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
         flexDirection: 'column',
         gap: '0.5rem',
         padding: '0.9rem 1rem 1rem',
-        background: 'var(--cb-paper-raised)',
-        border: '1px solid var(--cb-rule)',
-        borderTop: '3px solid var(--cb-ochre)',
-        borderRadius: '2px',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
         minWidth: 0
       },
       children: [
         jsxs('div', {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
           children: [jsx(ModeBadge, { mode }), jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
             children: CB_WORLD_COPY.notApprovedTitle
           })]
         }),
         jsx('p', {
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
           children: CB_WORLD_COPY.notApprovedBody
         }),
-        jsx(CbAction, {
-          variant: 'secondary',
+        jsx(PillAction, {
+          variant: 'quiet',
           'data-cb-world-open-studio': '',
           onClick: onOpenStudio,
           style: { alignSelf: 'flex-start' },
@@ -35857,9 +35957,8 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
           gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 13.25rem',
           gap: '0.9rem',
           padding: '0.9rem 1rem 1rem',
-          background: 'var(--cb-lamp-soft)',
-          borderTop: '3px solid var(--cb-lamp)',
-          borderRadius: '2px',
+          background: 'var(--cb3-terracotta-quiet)',
+          borderRadius: cb3Radius('round'),
           minWidth: 0
         },
         children: [
@@ -35869,10 +35968,6 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
               jsxs('div', {
                 style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' },
                 children: [
-                  jsx('span', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
-                    children: CB_WORLD_COPY.label
-                  }),
                   jsx(ModeBadge, { mode })
                 ]
               }),
@@ -35880,25 +35975,23 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
                 'data-cb-world-title': '',
                 style: {
                   margin: 0,
-                  fontFamily: CB_SERIF,
-                  fontSize: CB_TYPE.heading,
+                  fontFamily: 'var(--cb3-font-display)',
+                  fontSize: cb3Type('heading'),
+                  lineHeight: cb3Lead('heading'),
                   fontWeight: 600,
-                  lineHeight: 1.15,
-                  color: 'var(--cb-ink)',
+                  color: 'var(--cb3-ink)',
                   minWidth: 0,
                   overflowWrap: 'anywhere'
                 },
                 children: title || 'This course'
               }),
-              grammarName
-                ? jsx('div', {
-                    'data-cb-world-grammar': '',
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
-                    children: grammarName
-                  })
-                : null,
-              jsx(CbAction, {
-                variant: 'tertiary',
+              jsx('div', {
+                'data-cb-world-grammar': '',
+                style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
+                children: grammarName ? `${CB_WORLD_COPY.label} · ${grammarName}` : CB_WORLD_COPY.label
+              }),
+              jsx(PillAction, {
+                variant: 'quiet',
                 'data-cb-world-change': '',
                 onClick: onOpenStudio,
                 style: { alignSelf: 'flex-start' },
@@ -35931,7 +36024,7 @@ function CourseWorldHero({ world, mode, sectionPlates, narrow, onOpenStudio, onO
                   jsx(WorldPlate, { artifactId: plate.artifact_id, caption: plate.title || plate.section_key, height: '6.5rem', kind: 'section' }),
                   jsx('span', {
                     'data-cb-world-section-title': plate.section_id,
-                    style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)', lineHeight: 1.3 },
+                    style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('body'), fontWeight: 600, color: 'var(--cb3-ink)', lineHeight: cb3Lead('body') },
                     children: plate.title || 'Section'
                   })
                 ]
@@ -36139,10 +36232,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'unsupported',
-      children: jsx(sdk.EmptyState, {
-        title: 'This backend does not carry the world wire yet',
-        description: CB_WORLD_COPY.readUnsupported + ' Your course stays in Textbook mode and no art is generated.',
-        children: jsx(CbAction, { variant: 'primary', onClick: onClose, children: 'Keep Textbook' })
+      heading: 'This backend does not carry the world wire yet',
+      children: jsx(PaperCard, {
+        meta: CB_WORLD_COPY.readUnsupported + ' Your course stays in Textbook mode and no art is generated.',
+        footer: jsx(PillAction, { variant: 'primary', label: 'Keep Textbook', onClick: onClose })
       })
     })
   }
@@ -36150,13 +36243,16 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'error',
-      children: jsxs(sdk.ErrorState, {
-        title: 'The course world could not be read',
-        description: describeError(worldError),
-        children: [
-          jsx(CbAction, { variant: 'primary', onClick: onReload, children: 'Try again' }),
-          jsx(CbAction, { variant: 'tertiary', onClick: onClose, children: 'Back to the course' })
-        ]
+      heading: 'The course world could not be read',
+      children: jsx(PaperCard, {
+        meta: describeError(worldError),
+        footer: jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' },
+          children: [
+            jsx(PillAction, { variant: 'primary', label: 'Try again', onClick: onReload }, 'retry'),
+            jsx(PillAction, { variant: 'quiet', label: 'Back to the course', onClick: onClose }, 'back')
+          ]
+        })
       })
     })
   }
@@ -36164,41 +36260,46 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
     return jsx(WorldStudioFrame, {
       onClose,
       state: 'loading',
-      children: jsxs('div', {
-        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '2rem 0' },
-        children: [
-          jsx(sdk.Loader, { label: 'Reading the course world' }),
-          jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' }, children: 'Nothing already saved is lost.' })
-        ]
+      heading: 'Reading the course world',
+      children: jsx('p', {
+        'data-cb-world-loading': '',
+        role: 'status',
+        'aria-live': 'polite',
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
+        children: 'Nothing already saved is lost.'
       })
     })
   }
 
   const generating = Boolean(jobId) || state === 'concepts_generating' || state === 'kit_generating'
-  const stageMessage = (job && job.progress && job.progress.message) || cbWorldStateWord(state)
+  const stateWord = cbWorldStateWord(state)
+  // The state word is the headline. A progress message is the detail under it; when the job has not
+  // reported one (or repeats the headline), do not print the same words twice — say what happens next.
+  const progressMessage = (job && job.progress && job.progress.message) || ''
+  const stageMessage = progressMessage.trim() && progressMessage.trim() !== stateWord ? progressMessage : null
 
   const body = []
   body.push(jsxs('div', {
     'data-cb-world-studio-head': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
+      jsx('h2', {
+        id: 'cb-world-studio-title',
+        style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
+        children: 'Choose the world for this course'
+      }),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
         children: [
+          jsx(ModeBadge, { mode }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' },
             children: CB_WORLD_COPY.label
-          }),
-          jsx(ModeBadge, { mode })
+          })
         ]
       }),
-      jsx('h2', {
-        id: 'cb-world-studio-title',
-        style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)' },
-        children: 'Choose the world for this course'
-      }),
       jsx('p', {
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+        style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
         children: (world && world.brief && world.brief.end_capability) || 'The world is orientation art. Your lessons, checks and evidence are unchanged by it.'
       })
     ]
@@ -36212,14 +36313,15 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         display: 'flex',
         flexDirection: 'column',
         gap: '0.35rem',
-        padding: '0.6rem 0.75rem',
-        background: 'var(--cb-paper-raised)',
-        borderLeft: '2px solid var(--cb-coral)',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
         minWidth: 0
       },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-coral)' }, children: 'That did not finish' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' }, children: error.message })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-alert)' }, children: 'That did not finish' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink)' }, children: error.message })
       ]
     }, 'error'))
   }
@@ -36227,10 +36329,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (providerUnavailable) {
     body.push(jsxs('div', {
       'data-cb-world-provider': 'unavailable',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem 0.85rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-ochre)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Game mode is unavailable because image generation is not configured.' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'The course stays in Textbook mode and your lessons are unchanged. No fake world is created.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Game mode is unavailable because image generation is not configured.' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' }, children: 'The course stays in Textbook mode and your lessons are unchanged. No fake world is created.' })
       ]
     }, 'provider'))
   }
@@ -36238,10 +36349,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (state === 'failed' && missing.length) {
     body.push(jsxs('div', {
       'data-cb-world-partial': missing.join(','),
-      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.75rem 0.85rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-coral)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.75rem 0.85rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Some plates are missing' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: `Missing: ${missing.join(', ')}. Nothing is approved until every role exists, and no placeholder art is saved.` })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Some plates are missing' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink-soft)' }, children: `Missing: ${missing.join(', ')}. Nothing is approved until every role exists, and no placeholder art is saved.` })
       ]
     }, 'partial'))
   }
@@ -36266,39 +36386,40 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           role: 'listitem',
           'data-cb-world-concept': concept.style_id,
           'data-cb-world-concept-selected': selected ? 'true' : 'false',
+          'data-cb3-card': 'paper',
           style: {
             display: 'flex',
             flexDirection: 'column',
             gap: '0.4rem',
-            padding: '0.6rem',
+            padding: '0.65rem',
             minWidth: 0,
-            background: 'var(--cb-paper-raised)',
-            border: selected ? '2px solid var(--cb-lamp)' : '1px solid var(--cb-rule)',
-            borderRadius: '2px'
+            background: 'var(--cb3-card-stock)',
+            border: selected ? '2px solid var(--cb3-terracotta)' : '1px solid var(--cb3-rule)',
+            borderRadius: cb3Radius('round')
           },
           children: [
             jsx(WorldPlate, { artifactId: concept.artifact_id, caption: name, height: '8rem', kind: 'concept' }),
-            jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.lead, fontWeight: 600, color: 'var(--cb-ink)' }, children: name }),
-            one ? jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: one }) : null,
+            jsx('span', { style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('lead'), lineHeight: cb3Lead('lead'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: name }),
+            one ? jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: one }) : null,
             jsxs('span', {
               'data-cb-world-palette': concept.style_id,
               'aria-hidden': 'true',
               style: { display: 'flex', gap: '0.2rem' },
               children: (concept.palette || []).slice(0, 5).map((swatch, index) => jsx('span', {
-                style: { width: '1rem', height: '0.75rem', background: swatch, border: '1px solid var(--cb-rule)' }
+                style: { width: '1rem', height: '0.75rem', background: swatch, border: '1px solid var(--cb3-rule)', borderRadius: cb3Radius('square') }
               }, String(index)))
             }),
             selected
-              ? jsx('span', { 'data-cb-world-chosen': '', style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' }, children: 'Chosen direction' })
+              ? jsx('span', { 'data-cb-world-chosen': '', style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'Chosen direction' })
               : jsx('div', {
                   'data-cb-world-use-direction': concept.style_id,
                   'data-cb-world-primary': concept.style_id === (concepts[0] && concepts[0].style_id) ? 'direction' : undefined,
                   style: { display: 'inline-flex' },
-                  children: jsx(CbAction, {
-                    variant: concept.style_id === (concepts[0] && concepts[0].style_id) ? 'primary' : 'secondary',
+                  children: jsx(PillAction, {
+                    variant: concept.style_id === (concepts[0] && concepts[0].style_id) ? 'primary' : 'quiet',
+                    label: 'Use this direction',
                     disabled: Boolean(busy),
-                    onClick: () => approveStyle(concept),
-                    children: 'Use this direction'
+                    onClick: () => approveStyle(concept)
                   })
                 })
           ]
@@ -36318,17 +36439,18 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
             gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 11rem',
             gap: '0.7rem',
             padding: '0.85rem 0.95rem',
-            background: 'var(--cb-lamp-soft)',
-            borderTop: '3px solid var(--cb-lamp)',
+            background: 'var(--cb3-card-stock)',
+            border: '1px solid var(--cb3-rule)',
+            borderRadius: cb3Radius('round'),
             minWidth: 0
           },
           children: [
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', justifyContent: 'center', minWidth: 0 },
               children: [
-                jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' }, children: 'The world you would get' }),
-                jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', overflowWrap: 'anywhere' }, children: (world.brief && world.brief.title) || 'This course' }),
-                jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: `1 hero · 1 cover · ${sectionPlates.length} section ${sectionPlates.length === 1 ? 'card' : 'cards'}` })
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)', overflowWrap: 'anywhere' }, children: (world.brief && world.brief.title) || 'This course' }),
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'The world you would get' }),
+                jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: `1 hero · 1 cover · ${sectionPlates.length} section ${sectionPlates.length === 1 ? 'card' : 'cards'}` })
               ]
             }),
             jsx(WorldPlate, { artifactId: cover ? cover.artifact_id : null, caption: 'Library cover', height: '7rem', kind: 'cover' })
@@ -36344,7 +36466,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           }, plate.section_id))
         }),
         jsx('p', {
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '58ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)', maxWidth: '58ch' },
           children: mode === 'game'
             ? 'Use this world and the course opens on it. This is the final visual approval; you can review it again from Course settings.'
             : 'Use this world to approve the kit and switch this course to Game mode. Your lessons, checks and evidence do not change.'
@@ -36356,10 +36478,19 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (state === 'approved') {
     body.push(jsxs('div', {
       'data-cb-world-approved-panel': world.approved_hash,
-      style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.8rem 0.9rem', background: 'var(--cb-paper-raised)', borderTop: '3px solid var(--cb-field)', minWidth: 0 },
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        padding: '0.8rem 0.9rem',
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round'),
+        minWidth: 0
+      },
       children: [
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-field)' }, children: 'This world is approved.' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'Changing it starts a new direction and leaves this approved kit on the course until you approve another.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: 'This world is approved.' }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'Changing it starts a new direction and leaves this approved kit on the course until you approve another.' })
       ]
     }, 'approved'))
   }
@@ -36367,13 +36498,13 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   // Edit direction: presentation-only fields, exactly the closed patch the backend accepts.
   body.push(jsxs('div', {
     'data-cb-world-direction': editing ? 'open' : 'closed',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', borderTop: '1px solid var(--cb-rule)', paddingTop: '0.6rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', borderTop: '1px solid var(--cb3-rule)', paddingTop: '0.6rem', minWidth: 0 },
     children: [
       jsx('button', {
         type: 'button',
         'data-cb-world-direction-toggle': '',
         onClick: () => setEditing((value) => !value),
-        style: { alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, font: 'inherit', fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-accent)', cursor: 'pointer', textDecoration: 'underline' },
+        style: { alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, font: 'inherit', fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-terracotta)', cursor: 'pointer', textDecoration: 'underline' },
         children: editing ? 'Close the direction' : 'Edit direction'
       }),
       editing
@@ -36389,7 +36520,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         : null,
       editing
         ? jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' },
             children: 'These words steer the next generation only. They never edit a lesson, a check or a source.'
           })
         : null
@@ -36399,11 +36530,11 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
   if (reasonOpen) {
     body.push(jsxs('div', {
       'data-cb-world-reason': '',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem 0.75rem', background: 'var(--cb-paper-raised)', border: '1px solid var(--cb-rule)', minWidth: 0 },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem 0.75rem', background: 'var(--cb3-card-stock)', border: '1px solid var(--cb3-rule)', minWidth: 0 },
       children: [
         jsx('label', {
           htmlFor: 'cb-world-reason-input',
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' },
+          style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), fontWeight: 600, color: 'var(--cb3-ink)' },
           children: 'What should change?'
         }),
         jsx(sdk.Input, {
@@ -36412,7 +36543,7 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
           onChange: (event) => setDirection((current) => ({ ...current, motifsNote: event.target.value })),
           placeholder: 'e.g. warmer light, fewer props'
         }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }, children: 'The reason is used as mood text for the next set. It is not shown to the image model as a scene description.' })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: 'The reason is used as mood text for the next set. It is not shown to the image model as a scene description.' })
       ]
     }, 'reason'))
   }
@@ -36427,10 +36558,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         ? jsx('div', {
             'data-cb-world-primary': primary.id,
             style: { display: 'inline-flex' },
-            children: jsx(CbAction, {
+            children: jsx(PillAction, {
               variant: 'primary',
               disabled: Boolean(busy) || primary.disabled,
-              pending: Boolean(busy) && primary.id === busy,
+              busy: Boolean(busy) && primary.id === busy,
               onClick: () => {
                 if (primary.id === 'concepts') generate('concepts', { brief_patch: patch() })
                 else if (primary.id === 'retry-concepts') generate('concepts', { brief_patch: patch() })
@@ -36447,11 +36578,11 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
         ? jsx('div', {
             'data-cb-world-another': '',
             style: { display: 'inline-flex' },
-            children: jsx(CbAction, { variant: 'secondary', disabled: Boolean(busy), onClick: () => generate('concepts', { brief_patch: patch() }), children: 'Try another set' })
+            children: jsx(PillAction, { variant: 'quiet', disabled: Boolean(busy), onClick: () => generate('concepts', { brief_patch: patch() }), children: 'Try another set' })
           }, 'another')
         : null,
-      jsx(CbAction, { variant: 'tertiary', 'data-cb-world-textbook': '', onClick: onClose, children: 'Use Textbook mode' }),
-      jsx(CbAction, { variant: 'tertiary', 'data-cb-world-cancel': '', onClick: onClose, children: 'Cancel' })
+      jsx(PillAction, { variant: 'quiet', 'data-cb-world-textbook': '', onClick: onClose, children: 'Use Textbook mode' }),
+      jsx(PillAction, { variant: 'quiet', 'data-cb-world-cancel': '', onClick: onClose, children: 'Cancel' })
     ]
   }, 'actions'))
 
@@ -36460,10 +36591,10 @@ function WorldStudio({ courseId, mode, world, worldStatus, worldError, onReload,
       'data-cb-world-progress': (job && job.state) || state,
       role: 'status',
       'aria-live': 'polite',
-      style: { display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
       children: [
-        jsx(sdk.Loader, { label: 'Working on the world' }),
-        jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` })
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: stateWord }),
+        jsx('span', { style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), lineHeight: cb3Lead('caption'), color: 'var(--cb3-ink-soft)' }, children: stageMessage ? `${stageMessage} — you can leave this open or cancel. No lesson is built until the world is approved.` : 'You can leave this open or cancel. No lesson is built until the world is approved.' })
       ]
     }, 'progress'))
   }
@@ -36475,7 +36606,7 @@ function worldField(label, id, value, onChange, placeholder) {
   return jsxs('div', {
     style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
     children: [
-      jsx('label', { htmlFor: id, style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: 'var(--cb-ink)' }, children: label }),
+      jsx('label', { htmlFor: id, style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), fontWeight: 600, color: 'var(--cb3-ink)' }, children: label }),
       jsx(sdk.Input, { id, value, onChange: (event) => onChange(event.target.value), placeholder })
     ]
   }, id)
@@ -36494,7 +36625,7 @@ function buildWorldPrimary({ state, busy, generating, providerUnavailable, hasSt
   return { id: 'concepts', label: 'Show me three directions' }
 }
 
-function WorldStudioFrame({ state, onClose, children }) {
+function WorldStudioFrame({ state, onClose, children, heading }) {
   return jsx('div', {
     'data-cb-world-studio-backdrop': '',
     style: {
@@ -36503,7 +36634,7 @@ function WorldStudioFrame({ state, onClose, children }) {
       zIndex: 60,
       display: 'flex',
       justifyContent: 'flex-end',
-      background: 'color-mix(in srgb, var(--cb-ink) 26%, transparent)'
+      background: 'color-mix(in srgb, var(--cb3-forest) 42%, transparent)'
     },
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onClose()
@@ -36518,9 +36649,9 @@ function WorldStudioFrame({ state, onClose, children }) {
         maxWidth: '100%',
         height: '100%',
         overflowY: 'auto',
-        background: 'var(--cb-paper)',
-        color: 'var(--cb-ink)',
-        borderLeft: '1px solid var(--cb-rule)',
+        background: 'var(--cb3-canvas)',
+        color: 'var(--cb3-ink)',
+        borderLeft: '1px solid var(--cb3-rule)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
@@ -36529,16 +36660,21 @@ function WorldStudioFrame({ state, onClose, children }) {
       children: [
         jsx('div', {
           style: { display: 'flex', justifyContent: 'flex-end' },
-          children: jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'ghost',
+          children: jsx(PillAction, {
+            variant: 'quiet',
+            label: 'Close',
             'data-cb-world-studio-close': '',
             'aria-label': 'Close the World Studio',
-            style: { minHeight: '44px' },
-            onClick: onClose,
-            children: 'Close'
+            onClick: onClose
           })
         }),
+        heading
+          ? jsx('h2', {
+              id: 'cb-world-studio-title',
+              style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
+              children: heading
+            }, 'heading')
+          : null,
         ...(Array.isArray(children) ? children : [children])
       ]
     })
@@ -36590,7 +36726,7 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
       alignItems: 'center',
       justifyContent: 'center',
       padding: '1rem',
-      background: 'color-mix(in srgb, var(--cb-ink) 34%, transparent)'
+      background: 'color-mix(in srgb, var(--cb3-forest) 46%, transparent)'
     },
     onMouseDown: (event) => {
       if (event && event.target === event.currentTarget) onCancel()
@@ -36606,20 +36742,19 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
         flexDirection: 'column',
         gap: '0.6rem',
         padding: '1rem 1.1rem 1.1rem',
-        background: 'var(--cb-paper-raised)',
-        border: '1px solid var(--cb-rule)',
-        borderTop: '3px solid var(--cb-lamp)',
-        borderRadius: '2px'
+        background: 'var(--cb3-card-stock)',
+        border: '1px solid var(--cb3-rule)',
+        borderRadius: cb3Radius('round')
       },
       children: [
         jsx('h2', {
           id: 'cb-mode-dialog-title',
-          style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-display)', fontSize: cb3Type('heading'), lineHeight: cb3Lead('heading'), fontWeight: 600, color: 'var(--cb3-ink)' },
           children: title
         }),
         jsx('p', {
           'data-cb-mode-dialog-body': '',
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink)', maxWidth: '54ch' },
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: 'var(--cb3-ink)', maxWidth: '54ch' },
           children: body
         }),
         jsxs('div', {
@@ -36628,9 +36763,9 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
             jsx('div', {
               'data-cb-mode-primary': primaryId,
               style: { display: 'inline-flex' },
-              children: jsx(CbAction, {
+              children: jsx(PillAction, {
                 variant: 'primary',
-                pending: Boolean(pending),
+                busy: Boolean(pending),
                 onClick: () => {
                   if (primaryId === 'switch') onSwitch()
                   else if (primaryId === 'studio') onOpenStudio()
@@ -36642,8 +36777,8 @@ function ModeSwitchDialog({ mode, world, pending, providerUnavailable, onGenerat
             }),
             primaryId === 'keep' || primaryId === 'generate'
               ? null
-              : jsx(CbAction, { variant: 'secondary', 'data-cb-mode-keep': '', onClick: onKeep, children: 'Keep Textbook' }),
-            jsx(CbAction, { variant: 'tertiary', 'data-cb-mode-cancel': '', onClick: onCancel, children: 'Cancel' })
+              : jsx(PillAction, { variant: 'quiet', 'data-cb-mode-keep': '', onClick: onKeep, children: 'Keep Textbook' }),
+            jsx(PillAction, { variant: 'quiet', 'data-cb-mode-cancel': '', onClick: onCancel, children: 'Cancel' })
           ]
         })
       ]
