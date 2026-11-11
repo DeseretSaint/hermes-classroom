@@ -47,7 +47,8 @@ Read with `docs/launch/VISUAL-QUALITY-PROGRAM.md` and
   v3 screens.
 - There is no Game-mode curated kit. `coursebook/world.py` generates hero, cover, and section
   plates when an image provider exists; it does not generate lesson scenes and has no curated
-  fallback.
+  fallback. `world_assets.textless` is asserted from the prompt, not verified: there is no OCR or
+  vision critic in the code, so a generated plate with baked letters can reach approval.
 
 ## 3. Surface matrix
 

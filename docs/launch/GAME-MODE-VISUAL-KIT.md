@@ -29,6 +29,20 @@ provider is available; it is not a requirement for Game mode.
 The missing pieces are: a curated kit, a kit reference in the brief, `lesson_scene` generation
 and resolution, a post-generation quality critic, and a no-provider path.
 
+The current code confirms each gap:
+
+- `coursebook/world.py` `build_kit_prompts` builds only `hero`, `cover`, and `section` prompts; it
+  has no `lesson_scene` role.
+- `coursebook/world.py` `_missing_kit_roles` requires hero, cover, and sections; it has no
+  lesson-scene requirement or fallback rule.
+- `coursebook/world.py` `_kit_stage` sets `provider_unavailable` and stops when no image provider
+  is configured, instead of using a curated kit.
+- `world_assets.textless` is written as true from the prompt. There is no OCR or vision critic,
+  so a plate with baked letters can still reach approval.
+- `desktop/src/70-learning.js` `classroomSceneFromWorld` returns `artifactId: null` when no
+  section plate matches, and the classroom then renders a typographic plate that states the
+  course title. That is the flat fallback this program removes for approved Game courses.
+
 ## 3. Visual kit registry
 
 Each grammar gets a registry entry under `assets/visual-kits/<grammar>/` with `kit.json`. The
