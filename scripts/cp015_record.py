@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DB = (Path.home() / ".hermes" / "coursebook-test-cp015" / "home"
+DEFAULT_DB = (Path.home() / ".hermes" / "coursebook-test-cp015c" / "home"
               / "plugin-data" / "coursebook" / "data.db")
 DEFAULT_OUT = ROOT / "docs" / "concept-parity" / "demo"
 
@@ -88,8 +88,35 @@ def authoring_model_label() -> str:
     return "host ctx.llm (nous / deepseek-v4.1-flash-1017)"
 
 
-def validator_label() -> str:
-    return "same model; no independent route configured -> model_assessed"
+def validator_label(snapshot: dict | None = None) -> str:
+    """The declared validator route, read from the stored verdicts themselves.
+
+    CP-015c: this used to be the constant "same model; no independent route configured ->
+    model_assessed". That sentence outlived the configuration it described: a run with the
+    trust-gated second-model route configured still carried it in its record, which is the same
+    class of defect CP-015b removed from the outcome sentence. When a snapshot is available the
+    label is derived from ``gen_validation_records``: the recorded independence, validator model
+    and generator model, counted, with no model named unless a row names it.
+    """
+    if not snapshot:
+        return "no stored verdict: recorded from configuration only"
+    rows = snapshot.get("validations") or []
+    if not rows:
+        return "no stored verdict carries a validator identity"
+    routes: dict[tuple[str, str | None, str | None], int] = {}
+    for row in rows:
+        key = (str(row.get("independence") or "unrecorded"),
+               row.get("validator_model"), row.get("generator_model"))
+        routes[key] = routes.get(key, 0) + 1
+    parts = []
+    for (independence, validator_model, generator_model), count in sorted(routes.items()):
+        if validator_model and validator_model != generator_model:
+            parts.append(f"{count} {independence} ({validator_model} judging {generator_model})")
+        elif validator_model:
+            parts.append(f"{count} {independence} ({validator_model} judging its own output)")
+        else:
+            parts.append(f"{count} {independence} (no model identity stored)")
+    return "stored verdicts: " + "; ".join(parts)
 
 
 # --------------------------------------------------------------------------------------
@@ -109,7 +136,8 @@ def collect(db_path: Path) -> dict:
     try:
         snapshot = {
             "courses": _rows(conn, (
-                "select id, title, status, subject_domain, locale, created_at, updated_at "
+                "select id, title, status, subject_domain, locale, pack_id, created_at, "
+                "updated_at "
                 "from courses where status != 'deleted' order by created_at")),
             "jobs": _rows(conn, (
                 "select id, kind, state, brief_json, error_json, created_at, updated_at "
@@ -203,7 +231,19 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
     # ---- courses keyed by the card's four slots -------------------------------------------------
     courses: dict[str, dict] = {}
     by_id: dict[str, dict] = {}
+    # CP-015c: the authoring home also holds courses that arrived by installing a bundled pack.
+    # They are real, but they were not authored by this run — the run record must not count them
+    # as courses it reached a plan for. They are named separately, by id and pack, so nothing is
+    # dropped silently.
+    imported: list[dict] = []
+    authored_rows = []
     for row in snapshot.get("courses") or []:
+        if row.get("pack_id"):
+            imported.append({"title": row.get("title"), "course_id": row.get("id"),
+                             "pack_id": row.get("pack_id")})
+            continue
+        authored_rows.append(row)
+    for row in authored_rows:
         title = str(row.get("title") or "")
         slug = slots.get(title) or _slug(title)
         entry = courses.setdefault(slug, {
@@ -266,10 +306,17 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
             continue
         entry["job_ids"].append(job["id"])
 
-    if unattributed:
+    # CP-015c: a `kind: import` row is written by the plugin install/import path, not by this
+    # course's authoring run, and it carries no course attribution by design. Recording it by id is
+    # honest; refusing the whole projection because the install left a row behind is not. Any
+    # authoring job (plan/media/export) with no course attribution still fails the projection,
+    # because that is a course's work that cannot be placed.
+    authoring_unattributed = [job["id"] for job in jobs
+                              if job["id"] in set(unattributed) and job["kind"] != "import"]
+    if authoring_unattributed:
         raise ValueError(
-            "job rows carry no course attribution and cannot be placed in the record: "
-            + ", ".join(unattributed)
+            "authoring job rows carry no course attribution and cannot be placed in the record: "
+            + ", ".join(authoring_unattributed)
         )
 
     # ---- plans: stored verdicts first, then authored plans the validator never judged ----------
@@ -428,6 +475,8 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
                      for criterion, count in sorted(by_criterion.items(),
                                                     key=lambda item: (-item[1], item[0])))
            or "none")
+        + (f". {len(imported)} further course(s) on this backend arrived by installing a bundled "
+           f"pack and are not counted here" if imported else "")
         + (f". The latest stored verdict is plan {latest['plan_id']} "
            f"({latest.get('verdict')}) with {len(latest.get('rejections') or [])} reason(s)"
            if latest else "")
@@ -456,6 +505,14 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
             "rejections_by_criterion": by_criterion,
             "plans": len(plans),
             "plans_without_validation": len(unvalidated),
+            "unattributed_jobs": len(unattributed),
+        },
+        "unattributed_job_ids": {
+            "ids": list(unattributed),
+            "note": (
+                "rows written by the plugin install/import path; they carry no course and are not "
+                "part of this course's authoring run"
+            ),
         },
         "jobs": jobs,
         "validations": [
@@ -475,6 +532,7 @@ def build_record(snapshot: dict, *, base: str, wire_version: int,
         ],
         "plan_attempts": attempts,
         "courses": courses,
+        "imported_courses": imported,
         "outcome": outcome,
     }
 
@@ -604,7 +662,7 @@ def write_records(db_path: Path, out_dir: Path, *, base: str, wire_version: int)
     snapshot = collect(db_path)
     record = build_record(snapshot, base=base, wire_version=wire_version,
                           authoring_model=authoring_model_label(),
-                          validator=validator_label())
+                          validator=validator_label(snapshot))
     evidence = build_evidence(record, snapshot, demo_home=str(db_path.parents[2]))
     run_path = out_dir / "cp015-run.json"
     evidence_path = out_dir / "cp015-live-evidence.json"
@@ -617,8 +675,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--base", default="http://127.0.0.1:44501")
-    parser.add_argument("--wire-version", type=int, default=25)
+    parser.add_argument("--base", default="http://127.0.0.1:44601")
+    parser.add_argument("--wire-version", type=int, default=26)
     args = parser.parse_args()
     if not args.db.is_file():
         print(f"[cp015-record] no database at {args.db}", file=sys.stderr)

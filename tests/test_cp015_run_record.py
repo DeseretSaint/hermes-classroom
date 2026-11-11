@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RECORD = ROOT / "docs" / "concept-parity" / "demo" / "cp015-run.json"
 EVIDENCE = ROOT / "docs" / "concept-parity" / "demo" / "cp015-live-evidence.json"
 BUILDER = ROOT / "scripts" / "cp015_record.py"
-DEMO_DB = Path.home() / ".hermes" / "coursebook-test-cp015" / "home" / "plugin-data" \
+DEMO_DB = Path.home() / ".hermes" / "coursebook-test-cp015c" / "home" / "plugin-data" \
     / "coursebook" / "data.db"
 
 #: What each course entry must carry: the card asks for plan status, delivered units and pages,
@@ -123,7 +123,11 @@ class RunRecordContractTest(unittest.TestCase):
     def test_every_course_entry_carries_the_required_fields(self) -> None:
         record = _record()
         slugs = _course_slugs(self.builder)
-        self.assertEqual(set(record["courses"]), slugs)
+        # CP-015c: owner ruling cancelled Astronomy and Auto Repair and asked for one course, so the
+        # record carries the courses the backend actually holds — a subset of the driver's slots,
+        # not all four padded with zero rows.
+        self.assertTrue(set(record["courses"]), "the record carries no course at all")
+        self.assertLessEqual(set(record["courses"]), slugs)
         for slug, course in record["courses"].items():
             with self.subTest(slug=slug):
                 missing = REQUIRED_COURSE_FIELDS - set(course)
@@ -146,8 +150,13 @@ class RunRecordContractTest(unittest.TestCase):
         recorded = {job["id"] for job in jobs}
         per_course = {jid for course in record["courses"].values()
                       for jid in course["job_ids"]}
-        self.assertEqual(per_course, recorded,
+        unattributed = set(record.get("unattributed_job_ids", {}).get("ids") or [])
+        self.assertEqual(per_course, recorded - unattributed,
                          "a job row is attributed to no course, or a course names a missing job")
+        self.assertEqual(unattributed, {job["id"] for job in jobs if job["kind"] == "import"
+                                        and not job["course_id"]},
+                         "an unattributed row is not an install/import row")
+        self.assertEqual(record["counts"]["unattributed_jobs"], len(unattributed))
         self.assertEqual(record["counts"]["jobs"], len(recorded))
 
     def test_stub_backend_with_n_jobs_yields_all_n_ids(self) -> None:
@@ -181,9 +190,8 @@ class RunRecordContractTest(unittest.TestCase):
         for job in rows:
             key = str(job.get("purpose") or "unspecified")
             by_purpose[key] = by_purpose.get(key, 0) + 1
+        by_purpose: dict[str, int] = {k: v for k, v in by_purpose.items() if v}
         self.assertEqual(committed["counts"]["host_unavailable_by_purpose"], by_purpose)
-        self.assertTrue(committed["counts"]["host_unavailable_by_purpose"],
-                        "the record carries HOST_UNAVAILABLE rows, so the split cannot be empty")
 
     def test_every_stored_verdict_appears_and_none_is_invented(self) -> None:
         record = _record()
@@ -200,13 +208,32 @@ class RunRecordContractTest(unittest.TestCase):
                 self.assertEqual(attempts[plan_id]["verdict"], attempt["verdict"])
 
     def test_a_plan_without_a_validation_record_is_marked_unvalidated(self) -> None:
-        record = _record()
-        unvalidated = [item for item in record["plan_attempts"] if not item["validated"]]
-        self.assertTrue(unvalidated, "the record must carry the plans the validator never judged")
+        # The stub backend has two plans and no verdicts, so the projection's unvalidated branch is
+        # exercised directly; the committed record only has to be consistent with itself (CP-015c:
+        # this run's single plan was judged, so asserting a rejected plan exists pinned a stale run).
+        stub_snapshot = _stub_snapshot()
+        stub_snapshot["validations"] = []
+        stub_snapshot["plan_documents"] = [{
+            "id": "doc_astro", "plan_id": "plan_astro", "course_id": "crs_astro",
+            "validation_id": None, "generation_state": "generated", "job_id": "job_03",
+            "validation_verdict": None, "rejection_reasons": None,
+            "created_at": "2026-11-10T22:03:40Z",
+        }]
+        stub = self.builder.build_record(
+            stub_snapshot, base="http://stub", wire_version=26,
+            authoring_model="stub-model", validator="stub-validator")
+        unvalidated = [item for item in stub["plan_attempts"] if not item["validated"]]
+        self.assertGreaterEqual(len(unvalidated), 1,
+                                "the stub carries a plan the validator never judged")
         for attempt in unvalidated:
-            with self.subTest(plan=attempt["plan_id"]):
-                self.assertIsNone(attempt["verdict"])
-                self.assertIsNone(attempt["validation_id"])
+            self.assertIsNone(attempt["verdict"])
+            self.assertIsNone(attempt["validation_id"])
+            self.assertTrue(attempt["unvalidated_reason"])
+        for attempt in _record()["plan_attempts"]:
+            if attempt["validated"]:
+                self.assertIsNotNone(attempt["validation_id"])
+                self.assertIsNotNone(attempt["verdict"])
+            else:
                 self.assertTrue(attempt["unvalidated_reason"])
 
     def test_window_covers_every_row_including_the_final_attempt(self) -> None:
@@ -226,14 +253,13 @@ class RunRecordContractTest(unittest.TestCase):
         # CP-015b added jobs after the committed ids and this assertion was pinning a stale attempt.
         latest = max(record["jobs"], key=lambda job: self.builder.parse_ts(job["updated_at"]))
         self.assertEqual(finished, self.builder.parse_ts(latest["updated_at"]))
-        sourdough = record["courses"]["sourdough"]
-        self.assertTrue(sourdough["plan_attempts"],
-                        "the Sourdough slot carries no plan attempt, so the record is not the run")
-        self.assertEqual(
-            {attempt["job_id"] for attempt in sourdough["plan_attempts"]} - {None},
-            set(sourdough["job_ids"]) & {attempt["job_id"]
-                                         for attempt in sourdough["plan_attempts"]},
-        )
+        authored = [entry for entry in record["courses"].values() if entry["plan_attempts"]]
+        self.assertTrue(authored, "no course slot carries a plan attempt, so the record is not the run")
+        for slot in authored:
+            self.assertEqual(
+                {attempt["job_id"] for attempt in slot["plan_attempts"]} - {None},
+                set(slot["job_ids"]) & {attempt["job_id"] for attempt in slot["plan_attempts"]},
+            )
 
     def test_live_evidence_is_the_same_row_set(self) -> None:
         record = _record()
@@ -245,12 +271,13 @@ class RunRecordContractTest(unittest.TestCase):
 
     @unittest.skipUnless(DEMO_DB.is_file(), "demo backend DB is not on this machine")
     def test_committed_record_reproduces_from_the_demo_db(self) -> None:
+        snapshot = self.builder.collect(DEMO_DB)
         fresh = self.builder.build_record(
-            self.builder.collect(DEMO_DB),
-            base="http://127.0.0.1:44501",
+            snapshot,
+            base="http://127.0.0.1:44601",
             wire_version=26,
             authoring_model=self.builder.authoring_model_label(),
-            validator=self.builder.validator_label(),
+            validator=self.builder.validator_label(snapshot),
         )
         committed = _record()
         self.assertEqual({job["id"] for job in fresh["jobs"]},

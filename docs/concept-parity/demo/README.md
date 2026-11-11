@@ -11,8 +11,14 @@ Regenerate (read-only against the backend):
 
 ```bash
 python3 scripts/cp015_record.py \
-  --db ~/.hermes/coursebook-test-cp015/home/plugin-data/coursebook/data.db
+  --db ~/.hermes/coursebook-test-cp015c/home/plugin-data/coursebook/data.db
 ```
+
+`[CP-015c]` repointed the record at the Japanese Cafe Basics run's own backend
+(`coursebook-test-cp015c`, `127.0.0.1:44601`, wire v26) and made the `validator` line derive from
+the stored `gen_validation_records` rows instead of a constant: this run's plan verdict is an
+independent pass (`z-ai/glm-5.3-flash` judging `deepseek/deepseek-v4.1-flash-1017`), and a record
+that still called it `model_assessed` would be false.
 
 `scripts/cp015-demo-courses.py --record <path>` writes a **live progress log** while the create
 flow runs, from the driver's in-memory flows. That log is not the run record and must not be
