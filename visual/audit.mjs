@@ -32,6 +32,9 @@ const THRESHOLD = Number(opt('--threshold', 0.001))
 const WRITE_BASELINE = args.includes('--write-baseline')
 const REUSE = args.includes('--reuse')
 const MONITOR = opt('--monitor', 'secondary')
+// The approved frames are 1344x768. A route narrower than this is the docked pane, not the
+// approved canvas; it must never be reported as a pass.
+const MIN_ROUTE_WIDTH = Number(opt('--min-width', 1200))
 
 const ROUTES = [
   { name: 'home', label: 'Home' },
@@ -70,13 +73,23 @@ function restoreFocus(previousAddress) {
   try { execSync(`hyprctl dispatch focuswindow address:${previousAddress}`, { stdio: 'ignore' }) } catch { /* best effort */ }
 }
 
-function discoverPort() {
+async function discoverPort() {
   if (PORT) return PORT
+  let ports = []
   try {
     const out = execSync('ss -ltnp 2>/dev/null | grep electron', { encoding: 'utf8' })
-    const ports = [...new Set(out.split('\n').map((l) => (l.match(/127\.0\.0\.1:(\d+)/) || [])[1]).filter(Boolean).map(Number))]
-    return ports.sort((a, b) => b - a)[0]
+    ports = [...new Set(out.split('\n').map((l) => (l.match(/127\.0\.0\.1:(\d+)/) || [])[1]).filter(Boolean).map(Number))]
   } catch { return 0 }
+  // Prefer the port whose target list actually shows the coursebook route. The highest port is
+  // often a peer window that never mounted the plugin.
+  for (const p of ports.sort((a, b) => b - a)) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${p}/json/list`, { signal: AbortSignal.timeout(1500) })
+      const targets = await res.json()
+      if (targets.some((t) => t.type === 'page' && /coursebook/.test(t.url || ''))) return p
+    } catch { /* port not answering */ }
+  }
+  return ports.sort((a, b) => b - a)[0] || 0
 }
 
 async function findCoursebookFrame(browser, timeoutMs) {
@@ -96,7 +109,7 @@ async function findCoursebookFrame(browser, timeoutMs) {
   return null
 }
 
-const port = discoverPort()
+const port = await discoverPort()
 if (!port) { console.error('no Electron CDP port found'); process.exit(2) }
 const before = hyprJson('activewindow')
 const previousAddress = before && before.address ? before.address : null
@@ -179,6 +192,37 @@ const report = {
   }).catch(() => null),
   frames: [],
   failures: []
+}
+
+if (!report.scope || report.scope.width < MIN_ROUTE_WIDTH) {
+  report.geometry_ok = false
+  report.failures.push(`geometry: route ${report.scope ? report.scope.width : 0}px wide (< ${MIN_ROUTE_WIDTH}) — this is the docked pane, not the approved 1344x768 canvas`)
+} else {
+  report.geometry_ok = true
+}
+
+// A route attribute and loaded fonts can both be true behind an app-level error dialog. The
+// capture must prove the coursebook shell actually mounted, or the frame is a screenshot of a crash.
+const health = await frame.evaluate(() => {
+  const text = document.body ? document.body.innerText : ''
+  return {
+    errorModal: /Hermes couldn't start|background service stopped|background service didn't come up/i.test(text),
+    route: Boolean(document.querySelector('[data-cb-route]')),
+    navCount: document.querySelectorAll('[data-cb-nav-item]').length,
+    textLength: text.trim().length
+  }
+}).catch(() => ({ errorModal: true, route: false, navCount: 0, textLength: 0 }))
+report.health = health
+if (health.errorModal) report.failures.push('app did not start: the Hermes error modal is on screen; every frame would be a crash dialog')
+if (!health.route) report.failures.push('no [data-cb-route] in the captured surface')
+if (health.navCount < 4) report.failures.push(`only ${health.navCount} nav items mounted; the coursebook shell did not render`)
+
+if (report.failures.length) {
+  if (testAddress) { try { execSync(`hyprctl dispatch closewindow address:${testAddress}`, { stdio: 'ignore' }) } catch { /* best effort */ } }
+  restoreFocus(previousAddress)
+  fs.writeFileSync(path.join(HERE, 'report.json'), JSON.stringify(report, null, 2))
+  console.log(`FAIL\n${report.failures.join('\n')}`)
+  process.exit(1)
 }
 
 async function routeTo(label) {

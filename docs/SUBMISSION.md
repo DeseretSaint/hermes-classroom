@@ -44,10 +44,10 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 3501 tests in 1134.427s … OK (skipped=11)` on `master` `07976d8`
-(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-10: the CP-042 pack-shipping
-merge over the docs-only gate 8 commits over `7130109`, the CP-049 audit re-pin and CP-044 merge over
-`19fec67`); the release tree
+additive only. The suite is `Ran 3523 tests in 951.634s … OK (skipped=11)` on `master` `b1913af7`
+(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-10: the CP-052 route_anchors
+merge over the docs-only gate 8 commit `eaf2d41` on `07976d8`, the CP-042 pack-shipping merge over the
+CP-049 audit re-pin and CP-044 merge); the release tree
 `b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
@@ -93,7 +93,7 @@ invalidates the earlier evidence.
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `b9f4a19` and no video exists. Gate 5 and the recording path must close first | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `07976d8` after the 2026-11-10 suite re-measurement (`3501 tests`, `OK (skipped=11)`) and the `cb.rpc` v25 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe | [x] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `b1913af7` after the 2026-11-10 suite re-measurement (`3523 tests`, `OK (skipped=11)`) and the `cb.rpc` v26 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml` pins the H-212 docs commit `61cdb03` (one commit above the frozen code commit `b9f4a19`) and the pin is on `origin/master`; validator `OK: 1 file(s) valid`. All seven raw URLs (`docs_url`, `image` and the six `screenshots`) were fetched on 2026-11-09: HTTP 200 each, and every PNG body hashes to the same sha256 as `docs/assets/<name>.png` at `61cdb03`. The draft pull request exists: `NousResearch/hermes-agent#152920`, opened 2026-11-10, pinned to `3278bae` with `docs_url` at the README's `#install-locally` heading, and it stays draft until gates 5 and 7 close | [x] |
@@ -298,8 +298,8 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Public listing not authorised | The source repository is public (gate 10 met by measurement 2026-11-10), but a catalog merge, a tag and an announcement are publication under the operator gate, and none of them is authorised | DeseretSaint |
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified, so they are not blockers: 93/93 `cb.rpc` v25 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 3501 tests on `master` `07976d8`
+Verified, so they are not blockers: 93/93 `cb.rpc` v26 methods mounted with no
+contract problems, schema v14 from migrations `0001`-`0014`, 3523 tests on `master` `b1913af7`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content

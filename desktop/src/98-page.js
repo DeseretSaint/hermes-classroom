@@ -226,6 +226,51 @@ function CoursebookPage() {
   // a 760 px route, clamp(1.25rem, 3.05cqi, 4rem) above it) and `test_v3_scope` refuses a viewport
   // unit that reaches the rendered element's own style.
 
+  // CP-040 — the classroom route. SPEC-V3 §5.3 makes the section the classroom, and the learner's
+  // presentation mode decides which reading surface that classroom uses: Game and Guided open the
+  // v3 classroom (stepper, section plate, one check), Textbook keeps the reader workspace that owns
+  // the document blocks, pronunciation, the tutor rail and take-home. `openCourse.view` is an
+  // explicit request for one of those views (Plan, Note, a citation handoff) and is never
+  // overridden; a section opened with no view follows the mode.
+  const classroomMode =
+    openCourse && openCourse.row && !openCourse.view && !openCourse.blockId
+      ? cbEffectiveMode(homePrefs, openCourse.row.course_id)
+      : null
+  // The run behind the classroom's no-chat action. It arms the exact run first and only then opens
+  // the chat, so the chat pane's pending binder — not a bare new chat — is what the learner lands
+  // in. A failed `lesson.begin` reports the backend's own code and never falls through to a chat.
+  const startClassroomRun = useCallback(async (course) => {
+    const row = course && course.row
+    const objectiveId = course && course.objectiveId
+    if (!row || !objectiveId) return
+    const profile = currentScope().profile
+    const response = await rpc(
+      'lesson.begin',
+      { enrollment_id: row.enrollment_id, objective_id: objectiveId, mode: 'fresh' },
+      { idempotencyKey: `cb3-classroom-run-${objectiveId}-${newOperationId('run')}` }
+    )
+    if (!response.ok) {
+      host.notify({
+        kind: 'warning',
+        message: `${response.error.code}: ${describeError(response.error)}`
+      })
+      return
+    }
+    armPendingBind({
+      enrollmentId: row.enrollment_id,
+      objectiveId,
+      objectiveTitle: null,
+      lessonRunId: response.result.lesson_run_id,
+      profile
+    })
+    if (!startLessonChat(profile)) {
+      host.notify({
+        kind: 'warning',
+        message: 'This Desktop build cannot open a new chat; start one from the sidebar.'
+      })
+    }
+  }, [])
+
   let body
   if (health.status === 'loading' && !health.result) {
     body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading the Coursebook backend' }) })
@@ -346,6 +391,22 @@ function CoursebookPage() {
         setDestination('workshop')
         setOpenCourse({ row, objectiveId: null })
       }
+    })
+  } else if (classroomMode && openCourse.objectiveId) {
+    // CP-040: the classroom's own surface. It is a wired container (its own outline, page, world
+    // and Game engagement reads), so the route hands it identity and navigation only. Back returns
+    // to the course home, a completed section returns there too — the Continue plate names the next
+    // real stop — and a section switch stays inside the classroom.
+    body = jsx(ClassroomV3Surface, {
+      row: openCourse.row,
+      enrollmentId: openCourse.row ? openCourse.row.enrollment_id : null,
+      objectiveId: openCourse.objectiveId,
+      mode: classroomMode,
+      onBack: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onOpenSection: (objectiveId) => setOpenCourse({ ...openCourse, objectiveId, blockId: null }),
+      onNextSection: () => setOpenCourse({ ...openCourse, objectiveId: null, blockId: null }),
+      onStartChat: () => startClassroomRun(openCourse),
+      onChanged: () => reloadHealth()
     })
   } else if (openCourse) {
     body = jsx(CourseDetail, {

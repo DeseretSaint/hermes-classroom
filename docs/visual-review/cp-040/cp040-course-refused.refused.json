@@ -1,0 +1,21 @@
+{
+  "stamp_version": 1,
+  "tool": "scripts/cp-capture.mjs",
+  "name": "cp040-course-refused",
+  "captured_at": "2026-11-11T03:59:47.272Z",
+  "ok": false,
+  "stage": "destination",
+  "reasons": [
+    "requested destination course/crs_none has no addressable control on the current surface ([data-cb-home-card-action=\"crs_none\"], [data-cb-course-id=\"crs_none\"] [data-cb-home-card-action], [data-cb-course-id=\"crs_none\"] button, [data-cb-all-courses-row=\"crs_none\"] button)"
+  ],
+  "gates": {},
+  "plugin": null,
+  "route": null,
+  "destination": {
+    "requested": "course/crs_none",
+    "normalized": "course/crs_none",
+    "controls": [],
+    "rendered": null,
+    "match": null
+  }
+}

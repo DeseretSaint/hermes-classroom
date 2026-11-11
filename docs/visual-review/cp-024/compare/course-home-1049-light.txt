@@ -1,0 +1,6 @@
+render:   docs/visual-review/cp-024/course-home--1049--light--100--default.png (810x900)
+reference: docs/concept-parity/refs/map.png (1575x900)
+rmse:     0.315382
+similarity: 0.6846
+sheet:    docs/visual-review/cp-024/compare/course-home-1049-light-sheet.png
+diff:     docs/visual-review/cp-024/compare/course-home-1049-light-diff.png

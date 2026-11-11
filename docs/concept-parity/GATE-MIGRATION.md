@@ -377,6 +377,97 @@ The assertion-call floors, recomputed at base `7a0841f` (`test_desktop_gate_scop
 
 ---
 
+## 4.2 CP-040 residual — the v2 UI/a11y gates the six-branch v3 wave invalidated (t_7c255559)
+
+The union (`wt/cp-040-seam`) mounted the v3 Home, classroom, course home, Discover, World Studio and
+Parent Studio, and exported the wave's names from the module. Twenty-eight v2 gates still named the
+composition the wave replaced, so the suite was red by 28 and none of the failures were the seam's
+own tests (`docs/visual-review/cp-040/full-suite-8f5c4df2.log`). This section is the migration
+record. Nothing was deleted: three cases were genuine v3 regressions and were fixed in the product
+file, the rest were the harness walking a v2 path that no longer exists.
+
+The CP-022 residual table (`t_847e5b1b`) is §4.1 on `wt/cp-022-residual` (a38d0693); it is not in
+this tree's copy, so this section takes the next free number and does not restate it.
+
+### 4.2.1 Product regressions the gates proved (fixed in `desktop/src/70-learning.js`)
+
+| Symptom the gate reported | Root cause | Fix | Gate that closes it |
+|---|---|---|---|
+| `section` shipped two `h1`s (`Course`, `Affection and register`) and its heading order was `1, 1, 3` | the v3 classroom title was rendered as `h1` under the shell's page-title `h1` | `data-cb3-classroom-title` is an `h2`; type role unchanged | `test_every_surface_has_exactly_one_h1_and_it_is_first`, `test_no_heading_level_is_skipped` |
+| `section` complementary landmark unnamed | the v3 classroom `aside` carried no `aria-label` (the v2 Field rail's is "Section details") | `aria-label: 'Section details'` on the same region | `test_landmarks_are_named` |
+| skip link fell back to `main` on a section instead of the reading column | the shell's skip path looks for `[data-cb-reading-column]`; the v3 reading column carried only `data-cb3-reading` | the v3 reading column carries the shared marker as well | `test_skip_link_moves_focus_into_content_never_the_header` |
+
+Module rebuilt (`scripts/build_plugin.py`) and the M4 pin regenerated on the new sha (15 claims PASS,
+`scripts/m4v-audit.py`).
+
+### 4.2.2 `tests/test_desktop_a11y_structure.py` — the driver now walks the v3 mount
+
+Every assertion in this module is unchanged; the harness that *reaches* the surfaces was walking the
+v2 section player. It now enters the v3 classroom, exits through the classroom's own `Back to
+{course}` control, clicks the v2 `All courses` control only when the mounted composition offers it,
+and takes the catalog through the destination nav (which is the claim `#13` makes).
+
+The course sub-surfaces were the one place the driver still named the v2 composition: it looped
+`['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']` with `if (!control) continue`. The v3 course
+composition (`desktop/src/70-learning.js:35,49`, mounted at `desktop/src/90-course.js:3765-4045`)
+renders four primary surfaces and keeps the reference/administration set behind one `More` disclosure:
+`Attempts` (the legacy `quizzes` view id, relabelled), `Plan`, `Sources`, `Export`. No button is
+labelled `Quizzes`, so that iteration was a dead branch and the graded-attempt record was silently
+unaudited. The driver now opens `More` and clicks each v3 label; a label the mounted surface does not
+render throws instead of skipping. The walk reaches thirteen surfaces, including `course-attempts` and
+`course-sources` (the latter was absent from the v2 loop as well). `test_the_harness_reaches_every_v3_course_surface`
+pins the reached names and refuses `course-quizzes`, so a rename fails here rather than shrinking
+coverage under a green suite.
+
+| # | assertion | class | where it reads now | v3 counterpart / note |
+|---|---|---|---|---|
+| 1 | `test_every_surface_has_exactly_one_h1_and_it_is_first` | U | rendered route, incl. the v3 classroom (`section`) | classroom `h1`→`h2` fixed; the v3 page title is the shell's only `h1` |
+| 2 | `test_first_run_still_has_one_h1_first` | U | rendered first-run Home | v3 first-use plate keeps one `h1`; CP-022 residual §4.1 (#179) for the copy |
+| 3 | `test_no_heading_level_is_skipped` | U | rendered route | classroom order 1, 2, 3 after the fix |
+| 4 | `test_first_run_heading_is_an_h2_under_the_page_title` | U | rendered first-run Home | same claim, v3 plate |
+| 5 | `test_the_desks_first_heading_is_the_page_title` | V2 | rendered course home under Home | v3 course home title is `Course` (`test_cp_024_course_home_v3`) |
+| 6 | `test_the_library_home_is_titled_home` | V2 | rendered library Home | v3 Home keeps `Home`; no Continue plate on it |
+| 7 | `test_landmarks_are_named` | U | rendered route | classroom aside named; nav/`main` unchanged |
+| 8 | `test_skip_link_is_the_first_focus_stop_and_reveals_on_focus` | U | rendered route | unchanged on v3 surfaces |
+| 9 | `test_skip_link_moves_focus_into_content_never_the_header` | U | rendered route | falls on the v3 reading column now |
+| 10 | `test_library_and_studio_have_their_own_page_title` | V2 | rendered destinations | Workshop / Parent Studio v3 (`test_cp_021_workshop_v3`, `test_cp_025b_v3_studio`) |
+| 11 | `test_each_destination_heading_regions_are_h2` | V2 | rendered destinations | v3 Discover and Studio regions are `h2` |
+| 12 | `test_the_header_carries_the_wordmark_not_the_seal` | V2 | rendered route header | unchanged wordmark, still type not a heading |
+| 13 | `test_destination_nav_is_home_first_then_the_catalog` | V2 | rendered destination nav | four items, Home current on the desk |
+| 14 | `test_the_page_title_uses_the_display_step` | V2 | module source | v3 uses the same `CB_TYPE.display` wiring |
+| 15 | `test_home_has_one_continue_surface_and_no_duplicate_next_step_or_seal` | V2 | rendered desk | one Continue, no stamp, no next sentence |
+| 16 | `test_the_measured_route_gutter_is_applied` | V2 | rendered route root + `.cb3-gutter` rule | unchanged: no inline gutter, no `vw`; painted padding measured by `test_cp_022_geometry` |
+| 17 | `test_authored_prose_h1_is_announced_as_level_two` | U | rendered prose document | unchanged: the reading body may not add a second page title |
+| 18 | `test_the_harness_reaches_every_v3_course_surface` | V3 | the harness's reached-surface list | new pin: `Attempts` behind `More` is audited; `Quizzes` is refused |
+
+### 4.2.3 `tests/test_desktop_home_hub.py` — three route drivers, no assertion moved
+
+All 20 assertions are unchanged (and the count floor is untouched). The `switch` script used to walk
+a path row into the v2 course detail and out through its back control; a path row now opens the v3
+classroom, whose back returns to the course home, and the slot rail lives one step further out on the
+desk. The driver keeps the v3 exit first, the v2 controls as fallbacks.
+
+| # | assertion | class | where it reads now | v3 counterpart / note |
+|---|---|---|---|---|
+| 170 | `test_switching_a_slot_rekeys_continue_and_the_outline_read` | V2 | rendered hub, selected slot | unchanged: Re-keys Continue and the outline read to the switched enrollment |
+| 171 | `test_selection_survives_course_detail_and_back` | V2 | rendered hub after classroom → course home → desk | selection survives the whole walk back; the v3 counterpart is `test_cp_024_course_home_v3` (course home) + `test_cp_023_classroom` (section) |
+| 172 | `test_slot_switch_never_changes_the_profile_scope` | V2 | same walk, `profileRoutes` counter | unchanged: a slot switch never reads the profile map |
+
+### 4.2.4 `tests/test_cp_024_course_home_v3.py` — the staged export shim
+
+| # | case | class | what changed | why it is not a weakening |
+|---|---|---|---|---|
+| 205 | `CourseHomeV3RenderTest` / `CourseDetailOverviewCompositionTest` `setUpClass` | V3 | the staged copy appends `export { CourseDetail }` only | CP-040's seam exports the other ten names itself, so the old shim produced `SyntaxError: Duplicate export`. The staged copy still imports every name it mounts, so a missing symbol still fails at module evaluation |
+
+### 4.2.5 Loader errors, not gates
+
+`test_lesson_skills` and `test_conversation_practice` imported `kernel_support` relatively. Under
+`unittest discover -s tests` the module is imported top-level, so both raised `ImportError` and the
+suite counted a loader error as a failure. Both now import `tests.kernel_support`, as every other
+module in `tests/` does; no assertion changed.
+
+---
+
 ## 5. The v3 gate inventory
 
 ### 5.1 `tests/test_desktop_tokens_v3.py`
