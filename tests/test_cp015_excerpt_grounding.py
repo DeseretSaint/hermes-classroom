@@ -89,10 +89,16 @@ class PlanSourcingRulesTest(unittest.TestCase):
                 self.assertIn("Not covered — no supporting source:", text)
                 self.assertNotIn("Cover the goal:", text)
                 self.assertIn("assess every evidence criterion", text)
+                # A check exercises the capability, not the source's wording; a goal the ledger
+                # cannot support is named as out of scope in the learner_outcome too; a
+                # prerequisite edge must name a shared concept.
+                self.assertIn("not to recall the source's wording", text)
+                self.assertIn("out of scope", text)
+                self.assertIn("false ordering", text)
 
     def test_plan_prompt_versions_are_current(self) -> None:
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v14")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v15")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v15")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v16")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):

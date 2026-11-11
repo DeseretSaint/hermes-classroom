@@ -184,7 +184,7 @@ logger = logging.getLogger("coursebook.generation")
 #: v13: the plan author is ledger-first — it may state only objectives a supplied excerpt
 #: carries, may stay short, and records an unsupported goal capability in exclusions instead of
 #: inventing an objective (CP-015).
-PLAN_PROMPT_VERSION = "plan-prompt.v14"
+PLAN_PROMPT_VERSION = "plan-prompt.v15"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -196,7 +196,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v14"
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
 #: v14: the ledger-first authoring rule, the short-course rule and the exclusions record (CP-015).
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v15"
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v16"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -3656,6 +3656,16 @@ def _plan_sourcing_rules() -> list[str]:
         "check actually exercises, and let the check observe all of them; a check that assesses one "
         "of three stated criteria is incomplete. Keep context_needs consistent with the check plan "
         "— do not demand more quiz items in context_needs than the checks supply.",
+        "A check item must require the learner to perform the objective's capability, not to recall "
+        "the source's wording. 'What does the guide say it examines?' is recall of a document; "
+        "'describe the Moon's changing shape' is the capability. Write the second kind.",
+        "When the goal names a capability the ledger cannot support, say so in learner_outcome as "
+        "well as in exclusions: name what the course does cover and that the unsupported "
+        "capability is out of scope. A learner_outcome that still promises it contradicts the "
+        "plan's own exclusions and is rejected as goal coverage.",
+        "Declare a prerequisite unit edge only when an earlier unit's concept is genuinely required "
+        "by the later unit's goal. Do not add an edge to show a sequence; a prerequisite with no "
+        "shared concept is a false ordering.",
     ]
 
 
