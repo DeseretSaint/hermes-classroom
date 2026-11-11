@@ -94,3 +94,24 @@ is the `discover` run above, on the same tree.
   never `language` — because the class of goals this card must not get wrong is affected by the
   omission default, and `general` is not.
 * The Desktop half still sends `goal` and `recipe` only; it does not have to change for this fix.
+
+## Addendum: the integrated stack, not the branch
+
+The measurements above were taken on the D1-F2 branch (`14a9b5a8`). Three cards' work landed
+together — D1-F2's domain resolution and its unverified-claim rule, the source-body excerpt fix,
+and the CP-015a clause-query correction that made the first two agree — so the numbers and prompt
+labels this note records were superseded by the merge itself: the labels are now
+`plan-prompt.v21`, `plan-prompt.v22` and `validation-prompt.v12` (`docs/GENERATION.md` is the
+authority), and the suite on the rebased stack over current master is
+
+```
+$ python3 -m unittest discover -s tests -t .
+Ran 4015 tests in 1445.315s ... OK (skipped=12)
+```
+
+The clause-query correction matters for this note's claim: with the domain now inferred from the
+goal, `research.derive_queries` treated the inferred qualifier as declared and joined it onto the
+capability clauses, which pushed those clauses out of a short depth cell. `bake with steam`
+stopped reaching the ledger and `test_cp015_goal_coverage` failed on three cells. The rule now
+follows `resolution["source"]`: a declared domain outranks the recipe question and the clauses
+join it; an inferred domain only shapes the base query.
