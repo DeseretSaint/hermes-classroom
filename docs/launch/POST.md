@@ -1,6 +1,6 @@
 # Film publish packet — the X post, the form answers, the licence and the QC
 
-Prepared 2026-11-11 13:50 MST by the release director for the contest that closes at
+Prepared 2026-11-11 during the 13:00–14:00 MST freeze, for the contest that closes at
 **15:00 MST / 17:00 EST**. Nothing in this file has been posted or submitted. The post and the form are
 DeseretSaint's actions under `docs/SUBMISSION.md` §0.
 
@@ -11,13 +11,11 @@ on-screen type so the file reads with sound off, which is how X autoplays.
 ## 1. The X post — 258 characters, one URL
 
 ```
-Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a
-time, typed checks, evidence you can inspect. MIT. 47 s demo, no sound needed. Built with
-@NousResearch Hermes Agent.
+Coursebook: turn a topic into a course you can finish. A Hermes Desktop plugin — one objective at a time, typed checks, evidence you can inspect. MIT. 47 s demo, no sound needed. Built with @NousResearch Hermes Agent.
 github.com/DeseretSaint/hermes-classroom
 ```
 
-- Length: **258 characters** counted on the string above (X counts the bare URL as 23 regardless of its
+- Length: **258 characters** counted on the string above, pasted exactly as the two lines inside the fence (X counts the bare URL as 23 regardless of its
   rendered length, so the effective count is lower).
 - Tags `@NousResearch`. Links the public repository. Makes no efficacy, mastery, benchmark, COPPA or
   child-safety claim.
