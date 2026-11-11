@@ -1,0 +1,41 @@
+{
+  "stamp_version": 1,
+  "tool": "freeze-capture.mjs",
+  "name": "workshop-1833-light",
+  "captured_at": "2026-11-11T19:27:04.373Z",
+  "tree": {
+    "commit": "172b61aaffd44c33f2c89360df9f1fceeff66c37",
+    "module_sha256_expected": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395"
+  },
+  "window": {
+    "plugin_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+    "loaded_path": "/home/deseretsaint/.hermes/desktop-plugins/coursebook/plugin.js",
+    "matches_expected": true
+  },
+  "route": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "destination": "workshop",
+    "clicks": [],
+    "width": 1833,
+    "height": 1090,
+    "scope": "light"
+  },
+  "gates": {
+    "no_crash": true,
+    "nav_items": 4,
+    "current": "workshop",
+    "fonts_display": true,
+    "fonts_status": "loaded",
+    "v3": true,
+    "textures": "ready",
+    "images": 5,
+    "images_ok": true,
+    "min_width": 1400
+  },
+  "capture": {
+    "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/freeze/workshop-1833-light.png",
+    "sha256": "148b3e02ab41262e88f3d0f348dc508f750106bcdf38afa43232a1f308309938",
+    "bytes": 1079236
+  },
+  "body_head": "4\nSESSIONS\nBOTS\nSkip to course content\nCOURSEBOOK\nWorkshop\nHome\nCourses\nWorkshop\nParent Studio\nDiscover\n\nPacks you can learn from, already on this device.\n\nDiscover\nLibrary\nProvenance\nJapanese register: affection and closeness\n\nChoose the J"
+}

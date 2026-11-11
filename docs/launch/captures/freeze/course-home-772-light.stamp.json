@@ -1,0 +1,23 @@
+{
+  "stamp_version": 1,
+  "tool": "one-course.mjs",
+  "captured_at": "2026-11-11T19:29:03.265Z",
+  "tree": {
+    "commit": "172b61aaffd44c33f2c89360df9f1fceeff66c37",
+    "module_sha256_expected": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395"
+  },
+  "window": {
+    "plugin_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395"
+  },
+  "route": {
+    "destination": "course/null",
+    "width": 772,
+    "height": 1090,
+    "scope": "light"
+  },
+  "capture": {
+    "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/freeze/course-home-772-light.png",
+    "sha256": "737ea36be20193366ff4c86d1f75a7bbf4ca9a6c4686be4f3677ac70d3e23964"
+  },
+  "body_head": "Skip to course content\nCOURSEBOOK\nCourse\nHome\nCourses\nWorkshop\nParent Studio\nBack to Home\nRead the Night Sky\n\nastronomy\n\nThe plan is waiting for you\n\nRead it, then approve it so lessons can start.\n\nRe"
+}

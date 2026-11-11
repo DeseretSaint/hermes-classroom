@@ -1,0 +1,10 @@
+{
+  "stamp_version": 1,
+  "tool": "freeze-capture.mjs",
+  "name": "course-home-1833-light",
+  "captured_at": "2026-11-11T19:28:29.750Z",
+  "ok": false,
+  "reasons": [
+    "route 772px < 1400px"
+  ]
+}

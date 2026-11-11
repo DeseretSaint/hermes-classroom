@@ -1,0 +1,10 @@
+{
+  "stamp_version": 1,
+  "tool": "freeze-capture.mjs",
+  "name": "course-home-772-light",
+  "captured_at": "2026-11-11T19:28:39.221Z",
+  "ok": false,
+  "reasons": [
+    "no course card for \"crs_b7fdae4d74ea4b169c8ecc095d8d4656\""
+  ]
+}

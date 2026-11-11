@@ -1,0 +1,41 @@
+{
+  "stamp_version": 1,
+  "tool": "freeze-capture.mjs",
+  "name": "studio-1833-light",
+  "captured_at": "2026-11-11T19:27:13.965Z",
+  "tree": {
+    "commit": "172b61aaffd44c33f2c89360df9f1fceeff66c37",
+    "module_sha256_expected": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395"
+  },
+  "window": {
+    "plugin_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+    "loaded_path": "/home/deseretsaint/.hermes/desktop-plugins/coursebook/plugin.js",
+    "matches_expected": true
+  },
+  "route": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "destination": "studio",
+    "clicks": [],
+    "width": 1833,
+    "height": 1090,
+    "scope": "light"
+  },
+  "gates": {
+    "no_crash": true,
+    "nav_items": 4,
+    "current": "studio",
+    "fonts_display": true,
+    "fonts_status": "loaded",
+    "v3": true,
+    "textures": "ready",
+    "images": 4,
+    "images_ok": true,
+    "min_width": 1400
+  },
+  "capture": {
+    "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/freeze/studio-1833-light.png",
+    "sha256": "dee6bc9261d1007a968bb848a09d33181e37e35837ef9543f7b3d264bf030b06",
+    "bytes": 664503
+  },
+  "body_head": "4\nSESSIONS\nBOTS\nSkip to course content\nCOURSEBOOK\nParent Studio\nHome\nCourses\nWorkshop\nParent Studio\nMy lesson plans\nTake-home from a lesson\nHomework\nParent Studio\nPlans for your child\n\nPrepare a lesson for a child. Each brief you write is k"
+}

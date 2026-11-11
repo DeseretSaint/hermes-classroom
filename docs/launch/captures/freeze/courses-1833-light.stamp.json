@@ -1,0 +1,41 @@
+{
+  "stamp_version": 1,
+  "tool": "freeze-capture.mjs",
+  "name": "courses-1833-light",
+  "captured_at": "2026-11-11T19:26:54.898Z",
+  "tree": {
+    "commit": "172b61aaffd44c33f2c89360df9f1fceeff66c37",
+    "module_sha256_expected": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395"
+  },
+  "window": {
+    "plugin_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+    "loaded_path": "/home/deseretsaint/.hermes/desktop-plugins/coursebook/plugin.js",
+    "matches_expected": true
+  },
+  "route": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "destination": "courses",
+    "clicks": [],
+    "width": 1833,
+    "height": 1090,
+    "scope": "light"
+  },
+  "gates": {
+    "no_crash": true,
+    "nav_items": 4,
+    "current": "courses",
+    "fonts_display": true,
+    "fonts_status": "loaded",
+    "v3": true,
+    "textures": "ready",
+    "images": 8,
+    "images_ok": true,
+    "min_width": 1400
+  },
+  "capture": {
+    "path": "/home/deseretsaint/Projects/hermes-classroom/docs/launch/captures/freeze/courses-1833-light.png",
+    "sha256": "cff11657c7dc40d955908fed9500ec04b75ad4eab89ead6a7a73e4037cb9200b",
+    "bytes": 853988
+  },
+  "body_head": "4\nSESSIONS\nBOTS\nSkip to course content\nCOURSEBOOK\nCourses\nNew course\nHome\nCourses\nWorkshop\nParent Studio\nBack to the Field Desk\nAll courses\n\n13 courses on this profile\n\nAll\nIn progress\nReview due\nArchived\nReview due\nJapanese affection and r"
+}
