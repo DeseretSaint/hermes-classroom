@@ -3,6 +3,15 @@
 Director: Opus (default profile). Decisions: `docs/launch/UI-DECISIONS.md`. Board: `coursebook`.
 Dispatch and merge: cron supervisor `85d2218453f7` only. New cards are unassigned `todo`.
 
+> **Owner decision 2026-11-11.** Product surfaces use Display Plates, not Press Plate pack
+> covers. The visual program and the generated-lesson path are in
+> `docs/launch/VISUAL-QUALITY-PROGRAM.md` and `docs/launch/GAME-MODE-VISUAL-KIT.md`. The asset
+> audit is `docs/launch/VISUAL-ASSET-AUDIT.md`. `design/home-scene.html` is a composition
+> reference only, never course truth; its fictional titles and mismatched covers are not evidence.
+> The Home quality card `t_831137dd` uses display covers and the 86 px header band. Game-mode
+> courses use the same visual kit as built-in courses, including when the user generated the
+> lesson.
+
 ## Order (one screen at a time; none starts before the previous one is installed)
 
 | # | screen | authority | signature elements |
