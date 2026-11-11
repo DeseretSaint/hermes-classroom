@@ -254,10 +254,13 @@ raises instead of silently behaving like one of the three.
   own (the generic recipe suffix is never invented onto a clause, so a syllabus-derived companion
   course does not acquire the "course outline exam" question through this path). No model call, no
   extra job step, no new budget class. The clause
-  queries sit **before** the base qualifier and before every curriculum or generic depth query, so
-  a bounded `max_queries` cell truncates the generic tail and never a capability; a goal with more
-  clauses than the cell allows still drops its later clauses in goal order and the course stays
-  short. `single`/`survey` and one-off briefs keep their bounded query sets.
+  queries sit **before** the base qualifier and before every generic depth query, so a bounded
+  `max_queries` cell truncates the generic tail and never a capability; a goal with more clauses
+  than the cell allows still drops its later clauses in goal order and the course stays short.
+  One curriculum-sequence question is **reserved before the clauses are allocated** once the cell
+  can hold it (every product cell from `short`/`working` up), because a course whose sources
+  describe each act but not what to learn first cannot sequence itself; the reserve costs one
+  clause slot in a clause-heavy goal and never raises the budget. `single`/`survey` and one-off briefs keep their bounded query sets.
 * **Stratified selection (CP-015a R-1b).** When candidates outnumber the page budget the pass
   takes **one page per query in query order**, then a second page from any query, and so on.
   Publisher-type rank (`SOURCE_TYPE_RANK`) orders candidates *inside* one query's list, never
