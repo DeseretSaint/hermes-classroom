@@ -1,0 +1,58 @@
+{
+  "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+  "frozen": true,
+  "steps": [
+    {
+      "name": "s01",
+      "tag": "home",
+      "destination": "home",
+      "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+      "frame_sha256": "29ac3e526acaf23330535c46363f1ae9e4b16b5ae2834541fcbf95922ebd5f35",
+      "text": "Skip to course content\nCOURSEBOOK\nHome\nDefault view · Game\n· Child-safe defaults\n· Session · 15 min\nSettings\nHome\nCourses\nWorkshop\nParent Studio\nYour field library\nChoose a course or start a new expedition.\nStart a new course\nBrowse library\nYour courses\nSee all\nJapanese affection and register — an L0 demonstration classroom\n0 of 4 sections done\nTextbook\nReview 3 objectives\nRead the Night Sky\nastronomy\n0 of 4 sections done\nNew\nGame\nReview and approve the plan\nTechnical demo: reading a pack before you install it\n0 of 2 sections done\nNew\nTextbook\nStart Read what a pack manifest declares\nJapanese affection and register — a Sample L0 classroom\n0 of 4 sections done\nNew\nTextbook\nStart Tell everyday affection from a direct romantic declaration\nMore courses to the right",
+      "geometry": {
+        "w": 772,
+        "h": 1090,
+        "scope": "light"
+      }
+    },
+    {
+      "name": "s02",
+      "tag": "courses",
+      "destination": "courses",
+      "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+      "frame_sha256": "36067feb8507a66513668e8c2176261e5c984ade98f7a07fa7b2d45f833e4ff0",
+      "text": "Skip to course content\nCOURSEBOOK\nCourses\nNew course\nHome\nCourses\nWorkshop\nParent Studio\nBack to the Field Desk\nAll courses\n14 courses on this profile\nAll\nIn progress\nReview due\nArchived\nReview due\nJapanese affection and register — an L0 demonstration classroom · 3 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nReview 3 objectives\n0 of 4 with evidence · 3 due\nA little at a time\nSource stale\nReview 3 objective(s)\nA source behind this course changed. Existing evidence is kept; the source needs review.\n3 enrollments\nOpen\nRead the Night Sky\nUnit 1 of 2 · Setting up and finding your first bright constellation\n0 of 4 with evidence\nA steady plan\nPlan update\nReview and approve the plan\nA newer plan draft is waiting for review.\nOpen\nTechnical demo: reading a pack before you install it\nStart Read what a pack manifest declares\n0 of 2 with evidence\nOne task I need to do n",
+      "geometry": {
+        "w": 772,
+        "h": 1090,
+        "scope": "light"
+      }
+    },
+    {
+      "name": "s03",
+      "tag": "course",
+      "destination": "courses",
+      "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+      "frame_sha256": "8d3c1703486e63aeb11933fc55a3ef2367e488e189593fc6903e3d2cac787efa",
+      "text": "Skip to course content\nCOURSEBOOK\nCourse\nHome\nCourses\nWorkshop\nParent Studio\nBack to Home\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nYou are here\nChoose the polite expression for a first confession\nRecall the intimate declaration in a new context\nExplain why register changes with the relationship\nContinue\nReview 3 objective(s)\nEvidence\n0 of 4 sections have evidence\nYour other courses\nRead the Night Sky · Review and approve the plan\nTechnical demo: reading a pack before you install it · Start Read what a pack manifest declares\nJapanese affection and register — a Sample L0 classroom · Start Tell everyday affection from a direct romantic declaration\nOverview\nLearn\nNotebook\nEvidence\nMore",
+      "geometry": {
+        "w": 772,
+        "h": 1090,
+        "scope": "light"
+      }
+    },
+    {
+      "name": "s04",
+      "tag": "section",
+      "destination": "courses",
+      "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+      "frame_sha256": "8d3c1703486e63aeb11933fc55a3ef2367e488e189593fc6903e3d2cac787efa",
+      "text": "Skip to course content\nCOURSEBOOK\nCourse\nHome\nCourses\nWorkshop\nParent Studio\nBack to Home\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nYou are here\nChoose the polite expression for a first confession\nRecall the intimate declaration in a new context\nExplain why register changes with the relationship\nContinue\nReview 3 objective(s)\nEvidence\n0 of 4 sections have evidence\nYour other courses\nRead the Night Sky · Review and approve the plan\nTechnical demo: reading a pack before you install it · Start Read what a pack manifest declares\nJapanese affection and register — a Sample L0 classroom · Start Tell everyday affection from a direct romantic declaration\nOverview\nLearn\nNotebook\nEvidence\nMore",
+      "geometry": {
+        "w": 772,
+        "h": 1090,
+        "scope": "light"
+      }
+    }
+  ]
+}
