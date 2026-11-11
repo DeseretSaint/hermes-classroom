@@ -190,7 +190,8 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
 - Targeted regression group (`plugin_build`, `cp_024` ×2, `m4_visual_audit`, `visual_gate_tools`,
   `cp_capture_stamp`, `desktop_tokens_v3`, `v3_primitives`, `a11y_structure`, `home_hub`,
   `gate_scope`, `cp_shelf_facts`, `lesson_views`) → **Ran 177, OK (skipped=2)**.
-- Full suite on the round-4 tree → **Ran 3502 tests in 943.715s, OK (skipped=11)**.
+- Full suite on the merged round-4 tree → **Ran 3517 tests in 959.639s, OK (skipped=11)** (includes
+  CP-042's pack-shipping tests brought in by the `07976d8` merge).
 - `docs/visual-review/cp-024/verify_stamps.py` → **15 stamps, 0 problems** (per-cell root font,
   requested size, frame bytes, duplicate-frame rejection).
 - `scripts/m4v-audit.py` regenerated on this module (15/15 claims PASS) + `test_m4_visual_audit` → 14 OK.
