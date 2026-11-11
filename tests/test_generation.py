@@ -1495,7 +1495,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v14")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v15")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1573,7 +1573,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v14")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v15")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -1592,8 +1592,8 @@ class LessonJobTest(GenerationTestBase):
             self.assertEqual(lesson["state"], "needs_review")
             self.assertFalse(lesson["check_enabled"])
             self.assertTrue(any("rubric" in reason for reason in lesson["rejection_reasons"]))
-        # Two authoring attempts per section, and no validator was handed a sub-minimum rubric.
-        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 2 * len(result["lessons"]))
+        # Three authoring attempts per section, and no validator was handed a sub-minimum rubric.
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 3 * len(result["lessons"]))
         self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
 
     def test_rejected_check_regenerates_once_with_reasons_then_passes(self) -> None:
@@ -1615,7 +1615,8 @@ class LessonJobTest(GenerationTestBase):
         plan_result = self.approved_plan()
         reject = validation_from_fixture("validation_reject_check")
         accept = validation_from_fixture()
-        llm = self.lesson_script([reject, reject, accept, accept, accept, accept])
+        # CP-015g: LESSON_ATTEMPTS is three, so a section parks only after three refusals.
+        llm = self.lesson_script([reject, reject, reject, accept, accept, accept])
         result = self.run_lessons(plan_result, llm)
         parked = result["lessons"][0]
         self.assertEqual(parked["state"], "needs_review")
@@ -1639,7 +1640,7 @@ class LessonJobTest(GenerationTestBase):
         plan_result = self.approved_plan(fixture_name="plan_parent", recipe="parent", dials={}, locale=None)
         reject = validation_from_fixture("validation_reject_hazard")
         llm = self.lesson_script(
-            [reject, reject, reject, reject, reject, reject, reject, reject],
+            [reject] * 12,
             generate=lesson_from_request("lesson_parent_unsafe"),
         )
         result = self.run_lessons(plan_result, llm)
@@ -1712,7 +1713,7 @@ class LessonJobTest(GenerationTestBase):
                 any("introduces '42'" in reason for reason in lesson["rejection_reasons"]),
                 lesson["rejection_reasons"],
             )
-        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 2 * len(result["lessons"]))
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 3 * len(result["lessons"]))
         self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
 
     def test_a_short_that_restates_its_block_is_refused(self) -> None:
@@ -1821,8 +1822,8 @@ class LessonJobTest(GenerationTestBase):
     def test_all_rejecting_validations_do_not_hit_the_production_call_ceiling(self) -> None:
         """The live defect: a plan larger than four sections died on the 8-call ceiling.
 
-        Every validation rejects, so each section spends its two legal attempts
-        (generate + validate twice = 4 calls). Four fixture sections therefore need 16 real
+        Every validation rejects, so each section spends its three legal attempts
+        (generate + validate three times = 6 calls). Four fixture sections therefore need 24 real
         calls, which the old production default of 8 refused with ``POLICY_VIOLATION``. No
         budget is passed here: the production default is what is under test.
         """
@@ -1836,16 +1837,15 @@ class LessonJobTest(GenerationTestBase):
         )
         self.assertEqual(len(result["lessons"]), 4)
         self.assertEqual(len(result["needs_review"]), 4)  # parked, never falsely passed
-        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 8)
-        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 8)
-        self.assertEqual(result["usage"]["calls"], 16)
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 12)
+        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 12)
+        self.assertEqual(result["usage"]["calls"], 24)
         self.assertEqual(self.count("gen_lessons"), 4)
 
     def test_lesson_budget_is_sized_to_the_plan_and_still_has_a_ceiling(self) -> None:
-        # W2-2: 2 attempts x (generate + validate + one re-ask on each answer) = 8 calls per
-        # section. The lesson stage now re-asks its own cut answer once, so 6n undercounted it.
-        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 40)  # 5 x 2 attempts x 4 calls
-        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 64)
+        # 3 attempts x (generate + validate + one re-ask on each answer) = 12 calls per section.
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 60)  # 5 x 3 attempts x 4 calls
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 96)
         budget = gen.lesson_cost_budget(2)
         usage = gen._Usage(budget)
         request = gen.build_lesson_request(

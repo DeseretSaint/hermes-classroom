@@ -487,7 +487,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000001e",
@@ -534,8 +534,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 8,
-            "maximum_cost_usd": 0.32,
+            "maximum_calls": 12,
+            "maximum_cost_usd": 0.48,
             "minimum_calls": 2,
             "minimum_cost_usd": 0.08,
             "section_count": 1

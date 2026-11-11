@@ -10,7 +10,7 @@ excludes it refuses a run that behaved exactly as designed.
 What is asserted here:
 
 * ``lesson_calls`` / ``lesson_cost_budget`` are sized from the calls the stage actually spends
-  (``LESSON_ATTEMPTS`` x (generate + validate + ``TRUNCATION_REPAIR_CALLS``) = 6 per section), and
+  (``LESSON_ATTEMPTS`` x (generate + validate + ``TRUNCATION_REPAIR_CALLS``) = 9 per section), and
   the dollar floor follows the same count;
 * a four-section job whose validation answer is cut on **both** attempts per section completes in
   exactly 24 calls with the production default budget — 16 (the old arithmetic) refuses it;
@@ -56,25 +56,29 @@ class LessonBudgetArithmeticTest(unittest.TestCase):
         per_section = gen.LESSON_ATTEMPTS * (
             gen.CALLS_PER_LESSON_ATTEMPT + 2 * gen.TRUNCATION_REPAIR_CALLS
         )
-        self.assertEqual(per_section, 8)
-        self.assertEqual(gen.lesson_calls(1), (2, 8))
-        self.assertEqual(gen.lesson_calls(5), (10, 40))
-        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 40)
-        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 64)
+        self.assertEqual(per_section, 12)
+        self.assertEqual(gen.lesson_calls(1), (2, 12))
+        self.assertEqual(gen.lesson_calls(5), (10, 60))
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 60)
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 96)
 
     def test_the_dollar_floor_follows_the_same_count(self) -> None:
         five = gen.lesson_cost_budget(5)
         five_cost = five.max_cost_usd
         assert five_cost is not None
-        self.assertAlmostEqual(five_cost, 40 * gen.DECLARED_CALL_COST_USD)
-        self.assertAlmostEqual(five_cost, 1.60)
+        self.assertAlmostEqual(five_cost, 60 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(five_cost, 2.40)
         eight = gen.lesson_cost_budget(8)
         eight_cost = eight.max_cost_usd
         assert eight_cost is not None
-        self.assertAlmostEqual(eight_cost, 64 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(eight_cost, 96 * gen.DECLARED_CALL_COST_USD)
         self.assertEqual(five.source, "declared")
-        # A two-section plan still sits on the historic flat floor.
-        self.assertEqual(gen.lesson_cost_budget(2).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
+        # A one-section plan (12 calls, $0.48) still sits on the historic flat floor; two sections
+        # are 24 calls and size to $0.96, so the floor no longer covers them.
+        self.assertEqual(gen.lesson_cost_budget(1).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
+        two_cost = gen.lesson_cost_budget(2).max_cost_usd
+        assert two_cost is not None
+        self.assertAlmostEqual(two_cost, 24 * gen.DECLARED_CALL_COST_USD)
 
     def test_a_caller_can_still_declare_a_tighter_ceiling(self) -> None:
         budget = gen.lesson_cost_budget(5, brief_budget_usd=0.5)
@@ -84,10 +88,10 @@ class LessonBudgetArithmeticTest(unittest.TestCase):
     def test_the_preflight_maximum_is_the_worst_legal_path(self) -> None:
         preflight = gen.preflight_lesson_cost(8)
         self.assertEqual(preflight.minimum_calls, 16)
-        self.assertEqual(preflight.maximum_calls, 64)
+        self.assertEqual(preflight.maximum_calls, 96)
         self.assertTrue(preflight.fits_minimum)
         self.assertTrue(preflight.fits_maximum)
-        self.assertAlmostEqual(preflight.maximum_cost_usd, 64 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(preflight.maximum_cost_usd, 96 * gen.DECLARED_CALL_COST_USD)
 
 
 class LessonBudgetStageTest(GenerationTestBase):

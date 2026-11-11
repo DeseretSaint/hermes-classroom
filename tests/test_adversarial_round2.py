@@ -571,14 +571,14 @@ class ScaleTest(unittest.TestCase):
     def test_cost_and_call_ceilings_both_scale_with_the_plan(self) -> None:
         small = gen.lesson_cost_budget(4)
         large = gen.lesson_cost_budget(8)
-        # 2 attempts x (generate + validate + one re-ask on each answer) = 8 calls per section.
-        self.assertEqual((small.max_calls, large.max_calls), (32, 64))
+        # 3 attempts x (generate + validate + one re-ask on each answer) = 12 calls per section.
+        self.assertEqual((small.max_calls, large.max_calls), (48, 96))
         # H-17: the dollar ceiling is sized from the plan, with the old flat 0.75 as the floor.
         small_cost = small.max_cost_usd
         large_cost = large.max_cost_usd
         assert small_cost is not None and large_cost is not None
-        self.assertAlmostEqual(small_cost, 32 * gen.DECLARED_CALL_COST_USD)
-        self.assertAlmostEqual(large_cost, 64 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(small_cost, 48 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(large_cost, 96 * gen.DECLARED_CALL_COST_USD)
         self.assertGreater(large_cost, small_cost)
 
         request = gen.LLMRequest(purpose="coursebook.lesson.generate", prompt_version="v",
@@ -598,15 +598,17 @@ class ScaleTest(unittest.TestCase):
             usage.record(request, costed(), 1)
         self.assertAlmostEqual(usage.known_cost, 24 * 0.032)
 
-        # The call ceiling still bounds the job: the 65th call is refused, not the 24th.
-        for _ in range(40):
+        # The call ceiling still bounds the job: the 97th call is refused. The ceiling is the
+        # worst legal path (8 sections x 12 calls), not the audit's 24-call abort point.
+        for _ in range(24, large.max_calls):
             usage.before_call(request)
             usage.record(request, costed(), 1)
         self.assertEqual(len(usage.calls), large.max_calls)
         with self.assertRaises(gen.CostCeilingExceeded):
             usage.before_call(request)
         # A caller can still pass a tighter explicit ceiling; the default never regresses to flat.
-        self.assertEqual(gen.lesson_cost_budget(2).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
+        # With 12 calls per section, only a one-section plan ($0.48) still sits on the 0.75 floor.
+        self.assertEqual(gen.lesson_cost_budget(1).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
 
 
 if __name__ == "__main__":

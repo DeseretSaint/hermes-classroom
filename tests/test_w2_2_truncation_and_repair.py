@@ -258,7 +258,10 @@ class AttemptTwoRepairsTheDraftTest(LessonStageBase):
         text = gen._feedback(verdict)
         for index in range(1, 13):
             self.assertIn(f"reason number {index}", text)
-        self.assertEqual(text.count("\n- "), 12)
+        # CP-015g states the hint-application rule once ahead of the item blocks; the twelve
+        # rejections still travel in full, so the count is the rule plus every reason.
+        self.assertIn("Apply every 'fix' hint literally", text)
+        self.assertEqual(text.count("\n- "), 13)
 
 
 # ── Prompt/schema agreement ──────────────────────────────────────────────────

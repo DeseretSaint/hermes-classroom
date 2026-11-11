@@ -565,7 +565,7 @@ class ProcedurePromptTest(unittest.TestCase):
         self.assertNotIn("1-based index of the segment", ordinary.instructions)
 
     def test_the_lesson_prompt_version_is_bumped(self) -> None:
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v14")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v15")
 
 
 class LegacyPageTest(unittest.TestCase):

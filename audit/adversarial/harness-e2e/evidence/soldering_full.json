@@ -1661,7 +1661,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005b",
@@ -1703,7 +1703,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000005e",
@@ -1750,8 +1750,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -1809,7 +1809,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000067",
@@ -1851,7 +1851,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000006a",
@@ -1898,8 +1898,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -1957,7 +1957,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000073",
@@ -1999,7 +1999,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000076",
@@ -2046,8 +2046,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -2105,7 +2105,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000007f",
@@ -2147,7 +2147,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000082",
@@ -2194,8 +2194,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -2253,7 +2253,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008b",
@@ -2295,7 +2295,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000008e",
@@ -2342,8 +2342,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -2401,7 +2401,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "0000000000000097",
@@ -2443,7 +2443,7 @@
                 "known": true,
                 "model": "recorded-transcript-h40",
                 "pipeline_version": "cb.gen.v2",
-                "prompt_version": "lesson-prompt.v14",
+                "prompt_version": "lesson-prompt.v15",
                 "provider": "recorded"
               },
               "lesson_id": "000000000000009a",
@@ -2490,8 +2490,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 16,
-            "maximum_cost_usd": 0.64,
+            "maximum_calls": 24,
+            "maximum_cost_usd": 0.96,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
