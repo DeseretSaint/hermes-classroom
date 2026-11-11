@@ -20,7 +20,7 @@ commit, frame or audit file was rewritten.
    asserts all of it.
 2. **One lane, implemented: Press Plate** (`docs/ART-DIRECTION-COVERS.md`). One broad flat form, one
    hard-edged `lamp-soft` flood, one `lamp` band full bleed at y=518, one ink cut edge, five flat
-   inks, no text, no object. Printed by `bundled/packs/build_demo_packs.py`.
+   inks, no text, no object. Printed by `bundled/packs/build_bundled_packs.py`.
 3. **Two files per pack.** `content/cover-16x9.png` (1024x576 master) and `content/cover-3x2.png`
    (864x576, the master's mechanical centre crop). Both are declared in `files[]`, both carry a
    `CC0-1.0` per-artifact licence record, and only the master is linked through `media[]`.
@@ -40,7 +40,7 @@ commit, frame or audit file was rewritten.
 | pack | cover | kind | why |
 | --- | --- | --- | --- |
 | `japanese-affection-context-l0` 2.1.0 | `content/cover-16x9.png` + `cover-3x2.png` | **press plate, host-printed** (five inks; CC0-1.0, our own work) | was cabling the relationship schematic as its cover — off-ratio and a README diagram, not a plate. The schematic stays in the pack as the lesson's factual visual. |
-| `technical-demo-pack` 2.0.0 | `content/cover-16x9.png` + `cover-3x2.png` | **press plate, host-printed** (five inks; CC0-1.0) | new fixture, no v1 role, so it can carry a media artifact. |
+| `technical-pack-literacy` 2.0.0 | `content/cover-16x9.png` + `cover-3x2.png` | **press plate, host-printed** (five inks; CC0-1.0) | new course, no v1 role, so it can carry a media artifact. |
 | `parent-measurement-practice` 1.0.0 | *(none)* | **typographic fallback** | cb.pack v1 is the repository's only v1 fixture and the gate that proves a v1 import behaves byte-for-byte as before; a v1 document may not carry `media[]`, so it cannot adopt a cover artifact. Converting it would delete that gate, so the fallback is stated rather than hidden. |
 
 **No model-generated cover ships.** The art direction measured the host image pipeline (1024x576;

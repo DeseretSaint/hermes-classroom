@@ -2,21 +2,22 @@
   "accessibility_notes": [
     "Learner page uses short sentences and a blank line per answer.",
     "The answer guide repeats each task number so a parent can match pages without scanning.",
-    "The cover plate has a text equivalent on its file record and the caption 'Cover plate — painted illustration, not a diagram of the course.' beside it; nothing in the course depends on seeing it."
+    "The cover plate has a text equivalent on its file record and the caption 'Cover plate — printed geometry, not a diagram of the course.' beside it; nothing in the course depends on seeing it. The image carries no glyph; the course title is UI text."
   ],
-  "attribution": "Original teaching text: Coursebook demo pack. The cover plate is model output generated for this pack and is recorded with its provenance and rights position in the manifest; no third-party text or imagery is bundled. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
-  "content_hash": "sha256:fdbdfcb30a52b290dd52e44f46d7598c552573f505b27146062a16086e681782",
+  "attribution": "Original teaching text: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest; no third-party text or imagery is bundled. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
+  "content_hash": "sha256:40c56aeb6514fc44f86c89f421594396d7eff859ea3e232a2fb8b0ab0ba858e5",
   "content_notes": [
     "Parent recipe: this pack is prepared by a parent and approved before use; it is not a child-facing chat.",
     "The learner page never carries the answer key. Answers live only in the answer guide, which the manifest declares with the answer_guide role.",
     "Observation records from a session are parent-reported evidence and are never exported with the pack.",
-    "2.0.0 moves the pack to cb.pack v2 and adds the approved painted cover as role 'cover' (content/cover-3x2.png with its exact 4:5 centre crop). The plate is decorative: the jug is drawn blank, it carries no graduations, quantity or text, and no lesson depends on seeing it. No teaching text, check or answer changed."
+    "2.0.0 moves the pack to cb.pack v2 and adds the approved painted cover as role 'cover' (content/cover-3x2.png with its exact 4:5 centre crop). The plate is decorative: the jug is drawn blank, it carries no graduations, quantity or text, and no lesson depends on seeing it. No teaching text, check or answer changed.",
+    "2.1.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. The pack licence note now states that deterministic provenance instead of calling the cover model output. No teaching text, check or answer changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
   "contributors": [
     {
-      "name": "Coursebook demo pack",
+      "name": "Coursebook",
       "role": "author"
     }
   ],
@@ -35,22 +36,22 @@
       "sha256": "sha256:cfccf28d078790345d6a25293378240d0605bd795e77c66c0ef7df1d2348fd48"
     },
     {
-      "bytes": 555452,
-      "description": "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 gouache plate. Decorative illustration; the jug is blank and it carries no text.",
+      "bytes": 3119,
+      "description": "Printed cover plate for this pack (3:2 plate, 864x576): flat geometry printed by the pack builder. Decorative only; no glyph, no number and no text.",
       "mime": "image/png",
       "path": "content/cover-3x2.png",
       "role": "cover",
-      "sha256": "sha256:5f57005fb58b3d72f1e377293671e9eb58cff185ee4d05b204bcef4c00798301",
-      "text_equivalent": "Painted cover plate: a blank measuring jug, a bowl, oranges and a table with field-green linen. Decorative illustration only: the jug carries no graduations or numbers, it is not a diagram of the lesson, and it states no quantity."
+      "sha256": "sha256:95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825",
+      "text_equivalent": "Printed cover plate: a plum plane across the left two thirds with an ink cut edge, one narrow plum band across the frame, a pale gold field on the right, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph, no number and no quantity, and it is not a diagram of the lesson."
     },
     {
-      "bytes": 538942,
-      "description": "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's exact centre crop. Decorative illustration; no quantity and no text.",
+      "bytes": 2061,
+      "description": "Printed cover plate for this pack (3:2 card crop, 864x576), the master's exact centre crop. Decorative only; no glyph, no quantity and no text.",
       "mime": "image/png",
       "path": "content/cover-4x5.png",
       "role": "cover",
-      "sha256": "sha256:66d485c8c4460febc7f3a8c43d31a183a0056f5677c4ce82bba41fee434d8da1",
-      "text_equivalent": "Painted cover plate: a blank measuring jug, a bowl, oranges and a table with field-green linen. Decorative illustration only: the jug carries no graduations or numbers, it is not a diagram of the lesson, and it states no quantity."
+      "sha256": "sha256:82505bf4730e2c465bdba91877a7baab6b8b8da9a8f04ff0606ebb35a08cabe6",
+      "text_equivalent": "Printed cover plate: a plum plane across the left two thirds with an ink cut edge, one narrow plum band across the frame, a pale gold field on the right, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph, no number and no quantity, and it is not a diagram of the lesson."
     },
     {
       "bytes": 853,
@@ -69,26 +70,26 @@
   ],
   "level_label": "Age 8-10 · parent-led",
   "license": {
-    "id": "unspecified",
-    "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+    "id": "CC-BY-4.0",
+    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
     "per_artifact": [
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-3x2.png"
       },
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-4x5.png"
       }
     ],
-    "redistribution": "local_only"
+    "redistribution": "allowed"
   },
   "locale": "en-US",
   "media": [
     {
-      "caption": "Cover plate — painted illustration, not a diagram of the course.",
+      "caption": "Cover plate — printed geometry, not a diagram of the course.",
       "path": "content/cover-3x2.png",
       "section_path": "content/learner-page.md"
     }
@@ -175,11 +176,11 @@
     }
   ],
   "pack_id": "parent-measurement-practice",
-  "pack_version": "2.0.0",
+  "pack_version": "2.1.0",
   "recipe": "parent",
   "safety_notes": [
     "Uses water and a jug; no heat, sharp tools or hazardous materials."
   ],
   "subtitle": "A ten-minute parent-led measurement practice with a separate answer guide.",
-  "title": "Parent demo: measuring ingredients together"
+  "title": "Measuring together: a kitchen lesson"
 }

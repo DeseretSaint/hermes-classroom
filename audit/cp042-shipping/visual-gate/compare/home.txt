@@ -1,0 +1,6 @@
+render:   visual/frames/home.png (1509x900)
+reference: docs/concept-parity/refs/home.png (1575x900)
+rmse:     0.198744
+similarity: 0.8013
+sheet:    visual/compare/home-sheet.png
+diff:     visual/compare/home-diff.png

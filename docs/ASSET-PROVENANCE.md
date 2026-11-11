@@ -23,12 +23,17 @@ first-party or openly licensed, they are not fetched from a host, and they are r
 segment and keep using the media route.
 
 H-197 opened one illustration lane: a cover plate composed in the Atlas Lamp language from the
-token palette by `bundled/packs/build_demo_packs.py`. It is **host-composed, not model-generated
+token palette by `bundled/packs/build_bundled_packs.py`. It is **host-composed, not model-generated
 and not stock**: every plate is flat rectangles and one hairline ring drawn from
 `contracts/cb.tokens.v2.json`, contains no text, and no third-party imagery, so its rights answer is
-authorship rather than a licence guess. CP-014 keeps that Press Plate lane as the composed
-typographic fallback for any pack that declares no cover. The three bundled packs now ship the
-approved CP-012 **painted** plate instead, declared as role `cover` with its own provenance row.
+authorship rather than a licence guess.
+
+CP-042 (operator note, 2026-11-10) makes that Press Plate generator the **only** cover lane. The host
+image model baked garbled titles into painted plates (the live Home shelf rendered `Asttomamy` and
+`Repir Fundamentas` inside the art), so a cover is never model output now: every bundled cover is
+printed deterministically from flat geometry, released `CC0-1.0`, and OCR-audited to carry no glyph.
+The course title is DOM text on the card, never part of the image. The earlier CP-012 painted plates
+remain recorded as superseded history, not as shipped files.
 
 The one third-party *production* step reachable from the surface is the bundled Japanese pack's
 narration clip: it is synthetic model output, not a recording, and it is declared as such in the
@@ -38,17 +43,17 @@ pack manifest, the pack's `content_notes`, its contributors list and its per-art
 
 | asset | path | produced by | licence | bundled | sha256 |
 | --- | --- | --- | --- | --- | --- |
-| Japanese pack cover, 3:2 master | `bundled/packs/japanese-affection-context-l0/content/cover-3x2.png` | **Painted plate (CP-012)**, generated through the host `image_generate` tool (nous image gateway, media served from `v3b.fal.media`) on 2026-11-10; model id not reported by the host. Copied byte for byte into the pack by `bundled/packs/build_demo_packs.py::painted_cover("japanese")`. Decorative illustration: cafe counter, lantern, noren; no text, no register fact. Prompt and provenance: `docs/concept-parity/COVERS.md`, `audit/cp012-covers/provenance.json`. | `unspecified` (model output; no redistribution licence declared), declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `local_only` | yes, 842,355 bytes | `66aaf53939cfac93cce0aec7ba33c8b0cfd46360d9aaacd3c4e71a546dd62285` |
-| Japanese pack cover, 4:5 crop | `bundled/packs/japanese-affection-context-l0/content/cover-4x5.png` | The master's exact 640x800 centre crop (AE = 0), never a second drawing; recorded in `audit/cp012-covers/provenance.json` | `unspecified`, declared per artifact; `local_only` | yes, 693,974 bytes | `d02801477cdfdd8d922f86fdd767ef09819b697268d3ca8cad2e118ed8a77b19` |
-| Parent pack cover, 3:2 master | `bundled/packs/parent-measurement-practice/content/cover-3x2.png` | **Painted plate (CP-012)**, same host pipeline and gap; copied byte for byte by `painted_cover("parent")`. Decorative illustration: blank jug, bowl, oranges, field-green linen; no quantity, no text. | `unspecified`, declared per artifact; `local_only` | yes, 555,452 bytes | `5f57005fb58b3d72f1e377293671e9eb58cff185ee4d05b204bcef4c00798301` |
-| Parent pack cover, 4:5 crop | `bundled/packs/parent-measurement-practice/content/cover-4x5.png` | The master's exact 640x800 centre crop (AE = 0) | `unspecified`, declared per artifact; `local_only` | yes, 538,942 bytes | `66d485c8c4460febc7f3a8c43d31a183a0056f5677c4ce82bba41fee434d8da1` |
-| Technical pack cover, 3:2 master | `bundled/packs/technical-demo-pack/content/cover-3x2.png` | **Painted plate (CP-012)**, same host pipeline and gap; copied byte for byte by `painted_cover("technical")`. Decorative illustration: blank open manual on a bench edge with loose sheets; no field, count or text. | `unspecified`, declared per artifact; `local_only` | yes, 617,107 bytes | `36927aabcffa5d8ff49a2c553aa6a9814e9820c337835f9e7709460a048fc85f` |
-| Technical pack cover, 4:5 crop | `bundled/packs/technical-demo-pack/content/cover-4x5.png` | The master's exact 640x800 centre crop (AE = 0) | `unspecified`, declared per artifact; `local_only` | yes, 561,177 bytes | `4a03eaa7051318d8ab4f565a39bc8a42d4efa4073d5a91bb6fae856d54c991ff` |
-| Relationship and register map (schematic) | `bundled/packs/japanese-affection-context-l0/content/relationship-map.png` | Deterministic geometry drawn by `bundled/packs/build_demo_packs.py`; no third-party imagery | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]` | yes, 6,948 bytes | `8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d` |
+| Japanese pack cover, 3:2 plate | `bundled/packs/japanese-affection-context-l0/content/cover-3x2.png` | **Deterministic Press Plate (CP-042)**, flat geometry printed by the pack builder from the token palette; no model call, no stock imagery, no text (864x576) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 3,153 bytes | `41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f` |
+| Japanese pack cover, 4:5 crop | `bundled/packs/japanese-affection-context-l0/content/cover-4x5.png` | **Deterministic Press Plate (CP-042)**, the 3:2 plate's exact 4:5 centre crop (no resampling), never a second drawing (460x575) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 2,194 bytes | `5ae6ea8007db3d034e6b21b4b9fea865530c93c43c9b9d23e4e0dd4bd310e7e6` |
+| Parent pack cover, 3:2 plate | `bundled/packs/parent-measurement-practice/content/cover-3x2.png` | **Deterministic Press Plate (CP-042)**, flat geometry printed by the pack builder from the token palette; no model call, no stock imagery, no text (864x576) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 3,119 bytes | `95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825` |
+| Parent pack cover, 4:5 crop | `bundled/packs/parent-measurement-practice/content/cover-4x5.png` | **Deterministic Press Plate (CP-042)**, the 3:2 plate's exact 4:5 centre crop (no resampling), never a second drawing (460x575) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 2,061 bytes | `82505bf4730e2c465bdba91877a7baab6b8b8da9a8f04ff0606ebb35a08cabe6` |
+| Technical pack cover, 3:2 plate | `bundled/packs/technical-pack-literacy/content/cover-3x2.png` | **Deterministic Press Plate (CP-042)**, flat geometry printed by the pack builder from the token palette; no model call, no stock imagery, no text (864x576) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 3,162 bytes | `3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056` |
+| Technical pack cover, 4:5 crop | `bundled/packs/technical-pack-literacy/content/cover-4x5.png` | **Deterministic Press Plate (CP-042)**, the 3:2 plate's exact 4:5 centre crop (no resampling), never a second drawing (460x575) | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]`; pack redistribution `allowed`. Attribution: "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0." | yes, 2,348 bytes | `668a63a9c38d07ca810d5b4f1a16bfd520ca23e668fdf5040836edbea94f8416` |
+| Relationship and register map (schematic) | `bundled/packs/japanese-affection-context-l0/content/relationship-map.png` | Deterministic geometry drawn by `bundled/packs/build_bundled_packs.py`; no third-party imagery | `CC0-1.0`, declared per artifact in `pack.json` → `license.per_artifact[]` | yes, 6,948 bytes | `8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d` |
 | Narration of the polite first-confession line | `bundled/packs/japanese-affection-context-l0/content/narration-polite-confession.mp3` | **Kokoro-82M** (`hexgrad/Kokoro-82M`, revision `f3ff3571791e39611d31c381e3a41a3af07b4987`), voice `jf_alpha`, Apache-2.0 model weights, run offline with the `kokoro` package (Apache-2.0). No human speaker. | `Apache-2.0` (model licence; the clip is model output) | yes, 22,272 bytes | `dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349` |
-| Japanese pack teaching text | `bundled/packs/japanese-affection-context-l0/content/section-0{1,2,3}-*.md`, `source-notes.md` | Original Coursebook-authored prose | pack `license` is `unspecified` with `local_only` redistribution — the operator has not chosen a redistribution licence | yes | per-file sha256 in `pack.json` → `files[]` |
-| Parent measurement pack | `bundled/packs/parent-measurement-practice/` (5 files, 1,097,873 expanded bytes: 3 prose + 2 cover files) | Original Coursebook-authored prose plus the CP-012 painted cover; no third-party text, image or audio | `unspecified`, `local_only`; cover records are `unspecified` with no redistribution claim | yes | per-file sha256 in `pack.json` → `files[]` (pack `content_hash` `sha256:fdbdfcb30a52b290dd52e44f46d7598c552573f505b27146062a16086e681782`) |
-| Technical demo pack | `bundled/packs/technical-demo-pack/` (5 files, 1,182,291 expanded bytes: 3 prose + 2 cover files) | Original Coursebook-authored prose plus the CP-012 painted cover, about this repository's own pack contract | `CC0-1.0` for the prose; cover records `unspecified`, `local_only` | yes | per-file sha256 in `pack.json` → `files[]` (pack `content_hash` `sha256:6201280f803060a6f66c6ad50cebdd3c467e34f3474ba483d3236777864f8b36`) |
+| Japanese pack teaching text | `bundled/packs/japanese-affection-context-l0/content/section-0{1,2,3}-*.md`, `source-notes.md` | Original Coursebook-authored prose | pack `license` is `CC-BY-4.0` with `allowed` redistribution under the operator-directed store release of 2026-11-10; covers are `CC0-1.0` | yes (whole pack: 8 files, 44,957 expanded bytes) | per-file sha256 in `pack.json` → `files[]` (pack `content_hash` `sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116`) |
+| Parent measurement pack | `bundled/packs/parent-measurement-practice/` (5 files, 8,659 expanded bytes: 3 prose + 2 cover files) | Original Coursebook-authored prose plus the deterministic Press Plate cover; no third-party text, image or audio | `CC-BY-4.0`, `allowed`; cover records are `CC0-1.0` | yes | per-file sha256 in `pack.json` → `files[]` (pack `content_hash` `sha256:40c56aeb6514fc44f86c89f421594396d7eff859ea3e232a2fb8b0ab0ba858e5`) |
+| Technical pack | `bundled/packs/technical-pack-literacy/` (5 files, 9,508 expanded bytes: 3 prose + 2 cover files) | Original Coursebook-authored prose plus the deterministic Press Plate cover, about this repository's own pack contract | `CC-BY-4.0`, `allowed`; cover records are `CC0-1.0` | yes | per-file sha256 in `pack.json` → `files[]` (pack `content_hash` `sha256:a700ee6bf263c70d1bbccd8a0d6075b1e5ca4fe65ba778359133d90570b03992`) |
 
 Hashes above were printed by `sha256sum` on the tree this document was written from, and the
 manifest-declared hashes beside each file are the ones `coursebook/workshop.py` re-verifies on every
@@ -56,15 +61,13 @@ catalogue read; a drifted file is refused rather than rendered.
 
 ## The cover lane, in full
 
-> **Second lane added by the v3 concept-parity direction (CP-012, `wt/cp-012-covers`), integrated
-> by CP-014.** The paragraphs below describe the H-197 Press Plate lane, which now remains the
-> composed typographic fallback. CP-012 draws the **painted** lane `docs/concept-parity/ART-BIBLE.md`
-> §1 defines — opaque gouache, model-generated, one upper-left light, warm-brown line — for the three
-> bundled packs; the files are in `assets/art/covers/`, the provenance rows are in
-> `docs/concept-parity/COVERS.md`, and CP-014 copies each approved plate into its pack byte for byte
-> as role `cover`. The painted plates carry only the pigments `docs/GM-SUBJECT-WORLDS.md` §0 allows
-> (paper, ink, cream, lamp, field); the state hues ochre, coral and plum are absent by measurement,
-> and a shipped-plate gate enforces it.
+> **CP-042 (2026-11-10) closes the model cover lane.** The paragraphs below describe the H-197 Press
+> Plate lane, which is now the only shipped cover lane. The CP-012 painted plates were model output;
+> the image model baked garbled titles into them (`Asttomamy`, `Repir Fundamentas`), so the operator
+> directed that no cover carry AI text. Every bundled cover is the deterministic Press Plate, the
+> course title is DOM text, and a shipped-still gate asserts the committed bytes are the generator's
+> own output and that OCR finds no glyph. The painted plates remain in `audit/cp012-covers/` as
+> superseded history.
 
 - **Icons are unchanged.** `sdk.Codicon` only, 16px, `currentColor`; no icon font and no second
   icon family. A cover plate is content/brand ornament, not UI grammar, and it is the only
@@ -73,18 +76,20 @@ catalogue read; a drifted file is refused rather than rendered.
   full bleed at a fixed y, one heavy ink rule. Five flat inks, no text, no object, no symbol. The
   full brief, the prompts (P1–P3) for the model lane, the finish recipe and the acceptance block are
   in `docs/ART-DIRECTION-COVERS.md`.
-- **Licence gate.** The Press Plate lane allowed only CC0, MIT, ISC, Apache-2.0, BSD, or CC BY 4.0
-  with visible attribution. The CP-012 painted plates are model output: their per-artifact record is
-  `unspecified`, the pack's redistribution stays `local_only`, and no wider right is claimed here.
-  Any redistribution is an operator decision recorded outside this file.
+- **Licence gate.** The cover lane is deterministic, so it ships `CC0-1.0`: the per-artifact record is
+  `CC0-1.0` with the attribution "Deterministic cover printed by the Coursebook bundled pack builder
+  from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.", and the
+  packs declare `redistribution: allowed` under the operator-directed store release recorded on
+  2026-11-10. A future pack without that direction stays `local_only`.
 - **Coherence gate.** One plate family, one light, one line family, one paper. The plate carries no text
   at all; the pack title is type rendered by the app beside it, and the plate keeps the paper ground
   in both UI modes because it is a lit page.
-- **Accuracy gate.** Every cover is labelled on the surface: the caption reads “Cover plate — painted
-  illustration, not a diagram of the course.”, and the file record carries a human-written text
+- **Accuracy gate.** Every cover is labelled on the surface: the caption reads "Cover plate — printed
+  geometry, not a diagram of the course.", and the file record carries a human-written text
   equivalent. No cover carries a measurement, torque, dosage, wiring value, field name or other
-  safety-critical fact, and none is labelled a photograph of a procedure. The Japanese pack's
-  factual visual remains the deterministic relationship map, which is a schematic, not the cover.
+  safety-critical fact, none is labelled a photograph of a procedure, and none carries a glyph — the
+  course title is UI text beside the plate. The Japanese pack's factual visual remains the
+  deterministic relationship map, which is a schematic, not the cover.
 - **No second icon or illustration system, no hotlink.** There is no remote `src`, no stock-photo
   link, no per-pack art direction and no third-party style in the lane.
 - **The optional CC0 set is not shipped.** One CC0 human set is permitted (Open Peeps only:
@@ -144,5 +149,8 @@ images is bundled; each is cited by URL in `pack.json` → `sources[]` and in
 - **The parent pack now carries a cover.** CP-014 moves it to cb.pack v2 so the approved painted
   plate can be adopted as role `cover`; the v1 import path is covered by in-memory v1 fixtures, and a
   pack that declares no cover still falls back to the composed typographic plate.
+- **The three bundled courses are store courses.** Their titles, subtitles and licence notes carry
+  no demo/sample/fixture label; they are added to the library from the Workshop like any other pack.
 - **No external asset was used, so no external licence is relied on** beyond the model licence
-  named above for the one generated audio fixture.
+  named above for the one generated audio clip; every shipped cover plate is the deterministic
+  Press Plate, released `CC0-1.0` under the packs' `redistribution: allowed` store release.

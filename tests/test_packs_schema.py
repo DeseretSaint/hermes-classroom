@@ -11,7 +11,7 @@ from coursebook import packs
 ROOT = Path(__file__).resolve().parent.parent
 JAPANESE = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
 PARENT = ROOT / "bundled" / "packs" / "parent-measurement-practice"
-TECHNICAL = ROOT / "bundled" / "packs" / "technical-demo-pack"
+TECHNICAL = ROOT / "bundled" / "packs" / "technical-pack-literacy"
 
 
 def load(directory: Path) -> dict:

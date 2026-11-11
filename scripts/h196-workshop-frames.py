@@ -308,7 +308,7 @@ FRAMES = [
     {
         "id": "13-no-media-fallback-light-460",
         "view": "detail",
-        "pack_id": "technical-demo-pack",
+        "pack_id": "technical-pack-literacy",
         "mode": "light",
         "width": 460,
         "height": 2400,

@@ -30,7 +30,7 @@
     },
     {
       "id": "C-technical-r2",
-      "pack": "technical-demo-pack",
+      "pack": "technical-pack-literacy",
       "raw": "audit/cp012-covers/raw/technical-sq.png",
       "media_url": "https://v3b.fal.media/files/b/0ab1eded/d-UqXS8DNxUoCe0dQzUuy_K1dmQ7Nb.png",
       "round": 2,
@@ -52,7 +52,7 @@
     },
     {
       "id": "C-technical-r1",
-      "pack": "technical-demo-pack",
+      "pack": "technical-pack-literacy",
       "raw": "audit/cp012-covers/raw/technical-r1.png",
       "why": "16:9 master and a muted-sage pigment outside the ART-BIBLE §2 table; the 4:5 crop cut the sheet stack"
     }

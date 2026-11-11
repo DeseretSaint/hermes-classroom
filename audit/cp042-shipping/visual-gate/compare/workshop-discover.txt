@@ -1,0 +1,6 @@
+render:   visual/frames/workshop.png (1509x900)
+reference: docs/concept-parity/refs/discover.png (1575x900)
+rmse:     0.36529
+similarity: 0.6347
+sheet:    visual/compare/workshop-discover-sheet.png
+diff:     visual/compare/workshop-discover-diff.png

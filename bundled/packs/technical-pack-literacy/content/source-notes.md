@@ -1,6 +1,6 @@
 # Sources
 
-This technical demo teaches the Coursebook pack contract as it is implemented in this repository.
+This course teaches the Coursebook pack contract as it is implemented in this repository.
 Nothing is quoted from an external work, and no third-party text or media is bundled.
 
 - `contracts/pack-manifest.v1.json` and `contracts/pack-manifest.v2.json` — the manifest contracts

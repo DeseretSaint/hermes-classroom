@@ -173,7 +173,7 @@
     },
     {
       "id": "C-technical-r2",
-      "pack": "technical-demo-pack",
+      "pack": "technical-pack-literacy",
       "prompt_sha256": "7f2323c2b42907cfe686d4790a0e041122fcb457a448de86389ef42c82ad97b3",
       "prompt_chars": 1721,
       "round": 2,

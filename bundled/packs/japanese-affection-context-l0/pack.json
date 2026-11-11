@@ -2,12 +2,12 @@
   "accessibility_notes": [
     "Every Japanese line carries romaji and an English meaning.",
     "The relationship schematic has a text equivalent on its file record and a short caption beside it on the lesson page.",
-    "The cover plate is illustration only: it has a text equivalent on its file record and the caption 'Cover plate — painted illustration, not a diagram of the course.' beside it. Nothing in the course depends on seeing it.",
+    "The cover plate is decorative geometry only: it has a text equivalent on its file record and the caption 'Cover plate — printed geometry, not a diagram of the course.' beside it. Nothing in the course depends on seeing it. The image carries no glyph; the course title is UI text.",
     "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
     "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
   ],
-  "attribution": "Original teaching text, relationship schematic and narration: Coursebook demo pack. The cover plate is model output generated for this pack and is recorded with its provenance and rights position in the manifest; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
-  "content_hash": "sha256:e5dc96b86688fc17523a1f5cf4ad23688ae575151d1c695adf5b4f7f5243c2c5",
+  "attribution": "Original teaching text, relationship schematic and narration: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+  "content_hash": "sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116",
   "content_notes": [
     "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
     "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
@@ -17,13 +17,15 @@
     "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
     "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer.",
     "2.1.0 added one composed Press Plate cover (content/cover-16x9.png, with its 3:2 crop), linked first in media[] so the Workshop storefront, the Library row and the course detail showed the same plate. It was decorative illustration: it carried no register facts. The relationship map remained the pack's deterministic schematic and the only visual that states them. No wording, check or source changed.",
-    "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and its rights position (no redistribution licence declared; local_only) are recorded per artifact. It is decorative: it carries no text and no register fact, and the relationship map remains the schematic. No wording, check or source changed, and no native-speaker review is claimed."
+    "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and its rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. It is decorative: it carries no text and no register fact, and the relationship map remains the schematic. No wording, check or source changed, and no native-speaker review is claimed.",
+    "2.3.0 rewrites two learner-facing phrases so the shipped course reads as a course: the first section opens as an L0 lesson for an adult beginner, and the second states that no native-speaker review is recorded for this pack. The rights paragraph in content/source-notes.md now records the actual licence (CC-BY-4.0, redistribution allowed, operator-directed 2026-11-10) instead of the pre-shipping placeholder. No language, check or source changed.",
+    "2.4.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. The pack licence note and content/source-notes.md now state that deterministic provenance instead of calling the covers model output. No language, check or source changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
   "contributors": [
     {
-      "name": "Coursebook demo pack",
+      "name": "Coursebook",
       "role": "author"
     },
     {
@@ -39,22 +41,22 @@
   },
   "files": [
     {
-      "bytes": 842355,
-      "description": "Painted cover plate for this pack (3:2 master, 1200x800): the approved CP-012 gouache plate. Decorative illustration; it carries no register facts and no text.",
+      "bytes": 3153,
+      "description": "Printed cover plate for this pack (3:2 plate, 864x576): flat geometry printed by the pack builder. Decorative only; it carries no glyph, no register fact and no text.",
       "mime": "image/png",
       "path": "content/cover-3x2.png",
       "role": "cover",
-      "sha256": "sha256:66aaf53939cfac93cce0aec7ba33c8b0cfd46360d9aaacd3c4e71a546dd62285",
-      "text_equivalent": "Painted cover plate: a paper ground with a cafe counter and stool across the lower part, a paper-cream lantern and a noren curtain above it. Decorative illustration only: it is not a diagram of the course, carries no text, and states no register fact. The relationship map remains the pack's schematic."
+      "sha256": "sha256:41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+      "text_equivalent": "Printed cover plate: a pale gold field across the lower part, one indigo plane with a slanted cut edge bleeding off the top and bottom, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph, is not a diagram of the course, and states no register fact. The relationship map remains the pack's schematic."
     },
     {
-      "bytes": 693974,
-      "description": "Painted cover plate for this pack (4:5 portrait crop, 640x800), the master's exact centre crop. Decorative illustration; no register facts and no text.",
+      "bytes": 2194,
+      "description": "Printed cover plate for this pack (3:2 card crop, 864x576), the master's exact centre crop. Decorative only; no glyph, no register fact and no text.",
       "mime": "image/png",
       "path": "content/cover-4x5.png",
       "role": "cover",
-      "sha256": "sha256:d02801477cdfdd8d922f86fdd767ef09819b697268d3ca8cad2e118ed8a77b19",
-      "text_equivalent": "Painted cover plate: a paper ground with a cafe counter and stool across the lower part, a paper-cream lantern and a noren curtain above it. Decorative illustration only: it is not a diagram of the course, carries no text, and states no register fact. The relationship map remains the pack's schematic."
+      "sha256": "sha256:5ae6ea8007db3d034e6b21b4b9fea865530c93c43c9b9d23e4e0dd4bd310e7e6",
+      "text_equivalent": "Printed cover plate: a pale gold field across the lower part, one indigo plane with a slanted cut edge bleeding off the top and bottom, and a full-width gold band along the bottom. Decorative geometry only: it carries no glyph, is not a diagram of the course, and states no register fact. The relationship map remains the pack's schematic."
     },
     {
       "bytes": 22272,
@@ -67,7 +69,7 @@
     },
     {
       "bytes": 6948,
-      "description": "Relationship and register map drawn deterministically for the demo pack.",
+      "description": "Relationship and register map drawn deterministically for this pack.",
       "mime": "image/png",
       "path": "content/relationship-map.png",
       "role": "visual",
@@ -75,18 +77,18 @@
       "text_equivalent": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting."
     },
     {
-      "bytes": 2382,
+      "bytes": 2367,
       "mime": "text/markdown",
       "path": "content/section-01-two-ways.md",
       "role": "section",
-      "sha256": "sha256:806201f9ca7bbf11e8921eb2486121926aeb8a8a2574ec2d8d9a336eedb5f1e8"
+      "sha256": "sha256:0557df9880ea3b404581e3d29164ec054253ef529244f3713d8df7a99e371a22"
     },
     {
-      "bytes": 2523,
+      "bytes": 2518,
       "mime": "text/markdown",
       "path": "content/section-02-choosing.md",
       "role": "section",
-      "sha256": "sha256:2098fe3d56cd888489f7682f6c62dbeb6a7e61ea47d071a4f8597824ecc0e7c0"
+      "sha256": "sha256:39ed51bef3a2446aba02f98619366f1b09b4709a79fb1afd5ffece117961bf59"
     },
     {
       "bytes": 2092,
@@ -96,30 +98,30 @@
       "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
     },
     {
-      "bytes": 3251,
+      "bytes": 3413,
       "mime": "text/markdown",
       "path": "content/source-notes.md",
       "role": "source_note",
-      "sha256": "sha256:5090c5b0c58635d3889cb819ff2c984ad6ce5ad8a65ca48142b858fa3d0f048e"
+      "sha256": "sha256:c1d9cb851f3b28706d2add8e00b92561370c4a62171a3e72268bd0f8910abc89"
     }
   ],
   "level_label": "CEFR A1 · ab initio (L0)",
   "license": {
-    "id": "unspecified",
-    "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+    "id": "CC-BY-4.0",
+    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
     "per_artifact": [
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-3x2.png"
       },
       {
-        "attribution": "Painted cover plate generated through the host image_generate tool (nous image gateway, media served from v3b.fal.media) on 2026-11-10; the host tool reported no model id. No third-party source text or media was supplied. No redistribution licence is declared for this model output: the pack's redistribution stays local_only, and any wider use is an operator rights decision, not a claim made here.",
-        "license_id": "unspecified",
+        "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
+        "license_id": "CC0-1.0",
         "path": "content/cover-4x5.png"
       },
       {
-        "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+        "attribution": "Deterministic schematic generated by the Coursebook bundled pack builder; no third-party imagery.",
         "license_id": "CC0-1.0",
         "path": "content/relationship-map.png"
       },
@@ -129,12 +131,12 @@
         "path": "content/narration-polite-confession.mp3"
       }
     ],
-    "redistribution": "local_only"
+    "redistribution": "allowed"
   },
   "locale": "ja-JP",
   "media": [
     {
-      "caption": "Cover plate — painted illustration, not a diagram of the course.",
+      "caption": "Cover plate — printed geometry, not a diagram of the course.",
       "path": "content/cover-3x2.png",
       "section_path": "content/section-01-two-ways.md"
     },
@@ -317,7 +319,7 @@
     }
   ],
   "pack_id": "japanese-affection-context-l0",
-  "pack_version": "2.2.0",
+  "pack_version": "2.4.0",
   "recipe": "casual",
   "safety_notes": [
     "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack implements no listening check and no pronunciation score, so no listening evidence is claimed.",
@@ -392,5 +394,5 @@
     }
   ],
   "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
-  "title": "Japanese affection and register — a Sample L0 classroom"
+  "title": "Japanese register: affection and closeness"
 }

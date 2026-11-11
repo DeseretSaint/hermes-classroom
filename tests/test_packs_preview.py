@@ -48,8 +48,9 @@ class PreviewTests(unittest.TestCase):
         # H-186 shipped the demo pack as cb.pack v2; the preview carries whatever the pack
         # manifest declares rather than a literal pinned to one revision of the fixture.
         self.assertEqual(shown["pack_version"], self.manifest["pack_version"])
-        # CP-014 integrates the painted cover and releases the fixture as 2.2.0.
-        self.assertEqual(shown["pack_version"], "2.2.0")
+        # CP-014 integrated the painted cover and released the pack as 2.2.0; CP-042's wording
+        # revision is 2.3.0.
+        self.assertEqual(shown["pack_version"], "2.4.0")
         self.assertEqual(shown["minimum_coursebook_version"], "0.1.0")
         self.assertGreater(result["integrity"]["expanded_bytes"], 0)
         self.assertEqual(result["integrity"]["file_count"], len(shown["files"]))
