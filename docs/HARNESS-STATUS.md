@@ -19,7 +19,7 @@ measurement (`cb.rpc` v20, `cb.db` v13, module `cd862140…`, suite `Ran 2747 te
 **Historical snapshot label — not current.** The row-by-row body (§1-§7) is a snapshot written
 against `master` at `498b1daeae946d988072bb7852c07b4cfbddeb8e` (2026-11-07 01:54 -0700), where the
 suite was `Ran 1177 tests … OK` and `desktop/plugin.js` was sha256
-`5beed34847ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25` (last changed by H-02,
+`5beed34797ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25` (last changed by H-02,
 `5b7423374a5b8d10a2fe94ce520a2613b5c8f02e`). Every "on `master`" / "not on `master`" statement in
 those rows describes `498b1da` unless §5.1 or §8 re-derives it. Do not quote a row as current
 without re-running `git merge-base --is-ancestor <commit> origin/master`; §8 records the H-171
