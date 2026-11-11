@@ -18,7 +18,8 @@
 const WORKSHOP_TABS = Object.freeze([
   { id: 'discover', label: 'Discover' },
   { id: 'library', label: 'Library' },
-  { id: 'provenance', label: 'Provenance' }
+  { id: 'provenance', label: 'Provenance' },
+  { id: 'share', label: 'Share to store' }
 ])
 
 /** The learner's own shelves. A user category is a bookmark, not a second taxonomy. */
@@ -2113,6 +2114,8 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
     })
   } else if (tab === 'provenance') {
     body = jsx(WorkshopProvenance, { implemented, motion, layout })
+  } else if (tab === 'share') {
+    body = jsx(WorkshopShare, { implemented, motion, layout })
   } else if (selected) {
     body = jsx(WorkshopDetail, {
       item: selected,
@@ -2256,3 +2259,143 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
 }
 
 
+
+
+/* ── Share to store ────────────────────────────────────────────────────────────────────────
+ * The one action that leaves this machine on purpose. It posts one enrollment id to the host,
+ * which exports the course there (never here), audits the pack with the importer's own gate, and
+ * opens exactly one pull request against the Coursebook repository for the owner to merge. The
+ * page never sends a path, never claims the pull request is accepted, and shows the pack id and
+ * hashes the host returned so the author can check what they offered.
+ */
+function WorkshopShare({ implemented, motion, layout }) {
+  const [items, setItems] = useState(null)
+  const [busy, setBusy] = useState('')
+  const [outcome, setOutcome] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      try {
+        const response = await rpc('library.list', {})
+        const rows = (response && response.result && response.result.items) || []
+        if (live) setItems(rows.filter((row) => !row.course_pack_id && row.course_status !== 'deleted'))
+      } catch (err) {
+        if (live) {
+          setItems([])
+          setError('Your courses could not be read; nothing was shared.')
+        }
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [])
+
+  const share = async (item) => {
+    setBusy(item.enrollment_id)
+    setOutcome(null)
+    setError('')
+    try {
+      const response = await rest('/workshop/share', {
+        method: 'POST',
+        body: { enrollment_id: item.enrollment_id, confirm: true }
+      })
+      if (!response || response.ok !== true) {
+        setError((response && response.message) || 'The store refused this course; nothing was published.')
+      } else {
+        setOutcome(response)
+      }
+    } catch (err) {
+      setError('The host could not reach GitHub; nothing was published.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const heading = jsx('h2', {
+    style: { ...workshopStateHeadingStyle, margin: 0 },
+    children: 'Share a course with everyone'
+  })
+
+  if (items === null) {
+    return jsxs('div', { 'data-cb-workshop-share': 'loading', style: { display: 'grid', gap: '0.75rem' }, children: [heading, jsx('p', { children: 'Reading your courses…' })] })
+  }
+
+  if (!items.length) {
+    return jsxs('div', {
+      'data-cb-workshop-share': 'empty',
+      style: { display: 'grid', gap: '0.75rem', maxWidth: '46rem' },
+      children: [
+        heading,
+        jsx('p', { children: 'You have no course of your own to share yet. A course you generate appears here once its plan is approved and its lessons are written.' }),
+        jsx('p', { style: { color: cb3Role('ink-soft') }, children: 'Packs from the store are shared by their authors, not from this page.' })
+      ]
+    })
+  }
+
+  return jsxs('div', {
+    'data-cb-workshop-share': 'ready',
+    style: { display: 'grid', gap: '1rem', maxWidth: '52rem' },
+    children: [
+      heading,
+      jsx('p', {
+        style: { margin: 0, color: cb3Role('ink-soft') },
+        children:
+          'Sharing exports this course, checks it against the same rules an imported pack must pass, and opens one pull request on the Coursebook repository. It appears in the store for everyone after that pull request is merged.'
+      }),
+      outcome
+        ? jsxs('div', {
+            'data-cb-workshop-share-result': 'ok',
+            style: { border: `1px solid ${cb3Role('rule')}`, borderRadius: '0.5rem', padding: '0.75rem', display: 'grid', gap: '0.35rem' },
+            children: [
+              jsx('strong', { children: 'Pull request opened' }),
+              jsx('div', { children: `${outcome.pack_id} · ${outcome.mode} · ${outcome.objectives} objective(s) · ${outcome.world_plates || 0} plate(s)` }),
+              jsx('div', { style: { color: cb3Role('ink-soft'), wordBreak: 'break-all' }, children: outcome.content_hash }),
+              outcome.pull_request
+                ? jsx('a', { href: outcome.pull_request, target: '_blank', rel: 'noreferrer', children: outcome.pull_request })
+                : null
+            ]
+          })
+        : null,
+      error
+        ? jsx('div', {
+            'data-cb-workshop-share-result': 'error',
+            role: 'status',
+            style: { border: `1px solid ${cb3Role('rule')}`, borderRadius: '0.5rem', padding: '0.75rem' },
+            children: error
+          })
+        : null,
+      jsx('ul', {
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.5rem' },
+        children: items.map((item) =>
+          jsxs('li', {
+            key: item.enrollment_id,
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+              borderBottom: `1px solid ${cb3Role('rule')}`,
+              paddingBottom: '0.5rem'
+            },
+            children: [
+              jsxs('span', { style: { display: 'grid', gap: '0.15rem' }, children: [
+                jsx('strong', { children: item.title }),
+                jsx('span', { style: { color: cb3Role('ink-soft'), fontSize: cb3Type('meta') }, children: `${item.recipe || 'course'} · ${item.locale || 'unscoped'}` })
+              ] }),
+              jsx(CbAction, {
+                variant: 'secondary',
+                disabled: busy === item.enrollment_id,
+                onClick: () => share(item),
+                children: busy === item.enrollment_id ? 'Opening pull request…' : 'Share to store'
+              })
+            ]
+          }, item.enrollment_id)
+        )
+      })
+    ]
+  })
+}

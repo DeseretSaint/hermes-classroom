@@ -34,6 +34,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import logging
+import pathlib
 import re
 import sys
 import uuid
@@ -244,6 +245,105 @@ async def workshop_install(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "message": "the pack could not be installed; nothing was adopted",
         }
     return {"ok": True, **result}
+
+
+@router.post("/workshop/share")
+async def workshop_share(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Offer one authored course to the store: export it, audit it, open one pull request.
+
+    The body carries ``enrollment_id`` and ``confirm``; it never carries a path. The export is
+    produced *here*, from the course's own approved text, through the same ``course.export``
+    contract the Desktop uses, so a client cannot hand this route a file to publish. The archive
+    then goes through the store submission path, which runs the importer's own pre-write gate
+    before it commits, pushes a branch and opens the pull request for the owner to merge.
+
+    Refusals are data with a code: an unready course, a pack the gate rejects, a missing ``gh``,
+    or a store that already carries these exact bytes. ``dry_run`` audits and identifies without
+    writing a branch, which is what the button uses to show the author what will be submitted.
+    """
+    if body.get("confirm") is not True and body.get("dry_run") is not True:
+        return {
+            "ok": False,
+            "code": "CONFIRMATION_REQUIRED",
+            "message": "sharing opens a pull request on your GitHub account; confirm to continue",
+        }
+    enrollment_id = body.get("enrollment_id")
+    if not isinstance(enrollment_id, str) or not enrollment_id.strip() or len(enrollment_id) > 128:
+        return {"ok": False, "code": "VALIDATION_FAILED", "message": "share needs one enrollment_id"}
+    enrollment_id = enrollment_id.strip()
+
+    api = _api()
+    reviewed = api.dispatch({
+        "contract": api.RPC_CONTRACT,
+        "contract_version": api.RPC_CONTRACT_VERSION,
+        "method": "course.export.read",
+        "operation_id": f"share-read-{uuid.uuid4().hex}",
+        "payload": {"enrollment_id": enrollment_id},
+    })
+    if not reviewed.get("ok"):
+        error = reviewed.get("error") or {}
+        return {"ok": False, "code": error.get("code") or "EXPORT_UNAVAILABLE",
+                "message": error.get("message") or "this course cannot be exported right now"}
+    content_hash = str((reviewed.get("result") or {}).get("content_hash") or "")
+    if not content_hash:
+        return {"ok": False, "code": "INTERNAL_ERROR", "message": "the export review returned no hash"}
+
+    exported = api.dispatch({
+        "contract": api.RPC_CONTRACT,
+        "contract_version": api.RPC_CONTRACT_VERSION,
+        "method": "course.export",
+        "operation_id": f"share-export-{uuid.uuid4().hex}",
+        "idempotency_key": f"share-{enrollment_id}-{content_hash.split(':')[-1][:16]}",
+        "payload": {"enrollment_id": enrollment_id, "expected_content_hash": content_hash},
+    })
+    if not exported.get("ok"):
+        error = exported.get("error") or {}
+        return {"ok": False, "code": error.get("code") or "EXPORT_UNAVAILABLE",
+                "message": error.get("message") or "the export was refused"}
+    artifacts = (exported.get("result") or {}).get("artifacts") or []
+    if not artifacts:
+        return {"ok": False, "code": "INTERNAL_ERROR", "message": "the export produced no artifact"}
+
+    db = _db()
+    try:
+        with db.read() as connection:
+            row = connection.execute(
+                "SELECT path FROM artifacts WHERE id = ?", (str(artifacts[0]["artifact_id"]),)
+            ).fetchone()
+        path = str(row["path"]) if row is not None else ""
+    except Exception as exc:  # noqa: BLE001 - an unreadable store is a typed answer, not a crash
+        logger.warning("coursebook: share could not resolve the exported artifact: %s", exc)
+        return {"ok": False, "code": "EXPORT_UNAVAILABLE", "message": "the exported file is missing"}
+    if not path or not Path(path).is_file():
+        return {"ok": False, "code": "EXPORT_UNAVAILABLE", "message": "the exported file is missing"}
+
+    submit_module = _submit_module()
+    try:
+        ledger = submit_module.submit(
+            pathlib.Path(path),
+            dry_run=bool(body.get("dry_run")),
+            push=not bool(body.get("dry_run")),
+        )
+    except (submit_module.archive.PackRejected, submit_module.packs.PackRejected) as exc:
+        return {"ok": False, "code": "PACK_REJECTED", "message": str(exc)}
+    except SystemExit as exc:  # the submission path reports policy refusals this way
+        return {"ok": False, "code": "SHARE_REFUSED", "message": str(exc)}
+    except Exception:  # noqa: BLE001 - gh/git failures are reported as data
+        logger.exception("coursebook: the store submission failed")
+        return {"ok": False, "code": "SHARE_FAILED",
+                "message": "the pull request could not be opened; the pack was not published"}
+    return {"ok": True, **ledger}
+
+
+def _submit_module() -> Any:
+    """``scripts/submit-course.py`` as a module (the one place the store path is defined)."""
+    path = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "submit-course.py"
+    spec = importlib.util.spec_from_file_location("coursebook_store_submit", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("the store submission script is missing from this package")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 @router.get("/packs/intake")
