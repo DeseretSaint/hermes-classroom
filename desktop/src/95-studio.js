@@ -1996,6 +1996,7 @@ function HomeworkSheetCard({ task, compact = false }) {
             : 'Done — I will record this myself.'
   return jsxs('article', {
     'data-cb-homework-sheet': task.task_id,
+    'data-cb3-homework': 'sheet',
     'data-cb-homework-state': state,
     'aria-label': `Take-home task: ${task.title || ''}`,
     style: {
@@ -2006,9 +2007,9 @@ function HomeworkSheetCard({ task, compact = false }) {
       maxWidth: CB_MEASURE,
       boxSizing: 'border-box',
       padding: compact ? '0.7rem 0.75rem' : '0.95rem 1rem 1rem',
-      background: 'var(--cb3-card-stock)',
-      border: '1px solid var(--cb3-rule)',
-      borderRadius: '2px'
+      background: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round')
     },
     children: [
       jsx('p', { style: eyebrow, children: 'Coursebook field card' }, 'eyebrow'),
@@ -2170,21 +2171,23 @@ function HomeworkSheetCard({ task, compact = false }) {
 function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownloaded, saved }) {
   return jsxs('div', {
     'data-cb-homework-actions': '',
+    'data-cb3-homework': 'actions',
     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'secondary',
+      jsx(PillAction, {
+        'data-cb-homework-action': 'print',
+        variant: 'quiet',
+        label: 'Print the sheet',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbPrintHomeworkSheet(task && task.sheet ? task.sheet.html : '')
           if (onPrinted) onPrinted(ok)
-        },
-        children: 'Print the sheet'
-      }),
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+        }
+      }, 'print'),
+      jsx(PillAction, {
+        'data-cb-homework-action': 'download',
+        variant: 'quiet',
+        label: 'Download',
         disabled: Boolean(busy),
         onClick: () => {
           const ok = cbDownloadHomeworkSheet(
@@ -2192,22 +2195,21 @@ function HomeworkSheetActions({ task, canSave, busy, onSave, onPrinted, onDownlo
             cbHomeworkFilename(task)
           )
           if (onDownloaded) onDownloaded(ok)
-        },
-        children: 'Download'
-      }),
+        }
+      }, 'download'),
       canSave
-        ? jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+        ? jsx(PillAction, {
+            'data-cb-homework-action': 'save',
+            variant: 'quiet',
+            label: saved ? 'Saved to the notebook' : 'Save to notebook',
             disabled: Boolean(busy) || saved,
-            onClick: onSave,
-            children: saved ? 'Saved to the notebook' : 'Save to notebook'
-          })
+            onClick: onSave
+          }, 'save')
         : null,
       jsx('span', {
-        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
+        style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: cb3Role('ink-soft') },
         children: 'Local only. Nothing is sent.'
-      })
+      }, 'note')
     ]
   })
 }
@@ -2447,12 +2449,12 @@ function TakeThisWithYou({
                     children: error.message || 'The task could not be read.'
                   }),
                   error.code ? jsx(QuietNote, { children: `Reason · ${error.code}` }) : null,
-                  jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'text',
+                  jsx(PillAction, {
+                    variant: 'quiet',
+                    'data-cb-homework-retry': '',
                     onClick: prepare,
-                    children: 'Try again'
-                  })
+                    label: 'Try again'
+                  }, 'retry')
                 ]
               })
             : null,
@@ -2498,13 +2500,13 @@ function TakeThisWithYou({
                   jsxs('div', {
                     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
                     children: [
-                      jsx(sdk.Button, {
-                        size: 'sm',
-                        variant: 'secondary',
+                      jsx(PillAction, {
+                        variant: 'quiet',
+                        'data-cb-homework-propose': '',
                         disabled: Boolean(busy) || contextText.trim().length === 0,
                         onClick: propose,
-                        children: busy === 'propose' ? 'Writing the task' : 'Show me the task'
-                      }),
+                        label: busy === 'propose' ? 'Writing the task' : 'Show me the task'
+                      }, 'propose'),
                       jsx('span', {
                         style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                         children: 'One task, at most three steps, three to ten minutes.'
@@ -2539,19 +2541,20 @@ function TakeThisWithYou({
                         'data-cb-homework-report': 'open',
                         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', maxWidth: CB_MEASURE },
                         children: [
-                          jsx(CbAction, {
-                            variant: 'secondary',
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'done',
                             disabled: Boolean(busy),
                             onClick: () => report('learner'),
-                            children: busy === 'learner' ? 'Recording' : 'I did it'
-                          }),
-                          jsx(sdk.Button, {
-                            size: 'sm',
-                            variant: 'text',
+                            label: busy === 'learner' ? 'Recording' : 'I did it'
+                          }, 'report'),
+                          jsx(PillAction, {
+                            variant: 'quiet',
+                            'data-cb-homework-report-action': 'skip',
                             disabled: Boolean(busy),
                             onClick: skipTask,
-                            children: busy === 'skip' ? 'Skipping' : 'Not this one'
-                          }),
+                            label: busy === 'skip' ? 'Skipping' : 'Not this one'
+                          }, 'skip'),
                           jsx('span', {
                             style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
                             children: 'Only you record it. Nothing here is marked.'
@@ -2590,12 +2593,15 @@ function TakeThisWithYou({
 
   return jsxs('div', {
     'data-cb-homework': open ? 'open' : 'closed',
+    'data-cb3-homework': 'action',
     style: { display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: CB_MEASURE },
     children: [
-      jsx(sdk.Button, {
-        size: 'sm',
-        variant: 'text',
+      // The GM-008 DOM contract names this quiet action by `data-variant="text"`; the v3 quiet
+      // pill keeps that attribute so the existing contract and tests resolve the same control.
+      jsx(PillAction, {
+        variant: 'quiet',
         'data-cb-homework-action': 'take-this-with-you',
+        'data-variant': 'text',
         'aria-expanded': open ? 'true' : 'false',
         onClick: () => {
           const next = !open
@@ -2603,8 +2609,8 @@ function TakeThisWithYou({
           setNotice(null)
           if (next && !task) prepare()
         },
-        children: 'Take this with you'
-      }),
+        label: 'Take this with you'
+      }, 'trigger'),
       panel
     ]
   })
@@ -2712,13 +2718,14 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
           },
           children: error ? `${error.code}: ${error.message}` : 'This task could not be read.'
         }),
-        jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: load, children: 'Try again' })
+        jsx(PillAction, { variant: 'quiet', onClick: load, label: 'Try again' }, 'retry')
       ]
     })
   }
   const openState = CB_HOMEWORK_OPEN_STATES.indexOf(task.state) >= 0
   return jsxs('div', {
     'data-cb-homework-record': task.state,
+    'data-cb3-homework': 'record',
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -2744,12 +2751,22 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
             lang: cbHasJapanese(task.target && task.target.display) ? 'ja' : undefined,
             children: (task.target && task.target.display) || task.title
           }),
-          jsx(sdk.Badge, {
-            size: 'xs',
-            variant: 'outline',
+          jsx('span', {
             'data-cb-homework-record-state': task.state,
+            'data-cb3-chip': 'state',
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '0.1rem 0.5rem',
+              borderRadius: cb3Radius('pill'),
+              border: `1px solid ${cb3Role('rule')}`,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink')
+            },
             children: CB_HOMEWORK_STATE_WORD[task.state] || task.state
-          }),
+          }, 'state'),
           jsx('span', {
             style: { fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('caption'), color: 'var(--cb3-ink-soft)' },
             children: `${Number(task.estimated_minutes) || 5} min`
@@ -2763,34 +2780,34 @@ function HomeworkRecord({ taskId, actor = 'learner', courseTitle, lessonTitle, o
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' },
         children: [
-          jsx(sdk.Button, {
-            size: 'sm',
-            variant: 'text',
+          jsx(PillAction, {
+            variant: 'quiet',
+            'data-cb-homework-record-action': 'toggle-sheet',
             'aria-expanded': open ? 'true' : 'false',
             onClick: () => setOpen(!open),
-            children: open ? 'Hide the sheet' : 'Show the sheet'
-          }),
+            label: open ? 'Hide the sheet' : 'Show the sheet'
+          }, 'toggle'),
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'secondary',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'done',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.complete', { actor, note: '' }, 'report'),
-                children: busy === 'report'
+                label: busy === 'report'
                   ? 'Recording'
                   : actor === 'parent'
                     ? 'A parent recorded this'
                     : 'I did it'
-              })
+              }, 'report')
             : null,
           openState
-            ? jsx(sdk.Button, {
-                size: 'sm',
-                variant: 'text',
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                'data-cb-homework-record-action': 'skip',
                 disabled: Boolean(busy),
                 onClick: () => settle('homework.skip', { actor }, 'skip'),
-                children: busy === 'skip' ? 'Skipping' : 'Skip'
-              })
+                label: busy === 'skip' ? 'Skipping' : 'Skip'
+              }, 'skip')
             : null
         ]
       }),
@@ -2843,16 +2860,29 @@ function HomeworkRecordList({ rows, actor, emptyTitle, emptyDescription, onChang
   if (!rows || rows.length === 0) {
     return jsx('div', {
       'data-cb-homework-list': 'empty',
+      'data-cb3-homework': 'list-empty',
       style: { display: 'flex', flexDirection: 'column', gap: '0.3rem' },
       children: jsx(EmptyState, { title: emptyTitle, description: emptyDescription })
     })
   }
   return jsx('div', {
     'data-cb-homework-list': String(rows.length),
+    'data-cb3-homework': 'list',
     style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
     children: [
       title
-        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx(CbLabel, { children: title }) }, 'title')
+        ? jsx('div', { style: { paddingTop: '0.2rem' }, children: jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              color: cb3Role('ink'),
+              maxWidth: '34ch'
+            },
+            children: title
+          }) }, 'title')
         : null,
       ...rows.map((row) =>
         jsx(
@@ -2958,6 +2988,7 @@ function HomeworkStudio({ implemented, onOpenSource }) {
 
   return jsxs('div', {
     'data-cb-homework-studio': String(rows.length),
+    'data-cb3-homework': 'studio',
     style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.9rem 1rem 1.2rem', minWidth: 0 },
     children: [
       jsx('p', {

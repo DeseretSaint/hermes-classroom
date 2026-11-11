@@ -1,0 +1,247 @@
+{
+  "stamp_version": 1,
+  "tool": "scripts/cp-capture.mjs",
+  "mode": "live",
+  "name": "homework--studio--1049--light--100",
+  "captured_at": "2026-11-10T23:48:45.654Z",
+  "ok": true,
+  "gates": {
+    "plugin_sha_match": true,
+    "route_present": true,
+    "no_render_error": true,
+    "fonts_loaded": true,
+    "images_decoded": true,
+    "no_host_overlay": true,
+    "no_unpainted_region": true,
+    "zoom_neutral": true,
+    "v3_ready": true,
+    "appearance_applied": true,
+    "no_react_key_warning": true
+  },
+  "plugin": {
+    "expected_sha256": "e9fd149a5375bb638a9c4d20c420ce117f32858f4409efa90bddd8236e840bfb",
+    "window_sha256": "e9fd149a5375bb638a9c4d20c420ce117f32858f4409efa90bddd8236e840bfb",
+    "loaded_path": "/home/deseretsaint/.hermes/coursebook-test-gm010/home/desktop-plugins/coursebook/plugin.js",
+    "checkout_path": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_1668762b/desktop/plugin.js",
+    "bytes": 2340991
+  },
+  "backend": {
+    "error": "HTTP 401",
+    "url": "http://127.0.0.1:44331"
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "marker": "/coursebook",
+    "destination": "studio",
+    "width": 1049,
+    "height": 1166,
+    "window_width": 1649,
+    "window_height": 1220,
+    "theme": "light",
+    "text_scale_root_px": "16px",
+    "motion": "full",
+    "reduced_motion": false,
+    "forced_colors": false,
+    "fonts_status": "loaded",
+    "font_faces": [
+      "KaTeX_AMS 400 unloaded",
+      "KaTeX_Caligraphic 700 unloaded",
+      "KaTeX_Caligraphic 400 unloaded",
+      "KaTeX_Fraktur 700 unloaded",
+      "KaTeX_Fraktur 400 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 700 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Main 400 unloaded",
+      "KaTeX_Math 700 unloaded",
+      "KaTeX_Math 400 unloaded",
+      "KaTeX_SansSerif 700 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_SansSerif 400 unloaded",
+      "KaTeX_Script 400 unloaded",
+      "KaTeX_Size1 400 unloaded",
+      "KaTeX_Size2 400 unloaded",
+      "KaTeX_Size3 400 unloaded",
+      "KaTeX_Size4 400 unloaded",
+      "KaTeX_Typewriter 400 unloaded",
+      "codicon normal loaded",
+      "Collapse 700 unloaded",
+      "JetBrains Mono 400 unloaded",
+      "JetBrains Mono 700 unloaded",
+      "JetBrains Mono 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 400 unloaded",
+      "Courier Prime 700 unloaded",
+      "Courier Prime 700 unloaded",
+      "CB Display 100 900 loaded",
+      "CB UI 100 900 loaded"
+    ],
+    "images_total": 0,
+    "images_decoded": 0,
+    "v3_ready": true,
+    "v3_textures": "ready",
+    "style_sheet_count": 19,
+    "css_rule_count": 1629,
+    "host_slots": 279,
+    "host_shell": true,
+    "heading_font_family": "\"CB Display\", Fraunces, ui-serif, Georgia, \"Noto Serif JP\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif, Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Noto Serif\", serif",
+    "body_font_family": "\"Segoe WPC\", \"Segoe UI\", -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\", emoji",
+    "route_ancestors": [
+      "div.contents",
+      "div.absolute.inset-0.overflow-auto",
+      "div.relative.min-h-0.min-w-0",
+      "div."
+    ],
+    "html_background": "rgb(13, 16, 21)",
+    "background_color": "rgb(245, 227, 200)",
+    "host_overlays": [],
+    "host_overlay_points": 0,
+    "host_overlay_sampled": 384,
+    "host_overlay_fraction": 0,
+    "host_overlay_trims": {
+      "left": 0,
+      "right": 0,
+      "top": 0,
+      "bottom": 0
+    },
+    "content_width": 1049,
+    "content_height": 1166,
+    "content_rect": {
+      "x": 260,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    },
+    "course_home": null,
+    "course_detail": null,
+    "lesson_view": null,
+    "lesson_document": null,
+    "scroll_y": 0,
+    "marker_names": [
+      "data-cb-destination",
+      "data-cb-destination-nav",
+      "data-cb-homework-list",
+      "data-cb-homework-record",
+      "data-cb-homework-record-action",
+      "data-cb-homework-record-state",
+      "data-cb-homework-record-target",
+      "data-cb-homework-studio",
+      "data-cb-main",
+      "data-cb-motion",
+      "data-cb-nav-item",
+      "data-cb-page-title",
+      "data-cb-parent-studio",
+      "data-cb-parent-studio-tabs",
+      "data-cb-route",
+      "data-cb-scope",
+      "data-cb-skip",
+      "data-cb-v3",
+      "data-cb-v3-ready",
+      "data-cb-v3-textures",
+      "data-cb-wordmark"
+    ]
+  },
+  "destination": {
+    "requested": "studio",
+    "normalized": "studio",
+    "rendered": "studio",
+    "rendered_course_home": null,
+    "rendered_lesson_view": null,
+    "match": true,
+    "controls": [
+      {
+        "purpose": "destination",
+        "found": true,
+        "selector": "[data-cb-nav-item=\"studio\"]",
+        "tag": "button",
+        "label": "Parent Studio"
+      }
+    ]
+  },
+  "clicks": [
+    {
+      "purpose": "click",
+      "found": true,
+      "selector": "[data-cb3-tab=\"homework\"]",
+      "tag": "button",
+      "label": "Homework"
+    }
+  ],
+  "appearance": {
+    "requested": "light",
+    "before": "light",
+    "applied": true,
+    "rendered_scope": "light",
+    "clicks": [
+      {
+        "purpose": "appearance-open",
+        "found": true,
+        "selector": "[data-cb-settings-open]",
+        "tag": "button",
+        "label": "Open Coursebook settings"
+      },
+      {
+        "purpose": "appearance-light",
+        "found": true,
+        "selector": "[data-cb-settings-control=\"appearance\"] button:nth-of-type(2)",
+        "tag": "button",
+        "label": "Light"
+      },
+      {
+        "purpose": "appearance-close",
+        "found": true,
+        "selector": "[data-cb-settings-close]",
+        "tag": "button",
+        "label": "Close settings"
+      }
+    ]
+  },
+  "scroll": null,
+  "zoom": {
+    "original_percent": 100,
+    "capture_percent": 100,
+    "bridge_available": true,
+    "restored_percent": 100
+  },
+  "emulated_media": null,
+  "console": {
+    "errors": [
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead.",
+      "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
+    ],
+    "warnings": 1,
+    "key_warnings": 0
+  },
+  "capture": {
+    "file": "homework--studio--1049--light--100.png",
+    "sha256": "ce3cbcbb29d930fa70f0e122e9c48a36b599ccee9fe44efcfe4a9ee911dd59df",
+    "bytes": 813119,
+    "crop_mode": "route",
+    "clip": {
+      "x": 260,
+      "y": 34,
+      "width": 1049,
+      "height": 1166
+    },
+    "pixel_check": {
+      "ok": true,
+      "sampled": 116900,
+      "host_bg_pixels": 0,
+      "host_bg_fraction": 0,
+      "html_bg": "13, 16, 21, 1",
+      "route_bg": "245, 227, 200, 1",
+      "distinct_backgrounds": true
+    }
+  },
+  "page_url": "http://127.0.0.1:5174/#/coursebook"
+}
