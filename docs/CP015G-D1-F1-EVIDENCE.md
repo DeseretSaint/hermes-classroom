@@ -90,6 +90,30 @@ The recorded H-40 packet was regenerated after the prompt-version change
 objective every fourth ordinal — its brief's goal is a physical act, and its objective *count*,
 which is what the bound is about, is unchanged.
 
+Suite status, stated exactly. The full suite on the pre-commit tree ran 3762 tests: 2 errors and 2
+failures.
+
+* Both errors were real consequences of the new rule and are fixed: `tests/test_course_quality_media_fixtures.py`
+  and `tests/test_course_quality_s2_repair.py` stand in a `SourceRecord` with no excerpt, so the
+  fixture plan's quote could not be found in it. Their `source_record()` now carries the sentence
+  the fixture quotes. Re-run: 37 tests, OK.
+* `tests/test_vq_capture_harness.py::test_harness_does_not_edit_product_source` asserts
+  `git diff --name-only` touches no product source, so it fails on *any* uncommitted change; it
+  passes on the committed tree.
+* `tests/test_cp_capture_stamp.py::test_render_error_marker_is_refused` failed in the full run and
+  passes in isolation — the same order-dependent capture-route flake CP-015g/D1 met.
+
+On the committed tree, 472 tests across every suite this change touches (the generation, plan,
+policy, curriculum, validation, quality-fixture, harness and capture suites, i.e. all four of the
+above plus the new module) pass.
+
+After the rebase onto master (`3641c896`, CP-015 stack + D1 + D3) the full suite was run to
+completion on the final merged tree: `Ran 3924 tests in 1063.291s` — `OK (skipped=11)`. That run
+also cleared the tree's pre-existing red: `tests.test_cp015h_media_construct_shape` pinned the
+unit-sections *request* label at `unit-sections-prompt.v2` after CP-015g/D3 advanced the constant
+to `v3`, so master itself failed that test before this merge; the builder always carried the
+constant, and the assertion now says so.
+
 ## Live reproduction
 
 Same flow as CP-015g/D1: `hermes serve --isolated --port 44633` on a home installed from this
