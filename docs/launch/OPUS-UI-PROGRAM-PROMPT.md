@@ -71,19 +71,31 @@ furniture; the design system's card anatomy and badges.
 
 **Characters and covers are assets, never drawings.** The writer may position, scale and crop an
 approved asset. It may not approximate a character with CSS shapes, emoji or a hand-built SVG. If a
-pose or size is missing, the card is blocked and an asset-export card is created from the master.
-A missing character asset is a blocker, never a divergence.
+pose or size is missing, the card is blocked and the art-lock card produces it. A missing character
+asset is a blocker, never a divergence.
+
+**The shipped fox is not the character.** The 512/256/128 assets and the SVG master are a flat,
+front-facing vector holding a pocket watch; the ratified R-SYS/R-HOME fox is painted, sitting in
+three-quarter view with a bushy tail and a separate clock. Treat the vector as a placeholder. Do not
+claim Home parity, and do not lock a hash, until the art-lock card has produced the approved
+character. See `FOX-ASSET-AUDIT.md`.
 
 **Resolution and identity.** The rendered CSS size may not exceed the asset's natural size. Home's
-208 px fox requires the 256 or 512 export from `assets/masters/fox/`, not the 128 WebP. The audit
-records the rendered `currentSrc` hash and the natural-vs-rendered size; a CSS-drawn substitute
-fails even if it looks fox-like.
+208 px fox requires a 512/1024 export from the approved art-lock master; the existing 128/256/512
+vector is not the character. The audit records the rendered `currentSrc` hash and the
+natural-vs-rendered size; a CSS-drawn substitute fails even if it looks fox-like.
 
-**Character fidelity.** On a 600×600 crop, answer specific binary questions against R-SYS: same ear
-shape, muzzle, eye style, scarf, tail tip, line weight, palette. Each answer cites the region.
-Compare the reference and render crops at 2× for SSIM, palette distance, edge density and an
-embedding distance; those are diagnostics, not the verdict. The owner signs the character once, on a
-2× 2-up sheet; then the asset hash is locked.
+**Character fidelity.** On a 600×600 crop, answer specific binary questions against the approved
+model sheet, not the shipped vector: same ear shape, muzzle, eye style, chest and leg markings, tail
+tip, line weight, palette. Each answer cites the region. Compare the reference and render crops at 2×
+for SSIM, palette distance, edge density and an embedding distance; those are diagnostics, not the
+verdict. The owner signs the model sheet and the pose contact sheet once; then every export is
+hash-locked.
+
+**Pose, not paste.** One pose per surface, chosen for context, no repeated pose in the same viewport,
+no arbitrary mirroring that breaks the tail or lighting. A state change may crossfade between two
+poses in 150 ms; continuous idle animation is forbidden by the motion tokens. If the owner wants
+continuous motion, that is a design-system amendment, not a worker decision.
 
 **Critical dimensions.** Character, typography and material are non-compensatory. A screen fails if
 any of them scores below 4, regardless of the rubric average. A beautiful layout cannot average out
@@ -95,11 +107,6 @@ a bad mascot.
   capped at 1,024 tokens per image with a minimum area of 295,936 px. Full frames are downsampled;
   crops are the unit of detail. Pin it with
   `--model deepseek/deepseek-v4.1-flash-1017 --provider nous`.
-
-Native image input is a precondition: every profile has `model.supports_vision: true` and
-`agent.image_input_mode: native`. If a turn arrives as a pre-analyzed text description instead of an
-image part, stop and fix the profile before accepting any evidence. A full 1344×768 frame is
-downsampled to the 1,024-token cap, so detailed review is done on 600×600 or larger crops.
 - **Region critic:** `qwen/qwen3-vl-235b-a22b-instruct` or `gemini-3.8-flash`, for presence,
   omission and misplacement only. It returns JSON: `{missing:[], misplaced:[], style_deltas:[]}`.
   No prose, no verdict.
@@ -109,6 +116,11 @@ downsampled to the 1,024-token cap, so detailed review is done on 600×600 or la
 - **Verifier:** atlas or cbqa, never the writer, using the same spec and audit.
 - **Tie-break:** Fable 5.2 only when your rubric and the verifier's disagree. Never the writer,
   never the first judge.
+
+Native image input is a precondition: every profile has `model.supports_vision: true` and
+`agent.image_input_mode: native`. If a turn arrives as a pre-analyzed text description instead of an
+image part, stop and fix the profile before accepting any evidence. A full 1344×768 frame is
+downsampled to the 1,024-token cap, so detailed review is done on 600×600 or larger crops.
 
 ## 5. Gate 0 — already decided; proceed unless overridden
 
@@ -122,9 +134,30 @@ without relitigating the rest.
   do **not** use literals: the design system's "six steps and no seventh" is law, and the reference
   is a concept, not a spec. Log the hero delta in the divergence ledger. If the hero reads weak,
   adjust measure and leading within the tokens, not the size.
-- **Assets:** the shipped pack covers, fox sprites, clock and object kit are canonical. Concept-art
-  differences are accepted divergences.
+- **Assets:** the character canon is R-SYS and R-HOME. The existing fox vector is a different
+  design and is a placeholder; it cannot pass a Home parity gate. Shipped pack covers, clock and
+  object kit are canonical only where they match the ratified frame; record every mismatch.
 - **Data:** stars become `sections_done/sections_total`. No invented ratings, counts or learners.
+
+## 5b. Art lock — before any Home parity claim
+
+The approved character has no production asset. This is the critical path, not a UI detail.
+
+1. **Model sheet.** Build a high-resolution sheet from the R-SYS and R-HOME crops: three-quarter
+   front, side, face close-up, palette, chest/leg/tail markings.
+2. **Pose matrix.** Home sit-beside-clock (side/3-4); Discover point; Course home wave or stand-clasp;
+   Classroom read or think; complete cheer; empty sleep; Studio stand-clasp. One pose per surface,
+   no repeats in a viewport.
+3. **Production.** Home's sitting pose first: it is the only pose on the release's critical path.
+   Generate from the sheet with a reference-image model, on a flat chroma background; key to alpha;
+   inspect edges at 200%. The test run needed two passes (the first duplicated the tail), so check
+   tail count, ears, markings and palette on every pass. If a pose drifts after two passes, drop it
+   from the release or commission it. Never let a worker draw the character in CSS. The rest of the
+   pose matrix follows after Home lands.
+4. **Approval.** One owner contact sheet of all poses at 2×; approve or reject. Then export 512/1024,
+   hash-pin and lock. This is the owner's only art touchpoint.
+5. **Swap.** UI cards place the locked assets. If a pose is missing, that surface is blocked; it does
+   not ship with a different character.
 
 ## 6. Per-screen loop
 
@@ -160,6 +193,8 @@ build, compare to the branch capture, name the rollback commit. A screen is not 
 - axe zero serious/critical; both fonts loaded.
 - Element checklist present and in the right boxes, and every signature element passes its
   fidelity check (asset hash, natural size, crop comparison, feature checklist).
+- Pose-map compliance: the surface uses its assigned pose, with no repeated pose in the viewport and
+  no CSS-drawn substitute.
 - Masked SSIM ≥0.85 against the reference, excluding copy, ratings and host chrome only. The
   character and illustration regions are never masked.
 - Rubric average ≥4, with the verifier's independent score, and no critical dimension (character,
@@ -209,5 +244,6 @@ Read `docs/launch/UI-MANAGER-BRIEF.md`, `docs/launch/VISION-ROUTE-RESEARCH.md`,
 `docs/launch/UI-CONTEXT-PACK.md`, `docs/concept-parity/refs/REFS.md`, and the generated pack.
 
 Write `docs/launch/UI-PROGRAM.md` (screens, order, cards, caps) and `docs/launch/UI-DECISIONS.md`
-(the Gate 0 defaults). Create the Home spec card and the type-mapping card. Start Home. Do not ask
-for approval, do not write an introduction, and do not produce a project plan longer than one page.
+(the Gate 0 defaults). Create the art-lock card first, then the Home spec and the type-mapping card.
+Start Home only when the pose it needs is locked. Do not ask for approval, do not write an
+introduction, and do not produce a project plan longer than one page.
