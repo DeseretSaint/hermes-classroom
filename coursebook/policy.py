@@ -801,12 +801,17 @@ def _declared_audio_decision(
     if need.audio_role == "narration":
         if not _LISTENING.search(text):
             raise CapabilityPolicyError(
-                f"the declared narration need {need.construct!r} names no listening construct"
+                f"the declared narration need {need.construct!r} names no listening construct; "
+                "the construct must name what the learner listens to, for example 'listen to a "
+                "shopkeeper greeting a customer'. The target phrase alone is not a listening "
+                "construct"
             )
     elif not _PRONUNCIATION.search(text):
         raise CapabilityPolicyError(
             f"the declared pronunciation_reference need {need.construct!r} names no spoken "
-            "construct"
+            "construct; the construct must name the spoken act and its line, for example "
+            "'pronounce the line 二人です (futari desu) aloud'. A construct that only quotes the "
+            "target phrase is refused"
         )
     return (
         need.audio,
