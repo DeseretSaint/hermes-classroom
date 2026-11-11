@@ -436,6 +436,123 @@ class UnitSectionsStageTest(UnitStageCase):
         self.assertEqual(int(validations), 0, "a discarded batch records no validation")
 
 
+class UnitOneOfTwoUnitsTest(UnitStageCase):
+    """CP-015g: one unit is judged against its own objectives, not the whole course's outcome.
+
+    Measured live on a real Japanese L0 course: two units, an approved plan, and unit 1 refused
+    under ``objective_alignment`` / ``plan_brief.learner_outcome`` for not teaching the snack
+    words and omotenashi explanation that unit 2 delivers. The brief carried the whole-course
+    outcome beside a check plan filtered to one unit, so the generic rubric read the course-wide
+    promise as this unit's obligation.
+    """
+
+    def course_with_two_units(self) -> tuple[dict, str, str]:
+        plan = blueprint_plan(scope="short", units=2, objectives_per_unit=2)
+        plan["title"] = "Doorway Japanese"
+        plan["learner_outcome"] = (
+            "Use entrance phrases in a shop, then match snack words and explain omotenashi."
+        )
+        course_id, plan_id = self.seed(plan)
+        return plan, course_id, plan_id
+
+    def test_unit_one_authors_over_its_own_goal_and_not_unit_twos_share(self) -> None:
+        plan, _course_id, plan_id = self.course_with_two_units()
+        llm = self.section_llm(plan, unit_ordinal=1)
+        result = gen.run_unit_sections_job(
+            db.connect(),
+            {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 1}},
+            llm,
+            plan_id=plan_id,
+            unit_ordinal=1,
+            now=T0,
+        )
+        self.assertEqual(result["sections"], 2)
+        self.assertEqual(result["owners"], 2)
+
+        validate = next(
+            request
+            for request in llm.requests
+            if request.purpose == "coursebook.unit_sections.validate"
+        )
+        payload = json.loads(validate.input_text)
+        brief = payload["plan_brief"]
+        # The whole-course outcome is gone from the unit pass; the unit's own goal stands in it.
+        self.assertNotIn("learner_outcome", brief)
+        self.assertEqual(brief["unit_goal"], self.unit(plan, 1)["goal"])
+        self.assertEqual(
+            sorted(int(item["ordinal"]) for item in payload["objectives"]),
+            [1, 2],
+            "the pass is handed this unit's objectives only",
+        )
+        self.assertEqual(
+            [item["objective_ref"] for item in brief["check_plan"]],
+            [1, 2],
+            "the check plan stays filtered to this unit",
+        )
+        self.assertNotIn("snack words", validate.input_text)
+        # The pass states the delegation rule it is judged by (H-191: a criterion id is not a rubric).
+        self.assertEqual(validate.prompt_version, gen.VALIDATION_PROMPT_VERSION)
+        self.assertEqual(validate.prompt_version, "validation-prompt.v8")
+        self.assertIn("for this unit only", validate.instructions)
+        self.assertIn(
+            "another unit of the course delivers is that unit's obligation",
+            validate.instructions,
+        )
+
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE unit_id = 'unt_1'"
+            ).fetchone()["n"]
+        self.assertEqual(int(rows), 2)
+
+    def test_a_unit_missing_its_own_objectives_capability_is_still_refused(self) -> None:
+        """The narrowing removes a false refusal, not the criterion: a real miss still fails."""
+        plan, _course_id, plan_id = self.course_with_two_units()
+        unit_one = self.unit(plan, 1)
+        document = unit_sections_document(
+            unit=unit_one, objectives=self.objectives_for(plan, 1)
+        )
+        rejected = validation_pass()
+        rejected["verdict"] = "reject"
+        rejected["rejections"] = [
+            {
+                "item": "objective_1",
+                "criterion": "objective_alignment",
+                "reason": (
+                    "Objective 1 comes from this unit's own goal, but no section or check in "
+                    "this batch asks the learner to use the entrance phrase it names."
+                ),
+            }
+        ]
+        llm = FakeLLM(
+            {
+                "coursebook.unit_sections.generate": response(document),
+                "coursebook.unit_sections.validate": response(rejected),
+            }
+        )
+        with self.assertRaises(gen.GenerationRejected) as caught:
+            gen.run_unit_sections_job(
+                db.connect(),
+                {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 1}},
+                llm,
+                plan_id=plan_id,
+                unit_ordinal=1,
+                now=T0,
+            )
+        self.assertIn("no section or check in this batch asks", str(caught.exception))
+        self.assertIn("objective_1", str(caught.exception))
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE plan_id = ?", (plan_id,)
+            ).fetchone()["n"]
+            validations = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_validation_records"
+                " WHERE subject_kind = 'unit_sections'"
+            ).fetchone()["n"]
+        self.assertEqual(int(rows), 0, "a rejected unit batch leaves no durable section row")
+        self.assertEqual(int(validations), 0)
+
+
 class BlueprintPlanJobTest(UnitStageCase):
     def plan_llm(self, plan: dict) -> FakeLLM:
         return FakeLLM(

@@ -260,7 +260,10 @@ class RubricTextTest(unittest.TestCase):
         self.assertNotIn("goal_capability_disclosure", gen.LESSON_VALIDATION_CRITERIA)
 
     def test_the_version_advanced_for_the_new_instruction_text(self) -> None:
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v7")
+        # v7 (CP-015d) is the narrowed-plan rubric; v8 (CP-015g) adds the unit-sections rule that
+        # one unit is judged against its own goal and objectives, and drops the whole-course
+        # learner_outcome from the unit-stage brief.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v8")
 
 
 class DisclosedGapVerdictTest(unittest.TestCase):

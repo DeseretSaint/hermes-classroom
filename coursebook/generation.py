@@ -241,7 +241,14 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: The answer-length rule is stated as one number that the schema also carries
 #: (:data:`VALIDATION_REASON_MAX_CHARS`), and each pass's rejection list is bounded by the items
 #: it was actually given, so the byte/token demand is sized by the request rather than by hope.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v7"
+#:
+#: v8 (`t_332351b0`, CP-015g): the unit-sections pass states that a unit is judged against its own
+#: goal and its own objectives, not the whole course's outcome. CP-015c measured the defect: the
+#: unit-stage brief carried the whole-course ``learner_outcome`` while its ``check_plan`` was
+#: filtered to the unit, so the validator refused unit 1 of a correctly approved two-unit plan
+#: for not delivering unit 2's share. Dropping the whole-course outcome and stating the
+#: delegation rule is a change to the instruction text, so the label advances.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v8"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -3123,6 +3130,24 @@ _PLAN_DISCLOSURE_RULE = (
     "that hides it."
 )
 
+#: CP-015g: ``objective_alignment`` for one unit of a multi-unit plan. CP-015c measured the
+#: defect: the unit-stage brief carried the whole-course ``learner_outcome`` while its
+#: ``check_plan`` was filtered to the unit, so a validator applying the generic rubric refused
+#: unit 1 of an approved two-unit plan for not teaching unit 2's share. The scope of a unit pass
+#: is the unit, and a rule the prompt does not state is a trap, so the prompt now states it.
+_UNIT_ALIGNMENT_RULE = (
+    " Also judge objective_alignment for this unit only, not for the whole course: the artifact "
+    "is one unit's sections, so judge it against the unit's own goal (plan_brief.unit_goal), the "
+    "unit's own objectives in 'objectives', and the part of the course's outcome those objectives "
+    "name. Each owner section must teach and assess the objective it claims, and every "
+    "evidence_criteria entry of this unit's objectives must be deliverable by a section or check "
+    "in this batch. A capability that another unit of the course delivers is that unit's "
+    "obligation: do not reject this unit because it does not teach another unit's share, and do "
+    "not read plan_brief.unit_goal as a promise of the whole course. Reject only when this unit's "
+    "own goal or one of this unit's own objectives names a capability that no section or check in "
+    "this batch delivers."
+)
+
 
 def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
     """Deterministic labels for the plan's own claims, in a stable order.
@@ -4508,6 +4533,8 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
     ) + _DECLARED_VERDICT_RULE
     if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
         text += _PLAN_ALIGNMENT_RULE
+    if subject == "unit sections" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += _UNIT_ALIGNMENT_RULE
     if subject == "plan" and _PLAN_CONTRADICTION_CRITERION in criteria:
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
@@ -9424,7 +9451,9 @@ def build_unit_sections_request(
 
 
 def _unit_plan_brief(
-    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+    plan: Mapping[str, Any],
+    unit: Mapping[str, Any],
+    objectives: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     """The plan context one unit's validation needs, bounded by the unit, not the course.
 
@@ -9434,6 +9463,13 @@ def _unit_plan_brief(
     rules on this unit's sections against this unit's objectives; it needs the plan's intent and
     the checks that cover *these* objectives, not every objective and unit in the course. Extra
     course length no longer grows this payload.
+
+    CP-015g: this brief carries the unit's own ``goal`` as ``unit_goal``, never the plan's
+    whole-course ``learner_outcome``. With the whole outcome in the payload and only this unit's
+    ``check_plan`` beside it, an approved two-unit plan's unit 1 was structurally unapprovable —
+    the validator read the course-wide promise as a promise this unit must keep and refused it for
+    not delivering unit 2's share. The unit pass is scoped to the unit; a capability delegated to
+    another unit is that unit's obligation, and :data:`_UNIT_ALIGNMENT_RULE` says so in the pass.
     """
     ordinals = {int(obj["ordinal"]) for obj in objectives}
     check_plan = [
@@ -9445,7 +9481,7 @@ def _unit_plan_brief(
         "title": plan.get("title"),
         "scope": plan.get("scope"),
         "delivery": plan.get("delivery"),
-        "learner_outcome": plan.get("learner_outcome"),
+        "unit_goal": unit.get("goal"),
         "check_plan": check_plan,
     }
     return {key: value for key, value in brief.items() if value not in (None, [], "")}
@@ -9469,7 +9505,7 @@ def build_unit_sections_validation_request(
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
-        "plan_brief": _unit_plan_brief(plan, objectives),
+        "plan_brief": _unit_plan_brief(plan, unit, objectives),
         "unit": unit,
         "objectives": list(objectives),
         "sections": list(sections),

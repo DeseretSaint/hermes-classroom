@@ -19,6 +19,7 @@ These tests pin the repair without a provider:
 """
 from __future__ import annotations
 
+import json
 import unittest
 
 from coursebook import generation as gen
@@ -426,10 +427,40 @@ class UnitValidationPayloadTest(unittest.TestCase):
             {"objective_ref": ordinal, "kind": "quiz", "evidence_target": "recall"}
             for ordinal in range(1, 7)
         ]
-        brief = gen._unit_plan_brief(plan, [{"ordinal": 2}, {"ordinal": 3}])
+        unit = {
+            "ordinal": 1,
+            "title": "Unit one",
+            "goal": "Unit one advances the first part of the goal",
+            "target_lessons": 3,
+            "prereq_unit_ordinals": [],
+        }
+        brief = gen._unit_plan_brief(plan, unit, [{"ordinal": 2}, {"ordinal": 3}])
         self.assertEqual([item["objective_ref"] for item in brief["check_plan"]], [2, 3])
         self.assertNotIn("objectives", brief)
         self.assertNotIn("units", brief)
+
+    def test_the_brief_carries_the_unit_goal_not_the_course_outcome(self) -> None:
+        """CP-015g: one unit is judged against its own slice of the outcome, never the whole one."""
+        plan = big_plan(6, units=2)
+        plan["learner_outcome"] = "Match snack words and explain omotenashi after the entrance unit."
+        unit = {
+            "ordinal": 1,
+            "title": "Entrance phrases",
+            "goal": "Unit 1 gets the learner through a doorway greeting.",
+            "target_lessons": 3,
+            "prereq_unit_ordinals": [],
+        }
+        brief = gen._unit_plan_brief(plan, unit, [{"ordinal": 1}, {"ordinal": 2}])
+        self.assertEqual(brief["unit_goal"], unit["goal"])
+        self.assertNotIn("learner_outcome", brief)
+        self.assertNotIn("snack words", json.dumps(brief))
+
+    def test_the_unit_pass_states_the_delegation_rule(self) -> None:
+        """The rubric is stated in the pass that owns it (H-191): the prompt carries the rule."""
+        request = self._request(big_plan(6, units=1), [{"ordinal": 1}])
+        self.assertIn("for this unit only", request.instructions)
+        self.assertIn("another unit of the course delivers is that unit's obligation", request.instructions)
+        self.assertEqual(request.prompt_version, "validation-prompt.v8")
 
 
 if __name__ == "__main__":

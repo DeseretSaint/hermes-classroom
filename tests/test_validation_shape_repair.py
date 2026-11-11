@@ -308,7 +308,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # (claim-only pass) because a six-claim pass overran the 24 576-byte answer bound.
         # v7 (CP-015d) states the narrowed-plan rubric for objective_alignment /
         # internal_contradiction / goal_capability_disclosure and sizes the answer demand.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v7")
+        # v8 (CP-015g) states that a unit-sections pass judges one unit against its own goal and
+        # objectives, and drops the whole-course learner_outcome from the unit-stage brief.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v8")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):
