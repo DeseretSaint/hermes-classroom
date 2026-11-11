@@ -259,7 +259,7 @@ async def workshop_share(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
     Refusals are data with a code: an unready course, a pack the gate rejects, a missing ``gh``,
     or a store that already carries these exact bytes. ``dry_run`` audits and identifies without
-    writing a branch, which is what the button uses to show the author what will be submitted.
+    writing a branch; the CLI and the tests use it to preview a submission.
     """
     if body.get("confirm") is not True and body.get("dry_run") is not True:
         return {
@@ -323,6 +323,9 @@ async def workshop_share(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             pathlib.Path(path),
             dry_run=bool(body.get("dry_run")),
             push=not bool(body.get("dry_run")),
+            # The author pressed Share: that is their grant to publish the course beyond their
+            # own machine, and the submission path records it in the pack's licence.
+            redistribute=True,
         )
     except (submit_module.archive.PackRejected, submit_module.packs.PackRejected) as exc:
         return {"ok": False, "code": "PACK_REJECTED", "message": str(exc)}

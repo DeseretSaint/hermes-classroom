@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, artifacts, packs, segments, validators
+from . import archive, artifacts, grading, packs, segments, validators
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -305,6 +305,21 @@ def objective_criteria(objective: Mapping[str, Any], *, recipe: str) -> list[dic
         criteria.append({"id": f"target{index}", "description": str(text)})
     for check in objective.get("checks") or []:
         spec = check_spec_from_pack_check(check, recipe=recipe)
+        if spec is not None:
+            # The open lane needs an auxiliary grader. This build configures none, so a
+            # ``rubric_only`` check would open and then refuse every attempt — a check that
+            # cannot pass is worse than no check: it imports ungraded, with that reason.
+            lane = str((spec or {}).get("kind") or "")
+            if lane == "rubric_only" and not grading.aux_grader_configured():
+                criteria.append(
+                    {
+                        "id": str(check.get("check_id") or "check"),
+                        "description": "check withheld: open-response grading is not configured in this build",
+                        "check_id": str(check.get("check_id")),
+                        "check_spec_withheld": True,
+                    }
+                )
+                continue
         if spec is None:
             criteria.append(
                 {

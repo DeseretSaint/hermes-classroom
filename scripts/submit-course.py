@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import json
 import shutil
 import subprocess
@@ -119,6 +120,41 @@ def _counts(manifest: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _version_tuple(text: Any) -> tuple[int, ...]:
+    parts: list[int] = []
+    for piece in str(text or "0").split("."):
+        digits = re.match(r"\d+", piece)
+        parts.append(int(digits.group()) if digits else 0)
+    return tuple(parts) or (0,)
+
+
+#: A pack may only sit on the store shelf when its licence grants redistribution. A course exported
+#: for a friend says ``local_only`` on purpose; sharing it is the author's own act, so the submission
+#: path rewrites the licence only when the caller says the author asked to share.
+#: The author's licence id is kept; only the redistribution grant changes, and only because the
+#: author themselves asked for the course to be published.
+STORE_LICENSE = {"redistribution": "allowed"}
+
+
+def _store_licence(manifest: dict[str, Any], redistribute: bool) -> dict[str, Any] | None:
+    """Return the rewritten manifest when the licence must change, else ``None``."""
+    licence = manifest.get("license") if isinstance(manifest.get("license"), dict) else {}
+    redistribution = str(licence.get("redistribution") or "unset")
+    if redistribution == "allowed":
+        return None
+    if redistribution == "forbidden":
+        raise SystemExit("this pack's licence forbids redistribution; it cannot be published")
+    if not redistribute:
+        raise SystemExit(
+            f"this pack's licence was exported for {redistribution.replace('_', ' ')} use; "
+            "sharing it publishes it under an author-shared licence, so pass --share "
+            "(the Share button does this when the author confirms)"
+        )
+    rewritten = dict(manifest)
+    rewritten["license"] = {**licence, **STORE_LICENSE}
+    return packs.with_content_hash(rewritten)
+
+
 def submit(
     archive_path: Path,
     *,
@@ -127,76 +163,125 @@ def submit(
     base: str = "master",
     dry_run: bool = False,
     push: bool = True,
+    redistribute: bool = False,
 ) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="cb-submit-") as temporary:
         tmp = Path(temporary)
         manifest, files = _prepare(tmp, archive_path)
-        original_id = str(manifest["pack_id"])
-        shelf = {
-            str(row.get("pack_id")): row
-            for row in _store_index(repo).get("packs") or []
-            if isinstance(row, dict)
-        }
 
-        status = "new"
-        derived_from = None
-        existing = shelf.get(original_id)
-        if existing is not None:
-            if str(existing.get("content_hash")) == str(manifest["content_hash"]):
-                return {
-                    "status": "already_present",
-                    "pack_id": original_id,
-                    "content_hash": manifest["content_hash"],
-                    "message": "the store already carries these exact bytes; nothing to submit",
-                }
-            derived_from = original_id
-            manifest, archive_path = _namespaced(tmp, manifest, files)
-            status = "renamed"
-            if str(manifest["pack_id"]) in shelf:
-                raise SystemExit(
-                    f"both {original_id!r} and its namespaced form are already in the store; "
-                    "bump the pack version in Coursebook and export again"
-                )
+        rewritten = _store_licence(manifest, redistribute)
+        if rewritten is not None:
+            archive_path = tmp / "licensed.zip"
+            archive.write_archive(archive_path, rewritten, files)
+            check = tmp / "licensed-check"
+            check_manifest = archive.extract_archive(archive_path, check)
+            _gate(_single_root(check), check_manifest, str(archive_path))
+            manifest, files = rewritten, files
 
-        pack_id = str(manifest["pack_id"])
-        destination = repo / "store" / "packs" / f"{pack_id}.zip"
-        archive_sha = _sha256_file(archive_path)
-        ledger: dict[str, Any] = {
-            "status": status,
-            "pack_id": pack_id,
-            "derived_from": derived_from,
-            "pack_version": manifest["pack_version"],
-            "title": manifest["title"],
-            **_counts(manifest),
-            "content_hash": manifest["content_hash"],
-            "archive_sha256": archive_sha,
-            "would_write": str(destination.relative_to(repo)),
-        }
-        if dry_run:
-            ledger["dry_run"] = True
-            return ledger
-
-        # The submission is built in a throwaway worktree of the freshly fetched base, never in the
-        # checkout the plugin is running from: a share must not move the author's working tree onto a
-        # store branch, and `checkout -B` there would clobber a branch of the same name.
-        _git(repo, "fetch", "--quiet", remote, base)
+        # Identity is decided against the *base branch*, never against the checkout the author is
+        # running from: a hand-edited or stale local index used to let a submission replace a
+        # published pack's bytes without a version bump.
+        fetched = _git(repo, "fetch", "--quiet", remote, base)
+        if fetched.returncode != 0:
+            raise SystemExit(
+                f"could not fetch {remote}/{base}: {fetched.stderr.strip() or fetched.stdout.strip()}"
+            )
         base_sha = _git(repo, "rev-parse", "FETCH_HEAD").stdout.strip()
         if not base_sha:
-            raise SystemExit(f"could not resolve origin/{base} to build the store branch from")
+            raise SystemExit(f"could not resolve {remote}/{base} to build the store branch from")
+
         scratch = Path(tempfile.mkdtemp(prefix="cb-store-"))
         work = scratch / "repo"
         added = _git(repo, "worktree", "add", "--detach", str(work), base_sha)
         if added.returncode != 0:
-            raise SystemExit(f"git worktree add failed:\n{added.stdout}{added.stderr}")
+            shutil.rmtree(scratch, ignore_errors=True)
+            raise SystemExit(
+                "sharing needs this plugin installed as a git checkout of the store repository; "
+                f"nothing was written ({added.stderr.strip() or added.stdout.strip()})"
+            )
         try:
+            shelf = {
+                str(row.get("pack_id")): row
+                for row in _store_index(work).get("packs") or []
+                if isinstance(row, dict)
+            }
+            original_id = str(manifest["pack_id"])
+            existing = shelf.get(original_id)
+            status = "new"
+            derived_from = None
+            if existing is not None:
+                if str(existing.get("content_hash")) == str(manifest["content_hash"]):
+                    return {
+                        "status": "already_present",
+                        "pack_id": original_id,
+                        "pack_version": str(manifest["pack_version"]),
+                        **_counts(manifest),
+                        "content_hash": manifest["content_hash"],
+                        "message": "the store already carries these exact bytes; nothing to submit",
+                    }
+                if _version_tuple(manifest["pack_version"]) > _version_tuple(
+                    existing.get("pack_version")
+                ):
+                    # A higher version is an update: the shelf file is replaced under its own id.
+                    status = "update"
+                else:
+                    derived_from = original_id
+                    manifest, archive_path = _namespaced(tmp, manifest, files)
+                    status = "renamed"
+                    if str(manifest["pack_id"]) in shelf:
+                        raise SystemExit(
+                            f"both {original_id!r} and its namespaced form are already in the store; "
+                            "bump the pack version in Coursebook and export again"
+                        )
+
+            pack_id = str(manifest["pack_id"])
+            archive_sha = _sha256_file(archive_path)
+            ledger: dict[str, Any] = {
+                "status": status,
+                "pack_id": pack_id,
+                "derived_from": derived_from,
+                "pack_version": manifest["pack_version"],
+                "title": manifest["title"],
+                **_counts(manifest),
+                "content_hash": manifest["content_hash"],
+                "archive_sha256": archive_sha,
+                "would_write": f"store/packs/{pack_id}.zip",
+            }
+            if dry_run:
+                ledger["dry_run"] = True
+                return ledger
             ledger.update(_publish_from_worktree(
                 work, archive_path, pack_id, manifest, archive_sha, ledger,
                 derived_from=derived_from, base=base, remote=remote, push=push,
             ))
+            return ledger
         finally:
             _git(repo, "worktree", "remove", "--force", str(work))
             shutil.rmtree(scratch, ignore_errors=True)
-        return ledger
+
+
+def _push(work: Path, remote: str, branch: str) -> tuple[subprocess.CompletedProcess[str], str]:
+    """Push the store branch, forking the repository when the author has no write access.
+
+    Most people do not own the Coursebook repository. A share has to work for them too, so a push
+    refused for permissions forks the repository under the author's own account and pushes there;
+    the pull request is then opened across repositories. Returns the push result and the head ref
+    the pull request needs.
+    """
+    direct = _git(work, "push", "-u", remote, branch)
+    if direct.returncode == 0:
+        return direct, branch
+    failure = f"{direct.stdout}\n{direct.stderr}".lower()
+    if not any(word in failure for word in ("permission", "403", "denied", "not authorized")):
+        return direct, branch
+    slug = _repo_slug(work)
+    fork = _run(["gh", "repo", "fork", slug, "--remote=false", "--clone=false"], cwd=work)
+    del fork  # gh prints the created fork; the login below is the authority for the head ref
+    login = _run(["gh", "api", "user", "--jq", ".login"], cwd=work)
+    owner, name = slug.split("/", 1)
+    fork_url = f"https://github.com/{login}/{name}.git"
+    forked = _git(work, "push", "-u", fork_url, branch)
+    return forked, f"{login}:{branch}"
 
 
 def _publish_from_worktree(
@@ -255,7 +340,7 @@ def _publish_from_worktree(
     )
     node = _run(
         [
-            "gh", "pr", "create", "--repo", _repo_slug(work), "--base", base, "--head", branch,
+            "gh", "pr", "create", "--repo", _repo_slug(work), "--base", base, "--head", head,
             "--title", f"store: {manifest['title']} ({pack_id})", "--body", body,
         ],
         cwd=work,
@@ -281,13 +366,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base", default="master")
     parser.add_argument("--dry-run", action="store_true", help="audit and identify, write nothing")
     parser.add_argument("--no-push", action="store_true", help="commit a local branch, no push/PR")
+    parser.add_argument(
+        "--share",
+        action="store_true",
+        help="publish a pack that was exported for local use, under an author-shared licence",
+    )
     args = parser.parse_args(argv)
     if not args.pack.is_file():
         raise SystemExit(f"{args.pack}: not a file")
     try:
         ledger = submit(
             args.pack, repo=args.repo, remote=args.remote, base=args.base,
-            dry_run=args.dry_run, push=not args.no_push,
+            dry_run=args.dry_run, push=not args.no_push, redistribute=args.share,
         )
     except (archive.PackRejected, packs.PackRejected) as exc:
         # A refused pack is a normal answer from the gate, not a crash: the button shows the reason.

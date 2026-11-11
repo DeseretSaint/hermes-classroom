@@ -38089,7 +38089,7 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
   } else if (tab === 'provenance') {
     body = jsx(WorkshopProvenance, { implemented, motion, layout })
   } else if (tab === 'share') {
-    body = jsx(WorkshopShare, { implemented, motion, layout })
+    body = jsx(WorkshopShare, {})
   } else if (selected) {
     body = jsx(WorkshopDetail, {
       item: selected,
@@ -38235,6 +38235,11 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
 
 
 
+/** "1 objective", "2 objectives" — the shipped copy never ships a plural placeholder. */
+function shareCount(value, noun) {
+  return `${value} ${noun}${Number(value) === 1 ? '' : 's'}`
+}
+
 /* ── Share to store ────────────────────────────────────────────────────────────────────────
  * The one action that leaves this machine on purpose. It posts one enrollment id to the host,
  * which exports the course there (never here), audits the pack with the importer's own gate, and
@@ -38242,7 +38247,7 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
  * page never sends a path, never claims the pull request is accepted, and shows the pack id and
  * hashes the host returned so the author can check what they offered.
  */
-function WorkshopShare({ implemented, motion, layout }) {
+function WorkshopShare() {
   const [items, setItems] = useState(null)
   const [busy, setBusy] = useState('')
   const [outcome, setOutcome] = useState(null)
@@ -38254,7 +38259,15 @@ function WorkshopShare({ implemented, motion, layout }) {
       try {
         const response = await rpc('library.list', {})
         const rows = (response && response.result && response.result.items) || []
-        if (live) setItems(rows.filter((row) => !row.course_pack_id && row.course_status !== 'deleted'))
+        // A pack-backed course belongs to its pack's author: only authored courses can be shared.
+        if (live) {
+          setItems(
+            rows.filter(
+              (row) =>
+                row.course_status !== 'deleted' && !(row.provenance && row.provenance.pack_id)
+            )
+          )
+        }
       } catch (err) {
         if (live) {
           setItems([])
@@ -38317,15 +38330,27 @@ function WorkshopShare({ implemented, motion, layout }) {
       jsx('p', {
         style: { margin: 0, color: cb3Role('ink-soft') },
         children:
-          'Sharing exports this course, checks it against the same rules an imported pack must pass, and opens one pull request on the Coursebook repository. It appears in the store for everyone after that pull request is merged.'
+          'Sharing exports this course, checks it against the same rules an imported pack must pass, and opens one pull request on the Coursebook repository. Once that pull request is merged the course is in the store; it reaches other people\'s Workshop with the next plugin update.'
       }),
       outcome
         ? jsxs('div', {
             'data-cb-workshop-share-result': 'ok',
             style: { border: `1px solid ${cb3Role('rule')}`, borderRadius: '0.5rem', padding: '0.75rem', display: 'grid', gap: '0.35rem' },
             children: [
-              jsx('strong', { children: 'Pull request opened' }),
-              jsx('div', { children: `${outcome.pack_id} · ${outcome.mode} · ${outcome.objectives} objective(s) · ${outcome.world_plates || 0} plate(s)` }),
+              jsx('strong', {
+                children:
+                  outcome.status === 'already_present'
+                    ? 'The store already has this course'
+                    : outcome.status === 'update'
+                      ? 'Pull request opened — this replaces the older version'
+                      : 'Pull request opened'
+              }),
+              jsx('div', {
+                children:
+                  outcome.status === 'already_present'
+                    ? `${outcome.pack_id} · these exact bytes are already published`
+                    : `${outcome.pack_id} · ${outcome.mode} · ${shareCount(outcome.objectives, 'objective')} · ${shareCount(outcome.world_plates || 0, 'plate')}`
+              }),
               jsx('div', { style: { color: cb3Role('ink-soft'), wordBreak: 'break-all' }, children: outcome.content_hash }),
               outcome.pull_request
                 ? jsx('a', { href: outcome.pull_request, target: '_blank', rel: 'noreferrer', children: outcome.pull_request })
@@ -38345,7 +38370,6 @@ function WorkshopShare({ implemented, motion, layout }) {
         style: { listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.5rem' },
         children: items.map((item) =>
           jsxs('li', {
-            key: item.enrollment_id,
             style: {
               display: 'flex',
               flexWrap: 'wrap',

@@ -36,7 +36,7 @@ from pathlib import Path
 
 from coursebook import archive, media, pack_flow, packs, workshop
 from tests.cb_source_scope import v2_source
-from tests.kernel_support import KernelCase
+from tests.kernel_support import KernelCase, isolate_community_shelf
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "catalog" / "workshop.v1.json"
@@ -431,6 +431,7 @@ class CoverFlowTests(KernelCase):
 
     def setUp(self) -> None:
         super().setUp()
+        isolate_community_shelf(self)
         pack_flow._STAGING.clear()
 
     def tearDown(self) -> None:

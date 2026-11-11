@@ -495,7 +495,7 @@ class WorkshopV3RenderTest(unittest.TestCase):
         self.assertIn("width: '100%'", self.source_block_of("data-cb3-feature"))
         self.assertEqual(report["headTitle"], "Discover")
         self.assertEqual(report["headBody"], "Packs you can learn from, already on this device.")
-        self.assertEqual([tab["label"] for tab in report["tabs"]], ["Discover", "Library", "Provenance"])
+        self.assertEqual([tab["label"] for tab in report["tabs"]], ["Discover", "Library", "Provenance", "Share to store"])
         self.assertEqual(report["tabs"][0]["current"], "page")
         self.assertEqual(report["tabs"][0]["active"], "true")
 

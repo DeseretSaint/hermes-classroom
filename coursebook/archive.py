@@ -207,10 +207,18 @@ def _open_zip(path: Path) -> zipfile.ZipFile:
         raise PackRejected(f"pack archive is unreadable: {exc}") from exc
 
 
-def _check_member(info: zipfile.ZipInfo, *, count: int, total: int) -> None:
+def _check_member(
+    info: zipfile.ZipInfo, *, count: int, total: int, members: int | None = None
+) -> None:
     maximum = packs.limits()
     if count > maximum["max_files"] + DIRECTORY_SLACK:
         raise PackRejected(f"archive declares more than {maximum['max_files']} files")
+    # Directory entries are not files, but they are not free either: a 17 MB archive of 100 000
+    # empty directories used to be accepted and cost ~136 MB of RSS before any pack work began.
+    if members is not None and members > maximum["max_files"] * 4:
+        raise PackRejected(
+            f"archive declares more than {maximum['max_files'] * 4} entries (files and directories)"
+        )
     if info.flag_bits & 0x1:
         raise PackRejected(f"archive member {info.filename!r} is encrypted")
     if info.compress_type not in ALLOWED_COMPRESSION:
@@ -270,9 +278,15 @@ def extract_archive(source: str | Path, destination: str | Path) -> dict[str, An
                 if folded in seen:
                     raise PackRejected(f"archive members {seen[folded]!r} and {name!r} collide by case")
                 seen[folded] = name
+                counter["members"] = counter.get("members", 0) + 1
                 if not info.is_dir():
                     counter["files"] += 1
-                _check_member(info, count=counter["files"], total=counter["bytes"])
+                _check_member(
+                    info,
+                    count=counter["files"],
+                    total=counter["bytes"],
+                    members=counter["members"],
+                )
                 if not info.is_dir():
                     counter["bytes"] += info.file_size
             if len(roots) != 1:

@@ -82,7 +82,7 @@ claims live model quality or a live Desktop drive.
 ```
 python3 -m unittest tests.test_pack_import_usability          # 3 tests, OK
 python3 -m unittest tests.test_pack_presentation_roundtrip    # 8 tests, OK
-python3 -m unittest tests.test_gm_contract                    # 30 tests, OK
+python3 -m unittest tests.test_gm_contract                    # 26 tests, OK
 python3 -m unittest tests.test_install_provisioning tests.test_install_check  # 19 tests, OK
 python3 -m coursebook.install_check --source . --provisioning # exit 0
 python3 -m unittest discover -s tests -t .                    # full-suite result recorded in docs/RELEASE-EVIDENCE.md

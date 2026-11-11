@@ -22,7 +22,7 @@ import unittest
 from pathlib import Path
 
 from coursebook import archive, packs, workshop
-from tests.kernel_support import KernelCase
+from tests.kernel_support import KernelCase, isolate_community_shelf
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKS = ROOT / "bundled" / "packs"
@@ -342,6 +342,10 @@ class ProvenanceDocumentTests(unittest.TestCase):
 
 class CatalogSurfaceTests(KernelCase):
     """The serialized read model the Desktop renders, scanned field by field."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        isolate_community_shelf(self)
 
     def test_catalog_view_renders_no_fixture_wording(self) -> None:
         view = workshop.catalog_view()

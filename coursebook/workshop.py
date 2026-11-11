@@ -653,13 +653,18 @@ def catalog_view() -> dict[str, Any]:
     }
 
 
+#: The generated shelf index. A module constant so a test can isolate itself from whatever the
+#: repository currently ships in ``store/packs`` — shelf growth must not rewrite test counts.
+COMMUNITY_INDEX_PATH = ROOT / "store" / "index.json"
+
+
 def _community_entries(catalogued: set[str]) -> list[dict[str, Any]]:
     """One card per accepted store pack that the editorial catalogue does not describe yet.
 
     Community packs carry their own facts, so the card is derived from the pack itself and the
     generated ``store/index.json``; nothing editorial is invented beyond a category label.
     """
-    index_path = ROOT / "store" / "index.json"
+    index_path = COMMUNITY_INDEX_PATH
     try:
         index = json.loads(index_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):

@@ -2,7 +2,7 @@
   "card": "CP-053 / D-007 Home quality pass (t_831137dd)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8",
+  "module_sha256": "91bbd567ca935ddfbf78ff48ea577b94c58e4b3f1905c18452776a9cd9d3d3a6",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
@@ -12,8 +12,8 @@
   ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
   "rmse_rgb": 92.692,
-  "rmse_grey": 91.809,
-  "sim_grey": 0.64,
+  "rmse_grey": 92.944,
+  "sim_grey": 0.6355,
   "sim_rgb": 0.6365,
   "bands_sim_grey": {
     "header": 0.6419,
@@ -25,5 +25,5 @@
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. Cards now carry the approved field_atlas@2 display plates, so the frame is measured against A1 as a record, not as a gate: D-007 changed the target from pixel parity with the mockup to the approved kit composition.",
   "measured_at": "2026-11-11",
-  "note": "Re-measured 2026-11-11 on module 71d940ce (the UI Home quality pass: fox and clock seated on plank two, hero inked on a 0.60 scrim, over UI-K1's field_atlas@2 hero plate). Fresh render, fresh 1344x768 capture, measure.py -- nothing carried over. sim_grey is 0.6400, i.e. the plate's arrival, not the pass's geometry, sets the number: the CP-053 reference is the pre-plate hand frame, so this row no longer measures what t_831137dd was asked to improve and CANNOT clear the 0.85 floor by construction. Prior row: module 98400108 sim_grey 0.6401 (UI-K5, pre-pass). The composition itself is measured separately in docs/visual-review/t-831137dd/."
+  "note": "Re-measured 2026-11-11 on module 91bbd567 (the Workshop Share surface; the Home scene itself is untouched by it). Fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. sim_grey is 0.6355: the CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor."
 }

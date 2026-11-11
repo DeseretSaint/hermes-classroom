@@ -8,11 +8,13 @@ Exit codes follow the repository convention: 0 clean, 1 findings, 3 refused to r
 """
 from __future__ import annotations
 
+import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CB_STORE_ROOT") or Path(__file__).resolve().parents[1]).resolve()
 sys.path.insert(0, str(ROOT))
 
 from coursebook import archive, packs, pack_flow  # noqa: E402
@@ -75,7 +77,20 @@ def verify() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     return problems, verified
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    global ROOT, STORE, COMMUNITY
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--root",
+        default="",
+        help="repository root holding store/ (default: this checkout); the workflow runs the base "
+        "branch's copy of this script against the pull request's tree",
+    )
+    args = parser.parse_args(argv)
+    if args.root:
+        ROOT = Path(args.root).resolve()
+        STORE = ROOT / "store"
+        COMMUNITY = STORE / "packs"
     problems, verified = verify()
     for row in verified:
         print(f"ok   {row['pack']}: {row['mode']}, {row['objectives']} objective(s), {row['media']} media")

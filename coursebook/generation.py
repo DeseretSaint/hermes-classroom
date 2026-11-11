@@ -7159,6 +7159,16 @@ def validation_verdict(
             + str(entry.get("reason") or "")
         )[:VALIDATION_REASON_MAX_CHARS]
     facts_unverified = research_status == "unavailable"
+    # A cited source that contradicts the lesson is a rejection even when every rubric criterion
+    # was met: the claim was checked against someone else's words and lost. Counting only the
+    # declared verdict let a "pass" ride on top of a recorded contradiction.
+    contradictory_claims = [
+        entry for entry in claim_verdicts if str(entry.get("support") or "") == "contradictory"
+    ]
+    if contradictory_claims and not rejections:
+        rejections = [
+            "claim_contradicted: the cited source contradicts a claim in the lesson"
+        ]
     passed = declared == "pass" and not failed and not unknown and not rejections
     if not passed:
         outcome = OUTCOME_REJECTED

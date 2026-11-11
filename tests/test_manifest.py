@@ -159,6 +159,7 @@ class PackageLayoutTest(unittest.TestCase):
                 # write. Neither takes a path: the body carries a catalogue pack id.
                 "/workshop/catalog",
                 "/workshop/install",
+                "/workshop/share",
             },
         )
 

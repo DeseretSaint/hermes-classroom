@@ -1,16 +1,18 @@
 name: store
-# The store shelf is generated from bytes, so the only review a submission needs is this check:
-# every community pack must pass the importer's own pre-write gate, and store/index.json must match
-# the files. A green run is what makes "Merge" a one-click acceptance.
+# The store shelf is generated from bytes, so the only review a submission needs is this check.
+#
+# Both steps run the *base branch's* copy of the checker against the pull request's tree. A
+# contributor can edit `coursebook/packs.py` in the same PR that adds a pack; running the PR's own
+# gate would let them weaken the gate that is supposed to judge them. The base copy imports the
+# base `coursebook` package, so "green" means "the published rules accept this pack".
 on:
   pull_request:
     paths:
       - "store/**"
+      - "coursebook/**"
+      - "contracts/**"
       - "scripts/store_index.py"
       - "scripts/store_verify.py"
-      - "coursebook/packs.py"
-      - "coursebook/pack_flow.py"
-      - "coursebook/archive.py"
   push:
     branches: [master]
     paths:
@@ -20,13 +22,36 @@ jobs:
   shelf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: The pull request tree
+        uses: actions/checkout@v4
+        with:
+          path: pr
+      - name: The rules it is judged by (base branch)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install the pack dependencies
         run: python -m pip install --quiet "jsonschema>=4,<5"
-      - name: The index matches the bytes
-        run: python scripts/store_index.py --check
-      - name: Every community pack passes the import gate
-        run: python scripts/store_verify.py
+      - name: The index matches the bytes (base rules)
+        run: |
+          if [ -d base ]; then
+            python base/scripts/store_index.py --check --root pr
+          else
+            python pr/scripts/store_index.py --check --root pr
+          fi
+      - name: Every community pack passes the import gate (base rules)
+        run: |
+          if [ -d base ]; then
+            python base/scripts/store_verify.py --root pr
+          else
+            python pr/scripts/store_verify.py --root pr
+          fi
+      - name: The shelf does not rewrite the plugin's own tests
+        run: |
+          cd pr
+          python -m unittest tests.test_workshop tests.test_h197_covers

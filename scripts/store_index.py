@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import hashlib
 import json
 import sys
@@ -24,7 +25,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("CB_STORE_ROOT") or Path(__file__).resolve().parents[1]).resolve()
 sys.path.insert(0, str(ROOT))
 
 from coursebook import archive  # noqa: E402
@@ -125,7 +126,19 @@ def render(body: dict[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail when store/index.json is stale")
+    parser.add_argument(
+        "--root",
+        default="",
+        help="repository root holding store/ (default: this checkout); the workflow runs the base "
+        "branch's copy of this script against the pull request's tree",
+    )
     args = parser.parse_args(argv)
+    if args.root:
+        global ROOT, STORE, COMMUNITY, INDEX
+        ROOT = Path(args.root).resolve()
+        STORE = ROOT / "store"
+        COMMUNITY = STORE / "packs"
+        INDEX = STORE / "index.json"
     text = render(build())
     if args.check:
         current = INDEX.read_text(encoding="utf-8") if INDEX.is_file() else None

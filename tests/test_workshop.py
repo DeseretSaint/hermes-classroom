@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 from coursebook import archive, pack_flow, packs, workshop
-from tests.kernel_support import KernelCase, request
+from tests.kernel_support import KernelCase, isolate_community_shelf, request
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG = ROOT / "catalog" / "workshop.v1.json"
@@ -25,6 +25,9 @@ PACKS = ROOT / "bundled" / "packs"
 
 class CatalogDocumentTests(unittest.TestCase):
     """The catalogue is bounded data, and every entry names a real, verified pack."""
+
+    def setUp(self) -> None:
+        isolate_community_shelf(self)
 
     def test_catalogue_lists_three_real_bundled_packs(self) -> None:
         document = workshop.load_catalog()
@@ -87,6 +90,7 @@ class InstallTests(KernelCase):
 
     def setUp(self) -> None:
         super().setUp()
+        isolate_community_shelf(self)
         # The staging area is cached per data root; point it at this test's home.
         pack_flow._STAGING.clear()
 
@@ -136,6 +140,7 @@ class CatalogViewTests(KernelCase):
 
     def setUp(self) -> None:
         super().setUp()
+        isolate_community_shelf(self)
         pack_flow._STAGING.clear()
 
     def tearDown(self) -> None:

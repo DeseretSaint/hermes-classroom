@@ -59,6 +59,19 @@ def criteria_with(spec: dict, criterion_id: str = "c1") -> list[dict]:
     return [{"id": criterion_id, "description": "graded criterion", "check_spec": spec}]
 
 
+def isolate_community_shelf(testcase: unittest.TestCase) -> None:
+    """Make this test independent of whatever the repository currently ships in ``store/packs``.
+
+    The community shelf grows every time a pack is accepted, and a test that counts cards must not
+    turn red because someone shared a course. The editorial catalogue is still read normally.
+    """
+    from coursebook import workshop
+
+    original = workshop.COMMUNITY_INDEX_PATH
+    testcase.addCleanup(setattr, workshop, "COMMUNITY_INDEX_PATH", original)
+    workshop.COMMUNITY_INDEX_PATH = original.parent / ".no-community-shelf-in-this-test.json"
+
+
 class KernelCase(unittest.TestCase):
     """An isolated profile database per test, migrated with the real migration runner."""
 
