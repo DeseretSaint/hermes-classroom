@@ -730,6 +730,17 @@ On rejection the author is called **once more** with the validator's itemised re
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
 
+**A review section over parked owners (CP-015j).** A review lesson authors no check; it presents
+the owner check of an objective it reinforces. A `needs_review` owner page closes that check, so
+`_resolve_review_target` now selects the owner's latest check *preferring an open one* and returns
+the closed check when none is open, instead of raising. The review page is still authored; the
+lesson is stored `needs_review` with a `rejection_reasons_json` entry naming each closed owner
+check (objective ordinal, check id, owner lesson id and lesson state) and the job completes. The
+page is not servable and `check_enabled` is false; regenerating the review section after an owner
+check opens rebinds it. Only an objective with **no owner lesson at all** is a structural refusal
+(`GenerationRejected`, naming the objectives), because then "author the owner lessons first" is
+still true.
+
 ### 7.1 A malformed answer is repaired once, then it is a typed failure — never an outage, never a verdict
 
 The host's structured-output gate (`agent.plugin_llm._parse_structured_text`) validates the parsed
