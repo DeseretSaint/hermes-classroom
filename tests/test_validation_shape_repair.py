@@ -306,7 +306,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
         # v6 (CP-015) lowers the per-pass claim demand to three (criteria pass) and four
         # (claim-only pass) because a six-claim pass overran the 24 576-byte answer bound.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v6")
+        # v7 (CP-015d) states the narrowed-plan rubric for objective_alignment /
+        # internal_contradiction / goal_capability_disclosure and sizes the answer demand.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v7")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

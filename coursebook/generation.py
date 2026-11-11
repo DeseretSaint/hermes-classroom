@@ -146,6 +146,7 @@ __all__ = [
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
     "VALIDATION_CRITERIA_PASSES",
+    "VALIDATION_REASON_MAX_CHARS",
     "CLAIM_VERDICTS_PER_PASS",
     "CLAIM_ONLY_VERDICTS_PER_PASS",
     "VALIDATION_AUX_TASK",
@@ -156,6 +157,7 @@ __all__ = [
     "build_plan_validation_requests",
     "validation_pass_schema",
     "validation_claim_schema",
+    "validation_answer_bound",
     "validation_pass_instructions",
     "validation_pass_criteria",
     "plan_claim_labels",
@@ -227,7 +229,16 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
 #: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
 #: read before answering, which is the H-191 lesson applied again.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v6"
+#: v7 (`t_c84d545e`, CP-015d): the plan passes state what ``objective_alignment`` and
+#: ``internal_contradiction`` mean for a narrowed plan, and the disclosure rule names the
+#: ``Not covered — no supporting source:`` prefix verbatim. CP-015b measured the defect: a plan
+#: that did exactly what the author rule asks (narrowed ``learner_outcome`` plus prefixed
+#: exclusions) was refused under both legacy criteria because the validator was handed criterion
+#: ids and nothing else, so it judged the raw goal sentence. A criterion name is not a rubric.
+#: The answer-length rule is stated as one number that the schema also carries
+#: (:data:`VALIDATION_REASON_MAX_CHARS`), and each pass's rejection list is bounded by the items
+#: it was actually given, so the byte/token demand is sized by the request rather than by hope.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v7"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -333,6 +344,14 @@ MAX_VALIDATION_BYTES = 24 * 1024
 #: 81-character sentence in ``item`` is a shape mistake, and the honest repair is to say the
 #: rule (and re-ask once) rather than to accept a claim where a locator is expected.
 ITEM_REFERENCE_MAX_CHARS = 80
+
+#: Bound on one validator ``reason``/``fix_hint``, in characters. CP-015d: the pass instructions
+#: said "at most 200 characters" while the schema allowed 400, so an answer that followed the
+#: stated rule and one that ignored it were both accepted — and a validator that wrote 400-char
+#: reasons on every criterion and rejection produced a 36 895-byte answer against a 24 576-byte
+#: bound. One number now, carried by the schema *and* stated in the prompt (H-191: a bound the
+#: prompt never states is a trap), with headroom over the one-sentence instruction.
+VALIDATION_REASON_MAX_CHARS = 240
 
 #: Minimum seconds a shape re-ask must inherit from the original call's deadline to be worth
 #: spending. Below it the stage could not finish inside its declared bound anyway, so the
@@ -2760,7 +2779,11 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "id": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
                     "verdict": {"type": "string", "enum": ["pass", "fail", "unknown"]},
-                    "reason": {"type": "string", "minLength": 3, "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
                 },
             },
         },
@@ -2774,8 +2797,12 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "criterion": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
-                    "reason": {"type": "string", "minLength": 5, "maxLength": 400},
-                    "fix_hint": {"type": "string", "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
+                    "fix_hint": {"type": "string", "maxLength": VALIDATION_REASON_MAX_CHARS},
                 },
             },
         },
@@ -2799,7 +2826,11 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                             "stored bytes, so a fabricated quote never upgrades support."
                         ),
                     },
-                    "reason": {"type": "string", "minLength": 3, "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
                     "excerpt": {
                         "type": ["string", "null"],
                         "maxLength": 600,
@@ -2947,13 +2978,56 @@ _PLAN_SEQUENCE_CRITERION = "objective_alignment"
 #: it, because the pass answers a narrowed schema and an unstated rule is a trap (H-191).
 _PLAN_DISCLOSURE_CRITERION = "goal_capability_disclosure"
 
+#: CP-015d: the inconsistency criterion, judged over the plan's own parts rather than against the
+#: raw goal sentence. Its rubric is stated in the pass that owns it for the same reason.
+_PLAN_CONTRADICTION_CRITERION = "internal_contradiction"
+
+#: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
+#: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
+#: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
+#:
+#: Defined here, above the validator rules, because the rubric text quotes it verbatim: a rule that
+#: paraphrases the prefix would let the prompt and :func:`excluded_capabilities` drift apart.
+EXCLUSION_PREFIX = "Not covered — no supporting source:"
+
+#: CP-015d: ``objective_alignment`` for a plan. CP-015b measured the validator refusing an
+#: R-2-compliant Sourdough plan because its objectives taught less than the raw goal sentence.
+#: That is the disclosed gap c2 exists to record, not misalignment: the criterion keeps its own
+#: jobs (sequence, prerequisites, objective-to-outcome), and the completeness question belongs to
+#: ``goal_capability_disclosure`` alone.
+_PLAN_ALIGNMENT_RULE = (
+    " Also judge curriculum sequence and objective alignment under objective_alignment: every "
+    "unit after the first must name the earlier unit(s) it builds on and explain why it comes at "
+    "that point; no unit may require a concept taught later; and each objective must advance the "
+    "learner_outcome the plan itself declares. Reject a plan whose order is arbitrary, whose "
+    "prerequisite edges do not match the stated dependencies, or whose language-coverage claim is "
+    "unsourced or treats coverage as comprehension. Judge the plan against its own declared "
+    "outcome and scope, not against every capability the raw goal sentence names: a capability "
+    "that appears only in a prefixed exclusions entry is disclosed scope, not misalignment, and "
+    "it is never an objective_alignment failure. Goal coverage is judged only by "
+    "goal_capability_disclosure."
+)
+
+#: CP-015d: ``internal_contradiction`` for a plan reads the plan's own parts against each other.
+#: The goal is input, not a promise the plan must repeat; a disclosed exclusion narrowing it is
+#: not a contradiction.
+_PLAN_CONTRADICTION_RULE = (
+    " Also judge internal_contradiction over the plan's own parts against each other: "
+    "learner_outcome, objectives, check_plan, evidence_note, delivery and exclusions must be able "
+    "to be true together. A contradiction is two statements the plan itself makes that cannot both "
+    "hold; a capability that appears only in a prefixed exclusions entry is a disclosed limit, not "
+    "a contradiction with the goal, and the goal sentence is not evidence that the plan promises "
+    "it. Do not reject on this criterion for a disclosed gap."
+)
+
 _PLAN_DISCLOSURE_RULE = (
     " Also judge goal coverage under goal_capability_disclosure: list every capability the goal "
     "names, and map each one either to an objective that covers it or to an entry in the plan's "
-    "exclusions. A goal capability that appears in neither is a reject: silence about a capability "
-    "the learner asked for is the failure this criterion exists to catch. A capability the plan "
-    "honestly records as excluded is disclosed, not covered — do not reject a plan for disclosing "
-    "a gap, and do not pass one that hides it."
+    "exclusions that begins exactly with 'Not covered — no supporting source:'. A goal capability "
+    "that appears in neither is a reject: silence about a capability the learner asked for is the "
+    "failure this criterion exists to catch. A capability the plan honestly records as excluded "
+    "is disclosed, not covered — do not reject a plan for disclosing a gap, and do not pass one "
+    "that hides it."
 )
 
 
@@ -3025,6 +3099,14 @@ def validation_pass_schema(
     criteria_schema["maxItems"] = len(criteria)
     criteria_schema["items"]["properties"]["id"]["enum"] = list(criteria)
     properties["rejections"]["items"]["properties"]["criterion"]["enum"] = list(criteria)
+    # CP-015d: size the demand by what this pass was given. A rejection list is at most one entry
+    # per judged criterion or claim — a validator cannot honestly itemise more defects than there
+    # are items to point at, and the wide ``maxItems: 20`` let one pass write ~18 KB of rejections
+    # on a six-criterion answer. The byte bound is derived from this same schema
+    # (:func:`validation_answer_bound`), so the limit the model is checked against and the limit it
+    # is told are one number.
+    judged = len(criteria) + len(claim_labels)
+    properties["rejections"]["maxItems"] = judged
     if claim_labels:
         claim_schema = properties["claim_verdicts"]
         claim_schema["minItems"] = len(claim_labels)
@@ -3036,6 +3118,67 @@ def validation_pass_schema(
     else:
         properties.pop("claim_verdicts", None)
     return schema
+
+
+#: The most UTF-8 bytes one code point can occupy. A JSON-Schema ``maxLength`` counts code points,
+#: so ``maxLength * this`` is a true upper bound on the encoded byte length of a schema string,
+#: independent of language.
+_SCHEMA_UTF8_BYTES_PER_CHAR = 4
+
+#: Structural bytes allowed per JSON member (key quotes, colon, comma, escaping headroom). The
+#: bound is a ceiling for a pre-parse guard, not a size prediction, so it over-counts rather than
+#: under-counts.
+_SCHEMA_STRUCTURAL_BYTES = 12
+
+
+def _schema_json_bound(schema: Mapping[str, Any]) -> int:
+    """Upper bound on the compact UTF-8 size of any instance the given schema admits.
+
+    It walks the schema's own ``maxLength``/``maxItems``/``enum`` declarations, which are the only
+    honest limits on a validator answer: the prompt's prose is not enforced, the schema is. Object
+    members are summed over every declared property (all were counted, whether required or not)
+    and arrays are multiplied by their own ``maxItems``.
+    """
+    if not isinstance(schema, Mapping):
+        return 0
+    enum = schema.get("enum")
+    if isinstance(enum, list) and enum:
+        return max(
+            _schema_json_bound({"type": "string", "maxLength": len(str(value))})
+            for value in enum
+        )
+    declared = schema.get("type")
+    types = declared if isinstance(declared, list) else [declared]
+    best = 0
+    for kind in types:
+        if kind == "null":
+            best = max(best, 4)
+        elif kind == "string":
+            best = max(best, int(schema.get("maxLength") or 0) * _SCHEMA_UTF8_BYTES_PER_CHAR + 2)
+        elif kind == "array":
+            items = _schema_json_bound(schema.get("items") or {})
+            count = int(schema.get("maxItems") or 0)
+            best = max(best, count * (items + _SCHEMA_STRUCTURAL_BYTES // 2) + 2)
+        elif kind == "object":
+            total = 2
+            for key, child in (schema.get("properties") or {}).items():
+                total += len(str(key)) + _SCHEMA_STRUCTURAL_BYTES + _schema_json_bound(child)
+            best = max(best, total)
+    return best
+
+
+def validation_answer_bound(schema: Mapping[str, Any]) -> int:
+    """The byte bound for one validator answer, derived from the pass's own schema.
+
+    CP-015d: ``MAX_VALIDATION_BYTES`` was a constant applied to every stage, and a narrowed plan
+    pass whose *schema-legal* answer can be tens of kilobytes failed on the byte count before the
+    schema could judge it (measured: 36 895 bytes / 24 576 bound on an honest 3-objective plan).
+    The schema is what bounds the answer — ``maxItems`` on criteria/claims/rejections and
+    ``maxLength`` on every string — so the bound is derived from it. A legitimate answer cannot
+    exceed it by construction; an answer that does could not have been schema-valid anyway. The
+    constant stays as a floor so a small pass is never given a looser guard than the historic one.
+    """
+    return max(MAX_VALIDATION_BYTES, _schema_json_bound(schema))
 
 
 #: The rule that makes a declared ``reject`` a verdict (`t_0affea08`). Stated by *both* prompt
@@ -3075,10 +3218,12 @@ def validation_pass_instructions(
     text = (
         f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
         f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
-        "named here and no others. Keep each reason to one sentence (at most 200 characters) that "
-        "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
-        "author's rationale, or explain your method. Reject any item that must not reach a learner, "
-        "with the item reference and a concrete reason."
+        "named here and no others. Keep each reason to one sentence (at most "
+        f"{VALIDATION_REASON_MAX_CHARS} characters) that names the concrete artifact feature it "
+        "rests on; do not restate the artifact, restate the author's rationale, or explain your "
+        "method. Return at most one rejection per criterion or claim you were given, and leave "
+        "'fix_hint' out unless a concrete replacement is needed. Reject any item that must not "
+        "reach a learner, with the item reference and a concrete reason."
     ) + _DECLARED_VERDICT_RULE
     if claim_labels:
         text += (
@@ -3094,13 +3239,9 @@ def validation_pass_instructions(
     else:
         text += " Return no claim_verdicts: claim support is judged by another pass."
     if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
-        text += (
-            " Also judge curriculum sequence under objective_alignment: every unit after the "
-            "first must name the earlier unit(s) it builds on and explain why it comes at that "
-            "point; no unit may require a concept taught later. Reject a plan whose order is "
-            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
-            "language-coverage claim is unsourced or treats coverage as comprehension."
-        )
+        text += _PLAN_ALIGNMENT_RULE
+    if subject == "plan" and _PLAN_CONTRADICTION_CRITERION in criteria:
+        text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
     return text
@@ -4272,14 +4413,12 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "field outside the schema is returned, so put each verdict in exactly the fields the "
         "schema names."
     ) + _DECLARED_VERDICT_RULE
-    if subject == "plan":
-        text += (
-            " Also judge curriculum sequence under objective_alignment: every unit after the "
-            "first must name the earlier unit(s) it builds on and explain why it comes at that "
-            "point; no unit may require a concept taught later. Reject a plan whose order is "
-            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
-            "language-coverage claim is unsourced or treats coverage as comprehension."
-        )
+    if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += _PLAN_ALIGNMENT_RULE
+    if subject == "plan" and _PLAN_CONTRADICTION_CRITERION in criteria:
+        text += _PLAN_CONTRADICTION_RULE
+    if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
+        text += _PLAN_DISCLOSURE_RULE
     return text
 
 
@@ -4791,10 +4930,9 @@ def _enforce_plan_rules_v1(
         raise _RuleViolation(reasons)
 
 
-#: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
-#: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
+#: The prefix is defined above, beside the validator rubric that quotes it verbatim
+#: (:data:`EXCLUSION_PREFIX`). Only prefixed entries are capability exclusions; any other exclusion
 #: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
-EXCLUSION_PREFIX = "Not covered — no supporting source:"
 
 #: Tolerate the punctuation a model actually writes for that prefix (hyphen, en dash, missing
 #: space) rather than only the em dash the prompt shows. The *meaning* is unchanged.
@@ -6190,7 +6328,13 @@ def _parse_validation_answer(
     schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
     try:
         document = _parse_structured(
-            response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
+            response,
+            schema,
+            what=what,
+            # CP-015d: the byte bound is the schema's own capacity, not a stage-wide constant. A
+            # schema-legal answer can be larger than 24 KB; failing it on bytes before the schema
+            # judges it told the operator "over the bound" about an answer that obeyed its request.
+            max_bytes=validation_answer_bound(schema),
         )
     except GenerationRejected as exc:
         raise ModelOutputInvalid(
@@ -6243,9 +6387,9 @@ def _truncation_repair_request(request: LLMRequest) -> LLMRequest:
         "\n\nYour previous answer to this same request was cut off before it finished: it "
         "consumed the whole answer-length budget and no usable JSON object arrived, so no verdict "
         "from it survives. Answer the request again and keep the answer short — one sentence per "
-        "reason (under 200 characters), no restating the artifact, no method explanation, and no "
-        "discussion inside the answer fields. Return exactly one JSON object matching the schema, "
-        "with every required field present."
+        f"reason (under {VALIDATION_REASON_MAX_CHARS} characters), no restating the artifact, no "
+        "method explanation, and no discussion inside the answer fields. Return exactly one JSON "
+        "object matching the schema, with every required field present."
     )
     return replace(
         request,
@@ -6364,7 +6508,7 @@ def validation_verdict(
         entry["reason"] = (
             "[provenance flagged: the cited provenance is not in the ledger] "
             + str(entry.get("reason") or "")
-        )[:400]
+        )[:VALIDATION_REASON_MAX_CHARS]
     facts_unverified = research_status == "unavailable"
     passed = declared == "pass" and not failed and not unknown and not rejections
     if not passed:
