@@ -1686,7 +1686,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
   // reads it directly; the lesson room resolves through `cb3KitSource`.
   const provenance = row && row.provenance && typeof row.provenance === 'object' ? row.provenance : {}
   const kit = cb3KitCoverFor({ pack_id: provenance.pack_id || (row && row.pack_id), title: row && row.title })
-  const coverSrc = (kit ? cb3Asset(kit.id3x2) : null) || cb3KitSource('field-atlas-lesson-room')
+  const coverSrc = (kit ? cb3KitSource(kit.id3x2) : null) || cb3KitSource('field-atlas-lesson-room')
   return jsxs('article', {
     'data-cb-course-cover': cbShelfFingerprint(row),
     'data-cb-course-id': row.course_id || '',

@@ -241,7 +241,7 @@ function WorkshopCover({ item, layout, hero, caption, revealStyle }) {
   // for this pack is the plate (D-007), so a mapped pack never falls back to a typographic cover.
   // `cb3KitCoverFor` answers the full asset key; `cb3Asset` is the one lookup that reads it.
   const kit = image ? null : cb3KitCoverFor(item)
-  const kitImage = kit ? cb3Asset(kit.id3x2) : null
+  const kitImage = kit ? cb3KitSource(kit.id3x2) : null
   const ratio = hero ? '16 / 9' : '3 / 2'
   const alt = (cover.alt && String(cover.alt)) || (item && item.title) || 'Pack cover'
   const failed = cover.kind === 'artifact' && preview.state === 'text'
@@ -1323,7 +1323,7 @@ function cb3PackCover(item) {
   return {
     artifactId,
     title: (item && item.title) || 'Untitled pack',
-    kitSrc: kit ? cb3Asset(kit.id3x2) : null
+    kitSrc: kit ? cb3KitSource(kit.id3x2) : null
   }
 }
 
