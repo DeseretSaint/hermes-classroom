@@ -258,6 +258,24 @@ _GENERIC_LANGUAGE = re.compile(
     re.IGNORECASE,
 )
 
+#: Orthographies are language-only: nothing else a person learns is called ``hiragana`` or
+#: ``romaji``. A goal that names one is a language goal even when it does not name the language,
+#: which matters for a learner who declares the locale and says "learn to read hiragana".
+_LANGUAGE_SCRIPT = re.compile(
+    r"\b(kana|kanji|hiragana|katakana|romaji)\b",
+    re.IGNORECASE,
+)
+
+#: The metalanguage of a language course — vocabulary, grammar, pronunciation, phrases. These are
+#: not language-only ("build a vocabulary app", "the grammar of music"), so they count only when a
+#: study verb governs the noun directly.
+_LANGUAGE_METALANGUAGE = re.compile(
+    r"\b(?:learn|study|practi[cs]e|memori[sz]e|revise|review|improve|expand|build\s+up)\w*\b"
+    r"[^.]{0,30}?"
+    r"\b(vocabulary|grammar|conjugat\w*|pronunciation|phrases?|dialog(?:ue)?s?|alphabet)\b",
+    re.IGNORECASE,
+)
+
 #: A goal about a culture or a country's past is a content course, not a language course, even
 #: when it names a language ("read Spanish colonial history"). A language-learning word above
 #: still wins, so "learn Spanish history vocabulary" stays a language goal.
@@ -279,9 +297,17 @@ def _language_goal(text: str) -> bool:
     """True when the goal itself asks for language learning or use of a target language."""
     if not text:
         return False
-    if not (_LANGUAGE_TARGET.search(text) or _GENERIC_LANGUAGE.search(text)):
+    if _LANGUAGE_SCRIPT.search(text):
+        # A named orthography is a language subject on its own; only a goal framed as being
+        # *about* something else ("the art of kanji calligraphy") is not a language course.
+        return _LANGUAGE_LEARNING.search(text) is not None or not _SUBJECT_FRAME.search(text)
+    if not (
+        _LANGUAGE_TARGET.search(text)
+        or _GENERIC_LANGUAGE.search(text)
+        or _LANGUAGE_METALANGUAGE.search(text)
+    ):
         return False
-    if _LANGUAGE_LEARNING.search(text):
+    if _LANGUAGE_LEARNING.search(text) or _LANGUAGE_METALANGUAGE.search(text):
         return True
     return not _SUBJECT_FRAME.search(text)
 

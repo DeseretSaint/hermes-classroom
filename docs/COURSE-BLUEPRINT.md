@@ -653,6 +653,7 @@ human `note`:
 | `declared` | the brief declared `subject_domain` (canonicalised by `policy.normalise_subject_domain`) | that domain |
 | `inferred` | no domain declared; the goal asks the learner to carry out a physical act | `technical_procedure` |
 | `inferred` | no domain declared; the goal asks the learner to learn or use a named target language, and a locale is declared | `language` |
+| `inferred` | no domain declared; the goal names a language-only subject (an orthography such as `hiragana`, or a study verb governing `vocabulary`/`grammar`/`pronunciation`), and a locale is declared | `language` |
 | `default` | nothing above matches | `general` |
 
 The rule that matters: **`language` is never reachable by omission.** A caller that omits the
@@ -687,7 +688,8 @@ passed off as the caller's declaration.
 ### 15.3 Tests
 
 * `tests/test_cp015g_domain_default.py` — undeclared domain + hands-on goal (brief, queries, plan
-  prompt and validator payload); undeclared domain + language goal; a language goal without a locale;
+  prompt and validator payload); undeclared domain + language goal (a named target language, a named
+  orthography, and a study verb governing the metalanguage); a language goal without a locale;
   a locale alone never producing a language course; "read Spanish colonial history" not becoming a
   Spanish course; a declared domain unchanged (including the alias table); and a parent brief.
 * `tests/test_generation.py::HandsOnGoalDomainProvenanceTest` — the plan job's run record names the
