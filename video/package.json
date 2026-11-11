@@ -1,0 +1,29 @@
+{
+  "name": "coursebook-launch-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remotion motion system for the Coursebook launch film (docs/launch/VIDEO-PLAN.md).",
+  "license": "MIT",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:75": "remotion render src/index.ts Hero75 out/scaffold-75s.mp4",
+    "render:30": "remotion render src/index.ts Hero30 out/scaffold-30s.mp4",
+    "still": "remotion still src/index.ts",
+    "check:fonts": "bash scripts/check-fonts.sh",
+    "check:copy": "bash scripts/check-copy.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/fraunces": "5.3.0",
+    "@fontsource/source-sans-3": "5.3.1",
+    "@remotion/cli": "4.0.542",
+    "@remotion/fonts": "^4.0.542",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.542"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "typescript": "5.6.3"
+  }
+}
