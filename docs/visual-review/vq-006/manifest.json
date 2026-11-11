@@ -1,8 +1,8 @@
 {
   "schema": "vq.manifest.v1",
   "tool": "scripts/vq-manifest.py",
-  "generated_at": "2026-11-11T09:28:06+00:00",
-  "commit": "0c1729eb150e0f561238235a0fedeb446a6257cd",
+  "generated_at": "2026-11-11T09:39:38+00:00",
+  "commit": "80a81fd78b9673d2d6d0876591608acd1862f9b2",
   "plugin_sha256": [
     "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
   ],
@@ -38,7 +38,8 @@
       "ok": false,
       "problems": [
         "required image missing: course_map 0/1",
-        "required image missing: fox_pose 0/1"
+        "required image missing: fox_pose 0/1",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -63,6 +64,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -72,23 +75,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.092,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -98,17 +104,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.092,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1049.00px"
           ]
         }
       ],
@@ -128,8 +137,8 @@
       },
       "screenshot": {
         "file": "course-home--1049.png",
-        "declared": "05d55187b0bede2a052150c3199ff6b14fc62fb74495b2cf538e02e95cddf219",
-        "measured": "05d55187b0bede2a052150c3199ff6b14fc62fb74495b2cf538e02e95cddf219",
+        "declared": "1fff401578b012f3b6a5a143ddf65e039670f5c1c4b496cf0882440be1e91078",
+        "measured": "1fff401578b012f3b6a5a143ddf65e039670f5c1c4b496cf0882440be1e91078",
         "ok": true
       }
     },
@@ -140,7 +149,8 @@
       "ok": false,
       "problems": [
         "required image missing: course_map 0/1",
-        "required image missing: fox_pose 0/1"
+        "required image missing: fox_pose 0/1",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -165,6 +175,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -174,23 +186,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.071,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -200,17 +215,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.071,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1344.00px"
           ]
         }
       ],
@@ -230,8 +248,8 @@
       },
       "screenshot": {
         "file": "course-home--1344.png",
-        "declared": "3f1afdba081b81f3735e132546911523ad1175efa0434ad22dd13b9c2e42f7fc",
-        "measured": "3f1afdba081b81f3735e132546911523ad1175efa0434ad22dd13b9c2e42f7fc",
+        "declared": "028bae33be46b075f492571c39d82d73aa0a52a6d2e146e9752d91a7736fce1e",
+        "measured": "028bae33be46b075f492571c39d82d73aa0a52a6d2e146e9752d91a7736fce1e",
         "ok": true
       }
     },
@@ -241,7 +259,8 @@
       "width": 460,
       "ok": false,
       "problems": [
-        "required image missing: course_map 0/1"
+        "required image missing: course_map 0/1",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -267,6 +286,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -276,23 +297,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.209,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -302,17 +326,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.209,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 460.00px"
           ]
         }
       ],
@@ -332,8 +359,8 @@
       },
       "screenshot": {
         "file": "course-home--460.png",
-        "declared": "1a73c466ee4bbb5bbacb699d025f43aabf0b931556c5103bb2d1dd8e76fedaed",
-        "measured": "1a73c466ee4bbb5bbacb699d025f43aabf0b931556c5103bb2d1dd8e76fedaed",
+        "declared": "1e52dd773402921c89fc0f3a9dc229b8def422ba0d147f80700bc5411b4e29b5",
+        "measured": "1e52dd773402921c89fc0f3a9dc229b8def422ba0d147f80700bc5411b4e29b5",
         "ok": true
       }
     },
@@ -344,7 +371,8 @@
       "ok": false,
       "problems": [
         "required image missing: course_map 0/1",
-        "required image missing: fox_pose 0/1"
+        "required image missing: fox_pose 0/1",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -369,6 +397,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -378,23 +408,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.107,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -404,17 +437,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.107,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 900.00px"
           ]
         }
       ],
@@ -434,8 +470,8 @@
       },
       "screenshot": {
         "file": "course-home--900.png",
-        "declared": "f902680394292a123e037319f9276d1dffaa232c732e7b1e5302ebd29e66f1e8",
-        "measured": "f902680394292a123e037319f9276d1dffaa232c732e7b1e5302ebd29e66f1e8",
+        "declared": "3f0747f0d3a8657a8e58b06625060c3c1ba1c400bb542ead9e29007969bbd012",
+        "measured": "3f0747f0d3a8657a8e58b06625060c3c1ba1c400bb542ead9e29007969bbd012",
         "ok": true
       }
     },
@@ -596,7 +632,8 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
-        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px"
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px",
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -738,6 +775,8 @@
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -747,23 +786,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.092,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -773,17 +815,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.092,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1049.00px"
           ]
         }
       ],
@@ -821,7 +866,8 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
-        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px"
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px",
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -963,6 +1009,8 @@
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -972,23 +1020,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.071,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -998,17 +1049,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.071,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1344.00px"
           ]
         }
       ],
@@ -1044,7 +1098,8 @@
         "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
-        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset"
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -1159,6 +1214,8 @@
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -1168,23 +1225,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.209,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -1194,17 +1254,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.209,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 460.00px"
           ]
         }
       ],
@@ -1242,7 +1305,8 @@
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
         "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
-        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 88.00px"
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 88.00px",
+        "background [data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -1384,6 +1448,8 @@
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -1393,23 +1459,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.107,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -1419,17 +1488,20 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=workshop",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.107,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 900.00px"
           ]
         }
       ],
@@ -1463,7 +1535,8 @@
         "required image missing: display_cover 0/4",
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
         "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
-        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 128.00px"
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 128.00px",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1049.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -1560,6 +1633,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -1569,23 +1644,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.092,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -1595,23 +1673,28 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.092,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1049.00px"
           ]
         },
         {
           "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
           "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat-x",
+          "background_size": "auto 100%",
           "natural": {
             "width": 256,
             "height": 256
@@ -1621,18 +1704,19 @@
             "height": 12
           },
           "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.object.shelf-plank",
             "path": "assets/objects/shelf-plank.webp",
             "role": "object.shelf-plank",
             "group": "objects"
           },
-          "marks": [
-            "data-cb3-shelf=\"\"",
-            "data-cb-home-shelf-frame=\"\"",
-            "data-cb-home-shelf=ready",
-            "data-cb-home-shelf-state=ready"
-          ]
+          "scale_ratio": 0.262,
+          "ratio_judged": false,
+          "problems": []
         }
       ],
       "plugin": {
@@ -1663,7 +1747,8 @@
       "ok": false,
       "problems": [
         "required image missing: display_cover 0/4",
-        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 220.00px"
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 220.00px",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 1344.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -1741,6 +1826,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -1750,23 +1837,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.071,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -1776,23 +1866,28 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.071,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 1344.00px"
           ]
         },
         {
           "selector": "[data-cb-home-scene-plank-one] [data-cb-home=\"scene\"] > div",
           "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat-x",
+          "background_size": "auto 100%",
           "natural": {
             "width": 256,
             "height": 256
@@ -1802,23 +1897,26 @@
             "height": 20
           },
           "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.object.shelf-plank",
             "path": "assets/objects/shelf-plank.webp",
             "role": "object.shelf-plank",
             "group": "objects"
           },
-          "marks": [
-            "data-cb-home-scene-plank-one=\"\"",
-            "data-cb-home=scene",
-            "data-cb-home-scene=\"\"",
-            "data-cb-main=\"\""
-          ]
+          "scale_ratio": 0.294,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-home-scene-plank-two] [data-cb-home=\"scene\"] > div",
           "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat-x",
+          "background_size": "auto 100%",
           "natural": {
             "width": 256,
             "height": 256
@@ -1828,18 +1926,19 @@
             "height": 34
           },
           "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.object.shelf-plank",
             "path": "assets/objects/shelf-plank.webp",
             "role": "object.shelf-plank",
             "group": "objects"
           },
-          "marks": [
-            "data-cb-home-scene-plank-two=\"\"",
-            "data-cb-home=scene",
-            "data-cb-home-scene=\"\"",
-            "data-cb-main=\"\""
-          ]
+          "scale_ratio": 0.22,
+          "ratio_judged": false,
+          "problems": []
         }
       ],
       "plugin": {
@@ -1871,7 +1970,8 @@
       "problems": [
         "required image missing: display_cover 0/4",
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
-        "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset"
+        "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 460.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -1942,6 +2042,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -1951,23 +2053,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.209,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -1977,23 +2082,28 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.209,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 460.00px"
           ]
         },
         {
           "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
           "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat-x",
+          "background_size": "auto 100%",
           "natural": {
             "width": 256,
             "height": 256
@@ -2003,18 +2113,19 @@
             "height": 12
           },
           "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.object.shelf-plank",
             "path": "assets/objects/shelf-plank.webp",
             "role": "object.shelf-plank",
             "group": "objects"
           },
-          "marks": [
-            "data-cb3-shelf=\"\"",
-            "data-cb-home-shelf-frame=\"\"",
-            "data-cb-home-shelf=ready",
-            "data-cb-home-shelf-state=ready"
-          ]
+          "scale_ratio": 0.596,
+          "ratio_judged": false,
+          "problems": []
         }
       ],
       "plugin": {
@@ -2047,7 +2158,8 @@
         "required image missing: display_cover 0/4",
         "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
         "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
-        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 128.00px"
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 128.00px",
+        "background [data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div: natural 96px is below 2x rendered 900.00px"
       ],
       "warnings": [],
       "requirements": [
@@ -2144,6 +2256,8 @@
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat",
+          "background_size": "auto",
           "natural": {
             "width": 96,
             "height": 96
@@ -2153,23 +2267,26 @@
             "height": 714
           },
           "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.grain-night",
             "path": "assets/material/grain-night.webp",
             "role": "material.tile.grain-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
-          ]
+          "scale_ratio": 0.107,
+          "ratio_judged": false,
+          "problems": []
         },
         {
           "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
           "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "no-repeat",
+          "background_size": "cover",
           "natural": {
             "width": 96,
             "height": 96
@@ -2179,23 +2296,28 @@
             "height": 714
           },
           "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.material.vignette-night",
             "path": "assets/material/vignette-night.webp",
             "role": "material.tile.vignette-night",
             "group": "material"
           },
-          "marks": [
-            "data-cb-destination=home",
-            "data-cb-route=/coursebook",
-            "data-cb-scope=dark",
-            "data-cb-motion=full"
+          "scale_ratio": 0.107,
+          "ratio_judged": true,
+          "problems": [
+            "natural 96px is below 2x rendered 900.00px"
           ]
         },
         {
           "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
           "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
           "data_uri": true,
+          "background_repeat": "repeat-x",
+          "background_size": "auto 100%",
           "natural": {
             "width": 256,
             "height": 256
@@ -2205,18 +2327,19 @@
             "height": 12
           },
           "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "kind": "background",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
           "bundled_asset": {
             "key": "cb.asset.object.shelf-plank",
             "path": "assets/objects/shelf-plank.webp",
             "role": "object.shelf-plank",
             "group": "objects"
           },
-          "marks": [
-            "data-cb3-shelf=\"\"",
-            "data-cb-home-shelf-frame=\"\"",
-            "data-cb-home-shelf=ready",
-            "data-cb-home-shelf-state=ready"
-          ]
+          "scale_ratio": 0.306,
+          "ratio_judged": false,
+          "problems": []
         }
       ],
       "plugin": {
@@ -2243,54 +2366,6 @@
   ],
   "missing_cells": [
     {
-      "destination": "home",
-      "width": 1344
-    },
-    {
-      "destination": "home",
-      "width": 1049
-    },
-    {
-      "destination": "home",
-      "width": 900
-    },
-    {
-      "destination": "home",
-      "width": 460
-    },
-    {
-      "destination": "discover",
-      "width": 1344
-    },
-    {
-      "destination": "discover",
-      "width": 1049
-    },
-    {
-      "destination": "discover",
-      "width": 900
-    },
-    {
-      "destination": "discover",
-      "width": 460
-    },
-    {
-      "destination": "course-home",
-      "width": 1344
-    },
-    {
-      "destination": "course-home",
-      "width": 1049
-    },
-    {
-      "destination": "course-home",
-      "width": 900
-    },
-    {
-      "destination": "course-home",
-      "width": 460
-    },
-    {
       "destination": "classroom",
       "width": 1344
     },
@@ -2320,30 +2395,16 @@
     },
     {
       "destination": "world-studio",
-      "width": 460
-    },
-    {
-      "destination": "design-system",
-      "width": 1344
-    },
-    {
-      "destination": "design-system",
-      "width": 1049
-    },
-    {
-      "destination": "design-system",
-      "width": 900
-    },
-    {
-      "destination": "design-system",
       "width": 460
     }
   ],
   "summary": {
     "cells": 16,
+    "captured": 16,
     "passed": 0,
     "failed": 16,
-    "missing_matrix_cells": 24,
+    "not_captured": 8,
+    "matrix_cells": 24,
     "mixed_build": false,
     "ok": false
   }

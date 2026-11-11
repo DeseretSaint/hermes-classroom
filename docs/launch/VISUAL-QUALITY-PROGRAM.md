@@ -251,14 +251,17 @@ the same way, with `background-repeat` and `background-size` alongside so a tili
 distinguishable from an upscaled one. A screen card reads the manifest; it does not need a browser
 of its own.
 
-**Measured on `0c1729eb`, plugin sha `251a3948…`, 2026-11-11** (16 cells captured, 0 pass, 24
-matrix cells not captured): no Home cell has a display cover (0 of 4). At 1049/900/460 the two
-course covers are the bundled pack Press Plates (`cover-3x2.png` of the Japanese and technical
-packs); at 1344 the Home scene draws no course cover art at all. The fox ships at 128 px and is
-rendered at 220 px on the wide Home, below 2x. Discover has 0 of 8 collectibles, its banner is a
-data-URI 864 px plate under 2x, and three Press Plates sit on the surface. Course home is DOM type,
-one inline contour and buttons with no image asset. The Design System surface is not mounted, and no
-course in the seeded library has an approved Game world, so Classroom and World Studio were not
-captured. Every one of those is a Gate 0/2 gap the harness is supposed to expose, not a harness
+**Measured on `80a81fd7`, plugin sha `251a3948…`, 2026-11-11** (16 of 24 matrix cells captured, 0
+pass, 16 captured and failed, 8 never captured — classroom ×4 and world-studio ×4): no Home cell has a
+display cover (0 of 4). At 1049/900/460 the two course covers are the bundled pack Press Plates
+(`cover-3x2.png` of the Japanese and technical packs); at 1344 the Home scene draws no course cover
+art at all. The fox ships at 128 px and is rendered at 220 px on the wide Home, below 2x. Discover
+has 0 of 8 collectibles, its banner is a data-URI 864 px plate under 2x, and three Press Plates sit
+on the surface. On the twelve cells that paint the night background, the vignette layer is a 96×96
+asset stretched with `background-size: cover` across the route (ratio 0.07–0.21, below 2x on every
+one); the grain and shelf-plank layers tile and are exempt from the ratio rule. Course home is DOM
+type, one inline contour and buttons with no image asset. The Design System surface is not mounted,
+and no course in the seeded library has an approved Game world, so Classroom and World Studio were
+never captured. Every one of those is a Gate 0/2 gap the harness is supposed to expose, not a harness
 failure to hide.
 

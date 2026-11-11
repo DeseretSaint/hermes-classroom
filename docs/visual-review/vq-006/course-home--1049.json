@@ -6,7 +6,7 @@
     "width": 1049,
     "height": 768
   },
-  "captured_at": "2026-11-11T09:27:19.019Z",
+  "captured_at": "2026-11-11T09:38:24.606Z",
   "window": {
     "cdp_port": 9396,
     "plugin": {
@@ -55,8 +55,8 @@
   },
   "screenshot": {
     "file": "course-home--1049.png",
-    "sha256": "05d55187b0bede2a052150c3199ff6b14fc62fb74495b2cf538e02e95cddf219",
-    "bytes": 92514,
+    "sha256": "1fff401578b012f3b6a5a143ddf65e039670f5c1c4b496cf0882440be1e91078",
+    "bytes": 92431,
     "clip": {
       "x": 260,
       "y": 34,
@@ -79,6 +79,8 @@
         "width": 1049,
         "height": 714
       },
+      "background_repeat": "repeat",
+      "background_size": "auto",
       "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
       "bundled_asset": {
         "key": "cb.asset.material.grain-night",
@@ -105,6 +107,8 @@
         "width": 1049,
         "height": 714
       },
+      "background_repeat": "no-repeat",
+      "background_size": "cover",
       "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
       "bundled_asset": {
         "key": "cb.asset.material.vignette-night",

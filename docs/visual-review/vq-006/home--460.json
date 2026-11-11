@@ -6,7 +6,7 @@
     "width": 460,
     "height": 768
   },
-  "captured_at": "2026-11-11T09:27:47.522Z",
+  "captured_at": "2026-11-11T09:38:52.316Z",
   "window": {
     "cdp_port": 9396,
     "plugin": {
@@ -147,6 +147,8 @@
         "width": 460,
         "height": 714
       },
+      "background_repeat": "repeat",
+      "background_size": "auto",
       "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
       "bundled_asset": {
         "key": "cb.asset.material.grain-night",
@@ -173,6 +175,8 @@
         "width": 460,
         "height": 714
       },
+      "background_repeat": "no-repeat",
+      "background_size": "cover",
       "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
       "bundled_asset": {
         "key": "cb.asset.material.vignette-night",
@@ -199,6 +203,8 @@
         "width": 429.63,
         "height": 12
       },
+      "background_repeat": "repeat-x",
+      "background_size": "auto 100%",
       "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
       "bundled_asset": {
         "key": "cb.asset.object.shelf-plank",
