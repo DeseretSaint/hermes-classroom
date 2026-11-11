@@ -887,6 +887,7 @@ const out = {
   courseTitles: [...document.querySelectorAll('[data-cb-course-title]')].map(text),
   titleHeadings: [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter((node) => text(node) === title).length,
   plateAspect: slot ? slot.style.aspectRatio : null,
+  plateMinHeight: slot ? slot.style.minHeight : null,
   continueText: text(document.querySelector('[data-cb-continue-action]') || null),
   elements: document.querySelectorAll('[data-cb-course-detail] *').length
 }
@@ -1098,11 +1099,13 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
         self.assertEqual(set(at900["nodeDotWidths"]), {"48px"}, at900["nodeDotWidths"])
 
         # The aside is a right column only at ≥ 1000 route px; at 900 it stacks under the route
-        # while the plate stays 3:1 (SPEC-V3 §5.4).
+        # while the plate keeps its M4 minimum height (SPEC-V3 §5.4). The typographic field's
+        # ratio is a minimum, not a fixed box: it grows with its title so 200 % text never clips.
         self.assertEqual(wide["bodyMode"], "split")
-        self.assertEqual(wide["plateAspect"], "3 / 1")
+        self.assertEqual(wide["plateMinHeight"], "204px")
         self.assertEqual(at900["bodyMode"], "stacked")
-        self.assertEqual(at900["plateAspect"], "3 / 1")
+        self.assertEqual(at900["plateMinHeight"], "204px")
+        self.assertEqual(self.reports[460]["plateMinHeight"], "214px")
 
     def test_course_home_v3_route_sits_between_plate_and_aside(self) -> None:
         """SPEC-V3 §5.4: M6 is below M5, and the aside moves under the route.
@@ -1149,6 +1152,10 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
                     self.assertIn("overflow-wrap:break-word", flat, f"{label}: {style}")
         # The plate's type field is the case round 2 saw: no art at 460, so the title is on paper.
         self.assertIsNotNone(self.reports[460].get("plateTitleStyle"))
+        # And the fixed-height plate uses the body step at compact widths (a heading step in a
+        # 214 px field clipped the title's opening lines at 200 % text) and the heading step wide.
+        self.assertIn("font-size:var(--cb3-text-body)", self.reports[460]["plateTitleStyle"].replace(" ", ""))
+        self.assertIn("font-size:var(--cb3-text-heading)", self.reports[1049]["plateTitleStyle"].replace(" ", ""))
 
 
 if __name__ == "__main__":

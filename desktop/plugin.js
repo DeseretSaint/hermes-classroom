@@ -24667,7 +24667,11 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
         style: {
           position: 'relative',
           width: '100%',
-          aspectRatio: big ? '3 / 1' : '2 / 1',
+          // An art plate is the fixed M4 ratio (3:1 wide, 2:1 compact). The typographic field is
+          // the same ratio as a **minimum** and grows with its title: at 200 % text a heading-step
+          // title needed more than the fixed 204/214 px box and its first lines were cut off.
+          aspectRatio: ready ? (big ? '3 / 1' : '2 / 1') : undefined,
+          minHeight: ready ? undefined : big ? '204px' : '214px',
           padding: '8px',
           boxSizing: 'border-box',
           backgroundColor: cb3Role('canvas-edge'),
@@ -24681,7 +24685,8 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
             style: {
               position: 'relative',
               width: '100%',
-              height: '100%',
+              height: ready ? '100%' : 'auto',
+              minHeight: ready ? undefined : big ? '188px' : '198px',
               overflow: 'hidden',
               borderRadius: cb3Radius('soft'),
               backgroundColor: cb3Role('card-stock')
@@ -24698,15 +24703,23 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
                 : jsx('span', {
                     'data-cb-course-plate-title': '',
                     style: {
-                      position: 'absolute',
-                      inset: 0,
+                      // Positioned over the art; in the typographic field it is in flow so the
+                      // field can grow with the title instead of clipping it.
+                      position: ready ? 'absolute' : 'static',
+                      inset: ready ? 0 : undefined,
+                      width: ready ? undefined : '100%',
+                      minHeight: ready ? undefined : big ? '188px' : '198px',
                       display: 'flex',
                       alignItems: 'flex-end',
                       padding: '0.75rem',
                       boxSizing: 'border-box',
                       fontFamily: 'var(--cb3-font-display)',
-                      fontSize: cb3Type('heading'),
-                      lineHeight: cb3Lead('heading'),
+                      // The plate is a fixed-height field (SPEC-V3 §5.4 M4: 3:1 wide, 2:1 compact),
+                      // so its decorative title takes the body step at compact widths: the course
+                      // `h2` already carries the heading, and a heading step inside a 214 px field
+                      // clipped the title's first lines at 200 % text.
+                      fontSize: cb3Type(big ? 'heading' : 'body'),
+                      lineHeight: cb3Lead(big ? 'heading' : 'body'),
                       fontWeight: 600,
                       color: cb3Role('ink'),
                       // Normal word wrapping: a title may wrap between words, never inside one.
