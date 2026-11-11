@@ -91,7 +91,7 @@ is the actual claim — this job must not leak a worker — and it no longer dep
 module is doing.
 
 `focused-both-orders.log`: the seven focused modules run twice, H-199 first and CP-044 first, both
-`Ran 89 tests … OK`. Six H-199/CP-044 orderings (both orders, twice each) are also green:
+`Ran 89 tests … OK`. The same log holds four H-199/CP-044 pairings (both orders, twice each),
 `Ran 11 tests … OK` ×4.
 
 ## The 1800 s default
