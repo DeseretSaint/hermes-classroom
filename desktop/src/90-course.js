@@ -3220,6 +3220,10 @@ function CourseHomeV3({
           className: 'cb3-course-field',
           children: [
             jsxs('div', {
+              'data-cb-course-side': '',
+              className: 'cb3-course-side',
+              children: [
+            jsxs('div', {
               'data-cb-course-lead': '',
               className: 'cb3-course-lead',
               children: [
@@ -3353,12 +3357,15 @@ function CourseHomeV3({
                 }, 'head'),
               ]
             }, 'lead'),
-            // SPEC-V3 §5.4: in list mode the route lives in the main column under the lead,
-            // so the DOM order is lead → route → aside at every width (the map carries its
-            // route over the plate instead).
-            plan.mode === 'list' && nodes.length
-              ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
-              : null,
+              // SPEC-V3 §5.4: in list mode the route lives in the main column under the lead, so
+              // the DOM order is lead → route → aside at every width (the map carries its route
+              // over the plate instead). D-009: lead and route share one wash column, so the left
+              // side of the scene reads as the page's own ink rather than two slabs on the art.
+              plan.mode === 'list' && nodes.length
+                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+                : null
+              ]
+            }, 'side'),
             jsx(CourseHomeAside, {
               row,
               nodes,

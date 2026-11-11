@@ -17588,29 +17588,40 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   grid-row: 2;
 }
 
-/* The head reads on the plate's own quiet field: the token canvas washes the words only, at the
-   vignette's own alpha. The art is not darkened and no gradient is introduced. */
-[data-cb-v3] .cb3-course-lead {
+/* The left side of the scene is one column of the page's own ink: the back path, the course head and
+   the route share a single token-canvas wash, at the vignette's own alpha. The art is not darkened,
+   no gradient is introduced, and the head and the route never read as two slabs stacked on the
+   painting. */
+[data-cb-v3] .cb3-course-side {
   position: relative;
-  isolation: isolate;
   align-self: start;
-  max-width: 30rem;
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 19rem;
   padding: 0.9rem 1.1rem 1rem;
   border-radius: var(--cb3-radius-round);
+  /* A paper object placed in the scene, like the aside cards: the same card stock, rule and
+     contact shadow. A translucent wash over the painting is neither art nor object and reads as
+     frosted glass, which the contract bans anyway. */
+  background-color: var(--cb3-card-stock);
+  border: 1px solid var(--cb3-rule);
+  box-shadow: var(--cb3-elev-1);
 }
 
-[data-cb-v3] .cb3-course-lead::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background-color: var(--cb3-canvas);
-  opacity: 0.62;
+[data-cb-v3] .cb3-course-scene[data-cb-course-plate="type"] .cb3-course-side {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
 }
 
-[data-cb-v3] .cb3-course-scene[data-cb-course-plate="type"] .cb3-course-lead { padding: 0; }
-[data-cb-v3] .cb3-course-scene[data-cb-course-plate="type"] .cb3-course-lead::before { display: none; }
+[data-cb-v3] .cb3-course-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
 
 /* The aside is a stack of paper objects on the plate, never text floating on art. */
 [data-cb-v3] .cb3-course-scene [data-cb-course-aside] > section {
@@ -17637,29 +17648,79 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] .cb3-course-nodes > button { pointer-events: auto; }
 
-/* The route rail is a paper object on the plate too — stamps on bare art are unreadable, which is
-   how the first D-009 frame shipped. The rail keeps its vertical order (SPEC-V3 §5.4 M5). */
+/* The route rail is the scene's own ink column: the same token-canvas wash the course head sits on,
+   not a white card and not chips stuck onto the painting. Stamps keep their state glyph; the wash
+   makes the words legible over the art without darkening it. */
 [data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] {
-  justify-self: start;
-  width: max-content;
+  width: 100%;
   max-width: 16rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--cb3-radius-round);
-  background-color: var(--cb3-card-stock);
-  border: 1px solid var(--cb3-rule);
-  box-shadow: var(--cb3-elev-1);
+  padding: 0;
+  margin: 0;
+  gap: 0.6rem;
+  background-color: transparent;
+  border: 0;
 }
 
-/* A locked node's word ("Opens after the section before it") is longer than the rail: it wraps
-   inside the paper instead of widening it past the scene's edge. */
+/* StampNode paints its mark above a 12ch caption, which is right for the lesson's vertical spine
+   and wrong for a route column beside a title. The layout is overridden here, scoped to the course
+   scene, because the primitive's own inline style is the product default elsewhere. */
 [data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] {
   max-width: 100%;
-  align-items: flex-start;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 0.45rem !important;
   text-align: left;
+  padding-block: 0.15rem;
+  color: var(--cb3-ink);
+  font-size: var(--cb3-text-meta);
+  line-height: var(--cb3-leading-meta);
 }
 
-[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] > span {
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] > span:not(.cb3-stamp-blank) {
+  max-width: 100% !important;
+}
+
+/* The state word belongs under its title, not in a second column beside it. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] {
+  flex-wrap: wrap;
+}
+
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] > span:nth-child(2) {
+  flex: 1 1 auto;
+}
+
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp="current"] > span:last-child,
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp="locked"] > span:last-child {
+  flex: 0 0 100%;
+  margin-left: calc(20px + 0.45rem);
+  font-size: var(--cb3-text-caption);
+  line-height: var(--cb3-leading-caption);
+  font-weight: 600;
+  color: var(--cb3-ink-soft);
+}
+
+/* The step mark is the state's glyph. The kit's blank rim carries four compass ticks, which at rail
+   size reads as a clock face — that is what made the route look pasted on. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] .cb3-stamp-blank {
+  width: 20px !important;
+  height: 20px !important;
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+  background-image: none !important;
+  outline: none !important;
+}
+
+/* The current step's glyph carries the identity hue; the word beside it says "You are here", so the
+   state never depends on colour alone. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp="current"] .cb3-stamp-blank {
+  color: var(--cb3-terracotta);
+}
+
+/* Captions are ink on the wash, not chips: a chip per caption is what turned the rail into stickers. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] > span:not(.cb3-stamp-blank) {
   max-width: 100%;
+  background-color: transparent;
+  padding: 0;
   overflow-wrap: anywhere;
   hyphens: none;
 }
@@ -27842,6 +27903,10 @@ function CourseHomeV3({
           className: 'cb3-course-field',
           children: [
             jsxs('div', {
+              'data-cb-course-side': '',
+              className: 'cb3-course-side',
+              children: [
+            jsxs('div', {
               'data-cb-course-lead': '',
               className: 'cb3-course-lead',
               children: [
@@ -27975,12 +28040,15 @@ function CourseHomeV3({
                 }, 'head'),
               ]
             }, 'lead'),
-            // SPEC-V3 §5.4: in list mode the route lives in the main column under the lead,
-            // so the DOM order is lead → route → aside at every width (the map carries its
-            // route over the plate instead).
-            plan.mode === 'list' && nodes.length
-              ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
-              : null,
+              // SPEC-V3 §5.4: in list mode the route lives in the main column under the lead, so
+              // the DOM order is lead → route → aside at every width (the map carries its route
+              // over the plate instead). D-009: lead and route share one wash column, so the left
+              // side of the scene reads as the page's own ink rather than two slabs on the art.
+              plan.mode === 'list' && nodes.length
+                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+                : null
+              ]
+            }, 'side'),
             jsx(CourseHomeAside, {
               row,
               nodes,
