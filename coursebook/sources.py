@@ -250,7 +250,42 @@ def _plan_objective_ordinals(connection, course_id: str) -> dict[str, dict[int, 
     return mapping
 
 
+def _plan_document_objectives(connection, course_id: str) -> dict[str, list[dict[str, Any]]]:
+    """plan_id -> the objectives recorded in that plan's document, loaded once per plan.
+
+    Objective citations live only in ``gen_plan_documents.document_json ->
+    $.plan.objectives[]``; the ``objectives`` table has no citation column. The newest document
+    row for a plan is authoritative, and an unreadable document is *unknown* (the dependency read
+    raises), never "this objective cites nothing".
+    """
+    rows = _dependency_rows(
+        connection,
+        "SELECT plan_id, document_json FROM gen_plan_documents"
+        " WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)"
+        " ORDER BY created_at DESC, rowid DESC",
+        (course_id,),
+        optional_tables=("gen_plan_documents",),
+        what="the plan documents backing the sections",
+    )
+    objectives: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        plan_id = str(row["plan_id"])
+        if plan_id in objectives:
+            continue  # the newest document is the authority; read each plan once
+        document = _dependency_json(row["document_json"], {})
+        plan = document.get("plan") if isinstance(document, dict) else None
+        declared = plan.get("objectives") if isinstance(plan, dict) else None
+        objectives[plan_id] = [
+            dict(item) for item in declared or [] if isinstance(item, dict)
+        ]
+    return objectives
+
+
 def _sections_citing(connection, course_id: str, source_id: str, url: str | None) -> list[dict[str, Any]]:
+    # Imported here, not at module scope: ``generation`` imports this module, and the citation
+    # rule must be the one helper every seam shares (CP-015g D3).
+    from .generation import _cited_source_ids
+
     keys = {source_id, url or ""} - {""}
     rows = _dependency_rows(
         connection,
@@ -260,14 +295,22 @@ def _sections_citing(connection, course_id: str, source_id: str, url: str | None
         optional_tables=("gen_plan_sections",),
         what="the plan sections citing this source",
     )
+    documents = _plan_document_objectives(connection, course_id)
     citing = []
     for row in rows:
+        refs = _dependency_json(row["objective_refs_json"], [])
         source_ids = {str(item) for item in _dependency_json(row["source_ids_json"], [])}
+        if not source_ids & keys:
+            # A section stored before the write-side derivation carries no citations; its bound
+            # objectives still cite the source, so the section depends on it.
+            source_ids |= set(
+                _cited_source_ids(documents.get(str(row["plan_id"]), []), refs)
+            )
         if source_ids & keys:
             citing.append(
                 {
                     "plan_id": row["plan_id"],
-                    "objective_refs": _dependency_json(row["objective_refs_json"], []),
+                    "objective_refs": refs,
                 }
             )
     return citing

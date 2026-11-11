@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v17` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v18` | `PLAN_SCHEMA_V2` |
-| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v2` | `UNIT_SECTIONS_SCHEMA` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v9` | `VALIDATION_SCHEMA` |
 | Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v9` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v11` | `LESSON_SCHEMA` |

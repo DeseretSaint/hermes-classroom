@@ -210,8 +210,11 @@ PLAN_PROMPT_VERSION = "plan-prompt.v17"
 #: v18 (CP-015a): same exclusions/outcome-integrity rule as the v1 prompt's v17 — the shared
 #: ``_plan_sourcing_rules`` text changed, so both labels advance.
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v18"
-#: The unit-sections authoring stage. One unit per call, so its own version.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v2"
+#: The unit-sections authoring stage. One unit per call, so its own version. v2 (CP-015g) states the
+#: unit scope and the construct shape its media gate enforces; v3 (CP-015g D3) adds the citation
+#: rule — an owner section copies its objective's source ids, a review section cites the union of
+#: the objectives it reinforces, and an uncited objective is not a licence to cite others.
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
@@ -7071,8 +7074,67 @@ def _source_brief(
     ]
 
 
-def _lesson_ledger(section: dict[str, Any], sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
-    """The ledger rows one lesson pass receives: the section's cited sources, else four.
+def _cited_source_ids(
+    plan_objectives: Iterable[Mapping[str, Any]], refs: Iterable[Any]
+) -> list[str]:
+    """The source ids the named objective ordinals cite, deduped, in first-seen document order.
+
+    The single authority is ``gen_plan_documents.document_json -> $.plan.objectives[]``; the
+    ``objectives`` table has no citation column and must not grow one. Every seam that propagates
+    provenance calls this helper, so no seam invents a citation rule of its own. Identifiers only:
+    page text never enters a section row or a ledger from here.
+    """
+    wanted: set[int] = set()
+    for ref in refs or []:
+        try:
+            wanted.add(int(str(ref)))
+        except (TypeError, ValueError):
+            continue
+    cited: list[str] = []
+    for objective in plan_objectives or []:
+        if not isinstance(objective, Mapping):
+            continue
+        try:
+            ordinal = int(str(objective.get("ordinal")))
+        except (TypeError, ValueError):
+            continue
+        if ordinal not in wanted:
+            continue
+        for source_id in objective.get("source_ids") or []:
+            text = str(source_id)
+            if text and text not in cited:
+                cited.append(text)
+    return cited
+
+
+def _plan_objective_support(plan: Mapping[str, Any], objective: Mapping[str, Any]) -> str:
+    """The objective's declared support from the plan document, or the conservative default.
+
+    ``support`` is plan provenance, not a model claim: it is copied from
+    ``$.plan.objectives[].support`` and only falls back to ``unverified`` when a document predates
+    the field. It is never upgraded here.
+    """
+    try:
+        ordinal = int(str(objective.get("ordinal")))
+    except (TypeError, ValueError):
+        return "unverified"
+    for candidate in plan.get("objectives") or []:
+        if not isinstance(candidate, Mapping):
+            continue
+        try:
+            if int(str(candidate.get("ordinal"))) == ordinal:
+                return str(candidate.get("support") or "unverified")
+        except (TypeError, ValueError):
+            continue
+    return "unverified"
+
+
+def _lesson_ledger(
+    section: dict[str, Any],
+    sources: Iterable[SourceRecord],
+    objective_source_ids: Sequence[str] = (),
+) -> list[dict[str, Any]]:
+    """The ledger rows one lesson pass receives: the cited sources, else four.
 
     Both the authoring pass and its independent validation get the *same* slice. H-182
     follow-up: validation used to receive the whole course research snapshot, so the request
@@ -7080,10 +7142,24 @@ def _lesson_ledger(section: dict[str, Any], sources: Iterable[SourceRecord]) -> 
     plan measured 25 081 bytes compact against the 24 000-byte lesson-stage bound and failed
     before the first lesson call. A validator can only support a claim from what the author was
     given anyway, so filtering here is also the honest ledger.
+
+    CP-015g D3: the section's own citations are the first choice, but a section stored before the
+    write-side derivation carries ``[]``. The citations of the objectives it is bound to are the
+    authority behind it, so the slice is ``dedupe(section.source_ids + objective_source_ids)``
+    filtered to ledger ids and capped at eight. That is the recovery path: an already-stored plan
+    resumes without a replan, and author and validator still see an identical ledger.
     """
     briefs = _source_brief(sources)
-    cited = set(section.get("source_ids") or [])
-    return [brief for brief in briefs if brief["source_id"] in cited] or briefs[:4]
+    ledger_ids = {brief["source_id"] for brief in briefs}
+    cited: list[str] = []
+    for source_id in list(section.get("source_ids") or []) + list(objective_source_ids):
+        text = str(source_id)
+        if text in ledger_ids and text not in cited:
+            cited.append(text)
+    if not cited:
+        return briefs[:4]
+    by_id = {brief["source_id"]: brief for brief in briefs}
+    return [by_id[source_id] for source_id in cited[:8]]
 
 
 # ── Provider request builders ───────────────────────────────────────────────
@@ -7467,7 +7543,11 @@ def build_lesson_request(
         "level": declared_level,
         "subject_domain": declared_domain,
         "capability_policy": capability.to_dict(),
-        "sources": _lesson_ledger(section, sources),
+        "sources": _lesson_ledger(
+            section,
+            sources,
+            _cited_source_ids(plan.get("objectives") or [], section.get("objective_refs") or []),
+        ),
         "rules": {
             "segments": [2, 6],
             "checks": 1,
@@ -7526,6 +7606,7 @@ def build_lesson_validation_request(
     timeout_s: float | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    plan: dict[str, Any] | None = None,
 ) -> LLMRequest:
     """The independent pass over one authored lesson.
 
@@ -7571,7 +7652,13 @@ def build_lesson_validation_request(
         "locale": locale,
         "level": level or _dial_text(dials, "level"),
         "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
-        "sources": _lesson_ledger(section, sources),
+        "sources": _lesson_ledger(
+            section,
+            sources,
+            _cited_source_ids(
+                (plan or {}).get("objectives") or [], section.get("objective_refs") or []
+            ),
+        ),
         "lesson": learner_lesson,
         "answer_key": answer_key,
         "learner_facing": True,
@@ -9899,6 +9986,13 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
         "Every section declares media_need with construct/image/audio; use level 'none' with role "
         "'none' and an empty construct when the text already carries the teaching."
     )
+    # CP-015g/D3: the citation rule is stated for the author that has to write the ids.
+    lines.append(
+        "Cite sources by id: an owner section cites the sources that back its objective (copy "
+        "their source_ids from the objective entry); a review section cites the union of the "
+        "sources of the objectives it reinforces; an objective with no citations is not a reason "
+        "to cite anything else."
+    )
     # CP-015h: the gate is deterministic and refuses a construct that does not name what the media
     # carries, so the shape it enforces is stated here rather than left to be inferred. An author
     # that writes the target phrase as the construct fails the whole unit batch, and the previous
@@ -9956,6 +10050,12 @@ def build_unit_sections_request(
                 "title": obj.get("title"),
                 "evidence_target": obj.get("evidence_target"),
                 "evidence_criteria": list(obj.get("evidence_criteria") or []),
+                # CP-015g D3: the plan document owns the citations; the objectives table has no
+                # citation column. Identifiers only, never page text.
+                "support": _plan_objective_support(plan, obj),
+                "source_ids": _cited_source_ids(
+                    plan.get("objectives") or [], [int(obj["ordinal"])]
+                ),
             }
             for obj in objectives
         ],
@@ -10516,6 +10616,17 @@ def run_unit_sections_job(
                             f"unit {requested_unit} references objective {ref}, which the plan "
                             "does not contain"
                         )
+                # CP-015g D3: the stored citations are derived, not trusted from the model. The
+                # objective citations for the bound refs come first, then any authored ids, both
+                # deduped and capped at the schema's six. A batch that authored `[]` therefore
+                # stores the plan's own provenance; an unfetched authored id was already refused
+                # by ``enforce_unit_section_rules`` above.
+                stored_source_ids = _cited_source_ids(plan.get("objectives") or [], refs)
+                for authored_source_id in section.get("source_ids") or []:
+                    text = str(authored_source_id)
+                    if text not in stored_source_ids:
+                        stored_source_ids.append(text)
+                stored_source_ids = stored_source_ids[:6]
                 connection.execute(
                     "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, "
                     "lesson_intent, media_need_json, objective_refs_json, context_needs_json, "
@@ -10530,7 +10641,7 @@ def run_unit_sections_job(
                         _json(section.get("media_need")),
                         _json(refs),
                         _json(section.get("context_needs") or []),
-                        _json(section.get("source_ids") or []),
+                        _json(stored_source_ids),
                         str(unit["id"]),
                         role,
                     ),
@@ -11650,6 +11761,7 @@ def _author_section(
             sources=sources,
             level=level,
             subject_domain=subject_domain,
+            plan=plan,
         )
         assert_separate_pass(request, validation_request)
         validation_started = time.monotonic()
