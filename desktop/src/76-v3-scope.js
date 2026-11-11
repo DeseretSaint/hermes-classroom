@@ -227,6 +227,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
+  /* The room paints its own canvas. The scope's material layers sit under the content wrapper, and
+     its vignette tile composites as a dark centre at this canvas size, so the scene keeps the
+     token canvas colour flat; texture is the token canvas, not the route vignette. */
   background-color: var(--cb3-canvas);
 }
 
@@ -250,7 +253,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
-  margin: 6px 0 0;
+  margin: 24px 0 0;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-heading);
   line-height: var(--cb3-leading-heading);
@@ -259,7 +262,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-cta] {
-  margin-top: 30px;
+  margin-top: 26px;
   display: flex;
   gap: 24px;
   justify-content: center;
@@ -277,6 +280,12 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-color: var(--cb3-terracotta);
   box-shadow: var(--cb3-elev-1);
   cursor: pointer;
+}
+
+/* One filled primary per surface: the browse door is the quiet warm field that carries ink. */
+[data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-secondary] {
+  color: var(--cb3-ink);
+  background-color: var(--cb3-terracotta-quiet);
 }
 
 [data-cb-v3] [data-cb-home-scene-cards] {
@@ -355,20 +364,26 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-color: var(--cb3-gold);
 }
 
+/* The reference card carries a title and a progress bar, not a second line of 12 px type. The
+   section pair stays in the document for a screen reader and every copy oracle; it is not painted. */
 [data-cb-v3] [data-cb-home-scene-meta] {
-  margin: 5px 0 0;
-  font-family: var(--cb3-font-ui);
-  font-size: var(--cb3-text-caption);
-  line-height: var(--cb3-leading-caption);
-  color: var(--cb3-ink-soft);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 [data-cb-v3] [data-cb-home-scene-plank-one] {
   position: absolute;
   left: 219px;
-  top: 559px;
-  width: 915px;
-  height: 18px;
+  top: 545px;
+  width: 870px;
+  height: 20px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -381,18 +396,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 18px;
-  height: 8px;
+  top: 20px;
+  height: 10px;
   background-color: var(--cb3-rule);
   border-bottom: 1px solid var(--cb3-wood-edge);
 }
 
 [data-cb-v3] [data-cb-home-scene-plank-two] {
   position: absolute;
-  left: 130px;
-  top: 684px;
-  width: 1150px;
-  height: 30px;
+  left: 115px;
+  top: 681px;
+  width: 1165px;
+  height: 34px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -403,8 +418,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 30px;
-  height: 24px;
+  top: 34px;
+  height: 26px;
   background-color: var(--cb3-wood);
   border-bottom: 1px solid var(--cb3-wood-edge);
   box-shadow: var(--cb3-elev-2);
@@ -412,8 +427,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 880px;
-  top: 606px;
+  left: 884px;
+  top: 616px;
   width: 164px;
   height: 88px;
   z-index: 4;
@@ -430,17 +445,17 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
-  left: 1042px;
-  top: 588px;
-  width: 118px;
-  height: 118px;
+  left: 1050px;
+  top: 596px;
+  width: 112px;
+  height: 112px;
   z-index: 4;
 }
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1088px;
-  top: 526px;
+  left: 1090px;
+  top: 486px;
   z-index: 5;
 }
 `

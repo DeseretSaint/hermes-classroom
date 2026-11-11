@@ -1,0 +1,21 @@
+{
+  "render": "docs/concept-parity/cp053/home-scene-1344.png",
+  "reference": "docs/concept-parity/refs/home.png",
+  "size": [
+    1344,
+    768
+  ],
+  "rmse_rgb": 49.786,
+  "rmse_grey": 48.727,
+  "sim_grey": 0.8089,
+  "sim_rgb": 0.8048,
+  "bands_sim_grey": {
+    "header": 0.8835,
+    "hero": 0.8194,
+    "cards": 0.7626,
+    "shelf1": 0.8054,
+    "objects": 0.829,
+    "shelf2": 0.833
+  },
+  "diff": "docs/concept-parity/cp053/home-1344-diff.png"
+}

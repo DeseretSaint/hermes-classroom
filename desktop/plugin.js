@@ -2983,7 +2983,9 @@ function useCourseModes(courseIds) {
  */
 const CB_HOME_V3_COPY = Object.freeze({
   title: 'Your field library',
-  sub: 'Pick a course, or start a new one.',
+  // CP-053: the owner's binding Home reference (R-HOME) wins on this line. The deck row keeps its
+  // id; only its text follows the reference, so no unregistered copy is introduced.
+  sub: 'Choose a course or start a new expedition.',
   primary: 'Start a new course',
   secondary: 'Browse library',
   shelfLabel: 'Your courses',
@@ -3342,21 +3344,22 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  * invented, the row under a title is the course's own section progress.
  */
 /* CP-053 — the scene's authored geometry, measured off the binding reference frame
- * (`docs/concept-parity/refs/home-concept-owner.png`, 1344x768). Every number below is a pixel
- * position on that canvas. `design/home-scene.html` is the standalone proof of the same layout and
- * `tests/test_desktop_home_scene_geometry.py` pins the two together, so the proof cannot drift from
- * the shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
+ * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
+ * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
+ * from this module by `scripts/gen-home-proof.mjs` and `tests/test_desktop_home_scene_parity.py`
+ * fails if the committed page differs from a fresh render, so the proof cannot drift from the
+ * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
  * because the reference is a lit room, not the desk's flat paper.
  */
 const CB_HOME_SCENE = Object.freeze({
   canvas: Object.freeze({ width: 1344, height: 768 }),
-  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 6, ctaGap: 30, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
+  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
   cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
-  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 8 }),
-  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
-  tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
-  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
-  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
+  shelf: Object.freeze({ left: 219, width: 870, top: 545, height: 20, lip: 10 }),
+  ledge: Object.freeze({ left: 115, width: 1165, top: 681, height: 34, face: 26 }),
+  tag: Object.freeze({ left: 884, top: 616, width: 164, height: 88, font: 23 }),
+  clock: Object.freeze({ left: 1050, top: 596, size: 112 }),
+  fox: Object.freeze({ left: 1090, top: 486, size: 220 })
 })
 
 function HomeSceneCard({ slot, index, onOpen }) {
@@ -3390,7 +3393,7 @@ function HomeSceneCard({ slot, index, onOpen }) {
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            children: total > 0 ? `${done} of ${total} sections` : 'Not started'
+            children: total > 0 ? `${done} of ${total} sections done` : 'Not started'
           }, 'meta')
         ]
       }, 'body')
@@ -3412,16 +3415,26 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
           jsx('h1', {
             'data-cb-home-question': '',
             'data-cb-home-scene-question': '',
-            children: CB_HOME_COPY.question
+            children: CB_HOME_V3_COPY.title
           }, 'question'),
-          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_COPY.subline }, 'subline'),
+          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
           jsxs('div', {
             'data-cb-home-scene-cta': '',
             children: [
               canCreate
-                ? jsx('button', { type: 'button', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-home-scene-primary': '',
+                    onClick: onStartCreate,
+                    children: CB_HOME_V3_COPY.primary
+                  }, 'create')
                 : null,
-              jsx('button', { type: 'button', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
+              jsx('button', {
+                type: 'button',
+                'data-cb-home-scene-secondary': '',
+                onClick: onBrowseLibrary,
+                children: CB_HOME_V3_COPY.secondary
+              }, 'browse')
             ]
           }, 'cta')
         ]
@@ -3440,7 +3453,7 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
         style: woodImage,
         children: jsx('i', {})
       }, 'plank-one'),
-      jsx('div', { 'data-cb-home-scene-tag': '', children: 'New course' }, 'tag'),
+      jsx('div', { 'data-cb-home-scene-tag': '', children: CB_HOME_V3_COPY.tagNew }, 'tag'),
       clock
         ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
         : null,
@@ -17149,6 +17162,9 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   height: 768px;
   margin: 0 auto;
   overflow: hidden;
+  /* The room paints its own canvas. The scope's material layers sit under the content wrapper, and
+     its vignette tile composites as a dark centre at this canvas size, so the scene keeps the
+     token canvas colour flat; texture is the token canvas, not the route vignette. */
   background-color: var(--cb3-canvas);
 }
 
@@ -17172,7 +17188,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-subline] {
-  margin: 6px 0 0;
+  margin: 24px 0 0;
   font-family: var(--cb3-font-ui);
   font-size: var(--cb3-text-heading);
   line-height: var(--cb3-leading-heading);
@@ -17181,7 +17197,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 }
 
 [data-cb-v3] [data-cb-home-scene-cta] {
-  margin-top: 30px;
+  margin-top: 26px;
   display: flex;
   gap: 24px;
   justify-content: center;
@@ -17199,6 +17215,12 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-color: var(--cb3-terracotta);
   box-shadow: var(--cb3-elev-1);
   cursor: pointer;
+}
+
+/* One filled primary per surface: the browse door is the quiet warm field that carries ink. */
+[data-cb-v3] [data-cb-home-scene-cta] button[data-cb-home-scene-secondary] {
+  color: var(--cb3-ink);
+  background-color: var(--cb3-terracotta-quiet);
 }
 
 [data-cb-v3] [data-cb-home-scene-cards] {
@@ -17277,20 +17299,26 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   background-color: var(--cb3-gold);
 }
 
+/* The reference card carries a title and a progress bar, not a second line of 12 px type. The
+   section pair stays in the document for a screen reader and every copy oracle; it is not painted. */
 [data-cb-v3] [data-cb-home-scene-meta] {
-  margin: 5px 0 0;
-  font-family: var(--cb3-font-ui);
-  font-size: var(--cb3-text-caption);
-  line-height: var(--cb3-leading-caption);
-  color: var(--cb3-ink-soft);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 [data-cb-v3] [data-cb-home-scene-plank-one] {
   position: absolute;
   left: 219px;
-  top: 559px;
-  width: 915px;
-  height: 18px;
+  top: 545px;
+  width: 870px;
+  height: 20px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -17303,18 +17331,18 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 18px;
-  height: 8px;
+  top: 20px;
+  height: 10px;
   background-color: var(--cb3-rule);
   border-bottom: 1px solid var(--cb3-wood-edge);
 }
 
 [data-cb-v3] [data-cb-home-scene-plank-two] {
   position: absolute;
-  left: 130px;
-  top: 684px;
-  width: 1150px;
-  height: 30px;
+  left: 115px;
+  top: 681px;
+  width: 1165px;
+  height: 34px;
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
@@ -17325,8 +17353,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   position: absolute;
   left: 0;
   right: 0;
-  top: 30px;
-  height: 24px;
+  top: 34px;
+  height: 26px;
   background-color: var(--cb3-wood);
   border-bottom: 1px solid var(--cb3-wood-edge);
   box-shadow: var(--cb3-elev-2);
@@ -17334,8 +17362,8 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 880px;
-  top: 606px;
+  left: 884px;
+  top: 616px;
   width: 164px;
   height: 88px;
   z-index: 4;
@@ -17352,17 +17380,17 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
 
 [data-cb-v3] [data-cb-home-scene-clock] {
   position: absolute;
-  left: 1042px;
-  top: 588px;
-  width: 118px;
-  height: 118px;
+  left: 1050px;
+  top: 596px;
+  width: 112px;
+  height: 112px;
   z-index: 4;
 }
 
 [data-cb-v3] [data-cb-home-scene-fox] {
   position: absolute;
-  left: 1088px;
-  top: 526px;
+  left: 1090px;
+  top: 486px;
   z-index: 5;
 }
 `

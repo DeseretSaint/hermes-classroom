@@ -158,7 +158,9 @@ function useCourseModes(courseIds) {
  */
 const CB_HOME_V3_COPY = Object.freeze({
   title: 'Your field library',
-  sub: 'Pick a course, or start a new one.',
+  // CP-053: the owner's binding Home reference (R-HOME) wins on this line. The deck row keeps its
+  // id; only its text follows the reference, so no unregistered copy is introduced.
+  sub: 'Choose a course or start a new expedition.',
   primary: 'Start a new course',
   secondary: 'Browse library',
   shelfLabel: 'Your courses',
@@ -517,21 +519,22 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
  * invented, the row under a title is the course's own section progress.
  */
 /* CP-053 — the scene's authored geometry, measured off the binding reference frame
- * (`docs/concept-parity/refs/home-concept-owner.png`, 1344x768). Every number below is a pixel
- * position on that canvas. `design/home-scene.html` is the standalone proof of the same layout and
- * `tests/test_desktop_home_scene_geometry.py` pins the two together, so the proof cannot drift from
- * the shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
+ * (`docs/concept-parity/refs/home.png`, R-HOME in `docs/concept-parity/refs/REFS.md`, 1344x768).
+ * Every number below is a pixel position on that canvas. `design/home-scene.html` is generated
+ * from this module by `scripts/gen-home-proof.mjs` and `tests/test_desktop_home_scene_parity.py`
+ * fails if the committed page differs from a fresh render, so the proof cannot drift from the
+ * shipped scene. The room's own material tones (wall, plank, card stock, tag) are scene-local
  * because the reference is a lit room, not the desk's flat paper.
  */
 const CB_HOME_SCENE = Object.freeze({
   canvas: Object.freeze({ width: 1344, height: 768 }),
-  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 6, ctaGap: 30, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
+  hero: Object.freeze({ top: 128, title: 72, titleTracking: -1.2, subline: 32, sublineGap: 24, ctaGap: 26, ctaHeight: 48, ctaPadding: 22, ctaGapX: 24 }),
   cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
-  shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 8 }),
-  ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
-  tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
-  clock: Object.freeze({ left: 1042, top: 588, size: 118 }),
-  fox: Object.freeze({ left: 1088, top: 526, size: 208 })
+  shelf: Object.freeze({ left: 219, width: 870, top: 545, height: 20, lip: 10 }),
+  ledge: Object.freeze({ left: 115, width: 1165, top: 681, height: 34, face: 26 }),
+  tag: Object.freeze({ left: 884, top: 616, width: 164, height: 88, font: 23 }),
+  clock: Object.freeze({ left: 1050, top: 596, size: 112 }),
+  fox: Object.freeze({ left: 1090, top: 486, size: 220 })
 })
 
 function HomeSceneCard({ slot, index, onOpen }) {
@@ -565,7 +568,7 @@ function HomeSceneCard({ slot, index, onOpen }) {
           }, 'progress'),
           jsx('p', {
             'data-cb-home-scene-meta': '',
-            children: total > 0 ? `${done} of ${total} sections` : 'Not started'
+            children: total > 0 ? `${done} of ${total} sections done` : 'Not started'
           }, 'meta')
         ]
       }, 'body')
@@ -587,16 +590,26 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
           jsx('h1', {
             'data-cb-home-question': '',
             'data-cb-home-scene-question': '',
-            children: CB_HOME_COPY.question
+            children: CB_HOME_V3_COPY.title
           }, 'question'),
-          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_COPY.subline }, 'subline'),
+          jsx('p', { 'data-cb-home-scene-subline': '', children: CB_HOME_V3_COPY.sub }, 'subline'),
           jsxs('div', {
             'data-cb-home-scene-cta': '',
             children: [
               canCreate
-                ? jsx('button', { type: 'button', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-home-scene-primary': '',
+                    onClick: onStartCreate,
+                    children: CB_HOME_V3_COPY.primary
+                  }, 'create')
                 : null,
-              jsx('button', { type: 'button', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
+              jsx('button', {
+                type: 'button',
+                'data-cb-home-scene-secondary': '',
+                onClick: onBrowseLibrary,
+                children: CB_HOME_V3_COPY.secondary
+              }, 'browse')
             ]
           }, 'cta')
         ]
@@ -615,7 +628,7 @@ function HomeScene({ slots, canCreate, onStartCreate, onBrowseLibrary, onOpenCou
         style: woodImage,
         children: jsx('i', {})
       }, 'plank-one'),
-      jsx('div', { 'data-cb-home-scene-tag': '', children: 'New course' }, 'tag'),
+      jsx('div', { 'data-cb-home-scene-tag': '', children: CB_HOME_V3_COPY.tagNew }, 'tag'),
       clock
         ? jsx('img', { 'data-cb-home-scene-clock': '', src: clock, alt: '', 'aria-hidden': 'true' }, 'clock')
         : null,

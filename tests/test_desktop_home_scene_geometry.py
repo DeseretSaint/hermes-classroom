@@ -1,9 +1,9 @@
 """CP-053 — the wide Home scene: geometry from the binding reference, paint from the token layer.
 
-The reference frame is `docs/concept-parity/refs/home-concept-owner.png` (1344x768). The scene's
-numbers were measured off it and now live in the v3 stylesheet
-(`desktop/src/76-v3-scope.js`, addressed by `data-cb-home-scene-*` hooks), while every colour,
-shadow and type size comes from the token contract. These tests assert four things:
+The reference frame is `docs/concept-parity/refs/home.png` (R-HOME; 1344x768). The scene's numbers
+were measured off it and now live in the v3 stylesheet (`desktop/src/76-v3-scope.js`, addressed by
+`data-cb-home-scene-*` hooks), while every colour, shadow and type size comes from the token
+contract. These tests assert four things:
 
   * the scene mounts only at the route breakpoint, and the narrow Home is untouched;
   * the shipped stylesheet still carries the measured geometry;
@@ -195,23 +195,23 @@ class HomeSceneTest(unittest.TestCase):
     def test_planks_and_objects_hold_the_reference_positions(self) -> None:
         one = css_block(self.source, "data-cb-home-scene-plank-one")
         self.assertEqual(declaration(one, "left"), "219px")
-        self.assertEqual(declaration(one, "width"), "915px")
-        self.assertEqual(declaration(one, "top"), "559px")
+        self.assertEqual(declaration(one, "width"), "870px")
+        self.assertEqual(declaration(one, "top"), "545px")
         two = css_block(self.source, "data-cb-home-scene-plank-two")
-        self.assertEqual(declaration(two, "left"), "130px")
-        self.assertEqual(declaration(two, "width"), "1150px")
-        self.assertEqual(declaration(two, "top"), "684px")
+        self.assertEqual(declaration(two, "left"), "115px")
+        self.assertEqual(declaration(two, "width"), "1165px")
+        self.assertEqual(declaration(two, "top"), "681px")
         tag = css_block(self.source, "data-cb-home-scene-tag")
-        self.assertEqual(declaration(tag, "left"), "880px")
-        self.assertEqual(declaration(tag, "top"), "606px")
+        self.assertEqual(declaration(tag, "left"), "884px")
+        self.assertEqual(declaration(tag, "top"), "616px")
         self.assertEqual(declaration(tag, "width"), "164px")
         self.assertEqual(declaration(tag, "height"), "88px")
         clock = css_block(self.source, "data-cb-home-scene-clock")
-        self.assertEqual(declaration(clock, "left"), "1042px")
-        self.assertEqual(declaration(clock, "width"), "118px")
+        self.assertEqual(declaration(clock, "left"), "1050px")
+        self.assertEqual(declaration(clock, "width"), "112px")
         fox = css_block(self.source, "data-cb-home-scene-fox")
-        self.assertEqual(declaration(fox, "left"), "1088px")
-        self.assertEqual(declaration(fox, "top"), "526px")
+        self.assertEqual(declaration(fox, "left"), "1090px")
+        self.assertEqual(declaration(fox, "top"), "486px")
         hero = css_block(self.source, "data-cb-home-scene-hero")
         self.assertEqual(declaration(hero, "top"), "128px")
 

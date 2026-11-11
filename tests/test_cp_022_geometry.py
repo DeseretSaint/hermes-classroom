@@ -170,6 +170,9 @@ class StubResizeObserver {
 globalThis.ResizeObserver = StubResizeObserver
 
 const payload = JSON.parse(process.env.CB_TEST_PAYLOAD)
+// CP-053: pin the route width before the plugin (and the SDK stub it reads) evaluates. The stub's
+// 1280 px default would mount the wide room scene, which has no `[data-cb-home-shelf-row]`.
+globalThis.__CB_TEST_WIDTH__ = '1049'
 const dom = new JSDOM(
   '<!doctype html><html><body><div id="root"><div data-cb-route></div></div></body></html>',
   { pretendToBeVisual: true, url: 'http://localhost/' }
