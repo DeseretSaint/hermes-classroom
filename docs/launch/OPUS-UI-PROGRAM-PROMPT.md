@@ -22,6 +22,29 @@ proceed.
 The owner sees two things from you: a stop-rule escalation, and the final contact sheet with a
 ten-line report. Nothing in between.
 
+## 0. Board protocol — read before any card action
+
+- Board: `coursebook`. Repo: `~/Projects/hermes-classroom`.
+- Load the `kanban-board-operations` skill. Read the board from its SQLite database, not
+  `hermes kanban list` (it truncates):
+  `sqlite3 ~/.hermes/kanban/boards/coursebook/kanban.db "select id,status,assignee,title from tasks where status not in ('done','archived')"`
+- At handoff, CP-053 (`t_5e22c918`, cinder) is running on Home and CP-015b is running. Re-read the
+  board before creating anything; states change.
+- Do not create a second Home card. CP-053 is the Home card. If it is running, let it finish; if it
+  is done, verify its capture and create one follow-up only if the painted fox is absent.
+- Create at most two UI cards before Home lands: (1) the asset-adoption card, titled exactly
+  `[UI] Adopt painted A1 fox into the brand-asset segment`; (2) the type-mapping card. Create both
+  in `todo`. Do not reopen CP-010, CP-020a, or any done card.
+- Assign the adoption card to the profile that owns the Home lane (CP-053 is `cinder`); assign
+  verification to `atlas` or `cbqa`; never assign to the owner; never two writers on one screen.
+- Card bodies and comments are argv, not shell. Use Python `subprocess.run([...])` or a file, then
+  re-read with `hermes kanban show <id>`; never pass markdown through a double-quoted shell string.
+- Do not delete cards, create a new board, touch non-UI cards, or change board configuration.
+- **Supervisor mode.** If the cron supervisor `85d2218453f7` is active, it is the only
+  dispatcher/merger: do not run `dispatch`, `promote`, or merge. You author cards and specs; the
+  supervisor lands them. If the owner pauses the cron and makes you sole supervisor, you may
+  dispatch and merge, but the card limits still apply.
+
 ## 1. The references — what governs what
 
 | id | attachment | governs |
@@ -254,6 +277,8 @@ Read `docs/launch/UI-MANAGER-BRIEF.md`, `docs/launch/VISION-ROUTE-RESEARCH.md`,
 `docs/launch/UI-CONTEXT-PACK.md`, `docs/concept-parity/refs/REFS.md`, and the generated pack.
 
 Write `docs/launch/UI-PROGRAM.md` (screens, order, cards, caps) and `docs/launch/UI-DECISIONS.md`
-(the Gate 0 defaults). Create the asset-adoption card first, then the Home spec and the type-mapping
-card. Start Home only when the painted fox is wired and the source test passes. Do not ask for
-approval, do not write an introduction, and do not produce a project plan longer than one page.
+(the Gate 0 defaults). Create the asset-adoption card first, in `todo`. Do not create a second Home
+card; CP-053 is the Home card. If CP-053 is not running, link the adoption card as its parent; if it
+is running, leave the adoption card standalone and let the supervisor sequence it. Create the
+type-mapping card. Start Home only after the adoption lands and the source test passes. Do not ask
+for approval, do not write an introduction, and do not produce a project plan longer than one page.
