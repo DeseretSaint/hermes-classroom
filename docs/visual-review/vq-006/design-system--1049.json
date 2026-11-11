@@ -1,0 +1,39 @@
+{
+  "schema": "vq.capture.v1",
+  "cell": {
+    "name": "design-system--1049",
+    "destination": "design-system",
+    "width": 1049,
+    "height": 768
+  },
+  "captured_at": "2026-11-11T09:27:25.170Z",
+  "window": {
+    "cdp_port": 9396
+  },
+  "route": null,
+  "surface": {
+    "requested": "design-system",
+    "resolved": null,
+    "control": null,
+    "missing": {
+      "reason": "the installed plugin mounts no Design System surface",
+      "probed": [
+        "[data-cb-design-system]",
+        "[data-cb3-surface=\"component.lab\"]",
+        "[data-cb3-lab]",
+        "[data-cb-nav-item=\"system\"]"
+      ],
+      "installed_destinations": [
+        "home",
+        "courses",
+        "workshop",
+        "studio"
+      ]
+    }
+  },
+  "screenshot": null,
+  "images": [],
+  "backgrounds": [],
+  "page": null,
+  "error": "the installed plugin mounts no Design System surface"
+}

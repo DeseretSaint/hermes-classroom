@@ -105,7 +105,8 @@ Gates for every built-in screen:
 - **Gate 4 Director and owner.** Rubric average at least 4; hard floors on composition,
   illustration, material, and character; masked SSIM for reference screens; anti-cheat clean.
 - **Gate 5 Installed capture.** Build, install, relaunch, and capture the installed plugin with
-  real course data. A proof HTML alone is not evidence.
+  real course data. A proof HTML alone is not evidence. The one command and its refusal rules are
+  in §9.
 - **Gate 6 Cross-screen cohesion.** A contact sheet of every screen; same palette, card anatomy,
   type, fox scale, and motion. A screen that passes alone but breaks the set fails.
 
@@ -184,3 +185,69 @@ The program is complete only when:
 - the world quality critic rejects text-bearing, generic, or unsafe plates;
 - the cross-screen contact sheet passes;
 - the owner approves the installed result.
+
+## 9. Gate 5 harness — the one capture command
+
+Every screen card captures through `scripts/vq-capture.sh`. There is no second door: a frame from a
+proof HTML, a component-lab render harness, a design fixture or a starter template is not evidence,
+and the judge refuses it.
+
+```bash
+scripts/vq-capture.sh
+#   --state <dir>        disposable rig (default ~/.hermes/coursebook-test-vq006)
+#   --out <dir>          capture output (default docs/visual-review/vq-006)
+#   --widths "1344 1049 900 460"
+#   --destinations "home discover course-home classroom world-studio design-system"
+#   --game-course crs_…  the user-created Game course to capture
+#   --reuse              drive an already-running rig instead of building one
+#   --allow-no-game      report a missing Game course instead of stopping before capture
+#   --keep-window        leave the rig running for a follow-up run
+```
+
+What it does, in order:
+
+1. installs the current checkout into a private `HERMES_HOME` (`scripts/install-local.sh`), starts
+   an isolated backend on that home, and launches one dev-Electron window with its own CDP port and
+   `connections.json` — the operator's window, profile and gateway are never touched;
+2. seeds the real library: the three bundled packs through the product's own grant → preview →
+   import path (`scripts/vq-library.py` → `scripts/seed-demo-course.py`), then reads `world.read` for
+   every library item and requires one course whose stored `presentation_mode` is `game` with an
+   approved world. It does not create a Game course and never photographs a Textbook course as Game;
+3. captures Home, Discover, Classroom, Course home, World Studio and the Design System at the
+   1344x768 window and the 1049, 900 and 460 route widths, one PNG and one JSON cell per cell;
+4. writes `manifest.json`, `MANIFEST.md` and `contact-sheet.png` beside the frames, and prints the
+   absolute output directory and a short manifest;
+5. exits non-zero when a cell fails.
+
+The judge is `scripts/vq-manifest.py`; the camera is `scripts/vq-capture.mjs`. A cell fails when:
+
+- the page is not live (a `file:` URL, a proof fixture script, a `[data-cb-proof]` marker);
+- the requested destination did not render, the route has a render-error marker, fonts did not
+  load, or the installed plugin has no such surface (the Design System on a build that never mounted
+  one, for example);
+- a required display role is missing: four Home display covers, eight Discover collectibles, a
+  Classroom lesson scene, a Course-map plate, a World plate, a Design System specimen;
+- an image is a placeholder (incomplete, no natural size, empty `currentSrc`, a known blank name);
+- an image is below 2x its rendered size;
+- an image is a data URI unless it is a hashed bundled brand asset from
+  `desktop/cb-assets.generated.js` (the fox, materials and object kit ship that way by contract);
+- an image's bytes match a bundled pack cover, which proves a Press Plate is standing in as
+  product-surface illustration;
+- the PNG on disk does not hash to the sha256 the cell record claims.
+
+Each cell record carries, for every image in the route: `selector`, `currentSrc`, natural width and
+height, rendered width and height, `sha256`, the resolved bundled-asset path when one exists, and
+whether the row is a placeholder or a Press Plate. Background-image layers are recorded the same
+way. A screen card reads the manifest; it does not need a browser of its own.
+
+**Measured on `0c1729eb`, plugin sha `251a3948…`, 2026-11-11** (16 cells captured, 0 pass, 24
+matrix cells not captured): no Home cell has a display cover (0 of 4). At 1049/900/460 the two
+course covers are the bundled pack Press Plates (`cover-3x2.png` of the Japanese and technical
+packs); at 1344 the Home scene draws no course cover art at all. The fox ships at 128 px and is
+rendered at 220 px on the wide Home, below 2x. Discover has 0 of 8 collectibles, its banner is a
+data-URI 864 px plate under 2x, and three Press Plates sit on the surface. Course home is DOM type,
+one inline contour and buttons with no image asset. The Design System surface is not mounted, and no
+course in the seeded library has an approved Game world, so Classroom and World Studio were not
+captured. Every one of those is a Gate 0/2 gap the harness is supposed to expose, not a harness
+failure to hide.
+

@@ -1,0 +1,270 @@
+{
+  "schema": "vq.capture.v1",
+  "cell": {
+    "name": "home--1344",
+    "destination": "home",
+    "width": 1344,
+    "height": 768
+  },
+  "captured_at": "2026-11-11T09:26:50.278Z",
+  "window": {
+    "cdp_port": 9396,
+    "plugin": {
+      "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+      "bytes": 2419017,
+      "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+    }
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "present": true,
+    "marker": "/coursebook",
+    "destination": "home",
+    "scope": "dark",
+    "motion": "full",
+    "v3_ready": true,
+    "v3_textures": "ready",
+    "width": 1344,
+    "height": 714,
+    "scroll_height": 714,
+    "top": 34,
+    "left": 260,
+    "window_width": 1604,
+    "window_height": 768,
+    "fonts_status": "loaded",
+    "fonts_ok": true,
+    "page_title": "Home",
+    "course_home": null,
+    "lesson_view": null,
+    "scene": null,
+    "surfaces_probed": [
+      {
+        "selector": "[data-cb-home-card]",
+        "present": false
+      },
+      {
+        "selector": "[data-cb-home-invitation]",
+        "present": false
+      },
+      {
+        "selector": "[data-cb-desk]",
+        "present": false
+      }
+    ],
+    "render_error_markers": [],
+    "proof_markers": []
+  },
+  "surface": {
+    "requested": "home",
+    "resolved": "home",
+    "control": "[data-cb-nav-item=\"home\"]",
+    "missing": null
+  },
+  "screenshot": {
+    "file": "home--1344.png",
+    "sha256": "d5990cec46e2357dfd8ee8a9a024b437574b1195450794dd9b4c933cc18689cc",
+    "bytes": 60981,
+    "clip": {
+      "x": 260,
+      "y": 34,
+      "width": 1344,
+      "height": 714,
+      "scale": 1
+    }
+  },
+  "images": [
+    {
+      "selector": "[data-cb-home-scene-clock] [data-cb-home=\"scene\"] > img",
+      "markers": [
+        "data-cb-home-scene-clock=\"\"",
+        "data-cb-home=scene",
+        "data-cb-home-scene=\"\"",
+        "data-cb-main=\"\"",
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook"
+      ],
+      "kind": "unknown",
+      "src_attr": "data:image/webp;base64,UklGRr5nAABXRUJQVlA4WAoAAAAQAAAA/wAA/wAAQUxQSN4yAAABDAZt2wiK+cPe/+2OQURMQOeq3G96UPnsUqc32tJaqXy4glTK3Cg0UThDxSh2fTWhNqRpdiFV9Emw06G019JKj6xk07HqzEar0qke6aYT3XT1rNFyU3or603Rax6Jh",
+      "current_src": "data:image/webp;base64,UklGRr5nAABXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 256,
+        "height": 256
+      },
+      "rendered": {
+        "width": 112,
+        "height": 112
+      },
+      "scale_ratio": 2.29,
+      "sha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+      "sha_error": null,
+      "bytes": 26566,
+      "bundled_asset": {
+        "key": "cb.asset.object.clock",
+        "path": "assets/objects/clock.webp",
+        "role": "object.clock",
+        "group": "objects"
+      },
+      "alt": "",
+      "complete": true
+    },
+    {
+      "selector": "[data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img",
+      "markers": [
+        "data-cb3-fox=clock",
+        "data-cb3-fox-safe=24px",
+        "data-cb-home-scene-fox=\"\"",
+        "data-cb-home=scene",
+        "data-cb-home-scene=\"\"",
+        "data-cb-main=\"\""
+      ],
+      "kind": "fox_pose",
+      "src_attr": "data:image/webp;base64,UklGRqQMAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUxQSJYDAAABoEXb2iFJ+iKLPbZt27Zt27Zt27attm27y7ZdEfch44/4879fzJMiYgLkf///M+Nyy2Vi9STIq6g73d6duCUBVgiAj1eytHw9hieALAVQfJCdm4BGLwG+A4D+p3IsZ",
+      "current_src": "data:image/webp;base64,UklGRqQMAABXRUJQV…",
+      "current_src_data_uri": true,
+      "natural": {
+        "width": 128,
+        "height": 128
+      },
+      "rendered": {
+        "width": 220,
+        "height": 220
+      },
+      "scale_ratio": 0.58,
+      "sha256": "3d057e10d4138a084ba97e81f5d5f05b4f74b744d664d89c2e371d03f1247854",
+      "sha_error": null,
+      "bytes": 3244,
+      "bundled_asset": {
+        "key": "cb.asset.fox.clock.128",
+        "path": "assets/fox/fox-clock-128.webp",
+        "role": "mascot.pose.clock@128",
+        "group": "fox"
+      },
+      "alt": "",
+      "complete": true
+    }
+  ],
+  "backgrounds": [
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRtwAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 1344,
+        "height": 714
+      },
+      "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+      "bundled_asset": {
+        "key": "cb.asset.material.grain-night",
+        "path": "assets/material/grain-night.webp",
+        "role": "material.tile.grain-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    },
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRpAAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 1344,
+        "height": 714
+      },
+      "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+      "bundled_asset": {
+        "key": "cb.asset.material.vignette-night",
+        "path": "assets/material/vignette-night.webp",
+        "role": "material.tile.vignette-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    },
+    {
+      "selector": "[data-cb-home-scene-plank-one] [data-cb-home=\"scene\"] > div",
+      "url": "data:image/webp;base64,UklGRmxFAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 256,
+        "height": 256
+      },
+      "rendered": {
+        "width": 870,
+        "height": 20
+      },
+      "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+      "bundled_asset": {
+        "key": "cb.asset.object.shelf-plank",
+        "path": "assets/objects/shelf-plank.webp",
+        "role": "object.shelf-plank",
+        "group": "objects"
+      },
+      "marks": [
+        "data-cb-home-scene-plank-one=\"\"",
+        "data-cb-home=scene",
+        "data-cb-home-scene=\"\"",
+        "data-cb-main=\"\""
+      ]
+    },
+    {
+      "selector": "[data-cb-home-scene-plank-two] [data-cb-home=\"scene\"] > div",
+      "url": "data:image/webp;base64,UklGRmxFAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 256,
+        "height": 256
+      },
+      "rendered": {
+        "width": 1165,
+        "height": 34
+      },
+      "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+      "bundled_asset": {
+        "key": "cb.asset.object.shelf-plank",
+        "path": "assets/objects/shelf-plank.webp",
+        "role": "object.shelf-plank",
+        "group": "objects"
+      },
+      "marks": [
+        "data-cb-home-scene-plank-two=\"\"",
+        "data-cb-home=scene",
+        "data-cb-home-scene=\"\"",
+        "data-cb-main=\"\""
+      ]
+    }
+  ],
+  "page": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "protocol": "http:",
+    "proof_script": false
+  },
+  "error": null,
+  "lazy": {
+    "scroller": "html.dark",
+    "scroll_height": 1030,
+    "client_height": 1030
+  },
+  "route_request": {
+    "requested": 1344,
+    "route_width": 1344,
+    "viewport_width": 1604,
+    "chrome": 260
+  }
+}

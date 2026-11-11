@@ -1,0 +1,140 @@
+{
+  "schema": "vq.capture.v1",
+  "cell": {
+    "name": "course-home--460",
+    "destination": "course-home",
+    "width": 460,
+    "height": 768
+  },
+  "captured_at": "2026-11-11T09:27:57.236Z",
+  "window": {
+    "cdp_port": 9396,
+    "plugin": {
+      "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+      "bytes": 2419017,
+      "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+    }
+  },
+  "route": {
+    "selector": "[data-cb-route]",
+    "present": true,
+    "marker": "/coursebook",
+    "destination": "home",
+    "scope": "dark",
+    "motion": "full",
+    "v3_ready": true,
+    "v3_textures": "ready",
+    "width": 460,
+    "height": 714,
+    "scroll_height": 714,
+    "top": 34,
+    "left": 260,
+    "window_width": 720,
+    "window_height": 768,
+    "fonts_status": "loaded",
+    "fonts_ok": true,
+    "page_title": "Course",
+    "course_home": "crs_92e950b34ffe4970a1e6760a60bf8c8b",
+    "lesson_view": null,
+    "scene": null,
+    "surfaces_probed": [
+      {
+        "selector": "[data-cb-course-home]",
+        "present": true
+      }
+    ],
+    "render_error_markers": [],
+    "proof_markers": []
+  },
+  "surface": {
+    "requested": "course-home",
+    "resolved": "home",
+    "control": "[data-cb-home-card-action]",
+    "missing": null,
+    "course_home_id": "crs_92e950b34ffe4970a1e6760a60bf8c8b"
+  },
+  "screenshot": {
+    "file": "course-home--460.png",
+    "sha256": "1a73c466ee4bbb5bbacb699d025f43aabf0b931556c5103bb2d1dd8e76fedaed",
+    "bytes": 69376,
+    "clip": {
+      "x": 260,
+      "y": 34,
+      "width": 460,
+      "height": 714,
+      "scale": 1
+    }
+  },
+  "images": [],
+  "backgrounds": [
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRtwAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 460,
+        "height": 714
+      },
+      "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+      "bundled_asset": {
+        "key": "cb.asset.material.grain-night",
+        "path": "assets/material/grain-night.webp",
+        "role": "material.tile.grain-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    },
+    {
+      "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+      "url": "data:image/webp;base64,UklGRpAAAABXRUJQV…",
+      "data_uri": true,
+      "natural": {
+        "width": 96,
+        "height": 96
+      },
+      "rendered": {
+        "width": 460,
+        "height": 714
+      },
+      "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+      "bundled_asset": {
+        "key": "cb.asset.material.vignette-night",
+        "path": "assets/material/vignette-night.webp",
+        "role": "material.tile.vignette-night",
+        "group": "material"
+      },
+      "marks": [
+        "data-cb-destination=home",
+        "data-cb-route=/coursebook",
+        "data-cb-scope=dark",
+        "data-cb-motion=full"
+      ]
+    }
+  ],
+  "page": {
+    "url": "http://127.0.0.1:5174/#/coursebook",
+    "protocol": "http:",
+    "proof_script": false
+  },
+  "error": null,
+  "lazy": {
+    "scroller": "html.dark",
+    "scroll_height": 1030,
+    "client_height": 1030
+  },
+  "route_request": {
+    "requested": 460,
+    "route_width": 460,
+    "viewport_width": 720,
+    "chrome": 260
+  }
+}

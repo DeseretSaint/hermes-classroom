@@ -1,0 +1,2350 @@
+{
+  "schema": "vq.manifest.v1",
+  "tool": "scripts/vq-manifest.py",
+  "generated_at": "2026-11-11T09:28:06+00:00",
+  "commit": "0c1729eb150e0f561238235a0fedeb446a6257cd",
+  "plugin_sha256": [
+    "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+  ],
+  "matrix": {
+    "destinations": [
+      "home",
+      "discover",
+      "course-home",
+      "classroom",
+      "world-studio",
+      "design-system"
+    ],
+    "widths": [
+      1344,
+      1049,
+      900,
+      460
+    ]
+  },
+  "press_plate_registry": {
+    "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+    "5ae6ea8007db3d034e6b21b4b9fea865530c93c43c9b9d23e4e0dd4bd310e7e6": "bundled/packs/japanese-affection-context-l0/content/cover-4x5.png",
+    "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+    "82505bf4730e2c465bdba91877a7baab6b8b8da9a8f04ff0606ebb35a08cabe6": "bundled/packs/parent-measurement-practice/content/cover-4x5.png",
+    "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+    "668a63a9c38d07ca810d5b4f1a16bfd520ca23e668fdf5040836edbea94f8416": "bundled/packs/technical-pack-literacy/content/cover-4x5.png"
+  },
+  "cells": [
+    {
+      "cell": "course-home--1049",
+      "destination": "course-home",
+      "width": 1049,
+      "ok": false,
+      "problems": [
+        "required image missing: course_map 0/1",
+        "required image missing: fox_pose 0/1"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "course_map",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "course-map plate"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 1049,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "course-home--1049.png",
+        "declared": "05d55187b0bede2a052150c3199ff6b14fc62fb74495b2cf538e02e95cddf219",
+        "measured": "05d55187b0bede2a052150c3199ff6b14fc62fb74495b2cf538e02e95cddf219",
+        "ok": true
+      }
+    },
+    {
+      "cell": "course-home--1344",
+      "destination": "course-home",
+      "width": 1344,
+      "ok": false,
+      "problems": [
+        "required image missing: course_map 0/1",
+        "required image missing: fox_pose 0/1"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "course_map",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "course-map plate"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 1344,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "course-home--1344.png",
+        "declared": "3f1afdba081b81f3735e132546911523ad1175efa0434ad22dd13b9c2e42f7fc",
+        "measured": "3f1afdba081b81f3735e132546911523ad1175efa0434ad22dd13b9c2e42f7fc",
+        "ok": true
+      }
+    },
+    {
+      "cell": "course-home--460",
+      "destination": "course-home",
+      "width": 460,
+      "ok": false,
+      "problems": [
+        "required image missing: course_map 0/1"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "course_map",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "course-map plate"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": null,
+          "ok": true,
+          "skipped": "not required at 460px (min width 620px)",
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 460,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "course-home--460.png",
+        "declared": "1a73c466ee4bbb5bbacb699d025f43aabf0b931556c5103bb2d1dd8e76fedaed",
+        "measured": "1a73c466ee4bbb5bbacb699d025f43aabf0b931556c5103bb2d1dd8e76fedaed",
+        "ok": true
+      }
+    },
+    {
+      "cell": "course-home--900",
+      "destination": "course-home",
+      "width": 900,
+      "ok": false,
+      "problems": [
+        "required image missing: course_map 0/1",
+        "required image missing: fox_pose 0/1"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "course_map",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "course-map plate"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 900,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "course-home--900.png",
+        "declared": "f902680394292a123e037319f9276d1dffaa232c732e7b1e5302ebd29e66f1e8",
+        "measured": "f902680394292a123e037319f9276d1dffaa232c732e7b1e5302ebd29e66f1e8",
+        "ok": true
+      }
+    },
+    {
+      "cell": "design-system--1049",
+      "destination": "design-system",
+      "width": 1049,
+      "ok": false,
+      "problems": [
+        "not a live page (None)",
+        "missing surface: the installed plugin mounts no Design System surface",
+        "no [data-cb-route] in the cell record",
+        "required image missing: specimen_plate 0/1",
+        "no screenshot recorded"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "specimen_plate",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "specimen sheet art"
+        }
+      ],
+      "images": [],
+      "backgrounds": [],
+      "plugin": {},
+      "route": {
+        "marker": null,
+        "destination": null,
+        "width": null,
+        "height": null,
+        "v3_ready": null,
+        "fonts_status": null,
+        "scope": null
+      },
+      "screenshot": null
+    },
+    {
+      "cell": "design-system--1344",
+      "destination": "design-system",
+      "width": 1344,
+      "ok": false,
+      "problems": [
+        "not a live page (None)",
+        "missing surface: the installed plugin mounts no Design System surface",
+        "no [data-cb-route] in the cell record",
+        "required image missing: specimen_plate 0/1",
+        "no screenshot recorded"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "specimen_plate",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "specimen sheet art"
+        }
+      ],
+      "images": [],
+      "backgrounds": [],
+      "plugin": {},
+      "route": {
+        "marker": null,
+        "destination": null,
+        "width": null,
+        "height": null,
+        "v3_ready": null,
+        "fonts_status": null,
+        "scope": null
+      },
+      "screenshot": null
+    },
+    {
+      "cell": "design-system--460",
+      "destination": "design-system",
+      "width": 460,
+      "ok": false,
+      "problems": [
+        "not a live page (None)",
+        "missing surface: the installed plugin mounts no Design System surface",
+        "no [data-cb-route] in the cell record",
+        "required image missing: specimen_plate 0/1",
+        "no screenshot recorded"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "specimen_plate",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "specimen sheet art"
+        }
+      ],
+      "images": [],
+      "backgrounds": [],
+      "plugin": {},
+      "route": {
+        "marker": null,
+        "destination": null,
+        "width": null,
+        "height": null,
+        "v3_ready": null,
+        "fonts_status": null,
+        "scope": null
+      },
+      "screenshot": null
+    },
+    {
+      "cell": "design-system--900",
+      "destination": "design-system",
+      "width": 900,
+      "ok": false,
+      "problems": [
+        "not a live page (None)",
+        "missing surface: the installed plugin mounts no Design System surface",
+        "no [data-cb-route] in the cell record",
+        "required image missing: specimen_plate 0/1",
+        "no screenshot recorded"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "specimen_plate",
+          "required": 1,
+          "found": 0,
+          "ok": false,
+          "note": "specimen sheet art"
+        }
+      ],
+      "images": [],
+      "backgrounds": [],
+      "plugin": {},
+      "route": {
+        "marker": null,
+        "destination": null,
+        "width": null,
+        "height": null,
+        "v3_ready": null,
+        "fonts_status": null,
+        "scope": null
+      },
+      "screenshot": null
+    },
+    {
+      "cell": "discover--1049",
+      "destination": "discover",
+      "width": 1049,
+      "ok": false,
+      "problems": [
+        "required image missing: collectible_plate 0/8",
+        "4 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/parent-measurement-practice/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: natural 864px is below 2x rendered 586.22px",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "collectible_plate",
+          "required": 8,
+          "found": 0,
+          "ok": false,
+          "note": "eight collectible display plates"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 586.22,
+            "height": 244.25
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "scene_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 1.474,
+          "problems": [
+            "data URI stands in for a kit asset",
+            "natural 864px is below 2x rendered 586.22px"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 209.47,
+            "height": 139.64
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 4.125,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 209.48,
+            "height": 139.66
+          },
+          "sha256": "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 4.124,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 209.47,
+            "height": 139.64
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 4.125,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRm4LAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 96,
+            "height": 96
+          },
+          "sha256": "3a248727009f0b5820beb6c0939d0fa98158a1b8ba11fda35f35cb34cdadad23",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.point.128",
+            "path": "assets/fox/fox-point-128.webp",
+            "role": "mascot.pose.point@128",
+            "group": "fox"
+          },
+          "scale_ratio": 1.333,
+          "problems": [
+            "natural 128px is below 2x rendered 96.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "workshop",
+        "width": 1049,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "discover--1049.png",
+        "declared": "f000a0fa56e014c71b6374a5e719cc3664bc08e675d341dbb974f5935bf4db9b",
+        "measured": "f000a0fa56e014c71b6374a5e719cc3664bc08e675d341dbb974f5935bf4db9b",
+        "ok": true
+      }
+    },
+    {
+      "cell": "discover--1344",
+      "destination": "discover",
+      "width": 1344,
+      "ok": false,
+      "problems": [
+        "required image missing: collectible_plate 0/8",
+        "4 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/parent-measurement-practice/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: natural 864px is below 2x rendered 752.42px",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 96.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "collectible_plate",
+          "required": 8,
+          "found": 0,
+          "ok": false,
+          "note": "eight collectible display plates"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 752.42,
+            "height": 313.5
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "scene_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 1.148,
+          "problems": [
+            "data URI stands in for a kit asset",
+            "natural 864px is below 2x rendered 752.42px"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 278.72,
+            "height": 185.81
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.1,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 278.73,
+            "height": 185.81
+          },
+          "sha256": "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.1,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 278.72,
+            "height": 185.81
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.1,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"24px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRm4LAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 96,
+            "height": 96
+          },
+          "sha256": "3a248727009f0b5820beb6c0939d0fa98158a1b8ba11fda35f35cb34cdadad23",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.point.128",
+            "path": "assets/fox/fox-point-128.webp",
+            "role": "mascot.pose.point@128",
+            "group": "fox"
+          },
+          "scale_ratio": 1.333,
+          "problems": [
+            "natural 128px is below 2x rendered 96.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "workshop",
+        "width": 1344,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "discover--1344.png",
+        "declared": "00a72161366927401a3b837703f9e9ad409e7aff53c7e44e30a6f2a3a70dd381",
+        "measured": "00a72161366927401a3b837703f9e9ad409e7aff53c7e44e30a6f2a3a70dd381",
+        "ok": true
+      }
+    },
+    {
+      "cell": "discover--460",
+      "destination": "discover",
+      "width": 460,
+      "ok": false,
+      "problems": [
+        "required image missing: collectible_plate 0/8",
+        "4 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/parent-measurement-practice/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "collectible_plate",
+          "required": 8,
+          "found": 0,
+          "ok": false,
+          "note": "eight collectible display plates"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": null,
+          "ok": true,
+          "skipped": "not required at 460px (min width 620px)",
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 429.63,
+            "height": 160
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "scene_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 2.011,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 88,
+            "height": 58.66
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 9.818,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 88,
+            "height": 58.66
+          },
+          "sha256": "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 9.818,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 88,
+            "height": 58.66
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 9.818,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "workshop",
+        "width": 460,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "discover--460.png",
+        "declared": "7681c5cc66057505908ae063e4c94647c1651db09b217efedc6efc37886ee47c",
+        "measured": "7681c5cc66057505908ae063e4c94647c1651db09b217efedc6efc37886ee47c",
+        "ok": true
+      }
+    },
+    {
+      "cell": "discover--900",
+      "destination": "discover",
+      "width": 900,
+      "ok": false,
+      "problems": [
+        "required image missing: collectible_plate 0/8",
+        "4 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/parent-measurement-practice/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img: natural 864px is below 2x rendered 502.28px",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img: data URI stands in for a kit asset",
+        "image [data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 88.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "collectible_plate",
+          "required": 8,
+          "found": 0,
+          "ok": false,
+          "note": "eight collectible display plates"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox point pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-feature-art=\"japanese-affection-context-l0\"] [data-cb3-feature=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 502.28,
+            "height": 213
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "scene_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 1.72,
+          "problems": [
+            "data URI stands in for a kit asset",
+            "natural 864px is below 2x rendered 502.28px"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"japanese-affection-context-l0\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 245.59,
+            "height": 163.72
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.518,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"parent-measurement-practice\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 245.59,
+            "height": 163.72
+          },
+          "sha256": "95e8f7b0f6e44bec6ece917e4b74e502445e7f0a7ec70a2993a97f79333de825",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/parent-measurement-practice/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.518,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb3-pack=\"technical-pack-literacy\"] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 245.59,
+            "height": 163.72
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.518,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-fox=\"point\"] [data-cb3-fox-safe=\"16px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRm4LAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 88,
+            "height": 88
+          },
+          "sha256": "3a248727009f0b5820beb6c0939d0fa98158a1b8ba11fda35f35cb34cdadad23",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.point.128",
+            "path": "assets/fox/fox-point-128.webp",
+            "role": "mascot.pose.point@128",
+            "group": "fox"
+          },
+          "scale_ratio": 1.455,
+          "problems": [
+            "natural 128px is below 2x rendered 88.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"workshop\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=workshop",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "workshop",
+        "width": 900,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "discover--900.png",
+        "declared": "f70b8916faa79d67eb9b9e5d18d7f31265fb490437622d10713462afc418cea6",
+        "measured": "f70b8916faa79d67eb9b9e5d18d7f31265fb490437622d10713462afc418cea6",
+        "ok": true
+      }
+    },
+    {
+      "cell": "home--1049",
+      "destination": "home",
+      "width": 1049,
+      "ok": false,
+      "problems": [
+        "required image missing: display_cover 0/4",
+        "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 128.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "display_cover",
+          "required": 4,
+          "found": 0,
+          "ok": false,
+          "note": "four Home display covers"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox clock pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 200,
+            "height": 133.33
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 4.32,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 200,
+            "height": 133.33
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 4.32,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRqQMAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 128,
+            "height": 128
+          },
+          "sha256": "3d057e10d4138a084ba97e81f5d5f05b4f74b744d664d89c2e371d03f1247854",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.clock.128",
+            "path": "assets/fox/fox-clock-128.webp",
+            "role": "mascot.pose.clock@128",
+            "group": "fox"
+          },
+          "scale_ratio": 1.0,
+          "problems": [
+            "natural 128px is below 2x rendered 128.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1049,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
+          "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 977.03,
+            "height": 12
+          },
+          "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "bundled_asset": {
+            "key": "cb.asset.object.shelf-plank",
+            "path": "assets/objects/shelf-plank.webp",
+            "role": "object.shelf-plank",
+            "group": "objects"
+          },
+          "marks": [
+            "data-cb3-shelf=\"\"",
+            "data-cb-home-shelf-frame=\"\"",
+            "data-cb-home-shelf=ready",
+            "data-cb-home-shelf-state=ready"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 1049,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "home--1049.png",
+        "declared": "ef52464b601efcfb4cd085911e3570017529d1daef3f25f55333d809d1a9861b",
+        "measured": "ef52464b601efcfb4cd085911e3570017529d1daef3f25f55333d809d1a9861b",
+        "ok": true
+      }
+    },
+    {
+      "cell": "home--1344",
+      "destination": "home",
+      "width": 1344,
+      "ok": false,
+      "problems": [
+        "required image missing: display_cover 0/4",
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img: natural 128px is below 2x rendered 220.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "display_cover",
+          "required": 4,
+          "found": 0,
+          "ok": false,
+          "note": "four Home display covers"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox clock pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb-home-scene-clock] [data-cb-home=\"scene\"] > img",
+          "current_src": "data:image/webp;base64,UklGRr5nAABXRUJQV\u2026",
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 112,
+            "height": 112
+          },
+          "sha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+          "kind": "unknown",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.object.clock",
+            "path": "assets/objects/clock.webp",
+            "role": "object.clock",
+            "group": "objects"
+          },
+          "scale_ratio": 2.286,
+          "problems": []
+        },
+        {
+          "selector": "[data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"24px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRqQMAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 220,
+            "height": 220
+          },
+          "sha256": "3d057e10d4138a084ba97e81f5d5f05b4f74b744d664d89c2e371d03f1247854",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.clock.128",
+            "path": "assets/fox/fox-clock-128.webp",
+            "role": "mascot.pose.clock@128",
+            "group": "fox"
+          },
+          "scale_ratio": 0.582,
+          "problems": [
+            "natural 128px is below 2x rendered 220.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 1344,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-home-scene-plank-one] [data-cb-home=\"scene\"] > div",
+          "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 870,
+            "height": 20
+          },
+          "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "bundled_asset": {
+            "key": "cb.asset.object.shelf-plank",
+            "path": "assets/objects/shelf-plank.webp",
+            "role": "object.shelf-plank",
+            "group": "objects"
+          },
+          "marks": [
+            "data-cb-home-scene-plank-one=\"\"",
+            "data-cb-home=scene",
+            "data-cb-home-scene=\"\"",
+            "data-cb-main=\"\""
+          ]
+        },
+        {
+          "selector": "[data-cb-home-scene-plank-two] [data-cb-home=\"scene\"] > div",
+          "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 1165,
+            "height": 34
+          },
+          "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "bundled_asset": {
+            "key": "cb.asset.object.shelf-plank",
+            "path": "assets/objects/shelf-plank.webp",
+            "role": "object.shelf-plank",
+            "group": "objects"
+          },
+          "marks": [
+            "data-cb-home-scene-plank-two=\"\"",
+            "data-cb-home=scene",
+            "data-cb-home-scene=\"\"",
+            "data-cb-main=\"\""
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 1344,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "home--1344.png",
+        "declared": "d5990cec46e2357dfd8ee8a9a024b437574b1195450794dd9b4c933cc18689cc",
+        "measured": "d5990cec46e2357dfd8ee8a9a024b437574b1195450794dd9b4c933cc18689cc",
+        "ok": true
+      }
+    },
+    {
+      "cell": "home--460",
+      "destination": "home",
+      "width": 460,
+      "ok": false,
+      "problems": [
+        "required image missing: display_cover 0/4",
+        "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "display_cover",
+          "required": 4,
+          "found": 0,
+          "ok": false,
+          "note": "four Home display covers"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": null,
+          "ok": true,
+          "skipped": "not required at 460px (min width 620px)",
+          "note": "fox clock pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 403,
+            "height": 268.66
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 2.144,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 403,
+            "height": 268.66
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 2.144,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 460,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
+          "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 429.63,
+            "height": 12
+          },
+          "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "bundled_asset": {
+            "key": "cb.asset.object.shelf-plank",
+            "path": "assets/objects/shelf-plank.webp",
+            "role": "object.shelf-plank",
+            "group": "objects"
+          },
+          "marks": [
+            "data-cb3-shelf=\"\"",
+            "data-cb-home-shelf-frame=\"\"",
+            "data-cb-home-shelf=ready",
+            "data-cb-home-shelf-state=ready"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 460,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "home--460.png",
+        "declared": "a1a8e9d5152ad61fced0be01b0fbd9ca315f86db48fe2adb498da29dfd552665",
+        "measured": "a1a8e9d5152ad61fced0be01b0fbd9ca315f86db48fe2adb498da29dfd552665",
+        "ok": true
+      }
+    },
+    {
+      "cell": "home--900",
+      "destination": "home",
+      "width": 900,
+      "ok": false,
+      "problems": [
+        "required image missing: display_cover 0/4",
+        "2 Press Plate(s) counted on a product surface \u2014 bundled pack cover bundled/packs/japanese-affection-context-l0/content/cover-3x2.png, bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+        "image [data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img: data URI stands in for a kit asset",
+        "image [data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img: natural 128px is below 2x rendered 128.00px"
+      ],
+      "warnings": [],
+      "requirements": [
+        {
+          "role": "display_cover",
+          "required": 4,
+          "found": 0,
+          "ok": false,
+          "note": "four Home display covers"
+        },
+        {
+          "role": "fox_pose",
+          "required": 1,
+          "found": 1,
+          "ok": true,
+          "note": "fox clock pose (hidden below 620 px by design)"
+        }
+      ],
+      "images": [
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 237,
+            "height": 158
+          },
+          "sha256": "3eab94e5555241a7bf0556aeedf2e7d1d145daf572e975239d4d6dc4565c0056",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/technical-pack-literacy/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.646,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-cover=\"art\"] [data-cb-home-cover-plate] > img",
+          "current_src": "data:image/png;base64,iVBORw0KGgoAAAANSU\u2026",
+          "natural": {
+            "width": 864,
+            "height": 576
+          },
+          "rendered": {
+            "width": 237,
+            "height": 158
+          },
+          "sha256": "41a21b9742c8f8cbd8e020e9f0660ff87dec3e6203688211aaad4f582c0aed2f",
+          "kind": "cover_plate",
+          "placeholder": false,
+          "press_plate": true,
+          "press_plate_source": "bundled/packs/japanese-affection-context-l0/content/cover-3x2.png",
+          "bundled_asset": null,
+          "scale_ratio": 3.646,
+          "problems": [
+            "data URI stands in for a kit asset"
+          ]
+        },
+        {
+          "selector": "[data-cb3-fox=\"clock\"] [data-cb3-fox-safe=\"16px\"] > img",
+          "current_src": "data:image/webp;base64,UklGRqQMAABXRUJQV\u2026",
+          "natural": {
+            "width": 128,
+            "height": 128
+          },
+          "rendered": {
+            "width": 128,
+            "height": 128
+          },
+          "sha256": "3d057e10d4138a084ba97e81f5d5f05b4f74b744d664d89c2e371d03f1247854",
+          "kind": "fox_pose",
+          "placeholder": false,
+          "press_plate": false,
+          "press_plate_source": null,
+          "bundled_asset": {
+            "key": "cb.asset.fox.clock.128",
+            "path": "assets/fox/fox-clock-128.webp",
+            "role": "mascot.pose.clock@128",
+            "group": "fox"
+          },
+          "scale_ratio": 1.0,
+          "problems": [
+            "natural 128px is below 2x rendered 128.00px"
+          ]
+        }
+      ],
+      "backgrounds": [
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRtwAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "970f718a1bc58260635b177b8f3004f9ed19ee68a764f5b0e47a11d126a7f03b",
+          "bundled_asset": {
+            "key": "cb.asset.material.grain-night",
+            "path": "assets/material/grain-night.webp",
+            "role": "material.tile.grain-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb-destination=\"home\"] [data-cb-scope=\"dark\"] > div",
+          "url": "data:image/webp;base64,UklGRpAAAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 96,
+            "height": 96
+          },
+          "rendered": {
+            "width": 900,
+            "height": 714
+          },
+          "sha256": "7497335c1212aae1cc484a11faeccfc3b29af3dd37a73d3dee942d252ef56e64",
+          "bundled_asset": {
+            "key": "cb.asset.material.vignette-night",
+            "path": "assets/material/vignette-night.webp",
+            "role": "material.tile.vignette-night",
+            "group": "material"
+          },
+          "marks": [
+            "data-cb-destination=home",
+            "data-cb-route=/coursebook",
+            "data-cb-scope=dark",
+            "data-cb-motion=full"
+          ]
+        },
+        {
+          "selector": "[data-cb3-shelf] [data-cb-home-shelf-frame] > div",
+          "url": "data:image/webp;base64,UklGRmxFAABXRUJQV\u2026",
+          "data_uri": true,
+          "natural": {
+            "width": 256,
+            "height": 256
+          },
+          "rendered": {
+            "width": 837.13,
+            "height": 12
+          },
+          "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+          "bundled_asset": {
+            "key": "cb.asset.object.shelf-plank",
+            "path": "assets/objects/shelf-plank.webp",
+            "role": "object.shelf-plank",
+            "group": "objects"
+          },
+          "marks": [
+            "data-cb3-shelf=\"\"",
+            "data-cb-home-shelf-frame=\"\"",
+            "data-cb-home-shelf=ready",
+            "data-cb-home-shelf-state=ready"
+          ]
+        }
+      ],
+      "plugin": {
+        "loaded_path": "/home/deseretsaint/Projects/hermes-classroom/desktop/plugin.js",
+        "bytes": 2419017,
+        "sha256": "251a39480ab0527df61a46058a0f7a5f9f03de40e2796886f4c0dc92b53ac3cd"
+      },
+      "route": {
+        "marker": "/coursebook",
+        "destination": "home",
+        "width": 900,
+        "height": 714,
+        "v3_ready": true,
+        "fonts_status": "loaded",
+        "scope": "dark"
+      },
+      "screenshot": {
+        "file": "home--900.png",
+        "declared": "cd41f061be1f3b33c09c2f3765e778d1a4ed541c46ca2cd4672d009a16873bbf",
+        "measured": "cd41f061be1f3b33c09c2f3765e778d1a4ed541c46ca2cd4672d009a16873bbf",
+        "ok": true
+      }
+    }
+  ],
+  "missing_cells": [
+    {
+      "destination": "home",
+      "width": 1344
+    },
+    {
+      "destination": "home",
+      "width": 1049
+    },
+    {
+      "destination": "home",
+      "width": 900
+    },
+    {
+      "destination": "home",
+      "width": 460
+    },
+    {
+      "destination": "discover",
+      "width": 1344
+    },
+    {
+      "destination": "discover",
+      "width": 1049
+    },
+    {
+      "destination": "discover",
+      "width": 900
+    },
+    {
+      "destination": "discover",
+      "width": 460
+    },
+    {
+      "destination": "course-home",
+      "width": 1344
+    },
+    {
+      "destination": "course-home",
+      "width": 1049
+    },
+    {
+      "destination": "course-home",
+      "width": 900
+    },
+    {
+      "destination": "course-home",
+      "width": 460
+    },
+    {
+      "destination": "classroom",
+      "width": 1344
+    },
+    {
+      "destination": "classroom",
+      "width": 1049
+    },
+    {
+      "destination": "classroom",
+      "width": 900
+    },
+    {
+      "destination": "classroom",
+      "width": 460
+    },
+    {
+      "destination": "world-studio",
+      "width": 1344
+    },
+    {
+      "destination": "world-studio",
+      "width": 1049
+    },
+    {
+      "destination": "world-studio",
+      "width": 900
+    },
+    {
+      "destination": "world-studio",
+      "width": 460
+    },
+    {
+      "destination": "design-system",
+      "width": 1344
+    },
+    {
+      "destination": "design-system",
+      "width": 1049
+    },
+    {
+      "destination": "design-system",
+      "width": 900
+    },
+    {
+      "destination": "design-system",
+      "width": 460
+    }
+  ],
+  "summary": {
+    "cells": 16,
+    "passed": 0,
+    "failed": 16,
+    "missing_matrix_cells": 24,
+    "mixed_build": false,
+    "ok": false
+  }
+}
