@@ -49,8 +49,9 @@ Read this once. It is the whole context you need; do not go exploring the reposi
 - `scripts/compare-ref.sh` (header only, for usage), `scripts/build_plugin.py` (header only)
 - Board state: `hermes kanban --board coursebook list --json`
 
-Do not open `desktop/src/*.js`, `tests/`, `coursebook/`, `contracts/`, or any other docs. If you think
-you need a code file, write one sentence saying why and ask the owner instead.
+Do not survey `desktop/src/*.js`, `tests/`, `coursebook/`, `contracts/`, or other docs. You may open
+up to three named source files per screen after saying which and why; the generated pack is the
+default substitute for the codebase.
 
 ## Roles
 
@@ -63,8 +64,8 @@ you need a code file, write one sentence saying why and ask the owner instead.
 | sentinel | adversarial review | DeepSeek |
 | default (you) | UI supervising manager | Opus 5.5 |
 
-Fable 5.2 may be pinned on at most two live design cards at a time:
-`--model anthropic/claude-fable-5.2 --provider nous --max-runtime 120m --max-retries 0`.
+Fable 5.2 is a tie-break judge only, when the director's rubric and the verifier disagree. It is
+never a writer and never the first judge.
 
 ## Non-goals
 
@@ -74,6 +75,6 @@ reference are recorded for the owner's copy card; they are never edited by a UI 
 
 ## Budget
 
-- Waves of at most four cards, each `--max-runtime 120m --max-retries 1`.
-- Two Fable cards maximum in flight.
-- Stop a wave after three failed passes on one screen and report the gap list.
+- At most two cards in flight; only one touches a screen's files.
+- Per screen: writer ≤ $5, critic ≤ $1, director ≤ $3; program ≤ $60.
+- Three failed passes on one dimension stops that screen and reports the gap list.
