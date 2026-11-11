@@ -54,7 +54,14 @@ import { dirname, resolve } from 'node:path'
 
 const args = process.argv.slice(2)
 const flag = (name, fallback = null) => {
-  const index = args.indexOf(`--${name}`)
+  // Last occurrence wins: the capture matrix puts shared defaults in the `BASE` array and lets a
+  // cell override one of them by appending the flag (e.g. `--root-font 32px` for the 200 % cell).
+  // With first-wins the shared `--root-font 16px` silently won and the 200 % cell was shot at 100 %
+  // (CP-024 review round 4).
+  let index = -1
+  for (let cursor = 0; cursor < args.length; cursor += 1) {
+    if (args[cursor] === `--${name}`) index = cursor
+  }
   if (index < 0) return fallback
   const value = args[index + 1]
   return value && !value.startsWith('--') ? value : true
@@ -1105,13 +1112,18 @@ const liveCapture = async () => {
     }
   }
 
-  // Optional root text scale, for the 200 % cell: the matrix's text scale is the root font size,
-  // not page zoom, and the probe already records the computed value (`route.text_scale_root_px`).
-  const rootFont = flag('root-font', null)
-  if (rootFont && rootFont !== true) {
-    await evaluate(cdp, `document.documentElement.style.fontSize = ${JSON.stringify(String(rootFont))}`)
-    await sleep(450)
-  }
+  // Text scale. The matrix's text scale is the root font size, not page zoom, and each cell names
+  // it (`--100--` / `--200--`). The door therefore sets the root font explicitly for EVERY cell —
+  // default 16px — and restores the page's prior inline value afterwards. Setting it only for the
+  // 200 % cell and never restoring it is what let a prior cell's 32px leak into later `--100--`
+  // frames on a `--no-reload` rig (CP-024 review round 3: 14 of 15 frames shot at 32px while every
+  // name said 100 %). The requested value is recorded in `capture.root_font`.
+  const rootFontArg = flag('root-font', null)
+  const rootFont = rootFontArg && rootFontArg !== true ? String(rootFontArg) : '16px'
+  const rootFontPrior = await evaluate(cdp, `document.documentElement.style.fontSize || ''`)
+  await evaluate(cdp, `document.documentElement.style.fontSize = ${JSON.stringify(rootFont)}`)
+  await sleep(450)
+  const rootFontRecord = { requested: rootFont, prior_inline: rootFontPrior || null }
 
   // Neutralise the rig's page zoom. Under a non-100% zoom, `Emulation.setDeviceMetricsOverride`
   // makes the layout viewport larger than the surface Chromium actually paints, so a route crop
@@ -1265,8 +1277,16 @@ const liveCapture = async () => {
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded, rootFont: rootFontRecord })
   } finally {
+    // Restore the page's own root font before the window is used by another cell. A `--no-reload`
+    // matrix shares one page across every frame, so an unrestored 32px is a silent scale change.
+    await evaluate(cdp, `(() => {
+      const prior = ${JSON.stringify(rootFontPrior || '')}
+      if (prior) document.documentElement.style.fontSize = prior
+      else document.documentElement.style.removeProperty('font-size')
+      return document.documentElement.style.fontSize || null
+    })()`).catch(() => null)
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
     }
@@ -1384,7 +1404,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null, driver = null, reloaded = true }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null, driver = null, reloaded = true, rootFont = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -1482,7 +1502,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height },
       pixel_check: pixelCheck,
       driver,
-      reloaded
+      reloaded,
+      root_font: rootFont ? { requested: rootFont.requested, prior_inline: rootFont.prior_inline } : null
     },
     page_url: pageUrl
   }

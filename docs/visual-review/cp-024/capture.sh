@@ -47,7 +47,7 @@ BACKEND_PORT="${CB013_PORT:-44427}"
 TOKEN="${CB013_TOKEN:-cp024-test-token}"
 
 BASE=(--out "$OUT" --cdp-port "$PORT" --state "$STATE" --plugin desktop/plugin.js
-      --backend-url "$BACKEND" --token "$TOKEN" --require-v3 --no-reload
+      --backend-url "$BACKEND" --token "$TOKEN" --require-v3 --no-reload --root-font 16px
       --after-reload "$OUT/drive-course-home.js"
       --after-reload-wait '[data-cb-course-home-v3]')
 
