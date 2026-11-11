@@ -205,17 +205,28 @@ hermes plugins doctor coursebook
 bash scripts/validate.sh
 ```
 
-Cloning from GitHub is the supported install path: the repository is public, and the clone in
-`## Install locally` above is the path the catalog entry's `docs_url` points at.
+Cloning from GitHub is the supported install path today: the repository is public, and the clone
+in `## Install locally` above is the path the catalog entry's `docs_url` points at.
+
+```
+hermes plugins install https://github.com/DeseretSaint/hermes-classroom \
+  --ref 172b61aaffd44c33f2c89360df9f1fceeff66c37 --yes-deps --enable
+```
+
+The install-time scanner returns a **caution** verdict for this repository because it scans the
+committed test fixtures and audit captures along with the plugin code (1,183 findings, almost all
+LOW). It prints the report and refuses without a human decision, which a Desktop install cannot
+give. Read the report, then repeat the command with `--force`. A catalog install (`hermes plugins
+install coursebook`) does not need `--force`: a curated pin accepts caution without a prompt.
 
 `hermes plugins install coursebook` — the catalog path — does not work yet. The entry is submitted as
 `plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open draft pull request,
-and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry pins
-`3278bae` on `master` and validates under `hermes-agent`'s pinned-source catalog gate: the CP-039
-review ran that gate at the pinned sha and it exited 0, 16/16 checks, including the
-symlink-confinement check that rejected the previous pin. Gates 7 and 12 of `docs/SUBMISSION.md`
-(demo scenarios, catalog merge) are open, so the pull request stays draft. Owner: Harbor and
-DeseretSaint.
+and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry now
+pins `172b61aa` on `master` (the CP-015g portability build) and validates under `hermes-agent`'s
+pinned-source catalog gate: the CP-039 review ran that gate at the previous pin and it exited 0,
+16/16 checks, including the symlink-confinement check that rejected the pin before it. Gates 7 and
+12 of `docs/SUBMISSION.md` (demo scenarios, catalog merge) are open, so the pull request stays
+draft. Owner: Harbor and DeseretSaint.
 
 ## First run
 
