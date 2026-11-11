@@ -17319,6 +17319,7 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   top: 545px;
   width: 870px;
   height: 20px;
+  /* The cards sit in front of the plank, as in the reference; the wood passes behind them. */
   z-index: 1;
   background-color: var(--cb3-wood);
   background-repeat: repeat-x;
