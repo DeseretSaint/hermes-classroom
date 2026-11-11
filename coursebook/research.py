@@ -156,6 +156,51 @@ _MAX_SOURCE_TYPE = 40
 _MAX_QUERY = 220
 _MAX_REASON = 300
 
+#: How much fetched page text the seam is asked for *before* main-body extraction. The article on
+#: a heavily navigated page can start after several thousand characters of menus; a window that
+#: closes first can only ever yield the menu. This bounds the fetch, not the store: only the
+#: extracted body (bounded by ``ResearchBudget.max_page_chars``) is hashed or kept.
+EXTRACT_WINDOW_CHARS = 40000
+
+#: A page no longer than this is its own body when it is not navigation. Long pages must offer a
+#: block that reads as prose; otherwise the record says ``no_body`` rather than quoting chrome.
+SHORT_PAGE_CHARS = 400
+
+#: A block must carry at least this much prose (characters and words) before it may start a body.
+MIN_BODY_BLOCK_CHARS = 60
+MIN_BODY_WORDS = 8
+
+#: Furniture phrases a page carries around its article. Matched casefolded against the block's
+#: plain text and only when the block is short or link-dense — a real body paragraph may use the
+#: word "search" without being a search box.
+_CHROME_MARKERS: tuple[str, ...] = (
+    "skip to content",
+    "suggested searches",
+    "we use cookies",
+    "accept all cookies",
+    "accept only essential cookies",
+    "cookie preferences",
+    "cookie notice",
+    "subscribe to our newsletter",
+    "join our newsletter",
+    "stay updated",
+    "media modal",
+    "copy url",
+    "publication date",
+    "favorites",
+    "share on",
+    "did you find what you were looking for",
+    "what were you looking for",
+    "what were you hoping to accomplish",
+    "0 of 1000 max characters",
+    "0 of 3000 max characters",
+    "back to homepage",
+    "related articles",
+    "advertisement",
+    "sign in",
+    "log in",
+)
+
 #: Declared deadlines for the host research tools (H-66). The host may ignore any timeout the
 #: plugin merely forwards, so the adapter enforces its own wall clock. These are outer bounds
 #: for one call, not target latencies; an operator can raise them per tool.
@@ -335,8 +380,18 @@ class SourceRecord:
     support_status: str = "unverified"
     claim_links: list[str] = field(default_factory=list)
     excerpt: str = ""
+    #: ``recorded`` when ``excerpt`` is the page's own prose, ``no_body`` when no prose could be
+    #: separated from the page furniture. A ``no_body`` source is provenance without quotable
+    #: text: it must not look citable, and no claim can be linked to it.
+    excerpt_state: str = "recorded"
     query: str = ""
     truncated: bool = False
+
+    def __post_init__(self) -> None:
+        if self.excerpt_state not in ("recorded", "no_body"):
+            raise ValueError(f"unknown excerpt_state {self.excerpt_state!r}")
+        if self.excerpt_state == "recorded" and not self.excerpt.strip():
+            self.excerpt_state = "no_body"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -924,8 +979,12 @@ def run_research(
             break
         if callable(cancel_probe) and cancel_probe():
             raise ResearchCancelled("job cancelled before the next extract call")
+        # Ask for the whole page's text, not just the excerpt budget: the body may start after
+        # thousands of characters of navigation, and an excerpt window that closes first can
+        # only quote the navigation. The stored body is still bounded by ``max_page_chars``.
+        fetch_window = max(budget.max_page_chars, EXTRACT_WINDOW_CHARS)
         try:
-            page = search.fetch(candidate["url"], budget.max_page_chars)
+            page = search.fetch(candidate["url"], fetch_window)
         except ResearchCancelled:
             raise
         except ResearchTimeout as exc:
@@ -953,8 +1012,10 @@ def run_research(
                 {"url": candidate["url"], "query": str(candidate.get("query") or ""), "error": "empty extract"}
             )
             continue
-        truncated = len(content) > budget.max_page_chars
-        bounded = content[: budget.max_page_chars]
+        body, excerpt_state, body_clipped = _extract_main_body(content, budget.max_page_chars)
+        # ``truncated`` is about the copy we keep: the fetch hit our window, or the body was
+        # longer than the page bound. A no-body page is not "truncated", it is honestly empty.
+        truncated = len(content) >= fetch_window or body_clipped
         url = str(page.get("url") or candidate["url"])
         publisher = page.get("publisher") or _publisher_of(url)
         sources.append(
@@ -966,9 +1027,10 @@ def run_research(
                 source_type=_classify_source(url),
                 fetched_at=fetched_at,
                 published_at=_normalize_timestamp(page.get("published_at")),
-                content_hash=sha256_of_text(bounded),
+                content_hash=sha256_of_text(body),
                 support_status="unverified",
-                excerpt=_excerpt(bounded, budget.max_excerpt_chars),
+                excerpt=_excerpt(body, budget.max_excerpt_chars),
+                excerpt_state=excerpt_state,
                 query=str(candidate.get("query") or ""),
                 truncated=truncated,
             )
@@ -1168,6 +1230,190 @@ def _excerpt(text: str, limit: int) -> str:
     if matches:
         return window[: matches[-1].end()]
     return window
+
+
+# ── Main-body extraction ────────────────────────────────────────────────────
+#
+# The host extractor returns markdown that still carries the site's furniture: skip links,
+# search boxes, subject menus, logo alt text, share rails, cookie banners and survey forms. On a
+# heavily navigated page that furniture can run past any fixed excerpt budget, so slicing the
+# first N characters yields navigation. These helpers find the first block that reads as prose
+# and keep from there; a page with no such block is recorded as ``no_body``.
+
+_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_INLINE_LINK_RE = re.compile(r"!?\[[^\]]*\]\([^)]*\)")
+_HEADING_MARK_RE = re.compile(r"^\s{0,3}#{1,6}\s*", re.MULTILINE)
+_EMPHASIS_RE = re.compile(r"[*_`>]+")
+_ESCAPE_RE = re.compile(r"\\([\\`*_{}\[\]()#+\-.!|>])")
+_WORDS_RE = re.compile(r"[^\W\d_]{2,}", re.UNICODE)
+_SENTENCE_END_RE = re.compile(r"[.!?。！？…]")
+
+
+def _plain_text(block: str) -> str:
+    """The readable text of one markdown block: no images, link targets or markers.
+
+    Image alt text is dropped with the image: a logo or a decorative thumbnail's alt string is
+    exactly the chrome this extraction exists to keep out. Link *labels* are kept — a nav list
+    is then recognisable by how little of the block is not a link.
+    """
+    text = _IMAGE_RE.sub(" ", block)
+    text = _LINK_RE.sub(lambda match: match.group(1), text)
+    text = _HEADING_MARK_RE.sub("", text)
+    text = _EMPHASIS_RE.sub(" ", text)
+    text = _ESCAPE_RE.sub(r"\1", text)
+    text = text.replace("|", " ")
+    return " ".join(text.split())
+
+
+_EMPHASIS_PAIR_RE = re.compile(r"(?<![\w])([*_])(?=\S)(.*?)(?<=\S)\1(?![\w])")
+_BLOCKQUOTE_RE = re.compile(r"^\s{0,3}>+\s?", re.MULTILINE)
+
+
+def _prose_text(block: str) -> str:
+    """The block as a reader sees it: link targets and images gone, markers gone.
+
+    What a model is asked to quote must be the rendered sentence. A markdown link in the stored
+    excerpt (`As ESA's Jupiter Icy Moons Explorer ( [Juice](https://...)) prepares`) would make a
+    verbatim quote of the visible sentence impossible, so link labels are kept and their targets
+    dropped. Emphasis markers are removed when they pair (`**bold**` -> `bold`); a lone ``*`` or
+    ``_`` in prose (multiplication, a variable name) is left alone.
+    """
+    text = _IMAGE_RE.sub(" ", block)
+    text = _LINK_RE.sub(lambda match: match.group(1), text)
+    text = _HEADING_MARK_RE.sub("", text)
+    text = _BLOCKQUOTE_RE.sub("", text)
+    text = re.sub(r"(?m)^\s*(?:[-*+]|\d+[.)])\s+", "", text)
+    text = _EMPHASIS_PAIR_RE.sub(lambda match: match.group(2), text)
+    text = text.replace("`", "")
+    # A link label that sat inside parentheses leaves "( [Juice](url))" -> "( Juice)"; close it.
+    text = re.sub(r"\(\s+", "(", text)
+    text = re.sub(r"\s+\)", ")", text)
+    return " ".join(text.split())
+
+
+def _link_density(block: str) -> float:
+    """Fraction of a block's characters that sit inside a markdown link or image."""
+    linked = sum(len(match.group(0)) for match in _INLINE_LINK_RE.finditer(block))
+    return linked / max(1, len(block))
+
+
+def _looks_like_notice(plain: str) -> bool:
+    low = plain.casefold()
+    return any(marker in low for marker in _CHROME_MARKERS)
+
+
+def _is_prose_block(block: str) -> bool:
+    """Whether this block can be the start of the article's body."""
+    stripped = block.strip()
+    if stripped.startswith("#") and "\n" not in stripped:
+        return False  # a bare heading is structure, not prose
+    plain = _plain_text(block)
+    if len(plain) < MIN_BODY_BLOCK_CHARS:
+        return False
+    if _link_density(block) > 0.35:
+        return False
+    if len(_WORDS_RE.findall(plain)) < MIN_BODY_WORDS:
+        return False
+    if not _SENTENCE_END_RE.search(plain):
+        return False
+    return not _looks_like_notice(plain)
+
+
+def _is_furniture(block: str) -> bool:
+    """Whether a block inside the body window is page furniture, not article prose."""
+    plain = _plain_text(block)
+    if not plain:
+        return True  # image-only / empty
+    if _link_density(block) > 0.5:
+        return True  # nav list, share rails, related links
+    if len(plain) < MIN_BODY_BLOCK_CHARS:
+        return True  # labels: bylines, dates, "4 Min Read", section headings
+    if _looks_like_notice(plain) and (len(plain) < 240 or _link_density(block) > 0.2):
+        return True
+    return False
+
+
+def _merge_lines(block: str) -> list[str]:
+    """Split a hard-wrapped block into pseudo-paragraphs (PDF text often has no blank lines)."""
+    paragraphs: list[str] = []
+    buffer: list[str] = []
+    for line in block.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith(("#", "- ", "* ", "> ", "|", "![")) and buffer:
+            paragraphs.append(" ".join(buffer))
+            buffer = []
+        buffer.append(line)
+        joined = " ".join(buffer)
+        if len(joined) >= 200 and _SENTENCE_END_RE.search(line[-1:] or ""):
+            paragraphs.append(" ".join(buffer))
+            buffer = []
+    if buffer:
+        paragraphs.append(" ".join(buffer))
+    return paragraphs
+
+
+def _paragraphs(text: str) -> list[str]:
+    """Markdown blocks, with long hard-wrapped chunks split into readable paragraphs."""
+    blocks: list[str] = []
+    for chunk in re.split(r"\n\s*\n", str(text or "")):
+        if not chunk.strip():
+            continue
+        if len(chunk) > 1200 and chunk.count("\n") >= 2:
+            blocks.extend(_merge_lines(chunk))
+        else:
+            blocks.append(chunk)
+    return blocks
+
+
+def _extract_main_body(text: str, limit: int) -> tuple[str, str, bool]:
+    """Return ``(body, excerpt_state, clipped)`` for one fetched page.
+
+    ``body`` is the page's own prose, bounded by *limit* characters; ``clipped`` says whether
+    more body was available than the bound kept. ``excerpt_state`` is ``recorded`` when prose
+    was found, ``no_body`` when the page offered none (pure navigation, a shell). A page no
+    longer than :data:`SHORT_PAGE_CHARS` is its own body unless it is only links or a notice.
+    """
+    collapsed = " ".join(str(text or "").split())
+    if not collapsed:
+        return "", "no_body", False
+    if len(collapsed) <= SHORT_PAGE_CHARS:
+        if _link_density(text) > 0.5 or _looks_like_notice(collapsed):
+            return "", "no_body", False
+        plain = _prose_text(text)
+        if not plain:
+            return "", "no_body", False
+        return plain[:limit], "recorded", len(plain) > limit
+
+    blocks = _paragraphs(text)
+    start = next((index for index, block in enumerate(blocks) if _is_prose_block(block)), None)
+    if start is None:
+        return "", "no_body", False
+
+    kept: list[str] = []
+    kept_chars = 0
+    clipped = False
+    for block in blocks[start:]:
+        if _is_furniture(block):
+            continue
+        chunk = _prose_text(block)
+        if not chunk:
+            continue
+        if kept_chars + len(chunk) > limit:
+            room = limit - kept_chars
+            if room > 0:
+                kept.append(chunk[:room])
+                kept_chars = limit
+            clipped = True
+            break
+        kept.append(chunk)
+        kept_chars += len(chunk) + 2
+    body = "\n\n".join(kept).strip()
+    if not body:
+        return "", "no_body", False
+    return body, "recorded", clipped
 
 
 def _loads_tool_json(raw: Any) -> dict[str, Any]:

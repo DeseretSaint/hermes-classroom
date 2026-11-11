@@ -7208,6 +7208,7 @@ def _source_brief(
             "fetched_at": source.fetched_at,
             "source_type": source.source_type,
             "support_status": source.support_status,
+            "excerpt_state": source.excerpt_state,
             "untrusted_excerpt": _untrusted_excerpt(source.excerpt, excerpt_chars=excerpt_chars),
         }
         for source in sources

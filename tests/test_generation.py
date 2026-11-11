@@ -439,15 +439,32 @@ class ResearchTest(GenerationTestBase):
         self.assertTrue(any(fetches for fetches in [run.reason]))
         self.assertIn("no source could be fetched", run.reason or "")
 
-    def test_content_is_bounded_and_hashed_on_the_bounded_text(self) -> None:
-        long_page = {"https://example.org/a": {"title": "Long", "content": "x" * 12000, "published_at": None}}
+    def test_content_is_bounded_and_hashed_on_the_bounded_body(self) -> None:
+        prose = "The telescope should cool outside before the first observation begins. " * 200
+        long_page = {"https://example.org/a": {"title": "Long", "content": prose, "published_at": None}}
         run = research.run_research(
             "x", recipe="casual", search=FakeSearch(long_page), budget=research.ResearchBudget(max_page_chars=600, max_excerpt_chars=100), now=NOW
         )
         source = run.sources[0]
         self.assertTrue(source.truncated)
+        self.assertEqual(source.excerpt_state, "recorded")
         self.assertEqual(len(source.excerpt), 100)
-        self.assertEqual(source.content_hash, research.sha256_of_text("x" * 600))
+        self.assertEqual(source.content_hash, research.sha256_of_text(prose[:600]))
+
+    def test_a_page_of_chrome_is_an_honest_no_excerpt(self) -> None:
+        chrome = "\n\n".join(
+            [f"- [Topic {index}](https://example.org/?q=Topic%20{index})" for index in range(40)]
+        )
+        run = research.run_research(
+            "x",
+            recipe="casual",
+            search=FakeSearch({"https://example.org/a": {"title": "Index", "content": chrome}}),
+            now=NOW,
+        )
+        source = run.sources[0]
+        self.assertEqual(source.excerpt, "")
+        self.assertEqual(source.excerpt_state, "no_body")
+        self.assertNotIn("Topic", source.excerpt)
 
     def test_http_only_and_publication_date_are_not_guessed(self) -> None:
         page = {"https://example.org/a": {"title": "T", "content": "body text", "published_at": "last week"}}

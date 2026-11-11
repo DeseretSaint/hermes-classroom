@@ -1469,8 +1469,8 @@
       "segments": [],
       "sources": [
         {
-          "content_hash": "sha256:8d35aa82ce62ba1aed94e1808a398e5d20641679bf80960d1d2f7bc1e94ef08d",
-          "excerpt": "150909 SOLDERING, ASSEMBLY, # AND MANUFACTURING [Image: Image6] George Hadley ©2014, Images Property of their Respective Owners. --- ## OUTLINE • Importance of soldering • Soldering equipment, tools, and supplies • How do solder and flux work?",
+          "content_hash": "sha256:c4289080396edf4ced319159db9ad6b417c32145a7932cb4ae8c57859367e669",
+          "excerpt": "[Image: Image6] George Hadley ©2014, Images Property of their Respective Owners. • Valuable engineering skill (in research, entrepreneurship, or industry) • Able to correct minor hardware issues discovered after PCB is received (“flywiring”) • Able to fabricate one-off prototypes, designs, and proof-of-concepts • Detachable probe, used for probing in circuit; transfers heat to board • Interchangeable tips; changes heat profile at board contact point (different tips for different jobs) • Soldering Base/Holder: • Holds soldering probe when not in use • Used for cleaning solder, oxidation, and impurities from tip • Available in various widths, materials (lead, lead-free, etc.), and core materials (rosin core, solid core, etc.) • Available in various types (rosinbased, water-based, no clean) • Used for dampening solder sponge and removing water-soluble flux LN307 5.251 Display Date: 15-12-09 DIA 1.25 mm NET NO. 5685 G LOT NO. 2216127-1 ULTRACORE CO.,LTD.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1485,8 +1485,8 @@
           "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf"
         },
         {
-          "content_hash": "sha256:4f4de4ce3cd779e3b9e82e4944f3eb50bdc3386f4dab8a8204e558e4214f76b6",
-          "excerpt": "You will likely need to solder components during the course, particularly for the final project. Your instructors and TAs are happy to help, but the resources below will help you get started. Before soldering, review the [soldering safety guidelines](https://physicslabs.colorado.edu/courses/phys-3330/resources/lab-safety/#soldering-safety) on the Lab Safety page. ## The Basics [Copy link to section](https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/\\#the-basics \"Copy link to section\") A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely. A bad joint looks dull, blobby, or cracked. The most common beginner mistakes are: - **Not heating both surfaces.** Touch the iron tip to both the pad and the lead simultaneously, then feed solder into the joint. If you only heat one surface, the solder won’t flow properly and you’ll get a cold joint. - **Too much solder.** You need less than you think. A small, concave fillet is ideal. Large blobs can bridge adjacent pads and create shorts. - **Moving too soon.** Hold the component steady until the solder solidifies (about a second).",
+          "content_hash": "sha256:c7dc75fb0ee3ee527daf7bbaea968fd8345681ed58a7ddf9690e5da4d7ffc677",
+          "excerpt": "You will likely need to solder components during the course, particularly for the final project. Your instructors and TAs are happy to help, but the resources below will help you get started. A good solder joint is shiny, smooth, and volcano-shaped — it wets both the pad and the component lead completely. A bad joint looks dull, blobby, or cracked. The most common beginner mistakes are: *Not heating both surfaces.* Touch the iron tip to both the pad and the lead simultaneously, then feed solder into the joint. If you only heat one surface, the solder won’t flow properly and you’ll get a cold joint. *Too much solder.* You need less than you think. A small, concave fillet is ideal. Large blobs can bridge adjacent pads and create shorts. *Moving too soon.* Hold the component steady until the solder solidifies (about a second). Moving the joint while it cools creates a dull, unreliable cold joint. *Overheating.* Don’t hold the iron on a joint for more than a few seconds. Excessive heat can damage components and lift pads from the board.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1501,8 +1501,8 @@
           "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/"
         },
         {
-          "content_hash": "sha256:b3a0187de6742fa2d57f887d854d6df2ab33c46ac5c5d5b17a1e9b9b0d937083",
-          "excerpt": "## TN1225 ### Mounting instructions for THD (through-hole device) packages #### Introduction The mounting instructions herein provide the main recommendations to appropriately handle, assemble and rework through‑hole device packages. It is necessary to follow some basic assembly rules to limit thermal and mechanical stresses or ensure optimal thermal conduction and electrical insulation. STPOWER --- ### Package description In the through-hole device packages the leads of these type of devices (THD packages) are longer and straight at the end, so that they can be inserted into drilled holes in PCBs and attached by wave soldering. An extra heat sink can be either mounted on the heat slug or exposed die pad. Depending on the process and technology, this requires an extra process before or after soldering the leads. The figure below shows examples of THD packages. **Figure 1. Example of THD packages** TO-220 TO-247 TO247-4 I²PAK IPAK TO-3P TO-220FP Max247 TO-3PF #### 1.1 Thermal performance The thermal resistance of semiconductor assembly is the parameter which characterizes its resistance to the heat flow generated by the junction during operation.",
+          "content_hash": "sha256:3eeb315601047692db5605e181b3178bdb18bfdc6313265e1c1410115d9ef40e",
+          "excerpt": "The mounting instructions herein provide the main recommendations to appropriately handle, assemble and rework through‑hole device packages. It is necessary to follow some basic assembly rules to limit thermal and mechanical stresses or ensure optimal thermal conduction and electrical insulation. In the through-hole device packages the leads of these type of devices (THD packages) are longer and straight at the end, so that they can be inserted into drilled holes in PCBs and attached by wave soldering. An extra heat sink can be either mounted on the heat slug or exposed die pad. Depending on the process and technology, this requires an extra process before or after soldering the leads. The figure below shows examples of THD packages. TO-220 TO-247 TO247-4 I²PAK IPAK TO-3P TO-220FP Max247 TO-3PF The thermal resistance of semiconductor assembly is the parameter which characterizes its resistance to the heat flow generated by the junction during operation. A temperature exceeding the maximum junction temperature curtails the electrical performance and may damage the device.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1517,8 +1517,8 @@
           "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf"
         },
         {
-          "content_hash": "sha256:465d8f2308a00d9cb8cd4e332089f4e29567dc8fe46a905a20b60498eca40731",
-          "excerpt": "Free Shipping on Domestic Orders $75+ Perhaps you’re at the same point in your repair journey as me: I know my way around a screwdriver and spudger, have popped many a cable and swapped my share of puffy batteries. But whenever I would come across soldered connections, the ghastly anti-repair corporate rhetoric swirled in my mind: _Contact a certified technician!_ Determined to overcome this barrier, I decided to take matters into my own hands. I sought advice from colleagues, watched instructional videos, explored forums, and even enrolled in a short primer class to boost my confidence and give me the basic knowledge to take the plunge. To document my journey and face down my fears, I chose to share my experiences in this blog. While there’s a handful of soldering disciplines, this piece focuses on simple through-hole soldering. I’m going to go over my thought process setting up my workstation, then hop right into a through-hole soldering project. ## Setting Up My Workstation There’s loads of soldering gadgets and doodads on the market, but I was interested in rounding up the basics so I could get right into soldering without any fluff!",
+          "content_hash": "sha256:3963cd5fcf9d697270de40b5474c30b453d82b2a5740b12f90599f7240c5fa99",
+          "excerpt": "Perhaps you’re at the same point in your repair journey as me: I know my way around a screwdriver and spudger, have popped many a cable and swapped my share of puffy batteries. But whenever I would come across soldered connections, the ghastly anti-repair corporate rhetoric swirled in my mind: Contact a certified technician! Determined to overcome this barrier, I decided to take matters into my own hands. I sought advice from colleagues, watched instructional videos, explored forums, and even enrolled in a short primer class to boost my confidence and give me the basic knowledge to take the plunge. To document my journey and face down my fears, I chose to share my experiences in this blog. While there’s a handful of soldering disciplines, this piece focuses on simple through-hole soldering. I’m going to go over my thought process setting up my workstation, then hop right into a through-hole soldering project. There’s loads of soldering gadgets and doodads on the market, but I was interested in rounding up the basics so I could get right into soldering without any fluff!",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1533,8 +1533,8 @@
           "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering"
         },
         {
-          "content_hash": "sha256:7cf979fceeebb5f92d946f0ce075e993274c135cc691352c2001dc7fc83b7955",
-          "excerpt": "# Soldering Through Hole Components \\| Soldering Basics By [How Do You - DIY](https://www.instructables.com/member/How%20Do%20You%20-%20DIY) in [Circuits](https://www.instructables.com/circuits/projects) [Soldering](https://www.instructables.com/circuits/soldering/projects) 10,798 39 [4](https://www.instructables.com/Soldering-Through-Hole-Components/#discuss) Featured Published on October 21st, 2020 [![license](https://www.instructables.com/assets/img/license/by-nc-sa_small.png)](https://creativecommons.org/licenses/by-nc-sa/4.0/) Save PDF [![](https://content.instructables.com/FNC/6530/K7GW8FSV/FNC6530K7GW8FSV.png)](https://www.instructables.com/member/How%20Do%20You%20-%20DIY) By [How Do You - DIY](https://www.instructables.com/member/How%20Do%20You%20-%20DIY) [Follow](https://www.instructables.com/account/login/?nxtPg=/Soldering-Through-Hole-Components/) [![Fix the 12 Piece Burr Puzzle Pieces](https://content.instructables.com/FP5/4RRB/LP17BWTD/FP54RRBLP17BWTD.png?auto=webp&crop=1.2:1&frame=1&width=120)](https://www.instructables.com/Fix-the-12-Piece-Burr-Puzzle-Pieces) [![Make and Solve a 12 Piece Burr Puzzle](https://content.instructables.com/FCM/VCOL/LPMMY3IY/FCMVCOLLPMMY3IY",
+          "content_hash": "sha256:b06d92f6c39754fd28d789bfa0517efeb96915819b7506c80af0605876c27511",
+          "excerpt": "In this Instructable I'll be discussing some basics about soldering through-hole components to circuit boards. I'll be assuming that you've already checked out the first 2 Instructables for my Soldering Basics series. If you have not check out my Instructables on Using Solder and Using Flux, I recommend that you do since I'll be applying information from those Instructable in this one. If you're interested in learning about some other aspects of soldering, you can check out the other Instructables in my Soldering Basics Series: I'm open to adding more topics to this series over time so if you have any suggestions, leave a comment and let me know. Also, if you have any tips to share, or if I get some of my info wrong, please let me know. I want to make sure this Instructable is as accurate and helpful as possible. If you would like to see a video version of this Instructable, you can see that here: https://youtu.be/eHu\\_fGAyNY4 For this Instructable I'm using a circuit board here where I've removed some of the components so that I can demonstrate how to solder through-hole components to a circuit board.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1549,8 +1549,8 @@
           "url": "https://www.instructables.com/Soldering-Through-Hole-Components/"
         },
         {
-          "content_hash": "sha256:71a8d510b5fbd24d6cd167b48e49fe3cd52fb752774ea9f15e39716fbc3c0fc3",
-          "excerpt": "![Soldering Glossary of Terms](https://guide-images.cdn.ifixit.com/igi/TDgoeawDbxoyFFrR.standard) # Soldering Glossary of Terms Here's a place to find out what all of the soldering terms mean. Author: [Bill Gilbert](https://www.ifixit.com/User/4152395/Bill+Gilbert)(and 3 other contributors) ### Table of Contents [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Alloy \"Link to this section\") A mixture of two or more elements (usually metallic) that have properties differing from the pure elements. [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Bridging \"Link to this section\") A soldering defect where excess solder creates an unintended connection between two adjacent conductors or terminals [Link to this section](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Cold_Joint \"Link to this section\") A poor solder joint that results from insufficient heat or improper soldering technique. Often, repeated reheating of a joint without additional flux will cause this.",
+          "content_hash": "sha256:67d954ae49d18a3b1d52fd03268cdf70cd79caeb607717ad58c69c678c3e820f",
+          "excerpt": "Here's a place to find out what all of the soldering terms mean. A mixture of two or more elements (usually metallic) that have properties differing from the pure elements. A soldering defect where excess solder creates an unintended connection between two adjacent conductors or terminals A poor solder joint that results from insufficient heat or improper soldering technique. Often, repeated reheating of a joint without additional flux will cause this. The process of removing solder from a joint, usually to repair or correct an error. A device which removes molten solder from a joint by a vacuum action. A material usually made from fine copper wire woven together which when placed on a solder joint and heated, removes molten solder from the joint by capillary action. It usually has flux pre-applied to the braid. An intermediate/advanced technique used to solder multiple closely spaced pins, typically on surface-mount devices (SMDs), in one continuous motion. This method is particularly effective for components like ICs (integrated circuits) with many pins and is faster than soldering each pin individually. Solder is fed into the iron as it is moved.",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
@@ -1706,7 +1706,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9865,
+            "input_tokens": 10447,
             "output_tokens": 1884,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1852,7 +1852,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9868,
+            "input_tokens": 10451,
             "output_tokens": 1888,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1998,7 +1998,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9829,
+            "input_tokens": 10412,
             "output_tokens": 1877,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2144,7 +2144,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9804,
+            "input_tokens": 10388,
             "output_tokens": 1847,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2290,7 +2290,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9861,
+            "input_tokens": 10445,
             "output_tokens": 1894,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2436,7 +2436,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 9861,
+            "input_tokens": 10443,
             "output_tokens": 1891,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2983,7 +2983,7 @@
           "calls": 7,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 31697,
+          "input_tokens": 32858,
           "output_tokens": 2167,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -3127,7 +3127,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5534,
+            "input_tokens": 5865,
             "output_tokens": 551,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3186,7 +3186,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5528,
+            "input_tokens": 5860,
             "output_tokens": 538,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3245,7 +3245,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5515,
+            "input_tokens": 5847,
             "output_tokens": 537,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3304,7 +3304,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5523,
+            "input_tokens": 5855,
             "output_tokens": 539,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3363,7 +3363,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5525,
+            "input_tokens": 5857,
             "output_tokens": 543,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3422,7 +3422,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5547,
+            "input_tokens": 5878,
             "output_tokens": 542,
             "unknown_calls": 0,
             "unknown_cost": false
