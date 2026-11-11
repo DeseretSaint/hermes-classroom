@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-11T10:40:58Z",
+  "captured_at": "2026-11-11T11:42:30Z",
   "backend": "http://127.0.0.1:44601 (isolated hermes serve, wire cb.rpc v26)",
   "demo_home": "/home/deseretsaint/.hermes/coursebook-test-cp015c/home",
   "provider_route": "host ctx.llm (nous / deepseek-v4.1-flash-1017); validator stored verdicts: 1 independent (z-ai/glm-5.3-flash judging deepseek/deepseek-v4.1-flash-1017)",
@@ -70,6 +70,50 @@
       "error_message": "review section 4 reinforces objectives [1, 2, 3] but none has an open owner check; author the owner lessons for those objectives first",
       "created_at": "2026-11-11T10:34:03Z",
       "updated_at": "2026-11-11T10:40:58Z"
+    },
+    {
+      "id": "job_bd19c3ea4a3d44e7a305da763dd892d9",
+      "kind": "plan",
+      "state": "completed",
+      "course_id": "crs_44880979e34f45a9926512c0bf24c098",
+      "purpose": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-11-11T11:33:27Z",
+      "updated_at": "2026-11-11T11:34:50Z"
+    },
+    {
+      "id": "job_7825c0e5ce5a428e808bcab750a62fe0",
+      "kind": "plan",
+      "state": "completed",
+      "course_id": "crs_44880979e34f45a9926512c0bf24c098",
+      "purpose": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-11-11T11:34:52Z",
+      "updated_at": "2026-11-11T11:37:02Z"
+    },
+    {
+      "id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "kind": "plan",
+      "state": "completed",
+      "course_id": "crs_44880979e34f45a9926512c0bf24c098",
+      "purpose": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-11-11T11:37:02Z",
+      "updated_at": "2026-11-11T11:39:42Z"
+    },
+    {
+      "id": "job_436041eae3b74afb97c2ac7dce337c53",
+      "kind": "plan",
+      "state": "completed",
+      "course_id": "crs_44880979e34f45a9926512c0bf24c098",
+      "purpose": null,
+      "error_code": null,
+      "error_message": null,
+      "created_at": "2026-11-11T11:39:42Z",
+      "updated_at": "2026-11-11T11:42:30Z"
     }
   ],
   "validations": [
@@ -86,6 +130,41 @@
     }
   ],
   "usage_events": [
+    {
+      "operation_id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "duration_ms": 17707,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 6168, \"output_tokens\": 687, \"prompt_version\": \"validation-prompt.v8\", \"purpose\": \"coursebook.lesson.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "duration_ms": 20488,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 6366, \"output_tokens\": 834, \"prompt_version\": \"validation-prompt.v8\", \"purpose\": \"coursebook.lesson.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "duration_ms": 45627,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 8127, \"output_tokens\": 7445, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "duration_ms": 71420,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7987, \"output_tokens\": 9909, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_436041eae3b74afb97c2ac7dce337c53",
+      "duration_ms": 28111,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 6855, \"output_tokens\": 788, \"prompt_version\": \"validation-prompt.v8\", \"purpose\": \"coursebook.lesson.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_436041eae3b74afb97c2ac7dce337c53",
+      "duration_ms": 50167,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7921, \"output_tokens\": 10567, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_436041eae3b74afb97c2ac7dce337c53",
+      "duration_ms": 84488,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7950, \"output_tokens\": 12239, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
     {
       "operation_id": "job_57a89f823d274b2ba7d769edd81eee0c",
       "duration_ms": 7890,
@@ -142,6 +221,21 @@
       "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7987, \"output_tokens\": 12233, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
     },
     {
+      "operation_id": "job_7825c0e5ce5a428e808bcab750a62fe0",
+      "duration_ms": 18566,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 5780, \"output_tokens\": 894, \"prompt_version\": \"validation-prompt.v8\", \"purpose\": \"coursebook.lesson.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_7825c0e5ce5a428e808bcab750a62fe0",
+      "duration_ms": 52812,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7984, \"output_tokens\": 8284, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_7825c0e5ce5a428e808bcab750a62fe0",
+      "duration_ms": 54992,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7955, \"output_tokens\": 12214, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
       "operation_id": "job_b2c645f2ea4f4095bf63b358f72616a8",
       "duration_ms": 10001,
       "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 6861, \"output_tokens\": 228, \"prompt_version\": \"validation-prompt.v7\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
@@ -160,6 +254,21 @@
       "operation_id": "job_b2c645f2ea4f4095bf63b358f72616a8",
       "duration_ms": 72296,
       "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7617, \"output_tokens\": 1315, \"prompt_version\": \"validation-prompt.v7\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_bd19c3ea4a3d44e7a305da763dd892d9",
+      "duration_ms": 17610,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 5595, \"output_tokens\": 707, \"prompt_version\": \"validation-prompt.v8\", \"purpose\": \"coursebook.lesson.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_bd19c3ea4a3d44e7a305da763dd892d9",
+      "duration_ms": 30575,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 7937, \"output_tokens\": 6575, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "operation_id": "job_bd19c3ea4a3d44e7a305da763dd892d9",
+      "duration_ms": 31248,
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 8005, \"output_tokens\": 5922, \"prompt_version\": \"lesson-prompt.v10\", \"purpose\": \"coursebook.lesson.generate\", \"unknown_cost\": true}"
     },
     {
       "operation_id": "job_d6cc431de46a453e831f4ab708463db7",

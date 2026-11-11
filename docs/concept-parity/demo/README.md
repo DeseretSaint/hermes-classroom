@@ -6,6 +6,7 @@ Two files, both generated from the demo backend's own rows. Neither is typed by 
 | --- | --- |
 | `cp015-run.json` | the run record: every `jobs` row of the window, every stored `gen_validation_records` row, one `plan_attempts` entry per verdict (plus authored plans the validator never judged), per-course `sources`/`images`/`units`/`pages`, and an outcome sentence whose counts are computed from those rows |
 | `cp015-live-evidence.json` | the raw companion: the same job and validation set, the provider `usage_events` behind those jobs, and the record source |
+| `cp015c-lessons-pass.json` | the CP-015c Japanese Cafe lessons pass: the three `lesson.regenerate` jobs, the unit lessons job, every section's stored state and verbatim rejection reasons, and the `course.export.read` refusal |
 
 Regenerate (read-only against the backend):
 
