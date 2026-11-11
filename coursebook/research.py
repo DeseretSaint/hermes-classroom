@@ -628,6 +628,13 @@ def host_search() -> "HermesToolSearch | None":
 
 # ── Query derivation ────────────────────────────────────────────────────────
 
+#: Capability-clause queries a cell must be able to hold before one slot is reserved for the
+#: curriculum/prerequisite question (GEN-6). At the four-query floor a goal with several clauses
+#: already spends the cell on the clauses themselves (CP-015a R-1a), so the reservation starts
+#: where a cell can hold the base query, three clauses and one more question — every product cell
+#: from ``short``/``working`` (six queries) upward.
+_CAPABILITY_SLOTS_BEFORE_SEQUENCING = 3
+
 
 def derive_queries(
     goal: str,
@@ -658,13 +665,22 @@ def derive_queries(
     * ``deep`` — those plus reference/documentation, official-guidance, common-mistake and
       practice queries, and a locale-aware query when a locale is declared.
 
-    The capability-clause queries sit before the base qualifier and before every curriculum or
-    generic depth query (CP-015 R-1a), so the bounded ``max_queries`` cell truncates the generic
-    tail and never a capability. They are derived from the goal's own punctuation and the word
-    ``and`` — no model call, no job step, no widened budget — and each is joined to the declared
-    subject-domain qualifier when the brief names a domain (a clause with no declared qualifier is
-    searched on its own). A goal with more clauses than the cell allows stays short: clauses are
-    dropped in goal order after the cap.
+    The capability-clause queries sit before the base qualifier and before every generic depth
+    query (CP-015a R-1a), so the bounded ``max_queries`` cell truncates the generic tail and never
+    a capability. They are derived from the goal's own punctuation and the word ``and`` — no model
+    call, no job step, no widened budget — and each is joined to the declared subject-domain
+    qualifier when the brief names a domain (a clause with no declared qualifier is searched on
+    its own). A goal with more clauses than the cell allows stays short: clauses are dropped in
+    goal order after the cap.
+
+    Sequencing is allocated before the capability block, not appended after it (GEN-6). A cell
+    that spends every slot on the clauses and then on the generic qualifier has nothing left for
+    *what to learn first*, which is the one question a course cannot answer from a list of
+    topics. Once the cell has room for the base query, :data:`_CAPABILITY_SLOTS_BEFORE_SEQUENCING`
+    clauses and one more question, one slot is held back: the curriculum-sequence question is
+    admitted before the generic qualifier and the capability block may only use what remains. The
+    prerequisite-progression question follows the qualifier and competes with the depth tail. The
+    budget cell itself is unchanged; the reservation only decides who spends it.
 
     ``overview``/``thorough`` are documented aliases for ``survey``/``deep``; any other value
     raises. The caller's ``max_queries`` (the budget cell) is the hard ceiling.
@@ -681,6 +697,7 @@ def derive_queries(
     resolution = curriculum.resolve_domain(goal=base, domain=subject_domain, locale=locale)
     domain = resolution["domain"]
     domain_source = resolution["source"]
+    limit = max(1, min(int(max_queries), 12))
     queries = [base]
     if depth != "survey":
         qualifier = _domain_qualifier(domain, level)
@@ -705,28 +722,50 @@ def derive_queries(
         else:
             base_qualifier = "beginner guide"
         # CP-015a R-1a: one query per capability clause the goal itself names, derived from the
-        # goal's clause structure and joined to the declared domain qualifier. These are appended
-        # before the base-qualifier and the curriculum/generic tail so a bounded ``max_queries``
-        # cell truncates the generic tail, never a capability: a goal that names shaping and steam
-        # must ask about shaping and steam, or the ledger can only ever carry the first capability
-        # it happened to search for and the planner correctly (and uselessly) excludes the rest.
+        # goal's clause structure and joined to the declared domain qualifier. These come before
+        # the base-qualifier and the depth tail so a bounded ``max_queries`` cell truncates the
+        # generic tail, never a capability: a goal that names shaping and steam must ask about
+        # shaping and steam, or the ledger can only ever carry the first capability it happened
+        # to search for and the planner correctly (and uselessly) excludes the rest.
         # The clause is joined only to a *declared* qualifier: when the brief names no domain there
         # is nothing declared to join, and inventing the recipe suffix would put the generic
         # recipe question back into a query a syllabus-derived companion course must not carry.
         # A one-off brief keeps its bounded speed and a survey pass stays one query.
-        if recipe != "one_off":
-            queries.extend(_capability_queries(base, qualifier if declared else None))
-        queries.append(f"{base} {base_qualifier}")
+        clause_queries = (
+            _capability_queries(base, qualifier if declared else None)
+            if recipe != "one_off"
+            else []
+        )
         # A course is not a list of topics. Ask how the subject is sequenced and what has
-        # to come first, before the generic reference/glossary questions can consume the
-        # bounded budget. Survey depth stays deliberately one query, and a one-off brief
+        # to come first. Survey depth stays deliberately one query, and a one-off brief
         # keeps its bounded speed rather than paying for a full curriculum pass.
-        if recipe != "one_off":
-            queries.extend(
-                curriculum.curriculum_queries(
-                    base, domain=domain, level=level, locale=locale
-                )
-            )
+        sequencing_queries = (
+            curriculum.curriculum_queries(base, domain=domain, level=level, locale=locale)
+            if recipe != "one_off"
+            else []
+        )
+        # GEN-6: the cell is allocated before the list is built. Appending sequencing after the
+        # clauses let a multi-capability goal spend every slot on the acts and drop both
+        # sequencing questions — sources about what to do, nothing about what to learn first.
+        # Once the cell has room for the base query, three clauses and one more question, one
+        # slot is held for the curriculum-sequence question; the capability block spends only
+        # what is left. The reserved slot is spent *before* the generic qualifier, so the
+        # qualifier can no longer be the query that pushes sequencing past the cap. The
+        # prerequisite question is the second sequencing question and follows the qualifier, so
+        # a six-query cell with a large clause block keeps a sequence and the subject qualifier
+        # both. No budget cell is widened; the reservation only decides who spends it.
+        reserve = (
+            1
+            if sequencing_queries
+            and limit - 1 - _CAPABILITY_SLOTS_BEFORE_SEQUENCING >= 1
+            else 0
+        )
+        clause_slots = max(0, limit - 1 - reserve)
+        queries.extend(clause_queries[:clause_slots])
+        if sequencing_queries:
+            queries.append(sequencing_queries[0])
+        queries.append(f"{base} {base_qualifier}")
+        queries.extend(sequencing_queries[1:])
     if depth == "deep":
         # A declared non-language domain is never researched as a language question, even
         # when the delivery locale is set. The language query is kept early so a bounded
@@ -748,7 +787,7 @@ def derive_queries(
             continue
         seen.add(key)
         unique.append(_bound(query, _MAX_QUERY))
-        if len(unique) >= max(1, min(int(max_queries), 12)):
+        if len(unique) >= limit:
             break
     return unique
 
