@@ -194,5 +194,4 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
 - `docs/visual-review/cp-024/verify_stamps.py` → **15 stamps, 0 problems** (per-cell root font,
   requested size, frame bytes, duplicate-frame rejection).
 - `scripts/m4v-audit.py` regenerated on this module (15/15 claims PASS) + `test_m4_visual_audit` → 14 OK.
-- `bash scripts/validate-plugin.sh` on the round-4 HEAD → release gate (recorded in the review
-  summary).
+- `bash scripts/validate-plugin.sh` on `b15931c` → **release gate passed 4/4** (4148 files).
