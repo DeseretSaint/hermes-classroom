@@ -6,7 +6,7 @@
         "level_label": "CEFR A1 · ab initio (L0)",
         "license": {
           "id": "CC-BY-4.0",
-          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
           "redistribution": "allowed"
         },
         "pack_id": "japanese-affection-context-l0",
@@ -16,7 +16,7 @@
         "level_label": "Age 8-10 · parent-led",
         "license": {
           "id": "CC-BY-4.0",
-          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+          "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
           "redistribution": "allowed"
         },
         "pack_id": "parent-measurement-practice",
@@ -26,7 +26,7 @@
         "level_label": "Technical · for pack readers",
         "license": {
           "id": "CC-BY-4.0",
-          "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is model output produced for this pack. No third-party text or media is included; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+          "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is deterministic, text-free geometry printed by the pack builder (CC0-1.0); no model output and no third-party text or media is included. The repository files it cites are read locally by the pack maintainer, not redistributed.",
           "redistribution": "allowed"
         },
         "pack_id": "technical-pack-literacy",
@@ -36,27 +36,27 @@
     "refused": []
   },
   "failures": [],
-  "hermes_home": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cp042-proof-pv2nq7c5",
+  "hermes_home": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cp042-proof-kanx4ux2",
   "installs": [
     {
-      "course_id": "crs_d3ef0c7179d94f2dbac656b91afea51a",
-      "enrollment_id": "enr_7bdc38e5176d41359f3ba46670ffde24",
+      "course_id": "crs_78d2676e308e4bb8adc6259fbd58a297",
+      "enrollment_id": "enr_2a0e634559a64303b445245aec44527f",
       "imported": true,
       "pack_id": "japanese-affection-context-l0",
       "pack_version": "2.4.0",
       "revision": 0
     },
     {
-      "course_id": "crs_662850e4558f4f4eacbb7397300ff90a",
-      "enrollment_id": "enr_4284fc8297474d9d88831e071e0f9d2c",
+      "course_id": "crs_dddc66bf45e94e7995df272a738da65d",
+      "enrollment_id": "enr_95d8ccdae5084ef387f51bf561924047",
       "imported": true,
       "pack_id": "parent-measurement-practice",
       "pack_version": "2.1.0",
       "revision": 0
     },
     {
-      "course_id": "crs_649679df58dc4c1e92132257366de48b",
-      "enrollment_id": "enr_ec7f5d7bd5f04d4cbcd479566fc4a8c5",
+      "course_id": "crs_caa134f9e67246fca8b921b4025d7c16",
+      "enrollment_id": "enr_bc623e62271e47a6950faf38aadf677a",
       "imported": true,
       "pack_id": "technical-pack-literacy",
       "pack_version": "2.3.0",
@@ -72,10 +72,10 @@
         "Two lines are shown. A: うん、好きだよ。 (un, suki da yo.) said to a friend after an outing. B: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?"
       ],
       "block_count": 2,
-      "course_id": "crs_d3ef0c7179d94f2dbac656b91afea51a",
+      "course_id": "crs_78d2676e308e4bb8adc6259fbd58a297",
       "first_served_text": "# Lesson 1 — two ways of saying it\n\nThis is an L0 lesson for an adult beginner. Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n\n## Dialogue A — two friends, after a film\n\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n\n`好き` (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. `好きだよ` (suki da yo) is the casual form, used with friends and people you\nare already close to. The final `よ` (yo) softens the statement and offers it as new information.\n\n## Dialogue B — a confession\n\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\n\nThis is the shape of a **告白** (kokuhaku), a romantic confession. The polite form `好きです`\n(suki desu) carries the seriousness of the moment, and `付き合ってください` (tsukiatte kudasai)\nis the request to start seeing each other.\n\n`です` (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\n\n## What changes between A and B?\n\n| | Dialogue A | Dialogue B |\n|---|---|---|\n| Who is speaking | friends | two people not yet a couple |\n| Setting | casual, after an outing | private, deliberate |\n| Form | 好きだよ (suki da yo) | 好きです — polite (suki desu) |\n| What it does | states affection | makes a romantic confession |\n\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\n\n## Note on the sources\n\nThe A1 curriculum reference used here teaches `すきです` (suki desu) as a basic sentence pattern,\nand it presents beginner Japanese with romaji alongside kana. That is a curriculum fact, not a\nclaim that any one phrase is the only natural choice. See `source-notes.md` for every link and\nfor what each source does and does not support.",
       "fixture_word_hits": [],
-      "objective_id": "obj_d8cd661e1efe4d9eb80e4756f830757a",
+      "objective_id": "obj_47fa6083cd4548d7bcb75555e869701e",
       "pack_id": "japanese-affection-context-l0",
       "section_title": "Tell everyday affection from a direct romantic declaration",
       "served_text_count": 4
@@ -86,10 +86,10 @@
         "The jug is marked every 50 ml. Liquid reaches the third mark. How many millilitres are in the jug?"
       ],
       "block_count": 2,
-      "course_id": "crs_662850e4558f4f4eacbb7397300ff90a",
+      "course_id": "crs_dddc66bf45e94e7995df272a738da65d",
       "first_served_text": "# Measuring ingredients\n\nYou are helping make a fruit drink for four people. Read each task and write your answer on the\nline. Show your working next to the line if it helps.\n\n## Task 1 — read the jug\n\nThe measuring jug has marks every 50 ml. The liquid reaches the mark after 100 ml, then one more\nmark.\n\nHow much liquid is in the jug? ____________ ml\n\n## Task 2 — double the recipe\n\nThe recipe uses 175 ml of juice for one batch. You are making two batches of the same size.\n\nHow much juice do you need for two batches? ____________ ml\n\n## Task 3 — check your answer\n\nExplain to your parent how you worked out Task 2. Use the words \"one batch\" and \"two batches\" in\nyour explanation.\n\nParent note: this page is the learner page. The answers, the parent script and the observation\nchecklist are in the separate parent materials, not on this page.",
       "fixture_word_hits": [],
-      "objective_id": "obj_949f7e28058b43459b09fcb40c5cd2ad",
+      "objective_id": "obj_91322498dfcb46c9978c9f41569ae63e",
       "pack_id": "parent-measurement-practice",
       "section_title": "Read the marks on a measuring jug",
       "served_text_count": 2
@@ -100,10 +100,10 @@
         "A pack's manifest declares every file it ships, each with a path, mime, size and sha256. Which manifest field holds that list?"
       ],
       "block_count": 2,
-      "course_id": "crs_649679df58dc4c1e92132257366de48b",
+      "course_id": "crs_caa134f9e67246fca8b921b4025d7c16",
       "first_served_text": "# Anatomy of a pack\n\nA Coursebook pack is a directory (or a zip of one) whose root carries `pack.json` — the **manifest**.\nEverything else is content the manifest names. Read the manifest before you read the lessons: it is\nthe only file that says what this pack contains and what it claims.\n\nSix fields decide what you are holding.\n\n- `contract` and `contract_version` — which manifest contract the pack speaks. A v1 document may not\n  carry `media[]` links; a v2 document may. A build that speaks only v1 refuses a v2 pack instead of\n  guessing what its extra fields mean.\n- `pack_id` and `pack_version` — the pack's identity. `pack_id` names the pack; `pack_version` is one\n  immutable release of it. Two packs with the same id and different versions are two releases, not\n  two packs.\n- `content_hash` — a sha256 over the manifest's own content description. It makes the manifest\n  self-checking: re-reading the pack must reproduce this value.\n- `files[]` — every file the pack ships, each with a `path`, `mime`, `bytes` and `sha256`. This list\n  is the allowlist. A file on disk that the manifest does not name is not part of the pack; a file\n  the manifest names must match its declared size and hash or the import is refused.\n- `objectives[]` — the sections a learner works through, each with its own `sections[]` and, where\n  the pack grades anything, a `checks[]` record.\n- `license` and `attribution` — who made it and under what terms. A pack can honestly say\n  `unspecified` and `local_only`; it may not pretend to a redistribution right it does not have.\n\nThe order matters. Hashes and structure are checked **before** any teaching text is read, so a\nmalformed manifest is refused with no course residue rather than half-imported.",
       "fixture_word_hits": [],
-      "objective_id": "obj_31dcaae998b14e0089ccd23db746655e",
+      "objective_id": "obj_2353f763cc49415a853c6701036ec66c",
       "pack_id": "technical-pack-literacy",
       "section_title": "Read what a pack manifest declares",
       "served_text_count": 2
@@ -111,18 +111,18 @@
   ],
   "library": [
     {
-      "course_id": "crs_649679df58dc4c1e92132257366de48b",
-      "enrollment_id": "enr_ec7f5d7bd5f04d4cbcd479566fc4a8c5",
+      "course_id": "crs_caa134f9e67246fca8b921b4025d7c16",
+      "enrollment_id": "enr_bc623e62271e47a6950faf38aadf677a",
       "title": "Reading a pack before you install it"
     },
     {
-      "course_id": "crs_662850e4558f4f4eacbb7397300ff90a",
-      "enrollment_id": "enr_4284fc8297474d9d88831e071e0f9d2c",
+      "course_id": "crs_dddc66bf45e94e7995df272a738da65d",
+      "enrollment_id": "enr_95d8ccdae5084ef387f51bf561924047",
       "title": "Measuring together: a kitchen lesson"
     },
     {
-      "course_id": "crs_d3ef0c7179d94f2dbac656b91afea51a",
-      "enrollment_id": "enr_7bdc38e5176d41359f3ba46670ffde24",
+      "course_id": "crs_78d2676e308e4bb8adc6259fbd58a297",
+      "enrollment_id": "enr_2a0e634559a64303b445245aec44527f",
       "title": "Japanese register: affection and closeness"
     }
   ],

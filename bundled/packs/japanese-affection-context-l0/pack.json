@@ -7,7 +7,7 @@
     "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
   ],
   "attribution": "Original teaching text, relationship schematic and narration: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest; no third-party imagery is bundled. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
-  "content_hash": "sha256:da916768278ec2066bdba059ee814083a4738f4adb124aecb7f3fb3acdac1e90",
+  "content_hash": "sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116",
   "content_notes": [
     "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
     "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
@@ -19,7 +19,7 @@
     "2.1.0 added one composed Press Plate cover (content/cover-16x9.png, with its 3:2 crop), linked first in media[] so the Workshop storefront, the Library row and the course detail showed the same plate. It was decorative illustration: it carried no register facts. The relationship map remained the pack's deterministic schematic and the only visual that states them. No wording, check or source changed.",
     "2.2.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and its rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. It is decorative: it carries no text and no register fact, and the relationship map remains the schematic. No wording, check or source changed, and no native-speaker review is claimed.",
     "2.3.0 rewrites two learner-facing phrases so the shipped course reads as a course: the first section opens as an L0 lesson for an adult beginner, and the second states that no native-speaker review is recorded for this pack. The rights paragraph in content/source-notes.md now records the actual licence (CC-BY-4.0, redistribution allowed, operator-directed 2026-11-10) instead of the pre-shipping placeholder. No language, check or source changed.",
-    "2.4.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. No language, check or source changed."
+    "2.4.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. The pack licence note and content/source-notes.md now state that deterministic provenance instead of calling the covers model output. No language, check or source changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
@@ -98,17 +98,17 @@
       "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
     },
     {
-      "bytes": 3344,
+      "bytes": 3413,
       "mime": "text/markdown",
       "path": "content/source-notes.md",
       "role": "source_note",
-      "sha256": "sha256:ee7db915db4dc5a394b9bcf1ab9699ead415787a94a6fd655e289c7a412a8a4e"
+      "sha256": "sha256:c1d9cb851f3b28706d2add8e00b92561370c4a62171a3e72268bd0f8910abc89"
     }
   ],
   "level_label": "CEFR A1 · ab initio (L0)",
   "license": {
     "id": "CC-BY-4.0",
-    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
     "per_artifact": [
       {
         "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",

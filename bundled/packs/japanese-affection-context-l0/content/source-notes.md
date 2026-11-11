@@ -58,4 +58,5 @@ No source text, exercise, audio or image is bundled. Sources are cited by link o
 contains original teaching prose and a schematic generated for this pack. The pack's own license
 is `CC-BY-4.0` with `redistribution: allowed`, under the operator-directed redistribution of
 2026-11-10 that ships it in the Workshop store. The covers and the relationship schematic are
-model output or original geometry produced for this pack, with no third-party imagery.
+deterministic geometry printed by the Coursebook pack builder for this pack (the covers are
+`CC0-1.0`); no model output and no third-party imagery is used.

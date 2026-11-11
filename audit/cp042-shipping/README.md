@@ -56,9 +56,9 @@ and the same two tests are green on this branch.
 
 | pack_id | pack_version | content_hash |
 | --- | --- | --- |
-| `japanese-affection-context-l0` | 2.4.0 | `sha256:da916768278ec2066bdba059ee814083a4738f4adb124aecb7f3fb3acdac1e90` |
-| `parent-measurement-practice` | 2.1.0 | `sha256:e2dbb752b7e45964f732dbdd05fdddfec9afb41305975aef12abdcf8a32daca6` |
-| `technical-pack-literacy` | 2.3.0 | `sha256:99526a93c25a6ac5950027e0c7d9dcc9bd3b26282f21c90fd3e45268444fd7f3` |
+| `japanese-affection-context-l0` | 2.4.0 | `sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116` |
+| `parent-measurement-practice` | 2.1.0 | `sha256:40c56aeb6514fc44f86c89f421594396d7eff859ea3e232a2fb8b0ab0ba858e5` |
+| `technical-pack-literacy` | 2.3.0 | `sha256:a700ee6bf263c70d1bbccd8a0d6075b1e5ca4fe65ba778359133d90570b03992` |
 
 The Japanese pack's rights paragraph in `content/source-notes.md` now states the actual position
 (`CC-BY-4.0`, `redistribution: allowed`, operator-directed redistribution 2026-11-10) instead of
@@ -82,6 +82,13 @@ Two checks hold that rule in `tests/test_pack_shipping_labels.py::CoverArtTests`
 No image toolchain is required: the covers are written deterministically by the plugin's own PNG
 writer, so the SVGO/Sharp/pngquant line in `docs/design/TOOLCHAIN-50.md` is stale for this pack set
 and nothing was installed.
+
+The first cover swap left one false rights sentence behind: every pack-level `license.note` still
+said "Cover plates are model output produced for these packs", and the Japanese
+`content/source-notes.md` hedged "model output or original geometry". Both are corrected to the real
+provenance (deterministic, text-free, `CC0-1.0`, no model output). The regression is pinned by
+`ManifestShippingTests.test_license_note_states_the_real_cover_provenance`: at `9cfdfbd` all three
+notes match `model output produced` (RED), at this HEAD they do not and state `CC0-1.0`.
 
 ## Visual gate (owner-directed, 2026-11-10 18:45)
 
@@ -115,7 +122,7 @@ TREE_UNCHANGED_BY_REBUILD
 
 `find bundled/packs -type f ! -path '*__pycache__*' -print0 | sort -z | xargs -0 sha256sum |
 sha256sum` (the tracked pack files; the builder's `__pycache__` bytecode is not evidence) was
-`01570e16175d25a441f91f16866b6e8cfd18e40a0f9072292d9bfba1bb37494a` before and after a rebuild, and
+`6d9ecaac6d6a924aafd719a6da1f992030f5496cedf6bc853ef524bbfbfcffd1` before and after a rebuild, and
 identical across three consecutive runs. On a clean checkout of the commit that ships this evidence,
 `git status --porcelain bundled/ catalog/` is empty after a rebuild.
 

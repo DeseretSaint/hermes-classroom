@@ -4,7 +4,7 @@
     "The cover plate has a text equivalent on its file record and the caption 'Cover plate — printed geometry, not a diagram of the course.' beside it; nothing in the course depends on seeing it. The image carries no glyph; the course title is UI text."
   ],
   "attribution": "Original teaching text: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest. No third-party text or media is bundled. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",
-  "content_hash": "sha256:99526a93c25a6ac5950027e0c7d9dcc9bd3b26282f21c90fd3e45268444fd7f3",
+  "content_hash": "sha256:a700ee6bf263c70d1bbccd8a0d6075b1e5ca4fe65ba778359133d90570b03992",
   "content_notes": [
     "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
     "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
@@ -12,7 +12,7 @@
     "2.0.0 added one composed Press Plate cover (content/cover-16x9.png with its 3:2 crop) and moved the document to cb.pack v2 so the plate could be linked through media[]. The plate was decorative: it was not a diagram of the manifest schema and stated no field, count or rule.",
     "2.1.0 replaces the Press Plate cover with the approved painted plate for this pack (content/cover-3x2.png, 1200x800, and its exact 4:5 centre crop content/cover-4x5.png) as role 'cover'. The plate is model output generated for this pack; its provenance and rights position (CC-BY-4.0 under the operator-directed redistribution of 2026-11-10) are recorded per artifact. Its pages are blank: it states no field, count or rule, and no lesson depends on seeing it.",
     "2.2.0 rewrites three learner-facing phrases that read as if this repository's own packs were throwaway exhibit material — in the anatomy section, the label section and content/source-notes.md — as the pack-contract rule they teach: a pack may declare `unspecified`/`local_only`, a `human_review_recorded` fact is absent when no review is on record, and `audit_state: \"unreviewed\"` is the honest default for any unreviewed check. No contract fact, check or citation changed.",
-    "2.3.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. No contract fact, check or citation changed."
+    "2.3.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. The pack licence note now states that deterministic provenance instead of calling the cover model output. No contract fact, check or citation changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
@@ -72,7 +72,7 @@
   "level_label": "Technical · for pack readers",
   "license": {
     "id": "CC-BY-4.0",
-    "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is model output produced for this pack. No third-party text or media is included; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+    "note": "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored teaching text about this repository's own pack contract, licensed CC-BY-4.0 for distribution in the Workshop store. The cover plate is deterministic, text-free geometry printed by the pack builder (CC0-1.0); no model output and no third-party text or media is included. The repository files it cites are read locally by the pack maintainer, not redistributed.",
     "per_artifact": [
       {
         "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",

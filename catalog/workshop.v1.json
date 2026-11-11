@@ -8,7 +8,7 @@
       "pack_id": "japanese-affection-context-l0",
       "pack_version": "2.4.0",
       "directory": "japanese-affection-context-l0",
-      "content_hash": "sha256:da916768278ec2066bdba059ee814083a4738f4adb124aecb7f3fb3acdac1e90",
+      "content_hash": "sha256:3e4fc6459aa1319e926267793d315f6cddcb5e62f133192a9632c4e1a21e8116",
       "featured": true,
       "categories": [
         "Languages",
@@ -65,7 +65,7 @@
       "pack_id": "parent-measurement-practice",
       "pack_version": "2.1.0",
       "directory": "parent-measurement-practice",
-      "content_hash": "sha256:e2dbb752b7e45964f732dbdd05fdddfec9afb41305975aef12abdcf8a32daca6",
+      "content_hash": "sha256:40c56aeb6514fc44f86c89f421594396d7eff859ea3e232a2fb8b0ab0ba858e5",
       "featured": false,
       "categories": [
         "For parents",
@@ -107,7 +107,7 @@
       "pack_id": "technical-pack-literacy",
       "pack_version": "2.3.0",
       "directory": "technical-pack-literacy",
-      "content_hash": "sha256:99526a93c25a6ac5950027e0c7d9dcc9bd3b26282f21c90fd3e45268444fd7f3",
+      "content_hash": "sha256:a700ee6bf263c70d1bbccd8a0d6075b1e5ca4fe65ba778359133d90570b03992",
       "featured": false,
       "categories": [
         "Technical",

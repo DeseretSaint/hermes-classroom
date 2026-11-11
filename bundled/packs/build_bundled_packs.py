@@ -100,8 +100,9 @@ BUNDLED_LICENSE = {
     "note": (
         "Operator-directed redistribution, 2026-11-10. The teaching text is original "
         "Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop "
-        "store. Cover plates are model output produced for these packs; no third-party source "
-        "or media is included. Linked sources are cited, not bundled."
+        "store. Cover plates are deterministic, text-free geometry printed by the pack builder "
+        "for these packs and licensed CC0-1.0; no model output, no third-party source or media "
+        "is included. Linked sources are cited, not bundled."
     ),
 }
 
@@ -780,8 +781,9 @@ def japanese_manifest() -> dict:
             "2026-11-10) instead of the pre-shipping placeholder. No language, check or source changed.",
             "2.4.0 replaces the model-painted cover with deterministic, text-free art printed by the "
             "pack builder from flat geometry (CC0-1.0), because the image model bakes garbled "
-            "lettering into plates. The image carries no glyph; the course title is UI text. No "
-            "language, check or source changed.",
+            "lettering into plates. The image carries no glyph; the course title is UI text. The "
+            "pack licence note and content/source-notes.md now state that deterministic provenance "
+            "instead of calling the covers model output. No language, check or source changed.",
         ],
         safety_notes=[
             "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack "
@@ -951,8 +953,9 @@ def parent_manifest() -> dict:
             "check or answer changed.",
             "2.1.0 replaces the model-painted cover with deterministic, text-free art printed by the "
             "pack builder from flat geometry (CC0-1.0), because the image model bakes garbled "
-            "lettering into plates. The image carries no glyph; the course title is UI text. No "
-            "teaching text, check or answer changed.",
+            "lettering into plates. The image carries no glyph; the course title is UI text. The "
+            "pack licence note now states that deterministic provenance instead of calling the "
+            "cover model output. No teaching text, check or answer changed.",
         ],
         safety_notes=["Uses water and a jug; no heat, sharp tools or hazardous materials."],
         accessibility_notes=[
@@ -1105,10 +1108,10 @@ def technical_manifest() -> dict:
             "note": (
                 "Operator-directed redistribution, 2026-11-10. Original Coursebook-authored "
                 "teaching text about this repository's own pack contract, licensed CC-BY-4.0 "
-                "for distribution in the Workshop store. The cover plate is model output "
-                "produced for this pack. No third-party text or media is included; the "
-                "repository files it cites are read locally by the pack maintainer, not "
-                "redistributed."
+                "for distribution in the Workshop store. The cover plate is deterministic, "
+                "text-free geometry printed by the pack builder (CC0-1.0); no model output and "
+                "no third-party text or media is included. The repository files it cites are read "
+                "locally by the pack maintainer, not redistributed."
             ),
             "per_artifact": [
                 {
@@ -1157,8 +1160,9 @@ def technical_manifest() -> dict:
             "No contract fact, check or citation changed.",
             "2.3.0 replaces the model-painted cover with deterministic, text-free art printed by the "
             "pack builder from flat geometry (CC0-1.0), because the image model bakes garbled "
-            "lettering into plates. The image carries no glyph; the course title is UI text. No "
-            "contract fact, check or citation changed.",
+            "lettering into plates. The image carries no glyph; the course title is UI text. The "
+            "pack licence note now states that deterministic provenance instead of calling the "
+            "cover model output. No contract fact, check or citation changed.",
         ],
         safety_notes=[
             "Text plus one decorative cover plate. No external services, no learner data, and no "

@@ -5,13 +5,13 @@
     "The cover plate has a text equivalent on its file record and the caption 'Cover plate — printed geometry, not a diagram of the course.' beside it; nothing in the course depends on seeing it. The image carries no glyph; the course title is UI text."
   ],
   "attribution": "Original teaching text: Coursebook. The cover plate is deterministic geometry printed by the pack builder for this pack and is recorded with its provenance and rights position in the manifest; no third-party text or imagery is bundled. Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
-  "content_hash": "sha256:e2dbb752b7e45964f732dbdd05fdddfec9afb41305975aef12abdcf8a32daca6",
+  "content_hash": "sha256:40c56aeb6514fc44f86c89f421594396d7eff859ea3e232a2fb8b0ab0ba858e5",
   "content_notes": [
     "Parent recipe: this pack is prepared by a parent and approved before use; it is not a child-facing chat.",
     "The learner page never carries the answer key. Answers live only in the answer guide, which the manifest declares with the answer_guide role.",
     "Observation records from a session are parent-reported evidence and are never exported with the pack.",
     "2.0.0 moves the pack to cb.pack v2 and adds the approved painted cover as role 'cover' (content/cover-3x2.png with its exact 4:5 centre crop). The plate is decorative: the jug is drawn blank, it carries no graduations, quantity or text, and no lesson depends on seeing it. No teaching text, check or answer changed.",
-    "2.1.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. No teaching text, check or answer changed."
+    "2.1.0 replaces the model-painted cover with deterministic, text-free art printed by the pack builder from flat geometry (CC0-1.0), because the image model bakes garbled lettering into plates. The image carries no glyph; the course title is UI text. The pack licence note now states that deterministic provenance instead of calling the cover model output. No teaching text, check or answer changed."
   ],
   "contract": "cb.pack",
   "contract_version": 2,
@@ -71,7 +71,7 @@
   "level_label": "Age 8-10 · parent-led",
   "license": {
     "id": "CC-BY-4.0",
-    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are model output produced for these packs; no third-party source or media is included. Linked sources are cited, not bundled.",
+    "note": "Operator-directed redistribution, 2026-11-10. The teaching text is original Coursebook-authored material, licensed CC-BY-4.0 for distribution in the Workshop store. Cover plates are deterministic, text-free geometry printed by the pack builder for these packs and licensed CC0-1.0; no model output, no third-party source or media is included. Linked sources are cited, not bundled.",
     "per_artifact": [
       {
         "attribution": "Deterministic cover printed by the Coursebook bundled pack builder from flat geometry; no model output, no text, no third-party source or media. CC0-1.0.",

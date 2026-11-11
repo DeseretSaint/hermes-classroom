@@ -6,8 +6,9 @@ library from Discover like any other course. These tests pin the two facts that 
 * every bundled pack declares a real licence and ``redistribution == "allowed"``;
 * nothing a user can read in the Workshop — pack title, subtitle, level label, licence note,
   attribution, contributors, or the catalogue's editorial copy — is labelled demo, sample or
-  fixture.
-and one rights fact for the model-produced covers: CC-BY-4.0 with the shipping attribution.
+  fixture;
+* the pack-level licence note states the cover's real provenance: deterministic, text-free,
+  CC0-1.0 geometry printed by the pack builder (the image model is no longer used for covers).
 """
 
 from __future__ import annotations
@@ -89,6 +90,24 @@ class ManifestShippingTests(unittest.TestCase):
                 self.assertEqual(license_block["id"], "CC-BY-4.0")
                 self.assertEqual(license_block["redistribution"], "allowed")
                 self.assertIn("Operator-directed redistribution, 2026-11-10", license_block["note"])
+
+    def test_license_note_states_the_real_cover_provenance(self) -> None:
+        """A rights record that calls deterministic art model output is a false provenance claim.
+
+        The covers were replaced by the deterministic, text-free generator (CC0-1.0). The
+        pack-level licence note a user reads in the store must describe that, not the retired
+        model plate.
+        """
+        for entry in self.entries:
+            manifest = manifest_for(entry)
+            note = str((manifest.get("license") or {}).get("note") or "")
+            with self.subTest(pack=entry["pack_id"]):
+                self.assertIn("deterministic", note.lower())
+                self.assertIn("CC0-1.0", note)
+                self.assertIsNone(
+                    re.search(r"model output produced|cover plate is model", note, re.I),
+                    f"{entry['pack_id']} licence note still calls the shipped cover model output: {note!r}",
+                )
 
     def test_every_user_visible_manifest_field_is_free_of_fixture_wording(self) -> None:
         for entry in self.entries:
