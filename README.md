@@ -158,11 +158,11 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 | Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Authored and Rendered: the lesson schema and `lesson-prompt.v10` produce the typed `procedure` header, and `tests/test_procedure_authoring.py` drives the real lesson job with a fake model and asserts the served document renders the header, hazards, numbered steps, schematic rows and source card. The 7 visual frames and 28 validator/render tests remain fixture-based; no live provider run has authored one | `docs/M4-PROCEDURE-LAYOUT.md`, `docs/GENERATION.md`, `tests/test_procedure_authoring.py` |
 | Pronunciation Studio (listen, record, compare, dispute) | Rendered: 14 frames and 15 jsdom interaction tests. It is inert on every existing section because none has a narration media child; no live attempt was walked | `docs/M3-PRONUNCIATION-UI.md`, `tests/test_desktop_pronunciation.py`, `audit/visual/m3-pronunciation/` |
 | Media generation and preview | Working for the host adapter (one real PNG and one real MP3 through `docs/M0-MEDIA-PROBE.md`) and Rendered in the lesson (50 decoded images, 12 audio elements, 0 autoplay, text equivalent for each). The preview route is covered by tests, not driven live on this tree | `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `audit/visual/m4-visual/audit.json` |
-| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,120 text nodes (worst authored 5.93:1), 0 unnamed of 298 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs at this module are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (the release-tree record is pinned to plugin `cd86214…` at `b9f4a19`, measured on `ab6dc7e`; the same file at this head is pinned to `4087908c…`, the module this tree ships, regenerated 2026-11-10 with every measurement reproduced), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
+| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,120 text nodes (worst authored 5.93:1), 0 unnamed of 298 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs at this module are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (the release-tree record is pinned to plugin `cd86214…` at `b9f4a19`, measured on `ab6dc7e`; the same file at this head is regenerated against the module this tree actually ships (`scripts/check-audit-pin.py` names it, and fails when the audit and the module disagree)), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
 | 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
 
-Nothing in the product line changes install status. The catalog entry pins the release candidate and
-is open as a draft pull request, and no release tag exists.
+Nothing in the product line changes install status. The catalog entry pins the `master` commit the
+pull request body names and is open awaiting maintainer review, and no release tag exists.
 
 ### 0.1.0 surface table (release record, post-release changes named)
 
@@ -245,13 +245,12 @@ Cloning from GitHub is the supported install path: the repository is public, and
 `## Install locally` above is the path the catalog entry's `docs_url` points at.
 
 `hermes plugins install coursebook` — the catalog path — does not work yet. The entry is submitted as
-`plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open draft pull request,
-and the catalog `hermes-agent` ships does not resolve `coursebook` until that merges. The entry pins
-`3278bae` on `master` and validates under `hermes-agent`'s pinned-source catalog gate: the CP-039
-review ran that gate at the pinned sha and it exited 0, 16/16 checks, including the
-symlink-confinement check that rejected the previous pin. Gates 7 and 12 of `docs/SUBMISSION.md`
-(demo scenarios, catalog merge) are open, so the pull request stays draft. Owner: Harbor and
-DeseretSaint.
+`plugin-catalog/coursebook.yaml` in `NousResearch/hermes-agent#152920`, an open pull request awaiting
+maintainer review, and the catalog `hermes-agent` ships does not resolve `coursebook` until that
+merges. The entry pins the `master` commit named in that pull request's body and is validated with
+`hermes-agent`'s own catalog validator and its pinned-source gate at that sha, including the
+symlink-confinement check that rejected an earlier pin. Gate state lives in `docs/SUBMISSION.md`
+and is not repeated here. Owner: Harbor and DeseretSaint.
 
 ## First run
 
