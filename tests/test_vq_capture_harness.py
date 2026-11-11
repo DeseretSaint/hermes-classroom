@@ -93,7 +93,7 @@ def home_images(cover_count: int = 4) -> list[dict]:
 
 def background(selector: str, natural: tuple[int, int], rendered: tuple[int, int], *,
                data_uri: bool = False, bundled: dict | None = None, sha: str | None = FAKE_SHA,
-               repeat: str = "no-repeat", url: str | None = None) -> dict:
+               repeat: str = "no-repeat", size: str = "auto", url: str | None = None) -> dict:
     return {
         "selector": selector,
         "url": url if url is not None else (
@@ -104,7 +104,7 @@ def background(selector: str, natural: tuple[int, int], rendered: tuple[int, int
         "natural": {"width": natural[0], "height": natural[1]},
         "rendered": {"width": rendered[0], "height": rendered[1]},
         "background_repeat": repeat,
-        "background_size": "auto",
+        "background_size": size,
         "sha256": sha,
         "bundled_asset": bundled,
         "marks": [],
@@ -300,7 +300,7 @@ class TestBackgroundRefusals(HarnessCase):
             background("[data-cb-home-hero] > div", (96, 96), (900, 900)),
         ])
         verdict = self.judge(rec)
-        self.assert_fails_with(verdict, "natural 96px is below 2x rendered 900.00px")
+        self.assert_fails_with(verdict, "natural 96x96px is below 2x rendered 900.00x900.00px")
 
     def test_background_matching_a_bundled_pack_cover_is_a_press_plate(self):
         registry = vq.press_plate_registry()
@@ -330,6 +330,85 @@ class TestBackgroundRefusals(HarnessCase):
         self.assertFalse(layer["press_plate"])
         self.assertFalse(layer["ratio_judged"])
         self.assertEqual(layer["problems"], [])
+
+    def test_a_cover_sized_layer_is_ratio_judged_even_when_it_repeats(self):
+        # Round-2 finding: `background-repeat` alone exempted a box-scaled layer, and repeat is the
+        # CSS default, so a 96 px file stretched with `cover` over 900 px passed. Size decides.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-vignette]", (96, 96), (900, 714),
+                       repeat="repeat", size="cover",
+                       bundled={"key": "cb.asset.material.vignette"}),
+        ])
+        verdict = self.judge(rec)
+        layer = verdict["backgrounds"][0]
+        self.assertTrue(layer["ratio_judged"])
+        self.assertEqual(layer["judged_axes"], ["x", "y"])
+        self.assert_fails_with(verdict, "natural 96x96px is below 2x rendered 900.00x714.00px")
+
+    def test_a_contain_sized_layer_is_ratio_judged_even_when_it_repeats(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-vignette]", (96, 96), (900, 714),
+                       repeat="repeat-y", size="contain",
+                       bundled={"key": "cb.asset.material.vignette"}),
+        ])
+        verdict = self.judge(rec)
+        self.assertTrue(verdict["backgrounds"][0]["ratio_judged"])
+        self.assert_fails_with(verdict, "natural 96x96px is below 2x rendered 900.00x714.00px")
+
+    def test_a_percentage_sized_layer_is_ratio_judged_even_when_it_repeats(self):
+        # `100% 100%` is a full-box stretch: the paint size comes from the box, not the file.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-vignette]", (96, 96), (900, 714),
+                       repeat="repeat", size="100% 100%",
+                       bundled={"key": "cb.asset.material.vignette"}),
+        ])
+        verdict = self.judge(rec)
+        self.assertTrue(verdict["backgrounds"][0]["ratio_judged"])
+        self.assert_fails_with(verdict, "natural 96x96px is below 2x rendered 900.00x714.00px")
+
+    def test_a_tiling_layer_with_explicit_pixel_size_keeps_the_exemption(self):
+        # An explicit px tile still paints at the file's size, so it stays decoration.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-grain]", (96, 96), (900, 714), data_uri=True,
+                       repeat="repeat", size="96px 96px",
+                       bundled={"key": "cb.asset.material.grain-night"}),
+        ])
+        verdict = self.judge(rec)
+        self.assertTrue(verdict["ok"], verdict["problems"])
+        self.assertFalse(verdict["backgrounds"][0]["ratio_judged"])
+
+    def test_a_horizontally_tiled_strip_is_judged_on_height_only(self):
+        # The shelf plank is `repeat-x` with `auto 100%`: 256 px wide at its own size, stretched to
+        # the box height. Width is a real tile and is not judged; height is a box stretch and is.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb3-shelf]", (256, 256), (870, 20),
+                       repeat="repeat-x", size="auto 100%",
+                       bundled={"key": "cb.asset.material.plank"}),
+        ])
+        verdict = self.judge(rec)
+        layer = verdict["backgrounds"][0]
+        self.assertEqual(layer["judged_axes"], ["y"])
+        # 256 px of source for 20 px of paint is a downscale, not an upscale.
+        self.assertTrue(verdict["ok"], verdict["problems"])
+
+    def test_a_horizontally_tiled_strip_stretched_on_height_fails(self):
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb3-shelf]", (256, 64), (870, 300),
+                       repeat="repeat-x", size="auto 100%",
+                       bundled={"key": "cb.asset.material.plank"}),
+        ])
+        verdict = self.judge(rec)
+        self.assertEqual(verdict["backgrounds"][0]["judged_axes"], ["y"])
+        self.assert_fails_with(verdict, "natural 64px is below 2x rendered 300.00px (height axis)")
+
+    def test_a_background_with_no_repeat_mode_is_judged_as_a_one_shot(self):
+        # A record that predates the repeat field must not be treated as a tile by accident.
+        rec = record("home", home_images(), backgrounds=[
+            background("[data-cb-home-vignette]", (96, 96), (900, 714), repeat="", size="auto"),
+        ])
+        verdict = self.judge(rec)
+        self.assertEqual(verdict["backgrounds"][0]["judged_axes"], ["x", "y"])
+        self.assert_fails_with(verdict, "natural 96x96px is below 2x rendered 900.00x714.00px")
 
     def test_a_background_row_cannot_satisfy_a_display_role(self):
         # Four 2x cover plates delivered as CSS layers are still 0 of 4 rendered display covers.
@@ -434,8 +513,10 @@ class TestCameraStatic(unittest.TestCase):
         for field in ("selector", "current_src", "natural", "rendered", "sha256", "bundled_asset"):
             self.assertIn(field, source, field)
         self.assertIn("readPluginSource", source)
-        # A background layer must carry the mode the judge needs to tell a tile from an upscale.
+        # A background layer must carry both modes the judge needs: repeat says whether it tiles at
+        # all, size says whether it tiles at its natural size or is scaled to the box.
         self.assertIn("background_repeat", source)
+        self.assertIn("background_size", source)
 
     def test_one_command_runs_the_judge(self):
         script = (SCRIPTS / "vq-capture.sh").read_text()

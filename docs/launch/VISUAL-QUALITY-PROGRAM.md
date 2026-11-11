@@ -235,9 +235,12 @@ The judge is `scripts/vq-manifest.py`; the camera is `scripts/vq-capture.mjs`. A
   product-surface illustration;
 - a `background-image` layer breaks any of the rules above. Layers are judged with the same
   classification as an `<img>`, so an asset cannot escape by being delivered as CSS; the exceptions
-  are stated, not silent: a layer whose recorded `background-repeat` tiles is decoration and is not
-  held to the 2x ratio, and no background layer satisfies a display role (a role is a placement the
-  surface must render as an image);
+  are stated, not silent. The 2x rule is applied per axis: an axis is exempt only when the layer
+  both repeats on it and paints it at the file's own size (`background-size: auto` or a length), so a
+  `repeat` + `auto` grain tile is decoration, while `cover`, `contain` and percentage sizes are
+  judged on the axes they stretch even when the layer also repeats. A record with no repeat mode
+  exempts nothing. No background layer satisfies a display role (a role is a placement the surface
+  must render as an image);
 - the PNG on disk does not hash to the sha256 the cell record claims.
 
 `manifest.json` separates three states, and `summary.ok` is false if any is non-zero: **passed**
@@ -247,9 +250,10 @@ captured** (no cell record at all — nothing to judge). A failed frame is never
 Each cell record carries, for every image in the route: `selector`, `currentSrc`, natural width and
 height, rendered width and height, `sha256`, the resolved bundled-asset path when one exists, and
 whether the row is a placeholder or a Press Plate. Background-image layers are recorded and judged
-the same way, with `background-repeat` and `background-size` alongside so a tiling layer is
-distinguishable from an upscaled one. A screen card reads the manifest; it does not need a browser
-of its own.
+the same way, with `background-repeat` and `background-size` alongside, and the manifest prints which
+axes the 2x rule covered for each layer (`x`, `y`, or none when it tiles at natural size), so a tiling
+layer is distinguishable from an upscaled one. A screen card reads the manifest; it does not need a
+browser of its own.
 
 **Measured on `80a81fd7`, plugin sha `251a3948…`, 2026-11-11** (16 of 24 matrix cells captured, 0
 pass, 16 captured and failed, 8 never captured — classroom ×4 and world-studio ×4): no Home cell has a

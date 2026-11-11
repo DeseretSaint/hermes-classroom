@@ -17,8 +17,10 @@ Rules applied to every cell (from `docs/launch/VISUAL-QUALITY-PROGRAM.md` Gate 2
    carry a sha256, have natural size at least 2x its rendered size, and not be a data URI unless it
    is a hashed bundled brand asset from `desktop/cb-assets.generated.js`. The same rules apply to
    every `background-image` layer the camera recorded, so an asset cannot escape judgement by being
-   delivered as CSS; a layer whose `background-repeat` tiles is decoration and is not held to the 2x
-   ratio, while a record with no repeat mode is judged as a one-shot image.
+   delivered as CSS; the 2x rule covers each axis that the layer paints at a box-derived size, so an
+   axis that tiles at the file's own natural size is exempt while `cover`/`contain`/percentage sizes
+   are judged (a `repeat` + `cover` layer is still an upscale). A record with no repeat mode is judged
+   as a one-shot image.
 5. **Press Plate lane** — a Press Plate is legal as a pack cover and illegal as a product-surface
    illustration. The judge counts them separately and fails a cell whose required display role was
    satisfied only by Press Plates.
@@ -92,11 +94,17 @@ REQUIREMENTS = {
 
 PLACEHOLDER_PATTERNS = ("placeholder", "blank", "spacer", "1x1", "transparent.", "no-image")
 PRESS_PATTERNS = ("cover-4x5", "cover-3x2", "press-plate", "press_plate", "/press/")
-#: `background-repeat` values that tile the layer. A tiled layer is decoration, not a display
-#: illustration, so the 2x rule does not apply to it — the same 96 px grain tile that is correct as
-#: a repeating overlay would be an upscaled asset as a one-shot image. Only an explicit repeat mode
-#: in the cell record exempts a layer; a record without one is judged as a one-shot image.
+#: `background-repeat` values that tile the layer. A layer tiling *at its natural size* is
+#: decoration, not a display illustration, so the 2x rule does not apply to it — the same 96 px grain
+#: tile that is correct as a repeating overlay would be an upscaled asset as a one-shot image. Only an
+#: explicit repeat mode in the cell record starts the exemption; a record without one is judged as a
+#: one-shot image.
 REPEATING_MODES = ("repeat", "repeat-x", "repeat-y", "round", "space")
+#: `background-size` tokens that scale the painted layer to the box instead of keeping the file's
+#: natural size. A tiling layer with one of these does not tile at natural size, so the exemption
+#: above cannot apply: `cover`/`contain` on a 96 px file over a 900 px box is an upscale whatever the
+#: repeat mode says. Percentages are included for the same reason (`100% 100%` is a full-box stretch).
+BOX_SCALING_SIZES = ("cover", "contain")
 
 
 def sha256_file(path: Path) -> str:
@@ -125,13 +133,20 @@ def press_plate_registry(root: Path | None = None) -> dict[str, str]:
     return registry
 
 
-def classify_image(image: dict, press_plates: dict[str, str] | None = None) -> dict:
+def classify_image(image: dict, press_plates: dict[str, str] | None = None,
+                   judged_axes: tuple[str, ...] = ("x",)) -> dict:
     """Return the judge's reading of one inventory row.
 
     Nothing here trusts a flag the camera set; every verdict is recomputed from the row's own
     values (`complete`, `natural`, `rendered`, `current_src`, `bundled_asset`, markers).
+
+    `judged_axes` says which dimension the 2x rule covers. An `<img>` is judged on its width, which
+    is how it is laid out; a CSS background layer passes the axes that do not paint at natural size,
+    so a tile repeated at its own width but stretched in height is held to the rule on height only.
+    An empty tuple means the layer tiles at natural size on both axes and is decoration.
     """
     rendered_width = float((image.get("rendered") or {}).get("width") or 0)
+    rendered_height = float((image.get("rendered") or {}).get("height") or 0)
     natural_width = int((image.get("natural") or {}).get("width") or 0)
     natural_height = int((image.get("natural") or {}).get("height") or 0)
     src = str(image.get("current_src") or "")
@@ -159,18 +174,43 @@ def classify_image(image: dict, press_plates: dict[str, str] | None = None) -> d
     data_uri_stand_in = data_uri and not bundled
 
     scale_ratio = (natural_width / rendered_width) if rendered_width > 0 else None
-    repeating = bool(image.get("repeating"))
-    scale_ok = bool((scale_ratio is not None and scale_ratio >= 1.998) or repeating)
+    scale_ratio_y = (natural_height / rendered_height) if rendered_height > 0 else None
+    axes = tuple(axis for axis in judged_axes if axis in ("x", "y"))
+    failing = []
+    for axis in axes:
+        ratio = scale_ratio if axis == "x" else scale_ratio_y
+        painted = rendered_width if axis == "x" else rendered_height
+        if ratio is None or ratio < 1.998:
+            failing.append(axis)
+    axis_problems = []
+    if failing == ["x", "y"]:
+        # One finding per layer: a `cover` layer stretched on both axes is one upscale, not two.
+        axis_problems.append(
+            f"natural {natural_width}x{natural_height}px is below 2x rendered "
+            f"{rendered_width:.2f}x{rendered_height:.2f}px (both axes)"
+        )
+    else:
+        for axis in failing:
+            natural = natural_width if axis == "x" else natural_height
+            painted = rendered_width if axis == "x" else rendered_height
+            if axis == "x" and scale_ratio is None:
+                axis_problems.append("not rendered")
+            elif axis == "y" and scale_ratio_y is None:
+                axis_problems.append("not rendered (height)")
+            elif axis == "x":
+                axis_problems.append(f"natural {natural}px is below 2x rendered {painted:.2f}px")
+            else:
+                axis_problems.append(
+                    f"natural {natural}px is below 2x rendered {painted:.2f}px (height axis)"
+                )
+    scale_ok = not axis_problems
 
     problems = []
     if placeholder_reasons:
         problems.extend(placeholder_reasons)
     if data_uri_stand_in:
         problems.append("data URI stands in for a kit asset")
-    if scale_ratio is None:
-        problems.append("not rendered")
-    elif not scale_ok:
-        problems.append(f"natural {natural_width}px is below 2x rendered {rendered_width:.2f}px")
+    problems.extend(axis_problems)
     if not image.get("sha256"):
         problems.append("no sha256")
 
@@ -183,9 +223,58 @@ def classify_image(image: dict, press_plates: dict[str, str] | None = None) -> d
         "bundled_asset": bundled,
         "scale_ok": scale_ok,
         "scale_ratio": round(scale_ratio, 3) if scale_ratio is not None else None,
-        "ratio_judged": not repeating,
+        "scale_ratio_y": round(scale_ratio_y, 3) if scale_ratio_y is not None else None,
+        "ratio_judged": bool(axes),
+        "judged_axes": list(axes),
         "problems": problems,
     }
+
+
+def box_scaled_size_token(token: str) -> bool:
+    """True when one `background-size` component derives its paint size from the box."""
+    token = token.strip().lower()
+    return token in BOX_SCALING_SIZES or token.endswith("%")
+
+
+def background_judged_axes(repeat: str | None, size: str | None) -> tuple[str, ...]:
+    """Which dimensions of a CSS background layer the 2x rule must judge.
+
+    An axis is exempt only when the layer both repeats on that axis and paints it at the file's
+    natural size; anything else is a box-derived paint. So:
+
+    - `repeat` + `auto` → nothing judged (a real tile);
+    - `repeat` + `cover` → both axes judged (the repeat is invisible; `cover` stretches the file);
+    - `repeat-x` + `auto 100%` → height judged, width exempt (a strip that tiles at its own width
+      but is stretched to the box height is not misleading on width, and may be on height).
+
+    A missing repeat mode exempts nothing: an old record must not become decoration by omission.
+    """
+    modes = str(repeat or "").strip().lower().split()
+    repeats_x = repeats_y = False
+    for mode in modes:
+        if mode == "repeat-x":
+            repeats_x = True
+        elif mode == "repeat-y":
+            repeats_y = True
+        elif mode in REPEATING_MODES:
+            repeats_x = repeats_y = True
+
+    tokens = str(size or "").strip().lower().split()
+    if not tokens:
+        size_x = size_y = "auto"
+    elif len(tokens) == 1:
+        size_x = tokens[0]
+        size_y = tokens[0] if tokens[0] in BOX_SCALING_SIZES else "auto"
+    else:
+        size_x, size_y = tokens[0], tokens[1]
+
+    judged = []
+    if not (repeats_x and not box_scaled_size_token(size_x)):
+        judged.append("x")
+    if not (repeats_y and not box_scaled_size_token(size_y)):
+        judged.append("y")
+    return tuple(judged)
+
 
 
 def classify_background(background: dict, press_plates: dict[str, str] | None = None) -> dict:
@@ -195,10 +284,13 @@ def classify_background(background: dict, press_plates: dict[str, str] | None = 
     a layer that painted is loaded, so an empty url or a zero natural size is the placeholder
     signal instead of an incompleteness flag. Everything else — data URI stand-in, 2x ratio, Press
     Plate by bundled-cover hash — is the rule applied to an image, so a kit asset cannot escape
-    judgement by being delivered as a CSS layer.
+    judgement by being delivered as a CSS layer. The 2x exemption is narrower than "repeats": an
+    axis is exempt only when the layer tiles on that axis at the file's own size, so `cover` +
+    `repeat` cannot pass a 96 px file at 900 px while a `repeat` + `auto` grain tile still can.
     """
-    repeat = str(background.get("background_repeat") or "").strip().lower()
-    modes = repeat.split()
+    judged = background_judged_axes(
+        background.get("background_repeat"), background.get("background_size")
+    )
     row = {
         "selector": background.get("selector"),
         "kind": str(background.get("kind") or "background"),
@@ -210,9 +302,8 @@ def classify_background(background: dict, press_plates: dict[str, str] | None = 
         "bundled_asset": background.get("bundled_asset"),
         "markers": background.get("marks") or background.get("markers") or [],
         "complete": True,
-        "repeating": any(mode in REPEATING_MODES for mode in modes),
     }
-    return classify_image(row, press_plates)
+    return classify_image(row, press_plates, judged_axes=judged)
 
 
 def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None = None) -> dict:
@@ -291,7 +382,9 @@ def judge_cell(record: dict, cell_dir: Path, press_plates: dict[str, str] | None
             "press_plate_source": verdict["press_plate_source"],
             "bundled_asset": verdict["bundled_asset"],
             "scale_ratio": verdict["scale_ratio"],
+            "scale_ratio_y": verdict["scale_ratio_y"],
             "ratio_judged": verdict["ratio_judged"],
+            "judged_axes": verdict["judged_axes"],
             "problems": verdict["problems"],
         })
     requirement_rows = []
@@ -560,20 +653,23 @@ def render_markdown(manifest: dict, output_dir: Path) -> str:
         lines.append("")
         if cell["backgrounds"]:
             lines.append("Background layers (judged for placeholder, data URI stand-in, Press Plate "
-                         "and, unless the layer tiles, 2x):")
+                         "and, unless the layer tiles at its natural size, 2x):")
             lines.append("")
-            lines.append("| selector | repeat | natural | rendered | ratio | sha256 | problems |")
-            lines.append("|---|---|---|---|---|---|---|")
+            lines.append("| selector | repeat | size | natural | rendered | ratio | 2x judged | sha256 | problems |")
+            lines.append("|---|---|---|---|---|---|---|---|---|")
             for layer in cell["backgrounds"]:
                 natural = layer.get("natural") or {}
                 rendered = layer.get("rendered") or {}
                 digest = layer.get("sha256") or "none"
                 problems = "; ".join(layer["problems"]) or "none"
+                judged_axes = layer.get("judged_axes") or []
+                judged = ", ".join(judged_axes) if judged_axes else "no (tiles at natural size)"
                 lines.append(
                     f"| `{layer.get('selector')}` | {layer.get('background_repeat') or 'unrecorded'} | "
+                    f"{layer.get('background_size') or 'unrecorded'} | "
                     f"{natural.get('width')}x{natural.get('height')} | "
                     f"{rendered.get('width')}x{rendered.get('height')} | "
-                    f"{layer.get('scale_ratio')} | `{digest}` | {problems} |"
+                    f"{layer.get('scale_ratio')} | {judged} | `{digest}` | {problems} |"
                 )
             lines.append("")
     text = "\n".join(lines) + "\n"
