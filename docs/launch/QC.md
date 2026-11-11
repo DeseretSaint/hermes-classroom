@@ -141,3 +141,18 @@ carries each file's sha256, the commit, the module sha and the fixture used. The
 
 The course, lesson and check screens were not touched by the Home pass, so their pixels remain true of
 the pinned tree.
+
+
+## Walkthrough v3 — the posted cut
+
+`docs/launch/coursebook-walkthrough.mp4`: 51.000000 s, 1920x1080/30, h264 + AAC stereo 48 kHz,
+**-15.1 LUFS** integrated (ebur128, post-mux), sha256
+`86ade99dccbf8b16867270de34c95442d61d2621d82daab9c12a5348763c0a70`, 9,499,230 B.
+
+Seven segments: Learn anything (title), Home, Workshop, Course plan, Lesson + tutor, Graded check,
+Parent mode printout, end card. The ground is an animated ffmpeg `gradients` source and every card
+carries a 2.5% push, so no segment is a still on a blank field. The Parent beat is a real A4 parent
+guide from `docs/visual-review/gm-014/a4/`, which is the printout Parent mode produces.
+
+Narration names the three modes and the pack path. The storefront sentence is future tense on
+purpose: export/import ships (gate 4 round trip), a storefront does not.

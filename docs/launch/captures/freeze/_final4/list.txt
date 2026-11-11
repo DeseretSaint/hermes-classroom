@@ -1,0 +1,8 @@
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/00.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/01.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/02.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/03.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/04.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/05.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/06.mp4'
+file '/home/deseretsaint/.hermes/cache/scratch/ship/docs/launch/captures/freeze/_final4/07.mp4'
