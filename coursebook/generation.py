@@ -3416,13 +3416,23 @@ def _stage_domain_provenance(
     A plan document authored after CP-015g/D1-F2 records ``domain_provenance``: the resolver's
     answer plus its source. Reusing that record is what makes the plan stage, the unit-sections
     stage, the lesson stage and the run records name one domain — a lesson can never re-derive a
-    different profile from the locale. A document authored before the field existed (or a caller
-    that passes no document) resolves here from the same course goal with the same function, so a
-    legacy plan and a new one cannot disagree about whether the course is a language course.
+    different profile from the locale. A document authored before the field existed resolves here
+    from the same course goal with the same function, so a legacy plan and a new one cannot
+    disagree about whether the course is a language course.
+
+    A legacy record is not trusted. H-44 stored ``source: "declared_locale"`` and a locale-derived
+    ``language``; reusing that would resurrect the very defect this card removes (a telescope
+    course gated as a language lesson) and would pass a retired source value to the policy. Only a
+    record naming one of ``capability_policy.DOMAIN_SOURCES`` is reused; anything else is
+    re-resolved from the goal.
     """
     if isinstance(document, Mapping):
         stored = document.get("domain_provenance")
-        if isinstance(stored, Mapping) and stored.get("resolved_domain"):
+        if (
+            isinstance(stored, Mapping)
+            and stored.get("resolved_domain")
+            and stored.get("source") in capability_policy.DOMAIN_SOURCES
+        ):
             return dict(stored)
     return _domain_provenance(goal=goal, subject_domain=subject_domain, locale=locale)
 
@@ -3612,7 +3622,8 @@ def _lesson_domain_resolution(
     * a domain declared on the section, the plan document or the dials is ``declared`` (it is what
       the caller actually said, and the alias table canonicalises it);
     * otherwise the plan's recorded ``domain_provenance`` is reused verbatim, so the lesson names
-      the same resolved domain and source the plan record did;
+      the same resolved domain and source the plan record did (a record with a retired source,
+      such as H-44's ``declared_locale``, is not reused);
     * otherwise the course goal resolves it with :func:`curriculum.resolve_domain` — never the
       locale. A lesson left without a goal is ``general``, never ``language``.
     """
@@ -3622,7 +3633,11 @@ def _lesson_domain_resolution(
     if declared is not None:
         resolved = curriculum.resolve_domain(domain=declared, locale=locale)
         return {"domain": resolved["domain"], "source": resolved["source"]}
-    if isinstance(domain_provenance, Mapping) and domain_provenance.get("resolved_domain"):
+    if (
+        isinstance(domain_provenance, Mapping)
+        and domain_provenance.get("resolved_domain")
+        and str(domain_provenance.get("source") or "inferred") in capability_policy.DOMAIN_SOURCES
+    ):
         return {
             "domain": str(domain_provenance["resolved_domain"]),
             "source": str(domain_provenance.get("source") or "inferred"),

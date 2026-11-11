@@ -297,11 +297,13 @@ _ILLUSTRATION_VISUAL = re.compile(
 #: (a word card, a phrase scene, a script chart) presupposes a language lesson; a course resolved
 #: to any other domain may still carry generic context artwork, but not this role. CP-015g/D1-F2
 #: followup: this is what stops a telescope lesson being handed a "language visual aid".
+#: Deliberately narrow: "script" (code) and a plain "letter"/"word" (a labelled diagram, an
+#: equation) are ordinary technical artwork, so only the language-artefact spellings are listed.
 _LANGUAGE_VISUAL = re.compile(
     r"\b("
-    r"language|vocabular(?:y|ies)|words?|phrases?|pronunciation|translations?|"
-    r"alphabet|letters?|scripts?|kana|kanji|romaji|flash\s?cards?|"
-    r"dialogues?|conversations?"
+    r"language|vocabular(?:y|ies)|words?\s+(?:for|of)\b|phrases?|pronunciation|translations?|"
+    r"alphabet|letter\s*names?|kana|kanji|romaji|flash\s?cards?|word\s?cards?|"
+    r"dialogues?|conversations?|script\s+(?:chart|table|summary|lesson)|writing\s+system"
     r")\b"
 )
 

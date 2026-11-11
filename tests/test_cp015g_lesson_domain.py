@@ -276,5 +276,95 @@ class LessonRunRecordTest(GenerationTestBase):
         self.assertEqual(stored["source"], plan["domain_provenance"]["source"])
 
 
+class LegacyPlanDocumentTest(unittest.TestCase):
+    """A plan authored before CP-015g/D1-F2 (H-44 shape) must not leak its locale decision.
+
+    H-44 stored ``source: "declared_locale"`` and a locale-derived ``language`` in the plan
+    document. Reusing that record would resurrect the telescope defect *and* hand the policy a
+    retired source value (``LessonCapabilityPlan`` rejects it), so the lesson stage re-resolves
+    from the course goal instead.
+    """
+
+    LEGACY = {
+        "domain_provenance": {
+            "resolved_domain": "language",
+            "declared_subject_domain": None,
+            "declared_locale": "en-US",
+            "target_language": "en",
+            "source": "declared_locale",
+        }
+    }
+
+    def test_a_retired_source_is_not_reused(self) -> None:
+        provenance = gen._stage_domain_provenance(
+            self.LEGACY, goal=TELESCOPE, subject_domain=None, locale="en-US"
+        )
+        self.assertEqual(provenance["resolved_domain"], "technical_procedure")
+        self.assertEqual(provenance["source"], "inferred")
+
+    def test_a_legacy_telescope_plan_gates_its_lesson_as_a_procedure(self) -> None:
+        provenance = gen._stage_domain_provenance(
+            self.LEGACY, goal=TELESCOPE, subject_domain=None, locale="en-US"
+        )
+        capability = gen.lesson_capability_plan(
+            recipe="casual",
+            section={"lesson_intent": "Explain how to align the finder scope.", "media_need": _none_media()},
+            objective={"ordinal": 1, "evidence_target": "comprehension"},
+            locale="en-US",
+            dials={},
+            plan={"subject_domain": None},
+            domain_provenance=provenance,
+            goal=TELESCOPE,
+        )
+        self.assertEqual(capability.subject_domain, "technical_procedure")
+        self.assertEqual(capability.domain_source, "inferred")
+
+    def test_a_legacy_language_plan_still_resolves_language_from_its_goal(self) -> None:
+        provenance = gen._stage_domain_provenance(
+            self.LEGACY, goal=SPANISH, subject_domain=None, locale="es-MX"
+        )
+        self.assertEqual(provenance["resolved_domain"], "language")
+        self.assertEqual(provenance["source"], "inferred")
+
+    def test_a_provenance_with_an_unknown_source_cannot_reach_the_policy(self) -> None:
+        # Defence in depth: even a caller that hands `lesson_capability_plan` the retired record
+        # directly gets a fresh resolution, not a CapabilityPolicyError from `domain_source`.
+        capability = gen.lesson_capability_plan(
+            recipe="casual",
+            section={"lesson_intent": "Explain how to align the finder scope."},
+            objective={"ordinal": 1, "evidence_target": "comprehension"},
+            locale="en-US",
+            dials={},
+            plan={"subject_domain": None},
+            domain_provenance=self.LEGACY["domain_provenance"],
+            goal=TELESCOPE,
+        )
+        self.assertEqual(capability.subject_domain, "technical_procedure")
+        self.assertEqual(capability.domain_source, "inferred")
+
+
+class LanguageVisualGateScopeTest(unittest.TestCase):
+    def test_a_programming_lesson_may_still_declare_a_script_illustration(self) -> None:
+        # "script" in a coding course is code, not a writing system: the language-artefact gate
+        # must not hard-fail legitimate technical artwork.
+        section = {
+            "lesson_intent": "Read the script that renames the files, then run it.",
+            "media_need": _declared_media(
+                "an illustration of the script the learner will run",
+                image=("optional", "illustration"),
+                audio=("none", "none"),
+            ),
+        }
+        capability = gen.lesson_capability_plan(
+            recipe="casual",
+            section=section,
+            objective={"ordinal": 1, "evidence_target": "comprehension"},
+            locale="en-US",
+            dials={},
+            plan={"subject_domain": "technical_procedure"},
+        )
+        self.assertEqual((capability.image, capability.image_role), ("optional", "illustration"))
+
+
 if __name__ == "__main__":
     unittest.main()

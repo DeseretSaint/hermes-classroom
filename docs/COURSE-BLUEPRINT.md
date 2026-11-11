@@ -675,8 +675,10 @@ The lesson stage now consumes the plan's decision instead of making its own:
 * The plan document stores `domain_provenance` beside the declared `subject_domain`.
   `generation.lesson_capability_plan` takes the plan's record (or, for a pre-field plan, resolves
   from the course row's goal with the same resolver) and passes the resolved `domain` and
-  `domain_source` to `policy.plan_lesson_capability`. A section/plan/dials declaration still wins
-  as `declared`; the alias table remains `policy.normalise_subject_domain`.
+  `domain_source` to `policy.plan_lesson_capability`. A record carrying a retired source (H-44's
+  `declared_locale`) is discarded and re-resolved from the goal, so an old telescope plan is not
+  reused as a language course. A section/plan/dials declaration still wins as `declared`; the
+  alias table remains `policy.normalise_subject_domain`.
 * `LessonCapabilityPlan` records `subject_domain` and `domain_source`, the stored
   `gen_lessons.policy_json` keeps both, and the lesson job's result carries `subject_domain`,
   `domain_source` and the full `domain_provenance` — the same values the plan result named.
