@@ -317,7 +317,9 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # v11 (CP-015g/D1-F2): the payload also carries the resolved subject domain and its
         # ``domain_source`` (declared, inferred or default), so the validator judges the plan
         # against the same profile the author was given.
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v11")
+        # v12 (CP-015g/D1-F2, second half): the instruction text now states what ``source_support``
+        # judges — a declared gap is not a defect (`docs/GENERATION.md` §5c).
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v12")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

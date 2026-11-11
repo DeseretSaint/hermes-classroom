@@ -703,6 +703,7 @@
         "scope_cap_weeks": 1,
         "sections": 0,
         "sources": 1,
+        "sourcing_notes": [],
         "status": "draft",
         "subject_domain": "repair",
         "target_language": null,

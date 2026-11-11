@@ -1253,6 +1253,7 @@
         "scope_cap_weeks": 8,
         "sections": 0,
         "sources": 1,
+        "sourcing_notes": [],
         "status": "draft",
         "subject_domain": "general",
         "target_language": null,

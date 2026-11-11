@@ -164,6 +164,7 @@ __all__ = [
     "validation_pass_instructions",
     "validation_pass_criteria",
     "plan_claim_labels",
+    "plan_declared_gaps",
     "merge_validation_reports",
     "run_plan_job",
     "run_unit_sections_job",
@@ -287,7 +288,14 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v11"
 #: v11 (CP-015g/D1-F2): the plan-validation payload now carries the curriculum brief's resolved
 #: subject domain and its ``domain_source`` (declared, inferred or default), so the validator
 #: judges the plan against the same profile the author was given. Instruction text unchanged.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v11"
+#: v12 (CP-015g/D1-F2, second half): the instruction text now states what ``source_support``
+#: judges. A live run refused two objectives for being "unsourced" while the plan itself marked
+#: them ``support: "unverified"`` with no ids — the authoring contract's own honest answer — so a
+#: plan for an under-sourced topic could never pass. The rule (``_PLAN_SUPPORT_RULE``) separates
+#: the three real defects (a ``sourced`` claim its excerpt does not carry, a claim presented as
+#: established fact, a claim the excerpts contradict) from a declared gap, which the kernel
+#: records instead of refusing.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v12"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -3147,6 +3155,10 @@ _PLAN_DISCLOSURE_CRITERION = "goal_capability_disclosure"
 #: raw goal sentence. Its rubric is stated in the pass that owns it for the same reason.
 _PLAN_CONTRADICTION_CRITERION = "internal_contradiction"
 
+#: CP-015g/D1-F2: the claim-support criterion. The pass that owns it is told which defects it
+#: judges and that a declared gap is not one of them.
+_PLAN_SUPPORT_CRITERION = "source_support"
+
 #: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
 #: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
 #: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
@@ -3398,6 +3410,23 @@ _LESSON_ANSWER_KEY_RULE = (
 )
 
 
+#: CP-015g/D1-F2: the rule that a declared gap is not a defect. Stated by both plan prompt
+#: builders for the same reason as :data:`_DECLARED_VERDICT_RULE` — the kernel enforces it
+#: (:func:`validation_verdict` reclassifies such a rejection and the plan stage refuses to
+#: re-author for it), so the model that answers ``source_support`` is told before it answers.
+_PLAN_SUPPORT_RULE = (
+    " Judge source_support against the claims the plan makes, never against the gaps it declares. "
+    "An objective whose 'support' is 'unverified', whose 'source_ids' is empty and whose wording "
+    "marks it as unverified is a declared gap: set that claim's verdict to 'unverified' with a "
+    "reason and do not reject source_support for it — the plan does not present that claim as "
+    "verified content, so there is nothing for a source to contradict. Reject source_support when "
+    "a claim marked 'sourced' is not carried by the excerpt it cites, when a claim is presented "
+    "to the learner as established fact without support, or when a supplied excerpt contradicts a "
+    "claim (and reject factual_correctness with it). An artifact is never refused for honestly "
+    "declaring what its sources do not establish."
+)
+
+
 def validation_pass_instructions(
     *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> str:
@@ -3446,6 +3475,10 @@ def validation_pass_instructions(
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
+    if subject == "plan" and _PLAN_SUPPORT_CRITERION in criteria:
+        # CP-015g/D1-F2: the pass that owns source_support is told the distinction the kernel
+        # enforces — a declared gap is not a defect.
+        text += _PLAN_SUPPORT_RULE
     return text
 
 
@@ -4701,6 +4734,9 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
+    if subject == "plan" and _PLAN_SUPPORT_CRITERION in criteria:
+        # CP-015g/D1-F2: same rule as the criteria-pass builder above.
+        text += _PLAN_SUPPORT_RULE
     if subject.startswith("lesson"):
         text += _LESSON_ANSWER_KEY_RULE
     return text
@@ -6982,6 +7018,41 @@ def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None
         raise GenerationRejected("validation reused the generation prompt version")
 
 
+def _claim_item_key(value: Any) -> str:
+    """Match a validator's item locator to a plan claim label, tolerantly.
+
+    The plan prompt gives locators such as ``objective_2``; the plan's own claim labels are
+    ``objective:2``. Both are the same place, and a validator writes one or the other, so the match
+    ignores every separator and case. Nothing else is fuzzy: a label that does not reduce to the
+    same word run is a different item.
+    """
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").casefold())
+
+
+def plan_declared_gaps(plan: Mapping[str, Any]) -> dict[str, str]:
+    """The plan claims that declare their own lack of support, keyed by claim label.
+
+    CP-015g/D1-F2. ``support: "unverified"`` with an empty ``source_ids`` is the authoring
+    contract's own answer to "no supplied excerpt carries this claim": the plan is telling the
+    reader it does not know. That is a gap the plan *declares*, and the validator criterion
+    ``source_support`` judges claims, not declarations — see :func:`validation_verdict`.
+
+    Only objectives are read: they are the plan's only claim-bearing rows that carry a support
+    value, and ``plan_claim_labels`` already labels them in the same vocabulary.
+    """
+    gaps: dict[str, str] = {}
+    objectives = plan.get("objectives") if isinstance(plan, Mapping) else None
+    for objective in objectives or []:
+        if not isinstance(objective, Mapping):
+            continue
+        if str(objective.get("support") or "") != "unverified":
+            continue
+        if objective.get("source_ids"):
+            continue
+        gaps[f"objective:{objective.get('ordinal')}"] = str(objective.get("title") or "")
+    return gaps
+
+
 def validation_verdict(
     report: dict[str, Any],
     *,
@@ -6989,6 +7060,7 @@ def validation_verdict(
     ledger: Sequence[SourceRecord] = (),
     independence: str = INDEPENDENCE_UNIDENTIFIED,
     criteria: Sequence[str] = VALIDATION_CRITERIA,
+    declared_gaps: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Turn a validator report into an outcome the pipeline can act on.
 
@@ -7012,6 +7084,17 @@ def validation_verdict(
     precondition is upstream — a declared ``reject`` must be grounded in the criteria that pass was
     given (:func:`_declared_reject_problem`), so a ``reject`` arriving here always names something a
     reviewer can read (``t_0affea08``).
+
+    CP-015g/D1-F2: ``source_support`` judges the claims an artifact *makes*, never the gaps it
+    *declares*. When ``declared_gaps`` is supplied (a plan's own ``support: "unverified"``
+    objectives with no ``source_ids``), a rejection under ``source_support`` that names one of those
+    claims is not a defect and is not counted as one: it is moved to ``sourcing_notes`` with the
+    validator's own words kept beside it. This changes no verdict — a declared ``reject`` stays a
+    ``reject`` — it stops the pipeline from attributing an honestly declared gap to the author and
+    from spending a repair cycle on a claim no supplied excerpt carries. Whether the refusal rested
+    *only* on declared gaps is reported as ``gap_only_refusal`` so the plan stage can park the
+    document for review instead of re-authoring it (nothing about regenerating supplies a source
+    that was never fetched).
     """
     allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
@@ -7026,6 +7109,38 @@ def validation_verdict(
     rejections = list(report.get("rejections") or [])
     declared = str(report.get("verdict"))
     claim_verdicts = [dict(entry) for entry in report.get("claim_verdicts") or []]
+    # CP-015g/D1-F2: a claim the plan itself marks unverified is a declared gap, not an
+    # unsupported assertion. See the docstring: only `source_support` reclassifies, and only for a
+    # claim label the plan declares.
+    gap_index = {
+        _claim_item_key(label): (label, title)
+        for label, title in dict(declared_gaps or {}).items()
+    }
+    sourcing_notes: list[dict[str, str]] = []
+    kept_rejections: list[dict[str, Any]] = []
+    for entry in rejections:
+        match = (
+            gap_index.get(_claim_item_key(entry.get("item")))
+            if str(entry.get("criterion")) == "source_support"
+            else None
+        )
+        if match is None:
+            kept_rejections.append(entry)
+            continue
+        sourcing_notes.append(
+            {
+                "item": match[0],
+                "claim": match[1],
+                "validator_reason": " ".join(str(entry.get("reason") or "").split())[:400],
+            }
+        )
+    gap_only_refusal = bool(
+        sourcing_notes
+        and not kept_rejections
+        and set(failed) <= {"source_support"}
+        and not unknown
+    )
+    rejections = kept_rejections
     provenance_flags: list[str] = []
     for index, entry in enumerate(claim_verdicts):
         flags = provenance_violations(
@@ -7058,6 +7173,10 @@ def validation_verdict(
         "unknown": sorted(unknown),
         "waived_unknown": sorted(waived),
         "rejections": rejections,
+        # CP-015g/D1-F2: claims the artifact itself marks unverified, and the validator words that
+        # argued about them. Recorded, never counted as defects.
+        "sourcing_notes": sourcing_notes,
+        "gap_only_refusal": gap_only_refusal,
         "criteria": [dict(entry) for entry in report.get("criteria") or []],
         "claim_verdicts": claim_verdicts,
         "provenance_flags": provenance_flags,
@@ -7086,12 +7205,25 @@ def _refusal_reasons(verdict: Mapping[str, Any]) -> list[str]:
     ]
     if reasons:
         return reasons
+    # CP-015g/D1-F2: a refusal whose only itemised grounds were the plan's own declared gaps has
+    # nothing left to quote, so the reader is told what the gap is and what to do about it instead
+    # of the bare "criteria failed: source_support" the reader cannot act on.
+    notes = [
+        f"{note['item']}: declared sourcing gap — {note['claim']!r} is marked unverified and no "
+        "supplied excerpt carries it; that is recorded, not a validation defect. Next: re-research "
+        "the claim, narrow the objective, or approve the lesson with it labelled unverified."
+        for note in verdict.get("sourcing_notes") or []
+    ]
+    if notes and verdict.get("gap_only_refusal"):
+        return notes
     failed = [str(name) for name in verdict.get("failed") or []]
     if failed:
-        return [f"criteria failed: {', '.join(failed)}"]
+        return [f"criteria failed: {', '.join(failed)}", *notes]
     unknown = [str(name) for name in verdict.get("unknown") or []]
     if unknown:
-        return [f"criteria could not be verified: {', '.join(unknown)}"]
+        return [f"criteria could not be verified: {', '.join(unknown)}", *notes]
+    if notes:
+        return notes
     return ["the validator did not clear this artifact"]
 
 
@@ -7121,6 +7253,14 @@ def _feedback(verdict: Mapping[str, Any]) -> str:
         return (
             "The independent validator rejected the previous attempt without itemised reasons; "
             "fix the objective/source alignment and try again."
+        )
+    if verdict.get("sourcing_notes"):
+        # CP-015g/D1-F2: the repair list must never read as "find a citation for this". A claim no
+        # supplied excerpt carries has exactly one honest answer, and it is the one the author
+        # already gave: keep it unverified with no ids.
+        lines.append(
+            "- do not invent a citation to satisfy a support complaint: an objective whose claim "
+            "no supplied excerpt carries stays `support: \"unverified\"` with empty `source_ids`"
         )
     return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines[:8]])
 
@@ -9502,12 +9642,24 @@ def run_plan_job(
                 research_status=research_run.status,
                 ledger=research_run.sources,
                 independence=independence,
+                # CP-015g/D1-F2: the plan's own `support: "unverified"` objectives are declared
+                # gaps, not unsupported claims. Passing them here is what keeps a validator
+                # complaint about one out of the author's repair list.
+                declared_gaps=plan_declared_gaps(candidate),
             )
             if verdict["verdict"] == "pass":
                 plan = candidate
                 break
             rejection_reasons = _refusal_reasons(verdict)
             if attempt == 2:
+                plan = candidate
+                break
+            if verdict.get("gap_only_refusal"):
+                # CP-015g/D1-F2: nothing about regenerating supplies a source that was never
+                # fetched. The refusal's only grounds are the plan's own declared gaps, so a
+                # second authoring call can only churn (and invites the over-citation D1-F1
+                # removed). Park the document needs_review now, with the sourcing notes stored as
+                # the reasons a human acts on.
                 plan = candidate
                 break
             feedback = _feedback(verdict)
@@ -9602,6 +9754,9 @@ def run_plan_job(
             "validation_id": None,
             "validation_verdict": verdict["verdict"],
             "plan_schema": plan.get("plan_schema"),
+            # CP-015g/D1-F2: the claims this plan declares unverified, with the validator's own
+            # words kept beside them. They are disclosures for approval, never author defects.
+            "sourcing_notes": list(verdict.get("sourcing_notes") or []),
             "validation": _validation_block(verdict, response, validation_response),
             # H-195: what actually wrote this plan, from the provider's own report, plus the
             # instruction label. The plan review prints it as "Writing model: provider/model".
@@ -9959,6 +10114,21 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
         warnings.append(
             "validator answered unknown for: " + ", ".join(verdict["waived_unknown"])
             + " (waived only because research was unavailable; the factual gate stays closed)"
+        )
+    # CP-015g/D1-F2: a declared gap is a disclosure, not a defect. It is stated with the next
+    # action so an approver is never left guessing whether something is broken.
+    for note in verdict.get("sourcing_notes") or []:
+        warnings.append(
+            f"declared sourcing gap: {note['item']} ({note['claim']}) is marked unverified and no "
+            "supplied excerpt carries it. That is recorded on the plan, not counted as a "
+            "validation defect. Next: re-research the claim, narrow the objective, or approve the "
+            "lesson with it labelled unverified."
+        )
+    if verdict.get("gap_only_refusal"):
+        warnings.append(
+            "the validator refused this plan only for claims it declares unverified, so it was not "
+            "re-authored: regenerating cannot supply a source that was never fetched. The plan is "
+            "parked needs_review with the sourcing notes below."
         )
     return warnings
 

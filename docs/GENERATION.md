@@ -19,10 +19,10 @@ Three different calls, three different prompts, three different schemas:
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v21` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v22` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v11` | `VALIDATION_SCHEMA` |
-| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v11` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
+| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v11` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v11` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v22` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v21` otherwise. The rounds that
@@ -109,8 +109,9 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
 whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v11` (the label advanced for the plan payload's typed `performance` block and
-resolved-domain brief; the rule text is unchanged by CP-015g/D1-F1 and CP-015g/D1-F2), so it is a
+`validation-prompt.v12` (the label advanced for the plan payload's typed `performance` block and
+resolved-domain brief; CP-015g/D1-F2's second half then changed the instruction text itself, adding
+the `source_support` rule in §5c), so it is a
 stated contract rather than an unstated schema trap (the H-191
 lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
 `docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
@@ -524,6 +525,59 @@ research it was given.
 What this does **not** decide: whether a verbatim quote actually carries the claim it is attached
 to. That is a judgment, and the independent validator's `source_support` criterion still makes it;
 the rule only removes the over-citation that made the claim impossible to support at all.
+
+## 5c. `source_support` judges claims, not declared gaps (CP-015g/D1-F2)
+
+A live CP-015g run (`docs/cp015g-d1-f1/run-f1-live-r2.json`, job
+`job_c3a5f5ca512a4d518e7b06c924e53eed`) authored four objectives for *"Set up a small backyard
+telescope and find and observe the moons of Jupiter on a clear night"*. Two were `sourced` with a
+verbatim `source_quote`; two carried `support: "unverified"` and empty `source_ids`, which is what
+the authoring contract (§5b) tells the author to write when no supplied excerpt carries the claim.
+The independent validator refused the plan under `source_support` for exactly those two:
+
+> objective:2: The setup/aim procedure is unsourced and must not be presented to a learner as
+> verified content.
+
+Neither objective presents itself as verified, so there was no unsupported claim to refuse — the
+validator was judging the plan's honesty instead of its assertions, and a plan for an under-sourced
+topic could never pass however honestly it was authored.
+
+**Decision: an honestly declared gap is not a `source_support` defect.** `source_support` refuses
+three things and only those: a claim marked `sourced` that the excerpt it cites does not carry; a
+claim presented to the learner as established fact with no support; and a claim the supplied
+excerpts contradict (which is also a `factual_correctness` defect). A claim the artifact itself
+marks `unverified`, with no source ids, is a *declared gap*: recorded, disclosed at approval,
+never refused. The distinction is stated to the validator before it answers — `_PLAN_SUPPORT_RULE`
+in every plan-validation pass, under `validation-prompt.v7`.
+
+**The kernel enforces the same rule, so a model slip cannot attribute it to the author.**
+`plan_declared_gaps()` reads the plan's own `support: "unverified"` / no-ids objectives;
+`validation_verdict(..., declared_gaps=...)` moves any `source_support` rejection naming one of them
+into `sourcing_notes` and out of `rejections`. Nothing is upgraded to a pass: a refusal stays a
+refusal, and the plan stays `needs_review`. What changes is attribution and repair:
+
+* the plan result carries `sourcing_notes` (`{item, claim, validator_reason}`) as a disclosure;
+* `_refusal_reasons` states the gap and the next action instead of a bare
+  `criteria failed: source_support`;
+* `_feedback` adds the one rule that keeps a repair honest — do not invent a citation to satisfy a
+  support complaint;
+* a refusal whose *only* grounds were declared gaps (`gap_only_refusal`) parks the document
+  `needs_review` on the first attempt instead of spending a second authoring and research cycle:
+  regenerating cannot supply a source that was never fetched.
+
+**What the pipeline does about a gap (answer to "re-research, narrow or pause").** Pause with a
+sourcing note, and say so: the note names the objective, the claim and the validator's words, and
+the warning states the three real options — re-research the claim, narrow the objective, or approve
+the lesson with it labelled unverified. Re-research is a research-stage decision, not something the
+plan stage can improvise; narrowing is the author's, and D1-F1 closed the authoring side. Money is
+never spent re-rolling an authoring call that has nothing to change.
+
+**Limit, stated.** This decides the plan-stage contract only. It does not prove that a lesson
+authored under an objective marked unverified labels every claim in its learner-facing page; the
+page-level disclosure is the lesson stage's own contract and is unchanged here. It also does not
+detect a validator that fails `source_support` with no itemised rejection at all: that answer keeps
+its refusal (the criterion verdict is the validator's, not the kernel's) and the reader sees
+`criteria failed: source_support`.
 
 ## 5a. The declared plan inputs: level, subject_domain, scope
 
