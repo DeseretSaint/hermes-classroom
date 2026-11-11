@@ -310,3 +310,13 @@ the posted beat does not show one.
 The film is **not approved for upload** until DeseretSaint signs the row above. That is
 `docs/SUBMISSION.md` §0 and gate 13; this file records the measurement, it does not grant the approval.
 The loudness FAIL and the two caption overstatements are the owner's to accept or repair before posting.
+
+## 30 s launch cut (film3)
+
+`docs/launch/coursebook-launch-30s.mp4` - 32.300000 s, 1920x1080, 30/1, h264 + AAC 192k 48 kHz stereo, 4,870,583 B, sha256 `60049942b4251f29a82c5c541c25c8f09afbc93b280fb477bc867783df06d880`.
+
+Provenance: every frame is a module render, not a Desktop window. Plates are six film3 captures at 1344 CSS width, device pixel ratio 2 (2688 px), from `desktop/plugin.js` sha256 `0d98d606`; composition evidence, not a live install (D-010).
+
+Audio: CC0 `bed-75s.wav` trimmed to 32.3 s, 0.8 s fade in, 1.2 s fade out, plus `04-click-1` at 4.55 s, `08-correct-chime` at 18.20 s, `07-stamp` at 27.30 s. Measured -15.4 LUFS integrated, peak under -1.5 dBTP by construction of the loudnorm pass.
+
+Captions assert only what their frame shows: a topic field, a plan with sections, the library, one course path, a game-mode lesson, the pack shelf.
