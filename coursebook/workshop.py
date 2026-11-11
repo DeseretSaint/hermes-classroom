@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import re
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Mapping
@@ -35,6 +36,10 @@ from . import archive, db, packs, pack_flow
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = ROOT / "catalog" / "workshop.v1.json"
 BUNDLED_ROOT = ROOT / "bundled" / "packs"
+#: Accepted community packs, one ``<pack_id>.zip`` per file. A pack lands here through the store
+#: pull request (``scripts/submit-course.py``); it ships to every user with the next plugin update
+#: and is read here by exactly the same gate as a bundled pack.
+COMMUNITY_ROOT = ROOT / "store" / "packs"
 
 #: A catalogue is editorial data with a tiny surface; anything outside this is not a catalogue.
 MAX_PACKS = 24
@@ -107,6 +112,17 @@ def load_catalog() -> dict[str, Any]:
         if not _SHA256.match(str(entry.get("content_hash") or "")):
             raise WorkshopError(f"catalogue entry {pack_id!r} declares no pack content hash")
     return dict(document)
+
+
+def _community_archive(slug: str) -> Path | None:
+    """Resolve one community pack id to its archive in the store, refusing any escape."""
+    if not _SLUG.match(str(slug or "")) or not COMMUNITY_ROOT.is_dir():
+        return None
+    root = COMMUNITY_ROOT.resolve()
+    candidate = (root / f"{slug}.zip").resolve()
+    if candidate.parent != root or not candidate.is_file():
+        return None
+    return candidate
 
 
 def _bundled_directory(slug: str) -> Path:
@@ -405,6 +421,9 @@ def _read_entry(entry: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     content audit, and every declared file's size and sha256. The catalogue's declared content hash
     must equal the manifest's own; a fixture edited without regenerating the catalogue is refused.
     """
+    community = _community_archive(str(entry.get("directory") or ""))
+    if community is not None:
+        return _read_community(entry, community)
     directory = _bundled_directory(str(entry["directory"]))
     manifest, files = archive.read_directory(directory)
     if str(manifest.get("pack_id")) != str(entry["pack_id"]):
@@ -431,6 +450,40 @@ def _read_entry(entry: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     }
     document = packs.preview(manifest, integrity=integrity, automated_checks_passed=True)
     return manifest, document
+
+
+def _read_community(entry: Mapping[str, Any], source: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Verify one accepted community pack straight out of its store archive.
+
+    ``extract_archive`` applies the importer's own checks (normalised paths, size and ratio ceilings,
+    magic-byte MIME, every declared sha256) and returns the manifest; the teaching minima, content
+    hash and content audit then run on the extracted tree. A store file that drifted from its
+    manifest is refused here, exactly as a bundled fixture is.
+    """
+    with tempfile.TemporaryDirectory(prefix="cb-store-read-") as temporary:
+        target = Path(temporary) / "pack"
+        manifest = archive.extract_archive(source, target)
+        roots = [child for child in target.iterdir() if child.is_dir()]
+        if len(roots) != 1:
+            raise WorkshopError("the store archive must carry exactly one root directory")
+        directory = roots[0]
+        if str(manifest.get("pack_id")) != str(entry.get("pack_id")):
+            raise WorkshopError("store file name does not match the pack's own pack_id")
+        if str(manifest.get("content_hash")) != str(entry.get("content_hash")):
+            raise WorkshopError("the store index does not match the pack's own content hash")
+        packs.validate_manifest(manifest)
+        packs.validate_minima(manifest)
+        packs.verify_content_hash(manifest)
+        problems = packs.audit_bundle(directory)
+        if problems:
+            raise WorkshopError("community pack content audit failed: " + "; ".join(problems))
+        integrity = {
+            "hashes_match": True,
+            "file_count": len(manifest["files"]),
+            "expanded_bytes": sum(int(item["bytes"]) for item in manifest["files"]),
+        }
+        document = packs.preview(manifest, integrity=integrity, automated_checks_passed=True)
+        return manifest, document
 
 
 def _entry_item(entry: Mapping[str, Any], manifest: Mapping[str, Any], preview: Mapping[str, Any], installed: dict[str, Any] | None) -> dict[str, Any]:
@@ -566,6 +619,27 @@ def catalog_view() -> dict[str, Any]:
                     "evidence_summary": _evidence_summary(connection, str(installed_row["course_id"])),
                 }
             items.append(_entry_item(entry, manifest, trust, installed))
+        catalogued = {str(entry.get("pack_id")) for entry in document["packs"]}
+        for entry in _community_entries(catalogued):
+            try:
+                manifest, trust = _read_entry(entry)
+            except (WorkshopError, archive.PackRejected, packs.PackRejected) as exc:
+                refused.append({"pack_id": str(entry.get("pack_id") or ""), "reason": str(exc)})
+                continue
+            installed_row = _installed_rows(str(manifest["pack_id"]), str(manifest["pack_version"]))
+            installed = None
+            if installed_row is not None:
+                installed = {
+                    **installed_row,
+                    "cover_artifact_id": _cover_artifact(
+                        connection, str(installed_row["course_id"]), _declared_cover_path(entry)
+                    ),
+                    "next_step": _install_next_step(
+                        connection, str(installed_row["enrollment_id"]), str(installed_row["course_id"])
+                    ),
+                    "evidence_summary": _evidence_summary(connection, str(installed_row["course_id"])),
+                }
+            items.append(_entry_item(entry, manifest, trust, installed))
     featured = next((item for item in items if item["featured"]), items[0] if items else None)
     return {
         "generated": document.get("generated"),
@@ -574,6 +648,40 @@ def catalog_view() -> dict[str, Any]:
         "refused": refused,
         "count": len(items),
     }
+
+
+def _community_entries(catalogued: set[str]) -> list[dict[str, Any]]:
+    """One card per accepted store pack that the editorial catalogue does not describe yet.
+
+    Community packs carry their own facts, so the card is derived from the pack itself and the
+    generated ``store/index.json``; nothing editorial is invented beyond a category label.
+    """
+    index_path = ROOT / "store" / "index.json"
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    entries: list[dict[str, Any]] = []
+    for row in index.get("packs") or []:
+        if not isinstance(row, Mapping) or row.get("origin") != "community":
+            continue
+        pack_id = str(row.get("pack_id") or "")
+        if not pack_id or pack_id in catalogued:
+            continue
+        entries.append({
+            "pack_id": pack_id,
+            "pack_version": str(row.get("pack_version") or ""),
+            "content_hash": str(row.get("content_hash") or ""),
+            "directory": pack_id,
+            "origin": "community",
+            "category": "Community",
+            "outcome": str(row.get("subtitle") or row.get("title") or ""),
+            "creator_note": "Shared by a Coursebook learner and accepted into the store.",
+            "featured": False,
+            "changelog": [],
+            "will_not_teach": [],
+        })
+    return entries
 
 
 def _evidence_summary(connection, course_id: str) -> dict[str, Any]:
@@ -608,7 +716,14 @@ def install(pack_id: str) -> dict[str, Any]:
     document = load_catalog()
     entry = next((item for item in document["packs"] if item.get("pack_id") == pack_id), None)
     if entry is None:
-        raise WorkshopError("that pack is not in the Workshop catalogue")
+        # An accepted community pack is catalogued by the generated store index, not by the
+        # editorial document; it takes the same read and import gate as a first-party pack.
+        community = next(
+            (item for item in _community_entries(set()) if item.get("pack_id") == pack_id), None
+        )
+        if community is None:
+            raise WorkshopError("that pack is not in the Workshop catalogue")
+        entry = community
     manifest, _trust = _read_entry(entry)
     version = str(manifest["pack_version"])
     existing = _installed_rows(str(manifest["pack_id"]), version)
@@ -622,7 +737,11 @@ def install(pack_id: str) -> dict[str, Any]:
             "imported": False,
             "message": "This pack is already in your library; nothing was imported twice.",
         }
-    staged_id = pack_flow.staging().stage_directory(_bundled_directory(str(entry["directory"])))
+    community = _community_archive(str(entry["directory"]))
+    if community is not None:
+        staged_id = pack_flow.staging().grant_local_file(community)
+    else:
+        staged_id = pack_flow.staging().stage_directory(_bundled_directory(str(entry["directory"])))
     revision, result = pack_flow.pack_import(
         {"staged_id": staged_id, "mode": "fresh"},
         {"idempotency_key": f"cb-workshop-install-{manifest['pack_id']}-{manifest['content_hash'].split(':')[-1][:16]}"},
