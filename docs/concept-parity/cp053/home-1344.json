@@ -5,17 +5,17 @@
     1344,
     768
   ],
-  "rmse_rgb": 50.133,
-  "rmse_grey": 49.047,
-  "sim_grey": 0.8077,
-  "sim_rgb": 0.8034,
+  "rmse_rgb": 92.625,
+  "rmse_grey": 91.782,
+  "sim_grey": 0.6401,
+  "sim_rgb": 0.6368,
   "bands_sim_grey": {
-    "header": 0.8835,
-    "hero": 0.8194,
-    "cards": 0.7541,
-    "shelf1": 0.8202,
-    "objects": 0.8406,
-    "shelf2": 0.835
+    "header": 0.6419,
+    "hero": 0.5888,
+    "cards": 0.6407,
+    "shelf1": 0.6819,
+    "objects": 0.655,
+    "shelf2": 0.756
   },
   "diff": "docs/concept-parity/cp053/home-1344-diff.png"
 }
