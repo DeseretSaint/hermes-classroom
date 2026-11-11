@@ -31,6 +31,19 @@ Read this once. It is the whole context you need; do not go exploring the reposi
 - The owner's verdict: the current screen is "pitiful" next to the reference. UI is the number one
   priority until it is fixed.
 
+## Native vision
+
+Every profile now has `model.supports_vision: true` and `agent.image_input_mode: native`. Before
+that, the capability lookup returned unknown and every image was pre-analyzed into text. If a turn
+arrives as a description instead of an image part, stop and fix the profile before accepting
+evidence. DeepSeek V4.1 Flash is multimodal, but its vision caps a frame at 1,024 tokens; review
+crops, not thumbnails.
+
+The fox is the proof case: the reference renders `assets/art/fox/fox-clock-256.png` at 208×208, while
+the product's `FoxPose` only ships 128/64 WebP exports. A 128 export upscaled to 208 goes soft, and a
+CSS-drawn fox is not the character. Use the SVG master in `assets/masters/fox/` or a 256/512 export,
+pin the hash, and never accept "a fox is present" as quality.
+
 ## What "done" means for one screen
 
 1. Captured at 1344×768, `data-cb-scope="light"`, from a route that is at least 1344 px wide.

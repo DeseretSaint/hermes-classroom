@@ -63,12 +63,43 @@ The writer receives three things, never a description alone:
 That is the LiveWorkspace pattern: keep Target and Current in one schema and diff them. It beat
 image-only feedback at matched model-call counts.
 
+## 3b. Signature elements, characters and critical dimensions
+
+**Signature elements.** Name them per screen and gate them, rather than ticking "present": Home's
+fox, clock, shelf, planks, tag and four covers; Discover's cards and map; Classroom's lesson
+furniture; the design system's card anatomy and badges.
+
+**Characters and covers are assets, never drawings.** The writer may position, scale and crop an
+approved asset. It may not approximate a character with CSS shapes, emoji or a hand-built SVG. If a
+pose or size is missing, the card is blocked and an asset-export card is created from the master.
+A missing character asset is a blocker, never a divergence.
+
+**Resolution and identity.** The rendered CSS size may not exceed the asset's natural size. Home's
+208 px fox requires the 256 or 512 export from `assets/masters/fox/`, not the 128 WebP. The audit
+records the rendered `currentSrc` hash and the natural-vs-rendered size; a CSS-drawn substitute
+fails even if it looks fox-like.
+
+**Character fidelity.** On a 600×600 crop, answer specific binary questions against R-SYS: same ear
+shape, muzzle, eye style, scarf, tail tip, line weight, palette. Each answer cites the region.
+Compare the reference and render crops at 2× for SSIM, palette distance, edge density and an
+embedding distance; those are diagnostics, not the verdict. The owner signs the character once, on a
+2× 2-up sheet; then the asset hash is locked.
+
+**Critical dimensions.** Character, typography and material are non-compensatory. A screen fails if
+any of them scores below 4, regardless of the rubric average. A beautiful layout cannot average out
+a bad mascot.
+
 ## 4. The lane — who sees what
 
 - **Writer:** `deepseek/deepseek-v4.1-flash-1017`, vision-native. It sees images, but its vision is
   capped at 1,024 tokens per image with a minimum area of 295,936 px. Full frames are downsampled;
   crops are the unit of detail. Pin it with
   `--model deepseek/deepseek-v4.1-flash-1017 --provider nous`.
+
+Native image input is a precondition: every profile has `model.supports_vision: true` and
+`agent.image_input_mode: native`. If a turn arrives as a pre-analyzed text description instead of an
+image part, stop and fix the profile before accepting any evidence. A full 1344×768 frame is
+downsampled to the 1,024-token cap, so detailed review is done on 600×600 or larger crops.
 - **Region critic:** `qwen/qwen3-vl-235b-a22b-instruct` or `gemini-3.8-flash`, for presence,
   omission and misplacement only. It returns JSON: `{missing:[], misplaced:[], style_deltas:[]}`.
   No prose, no verdict.
@@ -127,9 +158,12 @@ build, compare to the branch capture, name the rollback commit. A screen is not 
   `test_desktop_type_scale`, `test_desktop_h152_motion`, `test_desktop_gm002_home`,
   `test_desktop_h86_wayfinding`, `test_v3_visual_audit`.
 - axe zero serious/critical; both fonts loaded.
-- Element checklist present and in the right boxes.
-- Masked SSIM ≥0.85 against the reference, excluding the signed divergences.
-- Rubric average ≥4, with the verifier's independent score.
+- Element checklist present and in the right boxes, and every signature element passes its
+  fidelity check (asset hash, natural size, crop comparison, feature checklist).
+- Masked SSIM ≥0.85 against the reference, excluding copy, ratings and host chrome only. The
+  character and illustration regions are never masked.
+- Rubric average ≥4, with the verifier's independent score, and no critical dimension (character,
+  typography, material) below 4.
 - Anti-cheat clean: no reference asset hash in the bundle, no data URI of a concept frame, hero and
   card titles are live text nodes, expected selectors and counts present, screenshot from the live
   DOM.
@@ -138,9 +172,10 @@ build, compare to the branch capture, name the rollback commit. A screen is not 
 ## 8. Divergence ledger
 
 Record every accepted difference from the concept, with the reason and the evidence: stars → progress;
-concept covers → shipped pack art; the 72→64 hero; host chrome in the docked pane; any missing
-asset. The ledger is part of the final report. It is not an excuse; it is how a professional
-handles a concept that is not a spec.
+concept covers → shipped pack art; the 72→64 hero; host chrome in the docked pane. The ledger is
+part of the final report. It is not an excuse; it is how a professional handles a concept that is
+not a spec. A missing character asset is not a ledger entry: it blocks the screen and spawns an
+asset-export card.
 
 ## 9. Cost and stop rules
 
@@ -149,6 +184,8 @@ handles a concept that is not a spec.
 - Two failed passes on one dimension: rewrite the card once with the delta list. Third failure:
   escalate that screen's writer to `claude-sonnet-5.5` for one pass. Still below the rubric: stop
   the screen and report.
+- Two failed character-crop passes: stop illustrating and export the required size from the master.
+  A worker never redraws the mascot to clear a gate.
 - A reference ambiguity gets one question with two options, and only if it changes what the user
   sees. Otherwise choose the ratified reading and log it.
 - No new screen while one is unlanded. No fifth card. No parallel writers on one screen.
@@ -157,7 +194,8 @@ handles a concept that is not a spec.
 
 No status pings. When the program is done — or a stop rule fires — send one report:
 
-- screens landed, with rubric averages and masked SSIM;
+- screens landed, with rubric averages, critical-dimension scores and masked SSIM;
+- character fidelity evidence: asset hash, natural size, crop comparison and the owner's sign-off;
 - gate results and the installed-build capture;
 - the divergence ledger;
 - spend against the caps;
