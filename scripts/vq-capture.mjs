@@ -76,16 +76,21 @@ const EVIDENCE_BYTE_CAP = 4 * 1024 * 1024
 const runId = arg('run-id', process.env.VQ_RUN_ID || null)
 const evidenceDir = resolve(outDir, 'evidence')
 
-function evidenceExtension(row) {
-  const src = String(row.current_src || '')
-  if (row.current_src_data_uri) {
-    const match = /^data:image\/([a-z0-9.+-]+)/i.exec(src)
-    if (match) return `.${match[1].replace('jpeg', 'jpg')}`
-  }
-  const path = src.split('?')[0].toLowerCase()
-  for (const extension of ['.png', '.webp', '.jpg', '.jpeg', '.gif', '.svg']) {
-    if (path.endsWith(extension)) return extension
-  }
+/* The extension of a persisted evidence file comes from its bytes, not from the URL: the judge
+ * accepts only `<row sha256>.<raster ext>`, and a URL extension is a claim (a `.webp` URL can serve
+ * PNG bytes, and a data URI can be mislabelled). Sniffing the container makes the name describe the
+ * file the judge will actually read. */
+function evidenceExtension(bytes) {
+  const head = bytes.subarray(0, 16)
+  if (head.length >= 8 && head.subarray(0, 8).equals(
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return '.png'
+  if (head.length >= 12
+      && head.subarray(0, 4).toString('latin1') === 'RIFF'
+      && head.subarray(8, 12).toString('latin1') === 'WEBP') return '.webp'
+  if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return '.jpg'
+  if (head.length >= 6 && /^GIF8[79]a$/.test(head.subarray(0, 6).toString('latin1'))) return '.gif'
+  const text = head.toString('utf8').trimStart()
+  if (text.startsWith('<svg') || text.startsWith('<?xml')) return '.svg'
   return '.bin'
 }
 
@@ -764,7 +769,7 @@ async function main() {
       }
       const bytes = Buffer.from(row.evidence_base64, 'base64')
       const digest = createHash('sha256').update(bytes).digest('hex')
-      const relative = `evidence/${digest}${evidenceExtension(row)}`
+      const relative = `evidence/${digest}${evidenceExtension(bytes)}`
       mkdirSync(evidenceDir, { recursive: true })
       writeFileSync(resolve(outDir, relative), bytes)
       row.evidence = { file: relative, sha256: digest, bytes: bytes.byteLength }

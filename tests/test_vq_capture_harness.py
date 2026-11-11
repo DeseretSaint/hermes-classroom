@@ -38,11 +38,12 @@ SPEC.loader.exec_module(vq)
 FAKE_SHA = "a" * 64
 
 
-def png_bytes(width: int, height: int) -> bytes:
+def png_bytes(width: int, height: int, salt: int = 0) -> bytes:
     """A small, structurally valid PNG with the given dimensions.
 
     The judge reads the raster header, not the pixels; this gives the tests real bytes of a declared
-    size so the evidence checks exercise the same path as a captured asset.
+    size so the evidence checks exercise the same path as a captured asset. `salt` changes the bytes
+    without changing the dimensions, so rows that must be distinct assets get distinct shas.
     """
 
     def chunk(kind: bytes, payload: bytes) -> bytes:
@@ -55,10 +56,12 @@ def png_bytes(width: int, height: int) -> bytes:
 
     header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
     row = b"\x00" + b"\x00\x00\x00" * width
+    text = chunk(b"tEXt", b"Comment\x00" + str(salt).encode()) if salt else b""
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", header)
         + chunk(b"IDAT", zlib.compress(row * height, 9))
+        + text
         + chunk(b"IEND", b"")
     )
 
@@ -152,9 +155,10 @@ class HarnessCase(unittest.TestCase):
     def attach_evidence(self, rec: dict) -> None:
         """Persist bytes for every row that can satisfy a required role, as the camera does.
 
-        Rows with the shared fake sha get fresh bytes of their declared natural size and are
-        re-stamped with that file's real sha256. A row pinned to a bundled pack cover gets the
-        cover's own bytes, so the Press Plate test still matches by hash.
+        Rows with the shared fake sha get fresh bytes of their declared natural size — salted per
+        row so each is a distinct asset — and are re-stamped with that file's real sha256. Files are
+        named `<sha256>.png` under `evidence/`, exactly the shape the judge accepts. A row pinned to a
+        bundled pack cover gets the cover's own bytes, so the Press Plate test still matches by hash.
         """
         registry = vq.press_plate_registry()
         kinds = vq.evidence_kinds()
@@ -170,10 +174,10 @@ class HarnessCase(unittest.TestCase):
             if sha and sha != FAKE_SHA and sha in registry:
                 data = (ROOT / registry[sha]).read_bytes()
             else:
-                data = png_bytes(width, height)
+                data = png_bytes(width, height, salt=index + 1)
                 row["sha256"] = hashlib.sha256(data).hexdigest()
             digest = hashlib.sha256(data).hexdigest()
-            relative = f"evidence/{rec['cell']['name']}-{index}.png"
+            relative = f"evidence/{digest}.png"
             target = self.dir / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
@@ -541,11 +545,82 @@ class TestEvidenceBacking(HarnessCase):
         rec = record("home", home_images())
         self.attach_evidence(rec)
         row = rec["images"][0]
-        (self.dir / row["evidence"]["file"]).write_bytes(b"not an image")
-        row["sha256"] = hashlib.sha256(b"not an image").hexdigest()
-        row["evidence"]["sha256"] = row["sha256"]
+        (self.dir / row["evidence"]["file"]).unlink()
+        data = b"not an image"
+        digest = hashlib.sha256(data).hexdigest()
+        (self.dir / f"evidence/{digest}.png").write_bytes(data)
+        row["sha256"] = digest
+        row["evidence"] = {"file": f"evidence/{digest}.png", "sha256": digest, "bytes": len(data)}
         verdict = self.judge(rec, attach=False)
         self.assert_fails_with(verdict, "evidence file is not a readable raster")
+
+    def test_evidence_file_must_live_under_evidence_in_the_cell(self):
+        # Review repro: leave the PNG untouched and point every required-role row at it through
+        # `evidence.file`; with no confinement this minted a PASS with zero new bytes.
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        for row in rec["images"]:
+            row["evidence"]["file"] = "shot.png"
+        verdict = self.judge(rec, attach=False)
+        self.assert_fails_with(verdict, "evidence file must live at evidence/<row sha256>.<ext>")
+        self.assert_fails_with(verdict, "required image missing: display_cover 0/4")
+
+    def test_an_absolute_evidence_path_is_refused(self):
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        row = rec["images"][0]
+        row["evidence"]["file"] = str(self.dir / row["evidence"]["file"])
+        verdict = self.judge(rec, attach=False)
+        self.assert_fails_with(verdict, "evidence file must be relative to the cell")
+
+    def test_a_parent_step_out_of_evidence_is_refused(self):
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        row = rec["images"][0]
+        name = Path(row["evidence"]["file"]).name
+        row["evidence"]["file"] = f"evidence/../evidence/{name}"
+        verdict = self.judge(rec, attach=False)
+        self.assert_fails_with(verdict, "evidence file must not step outside the cell")
+
+    def test_evidence_file_name_must_be_the_row_sha256(self):
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        row = rec["images"][0]
+        bytes_ = (self.dir / row["evidence"]["file"]).read_bytes()
+        renamed = f"evidence/{'0' * 64}.png"
+        (self.dir / renamed).write_bytes(bytes_)
+        row["evidence"]["file"] = renamed
+        verdict = self.judge(rec, attach=False)
+        self.assert_fails_with(verdict, "evidence file name must be the row sha256")
+
+    def test_evidence_may_not_be_the_cell_screenshot(self):
+        # A row backed by the frame's own bytes proves nothing about the asset it claims to show.
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        row = rec["images"][0]
+        blob = png_bytes(1200, 800, salt=99)
+        digest = hashlib.sha256(blob).hexdigest()
+        (self.dir / "shot.png").write_bytes(blob)
+        rec["screenshot"]["sha256"] = digest
+        (self.dir / f"evidence/{digest}.png").write_bytes(blob)
+        row["sha256"] = digest
+        row["evidence"] = {"file": f"evidence/{digest}.png", "sha256": digest, "bytes": len(blob)}
+        verdict = vq.judge_cell(rec, self.dir, vq.press_plate_registry())
+        self.assert_fails_with(verdict, "evidence bytes are the cell screenshot")
+
+    def test_one_asset_cannot_satisfy_two_rows_of_the_same_role(self):
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        covers = [row for row in rec["images"] if row["kind"] == "cover_plate"]
+        first = covers[0]
+        data = (self.dir / first["evidence"]["file"]).read_bytes()
+        digest = first["sha256"]
+        for row in covers[1:]:
+            row["sha256"] = digest
+            row["evidence"] = {"file": f"evidence/{digest}.png", "sha256": digest, "bytes": len(data)}
+        verdict = self.judge(rec, attach=False)
+        self.assert_fails_with(verdict, "required role display_cover counts the same image bytes 4 times")
+        self.assert_fails_with(verdict, "required image missing: display_cover 1/4")
 
     def test_a_non_required_row_needs_no_backing(self):
         # A row that satisfies no required role on Home is judged on its numbers alone.
@@ -563,6 +638,25 @@ class TestBuildIdentity(HarnessCase):
         rec["window"].pop("plugin")
         verdict = self.judge(rec)
         self.assert_fails_with(verdict, "cell names no plugin build")
+
+    def test_every_cell_in_a_capture_set_names_the_plugin_sha(self):
+        """Acceptance item 5 is about *every* record, refusals included, not one judge call."""
+        home = record("home", home_images())
+        home["run"] = {"id": "run-a"}
+        refused = record("design-system", [])
+        refused["run"] = {"id": "run-a"}
+        refused["surface"] = {"requested": "design-system", "resolved": None,
+                              "missing": {"reason": "the installed plugin mounts no Design System surface"}}
+        refused["route"]["present"] = False
+        refused["screenshot"] = {"file": None, "sha256": None, "bytes": 0, "clip": None}
+        for rec in (home, refused):
+            self.attach_evidence(rec)
+            self.persist(rec)
+        manifest = vq.build_manifest(self.dir, destinations=("home", "design-system"), widths=(1344,))
+        self.assertEqual(len(manifest["cells"]), 2)
+        for cell in manifest["cells"]:
+            self.assertTrue(cell["plugin"].get("sha256"), cell["cell"])
+        self.assertEqual(len(manifest["plugin_sha256"]), 1)
 
 
 class TestUnreadableRecords(HarnessCase):
@@ -626,6 +720,18 @@ class TestSubsetMatrix(HarnessCase):
         manifest = vq.build_manifest(self.dir, destinations=("home",), widths=(460,))
         self.assertEqual(manifest["summary"]["cells"], 0)
         self.assertEqual(manifest["summary"]["not_captured"], 1)
+
+    def test_an_unreadable_record_outside_the_requested_subset_is_ignored(self):
+        # Review: a truncated home--460.json made a --widths 1344 run report two cells and FAIL.
+        rec = record("home", home_images())
+        self.attach_evidence(rec)
+        self.persist(rec)
+        (self.dir / "home--460.json").write_text('{"schema": "vq.capture.v1", "cell": {"name"')
+        manifest = vq.build_manifest(self.dir, destinations=("home",), widths=(1344,))
+        self.assertEqual(manifest["summary"]["matrix_cells"], 1)
+        self.assertEqual(manifest["summary"]["cells"], 1)
+        self.assertEqual(manifest["summary"]["not_captured"], 0)
+        self.assertTrue(manifest["summary"]["ok"], manifest["cells"][0]["problems"])
 
 
 class TestRasterDimensions(HarnessCase):
@@ -762,6 +868,31 @@ class TestCameraStatic(unittest.TestCase):
         self.assertIn("evidenceKinds: EVIDENCE_KINDS", source)
         self.assertIn("row.evidence = { file: relative", source)
         self.assertIn("evidence/${digest}", source)
+        self.assertIn("evidenceExtension(bytes)", source)
+
+    def test_camera_names_evidence_from_the_bytes(self):
+        """The judge accepts only `<sha>.<raster ext>`; the name must describe the real container.
+
+        Executed, not string-matched: the function is lifted out of the camera and run against real
+        magic bytes, because a URL extension is a claim the file does not have to honour.
+        """
+        source = (SCRIPTS / "vq-capture.mjs").read_text()
+        match = re.search(r"function evidenceExtension\(bytes\) \{.*?\n\}\n", source, re.S)
+        assert match is not None
+        harness = match.group(0) + """
+const samples = [
+  Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0,0,0,0]),
+  Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBP')]),
+  Buffer.from([0xff,0xd8,0xff,0xe0,0,0]),
+  Buffer.from('GIF89a'),
+  Buffer.from('<?xml version="1.0"?><svg/>'),
+  Buffer.from([0,1,2,3,4,5,6,7]),
+]
+console.log(samples.map(evidenceExtension).join(','))
+"""
+        result = subprocess.run(["node", "-e", harness], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), ".png,.webp,.jpg,.gif,.svg,.bin")
 
     def test_camera_evidence_kinds_match_the_judge(self):
         source = (SCRIPTS / "vq-capture.mjs").read_text()

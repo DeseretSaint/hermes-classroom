@@ -19,9 +19,12 @@ contact-sheet.png              every captured frame on one labelled sheet
   on a live `http(s)` page, including when the destination was refused as `missing_surface`;
 - the route rendered the requested destination, with fonts loaded and v3 primitives mounted;
 - **required display roles are backed by bytes**: for every image row that could satisfy one, the
-  packet holds its inventoried bytes under `evidence/`; the judge re-hashes them against the row's
-  `sha256` and reads the raster header, so the declared natural size has to match the file. A
-  required-role row without that backing is refused;
+  packet holds its inventoried bytes under `evidence/`, and the record points at them as
+  `evidence/<row sha256>.<raster ext>`. The judge treats that path as untrusted: anything else —
+  absolute, `..`, another directory, a name that is not the row's own sha256 — is refused, as are
+  bytes identical to the cell screenshot. It re-hashes the file against the row's `sha256` and reads
+  the raster header, so the declared natural size has to match the file, and one asset cannot count
+  twice toward a role. A required-role row without that backing is refused;
 - for every image in the route: its selector, `currentSrc`, natural size, rendered size, sha256, the
   bundled-asset path when the bytes match `desktop/cb-assets.generated.js`, and whether the row is a
   placeholder or a Press Plate (matched by sha256 against the bundled pack covers);
