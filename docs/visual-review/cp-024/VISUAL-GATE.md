@@ -6,6 +6,14 @@ state `~/.hermes/coursebook-test-cp024-r2`, backend `127.0.0.1:44427`, window **
 `find-cdp.mjs` also answers `9395`; that window belongs to another profile's run and was not opened,
 driven or captured.
 
+**Round 4 (evidence-scale repair).** The 15-cell matrix was re-shot from a restarted window after
+the capture door and verifier were fixed: the door now sets the root font explicitly for every cell
+(`--root-font 16px` in the shared matrix arguments, `32px` for the text-200 cell), records the
+requested value in `capture.root_font`, and restores the page's prior inline value in its `finally`.
+`verify_stamps.py` now checks the root font on **every** cell (not only non-100 % ones), re-hashes
+each frame against its stamp, and fails two cells that share one frame hash. The four
+`gate-course-home-*.json` records below were re-measured on the re-shot rig at the 16 px root.
+
 ```bash
 cd visual
 node find-cdp.mjs                 # 9395, 9361   (9361 = this card's rig)
@@ -57,8 +65,8 @@ portrait route crop.
 ```
 render:    course-home--1049--light--100--default.png (810x900 after equal-height scaling)
 reference: docs/concept-parity/refs/map.png (1575x900 after equal-height scaling)
-rmse:      0.31669
-similarity: 0.6833
+rmse:      0.315382
+similarity: 0.6846
 sheet:     docs/visual-review/cp-024/compare/course-home-1049-light-sheet.png
 diff:      docs/visual-review/cp-024/compare/course-home-1049-light-diff.png
 ```

@@ -11,11 +11,22 @@ Maker: `lattice`   Reviewer: `cbqa` (must not be the maker)
 Module: `desktop/plugin.js` sha256 `31c8bc9484dbfb09d73a2d6b9019c4386d27910eeadb9aed36ba8d9bfbd942dc`
 (built by `python3 scripts/build_plugin.py` from 20 segments; `--check` reports the same bytes)
 
-**Status: review round 3.** The 15-cell live matrix is captured on this module on one rig (0
-refusals), the assembled composition is asserted in a mounting test, the live DOM order and the
-word-wrap probe are measured at 1440/1049/900/460, and the binding visual gate has been run. One gap
-remains honest and unchanged: no live frame can show the anchored **map** mode, because no `cb.rpc`
-v25 field carries a plate's `route_anchors` (see "Map mode" below).
+**Status: review round 4 (evidence-scale repair).** Round 3's code was verified good by the
+reviewer; its packet was not. The 15-cell live matrix has been **re-shot from a restarted window**
+after fixing the capture door and the verifier, so every `--100--` cell now really is a 16 px root
+and the `--200--` cell really is 32 px. 15/15 frames stamped on this module, 0 refusals,
+`verify_stamps.py` → 15 stamps / 0 problems (now with per-cell root-font assertions, frame-byte
+re-hashing and duplicate-frame rejection). One gap remains honest and unchanged: no live frame can
+show the anchored **map** mode, because no `cb.rpc` v25 field carries a plate's `route_anchors`
+(see "Map mode" below).
+
+## What changed in review round 4 (cbqa, contract lens at `6313723`)
+
+| Defect (round 3) | Fix in this round |
+|---|---|
+| P1 evidence integrity: 14 of 15 frames were shot at a 32 px root while every name said `--100--`; `course-home--460--light--100--default.png` and `--200--text-200.png` were byte-identical (sha256 `2106344f…`) | `scripts/cp-capture.mjs` now sets the root font **explicitly for every live cell** — shared default `16px`, `32px` only where declared — records the requested value in `capture.root_font`, and restores the page's prior inline value in the same `finally` that restores zoom. Repeated flags now resolve **last-wins**, so the matrix's shared `--root-font 16px` cannot swallow a cell's `--root-font 32px` (this was the second half of the bug: the first re-shoot still produced a 16 px text-200 cell until the flag precedence was fixed) |
+| P1: `verify_stamps.py` checked the root font only when the name's scale was not 100, so it printed 0 problems on a packet where 14 frames contradicted their names | the verifier now asserts the root font for **every** cell, compares it with the capture's own `root_font.requested`, re-hashes each PNG against `capture.sha256`, and fails two cells that share one frame hash. `tests/test_cp_024_capture_scale.py` proves each rule with a negative fixture (a 100 % cell at 32 px, a 200 % cell at 16 px, a duplicate hash, a mismatched frame, and a clean pass) |
+| Evidence hygiene: gate JSONs (16 px) and shipped frames (32 px) described different renders | all four `gate-course-home-{1440,1049,900,460}.json` re-measured on the re-shot rig at 16 px, `VISUAL-GATE.md` / `MANIFEST.md` / `capture.sh` all describe this round's rig and matrix |
 
 ## What changed in review round 3 (cbqa, live at `59ee6ba` / `6aaa9c39`)
 
@@ -31,29 +42,35 @@ v25 field carries a plate's `route_anchors` (see "Map mode" below).
 
 ## The matrix — 15 cells, every stamp `plugin.window_sha256 = 31c8bc94…42dc`
 
-Verified by `verify_stamps.py` on this module: **15 stamps, 0 problems** (sha, name ↔ width ↔ theme ↔
-text scale, all door gates true, course home in `overview`, no word split). Each frame passed the
-door's gates: plugin sha, route present, no render error, fonts loaded, images decoded, no host
-overlay, no unpainted region, 100 % zoom, `[data-cb-v3-ready]` with textures `ready`, no React
-key warning.
+Verified by `verify_stamps.py` on this module: **15 stamps, 0 problems** (sha, name ↔ width ↔ theme,
+the root font on every cell and the capture's own requested size, frame bytes against the stamp, no
+two cells sharing a frame hash, all door gates true, course home in `overview`, no word split). Each
+frame passed the door's gates: plugin sha, route present, no render error, fonts loaded, images
+decoded, no host overlay, no unpainted region, 100 % zoom, `[data-cb-v3-ready]` with textures
+`ready`, no React key warning.
 
-| # | Cell | Route (w × h) | Theme |
-|---|---|---|---|
-| 1 | `course-home--1049--light--100--default` | 1021 × 1811 | light |
-| 2 | `course-home--1049--dark--100--default` | 1021 × 1811 | dark |
-| 3 | `course-home--900--light--100--default` | 872 × 2516 | light |
-| 4 | `course-home--900--dark--100--default` | 872 × 2516 | dark |
-| 5 | `course-home--460--light--100--default` | 460 × 2980 | light |
-| 6 | `course-home--460--dark--100--default` | 460 × 2980 | dark |
-| 7 | `course-home--1349--light--100--default` | 1321 × 1817 | light |
-| 8 | `course-home--1049--light--100--forced-colors` | 1021 × 1811 | light, forced-colors |
-| 9 | `course-home--1049--light--100--plan-in-review` | 1021 × 2375 | light |
-| 10 | `course-home--1049--light--100--world-running` | 1021 × 1811 | light |
-| 11 | `course-home--1049--light--100--world-rejected` | 1021 × 1811 | light |
-| 12 | `course-home--1049--light--100--course-end` | 1021 × 2001 | light |
-| 13 | `course-home--1049--light--100--read-error` | 1021 × 1911 | light |
-| 14 | `course-home--1049--light--100--loading` | 1021 × 1166 | light |
-| 15 | `course-home--460--light--200--text-200` | 460 × 2980 | light, root 32 px |
+| # | Cell | Route (w × h) | Theme | Root font |
+|---|---|---|---|---|
+| 1 | `course-home--1049--light--100--default` | 1049 × 1166 | light | 16 px |
+| 2 | `course-home--1049--dark--100--default` | 1049 × 1166 | dark | 16 px |
+| 3 | `course-home--900--light--100--default` | 900 × 1530 | light | 16 px |
+| 4 | `course-home--900--dark--100--default` | 900 × 1530 | dark | 16 px |
+| 5 | `course-home--460--light--100--default` | 460 × 1466 | light | 16 px |
+| 6 | `course-home--460--dark--100--default` | 460 × 1466 | dark | 16 px |
+| 7 | `course-home--1349--light--100--default` | 1349 × 1166 | light | 16 px |
+| 8 | `course-home--1049--light--100--forced-colors` | 1049 × 1166 | light, forced-colors | 16 px |
+| 9 | `course-home--1049--light--100--plan-in-review` | 1049 × 1166 | light | 16 px |
+| 10 | `course-home--1049--light--100--world-running` | 1049 × 1166 | light | 16 px |
+| 11 | `course-home--1049--light--100--world-rejected` | 1049 × 1166 | light | 16 px |
+| 12 | `course-home--1049--light--100--course-end` | 1049 × 1166 | light | 16 px |
+| 13 | `course-home--1049--light--100--read-error` | 1049 × 1166 | light | 16 px |
+| 14 | `course-home--1049--light--100--loading` | 1049 × 1166 | light | 16 px |
+| 15 | `course-home--460--light--200--text-200` | 460 × 2980 | light | 32 px |
+
+The heights are the true 100 %-text heights from this round's re-shoot; round 3's listed heights
+(1811/2516/2980) were the 32 px-root heights, which is exactly the defect this round repairs. The
+dark and named-state cells render the same course home at the same widths; their frame hashes are
+distinct (the verifier rejects duplicates).
 
 Rerun: `docs/visual-review/cp-024/capture.sh` (no argument = all 15; each cell is listed by name).
 Every cell is `capture.reloaded: false` on a window restarted on this module, so the stamp names the
@@ -129,7 +146,11 @@ port 9361), `compare/course-home-1049-light-sheet.png`,
 - `desktop/plugin.js` — generated (never hand-edited).
 - `tests/test_cp_024_course_home_v3.py` — pure-render contracts, the composed `CourseDetail` test
   (one primary / one route / one heading / dot sizes / DOM order / title wrap / completion).
-- `scripts/cp-capture.mjs` — the deep-screen flags, `settleLayout()`, the word-wrap probe.
+- `scripts/cp-capture.mjs` — the deep-screen flags, `settleLayout()`, the word-wrap probe, the
+  explicit per-cell root font (set + record + restore) and last-wins flag precedence.
+- `tests/test_cp_024_capture_scale.py` — negative fixtures for the verifier (100 % cell at 32 px,
+  200 % cell at 16 px, duplicate frame hash, mismatched frame bytes) and the capture door's
+  set/restore contract.
 - `docs/visual-review/cp-024/` — this file, `SCORECARD.md` (blank for the reviewer), `VISUAL-GATE.md`,
   `capture.sh`, `verify_stamps.py`, `measure-course-home.mjs`, `forward-proxy.mjs`, `list-shelf.py`,
   the drivers (`drive-course-home.js`, `drive-course-plan.js`, `drive-course-end.js`),
