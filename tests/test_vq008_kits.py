@@ -70,6 +70,54 @@ class KitJudge(unittest.TestCase):
         self.assertIn("palette drifted from the grammar table", out.stdout)
         KIT.write_text(self.original)
 
+    def test_inverted_cannot_do_fails(self):
+        # `cannot_do` is the card's safety fence and lives in the grammar table. A manifest that
+        # inverts it into permission is a false safety promise, not a copy edit.
+        kit = json.loads(self.original)
+        kit["cannot_do"] = "art may show a torque value as authority"
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("cannot_do drifted from the grammar table", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_widened_illustration_role_fails(self):
+        kit = json.loads(self.original)
+        kit["illustration_role"] = "orientation only; may show measurements and procedures"
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("illustration_role drifted from the grammar table", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_replaced_subject_cues_fails(self):
+        kit = json.loads(self.original)
+        kit["subject_cues"] = ["generic classroom", "stock photo"]
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("subject_cues drifted from the grammar table", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_provider_free_false_fails(self):
+        # A kit that needs an image provider is not the provider-free artifact this card ships.
+        kit = json.loads(self.original)
+        kit["provider_free"] = False
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("provider_free is not true", out.stdout)
+        KIT.write_text(self.original)
+
+    def test_wrong_art_bible_fails(self):
+        kit = json.loads(self.original)
+        kit["art_bible"] = "docs/launch/ART-BIBLE.md"
+        KIT.write_text(json.dumps(kit))
+        out = self._check()
+        self.assertEqual(out.returncode, 1, out.stdout)
+        self.assertIn("art_bible is", out.stdout)
+        KIT.write_text(self.original)
+
     def test_faked_cover_ratio_fails(self):
         kit = json.loads(self.original)
         master = [p for p in kit["roles"]["cover"] if "derived_from" not in p][0]

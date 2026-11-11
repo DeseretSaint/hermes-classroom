@@ -1551,6 +1551,21 @@ def check_grammar_consistency(grammar: str, kit: dict) -> None:
         fail(f"{grammar}: palette drifted from the grammar table")
     if kit.get("motifs") != list(rec.motifs):
         fail(f"{grammar}: motifs drifted from the grammar table")
+    # The safety fence and the orientation claim are grammar-table data, not kit prose. A manifest
+    # that inverts `cannot_do` into permission, or widens `illustration_role` into authority, would
+    # otherwise pass every byte-level check and carry a false promise into the learner's world.
+    if list(kit.get("subject_cues") or []) != list(rec.subject_cues):
+        fail(f"{grammar}: subject_cues drifted from the grammar table")
+    if kit.get("illustration_role") != rec.illustration_role:
+        fail(f"{grammar}: illustration_role drifted from the grammar table")
+    if kit.get("cannot_do") != rec.cannot_do:
+        fail(f"{grammar}: cannot_do drifted from the grammar table")
+    if kit.get("provider_free") is not True:
+        fail(f"{grammar}: provider_free is not true — a kit must be complete with no image provider")
+    if kit.get("art_bible") != ART_BIBLE:
+        fail(f"{grammar}: art_bible is {kit.get('art_bible')!r}, not {ART_BIBLE!r}")
+    if not (ROOT / ART_BIBLE).exists():
+        fail(f"{grammar}: art_bible path {ART_BIBLE!r} does not exist in the repo")
     if len(kit.get("palette", {})) > MAX_PLATE_PIGMENTS:
         fail(f"{grammar}: more than {MAX_PLATE_PIGMENTS} pigments declared")
 
