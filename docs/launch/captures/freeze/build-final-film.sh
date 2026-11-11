@@ -27,11 +27,11 @@ format=yuv420p[v]" \
     -map "[v]" -t $SECS -r 30 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p "$out"
 }
 
-beat "$C/home-1833-light.png"       "1634:995:0:0"  "Your field library."                  "Pick a course, or start a new expedition."      "$WORK/01.mp4"
-beat "$C/courses-1833-light.png"    "1634:995:0:0"  "Every course keeps its own record."   "Sources, progress, and what is due."            "$WORK/02.mp4"
-beat "$C/course-home-772-light.png" "688:985:0:0"    "The plan is the spine."               "Read it, then approve it so lessons can start." "$WORK/03.mp4"
-beat "$C/04-lesson-top.png"         "784:856:38:36"  "One objective at a time."             "Four objectives, one trail, one next step."     "$WORK/04.mp4"
-beat "$C/07-answer.png"             "784:856:38:36"  "A typed check, graded against the objective."         "Graded against what the lesson asked, not the chat."        "$WORK/05.mp4"
+beat "$C/home-1833-light.png"       "1634:972:0:0"  "Your field library."                  "Pick a course, or start a new expedition."      "$WORK/01.mp4"
+beat "$C/workshop-1833-light.png"   "1634:972:0:0"  "Your next world is already on the shelf." "Packs you can learn from, already on this device." "$WORK/02.mp4"
+beat "$C/course-home-772-light.png" "688:972:0:0"    "The plan is the spine."               "Read it, then approve it so lessons can start." "$WORK/03.mp4"
+beat "$C/04-lesson-top.png"         "784:838:38:36"  "One objective at a time."             "Four objectives, one trail, one next step."     "$WORK/04.mp4"
+beat "$C/07-answer.png"             "784:520:38:36"  "A typed check, graded against the objective."         "Graded against what the lesson asked, not the chat."        "$WORK/05.mp4"
 
 ffmpeg -y -loglevel error -f lavfi -i "color=c=$BG:s=1920x1080:r=30:d=7" \
   -vf "drawtext=fontfile=$FB:text='Coursebook':x=(w-tw)/2:y=(h/2)-150:fontsize=104:fontcolor=$INK,\

@@ -55,7 +55,7 @@ lives.
 2. Paste that URL and the catalog PR URL into the form with §2's answers.
 3. Screenshot or copy the confirmation and add it to `docs/SUBMISSION.md` gate 15.
 
-If X rejects the upload for size, the file is 1.80 MB — well under any limit; re-encode is not needed.
+If X rejects the upload for size, the file is 1.94 MB — well under any limit; re-encode is not needed.
 
 ## 4. What the film does not claim
 

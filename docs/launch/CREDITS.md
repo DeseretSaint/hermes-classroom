@@ -16,7 +16,7 @@ captures; the build script is `build-final-film.sh` in the capture directory.
 | Beats | File | sha256 |
 | --- | --- | --- |
 | 1 | `captures-src/home-1833-light.png` | `77bfb00627822aa730a676cb3761cd9dd139793962bea8334a8d86e8a804f852` |
-| 2 | `captures-src/courses-1833-light.png` | `cff11657c7dc40d955908fed9500ec04b75ad4eab89ead6a7a73e4037cb9200b` |
+| 2 | `captures-src/workshop-1833-light.png` | `148b3e02ab41262e88f3d0f348dc508f750106bcdf38afa43232a1f308309938` |
 | 3 | `captures-src/course-home-772-light.png` | `737ea36be20193366ff4c86d1f75a7bbf4ca9a6c4686be4f3677ac70d3e23964` |
 | 4 | `captures-src/04-lesson-top.png` | `6d881493924355305636a7be1136460fe3de3b09cdf5620e7e9064f61e2431ea` |
 | 5 | `captures-src/07-answer.png` | `20c0078c23af637e94bc100eebf278f95c8562ef1091456db9c2a61078541ea1` |

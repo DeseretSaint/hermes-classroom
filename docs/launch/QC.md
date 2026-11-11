@@ -20,8 +20,8 @@ r_frame_rate=30/1
 $ ffprobe -v error -show_entries format=duration,size,bit_rate,format_name -of default=noprint_wrappers=1 coursebook-demo-90s.mp4
 format_name=mov,mp4,m4a,3gp,3g2,mj2
 duration=47.000000
-size=1888574
-bit_rate=321459
+size=2031041
+bit_rate=345709
 
 $ ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 coursebook-demo-90s.mp4
 1410
@@ -30,7 +30,7 @@ $ ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 cour
 0
 
 $ sha256sum coursebook-demo-90s.mp4
-61b485ab8180fec7a1d5e2defd002c953d0d0e44e70b3685811e77dc7fbfd5de  coursebook-demo-90s.mp4
+a52d1d510c22ea8a78ea39233cf999f69c7d2ae202bab1b5a693d64d5443a84e  coursebook-demo-90s.mp4
 ```
 
 | Check | Required | Measured | Verdict |
@@ -39,7 +39,7 @@ $ sha256sum coursebook-demo-90s.mp4
 | Resolution | 1920×1080 | 1920×1080 | PASS |
 | Frame rate | 30 fps CFR | `r_frame_rate=30/1`, 1410 frames = 47.0 × 30 | PASS |
 | Codec / pixel format | H.264, yuv420p | `h264`, `High`, `yuv420p` | PASS |
-| Size | ≤ 512 MB | 1,888,574 B (1.80 MiB) | PASS |
+| Size | ≤ 512 MB | 2,031,041 B (1.94 MiB) | PASS |
 | Loudness −14 LUFS | required by `VIDEO-PLAN.md` §9 | no audio stream at all | **NOT APPLICABLE — declared deviation** |
 | Muted legibility | every beat readable with sound off | see below | PASS |
 
@@ -54,7 +54,7 @@ Each of the five beats was reviewed as a still with sound off, and each carries 
 type below the capture:
 
 1. "Your field library." / "Pick a course, or start a new expedition."
-2. "Every course keeps its own record." / "Sources, progress, and what is due."
+2. "Your next world is already on the shelf." / "Packs you can learn from, already on this device."
 3. "The plan is the spine." / "Read it, then approve it so lessons can start."
 4. "One objective at a time." / "Four objectives, one trail, one next step."
 5. "A typed check, graded against the objective." / "Graded against what the lesson asked, not the chat."
