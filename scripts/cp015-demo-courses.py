@@ -9,11 +9,15 @@ fixture stands in for the provider: the plan author, the validator, research and
 whatever the running backend is configured for, and the run record says which.
 
 This is a driver, not a test. It talks `cb.rpc` over the isolated demo backend and writes a JSON
-run record the reviewer can diff against the shelf.
+progress log the reviewer can follow while it runs. The *committed* run record is not this log: it
+is projected from the backend's own rows by ``scripts/cp015_record.py`` (jobs, validation records,
+per-course source/image counts, window), because a progress log only contains the steps this
+process ran and a re-run drops earlier jobs and verdicts. See ``docs/concept-parity/demo/README.md``.
 
     CB013_BASE=http://127.0.0.1:44501 CB013_TOKEN=cp015-demo-token \
       python3 scripts/cp015-demo-courses.py --only japanese-cafe
-    ... --all --record docs/concept-parity/demo/cp015-run.json
+    ... --all --record "${TMPDIR:-/tmp}/cp015-progress.json"
+    python3 scripts/cp015_record.py --db <demo DB>   # the committed record
 
 Exit code is 0 only when every requested course reaches an approved world and an authored lesson
 page; a partial run prints the exact step and job that stopped it.
