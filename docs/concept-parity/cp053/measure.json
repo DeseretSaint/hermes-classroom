@@ -2,7 +2,7 @@
   "card": "CP-053 / D-007 Home quality pass (t_831137dd)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "9840010845539c05e571566dbd65d4ceab03bc1119d01c0356f2ff29c6d9c395",
+  "module_sha256": "71d940ce0398220fe1d25d1ec39b1e4bdfbc2a1c257eb7eb42292c628ac4d4b8",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
@@ -11,19 +11,19 @@
     768
   ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
-  "rmse_rgb": 92.625,
-  "rmse_grey": 91.782,
-  "sim_grey": 0.6401,
-  "sim_rgb": 0.6368,
+  "rmse_rgb": 92.692,
+  "rmse_grey": 91.809,
+  "sim_grey": 0.64,
+  "sim_rgb": 0.6365,
   "bands_sim_grey": {
     "header": 0.6419,
-    "hero": 0.5888,
-    "cards": 0.6407,
-    "shelf1": 0.6819,
-    "objects": 0.655,
-    "shelf2": 0.756
+    "hero": 0.5904,
+    "cards": 0.6409,
+    "shelf1": 0.6784,
+    "objects": 0.6508,
+    "shelf2": 0.7562
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. Cards now carry the approved field_atlas@2 display plates, so the frame is measured against A1 as a record, not as a gate: D-007 changed the target from pixel parity with the mockup to the approved kit composition.",
   "measured_at": "2026-11-11",
-  "note": "Re-measured 2026-11-11 on module 98400108. The Home scene is no longer a typographic pane: UI-K1's curated field_atlas@2 home-hero plate is embedded in the generated page, so sim_grey falls from 0.8077 (module 1d23b78c, pre-plate) to 0.6401 against the hand-made CP-053 reference. Every number here is measure.py's output on a fresh 1344x768 capture of a fresh render of this module \u2014 not carried over. Two modules' pins had gone stale on master because the UI-K1/UI-K3/UI-K5 merges each changed desktop/plugin.js without regenerating this page; that is why the row moved twice today. This remains the CP-053 baseline scene, not the VQ-002 Home pass: t_831137dd owns the number that must clear 0.85 against the reference, and the plate decision behind the drop is D-007/D-008."
+  "note": "Re-measured 2026-11-11 on module 71d940ce (the UI Home quality pass: fox and clock seated on plank two, hero inked on a 0.60 scrim, over UI-K1's field_atlas@2 hero plate). Fresh render, fresh 1344x768 capture, measure.py -- nothing carried over. sim_grey is 0.6400, i.e. the plate's arrival, not the pass's geometry, sets the number: the CP-053 reference is the pre-plate hand frame, so this row no longer measures what t_831137dd was asked to improve and CANNOT clear the 0.85 floor by construction. Prior row: module 98400108 sim_grey 0.6401 (UI-K5, pre-pass). The composition itself is measured separately in docs/visual-review/t-831137dd/."
 }
