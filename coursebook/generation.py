@@ -211,7 +211,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v17"
 #: ``_plan_sourcing_rules`` text changed, so both labels advance.
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v18"
 #: The unit-sections authoring stage. One unit per call, so its own version.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v2"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
@@ -9377,6 +9377,19 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
     lines.append(
         "Every section declares media_need with construct/image/audio; use level 'none' with role "
         "'none' and an empty construct when the text already carries the teaching."
+    )
+    # CP-015h: the gate is deterministic and refuses a construct that does not name what the media
+    # carries, so the shape it enforces is stated here rather than left to be inferred. An author
+    # that writes the target phrase as the construct fails the whole unit batch, and the previous
+    # batch's refusal feedback alone could not teach it the shape.
+    lines.append(
+        "Media policy: audio may only be declared for a language lesson, and a construct must name "
+        "what the audio carries, never just the target text. For audio role "
+        "'pronunciation_reference', name the spoken act and the line it speaks, for example "
+        "'pronounce the line 二人です (futari desu) aloud'. A construct that is only the target "
+        "phrase (for example '二人です') is refused. For audio role 'narration', name what the "
+        "learner listens to, for example 'listen to a shopkeeper greeting a customer'. A refused "
+        "declaration fails the whole unit batch."
     )
     lines.append("Context needs are concrete (for example an audio source or a physical object).")
     lines.append(f"Total sections for this unit: exactly {int(unit.get('target_lessons', 0))}.")
