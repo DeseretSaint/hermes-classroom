@@ -52,8 +52,9 @@ that killed the first attempt.
   full-window frame; the tab must still read as the same product. Who owns the 86 px header is
   unresolved (Gate 0).
 - Covers currently render as 56 px strips in the compact card; the reference cover is 106 px.
-- Known visual gaps: concept cover art differs from the shipped pack covers; the fox sprite is
-  256 px where the reference places it at 208 px; the header is the host shell in the docked pane.
+- Known visual gaps: concept cover art differs from the shipped pack covers; the live fox is a
+  128 px procedural WebP where the reference places the painted 208 px A1 plate; the header is the
+  host shell in the docked pane.
 
 ## 5. Gate commands the worker must run
 
