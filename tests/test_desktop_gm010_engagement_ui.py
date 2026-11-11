@@ -230,12 +230,21 @@ class GameEngagementUiTests(unittest.TestCase):
         html = self.header(engagement=engagement())
         self.assertIn('data-cb-game="ready"', html)
         self.assertIn("Game progress", html)
-        # The play layer is mounted in exactly two places, and the source gates both on the
-        # course's durable mode: the course home (FieldDeskHome) and the Game overview
-        # (CourseDetail). There is no third mount a textbook surface could reach.
+        # One mount per course-list surface, and a reader is not a mount. Three surfaces read
+        # `engagement.read`: the course home (FieldDeskHome), the course detail (CourseDetail,
+        # gated on `view === 'overview'`) and the v3 classroom's Game rail (ClassroomV3Surface,
+        # CP-023). Two of them render GameHeader: the course home and CourseDetail's overview.
+        # The classroom reads the same row for its own challenge card and XP line in the aside,
+        # so mounting this header there would print the same play band twice on one screen; its
+        # Game chrome is the aside, not the course-list band. That is the invariant CP-040
+        # measured on the merged module (2 `jsx(GameHeader,` sites, 3 `engagement.read` readers),
+        # not the earlier "there is no third mount" claim.
         mounts = re.findall(r"jsxs?\(\s*GameHeader,", self.source)
-        self.assertEqual(len(mounts), 2, "GameHeader must be mounted exactly twice")
-        self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 2)
+        self.assertEqual(
+            len(mounts), 2, "GameHeader is mounted on the two course-list surfaces, not the classroom rail"
+        )
+        self.assertEqual(self.source.count("useRpcQuery(\n    'engagement.read'"), 3)
+        self.assertIn("mode === 'game' && Boolean(courseId) && Boolean(enrollmentId)", self.source)
         self.assertNotIn("engagement.award", self.source)
         # The FieldDeskHome mount is unconditional inside `gameCourse`, and the CourseDetail mount
         # adds the view gate: overview only.

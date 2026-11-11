@@ -1220,134 +1220,565 @@ function workshopFactRows(item) {
   return rows
 }
 
-function WorkshopDiscover({ catalog, layout, motion, prefs, onOpen, onInstall, busyInstall, onFavorite, onOpenCourse }) {
-  const [filter, setFilter] = useState('all')
-  const items = catalog.items || []
-  const favoriteSet = new Set(prefs.favorites)
-  const featured = items.find((item) => item.pack_id === catalog.featured_pack_id) || items[0]
-  const categories = []
-  for (const item of items) {
-    for (const category of item.categories || []) {
-      if (categories.indexOf(category) < 0) categories.push(category)
-    }
+/* ── CP-021 · Discover v3 (R-DISC) ───────────────────────────────────────────────────────────
+ * The Store tab, rebuilt on the Field Atlas v3 primitives: one page head, the H-196 tabs, a
+ * featured plate whose quiet field and grid share **one** track, a collectible grid whose column
+ * count is measured against the route (never the window), and the fox at the grid's foot inside
+ * its safe area.
+ *
+ * Honesty rules (SPEC-V3 §6):
+ *   - every card is one metadata pattern: subject chip, real section count, one trust label that
+ *     comes from `pack.inspect.trust.labels`; no star, no review count, no badge word that has no
+ *     backing field;
+ *   - the banner title and line are the pack manifest's own title and the catalogue's outcome;
+ *   - a pack's cover is the pack's own artifact through `/media/:id`; with no artifact the plate
+ *     is typographic and no shape is drawn to stand in for art;
+ *   - exactly one filled control on the surface: `Preview this pack` on the banner.
+ *
+ * The banner's quiet field is a paper field **beside** the art, not a scrim over it. The CP-013
+ * `discover-banner` scene has no media route yet (it is a shipped master, not a pack artifact), so
+ * the plate is composed from the featured pack's real cover artifact; when that has no route the
+ * quiet field takes the full width and no art is invented.
+ */
+const CB3_DISCOVER_COPY = Object.freeze({
+  title: 'Discover',
+  sub: 'Packs you can learn from, already on this device.',
+  shelfTitle: 'All packs',
+  primary: 'Preview this pack',
+  loading: 'Reading your workshop.',
+  emptyTitle: 'No packs on this device',
+  emptyBody: 'A pack file you add shows up here.',
+  emptyAction: 'Import a pack',
+  errorTitle: 'The workshop could not be read',
+  errorBody: 'Packs you already have are unchanged. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'Packs already on this device still list. The rest waits.',
+  offlineAction: 'Try again',
+  rejectedAction: 'Open Provenance'
+})
+
+/** The four trust labels, in the order they are shown; the word is the deck's, not a claim. */
+const CB3_TRUST_LABELS = Object.freeze([
+  Object.freeze({ id: 'integrity_verified', label: 'Files checked' }),
+  Object.freeze({ id: 'automated_checks_passed', label: 'Automated checks passed' }),
+  Object.freeze({ id: 'human_review_recorded', label: 'Human review recorded' }),
+  Object.freeze({ id: 'model_assessed_support', label: 'Support assessed by a model' })
+])
+
+function cb3PackTrustLabels(item) {
+  const labels = Array.isArray(item && item.trust_labels) ? item.trust_labels : []
+  return CB3_TRUST_LABELS.filter((row) => labels.indexOf(row.id) >= 0)
+}
+
+function cb3PackSections(item) {
+  const count = Number(item && item.section_count)
+  return Number.isFinite(count) && count > 0 ? Math.round(count) : null
+}
+
+/** A pack's subject line is its own first catalogue category, never an invented chip word. */
+function cb3PackSubject(item) {
+  const categories = Array.isArray(item && item.categories) ? item.categories : []
+  for (const category of categories) {
+    if (typeof category === 'string' && category.trim()) return category
   }
-  const shown = filter === 'all' ? items : items.filter((item) => (item.categories || []).indexOf(filter) >= 0)
-  const savedItems = items.filter((item) => favoriteSet.has(item.pack_id) || (prefs.categories || {})[item.pack_id])
-  // Shelves follow each pack's own first category, in catalogue order. The catalogue is the
-  // taxonomy: this surface never invents a shelf a pack does not already belong to, and the
-  // filter pills above are drawn from the same field.
-  const shelves = []
-  if (filter === 'all') {
-    const order = []
-    for (const item of items) {
-      const name = (item.categories || [])[0] || 'Other packs'
-      if (order.indexOf(name) < 0) order.push(name)
-    }
-    for (const name of order) {
-      shelves.push({
-        title: name,
-        items: items.filter((item) => ((item.categories || [])[0] || 'Other packs') === name)
-      })
-    }
-  } else {
-    shelves.push({ title: filter, items: shown })
-  }
-  const shelfKey = `${filter}-${shown.map((item) => item.pack_id).join(',')}`
-  const cardProps = {
-    motion,
-    layout,
-    onOpen,
-    onInstall,
-    busy: null,
-    onFavorite,
-    onOpenCourse
-  }
-  return jsxs('div', {
-    'data-cb-workshop-discover': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 },
+  return null
+}
+
+/** One cover resolver for the Store card, the pack detail and the Library tab's same row. */
+function cb3PackCover(item) {
+  const cover = (item && item.cover) || {}
+  const artifactId = cover.kind === 'artifact' && typeof cover.artifact_id === 'string' ? cover.artifact_id : null
+  return { artifactId, title: (item && item.title) || 'Untitled pack' }
+}
+
+/**
+ * Columns are a function of the **route** width (SPEC-V3 §3.3): 4 at 1000+, 3 from 620 to 999,
+ * and 1 row at compact. Never `vw`, never the Desktop window.
+ */
+function cb3DiscoverColumns(routeWidth) {
+  const width = Number(routeWidth)
+  if (!Number.isFinite(width) || width <= 0) return 4
+  if (width >= 1000) return 4
+  if (width >= 620) return 3
+  return 1
+}
+
+function cb3DiscoverFoxBox(routeWidth) {
+  return Number(routeWidth) >= 1000 ? 96 : 88
+}
+
+const CB3_DISCOVER_HEADING = Object.freeze({
+  margin: 0,
+  fontFamily: 'var(--cb3-font-display)',
+  fontSize: cb3Type('heading'),
+  lineHeight: cb3Lead('heading'),
+  fontWeight: 600,
+  maxWidth: '34ch',
+  overflowWrap: 'anywhere',
+  color: cb3Role('ink')
+})
+
+const CB3_DISCOVER_BODY = Object.freeze({
+  margin: 0,
+  fontFamily: 'var(--cb3-font-ui)',
+  fontSize: cb3Type('body'),
+  lineHeight: cb3Lead('body'),
+  color: cb3Role('ink-soft'),
+  maxWidth: '52ch'
+})
+
+/** D2: the page head above the tabs. One h2 region; the page h1 is the route's own title. */
+function WorkshopDiscoverHead({ line }) {
+  return jsxs('header', {
+    'data-cb3-discover-head': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
-      featured
-        ? jsx(WorkshopHero, { item: featured, layout, motion, onOpen, onInstall, onContinue: onOpenCourse, busy: busyInstall === featured.pack_id })
-        : null,
-      jsxs('div', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.5rem 1rem'
-        },
-        children: [
-          jsx('h2', {
-            style: {
-              margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.heading,
-              fontWeight: 600,
-              color: 'var(--cb-ink)'
-            },
-            children: 'Find a pack',
-          }),
-          jsxs('div', {
-            'data-cb-workshop-filter': '',
-            role: 'group',
-            'aria-label': 'Filter packs by category',
-            style: { display: 'flex', flexWrap: 'wrap', gap: '0.35rem' },
-            children: [
-              jsx('button', {
-                type: 'button',
-                'aria-pressed': filter === 'all' ? 'true' : 'false',
-                onClick: () => setFilter('all'),
-                style: workshopFilterStyle(filter === 'all'),
-                children: 'All'
-              })
-            ].concat(
-              categories.map((category) =>
-                jsx('button', {
-                  type: 'button',
-                  'aria-pressed': filter === category ? 'true' : 'false',
-                  onClick: () => setFilter(category),
-                  style: workshopFilterStyle(filter === category),
-                  children: category
-                }, category)
-              )
-            )
-          })
-        ]
-      }),
-      filter === 'all' && savedItems.length
-        ? jsx(WorkshopShelf, {
-            ...cardProps,
-            title: 'Your shelf',
-            caption: 'Saved or labelled on this device',
-            items: savedItems
-          })
-        : null,
-      ...shelves.map((shelf) =>
-        jsx(WorkshopShelf, {
-          ...cardProps,
-          title: shelf.title,
-          caption: plural(shelf.items.length, 'pack', 'packs'),
-          items: shelf.items
-        }, `${shelfKey}-${shelf.title}`)
-      )
+      jsx('h2', { style: CB3_DISCOVER_HEADING, children: CB3_DISCOVER_COPY.title }, 'title'),
+      jsx('p', { style: CB3_DISCOVER_BODY, children: line || CB3_DISCOVER_COPY.sub }, 'sub')
     ]
   })
 }
 
-function workshopFilterStyle(selected) {
-  return {
-    minHeight: '44px',
-    padding: '0.25rem 0.7rem',
-    fontFamily: CB_SANS,
-    fontSize: CB_TYPE.caption,
-    fontWeight: selected ? 600 : 400,
-    color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-    background: selected ? 'var(--cb-lamp-soft)' : 'transparent',
-    border: `1px solid ${selected ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`,
-    borderRadius: '999px',
-    cursor: 'pointer'
+/**
+ * D4 + D5: the featured plate. The left percentage is the reserved quiet field; the art sits in
+ * its own region, mechanically cropped, never underneath the type. Card stock + `elev-1` is one
+ * material object (the contract forbids a border and a shadow on the same object).
+ */
+function WorkshopDiscoverFeature({ item, layout, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const compact = layout.columns === 1
+  const pad = layout.wide ? '2rem' : layout.columns === 3 ? '1.75rem' : '1.25rem'
+  return jsxs('section', {
+    'data-cb3-feature': item.pack_id,
+    'aria-labelledby': 'cb3-feature-title',
+    style: {
+      position: 'relative',
+      display: 'flex',
+      flexDirection: compact ? 'column' : 'row',
+      alignItems: 'stretch',
+      width: '100%',
+      minWidth: 0,
+      minHeight: compact ? 0 : layout.wide ? '226px' : '213px',
+      ...(compact ? {} : { aspectRatio: '4 / 1' }),
+      overflow: 'hidden',
+      borderRadius: cb3Radius('round'),
+      backgroundColor: cb3Role('card-stock')
+    },
+    className: 'cb3-elev-1',
+    children: [
+      jsxs('div', {
+        'data-cb3-quiet-field': '',
+        style: {
+          flex: compact ? '0 0 auto' : '0 0 40%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          gap: '0.6rem',
+          minWidth: 0,
+          padding: pad
+        },
+        children: [
+          jsx('h3', {
+            id: 'cb3-feature-title',
+            style: { ...CB3_DISCOVER_HEADING, fontSize: cb3Type('heading') },
+            children: cover.title
+          }, 'title'),
+          item.outcome
+            ? jsx('p', { style: { ...CB3_DISCOVER_BODY, maxWidth: '42ch' }, children: item.outcome }, 'outcome')
+            : null,
+          jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' },
+            children: jsx(PillAction, {
+              variant: 'primary',
+              label: CB3_DISCOVER_COPY.primary,
+              onClick: () => {
+                if (typeof onOpen === 'function') onOpen(item)
+              },
+              'data-cb3-feature-primary': item.pack_id
+            }, 'primary')
+          }, 'actions')
+        ]
+      }, 'quiet'),
+      art
+        ? jsx('div', {
+            'data-cb3-feature-art': item.pack_id,
+            'aria-hidden': 'true',
+            style: {
+              position: 'relative',
+              flex: compact ? '0 0 auto' : '1 1 auto',
+              width: compact ? '100%' : undefined,
+              height: compact ? '160px' : undefined,
+              minWidth: 0,
+              overflow: 'hidden'
+            },
+            children: jsx('img', {
+              src: art,
+              alt: '',
+              style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+            }, 'img')
+          }, 'art')
+        : null
+    ]
+  })
+}
+
+/** The one metadata row: real sections + one trust label, in the same order on every card. */
+function cb3DiscoverMeta(item) {
+  const sections = cb3PackSections(item)
+  const trust = cb3PackTrustLabels(item)[0] || null
+  const parts = []
+  if (sections !== null) {
+    parts.push(jsx('span', { children: `${sections} ${sections === 1 ? 'section' : 'sections'}` }, 'sections'))
   }
+  if (sections !== null && trust) parts.push(jsx('span', { 'aria-hidden': 'true', children: '·' }, 'sep'))
+  if (trust) {
+    parts.push(
+      jsxs('span', {
+        'data-cb3-trust': trust.id,
+        style: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem' },
+        children: [
+          jsx(sdk.Codicon, { name: 'shield', size: CB_ICON_UI }, 'icon'),
+          jsx('span', { children: trust.label }, 'label')
+        ]
+      }, 'trust')
+    )
+  }
+  return parts.length ? parts : null
+}
+
+function cb3DiscoverOpenKey(event, item, onOpen) {
+  if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return
+  event.preventDefault()
+  if (typeof onOpen === 'function') onOpen(item)
+}
+
+/** D7 at wide/mid: the collectible card, every card one paper object on the same track. */
+function WorkshopDiscoverCard({ item, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const rejected = cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified')
+  return jsx(CollectibleCard, {
+    'data-cb3-pack': item.pack_id,
+    'data-cb3-pack-rejected': rejected ? 'true' : 'false',
+    title: item.title,
+    subject: cb3PackSubject(item),
+    src: art,
+    meta: cb3DiscoverMeta(item),
+    role: 'link',
+    tabIndex: 0,
+    'aria-label': `Preview ${item.title}`,
+    onClick: () => {
+      if (typeof onOpen === 'function') onOpen(item)
+    },
+    onKeyDown: (event) => cb3DiscoverOpenKey(event, item, onOpen)
+  }, item.pack_id)
+}
+
+/** D7 at compact: one pack per row, 88 × 59 art, text beside it. No card grid at 460. */
+function WorkshopDiscoverRow({ item, onOpen }) {
+  const cover = cb3PackCover(item)
+  const preview = useArtifactPreview(cover.artifactId)
+  const art = cover.artifactId && preview.state === 'ready' ? preview.data_url : null
+  const subject = cb3PackSubject(item)
+  return jsxs('article', {
+    'data-cb3-pack': item.pack_id,
+    'data-cb3-pack-layout': 'row',
+    role: 'link',
+    tabIndex: 0,
+    'aria-label': `Preview ${item.title}`,
+    onClick: () => {
+      if (typeof onOpen === 'function') onOpen(item)
+    },
+    onKeyDown: (event) => cb3DiscoverOpenKey(event, item, onOpen),
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.75rem',
+      minWidth: 0,
+      padding: '0.65rem',
+      backgroundColor: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round'),
+      color: cb3Role('ink'),
+      cursor: 'pointer'
+    },
+    children: [
+      jsx('div', { style: { flex: '0 0 88px', width: '88px', minWidth: 0 }, children: jsx(CoverPlate3, { src: art, title: cover.title }) }, 'cover'),
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0, flex: '1 1 auto' },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: 600,
+              overflowWrap: 'anywhere'
+            },
+            children: cover.title
+          }, 'title'),
+          subject
+            ? jsx('span', {
+                'data-cb3-chip': 'subject',
+                style: {
+                  alignSelf: 'flex-start',
+                  paddingInline: '0.5rem',
+                  paddingBlock: '0.15rem',
+                  borderRadius: cb3Radius('soft'),
+                  backgroundColor: cb3Role('terracotta-quiet'),
+                  color: cb3Role('ink'),
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption')
+                },
+                children: subject
+              }, 'subject')
+            : null,
+          jsx('p', {
+            style: {
+              margin: 0,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.3rem',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: cb3DiscoverMeta(item)
+          }, 'meta')
+        ]
+      }, 'text')
+    ]
+  }, item.pack_id)
+}
+
+function WorkshopDiscoverGrid({ items, layout, onOpen }) {
+  const columns = layout.columns
+  return jsx('div', {
+    'data-cb3-discover-grid': String(columns),
+    style: {
+      display: 'grid',
+      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+      columnGap: columns === 1 ? '12px' : '16px',
+      rowGap: columns === 1 ? '12px' : '24px',
+      alignItems: 'stretch',
+      width: '100%',
+      minWidth: 0
+    },
+    children: items.map((item) =>
+      columns === 1
+        ? jsx(WorkshopDiscoverRow, { item, onOpen }, item.pack_id)
+        : jsx(WorkshopDiscoverCard, { item, onOpen }, item.pack_id)
+    )
+  })
+}
+
+/** A quiet plate that keeps the banner's geometry for empty/error/offline. */
+function WorkshopDiscoverNotice({ state, title, body, actionLabel, onAction }) {
+  return jsxs('div', {
+    'data-cb3-discover-state': state,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      gap: '0.6rem',
+      width: '100%',
+      minWidth: 0,
+      minHeight: '226px',
+      padding: '2rem',
+      borderRadius: cb3Radius('round'),
+      backgroundColor: cb3Role('card-stock')
+    },
+    className: 'cb3-elev-1',
+    children: [
+      jsx('h3', { style: CB3_DISCOVER_HEADING, children: title }, 'title'),
+      jsx('p', { style: CB3_DISCOVER_BODY, children: body }, 'body'),
+      actionLabel && typeof onAction === 'function'
+        ? jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' },
+            children: jsx(PillAction, { variant: 'quiet', label: actionLabel, onClick: onAction }, 'action')
+          }, 'actions')
+        : null
+    ]
+  })
+}
+
+/** Loading keeps the real region boxes; 40% card stock, no shimmer, no spinner. */
+function WorkshopDiscoverSkeleton({ layout }) {
+  const boxes = layout.columns * 2
+  return jsxs('div', {
+    'data-cb3-discover-skeleton': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 },
+    children: [
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: {
+          width: '100%',
+          minHeight: '226px',
+          borderRadius: cb3Radius('round'),
+          backgroundColor: cb3Role('card-stock'),
+          opacity: 0.4
+        }
+      }, 'banner'),
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+          columnGap: layout.columns === 1 ? '12px' : '16px',
+          rowGap: '24px'
+        },
+        children: Array.from({ length: boxes }, (unused, index) =>
+          jsx('div', {
+            style: {
+              minHeight: layout.columns === 1 ? '76px' : '211px',
+              borderRadius: cb3Radius('round'),
+              backgroundColor: cb3Role('card-stock'),
+              opacity: 0.4
+            }
+          }, `skeleton-${index}`)
+        )
+      }, 'grid')
+    ]
+  })
+}
+
+/**
+ * The Discover body: head is painted by the destination shell above the tabs; this owns the
+ * banner + shelf + grid and one state at a time. `refused` packs keep a quiet strip at the foot
+ * (D9) and never disappear from the count they belong to.
+ */
+function WorkshopDiscoverV3({ items, featured, layout, status, error, refused, onOpen, onRetry, canImport, onImport, onOpenProvenance }) {
+  const unique = []
+  const seen = new Set()
+  for (const item of items) {
+    if (!item || !item.pack_id || seen.has(item.pack_id)) continue
+    seen.add(item.pack_id)
+    unique.push(item)
+  }
+  if (status === 'error') {
+    const offline = Boolean(error && error.code === 'HOST_UNAVAILABLE')
+    return jsx(WorkshopDiscoverNotice, {
+      state: offline ? 'offline' : 'error',
+      title: offline ? CB3_DISCOVER_COPY.offlineTitle : CB3_DISCOVER_COPY.errorTitle,
+      body: offline ? CB3_DISCOVER_COPY.offlineBody : CB3_DISCOVER_COPY.errorBody,
+      actionLabel: offline ? CB3_DISCOVER_COPY.offlineAction : CB3_DISCOVER_COPY.errorAction,
+      onAction: onRetry
+    })
+  }
+  if (!unique.length) {
+    return jsx(WorkshopDiscoverNotice, {
+      state: 'empty',
+      title: CB3_DISCOVER_COPY.emptyTitle,
+      body: CB3_DISCOVER_COPY.emptyBody,
+      actionLabel: canImport ? CB3_DISCOVER_COPY.emptyAction : null,
+      onAction: canImport ? onImport : null
+    })
+  }
+  const featuredItem = featured || unique[0]
+  const rejected = unique.filter((item) => cb3PackTrustLabels(item).every((row) => row.id !== 'integrity_verified'))
+  return jsxs('div', {
+    'data-cb3-discover-track': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 },
+    children: [
+      jsx(WorkshopDiscoverFeature, { item: featuredItem, layout, onOpen }, 'feature'),
+      jsxs('section', {
+        'data-cb3-discover-shelf': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', minWidth: 0 },
+        children: [
+          jsxs('div', {
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '0.5rem 1rem'
+            },
+            children: [
+              jsx('h2', {
+                style: { ...CB3_DISCOVER_HEADING, fontSize: cb3Type('lead') },
+                children: CB3_DISCOVER_COPY.shelfTitle
+              }, 'title'),
+              jsx('span', {
+                'data-cb3-discover-count': '',
+                style: {
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: `${unique.length} ${unique.length === 1 ? 'pack' : 'packs'}`
+              }, 'count')
+            ]
+          }, 'head'),
+          jsx(WorkshopDiscoverGrid, { items: unique, layout, onOpen }, 'grid'),
+          jsx('div', {
+            'data-cb3-discover-fox': '',
+            'aria-hidden': 'true',
+            style: { display: 'flex', justifyContent: 'flex-end', width: '100%', minWidth: 0 },
+            children: jsx(FoxPose, {
+              pose: 'point',
+              size: 128,
+              style: { width: `${cb3DiscoverFoxBox(layout.routeWidth)}px`, height: `${cb3DiscoverFoxBox(layout.routeWidth)}px` }
+            }, 'fox')
+          }, 'fox'),
+          rejected.length
+            ? jsxs('div', {
+                'data-cb3-discover-rejected': '',
+                role: 'status',
+                style: {
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem',
+                  minHeight: '48px',
+                  padding: '0.5rem 0.75rem',
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  backgroundColor: cb3Role('card-stock')
+                },
+                children: [
+                  jsx('p', {
+                    style: {
+                      margin: 0,
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('meta'),
+                      lineHeight: cb3Lead('meta'),
+                      color: cb3Role('alert')
+                    },
+                    children: rejected.map((item) => `${item.title} did not pass its checks.`).join(' ')
+                  }, 'line'),
+                  onOpenProvenance
+                    ? jsx(PillAction, { variant: 'quiet', label: CB3_DISCOVER_COPY.rejectedAction, onClick: onOpenProvenance }, 'action')
+                    : null
+                ]
+              })
+            : null,
+          refused && refused.length
+            ? jsx('p', {
+                'data-cb3-discover-refused': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
+                },
+                children: `${refused.length} ${refused.length === 1 ? 'pack' : 'packs'} could not be verified and are not shown.`
+              })
+            : null
+        ]
+      }, 'shelf')
+    ]
+  })
 }
 
 /** The imported-pack ledger: what this profile holds, at which version, from where. */
@@ -1513,6 +1944,13 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
   const [notice, setNotice] = useState(null)
   const width = useCbViewportWidth()
   const layout = cbLayoutFor(width)
+  // CP-021: the Discover composition is a function of the *route* width (SPEC-V3 §3.1/§3.3).
+  // Columns: 4 wide, 3 mid, 1 row at compact. The fox box is 96 wide, 88 mid, absent compact.
+  const discoverLayout = {
+    routeWidth: width,
+    columns: cb3DiscoverColumns(width),
+    wide: !(width > 0) || width >= 1000
+  }
   const motion = useCbMotion()
   const [prefs, toggleFavorite, setCategory] = useCbWorkshopPrefs()
   const catalog = useWorkshopCatalog(true)
@@ -1649,47 +2087,23 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
       onCategory
     })
   } else if (catalog.status === 'loading' && !catalog.data) {
-    body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Reading the Workshop catalogue' }) })
-  } else if (catalog.status === 'error') {
-    body = jsxs('div', {
-      'data-cb-workshop-error': (catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
-      children: [
-        jsx('h2', {
-          style: workshopStateHeadingStyle,
-          children: 'The Workshop could not be read'
-        }),
-        jsx('p', {
-          style: workshopStateBodyStyle,
-          children: `${(catalog.error && catalog.error.code) || 'WORKSHOP_UNAVAILABLE'}: ${(catalog.error && catalog.error.message) || 'The catalogue did not answer.'}`
-        }),
-        jsx(CbAction, { variant: 'tertiary', onClick: catalog.reload, className: 'self-start', children: 'Try again' })
-      ]
-    })
-  } else if (!items.length) {
-    body = jsxs('div', {
-      'data-cb-workshop-empty': '',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: CB_MEASURE },
-      children: [
-        jsx('h2', { style: workshopStateHeadingStyle, children: 'No packs in this build' }),
-        jsx('p', {
-          style: workshopStateBodyStyle,
-          children:
-            'The Workshop ships with the packs this build bundles. If the catalogue is empty, nothing was installed and no pack is being offered.'
-        })
-      ]
-    })
+    body = jsx(WorkshopDiscoverSkeleton, { layout: discoverLayout })
   } else {
-    body = jsx(WorkshopDiscover, {
-      catalog: catalog.data,
-      layout,
-      motion,
-      prefs,
+    body = jsx(WorkshopDiscoverV3, {
+      items,
+      featured: items.find((item) => item.pack_id === catalog.data.featured_pack_id) || items[0] || null,
+      layout: discoverLayout,
+      status: catalog.status,
+      error: catalog.error,
+      refused: catalog.data && Array.isArray(catalog.data.refused) ? catalog.data.refused : [],
       onOpen,
-      onInstall: install,
-      busyInstall: installBusy,
-      onFavorite,
-      onOpenCourse: openInstalled
+      onRetry: catalog.reload,
+      canImport: Boolean(canImport),
+      onImport: onStartImport,
+      onOpenProvenance: () => {
+        setTab('provenance')
+        setSelectedId(null)
+      }
     })
   }
 
@@ -1697,14 +2111,27 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
     'data-cb-workshop': tab,
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
     children: [
+      // D2 sits above the tabs; on the other two tabs the ledger and shelf carry their own head.
+      tab === 'discover' && !selected
+        ? jsx(WorkshopDiscoverHead, {
+            line: catalog.status === 'loading' && !catalog.data ? CB3_DISCOVER_COPY.loading : null
+          }, 'discover-head')
+        : null,
       jsx('nav', {
         'data-cb-workshop-tabs': '',
         'aria-label': 'Workshop surfaces',
-        style: { display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.25rem', borderBottom: '1px solid var(--cb-rule)' },
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'stretch',
+          gap: '0 1.5rem',
+          borderBottom: `1px solid ${cb3Role('rule')}`
+        },
         children: WORKSHOP_TABS.map((entry) =>
           jsx('button', {
             type: 'button',
             'data-cb-workshop-tab': entry.id,
+            'data-cb-workshop-tab-active': tab === entry.id ? 'true' : 'false',
             'aria-current': tab === entry.id ? 'page' : undefined,
             onClick: () => {
               setTab(entry.id)
@@ -1713,46 +2140,20 @@ function WorkshopView({ implemented, createOpen, onOpenCourse, onStartSyllabus, 
             style: {
               background: 'none',
               border: 'none',
-              borderBottom: `2px solid ${tab === entry.id ? 'var(--cb-lamp)' : 'transparent'}`,
-              padding: '0.5rem 0',
+              borderBottom: `3px solid ${tab === entry.id ? cb3Role('terracotta') : 'transparent'}`,
+              padding: '0 0.1rem',
               minHeight: '44px',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.meta,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
               fontWeight: tab === entry.id ? 600 : 400,
-              color: tab === entry.id ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+              color: tab === entry.id ? cb3Role('ink') : cb3Role('ink-soft'),
               cursor: tab === entry.id ? 'default' : 'pointer'
             },
             children: entry.label
           }, entry.id)
         )
       }),
-      catalog.data && catalog.data.refused && catalog.data.refused.length
-        ? jsxs('div', {
-            'data-cb-workshop-refused': '',
-            role: 'status',
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.2rem',
-              padding: '0.5rem 0.65rem',
-              border: '1px solid var(--cb-coral)',
-              borderRadius: '3px',
-              background: 'var(--cb-paper-raised)'
-            },
-            children: [
-              jsx('p', {
-                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-coral)' },
-                children: `${plural(catalog.data.refused.length, 'pack', 'packs')} could not be verified and are not shown`
-              }),
-              ...catalog.data.refused.map((entry) =>
-                jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
-                  children: `${entry.pack_id}: ${entry.reason}`
-                }, `refused-${entry.pack_id}`)
-              )
-            ]
-          })
-        : null,
       notice
         ? jsxs('div', {
             'data-cb-workshop-notice': notice.kind,

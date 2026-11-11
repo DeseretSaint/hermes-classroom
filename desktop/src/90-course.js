@@ -2409,6 +2409,1007 @@ function lessonHeroPlan(readiness, { overview = false, sectionOpen = false } = {
   ]
 }
 
+/* ══ CP-024 — the v3 course home (R-MAP) ══════════════════════════════════════════════════════
+ * The course page's own composition (SPEC-V3 §5.4): a back path, the course head, a mounted hero
+ * plate with the route's nodes on it, and an aside carrying Continue, the evidence count and the
+ * other courses.
+ *
+ * Provenance, in the order the deck and the contract set it:
+ *  - every visible string is a `course.*` row from `docs/concept-parity/COPY.md`, or a backend
+ *    field the deck names for that row. Nothing here authors a label;
+ *  - every number is a stored fact (`library_item.sections_done`/`sections_total`, the outline's
+ *    objective states, the review queue). No streak, XP, percentage or invented total;
+ *  - every colour, radius, type size and elevation is the v3 contract through the `cb3*` readers,
+ *    so this segment carries no hex, no viewport unit and no shadow recipe of its own.
+ *
+ * The route nodes (M5) are DOM buttons placed on **normalised coordinates the plate's manifest
+ * declares** (`route_anchors: [{section_id | objective_id, x, y}]`, each 0–1 of the plate box).
+ * A plate that declares no usable anchors — today's `world.read` asset rows carry none, which is
+ * reported as a gap rather than filled in — or a route narrower than 900 px renders the vertical
+ * `StampNode` route instead. A node is a real button with its section's own title; the current one
+ * carries `aria-current="step"` and the word `You are here`, never a colour alone.
+ */
+
+/** The deck's `course.*` strings. Every literal below is a `COPY.md` row, verbatim. */
+const CB3_COURSE_COPY = Object.freeze({
+  backPrefix: 'Back to ',
+  routeLabel: 'Your route',
+  nodeCurrent: 'You are here',
+  nodeDone: 'Done',
+  nodeNext: 'Next',
+  nodeLocked: 'Opens after the section before it',
+  continueTitle: 'Continue',
+  evidenceTitle: 'Evidence',
+  othersTitle: 'Your other courses',
+  noWorldTitle: 'No scene yet',
+  noWorldBody: 'The lesson works without art.',
+  worldRunning: 'Painting the scene.',
+  worldRejectedTitle: 'This scene was not approved',
+  worldRejectedAction: 'Open World Studio',
+  planReviewTitle: 'The plan is waiting for you',
+  planReviewBody: 'Read it, then approve it so lessons can start.',
+  endTitle: 'Course complete',
+  endBody: 'Every section has evidence.',
+  loading: 'Opening this course.',
+  errorTitle: 'This course could not be read',
+  errorBody: 'The route shows what was saved last. Try again.',
+  errorAction: 'Try again'
+})
+
+/** `course.evidence.count`, filled from stored section counts. A zero total prints no claim. */
+function cb3CourseEvidenceLine(done, total) {
+  const have = Math.max(0, Number(done) || 0)
+  const all = Math.max(0, Number(total) || 0)
+  if (all <= 0) return null
+  return `${have} of ${all} sections have evidence`
+}
+
+/**
+ * Normalised anchor points, from either shape: `{key, x, y}` (already normalised) or the plate's
+ * own `{section_id | objective_id | section_key, x, y}`. Malformed entries (no key, a non-finite
+ * or out-of-range coordinate) are dropped rather than clamped: a coordinate the renderer invents
+ * is not the plate's composition.
+ */
+function cb3CourseAnchorPoints(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) return []
+  const points = []
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue
+    const key = entry.key || entry.section_id || entry.objective_id || entry.section_key || null
+    const x = Number(entry.x)
+    const y = Number(entry.y)
+    if (!key) continue
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue
+    if (x < 0 || x > 1 || y < 0 || y > 1) continue
+    points.push({ key: String(key), x, y })
+  }
+  return points
+}
+
+/**
+ * Normalised anchors declared by a plate. One shape, several legal carriers: the manifest's
+ * `route_anchors`, the asset row's own `route_anchors`, the world brief's `plate.route_anchors`
+ * or `route_anchors`, and the world row itself. The brief is the only plate document today's
+ * `world.read` returns, so it is a legal home; the asset row's own manifest is preferred when a
+ * backend exposes it, and this order keeps that preference.
+ */
+function cb3CoursePlateAnchors(plate, world) {
+  const brief = world && world.brief && typeof world.brief === 'object' ? world.brief : null
+  const sources = [
+    plate && plate.manifest,
+    plate,
+    brief && brief.plate,
+    brief,
+    world
+  ]
+  for (const source of sources) {
+    if (!source || typeof source !== 'object') continue
+    const points = cb3CourseAnchorPoints(source.route_anchors)
+    if (points.length) return points
+  }
+  return []
+}
+
+/** The one hero plate a course has: its approved world plate, else the pack's map ground. */
+function cb3CourseHeroPlate(world) {
+  const assets = world && Array.isArray(world.assets) ? world.assets : []
+  const hero = cbWorldPlate(assets, 'hero')
+  const anchors = cb3CoursePlateAnchors(hero, world)
+  if (hero && hero.artifact_id) {
+    return {
+      artifactId: hero.artifact_id,
+      src: null,
+      anchors,
+      credit: hero.attribution || null
+    }
+  }
+  // CP-013's map ground is the pack's own field; it is used only when the asset segment carries
+  // it. A plate that is not there renders the typographic field, never an invented picture.
+  const ground = typeof cb3Asset === 'function' ? cb3Asset('cb.asset.scene.map-ground') : null
+  return { artifactId: null, src: ground || null, anchors, credit: null }
+}
+
+/**
+ * The route's sections as nodes. State precedence is honest: a gated section is `locked`, the
+ * section the backend names current is `current`, a section with independent evidence is `done`,
+ * everything else is `upcoming`. `label` is the section's own title; when the outline carries no
+ * title the node falls back to its state word rather than to a fabricated name.
+ */
+function cb3CourseNodes({ objectives, row, page, complete = false }) {
+  const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
+  const summary = (row && row.evidence_summary) || {}
+  const section = page && page.section
+  const mainline = mainlineObjective(row, list) || {}
+  const currentId =
+    (section && section.objective_id) || summary.current_objective_id || mainline.objective_id || null
+  return list.map((entry, index) => {
+    const locked = entry.locked === true || entry.state === 'locked'
+    const independent = entry.independent === true || entry.state === 'completed'
+    let state = 'upcoming'
+    if (locked) state = 'locked'
+    // At the course's close every node is done, including whichever section was opened last:
+    // SPEC-V3 §5.4's `course-end` says "every node marked done", and leaving the last section as
+    // the current step would mark one node not-done on a screen whose own beat is completion.
+    else if (complete && independent) state = 'done'
+    else if (entry.objective_id === currentId) state = 'current'
+    else if (independent) state = 'done'
+    const word =
+      state === 'current'
+        ? CB3_COURSE_COPY.nodeCurrent
+        : state === 'done'
+          ? CB3_COURSE_COPY.nodeDone
+          : state === 'locked'
+            ? CB3_COURSE_COPY.nodeLocked
+            : CB3_COURSE_COPY.nodeNext
+    return {
+      id: entry.objective_id || `node-${index + 1}`,
+      sectionKey: entry.section_key || entry.section_id || entry.objective_id || null,
+      label: entry.title || null,
+      state,
+      word,
+      ordinal: Number(entry.ordinal) || index + 1
+    }
+  })
+}
+
+/**
+ * Map or list. The map needs a wide route **and** a placement for every node: a plate that misses
+ * one section would hide it, so a partial anchor set falls back to the complete vertical route
+ * rather than drawing an incomplete path.
+ */
+function cb3CourseRoutePlan({ nodes, anchors, width }) {
+  const list = Array.isArray(nodes) ? nodes : []
+  const wide = Number(width) >= 900
+  const points_ = cb3CourseAnchorPoints(anchors)
+  if (wide && list.length && points_.length) {
+    const byKey = new Map(list.map((node) => [String(node.sectionKey), node]))
+    const points = []
+    for (const anchor of points_) {
+      const node = byKey.get(String(anchor.key))
+      if (!node) continue
+      if (points.some((point) => point.node.id === node.id)) continue
+      points.push({ node, x: anchor.x, y: anchor.y })
+    }
+    if (points.length === list.length) return { mode: 'map', points }
+  }
+  return { mode: 'list', points: [] }
+}
+
+/**
+ * One route node placed on the plate. A button, not an ornament: it has a 48/56 px dot, its
+ * section's title on a paper chip (never a scrim over art), `aria-current="step"` and the word for
+ * its state, and the anchor is the only thing that decides where it sits.
+ */
+function CourseRouteMapNode({ node, x, y, big, onOpen }) {
+  const size = big ? '56px' : '48px'
+  const locked = node.state === 'locked'
+  const current = node.state === 'current'
+  return jsxs('button', {
+    type: 'button',
+    'data-cb-course-node': node.id,
+    'data-cb-course-node-state': node.state,
+    'data-cb-course-anchor': `${x.toFixed(4)},${y.toFixed(4)}`,
+    'aria-current': current ? 'step' : undefined,
+    disabled: locked,
+    'aria-disabled': locked ? 'true' : undefined,
+    className: 'cb3-press',
+    onClick: () => {
+      if (locked || typeof onOpen !== 'function') return
+      onOpen(node.id)
+    },
+    style: {
+      position: 'absolute',
+      left: `${(x * 100).toFixed(3)}%`,
+      top: `${(y * 100).toFixed(3)}%`,
+      transform: 'translate(-50%, -50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.25rem',
+      minWidth: size,
+      padding: 0,
+      border: 0,
+      background: 'transparent',
+      color: cb3Role('ink'),
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('caption'),
+      lineHeight: cb3Lead('caption'),
+      cursor: locked ? 'not-allowed' : 'pointer',
+      textAlign: 'center'
+    },
+    children: [
+      jsx('span', {
+        'aria-hidden': 'true',
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: size,
+          height: size,
+          boxSizing: 'border-box',
+          borderRadius: cb3Radius('pill'),
+          backgroundColor: cb3Role('card-stock'),
+          border: `1px solid ${cb3Role('rule')}`,
+          // The current step is marked by a 3 px ring *and* by the word below it, never by colour
+          // alone (SPEC-V3 §5.4, better than the concept #1).
+          outline: current ? `3px solid ${cb3Role('terracotta')}` : 'none',
+          outlineOffset: '0px',
+          opacity: locked ? 0.5 : 1
+        },
+        children: jsx(sdk.Codicon, {
+          name: locked ? 'lock' : current ? 'play' : node.state === 'done' ? 'check' : 'chevron-right',
+          size: CB_ICON_UI
+        })
+      }, 'dot'),
+      jsx('span', {
+        'data-cb-course-node-label': '',
+        style: {
+          maxWidth: '14ch',
+          paddingInline: '0.35rem',
+          paddingBlock: '0.1rem',
+          borderRadius: cb3Radius('soft'),
+          backgroundColor: cb3Role('card-stock'),
+          border: `1px solid ${cb3Role('rule')}`,
+          overflowWrap: 'anywhere'
+        },
+        children: node.label || node.word
+      }, 'label'),
+      node.label ? jsx('span', {
+        'data-cb-course-node-word': '',
+        style: {
+          paddingInline: '0.3rem',
+          borderRadius: cb3Radius('soft'),
+          backgroundColor: cb3Role('card-stock'),
+          color: current ? cb3Role('ink') : cb3Role('ink-soft'),
+          fontWeight: current ? 600 : 400
+        },
+        children: node.word
+      }, 'word') : null
+    ]
+  })
+}
+
+/** The vertical route: the same nodes as `StampNode` buttons, in section order. */
+function CourseRouteList({ nodes, onOpen }) {
+  return jsx('ol', {
+    'data-cb-course-route': 'list',
+    'aria-label': CB3_COURSE_COPY.routeLabel,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      margin: 0,
+      padding: 0,
+      listStyle: 'none',
+      minWidth: 0
+    },
+    children: nodes.map((node, index) =>
+      jsx(
+        'li',
+        {
+          'data-cb-course-route-item': node.id,
+          style: { display: 'flex', minWidth: 0 },
+          children: jsx(StampNode, {
+            state: node.state,
+            label: node.label || node.word,
+            stateWord: node.word,
+            index: index + 1,
+            onClick: () => {
+              if (node.state === 'locked' || typeof onOpen !== 'function') return
+              onOpen(node.id)
+            }
+          })
+        },
+        node.id
+      )
+    )
+  })
+}
+
+/**
+ * The world's plate posture, from the state the backend recorded — never inferred from art
+ * presence. `unavailable`, `not_requested` and an absent world are `none`; a generating kit keeps
+ * the last approved plate underneath and says it is painting (`running`); a failed generation is
+ * `rejected`, and its typographic field says the scene was not approved.
+ */
+function cb3CourseWorldPosture(state) {
+  const value = String(state || '')
+  if (value === 'approved' || value === 'kit_ready') return 'ready'
+  if (value === 'failed') return 'rejected'
+  if (
+    value === 'concepts_generating' ||
+    value === 'concepts_ready' ||
+    value === 'style_selected' ||
+    value === 'kit_generating' ||
+    value === 'stale'
+  ) {
+    return 'running'
+  }
+  return 'none'
+}
+
+/**
+ * The mounted hero plate (M4): an 8 px `canvas-edge` mat, a 1 px `ink` rule, `elev-1`, and art
+ * that is textless. With no plate it is a typographic field carrying the course title, and the
+ * deck's own state row says what the learner loses — the lesson still works. A world in flight
+ * keeps its last approved plate underneath; a rejected world says so and offers the one quiet
+ * way into the studio, never a dead control.
+ */
+function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children }) {
+  const preview = useArtifactPreview(plate && plate.artifactId ? plate.artifactId : null)
+  const direct = plate && typeof plate.src === 'string' && plate.src ? plate.src : null
+  const posture = cb3CourseWorldPosture(worldState)
+  const painted =
+    (!plate || !plate.artifactId) && direct
+      ? direct
+      : preview.state === 'ready' && preview.mime && String(preview.mime).startsWith('image/')
+        ? preview.data_url
+        : null
+  // A rejected world never paints its refused art: the field carries the course title instead.
+  const ready = posture === 'rejected' ? null : painted
+  const note =
+    posture === 'running'
+      ? jsx('p', {
+          'data-cb-course-plate-note': '',
+          'data-cb-course-plate-running': '',
+          style: {
+            margin: 0,
+            fontFamily: 'var(--cb3-font-ui)',
+            fontSize: cb3Type('caption'),
+            lineHeight: cb3Lead('caption'),
+            color: cb3Role('ink-soft')
+          },
+          children: CB3_COURSE_COPY.worldRunning
+        }, 'note')
+      : posture === 'rejected'
+        ? jsxs('div', {
+            'data-cb-course-plate-note': '',
+            'data-cb-course-plate-rejected': '',
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              gap: '0.5rem',
+              minWidth: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: [
+              jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.worldRejectedTitle }, 'title'),
+              typeof onOpenStudio === 'function'
+                ? jsx('button', {
+                    type: 'button',
+                    'data-cb-course-world-studio': '',
+                    className: 'cb3-press',
+                    onClick: () => onOpenStudio(),
+                    style: {
+                      border: 0,
+                      background: 'transparent',
+                      padding: 0,
+                      color: cb3Role('ink'),
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      textDecoration: 'underline',
+                      cursor: 'pointer'
+                    },
+                    children: CB3_COURSE_COPY.worldRejectedAction
+                  }, 'action')
+                : null
+            ]
+          }, 'note')
+        : ready
+          ? plate && plate.credit
+            ? jsx('p', {
+                'data-cb-course-credit': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
+                },
+                children: plate.credit
+              }, 'note')
+            : null
+          : jsxs('p', {
+              'data-cb-course-plate-note': '',
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: [
+                jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
+                ' ',
+                jsx('span', { children: CB3_COURSE_COPY.noWorldBody }, 'body')
+              ]
+            }, 'note')
+  return jsxs('div', {
+    'data-cb-course-plate': ready ? 'art' : 'type',
+    'data-cb-course-plate-state': plate && plate.artifactId ? preview.state : ready ? 'ready' : 'none',
+    'data-cb-course-world-state': posture,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        className: 'cb3-shelf',
+        style: {
+          position: 'relative',
+          width: '100%',
+          // An art plate is the fixed M4 ratio (3:1 wide, 2:1 compact). The typographic field is
+          // the same ratio as a **minimum** and grows with its title: at 200 % text a heading-step
+          // title needed more than the fixed 204/214 px box and its first lines were cut off.
+          aspectRatio: ready ? (big ? '3 / 1' : '2 / 1') : undefined,
+          minHeight: ready ? undefined : big ? '204px' : '214px',
+          padding: '8px',
+          boxSizing: 'border-box',
+          backgroundColor: cb3Role('canvas-edge'),
+          border: `1px solid ${cb3Role('ink')}`,
+          borderRadius: cb3Radius('round'),
+          overflow: 'hidden',
+          minWidth: 0
+        },
+        children: [
+          jsxs('div', {
+            style: {
+              position: 'relative',
+              width: '100%',
+              height: ready ? '100%' : 'auto',
+              minHeight: ready ? undefined : big ? '188px' : '198px',
+              overflow: 'hidden',
+              borderRadius: cb3Radius('soft'),
+              backgroundColor: cb3Role('card-stock')
+            },
+            children: [
+              ready
+                ? jsx('img', {
+                    'data-cb-course-plate-art': '',
+                    src: ready,
+                    alt: '',
+                    'aria-hidden': 'true',
+                    style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+                  }, 'art')
+                : jsx('span', {
+                    'data-cb-course-plate-title': '',
+                    style: {
+                      // Positioned over the art; in the typographic field it is in flow so the
+                      // field can grow with the title instead of clipping it.
+                      position: ready ? 'absolute' : 'static',
+                      inset: ready ? 0 : undefined,
+                      width: ready ? undefined : '100%',
+                      minHeight: ready ? undefined : big ? '188px' : '198px',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      padding: '0.75rem',
+                      boxSizing: 'border-box',
+                      fontFamily: 'var(--cb3-font-display)',
+                      // The plate is a fixed-height field (SPEC-V3 §5.4 M4: 3:1 wide, 2:1 compact),
+                      // so its decorative title takes the body step at compact widths: the course
+                      // `h2` already carries the heading, and a heading step inside a 214 px field
+                      // clipped the title's first lines at 200 % text.
+                      fontSize: cb3Type(big ? 'heading' : 'body'),
+                      lineHeight: cb3Lead(big ? 'heading' : 'body'),
+                      fontWeight: 600,
+                      color: cb3Role('ink'),
+                      // Normal word wrapping: a title may wrap between words, never inside one.
+                      // `anywhere` split "demonstration" mid-word at 460 px / 200 % text; `break-word`
+                      // still reflows a word that genuinely cannot fit, without hyphenating it.
+                      overflowWrap: 'break-word',
+                      wordBreak: 'normal',
+                      hyphens: 'none'
+                    },
+                    children: title || ''
+                  }, 'type'),
+              children
+            ]
+          })
+        ]
+      }),
+      note
+    ]
+  })
+}
+
+/**
+ * The aside (M6–M9): Continue, the evidence count, the other courses, the fox. Continue is the
+ * screen's only filled control, and its label is the backend's own `next_step.label` — including
+ * the review and completion steps, which are the backend's words, not a second action.
+ */
+function CourseHomeAside({
+  row,
+  nodes,
+  evidenceLine,
+  others,
+  step,
+  big,
+  busy,
+  onContinue,
+  onOpenPlan,
+  onOpenOther
+}) {
+  const nextStep = (row && row.next_step) || {}
+  const nextLabel = nextStep.label || step.label
+  const complete = step.done === true
+  const planReview = !complete && step.kind === 'review_plan'
+  const heading = complete
+    ? CB3_COURSE_COPY.endTitle
+    : planReview
+      ? CB3_COURSE_COPY.planReviewTitle
+      : CB3_COURSE_COPY.continueTitle
+  const body = complete
+    ? CB3_COURSE_COPY.endBody
+    : planReview
+      ? CB3_COURSE_COPY.planReviewBody
+      : null
+  const run = () => {
+    if (planReview || complete) {
+      if (typeof onOpenPlan === 'function') onOpenPlan()
+      return
+    }
+    if (typeof onContinue === 'function') onContinue(nextStep.kind || 'start_lesson')
+  }
+  const others_ = Array.isArray(others) ? others.slice(0, 3) : []
+  return jsxs('aside', {
+    'data-cb-course-aside': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.85rem',
+      minWidth: 0,
+      alignItems: 'flex-start'
+    },
+    children: [
+      jsxs('section', {
+        'data-cb-continue': step.kind || 'none',
+        className: 'cb3-card',
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          width: '100%',
+          padding: '1rem',
+          boxSizing: 'border-box',
+          minWidth: 0
+        },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              fontWeight: 700,
+              color: cb3Role('ink-soft')
+            },
+            children: heading
+          }, 'heading'),
+          body
+            ? jsx('p', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  color: cb3Role('ink')
+                },
+                children: body
+              }, 'body')
+            : null,
+          jsx(PillAction, {
+            variant: 'primary',
+            'data-cb-continue-action': '',
+            label: nextLabel,
+            busy: Boolean(busy),
+            disabled: Boolean(busy),
+            onClick: run,
+            style: { width: '100%' }
+          }, 'primary')
+        ]
+      }, 'continue'),
+      jsxs('section', {
+        'data-cb-course-evidence': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', width: '100%', minWidth: 0 },
+        children: [
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              fontWeight: 700,
+              color: cb3Role('ink-soft')
+            },
+            children: CB3_COURSE_COPY.evidenceTitle
+          }, 'heading'),
+          jsx('p', {
+            'data-cb-course-evidence-count': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink')
+            },
+            children: evidenceLine
+          }, 'count')
+        ]
+      }, 'evidence'),
+      others_.length
+        ? jsxs('section', {
+            'data-cb-course-others': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '100%', minWidth: 0 },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  fontWeight: 700,
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.othersTitle
+              }, 'heading'),
+              jsx('ul', {
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem',
+                  margin: 0,
+                  padding: 0,
+                  listStyle: 'none',
+                  minWidth: 0
+                },
+                children: others_.map((item) => {
+                  const rowStyle = {
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    minHeight: '40px',
+                    padding: '0.35rem 0.5rem',
+                    boxSizing: 'border-box',
+                    textAlign: 'left',
+                    border: `1px solid ${cb3Role('rule')}`,
+                    borderRadius: cb3Radius('soft'),
+                    backgroundColor: cb3Role('card-stock'),
+                    color: cb3Role('ink'),
+                    fontFamily: 'var(--cb3-font-ui)',
+                    fontSize: cb3Type('meta'),
+                    lineHeight: cb3Lead('meta'),
+                    overflowWrap: 'anywhere'
+                  }
+                  const text = `${item.title} · ${(item.next_step && item.next_step.label) || CB3_COURSE_COPY.continueTitle}`
+                  // A row is a signpost. It is a control only when this surface can actually open
+                  // the course; a button that goes nowhere is a dead end, so with no handler the
+                  // row stays plain text.
+                  const interactive = typeof onOpenOther === 'function'
+                  return jsx(
+                    'li',
+                    {
+                      'data-cb-course-other-row': item.course_id || '',
+                      style: { minWidth: 0 },
+                      children: interactive
+                        ? jsx('button', {
+                            type: 'button',
+                            'data-cb-course-other': item.course_id || '',
+                            className: 'cb3-press',
+                            onClick: () => onOpenOther(item),
+                            style: { ...rowStyle, cursor: 'pointer' },
+                            children: text
+                          })
+                        : jsx('span', { style: rowStyle, children: text })
+                    },
+                    item.course_id || item.title
+                  )
+                })
+              }, 'rows')
+            ]
+          }, 'others')
+        : null,
+      // M9: the course-home pose is `point`, beside the Continue plate and outside the hero's
+      // quiet field. FoxPose hides itself below a 620 px route.
+      jsx(FoxPose, { pose: 'point', size: big ? 96 : 88 }, 'fox')
+    ]
+  })
+}
+
+/**
+ * The v3 course home. One composition, two route modes, every value read from a caller that read
+ * the backend: no fetch happens here, so the surface can be rendered in a test and in the route
+ * from the same data.
+ */
+function CourseHomeV3({
+  row,
+  objectives,
+  page,
+  plate,
+  anchors,
+  others,
+  sectionsDone,
+  sectionsTotal,
+  parentLabel,
+  width,
+  busy,
+  worldState,
+  readState,
+  onBack,
+  onContinue,
+  onOpenPlan,
+  onOpenSection,
+  onOpenOther,
+  onRetry,
+  onOpenStudio
+}) {
+  const measured = useCbViewportWidth()
+  const routeWidth = Number(width) > 0 ? Number(width) : Number(measured) || 0
+  // Two breakpoints, kept apart on purpose (SPEC-V3 §5.4): the map route holds from 900 px, where
+  // M5's nodes shrink to 48 and the plate stays 3:1; the aside only becomes a right column at
+  // 1000 px, where the nodes are 56 and the fox is 96. Tying the column to the map breakpoint put
+  // a 268 px aside beside an 852 px plate on a 900 route, which §5.4 puts below the route.
+  const mapWide = routeWidth >= 900
+  const wide = routeWidth >= 1000
+  const summary = (row && row.evidence_summary) || {}
+  const declaredDone = Number(sectionsDone)
+  const done = Number.isFinite(declaredDone)
+    ? Math.max(0, declaredDone)
+    : Math.max(0, Number(summary.independent) || 0)
+  const total = Math.max(0, Number(sectionsTotal) || Number(summary.total_objectives) || 0)
+  const courseComplete = total > 0 && done >= total
+  // `complete` is passed before the anchors: at the course's close every node reads done, so the
+  // last opened section cannot keep a "You are here" word on a completed route.
+  const nodes = cb3CourseNodes({ objectives, row, page, complete: courseComplete })
+  // Anchor precedence: an explicit set from the caller, then the plate's own declaration, then the
+  // plate row's inline field. The plan normalises whichever arrives, and falls back to the vertical
+  // route when a section would be left unplaced.
+  const explicitAnchors = Array.isArray(anchors) && anchors.length ? anchors : null
+  const manifestAnchors = cb3CoursePlateAnchors(plate, null)
+  const plan = cb3CourseRoutePlan({
+    nodes,
+    anchors:
+      explicitAnchors ||
+      (manifestAnchors.length
+        ? manifestAnchors
+        : plate && Array.isArray(plate.anchors)
+          ? plate.anchors
+          : []),
+    width: routeWidth
+  })
+  const evidenceLine = cb3CourseEvidenceLine(done, total)
+  const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
+  const step = {
+    kind: nextKind,
+    label: (row && row.next_step && row.next_step.label) || CB3_COURSE_COPY.continueTitle,
+    done: courseComplete
+  }
+  const backLabel = CB3_COURSE_COPY.backPrefix + (parentLabel || 'Home')
+  return jsxs('div', {
+    'data-cb-course-home-v3': plan.mode,
+    'data-cb-course-home-width': routeWidth ? String(routeWidth) : 'unknown',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.85rem',
+      minWidth: 0,
+      color: cb3Role('ink')
+    },
+    children: [
+      // M2: the back path is the first focusable element on a deep screen (SPEC-V3 §3.11).
+      jsxs('button', {
+        type: 'button',
+        'data-cb-course-back': '',
+        className: 'cb3-press',
+        onClick: () => {
+          if (typeof onBack === 'function') onBack()
+        },
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.35rem',
+          alignSelf: 'flex-start',
+          minHeight: '40px',
+          paddingInline: '0.25rem',
+          border: 0,
+          background: 'transparent',
+          color: cb3Role('ink'),
+          fontFamily: 'var(--cb3-font-ui)',
+          fontSize: cb3Type('meta'),
+          lineHeight: cb3Lead('meta'),
+          cursor: 'pointer'
+        },
+        children: [
+          jsx(sdk.Codicon, { name: 'arrow-left', size: CB_ICON_UI }, 'icon'),
+          jsx('span', { children: backLabel }, 'label')
+        ]
+      }, 'back'),
+      // M3: the course head. The title is the screen's heading; the subject line is the deck's
+      // one stored subject label.
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+        children: [
+          jsx('h2', {
+            'data-cb-course-title': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              color: cb3Role('ink'),
+              maxWidth: '34ch',
+              // Same rule as the plate's type field: wrap between words, never inside one.
+              overflowWrap: 'break-word',
+              wordBreak: 'normal',
+              hyphens: 'none'
+            },
+            children: (row && row.title) || ''
+          }, 'title'),
+          row && row.subject_label
+            ? jsx('p', {
+                'data-cb-course-subject': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  color: cb3Role('ink-soft')
+                },
+                children: row.subject_label
+              }, 'subject')
+            : null,
+          // The course's own read state. A loading head says it is opening; a failed read says so
+          // in place and offers one quiet way to try again, while the route keeps what was saved.
+          readState === 'loading'
+            ? jsx('p', {
+                'data-cb-course-loading': '',
+                style: {
+                  margin: 0,
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_COURSE_COPY.loading
+              }, 'loading')
+            : readState === 'error'
+              ? jsxs('div', {
+                  'data-cb-course-error': '',
+                  role: 'status',
+                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+                  children: [
+                    jsx('strong', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        fontWeight: 600,
+                        color: cb3Role('ink')
+                      },
+                      children: CB3_COURSE_COPY.errorTitle
+                    }, 'title'),
+                    jsx('span', {
+                      style: {
+                        fontFamily: 'var(--cb3-font-ui)',
+                        fontSize: cb3Type('meta'),
+                        lineHeight: cb3Lead('meta'),
+                        color: cb3Role('ink-soft')
+                      },
+                      children: CB3_COURSE_COPY.errorBody
+                    }, 'body'),
+                    typeof onRetry === 'function'
+                      ? jsx('button', {
+                          type: 'button',
+                          'data-cb-course-retry': '',
+                          className: 'cb3-press',
+                          onClick: () => onRetry(),
+                          style: {
+                            border: 0,
+                            background: 'transparent',
+                            padding: 0,
+                            color: cb3Role('ink'),
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('meta'),
+                            lineHeight: cb3Lead('meta'),
+                            textDecoration: 'underline',
+                            cursor: 'pointer'
+                          },
+                          children: CB3_COURSE_COPY.errorAction
+                        }, 'action')
+                      : null
+                  ]
+                }, 'error')
+              : null
+        ]
+      }, 'head'),
+      // M4/M5 and M6–M9: the hero plate with the route, and the aside. Two columns only at a wide
+      // route (≥ 1000 px, SPEC-V3 §5.4); below it the aside follows the plate and keeps its order.
+      jsxs('div', {
+        'data-cb-course-body': wide ? 'split' : 'stacked',
+        style: {
+          display: 'grid',
+          gridTemplateColumns: wide ? 'minmax(0, 1fr) 268px' : 'minmax(0, 1fr)',
+          gap: wide ? '1rem' : '0.85rem',
+          alignItems: 'start',
+          minWidth: 0
+        },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
+            children: [
+              jsx(CourseHeroPlate, {
+                plate: plate || { artifactId: null, src: null, anchors: [] },
+                title: (row && row.title) || '',
+                big: mapWide,
+                worldState,
+                onOpenStudio,
+                children:
+                  plan.mode === 'map'
+                    ? jsx('div', {
+                        'data-cb-course-nodes': '',
+                        role: 'group',
+                        'aria-label': CB3_COURSE_COPY.routeLabel,
+                        style: { position: 'absolute', inset: 0 },
+                        children: plan.points.map((point) =>
+                          jsx(
+                            CourseRouteMapNode,
+                            { node: point.node, x: point.x, y: point.y, big: wide, onOpen: onOpenSection },
+                            point.node.id
+                          )
+                        )
+                      })
+                    : null
+              }),
+              // SPEC-V3 §5.4: M6 sits **below** M5, and the aside moves under the route. In list
+              // mode the route therefore lives in the main column directly under the plate, so the
+              // DOM order is plate → route → aside at every width (the map carries its route
+              // inside the plate instead).
+              plan.mode === 'list' && nodes.length
+                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+                : null
+            ]
+          }, 'hero'),
+          jsx(CourseHomeAside, {
+            row,
+            nodes,
+            evidenceLine,
+            others,
+            step,
+            big: wide,
+            busy,
+            onContinue,
+            onOpenPlan,
+            onOpenOther
+          }, 'aside')
+        ]
+      }, 'body')
+    ]
+  })
+}
+
 /**
  * Course detail — the durable page for one enrollment.
  *
@@ -2428,6 +3429,10 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
   const [targetBlockId, setTargetBlockId] = useState(focusBlockId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  // CP-024: a rejected world's one quiet next action opens the studio that owns the world. It is
+  // the shipped surface from 97-world.js, rendered as a sheet over this page — the course home
+  // never grows a second world editor of its own, and a failed read never opens it silently.
+  const [studioOpen, setStudioOpen] = useState(false)
   // `plan.approve` fences on the enrolment revision, so the page tracks the revision the last
   // mutation returned instead of trusting the row it was opened with.
   const [revision, setRevision] = useState(Number(row.revision || 0))
@@ -2484,6 +3489,14 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     `page-${row.enrollment_id}-${pageObjectiveId}`,
     supports('lesson.page') && Boolean(pageObjectiveId)
   )
+  // CP-024 M8: the aside's `Your other courses` rows read the same library the Home shelf reads.
+  // It is a real read with no counters, and the course whose page this is is filtered out.
+  const library = useRpcQuery(
+    'library.list',
+    { filter: 'all', limit: 20, sort: 'recent' },
+    `course-others-${row.enrollment_id}`,
+    supports('library.list')
+  )
 
   // GM-010: the play layer belongs to the course's Game overview and nowhere else. The durable mode
   // comes from `world.read` (a library row carries none); the read is enabled only on that surface,
@@ -2507,8 +3520,9 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
     page.reload()
     jobs.reload()
     if (outline) outline.reload()
+    if (library) library.reload()
     if (onChanged) onChanged()
-  }, [review, notebooks, quizzes, evidence, page, jobs, outline, onChanged])
+  }, [review, notebooks, quizzes, evidence, page, jobs, outline, library, onChanged])
 
   const openSection = useCallback((nextObjectiveId, blockId) => {
     if (nextObjectiveId) setObjectiveId(nextObjectiveId)
@@ -2628,20 +3642,12 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
 
   let body
   if (view === 'overview') {
-    body = jsx(OverviewView, {
-      row,
-      page: page.data,
-      review: review.data,
-      quizzes: quizzes.data,
-      outline: outline.data,
-      implemented,
-      onOpenSection: openSection,
-      onResume: (objectiveId) =>
-        startLesson(
-          row.next_step && row.next_step.kind === 'resume_lesson' ? 'resume' : 'fresh',
-          objectiveId || null
-        )
-    })
+    // CP-024: the course's own overview IS the v3 R-MAP composition below (`courseHome`). The
+    // legacy OverviewView was still mounted under it, so the shipped screen carried two filled
+    // primaries (its "Start a fresh run" plus the v3 Continue plate), two route containers and the
+    // title twice — falsifying SPEC-V3 §5.4 and the quality bar's one-primary rule. It is retired
+    // from this route; its Evidence tab remains the record, and M7 carries the recorded count.
+    body = null
   } else if (view === 'textbook') {
     body = jsx(TextbookView, {
       row,
@@ -2797,21 +3803,90 @@ function CourseDetail({ row, implemented, profile, prefs, onBack, onChanged, foc
       ? jsx(GameJournal, { objectives, compact: phone }, 'game-journal')
       : null
 
+  // CP-024: on the course's own overview the page is the v3 R-MAP composition — the hero plate
+  // with the route's nodes, one Continue plate, the evidence count and the other courses. The
+  // compact hero stays for the reading surfaces, where the course head is context, not the page.
+  const courseHomePlate = cb3CourseHeroPlate(world.data)
+  const courseWorldState =
+    world.data && world.data.world && world.data.world.state ? world.data.world.state : null
+  const courseReadState =
+    outline.status === 'error' || world.status === 'error'
+      ? 'error'
+      : outline.status === 'loading' && !outline.data
+        ? 'loading'
+        : 'ready'
+  const otherCourses = (library.data && Array.isArray(library.data.items) ? library.data.items : []).filter(
+    (item) => item && item.course_id !== row.course_id && item.recipe !== 'parent'
+  )
+  const courseHome =
+    view === 'overview'
+      ? jsx(CourseHomeV3, {
+          row,
+          objectives,
+          page: page.data,
+          plate: courseHomePlate,
+          others: otherCourses,
+          sectionsDone: row.sections_done,
+          sectionsTotal: row.sections_total,
+          parentLabel: 'Home',
+          busy,
+          worldState: courseWorldState,
+          readState: courseReadState,
+          onBack,
+          onContinue: (kind) =>
+            startLesson(kind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+          onOpenPlan: () => selectView('plan'),
+          onOpenSection: openSection,
+          onOpenStudio: () => setStudioOpen(true),
+          onRetry: () => {
+            if (outline) outline.reload()
+            if (world) world.reload()
+            if (page) page.reload()
+          }
+        })
+      : null
+
   return jsxs('div', {
     'data-cb-course-detail': view,
     className: 'flex flex-col gap-4',
     children: [
-      jsx(sdk.Button, {
-        className: 'self-start',
-        variant: 'text',
-        size: 'sm',
-        'data-cb-course-back': '',
-        onClick: onBack,
-        children: 'All courses'
-      }),
+      // CP-024: the course home carries its own back path and its one Continue plate.
+      courseHome,
+
+      // The rejected world's quiet action opens the studio that owns the world; it is a sheet over
+      // this page, never a second copy of the studio and never opened on its own.
+      studioOpen && view === 'overview'
+        ? jsx(WorldStudio, {
+            courseId: row.course_id,
+            mode: courseMode || 'textbook',
+            world: world.data && world.data.world ? world.data.world : null,
+            worldStatus: world.status,
+            worldError: world.error,
+            autoStart: false,
+            onReload: () => {
+              if (world) world.reload()
+            },
+            onChanged: () => {
+              refresh()
+              if (onChanged) onChanged()
+            },
+            onClose: () => setStudioOpen(false)
+          }, 'world-studio')
+        : null,
+
+      courseHome
+        ? null
+        : jsx(sdk.Button, {
+            className: 'self-start',
+            variant: 'text',
+            size: 'sm',
+            'data-cb-course-back': '',
+            onClick: onBack,
+            children: 'All courses'
+          }),
 
       // The compact hero: one lamp field, one seal, three recorded facts, one primary action.
-      jsx(HeroField, {
+      courseHome ? null : jsx(HeroField, {
         identity: parentIdentity,
         phone,
         children: jsxs('div', {

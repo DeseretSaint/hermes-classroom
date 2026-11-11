@@ -31,8 +31,17 @@
  * Usage (live Electron window):
  *   node scripts/cp-capture.mjs --name home-1049-light --out docs/concept-parity/captures \
  *     --cdp-port 9411 --state "$COURSEBOOK_TEST_STATE" --plugin desktop/plugin.js \
- *     --backend-url http://127.0.0.1:44311 --token cb013-test-token \
+ *     --backend-url http://127.0.0.1:44311 --token "$CB013_TOKEN" \
  *     --route-width 1049 [--require-v3] [--keep-console] [--crop-to-content]
+ *
+ * Deep screens (a course home, a classroom) are shell state, not a URL, so a hard reload lands on
+ * the destination. Those cells add an opt-in driver that clicks what a learner clicks after the
+ * reload, and a selector the probe waits for:
+ *
+ *   --after-reload docs/visual-review/cp-024/drive-course-home.js \
+ *   --after-reload-wait '[data-cb-course-home-v3]'
+ *
+ * Both flags are off by default; a frame that used them says so in its stamp (`capture.driver`).
  *
  * Usage (recorded fixture page, used by tests — no Electron host):
  *   node scripts/cp-capture.mjs --name fixture-ok --out <dir> --fixture tests/fixtures/cp-capture/ok.html \
@@ -45,7 +54,14 @@ import { dirname, resolve } from 'node:path'
 
 const args = process.argv.slice(2)
 const flag = (name, fallback = null) => {
-  const index = args.indexOf(`--${name}`)
+  // Last occurrence wins: the capture matrix puts shared defaults in the `BASE` array and lets a
+  // cell override one of them by appending the flag (e.g. `--root-font 32px` for the 200 % cell).
+  // With first-wins the shared `--root-font 16px` silently won and the 200 % cell was shot at 100 %
+  // (CP-024 review round 4).
+  let index = -1
+  for (let cursor = 0; cursor < args.length; cursor += 1) {
+    if (args[cursor] === `--${name}`) index = cursor
+  }
   if (index < 0) return fallback
   const value = args[index + 1]
   return value && !value.startsWith('--') ? value : true
@@ -280,6 +296,45 @@ const probeExpression = (srcPath, wantSource) => `(async () => {
       render_error_markers: ${JSON.stringify(RENDER_ERROR_SELECTORS)}.filter((sel) => document.querySelector(sel)),
       v3_ready: Boolean(document.querySelector('[data-cb-v3-ready]')),
       v3_textures: root ? root.getAttribute('data-cb-v3-textures') : null,
+      // Word-wrap probe (CP-024 review round 2): a course title may wrap between words, never
+      // inside one. For every word in the course title and the plate's type field, count the line
+      // boxes its own Range paints; more than one box means the renderer split a word.
+      plate_title: (() => {
+        const el = document.querySelector('[data-cb-course-plate-title]')
+        if (!el) return null
+        const style = getComputedStyle(el)
+        return {
+          font_size: style.fontSize,
+          client_height: el.clientHeight,
+          scroll_height: el.scrollHeight,
+          clipped_vertically: el.scrollHeight > el.clientHeight + 1
+        }
+      })(),
+      word_wraps: (() => {
+        const out = []
+        for (const sel of ['[data-cb-course-title]', '[data-cb-course-plate-title]']) {
+          const el = document.querySelector(sel)
+          if (!el) continue
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+          let node = walker.nextNode()
+          while (node) {
+            const value = node.nodeValue || ''
+            const re = /\\S+/g
+            let match = re.exec(value)
+            while (match) {
+              const range = document.createRange()
+              range.setStart(node, match.index)
+              range.setEnd(node, match.index + match[0].length)
+              const rects = [...range.getClientRects()].filter((r) => r.width > 0)
+              const tops = new Set(rects.map((r) => Math.round(r.top / 2)))
+              if (tops.size > 1) out.push({ selector: sel, word: match[0], line_boxes: rects.length })
+              match = re.exec(value)
+            }
+            node = walker.nextNode()
+          }
+        }
+        return out
+      })(),
       style_sheet_count: styleSheets.length,
       css_rule_count: cssRuleCount,
       host_slots: document.querySelectorAll('[data-slot]').length,
@@ -592,6 +647,21 @@ const clickExpression = (selector) => `(() => {
 const settlePage = async (cdp) => {
   await evaluate(cdp, `new Promise((done) => {
     requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 80)))
+  })`).catch(() => null)
+}
+
+/**
+ * CP-024: `Emulation.setDeviceMetricsOverride` resizes the layout viewport but does not deliver a
+ * ResizeObserver frame in this host, so a v3 surface that measures its own route (the Coursebook
+ * route width hook) kept the width it was mounted at. The route geometry recorded by the probe was
+ * right while the composition on screen was still the old breakpoint's — a frame that would have
+ * been stamped as a 1049 cell and painted the 460 layout. Dispatching `resize` makes the route's
+ * own measurement run again, and two frames let React commit it before anything is measured.
+ */
+const settleLayout = async (cdp) => {
+  await evaluate(cdp, `(() => { window.dispatchEvent(new Event('resize')); return true })()`).catch(() => null)
+  await evaluate(cdp, `new Promise((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 120)))
   })`).catch(() => null)
 }
 
@@ -971,14 +1041,21 @@ const liveCapture = async () => {
   const { cdp, page } = await attachLive()
   const consoleReader = collectConsole(cdp)
 
-  // CP-038: point the host at the route *before* the hard reload. The earlier order (reload, then
+  // Point the host at the route *before* the hard reload (CP-038): the earlier order (reload, then
   // set the hash) let the plugin mount on its remembered Home state and photograph Home under any
   // requested name. Reloading after the hash is set lands on the plugin directly, and the route
   // is re-asserted below for host builds that restore a session route instead.
+  //
+  // `--no-reload` (CP-024) is for a deep screen the host cannot re-enter after a reload: the caller
+  // has already driven the window there and restarted it on the installed module, and the stamp
+  // records `capture.reloaded: false` so the frame is never mistaken for a fresh-boot frame.
+  const reloaded = !flag('no-reload', false)
   await evaluate(cdp, `location.hash = '#/coursebook'`).catch(() => null)
   await sleep(250)
-  await cdp.send('Page.reload', { ignoreCache: true })
-  await sleep(400)
+  if (reloaded) {
+    await cdp.send('Page.reload', { ignoreCache: true })
+    await sleep(400)
+  }
   let state = await waitForRoute(cdp, timeoutMs)
   if (!state) {
     await evaluate(cdp, `location.hash = '#/coursebook'`).catch(() => null)
@@ -1008,6 +1085,45 @@ const liveCapture = async () => {
     }
     throw error
   }
+
+  // Optional post-reload driver (CP-024). A deep screen that the door's destination vocabulary
+  // does not address (a course home on `#/coursebook`) is shell state, not a URL: `--after-reload
+  // <file>` runs that screen's own real-click driver after the route is up and before any
+  // measurement, and `--after-reload-wait <selector>` holds the probe until it is on screen. Both
+  // are opt-in; a driver that invents UI state instead of clicking what a learner clicks would
+  // defeat the stamp, so the wait selector is what proves the surface arrived.
+  const afterReload = flag('after-reload', null)
+  if (afterReload && afterReload !== true) {
+    const driver = readFileSync(resolve(String(afterReload)), 'utf8')
+    await evaluate(cdp, `(async () => { ${driver} })()`)
+    const waitSelector = flag('after-reload-wait', null)
+    if (waitSelector && waitSelector !== true) {
+      const selector = JSON.stringify(String(waitSelector))
+      const deadline = Date.now() + timeoutMs
+      let arrived = false
+      while (Date.now() < deadline) {
+        arrived = Boolean(await evaluate(cdp, `Boolean(document.querySelector(${selector}))`))
+        if (arrived) break
+        await sleep(200)
+      }
+      if (!arrived) {
+        throw new Error(`after-reload driver finished but ${String(waitSelector)} never appeared`)
+      }
+    }
+  }
+
+  // Text scale. The matrix's text scale is the root font size, not page zoom, and each cell names
+  // it (`--100--` / `--200--`). The door therefore sets the root font explicitly for EVERY cell —
+  // default 16px — and restores the page's prior inline value afterwards. Setting it only for the
+  // 200 % cell and never restoring it is what let a prior cell's 32px leak into later `--100--`
+  // frames on a `--no-reload` rig (CP-024 review round 3: 14 of 15 frames shot at 32px while every
+  // name said 100 %). The requested value is recorded in `capture.root_font`.
+  const rootFontArg = flag('root-font', null)
+  const rootFont = rootFontArg && rootFontArg !== true ? String(rootFontArg) : '16px'
+  const rootFontPrior = await evaluate(cdp, `document.documentElement.style.fontSize || ''`)
+  await evaluate(cdp, `document.documentElement.style.fontSize = ${JSON.stringify(rootFont)}`)
+  await sleep(450)
+  const rootFontRecord = { requested: rootFont, prior_inline: rootFontPrior || null }
 
   // Neutralise the rig's page zoom. Under a non-100% zoom, `Emulation.setDeviceMetricsOverride`
   // makes the layout viewport larger than the surface Chromium actually paints, so a route crop
@@ -1039,6 +1155,7 @@ const liveCapture = async () => {
       mobile: false
     })
     await sleep(250)
+    await settleLayout(cdp)
     const measured = await evaluate(cdp, `(() => {
       const root = document.querySelector('[data-cb-route]')
       const rect = root.getBoundingClientRect()
@@ -1059,9 +1176,19 @@ const liveCapture = async () => {
     const rect = root.getBoundingClientRect()
     const scroller = document.querySelector('main#cb-main-content')
     if (scroller) scroller.scrollTop = 0
-    return { height: rect.height, top: rect.top, left: rect.left, width: rect.width }
+    // The route box can be shorter than its content when the host clamps the main scroller to the
+    // viewport (seen at 200 % text, where the plate and route overflow below a 1126 px box); the
+    // scroller's scrollHeight is then the truth for the crop.
+    const inner = scroller ? scroller.scrollHeight : 0
+    return {
+      height: Math.max(rect.height, inner),
+      content_height: Math.max(root.scrollHeight || 0, inner),
+      top: rect.top,
+      left: rect.left,
+      width: rect.width
+    }
   })()`)
-  const wantedHeight = Math.min(5000, Math.max(targetHeight, Math.ceil(box.height + box.top + 40)))
+  const wantedHeight = Math.min(5000, Math.max(targetHeight, Math.ceil(Math.max(box.height, box.content_height) + box.top + 40)))
   if (wantedHeight !== targetHeight) {
     targetHeight = wantedHeight
     await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -1071,6 +1198,7 @@ const liveCapture = async () => {
       mobile: false
     })
     await sleep(300)
+    await settleLayout(cdp)
   }
 
   // Ask the page for the scroll offset only after the viewport is sized: the sizing pass resets
@@ -1149,8 +1277,16 @@ const liveCapture = async () => {
   if (!gate.ok) writeRefusal('gates', probe, gate)
 
   writeFileSync(pngPath, png)
-  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord })
+  return finishStamp({ probe, gate, png, expectedSha, pageUrl: page.url, shotBox: crop, mode: 'live', cropMode, pixelCheck, zoom: zoomRecord, emulatedMedia, destinationRecord, clicks, scroll, appearanceRecord, driver: afterReload && afterReload !== true ? String(afterReload) : null, reloaded, rootFont: rootFontRecord })
   } finally {
+    // Restore the page's own root font before the window is used by another cell. A `--no-reload`
+    // matrix shares one page across every frame, so an unrestored 32px is a silent scale change.
+    await evaluate(cdp, `(() => {
+      const prior = ${JSON.stringify(rootFontPrior || '')}
+      if (prior) document.documentElement.style.fontSize = prior
+      else document.documentElement.style.removeProperty('font-size')
+      return document.documentElement.style.fontSize || null
+    })()`).catch(() => null)
     if (zoomApplied && Math.abs(originalZoom.percent - 100) > 0.01) {
       await setZoomPercent(cdp, originalZoom.percent).catch(() => false)
     }
@@ -1268,7 +1404,7 @@ const fetchRuntime = async (probe) => {
   }
 }
 
-const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null }) => {
+const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mode, cropMode = 'route', pixelCheck = null, zoom = null, emulatedMedia = null, destinationRecord = null, clicks = [], scroll = null, appearanceRecord = null, driver = null, reloaded = true, rootFont = null }) => {
   await fetchRuntime(probe)
   const stamp = {
     stamp_version: 1,
@@ -1327,6 +1463,8 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       lesson_view: probe.route.lesson_view || null,
       lesson_document: probe.route.lesson_document || null,
       scroll_y: probe.route.scroll_y,
+      word_wraps: probe.route.word_wraps || [],
+      plate_title: probe.route.plate_title || null,
       marker_names: probe.route.marker_names || []
     },
     // CP-038: the frame's provenance is not only the plugin sha. A still must say which
@@ -1362,7 +1500,10 @@ const finishStamp = async ({ probe, gate, png, expectedSha, pageUrl, shotBox, mo
       bytes: png.length,
       crop_mode: cropMode,
       clip: { x: shotBox.x, y: shotBox.y, width: shotBox.width, height: shotBox.height },
-      pixel_check: pixelCheck
+      pixel_check: pixelCheck,
+      driver,
+      reloaded,
+      root_font: rootFont ? { requested: rootFont.requested, prior_inline: rootFont.prior_inline } : null
     },
     page_url: pageUrl
   }

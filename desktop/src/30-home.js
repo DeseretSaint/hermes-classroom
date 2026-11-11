@@ -150,47 +150,194 @@ function useCourseModes(courseIds) {
 }
 
 /**
- * One course on the global shelf. The whole card is the target: one real RowButton paints over
- * the card and takes Enter/Space, so there is no second "Open" control inside a card that is
- * already an object. The cover is the existing cover field (real artifact when the row carries
- * one, a paper cover with the subject monogram otherwise) — never an invented share image.
+ * CP-022 — the v3 Home copy, from `docs/concept-parity/COPY.md` §2. Every fixed string below is a
+ * deck row with an id; nothing is authored here. Two deliberate deviations are recorded in the
+ * card's review packet rather than hidden: `home.primary` ships as the card body's own label
+ * ("Start a new course", also the GM-002 behavioural anchor), and the kraft tag composes the deck's
+ * `home.tag.firstuse` word with the course's real title instead of inventing a sentence.
  */
-function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
+const CB_HOME_V3_COPY = Object.freeze({
+  title: 'Your field library',
+  sub: 'Pick a course, or start a new one.',
+  primary: 'Start a new course',
+  secondary: 'Browse library',
+  shelfLabel: 'Your courses',
+  seeAll: 'See all',
+  tagNew: 'New course',
+  firstuseTitle: 'Your field library',
+  firstuseSub: 'Nothing here yet. Start a course and its first lesson will appear on this shelf.',
+  firstusePrimary: 'Start your first course',
+  overflowHint: 'More courses to the right',
+  emptyTitle: 'No courses on this shelf',
+  emptyBody: 'Courses you archive move out of this view.',
+  emptyAction: 'See archived courses',
+  loading: 'Reading your courses. Nothing on the shelf changes while this loads.',
+  errorTitle: 'Your courses could not be read',
+  errorBody: 'Nothing you saved is lost. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'Your shelf is here. New lessons wait until you reconnect.',
+  offlineAction: 'Try again',
+  cardNew: 'New',
+  emptyShippedTitle: 'No courses yet.',
+  emptyArchivedBody: 'Every course here is archived. Unarchive one in Courses to continue it.',
+  // CP-031 — these strings still carry no `COPY.md` §2 id. They are enumerated in
+  // `docs/visual-review/cp-022/MANIFEST.md` gap 3 and frozen by `test_home_v3_copy_has_an_id`;
+  // the deck adopts or replaces them, this card may not invent a deck row. `failedReadWord` is
+  // also pinned by the existing behavioural `tests.test_desktop_home_hub`, which this card does
+  // not own.
+  failedReadWord: 'This is a failed read, not an empty library.',
+  parentTitle: 'Parent Studio holds your lesson plans.',
+  parentBody:
+    'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.',
+  parentAction: 'Open Parent Studio'
+})
+
+/** The shelf holds four real courses; a fifth scrolls behind `See all` (SPEC-V3 §3.3, §5.1 H5). */
+const CB_HOME_V3_LIMIT = 4
+
+/** A course is "new" for fourteen days from the newest write the row records (PLAN O5). */
+const CB_HOME_TAG_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
+
+function homeNumber(value) {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+/**
+ * One metadata pattern for every card in the shelf (SPEC-V3 §3.6): title / one subject line / one
+ * evidence line. Every value comes from a CP-005 `library_item` field; the UI computes no count and
+ * invents no percentage. A fact the read did not carry is omitted, never guessed.
+ */
+function homeCardFacts(row) {
+  const entry = row || {}
+  const summary = entry.evidence_summary && typeof entry.evidence_summary === 'object' ? entry.evidence_summary : {}
+  const done = homeNumber(entry.sections_done)
+  const total = homeNumber(entry.sections_total)
+  const independent = homeNumber(summary.independent)
+  const objectives = homeNumber(summary.total_objectives)
+  let meta = null
+  if (done !== null && total !== null) meta = `${done} of ${total} sections done`
+  else if (independent !== null && objectives !== null) meta = `${independent} of ${objectives} sections done`
+  const subject =
+    typeof entry.subject_label === 'string' && entry.subject_label.trim() ? entry.subject_label.trim() : null
+  const isNew = typeof entry.is_new === 'boolean' ? entry.is_new : independent === 0
+  return { meta, subject, isNew, next: learnerNextLabel(entry.next_step && entry.next_step.label) }
+}
+
+/** The row's cover artifact id, from the CP-005 field, else the older `cover` object. */
+function homeCoverArtifactId(row) {
+  const entry = row || {}
+  if (typeof entry.cover_artifact_id === 'string' && entry.cover_artifact_id) return entry.cover_artifact_id
+  const cover = entry.cover && typeof entry.cover === 'object' ? entry.cover : null
+  const id = cover ? cover.artifact_id || cover.artifact : null
+  return typeof id === 'string' && id ? id : null
+}
+
+/**
+ * The newest course a kraft tag may point at, or null. Strict PLAN O5 rule: the *most recently
+ * written* course qualifies only when it has no attempt yet (`is_new`) and its recorded time is
+ * under fourteen days old; otherwise no tag renders. CP-005 exposes no creation timestamp, so the
+ * age is measured from `updated_at` — the gap is named in the card's review packet, not papered
+ * over with a guessed date.
+ */
+function homeNewTagSlot(slots, nowMs) {
+  const all = Array.isArray(slots) ? slots : []
+  const newest = all[0]
+  if (!newest) return null
+  const row = newest.row || {}
+  if (!homeCardFacts(row).isNew) return null
+  const stamp = hubTime(row.updated_at)
+  if (!stamp) return null
+  const now = Number.isFinite(nowMs) ? Number(nowMs) : Date.now()
+  const age = now - stamp
+  if (age < 0 || age > CB_HOME_TAG_MAX_AGE_MS) return null
+  return newest
+}
+
+/**
+ * Route-relative shelf geometry (SPEC-V3 §3.1, §3.3, §5.1 H5). The number comes from the route
+ * box `useCbViewportWidth` measures, never from a viewport unit, and it follows the shipped
+ * `.cb3-gutter` rule — `clamp(1.25rem, 3.05cqi, 4rem)` above 760, `0.7rem` below — so a card row
+ * can never be wider than the paper it sits on. The fox has its own lower ledge (H6) and never
+ * takes a lane away from the cards.
+ */
+function homeGutter(width) {
+  if (!(width > 0)) return 32
+  if (!(width > 760)) return 0.7 * 16
+  return Math.min(64, Math.max(20, width * 0.0305))
+}
+
+function homeContentWidth(width) {
+  if (!(width > 0)) return 0
+  return Math.max(0, width - 2 * homeGutter(width))
+}
+
+function homeShelfColumns(width) {
+  if (!(width > 0)) return 4
+  const content = homeContentWidth(width)
+  if (content >= 880) return 4
+  if (content >= 560) return 3
+  return 1
+}
+
+function homeCardWidth(width) {
+  if (!(width > 0)) return null
+  const content = homeContentWidth(width)
+  const gap = width >= 620 ? 16 : 12
+  const columns = homeShelfColumns(width)
+  return Math.max(140, Math.floor((content - (columns - 1) * gap) / columns))
+}
+
+/**
+ * The shelf's own capacity: four cards at wide, three at mid (SPEC-V3 §5.1 overflow — five at
+ * wide, four at mid), and the stacked column keeps four rows at compact. `home.gutter` above is
+ * the same box the CSS draws, so the cards always fit the lane.
+ */
+function homeShelfLayout(width) {
+  const compact = width > 0 && width < 620
+  const columns = compact ? 1 : homeShelfColumns(width)
+  const capacity = compact ? CB_HOME_V3_LIMIT : Math.min(CB_HOME_V3_LIMIT, columns)
+  return { compact, columns, capacity }
+}
+
+/** A 3:2 paper cover: the real artifact when the media answer arrives, else the typographic plate. */
+function HomeV3Cover({ artifactId, title }) {
+  const preview = useArtifactPreview(artifactId)
+  const src = preview && preview.state === 'ready' && typeof preview.data_url === 'string' ? preview.data_url : null
+  return jsx(CoverPlate3, { src, title })
+}
+
+/**
+ * CP-022 — one course standing on the v3 shelf. The card is one paper object (cover, title, one
+ * subject chip, one evidence line, the backend's own next-step sentence) with exactly one control:
+ * an overlay `RowButton` whose name is `Open <title>`. No rating, no progress bar, no invented XP.
+ */
+function HomeV3Card({ slot, mode, index, width, isNew, onOpen }) {
   const row = (slot && slot.row) || {}
-  const [keyboardFocus, setKeyboardFocus] = useState(false)
   const title = row.title || (slot && slot.name) || 'Untitled course'
-  const next = learnerNextLabel(row.next_step && row.next_step.label)
-  // The goal paragraph carries a stored goal or the course's own subtitle. It must not repeat
-  // the card title or the next-step sentence the meta row already prints, or every card repeats
-  // itself: real authored rows often store `subtitle` identical to `title`.
-  const goalCandidate = (row.goal && String(row.goal).trim()) || (row.subtitle && String(row.subtitle).trim()) || ''
-  const sameText = (a, b) => String(a).trim().toLowerCase().replace(/\s+/g, ' ') === String(b).trim().toLowerCase().replace(/\s+/g, ' ')
-  const goal = goalCandidate && !sameText(goalCandidate, title) && !sameText(goalCandidate, next) ? goalCandidate : ''
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  const facts = homeCardFacts(row)
+  const artifactId = homeCoverArtifactId(row)
+  const modeWord =
+    mode && mode.state === 'ready' ? (readCoursePresentationMode(mode.mode) === 'game' ? 'Game' : 'Textbook') : null
+  const cardWidth = homeCardWidth(width)
   const open = () => {
     if (onOpen) onOpen(slot)
   }
-  // Authored asymmetry: the first card leads, one in three is a short card. The shelf is a row of
-  // objects, not six equal admin tiles; the widths come from the card's place, not from chance.
-  const basis = narrow ? '100%' : index === 0 ? '17rem' : index % 3 === 1 ? '13rem' : '15rem'
-  const compactCover = !narrow && index % 3 === 1
-  const modeState = mode ? mode.state : 'absent'
-  return jsxs('article', {
-    'data-cb-home-card': '',
-    'data-cb-home-card-index': String(index),
-    'data-cb-course-id': row.course_id || '',
-    'data-cb-home-card-basis': narrow ? 'full' : basis,
-    role: 'listitem',
-    style: {
-      position: 'relative',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.4rem',
-      flex: narrow ? '1 1 auto' : `0 0 ${basis}`,
-      width: narrow ? '100%' : basis,
-      minWidth: 0,
-      paddingTop: '0.45rem',
-      borderTop: '1px solid var(--cb-rule)'
-    },
+  const chipStyle = {
+    alignSelf: 'flex-start',
+    paddingInline: '0.5rem',
+    paddingBlock: '0.1rem',
+    borderRadius: cb3Radius('soft'),
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink')
+  }
+  const action = jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
     children: [
       jsx(sdk.RowButton, {
         'aria-label': `Open ${title}`,
@@ -200,9 +347,11 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
         onBlur: () => setKeyboardFocus(false),
         onFocus: (event) => setKeyboardFocus(shelfRingVisible(event && event.currentTarget)),
         style: {
-          outline: keyboardFocus ? '2px solid var(--cb-accent)' : 'none',
+          outlineStyle: keyboardFocus ? 'solid' : 'none',
+          outlineWidth: keyboardFocus ? '2px' : '0',
+          outlineColor: cb3Role('focus'),
           outlineOffset: '-2px',
-          borderRadius: '2px'
+          borderRadius: cb3Radius('soft')
         },
         onKeyDown: (event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -212,62 +361,106 @@ function HomeCourseCard({ slot, mode, index, narrow, onOpen }) {
         },
         onClick: open
       }, 'target'),
-      jsxs('div', {
-        className: 'pointer-events-none flex flex-col gap-2',
-        style: { minWidth: 0 },
-        children: [
-          jsx('div', {
-            'data-cb-home-cover': '',
-            style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
-            children: jsx(ClassroomCover, { slot, compact: compactCover, hideTitle: true }, 'cover')
-          }, 'cover'),
-          jsxs('div', {
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minWidth: 0 },
+      modeWord || facts.next
+        ? jsxs('div', {
+            className: 'pointer-events-none',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.6rem', minWidth: 0 },
             children: [
-              modeState === 'ready'
-                ? jsx(sdk.Badge, { variant: 'muted', children: readCoursePresentationMode(mode.mode) === 'game' ? 'Game' : 'Textbook' }, 'mode')
+              modeWord
+                ? jsx('span', {
+                    'data-cb3-chip': 'mode',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft')
+                    },
+                    children: modeWord
+                  }, 'mode')
                 : null,
-              jsx('span', {
-                'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
-                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-                children: next || 'No next step recorded'
-              }, 'next')
+              facts.next
+                ? jsx('span', {
+                    'data-cb-home-card-next': row.next_step && row.next_step.kind ? row.next_step.kind : 'none',
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: facts.next
+                  }, 'next')
+                : null
             ]
-          }, 'meta'),
-          jsx('h3', {
+          }, 'meta')
+        : null
+    ]
+  }, 'action')
+  return jsx(PaperCard, {
+    'data-cb-home-card': '',
+    'data-cb-home-card-index': String(index),
+    'data-cb-course-id': row.course_id || '',
+    'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
+    'data-cb-home-cover': artifactId ? 'artifact' : 'type',
+    role: 'listitem',
+    style: {
+      position: 'relative',
+      boxSizing: 'border-box',
+      width: cardWidth ? `${cardWidth}px` : '17rem',
+      flex: cardWidth ? `0 0 ${cardWidth}px` : '0 0 17rem',
+      gap: '0.45rem'
+    },
+    children: [
+      artifactId
+        ? jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { artifactId, title }) }, 'cover')
+        : null,
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
+          fontWeight: 600,
+          color: cb3Role('ink'),
+          maxWidth: '24ch',
+          overflowWrap: 'anywhere'
+        },
+        children: title
+      }, 'title'),
+      facts.subject
+        ? jsx('span', {
+            'data-cb3-chip': 'subject',
+            style: { ...chipStyle, backgroundColor: cb3Role('terracotta-quiet') },
+            children: facts.subject
+          }, 'subject')
+        : null,
+      facts.meta
+        ? jsx('p', {
+            'data-cb-home-card-meta': '',
             style: {
               margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.lead,
-              fontWeight: 600,
-              lineHeight: 1.3,
-              color: 'var(--cb-ink)',
-              overflowWrap: 'anywhere'
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft')
             },
-            children: title
-          }, 'title'),
-          goal
-            ? jsx('p', {
-                'data-cb-home-card-goal': '',
-                style: {
-                  margin: 0,
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
-                  lineHeight: 1.5,
-                  color: 'var(--cb-ink-soft)',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                },
-                children: goal
-              }, 'goal')
-            : null
-        ]
-      }, 'body')
+            children: facts.meta
+          }, 'facts')
+        : null,
+      isNew
+        ? jsx('span', {
+            'data-cb3-chip': 'new',
+            style: { ...chipStyle, border: `1px solid ${cb3Role('gold')}` },
+            children: CB_HOME_V3_COPY.cardNew
+          }, 'new')
+        : null,
+      action
     ]
   })
 }
+// The v2 segment exported the card under this name; CP-022 keeps the export so the test surface in
+// 99-tutor.js resolves while the Home it paints is the v3 object.
+const HomeCourseCard = HomeV3Card
 
 /**
  * GM-VISUAL-SPEC §2.5 — the shelf's edge affordance. A shelf that overflows fades the last 24px
@@ -304,12 +497,14 @@ function cbShelfEdgeMask(scrollLeft, clientWidth, scrollWidth) {
 }
 
 /**
- * GM-002 — the global Home, a field library and a threshold.
+ * CP-022 — the v3 global Home (R-HOME): a field library and a threshold.
  *
- * It answers "what do I want to learn now?" with one question, one filled create action, one
- * secondary path and a shelf of real courses. It is not a course page: there is no Continue, no
- * trailhead, no course world hero and no course-bound scene. Selecting a card asks the route for
- * that course's own home, which is where the trailhead lives.
+ * It answers "which course do I open next, and how do I start a new one?" with one threshold band
+ * (type only), one filled primary plus one quiet outline pill, and one wooden shelf holding up to
+ * four real courses, the fox at its right end and a kraft tag for a genuinely new course. It is not
+ * a course page: no Continue, no trailhead, no course-bound hero. SPEC-V3 §5.1 is the region map and
+ * `docs/concept-parity/COPY.md` §2 is the copy deck; every card fact is a CP-005 `library_item`
+ * field, so no number is computed by the UI.
  */
 
 /* ── Home scene (wide) ────────────────────────────────────────────────────────────────────────
@@ -449,20 +644,53 @@ function CoursebookHome({
   onRetry
 }) {
   const width = useCbViewportWidth()
-  const narrow = width > 0 && width < 620
+  const compact = width > 0 && width < 620
   const status = library ? library.status : 'loading'
   const data = library ? library.data : null
   const rows = data && Array.isArray(data.items) ? data.items : []
   const parentPlans = rows.filter((entry) => entry && entry.recipe === 'parent').length
-  // `hubSlots` is the same honest one-object-per-course rule the desk uses; the shelf caps at six
-  // and `See all` is the catalog, not a second create door.
   const hub = hubSlots(rows)
-  const slots = hub.all.slice(0, HUB_SHELF_LIMIT)
-  const total = Math.max(Number(data && data.total) || 0, hub.total)
+  const slots = hub.all.slice(0, CB_HOME_V3_LIMIT)
   const modeMap = modes && typeof modes === 'object' ? modes : {}
-  const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
-  // The shelf fades the edge that still has cards behind it (GM-VISUAL-SPEC §2.5). Measured from
-  // the live row: jsdom/SSR report zeroes and honestly stay `none`.
+  const parentOnly = status === 'ready' && hub.total === 0 && parentPlans > 0
+  const firstUse = status === 'ready' && hub.total === 0 && parentPlans === 0
+  const archived = Boolean(data && data.empty_reason === 'all_archived')
+  const overflow = hub.total > CB_HOME_V3_LIMIT
+  const tagSlot = status === 'ready' ? homeNewTagSlot(hub.all, Date.now()) : null
+  // The one filled pill keeps one label on every Home state: the card's own `Start a new course`.
+  // SPEC §5.1's `home.firstuse.primary` ("Start your first course") is not rendered, because the
+  // first-run plate already carries the deck's first-use sentence and one surface has one action.
+  const primaryLabel = CB_HOME_V3_COPY.primary
+  const [primaryFocus, setPrimaryFocus] = useState(false)
+  const caption = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink-soft')
+  }
+  const body = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('body'),
+    lineHeight: cb3Lead('body'),
+    color: cb3Role('ink'),
+    maxWidth: '60ch'
+  }
+  const stateTitle = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-display)',
+    fontSize: cb3Type('heading'),
+    lineHeight: cb3Lead('heading'),
+    fontWeight: 600,
+    color: cb3Role('ink'),
+    maxWidth: '34ch',
+    overflowWrap: 'anywhere'
+  }
+
+  // The shelf fades the edge that still has cards behind it. Measured from the live row; jsdom and
+  // a static render report zeroes and honestly stay `none`. The route width is a dependency: the
+  // card basis changes with it, so a stale measure would leave a clipped shelf with no fade.
   const shelfRowRef = useRef(null)
   const [shelfMask, setShelfMask] = useState({ state: 'none', style: {} })
   const shelfSlotCount = slots.length
@@ -473,203 +701,433 @@ function CoursebookHome({
     measure()
     row.addEventListener('scroll', measure, { passive: true })
     window.addEventListener('resize', measure)
+    let observer = null
+    if (typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver(measure)
+      observer.observe(row)
+    }
     return () => {
       row.removeEventListener('scroll', measure)
       window.removeEventListener('resize', measure)
+      if (observer) observer.disconnect()
     }
-  }, [status, narrow, shelfSlotCount])
+  }, [status, compact, width, shelfSlotCount])
 
-  const invitation = jsxs('div', {
+  const invitation = jsxs('section', {
     'data-cb-home-invitation': '',
     style: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'flex-start',
-      gap: '0.55rem',
-      width: '100%',
+      gap: '0.7rem',
+      minWidth: 0,
       maxWidth: '42rem',
-      paddingTop: narrow ? '0.35rem' : '0.9rem',
-      paddingBottom: narrow ? '0.6rem' : '1.1rem'
+      paddingBlock: compact ? '0.5rem 1rem' : '1rem 1.5rem'
     },
     children: [
       jsx('h2', {
         'data-cb-home-question': '',
         style: {
           margin: 0,
-          fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.heading,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
           fontWeight: 600,
-          lineHeight: 1.2,
-          letterSpacing: '-0.01em',
-          color: 'var(--cb-ink)',
+          color: cb3Role('ink'),
+          maxWidth: '24ch',
           overflowWrap: 'anywhere'
         },
-        children: CB_HOME_COPY.question
-      }, 'question'),
+        children: CB_HOME_V3_COPY.title
+      }, 'title'),
       jsx('p', {
         'data-cb-home-subline': '',
-        style: { ...quiet, color: 'var(--cb-ink)', fontSize: CB_TYPE.body },
-        children: CB_HOME_COPY.subline
-      }, 'subline'),
+        style: { ...body, color: cb3Role('ink-soft') },
+        children: CB_HOME_V3_COPY.sub
+      }, 'sub'),
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem 0.9rem', paddingTop: '0.2rem' },
+        style: {
+          display: 'flex',
+          flexDirection: compact ? 'column' : 'row',
+          flexWrap: 'wrap',
+          alignItems: compact ? 'stretch' : 'center',
+          gap: compact ? '0.75rem' : '1rem',
+          paddingTop: '0.2rem'
+        },
         children: [
           canCreate
-            ? jsx(CbAction, { variant: 'primary', onClick: onStartCreate, children: CB_HOME_COPY.create }, 'create')
+            ? jsx(PillAction, {
+                variant: 'primary',
+                label: primaryLabel,
+                'data-cb-action': 'primary',
+                'data-cb-home-primary': '',
+                'data-cb-focus-ring': primaryFocus ? 'visible' : 'none',
+                onFocus: () => setPrimaryFocus(true),
+                onBlur: () => setPrimaryFocus(false),
+                style: {
+                  width: compact ? '100%' : undefined,
+                  outlineStyle: primaryFocus ? 'solid' : 'none',
+                  outlineWidth: primaryFocus ? '2px' : '0',
+                  outlineColor: cb3Role('focus'),
+                  outlineOffset: '2px'
+                },
+                onClick: onStartCreate
+              }, 'create')
             : null,
-          jsx(CbAction, { variant: 'tertiary', onClick: onBrowseLibrary, children: CB_HOME_COPY.browse }, 'browse')
+          jsx(PillAction, {
+            variant: 'quiet',
+            label: CB_HOME_V3_COPY.secondary,
+            'data-cb-home-secondary': '',
+            style: { width: compact ? '100%' : undefined },
+            onClick: onBrowseLibrary
+          }, 'browse')
         ]
       }, 'actions')
     ]
   }, 'invitation')
 
+  const shelfHead = jsxs('div', {
+    'data-cb-home-shelf-head': '',
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem', minWidth: 0 },
+    children: [
+      jsx('h2', {
+        'data-cb-home-shelf-label': '',
+        style: {
+          margin: 0,
+          fontFamily: 'var(--cb3-font-display)',
+          fontSize: cb3Type('heading'),
+          lineHeight: cb3Lead('heading'),
+          fontWeight: 600,
+          color: cb3Role('ink')
+        },
+        children: CB_HOME_V3_COPY.shelfLabel
+      }, 'label'),
+      overflow && onShowAll
+        ? jsx(PillAction, {
+            variant: 'quiet',
+            label: CB_HOME_V3_COPY.seeAll,
+            'data-cb-home-see-all': '',
+            onClick: onShowAll
+          }, 'seeAll')
+        : null
+    ]
+  }, 'head')
+
+  const tagTitle = tagSlot ? (tagSlot.row && tagSlot.row.title) || tagSlot.name : null
+  const tag = tagSlot
+    ? jsxs('button', {
+        type: 'button',
+        'data-cb-home-tag': '',
+        className: 'cb3-press',
+        'aria-label': `${CB_HOME_V3_COPY.tagNew}: ${tagTitle}`,
+        onClick: () => {
+          if (onOpenCourse) onOpenCourse(tagSlot.row)
+        },
+        style: {
+          alignSelf: 'flex-end',
+          display: 'inline-flex',
+          flexDirection: 'column',
+          gap: '0.1rem',
+          minHeight: '44px',
+          maxWidth: '14ch',
+          padding: '0.35rem 0.6rem',
+          backgroundColor: cb3Role('terracotta-quiet'),
+          border: `1px solid ${cb3Role('rule')}`,
+          borderRadius: cb3Radius('soft'),
+          color: cb3Role('ink'),
+          textAlign: 'left',
+          cursor: 'pointer',
+          transform: 'rotate(-1.5deg)'
+        },
+        children: [
+          jsx('span', {
+            style: {
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: CB_HOME_V3_COPY.tagNew
+          }, 'label'),
+          jsx('span', {
+            style: {
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              overflowWrap: 'anywhere'
+            },
+            children: tagTitle
+          }, 'title')
+        ]
+      }, 'tag')
+    : null
+
   let shelf
   if (status === 'loading' || status === 'idle') {
-    shelf = jsxs('div', {
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'loading',
       'data-cb-home-shelf-state': status,
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '9rem', paddingTop: '0.4rem' },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
-        jsx(sdk.Loader, { label: CB_HOME_COPY.loading }),
-        jsx('p', { style: quiet, children: 'Nothing already saved is lost while this read is in flight.' })
+        shelfHead,
+        jsx(ShelfPlank, {
+          style: { overflow: 'visible' },
+          children: [0, 1, 2, 3].slice(0, compact ? 4 : Math.min(4, homeShelfColumns(width))).map((index) =>
+            jsx('div', {
+              'data-cb-home-skeleton': String(index),
+              'aria-hidden': 'true',
+              style: {
+                boxSizing: 'border-box',
+                width: homeCardWidth(width) ? `${homeCardWidth(width)}px` : '17rem',
+                height: '9.5rem',
+                flex: homeCardWidth(width) ? `0 0 ${homeCardWidth(width)}px` : '0 0 17rem',
+                backgroundColor: cb3Role('card-stock'),
+                opacity: 0.4,
+                borderRadius: cb3Radius('round')
+              }
+            }, `skeleton-${index}`)
+          )
+        }, 'plank'),
+        jsx('p', { 'data-cb-home-loading': '', style: body, children: CB_HOME_V3_COPY.loading }, 'loading')
       ]
     }, 'shelf')
   } else if (status === 'error' && rows.length === 0) {
-    shelf = jsx('div', {
+    const cause = library && library.error ? describeError(library.error) : ''
+    const code = library && library.error && library.error.code ? `${library.error.code}: ` : ''
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'error',
       'data-cb-home-shelf-state': 'error',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
-      children: jsxs(sdk.ErrorState, {
-        title: CB_HOME_COPY.errorTitle,
-        description: `${library && library.error && library.error.code ? library.error.code + ': ' : ''}${describeError(library && library.error)} This is a failed read, not an empty library.`,
-        children: jsx(CbAction, { variant: 'secondary', onClick: onRetry, children: 'Try again' })
-      })
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+      children: [
+        jsx('h3', {
+          'data-cb-home-error-title': '',
+          style: stateTitle,
+          children: online === false ? CB_HOME_V3_COPY.offlineTitle : CB_HOME_V3_COPY.errorTitle
+        }, 'title'),
+        jsx('p', {
+          'data-cb-home-error-body': '',
+          style: body,
+          children: `${code}${cause ? `${cause.replace(/\.$/, '')}. ` : ''}${CB_HOME_V3_COPY.failedReadWord} ${
+            online === false ? CB_HOME_V3_COPY.offlineBody : CB_HOME_V3_COPY.errorBody
+          }`
+        }, 'body'),
+        jsx(PillAction, {
+          variant: 'quiet',
+          label: online === false ? CB_HOME_V3_COPY.offlineAction : CB_HOME_V3_COPY.errorAction,
+          'data-cb-home-retry': '',
+          onClick: onRetry
+        }, 'retry')
+      ]
     }, 'shelf')
-  } else if (hub.total === 0) {
-    const reason = data && data.empty_reason
-    const parentOnly = parentPlans > 0
-    shelf = jsx('div', {
-      'data-cb-home-shelf': parentOnly ? 'parent-only' : 'empty',
+  } else if (parentOnly) {
+    shelf = jsxs('section', {
+      'data-cb-home-shelf': 'parent-only',
       'data-cb-home-shelf-state': 'empty',
-      'data-cb-home-empty-reason': parentOnly ? 'parent_only' : reason || 'no_courses',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingTop: '0.4rem', maxWidth: '42rem' },
-      children: parentOnly
-        ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.6rem' },
-            children: [
-              jsx(sdk.EmptyState, {
-                title: 'Parent Studio holds your lesson plans.',
-                description: 'This profile has parent-led lesson plans, not a learner course. Start a learner course here, or open Parent Studio.'
-              }, 'state'),
-              jsx(CbAction, { variant: 'secondary', onClick: onOpenStudio, children: 'Open Parent Studio' }, 'studio')
-            ]
-          })
-        : jsxs(sdk.EmptyState, {
-            title: CB_HOME_COPY.emptyTitle,
-            description:
-              reason === 'all_archived'
-                ? 'Every course here is archived. Unarchive one in Courses to continue it.'
-                : CB_HOME_COPY.emptyBody
-          })
+      'data-cb-home-empty-reason': 'parent_only',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0, maxWidth: '42rem' },
+      children: [
+        jsx('h3', { style: stateTitle, children: CB_HOME_V3_COPY.parentTitle }, 'title'),
+        jsx('p', { style: body, children: CB_HOME_V3_COPY.parentBody }, 'body'),
+        jsx(PillAction, {
+          variant: 'quiet',
+          label: CB_HOME_V3_COPY.parentAction,
+          'data-cb-home-studio': '',
+          onClick: onOpenStudio
+        }, 'studio')
+      ]
+    }, 'shelf')
+  } else if (firstUse) {
+    const plateTitle = archived ? CB_HOME_V3_COPY.emptyTitle : CB_HOME_V3_COPY.emptyShippedTitle
+    const plateBody = archived ? CB_HOME_V3_COPY.emptyArchivedBody : CB_HOME_V3_COPY.firstuseSub
+    shelf = jsxs('section', {
+      'data-cb-home-shelf': 'empty',
+      'data-cb-home-shelf-state': 'empty',
+      'data-cb-home-empty-reason': archived ? 'all_archived' : 'no_courses',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
+      children: [
+        shelfHead,
+        jsxs('div', {
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+          children: [
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsxs('div', {
+                'data-cb-home-start-plate': '',
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '0.6rem',
+                  maxWidth: '42ch',
+                  padding: '1.1rem 1.25rem',
+                  backgroundColor: cb3Role('card-stock'),
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('round')
+                },
+                children: [
+                  jsx('h3', { 'data-cb-home-plate-title': '', style: stateTitle, children: plateTitle }, 'title'),
+                  jsx('p', { style: body, children: plateBody }, 'body'),
+                  archived && onShowAll
+                    ? jsx(PillAction, {
+                        variant: 'quiet',
+                        label: CB_HOME_V3_COPY.emptyAction,
+                        'data-cb-home-archived': '',
+                        onClick: onShowAll
+                      }, 'archived')
+                    : null
+                ]
+              }, 'plate')
+            }, 'plank'),
+            compact
+              ? null
+              : jsx('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: jsx(FoxPose, {
+                    pose: 'wave',
+                    size: width >= 900 || width === 0 ? 128 : 112,
+                    style: { alignSelf: 'flex-end' }
+                  }, 'fox')
+                }, 'ledge')
+          ]
+        }, 'shelf-frame')
+      ]
     }, 'shelf')
   } else {
-    shelf = jsxs('div', {
+    const shelfLayout = homeShelfLayout(width)
+    // SPEC-V3 §5.1 overflow: a fifth course at wide or a fourth at mid. The row scrolls inside its
+    // frame with the edge mask; the cards never shrink and the fox never takes their lane.
+    const shelfOverflow = hub.total > shelfLayout.capacity
+    shelf = jsxs('section', {
       'data-cb-home-shelf': 'ready',
       'data-cb-home-shelf-state': 'ready',
-      style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0 },
+      'data-cb-home-shelf-overflow': shelfOverflow ? 'true' : 'false',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.55rem', minWidth: 0 },
       children: [
+        shelfHead,
         jsxs('div', {
-          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+          'data-cb-home-shelf-frame': '',
+          style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
           children: [
-            jsx('h2', {
-              'data-cb-home-shelf-label': '',
-              style: {
-                margin: 0,
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.lead,
-                fontWeight: 600,
-                color: 'var(--cb-ink)'
-              },
-              children: CB_HOME_COPY.shelf
-            }, 'label'),
-            onShowAll
-              ? jsx(CbAction, { variant: 'tertiary', onClick: onShowAll, children: CB_HOME_COPY.seeAll }, 'seeAll')
-              : null
+            jsx(ShelfPlank, {
+              style: { overflow: 'visible' },
+              children: jsx('div', {
+                'data-cb-home-shelf-row': '',
+                'data-cb-shelf-mask': shelfMask.state,
+                ref: shelfRowRef,
+                role: 'list',
+                'aria-label': CB_HOME_V3_COPY.shelfLabel,
+                style: {
+                  display: 'flex',
+                  flexDirection: compact ? 'column' : 'row',
+                  alignItems: compact ? 'stretch' : 'flex-end',
+                  gap: compact ? '0.75rem' : '1rem',
+                  overflowX: compact ? 'visible' : 'auto',
+                  minWidth: 0,
+                  flex: '1 1 auto',
+                  ...shelfMask.style
+                },
+                children: slots.map((slot, index) =>
+                  jsx(HomeV3Card, {
+                    slot,
+                    mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
+                    index,
+                    width,
+                    isNew: homeCardFacts(slot && slot.row).isNew,
+                    onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
+                  }, (slot && slot.course_id) || `slot-${index}`)
+                )
+              }, 'frame')
+            }, 'plank'),
+            // H6 — the lower ledge. The fox box and the kraft tag stand here, on their own paper,
+            // so the shelf's full width belongs to the cards at every route width.
+            compact
+              ? null
+              : jsxs('div', {
+                  'data-cb-home-ledge': '',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'flex-end',
+                    gap: '0.9rem',
+                    minWidth: 0,
+                    minHeight: '16px',
+                    borderTop: `1px solid ${cb3Role('rule')}`,
+                    paddingTop: '0.35rem'
+                  },
+                  children: [
+                    tag,
+                    jsx(FoxPose, {
+                      pose: 'clock',
+                      size: width >= 900 || width === 0 ? 128 : 112,
+                      style: { alignSelf: 'flex-end' }
+                    }, 'fox')
+                  ]
+                }, 'ledge')
           ]
-        }, 'head'),
-        jsx('div', {
-          'data-cb-home-shelf-row': '',
-          'data-cb-shelf-mask': shelfMask.state,
-          ref: shelfRowRef,
-          role: 'list',
-          'aria-label': CB_HOME_COPY.shelf,
-          style: {
-            display: 'flex',
-            flexDirection: narrow ? 'column' : 'row',
-            alignItems: 'stretch',
-            gap: narrow ? '0.9rem' : '1.1rem',
-            overflowX: narrow ? 'visible' : 'auto',
-            paddingBottom: '0.7rem',
-            borderBottom: '2px solid var(--cb-rule)',
-            minWidth: 0,
-            ...shelfMask.style
-          },
-          children: slots.map((slot, index) =>
-            jsx(HomeCourseCard, {
-              slot,
-              index,
-              narrow,
-              mode: slot && slot.course_id ? modeMap[slot.course_id] : null,
-              onOpen: (opened) => onOpenCourse && onOpenCourse(opened ? opened.row : null)
-            }, (slot && slot.course_id) || `slot-${index}`)
-          )
-        }, 'row'),
-        hub.hidden > 0
-          ? jsx('p', {
-              'data-cb-home-shelf-hidden': String(hub.hidden),
-              style: quiet,
-              children: `${plural(hub.hidden, 'more course', 'more courses')} behind See all.`
-            }, 'hidden')
-          : null,
-        modesSupported === false
-          ? jsx('p', { 'data-cb-home-mode-read': 'unavailable', style: quiet, children: CB_HOME_COPY.modeUnavailable }, 'mode')
+        }, 'shelf-frame'),
+        shelfOverflow && !compact
+          ? jsx('p', { 'data-cb-home-overflow-hint': '', style: caption, children: CB_HOME_V3_COPY.overflowHint }, 'overflow')
           : null
       ]
     }, 'shelf')
   }
 
-  // Wide routes get the room, not the dashboard. Narrower routes (and jsdom's width 0) keep the
-  // compact Home above, so nothing here changes a phone layout or a unit test.
-  if (width >= 1200 && status === 'ready' && slots.length > 0) {
-    return jsx(HomeScene, {
-      slots,
-      canCreate,
-      onStartCreate,
-      onBrowseLibrary,
-      onOpenCourse: (slot) => onOpenCourse && onOpenCourse(slot ? slot.row : null)
-    }, 'scene')
-  }
-
   return jsxs('div', {
     'data-cb-home': status === 'ready' && hub.total === 0 ? 'empty' : status,
-    'data-cb-home-layout': narrow ? 'stacked' : 'wide',
+    'data-cb-home-layout': compact ? 'stacked' : 'wide',
     style: { display: 'flex', flexDirection: 'column', gap: '0.8rem', minWidth: 0 },
     children: [
-      online === false
-        ? jsx('div', {
+      online === false && status !== 'error'
+        ? jsxs('div', {
             'data-cb-home-offline': '',
-            className: 'text-xs text-(--ui-text-secondary)',
-            children:
-              'Offline. Showing the courses that were last read; starting a course or writing a brief is paused until the connection returns.'
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.4rem 0.75rem',
+              padding: '0.5rem 0.75rem',
+              backgroundColor: cb3Role('card-stock'),
+              border: `1px solid ${cb3Role('rule')}`,
+              borderRadius: cb3Radius('soft')
+            },
+            children: [
+              jsxs('p', {
+                style: { ...caption, color: cb3Role('ink') },
+                children: [
+                  jsx('span', {
+                    'data-cb-home-offline-word': '',
+                    style: { fontWeight: 600, marginInlineEnd: '0.4rem' },
+                    children: CB_HOME_V3_COPY.offlineTitle
+                  }, 'word'),
+                  jsx('span', { children: CB_HOME_V3_COPY.offlineBody }, 'text')
+                ]
+              }, 'text'),
+              jsx(PillAction, {
+                variant: 'quiet',
+                label: CB_HOME_V3_COPY.offlineAction,
+                'data-cb-home-offline-retry': '',
+                onClick: onRetry
+              }, 'retry')
+            ]
           }, 'offline')
         : null,
       library && library.stale
         ? jsxs('div', {
             'data-cb-home-stale': '',
-            className: 'flex flex-wrap items-center justify-between gap-2 text-xs text-(--ui-text-secondary)',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem 0.75rem' },
             children: [
-              jsx('span', { children: 'Reconnecting. Showing the courses that were last read.' }),
-              jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Retry now' })
+              jsx('p', { style: caption, children: CB_HOME_V3_COPY.errorBody }, 'text'),
+              jsx(PillAction, { variant: 'quiet', label: CB_HOME_V3_COPY.errorAction, 'data-cb-home-stale-retry': '', onClick: onRetry }, 'retry')
             ]
           }, 'stale')
         : null,
@@ -688,7 +1146,7 @@ function HomeLibraryPanel({ canCreate, online, onStartCreate, onBrowseLibrary, o
   const library = useRpcQuery('library.list', payload, JSON.stringify(payload), backendSupports('library.list'))
   const rows = library.data && Array.isArray(library.data.items) ? library.data.items : []
   const hub = hubSlots(rows)
-  const modes = useCourseModes(hub.slots.slice(0, HUB_SHELF_LIMIT).map((slot) => slot.course_id))
+  const modes = useCourseModes(hub.all.slice(0, CB_HOME_V3_LIMIT).map((slot) => slot.course_id))
   return jsx(CoursebookHome, {
     library,
     modes,
@@ -3872,39 +4330,67 @@ function cbGameCourse(row, mode) {
 }
 
 /**
- * The Game header: one slim band of small chips over one honest bar.
+ * The Game header: one band of honest play-state chips over one bar.
  *
  * It is deliberately short. The primary action, the current objective and the check live in their
  * own surfaces below and keep their hierarchy; this band names play progress and nothing else. A
  * zero-step course paints no bar rather than an empty frame.
+ *
+ * v3 (CP-025a): the band paints from `--cb3-*` roles and the v3 type steps only. Gold is a mark in
+ * the contract, never a text background, so the XP chip carries a gold edge and ink text; the bar's
+ * fill is the same mark tone. The flame glyph is the only Game-only icon (SPEC-V3 §3.7).
+ * Tokens: rule, ink, ink-soft, gold, card-stock, radius.pill, type.meta, type.caption.
  */
 function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
   const motion = useCbMotion()
   if (!cbGameFeedbackVisible(prefs, engagement)) return null
 
-  const wrapStyle = {
+  const bandStyle = {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: compact ? '0.35rem 0.5rem' : '0.4rem 0.75rem',
+    gap: compact ? '0.4rem 0.5rem' : '0.5rem 0.75rem',
     minWidth: 0,
-    padding: '0.45rem 0',
-    borderTop: '1px solid var(--cb-rule)',
-    borderBottom: '1px solid var(--cb-rule)'
+    padding: '0.5rem 0',
+    borderTop: `1px solid ${cb3Role('rule')}`,
+    borderBottom: `1px solid ${cb3Role('rule')}`
+  }
+  const chipStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+    minHeight: '32px',
+    padding: '0.2rem 0.6rem',
+    borderRadius: cb3Radius('pill'),
+    border: `1px solid ${cb3Role('rule')}`,
+    backgroundColor: 'transparent',
+    color: cb3Role('ink'),
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('meta'),
+    lineHeight: cb3Lead('meta'),
+    whiteSpace: 'nowrap'
+  }
+  const quietLine = {
+    margin: 0,
+    fontFamily: 'var(--cb3-font-ui)',
+    fontSize: cb3Type('caption'),
+    lineHeight: cb3Lead('caption'),
+    color: cb3Role('ink-soft')
   }
 
   if (status === 'error') {
     return jsxs('div', {
       'data-cb-game': 'error',
+      'data-cb3-game': 'error',
       role: 'status',
-      style: { ...wrapStyle, borderBottomColor: 'var(--cb-rule)' },
+      style: bandStyle,
       children: [
         jsx('span', {
-          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
+          style: quietLine,
           children: `The field journal could not be read: ${describeError(error)} Your course is unaffected.`
-        }),
+        }, 'message'),
         onRetry
-          ? jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
+          ? jsx(PillAction, { 'data-cb3-game-retry': '', variant: 'quiet', onClick: onRetry, children: 'Try again' }, 'retry')
           : null
       ]
     })
@@ -3914,12 +4400,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
     // A read in flight is a state, not a zero: no chip and no bar until the backend answers.
     return jsx('div', {
       'data-cb-game': 'loading',
+      'data-cb3-game': 'loading',
       role: 'status',
-      style: wrapStyle,
-      children: jsx('span', {
-        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-        children: 'Reading the field journal…'
-      })
+      style: bandStyle,
+      children: jsx('span', { style: quietLine, children: 'Reading the field journal…' })
     })
   }
 
@@ -3936,57 +4420,40 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
 
   return jsxs('section', {
     'data-cb-game': 'ready',
+    'data-cb3-game': 'header',
     'aria-label': 'Game',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
       jsxs('div', {
-        style: wrapStyle,
+        style: bandStyle,
         children: [
-          jsx('span', {
+          jsxs('span', {
             'data-cb-game-xp': String(xp),
-            style: {
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              fontWeight: 700,
-              lineHeight: 1.3,
-              letterSpacing: '0.02em',
-              color: 'var(--cb-on-lamp)',
-              background: 'var(--cb-lamp)',
-              border: '1px solid var(--cb-ochre)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
-            children: `${xp} XP`
-          }),
+            'data-cb3-chip': 'xp',
+            style: { ...chipStyle, borderColor: cb3Role('gold'), fontWeight: 600 },
+            children: [
+              jsx('span', {
+                'aria-hidden': 'true',
+                style: { display: 'inline-flex', color: cb3Role('gold') },
+                children: jsx(sdk.Codicon, { name: 'flame', size: CB_ICON_UI })
+              }, 'flame'),
+              jsx('span', { children: `${xp} XP` }, 'value')
+            ]
+          }, 'xp'),
           jsxs('span', {
             'data-cb-game-level': String(levelNumber),
-            style: {
-              display: 'inline-flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              gap: '0.35rem',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink)',
-              border: '1px solid var(--cb-rule)',
-              borderRadius: '999px',
-              padding: '0.15rem 0.55rem',
-              whiteSpace: 'nowrap'
-            },
+            'data-cb3-chip': 'level',
+            style: { ...chipStyle, padding: '0.2rem 0.65rem' },
             children: [
-              jsx('strong', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: level.title || 'Explorer' }),
-              jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: '· cosmetic' })
+              jsx('span', { style: { fontWeight: 600 }, children: `Level ${levelNumber}` }, 'level'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: level.title || 'Explorer' }, 'title'),
+              jsx('span', { style: { color: cb3Role('ink-soft') }, children: '· cosmetic' }, 'cosmetic')
             ]
-          }),
+          }, 'level'),
           jsxs('div', {
             'data-cb-game-progress': String(done),
-            style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', flex: '1 1 12rem', minWidth: 0 },
+            'data-cb3-game-progress': String(done),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: '1 1 12rem', minWidth: 0 },
             children: [
               jsxs('div', {
                 style: {
@@ -3995,18 +4462,18 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                   alignItems: 'baseline',
                   justifyContent: 'space-between',
                   gap: '0.15rem 0.5rem',
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.caption,
-                  lineHeight: 1.4,
-                  color: 'var(--cb-ink-soft)'
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('caption'),
+                  lineHeight: cb3Lead('caption'),
+                  color: cb3Role('ink-soft')
                 },
                 children: [
-                  jsx('span', { style: { fontWeight: 600, color: 'var(--cb-ink)' }, children: progress.label || 'Game progress' }),
+                  jsx('span', { style: { fontWeight: 600, color: cb3Role('ink') }, children: progress.label || 'Game progress' }, 'label'),
                   jsx('span', {
                     children: assigned
                       ? `${done} of ${assigned} ${assigned === 1 ? 'step' : 'steps'}`
                       : 'No steps assigned yet'
-                  })
+                  }, 'count')
                 ]
               }),
               assigned
@@ -4018,10 +4485,10 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                     'aria-valuenow': done,
                     style: {
                       position: 'relative',
-                      height: '0.35rem',
+                      height: '0.4rem',
                       width: '100%',
-                      background: 'var(--cb-rule)',
-                      borderRadius: '999px',
+                      backgroundColor: cb3Role('rule'),
+                      borderRadius: cb3Radius('pill'),
                       overflow: 'hidden'
                     },
                     children: jsx('div', {
@@ -4029,28 +4496,22 @@ function GameHeader({ engagement, status, error, prefs, compact, onRetry }) {
                         position: 'absolute',
                         inset: '0',
                         width: `${Math.round(ratio * 100)}%`,
-                        background: 'var(--cb-lamp)',
-                        // Restrained motion: the fill arrives once; a reduced-motion reader gets
+                        backgroundColor: cb3Role('gold'),
+                        // One authored beat: the fill arrives once; a reduced-motion reader gets
                         // the same state with no travel at all.
                         transition: motion.reduced
                           ? 'none'
-                          : `width var(--cb-dur-complete) var(--cb-ease)`
+                          : `width var(--cb3-dur-complete) var(--cb3-ease)`
                       }
                     })
                   })
                 : null
             ]
-          }),
+          }, 'progress'),
           jsx('span', {
-            style: {
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              lineHeight: 1.4,
-              color: 'var(--cb-ink-soft)',
-              flex: '0 1 auto'
-            },
+            style: { ...quietLine, flex: '0 1 auto' },
             children: CB_GAME_PROGRESS_NOTE
-          })
+          }, 'note')
         ]
       })
     ]
@@ -4075,99 +4536,146 @@ function cbGameSectionCards(objectives) {
   }))
 }
 
+/**
+ * The field journal: one paper panel, one row per real section, stamped only by recorded evidence.
+ *
+ * A card is stamped when the outline says that section carries independent evidence
+ * (`objective.independent`), which is the same fact the evidence surfaces print. No star, no
+ * rating, no invented count: a card that has not been earned says what it actually is. The rows are
+ * a list inside one paper object rather than twelve floating cards, so a small course still reads
+ * as one shelf and never as card-in-card.
+ * Tokens: card-stock, rule, ink, ink-soft, gold, radius.round, radius.pill, type.*.
+ */
 function GameJournal({ objectives, compact }) {
   const cards = cbGameSectionCards(objectives)
   if (cards.length === 0) return null
   const earned = cards.filter((card) => card.earned).length
-  return jsxs('section', {
+  return jsx(PaperCard, {
     'data-cb-game-journal': String(earned),
+    'data-cb3-game': 'journal',
     'aria-label': 'Field journal',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [
-      jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
-        children: [
-          jsx('h3', {
-            style: {
-              margin: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.meta,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              color: 'var(--cb-ink-soft)'
-            },
-            children: 'Field journal'
-          }),
-          jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', lineHeight: 1.5 },
-            children: earned
-              ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
-              : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
-          })
-        ]
-      }),
-      jsx('ul', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-          margin: 0,
-          padding: 0,
-          listStyle: 'none',
-          minWidth: 0
-        },
-        children: cards.map((card) =>
-          jsxs(
-            'li',
-            {
-              'data-cb-game-card': card.earned ? 'earned' : card.state,
+    emphasis: 'elev-1',
+    style: { gap: '0.5rem', maxWidth: CB_MEASURE },
+    children: jsxs('div', {
+      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+      children: [
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.15rem 0.75rem' },
+          children: [
+            jsx('h3', {
               style: {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.2rem',
-                minWidth: compact ? 0 : '8.5rem',
-                flex: compact ? '1 1 8rem' : '0 1 11rem',
-                padding: '0.5rem 0.6rem',
-                borderRadius: '0.5rem',
-                // Tactile, not glossy: a paper card with one honest hairline, and the warm Game
-                // accent only where the card was actually earned.
-                background: card.earned ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
-                border: `1px solid ${card.earned ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`
+                margin: 0,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('heading'),
+                lineHeight: cb3Lead('heading'),
+                fontWeight: 600,
+                color: cb3Role('ink'),
+                maxWidth: '34ch'
               },
-              children: [
-                jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', letterSpacing: '0.04em' },
-                  children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.meta,
-                    fontWeight: 600,
-                    lineHeight: 1.3,
-                    color: 'var(--cb-ink)',
-                    overflowWrap: 'anywhere'
-                  },
-                  children: card.title
-                }),
-                jsx('span', {
-                  style: {
-                    fontFamily: CB_SANS,
-                    fontSize: CB_TYPE.caption,
-                    fontWeight: card.earned ? 700 : 500,
-                    lineHeight: 1.4,
-                    color: card.earned ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
-                  },
-                  children: card.earned ? 'Stamped' : (DESK_STATE_WORD[card.state] || 'Not started')
-                })
-              ]
-            },
-            card.id
+              children: 'Field journal'
+            }, 'heading'),
+            jsx('span', {
+              style: {
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('caption'),
+                lineHeight: cb3Lead('caption'),
+                color: cb3Role('ink-soft')
+              },
+              children: earned
+                ? `${earned} of ${cards.length} sections stamped by recorded evidence.`
+                : 'No section is stamped yet. A stamp appears when evidence is recorded, never for opening a page.'
+            }, 'count')
+          ]
+        }),
+        jsx('ul', {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+            minWidth: 0
+          },
+          children: cards.map((card, index) =>
+            jsxs(
+              'li',
+              {
+                'data-cb-game-card': card.earned ? 'earned' : card.state,
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: compact ? 'minmax(0, 1fr)' : '5.5rem minmax(0, 1fr) auto',
+                  alignItems: 'baseline',
+                  gap: compact ? '0.15rem' : '0.75rem',
+                  padding: '0.5rem 0',
+                  borderTop: index === 0 ? 0 : `1px solid ${cb3Role('rule')}`,
+                  minWidth: 0
+                },
+                children: [
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('caption'),
+                      lineHeight: cb3Lead('caption'),
+                      color: cb3Role('ink-soft'),
+                      letterSpacing: '0.04em'
+                    },
+                    children: card.ordinal ? `Section ${card.ordinal}` : 'Section'
+                  }, 'ordinal'),
+                  jsx('span', {
+                    style: {
+                      fontFamily: 'var(--cb3-font-display)',
+                      fontSize: cb3Type('meta'),
+                      lineHeight: cb3Lead('meta'),
+                      fontWeight: 600,
+                      color: cb3Role('ink'),
+                      overflowWrap: 'anywhere'
+                    },
+                    children: card.title
+                  }, 'title'),
+                  card.earned
+                    ? jsx('span', {
+                        'data-cb3-chip': 'stamped',
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          padding: '0.1rem 0.5rem',
+                          borderRadius: cb3Radius('pill'),
+                          border: `1px solid ${cb3Role('gold')}`,
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 600,
+                          color: cb3Role('ink')
+                        },
+                        children: [
+                          jsx('span', {
+                            'aria-hidden': 'true',
+                            style: { display: 'inline-flex', color: cb3Role('gold') },
+                            children: jsx(sdk.Codicon, { name: 'check', size: CB_ICON_UI })
+                          }, 'glyph'),
+                          jsx('span', { children: 'Stamped' }, 'word')
+                        ]
+                      }, 'state')
+                    : jsx('span', {
+                        style: {
+                          justifySelf: compact ? 'start' : 'end',
+                          fontFamily: 'var(--cb3-font-ui)',
+                          fontSize: cb3Type('caption'),
+                          lineHeight: cb3Lead('caption'),
+                          fontWeight: 500,
+                          color: cb3Role('ink-soft')
+                        },
+                        children: DESK_STATE_WORD[card.state] || 'Not started'
+                      }, 'state')
+                ]
+              },
+              card.id
+            )
           )
-        )
-      })
-    ]
+        })
+      ]
+    })
   })
 }
-

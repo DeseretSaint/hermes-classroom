@@ -286,12 +286,25 @@ if (payload.script === 'switch') {
   if (!pathItem) throw new Error('the selected classroom rendered no path row')
   await act(async () => { pathItem.closest('button').click() })
   await flush(160)
-  const back = document.querySelector('[data-cb-course-back]') || [...document.querySelectorAll('button')].find(
+  // CP-040: a path row opens the v3 classroom when the learner's mode is Guided or Game, and its
+  // exit is the first control inside [data-cb-classroom] (it returns to the course home, where the
+  // selected slot still lives). Textbook mode keeps the v2 reader and its own back control.
+  const back = document.querySelector('[data-cb-classroom] button') || document.querySelector('[data-cb-course-back]') || [...document.querySelectorAll('button')].find(
     (node) => text(node) === 'Back to the section index'
   )
   if (!back) throw new Error('course detail rendered no back control')
   await act(async () => { back.click() })
   await flush(320)
+  // CP-040: the section's back returns to the course home, which is one step in from the home desk
+  // — the slot rail lives on the desk, so the walk back to it is one more control. The v3 course
+  // home names it "Back to Home" ([data-cb-course-back]); the v2 course detail's is "All courses".
+  const deskBack = document.querySelector('[data-cb-course-back]') || [...document.querySelectorAll('button')].find(
+    (node) => text(node) === 'All courses'
+  )
+  if (deskBack) {
+    await act(async () => { deskBack.click() })
+    await flush(320)
+  }
   steps.push({ step: 'after-back', ...snapshot() })
 }
 
