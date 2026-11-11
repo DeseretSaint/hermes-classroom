@@ -248,3 +248,25 @@ with the contract and `coursebook/db.py`; a document stops quoting the recorded 
 carries a retired one (`1648`, `1682 tests`, `2,050 text nodes`, `635b7061`, `80725f6`); a cited
 40-hex commit does not exist; a historical pin is attributed to the wrong commit; or the suite no
 longer reports the recorded test count. `--skip-tests` runs everything except the suite.
+
+
+## CP-015g backend portability pass (2026-11-11, tree `b1203ee8`)
+
+This is a **backend** record, not a release record. It names what was measured on the master tree
+`b1203ee8` (CP-015g portability merged over UI-K3 `7479bfb0`). The demo, catalog and publication
+gates in `docs/SUBMISSION.md` §0 are untouched by it.
+
+| Fact | Value | Command |
+| --- | --- | --- |
+| Backend groups on the pushed tree | `Ran 326 tests in 78.232s`, `OK`, exit 0 | `python3 -m unittest tests.test_pack_import_usability tests.test_pack_presentation_roundtrip tests.test_gm_contract tests.test_contracts tests.test_install_provisioning tests.test_packs_roundtrip tests.test_course_export tests.test_pack_flow` |
+| Install gates | `scripts/install-local.sh` 7/7, `Installed.` (validate + doctor + sha match) | `COURSEBOOK_TEST_HOME=~/.hermes/coursebook-verify-cp015g bash scripts/install-local.sh` |
+| Provisioning check | exit 0, `SKILLS_OK`, `TOOLS_OK`, `CONTRACTS_OK` (cb.pack v3), `DEPS_OK`, `BUNDLED_PACKS_OK` | `python3 -m coursebook.install_check --home <home> --source . --provisioning --quiet` |
+| Installed-package round trip | bundled Japanese pack imported on the installed home: 4 checks, `attempt.submit` → `pass`, `pack.export` → `sha256:3e4fc645…` | `python3 /tmp/verify-installed.py` (recorded in this commit's transcript) |
+| `cb.pack` | v3 current; v1 and v2 still accepted; `audit_contracts()` → `[]` | `python3 -c "from coursebook.contracts import audit_contracts; print(audit_contracts())"` |
+| `cb.rpc` / `cb.db` | v26 / 93 methods and v14, unchanged by this pass | `contracts/rpc.v26.json`, `contracts/db.v14.json` |
+
+**Full suite is deliberately not quoted here.** It is running on this tree and its result is not yet
+in this record; the previous recorded `Ran 3523 tests … OK (skipped=11)` was measured on `b1913af7`
+and is **not** a claim about `b1203ee8`. The gate-8c pin card owns the full-suite measurement for
+the final tree. Every defect this pass fixed has its own focused test named in
+`docs/ADVERSARIAL-BACKEND-REVIEW.md` §1.
