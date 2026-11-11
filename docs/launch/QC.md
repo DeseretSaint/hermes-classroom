@@ -124,3 +124,20 @@ Narration is synthesised (OpenAI TTS), slowed to 0.88 and delayed 3.6 s so it si
 picture: it starts under the Home beat, not over the title card. `loudnorm=I=-14:TP=-1.5:LRA=11`
 was applied at mux time; the integrated figure above is the post-mux measurement, not the target.
 The silent `coursebook-demo-90s.mp4` remains in the tree as the picture-only master.
+
+
+## Provenance of each beat in the walkthrough
+
+| Beats | Source | Module | How |
+| --- | --- | --- | --- |
+| 1 Home, 2 Workshop | `captures/freeze/captures-src/f-home.png`, `f-workshop.png` | `71d940ce` (the catalog pin) | module-rendered by `scripts/gen-home-proof.py` and `scripts/frame-more.py`, Chromium at 1920x1080 |
+| 3 Course, 4 Lesson, 5 Check | `course-home-772-light.png`, `04-lesson-top.png`, `07-answer.png` | `98400108` | real window captures of the plugin, one Home pass earlier |
+
+The two module renders are **component renders of the shipped modules with seeded fixture data**, not
+screenshots of a running Desktop: the installed plugin on this host is `0d98d606` and is stale, which
+is exactly why they were re-rendered from the checkout. `docs/launch/captures/live/manifest.json`
+carries each file's sha256, the commit, the module sha and the fixture used. The end card says
+"rendered from the real plugin", which is true of all five beats; no frame is a mockup.
+
+The course, lesson and check screens were not touched by the Home pass, so their pixels remain true of
+the pinned tree.

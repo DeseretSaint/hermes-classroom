@@ -43,7 +43,7 @@ ffmpeg -y -loglevel error -f lavfi -i "color=c=$BG:s=1920x1080:r=30:d=7" \
 drawtext=fontfile=$F:text='a local-first study plugin for Hermes Agent':x=(w-tw)/2:y=(h/2)-30:fontsize=40:fontcolor=0xD9CFB8,\
 drawtext=fontfile=$F:text='github.com/DeseretSaint/hermes-classroom':x=(w-tw)/2:y=(h/2)+70:fontsize=34:fontcolor=0xB9C7B4,\
 drawtext=fontfile=$FB:text='MIT':x=(w-tw)/2:y=(h/2)+150:fontsize=30:fontcolor=0x8FA08C,\
-drawtext=fontfile=$F:text='captured from the real plugin':x=(w-tw)/2:y=(h/2)+212:fontsize=22:fontcolor=0x6F7F6B,\
+drawtext=fontfile=$F:text='rendered from the real plugin':x=(w-tw)/2:y=(h/2)+212:fontsize=22:fontcolor=0x6F7F6B,\
 fade=t=in:st=0:d=0.6,fade=t=out:st=6.4:d=0.6,format=yuv420p" \
   -t 7 -r 30 -c:v libx264 -preset slow -crf 17 -pix_fmt yuv420p "$WORK/06.mp4"
 
