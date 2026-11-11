@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coursebook — Home scene reference</title>
+<style>
+  @font-face { font-family: 'CB Display'; src: url('../assets/fonts/CBDisplay-VF.woff2') format('woff2-variations'); font-weight: 100 900; }
+  @font-face { font-family: 'CB UI'; src: url('../assets/fonts/CBUI-VF.woff2') format('woff2-variations'); font-weight: 100 900; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 1344px; height: 768px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #f1dfc4;
+    color: #1a1713;
+    font-family: 'CB UI', system-ui, sans-serif;
+  }
+  .grain, .vignette { position: absolute; inset: 0; pointer-events: none; }
+  .grain { background: url('../assets/art/material/paper-grain-light.png') repeat; background-size: 300px; opacity: .85; mix-blend-mode: multiply; }
+  .vignette { background: url('../assets/art/material/parchment-vignette-light.png') center/cover no-repeat; opacity: .55; }
+
+  header { position: absolute; top: 0; left: 0; right: 0; height: 86px; display: flex; align-items: center; padding: 0 46px; z-index: 5; }
+  .brand { font-family: 'CB Display', Georgia, serif; font-size: 27px; font-weight: 600; color: #4a2c17; letter-spacing: .2px; }
+  nav { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 40px; }
+  nav a { font-size: 15.5px; color: #1d3b2e; text-decoration: none; padding-bottom: 5px; }
+  nav a.active { border-bottom: 2px solid #b4532f; }
+  .studio { margin-left: auto; display: flex; align-items: center; gap: 9px; font-size: 15.5px; color: #1d3b2e; }
+  .studio i { width: 27px; height: 27px; border: 1.5px solid #1d3b2e; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-family: 'CB Display', serif; font-size: 15px; }
+
+  .hero { position: absolute; top: 120px; left: 0; right: 0; text-align: center; z-index: 4; }
+  .hero h1 { margin: 0; font-family: 'CB Display', Georgia, serif; font-size: 62px; line-height: 1.05; font-weight: 600; color: #123528; letter-spacing: -.6px; }
+  .hero p { margin: 15px 0 0; font-size: 17.5px; color: #2b4a3a; }
+  .cta { margin-top: 24px; display: flex; gap: 18px; justify-content: center; }
+  .btn { border: 0; border-radius: 999px; padding: 14px 27px; font-family: inherit; font-size: 16px; font-weight: 600; color: #fff; cursor: pointer; box-shadow: 0 2px 3px rgba(70,40,20,.18); }
+  .btn.primary { background: #cf7053; }
+  .btn.secondary { background: #dd8a6c; }
+
+  .shelf { position: absolute; left: 62px; right: 62px; z-index: 3; }
+  .shelf.cards { top: 372px; height: 268px; display: flex; gap: 20px; align-items: flex-end; }
+  .card { width: 278px; transform-origin: 50% 100%; background: #fffdf4; border: 1px solid rgba(90,60,35,.16); border-radius: 10px; box-shadow: 0 12px 20px -10px rgba(60,35,20,.45); overflow: hidden; }
+  .card .cover { height: 170px; width: 100%; object-fit: cover; display: block; }
+  .card .body { padding: 10px 13px 13px; }
+  .card h3 { margin: 0; font-size: 17px; line-height: 1.16; font-weight: 600; color: #16130f; }
+  .stars { margin-top: 7px; font-size: 13px; letter-spacing: 2px; color: #c8892f; }
+  .stars span { color: #d9c9ad; }
+
+  .plank { position: absolute; left: 50px; right: 50px; height: 26px; background: url('../assets/art/material/wood-plank-light.png') repeat-x; background-size: auto 100%; border-bottom: 3px solid #7d5529; box-shadow: 0 8px 14px -6px rgba(55,30,15,.5); z-index: 2; }
+  .plank.one { top: 640px; }
+  .plank.one::after { content:''; position:absolute; left:0; right:0; top:26px; height:9px; background:#8a5f33; border-bottom:2px solid #6b4524; }
+  .plank.two { top: 714px; }
+  .plank.two::after { content:''; position:absolute; left:0; right:0; top:26px; height:10px; background:#8a5f33; border-bottom:2px solid #6b4524; }
+
+  .tag { position: absolute; left: 886px; top: 626px; width: 152px; height: 82px; background: #fdf8ea; border: 1.5px solid #2a2118; transform: rotate(-3deg); display: grid; place-items: center; font-family: 'CB Display', serif; font-size: 22px; color: #1d1a14; z-index: 4; box-shadow: 0 4px 6px rgba(60,35,20,.18); }
+  .tag::before { content: ''; position: absolute; left: 7px; right: 7px; top: 7px; bottom: 7px; border: 1px dashed #b9a888; }
+  .clock { position: absolute; left: 1052px; top: 590px; width: 152px; height: 152px; z-index: 4; }
+  .fox { position: absolute; left: 1150px; top: 520px; width: 196px; height: 196px; z-index: 5; }
+  .bracket { position: absolute; top: 730px; width: 54px; height: 38px; background: #6b4826; clip-path: polygon(0 0, 100% 0, 78% 100%, 22% 100%); z-index: 1; }
+  .bracket.l { left: 96px; }
+  .bracket.r { right: 96px; }
+  .cards .card:nth-child(1) { transform: rotate(-1.6deg) translateY(2px); }
+  .cards .card:nth-child(2) { transform: rotate(0.8deg); }
+  .cards .card:nth-child(3) { transform: rotate(-0.6deg) translateY(3px); }
+  .cards .card:nth-child(4) { transform: rotate(1.4deg) translateY(1px); }
+</style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="vignette"></div>
+
+  <header>
+    <div class="brand">Coursebook</div>
+    <nav><a href="#" class="active">Home</a><a href="#">Discover Library</a></nav>
+    <div class="studio"><i>C</i>Studio</div>
+  </header>
+
+  <section class="hero">
+    <h1>Your field library</h1>
+    <p>Choose a course or start a new expedition.</p>
+    <div class="cta">
+      <button class="btn primary">Start a new course</button>
+      <button class="btn secondary">Browse library</button>
+    </div>
+  </section>
+
+  <section class="shelf cards">
+    <article class="card">
+      <img class="cover" src="../assets/art/covers/technical-master-1200x800.png" alt="">
+      <div class="body"><h3>Auto Repair Fundamentals</h3><div class="stars">★★★★<span>★</span></div></div>
+    </article>
+    <article class="card">
+      <img class="cover" src="../assets/art/covers/japanese-master-1200x800.png" alt="">
+      <div class="body"><h3>Japanese Cafe Basics</h3><div class="stars">★★★★<span>★</span></div></div>
+    </article>
+    <article class="card">
+      <img class="cover" src="../assets/art/covers/parent-master-1200x800.png" alt="">
+      <div class="body"><h3>Astronomy</h3><div class="stars">★★★★<span>★</span></div></div>
+    </article>
+    <article class="card">
+      <img class="cover" src="../assets/art/covers/technical-master-1200x800.png" alt="">
+      <div class="body"><h3>Sourdough</h3><div class="stars">★★★<span>★★</span></div></div>
+    </article>
+  </section>
+  <div class="plank one"></div>
+
+  <div class="tag">New course</div>
+  <img class="clock" src="../assets/art/objects/clock.png" alt="">
+  <img class="fox" src="../assets/art/fox/fox-clock-256.png" alt="">
+  <div class="plank two"></div>
+  <div class="bracket l"></div>
+  <div class="bracket r"></div>
+</body>
+</html>
