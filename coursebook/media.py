@@ -12,6 +12,10 @@ Two boundaries are hard:
   image/TTS API.
 * generation is outside every DB transaction. Bytes are adopted before the lesson row is updated;
   a provider failure leaves a complete text lesson and an explicit degraded state.
+* an illustration is judged before it ships. The bytes are dispatched to the host's
+  ``vision_analyze`` tool for a typed verdict (subject match, legible text, depicted procedure); a
+  rejection is re-prompted once and then replaced by the text equivalent, and a host with no vision
+  seam records ``unreviewed`` rather than a silent approval.
 
 The first slice maps the existing lesson ``media`` specs to the existing ``MediaSpec`` roles:
 illustration → host image, schematic → deterministic SVG, narration → host TTS. A sourced
@@ -25,6 +29,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import tempfile
 import time
@@ -57,6 +62,37 @@ MEDIA_ELIGIBLE_LESSON_STATES = frozenset({"validated", "model_assessed"})
 #: The image tool returns a provider URL. Only these hosts are accepted for the download; this is
 #: a narrower allowlist than "any URL returned by a tool", not a general web fetcher.
 _ALLOWED_IMAGE_HOSTS = ("fal.media", "fal.run")
+
+#: The host tool that can look at a picture. It is asked for a typed verdict, never for prose.
+REVIEW_TOOL_NAME = "vision_analyze"
+
+#: What the reviewer must answer, and the only JSON shape this module accepts. The two hazard
+#: checks exist because generated art is context: readable text becomes a spec, and a depicted
+#: step or measurement becomes a procedure the learner may follow.
+REVIEW_QUESTION = (
+    "You are adversarially reviewing a generated illustration for a course lesson. The picture is "
+    "context art only; it must never carry a procedure, a measurement or a number. Answer with one "
+    "JSON object and nothing else:\n"
+    '{{"subject_matches": true|false, "contains_legible_text": true|false, '
+    '"depicts_procedure_or_measurement": true|false, "reason": "one short sentence"}}\n'
+    "Judge strictly:\n"
+    "- subject_matches: does the picture show the subject this prompt asked for: {prompt!r}?\n"
+    "- contains_legible_text: any readable word, label, number, gauge, unit or annotation a learner "
+    "could read as a fact. Garbled or invented text still counts.\n"
+    "- depicts_procedure_or_measurement: ordered steps, hands performing a step, a tool setting, a "
+    "torque value, a measurement or a safety instruction a learner could follow as authority.\n"
+    "When you cannot tell, answer true for the hazard and false for subject_matches."
+)
+
+#: A correction appended to the prompt for the one re-prompt a rejection earns.
+REVIEW_REVISION_RULE = (
+    "Revise the illustration. It is context art for a lesson, not an instruction: show no readable "
+    "text, labels, numbers, gauges, tool settings or ordered steps, and do not depict a measurement "
+    "or a procedure being performed."
+)
+
+_MAX_REVIEW_REPLY_CHARS = 4000
+
 
 _HOST_MEDIA: "HostMedia | None" = None
 
@@ -91,6 +127,140 @@ def media_tool_timeout_s() -> float:
     return value if value > 0 else MEDIA_TOOL_TIMEOUT_SECONDS
 
 
+# ── the review verdict: typed, bounded, defensively parsed ──────────────────
+#
+# The host's vision tool is not a verdict API: one host path answers in prose, another attaches the
+# picture to the conversation and returns an envelope with no text at all. This parser accepts only
+# the typed JSON object the question asks for and turns everything else into ``unreviewed`` with a
+# reason — a vision call that did not answer has not approved anything.
+
+_FENCED_BLOCK = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
+_TRUE_WORDS = frozenset({"true", "yes", "y", "1", "pass", "matches"})
+_FALSE_WORDS = frozenset({"false", "no", "n", "0", "fail", "mismatch"})
+
+
+def _review_text(raw: Any) -> tuple[str | None, str | None]:
+    """``(text, problem)``: the reviewer's answer as text, or why there is no text answer."""
+    if isinstance(raw, str):
+        return raw, None
+    if isinstance(raw, Mapping):
+        for key in ("analysis", "text", "content", "result", "description", "message"):
+            value = raw.get(key)
+            if isinstance(value, Mapping):
+                return json.dumps(value, ensure_ascii=False), None
+            if isinstance(value, str) and value.strip():
+                return value, None
+        if raw.get("success") is False:
+            detail = str(raw.get("error") or raw.get("error_type") or "no detail")
+            return None, f"the host vision tool reported failure ({detail[:200]})"
+        if raw.get("error"):
+            return None, f"the host vision tool reported an error ({str(raw['error'])[:200]})"
+        if raw.get("_multimodal") is not None:
+            return None, (
+                "the host vision tool attached the picture to the conversation instead of returning "
+                "a text verdict"
+            )
+        return None, "the host vision tool returned no text verdict"
+    return None, f"the host vision tool returned {type(raw).__name__}, not a verdict"
+
+
+def _review_payload(text: str) -> Mapping[str, Any] | None:
+    """The first JSON object in ``text``, tolerant of fences and prose around it.
+
+    ``raw_decode`` from every ``{`` is deliberate: a regex that assumes the first brace opens the
+    object breaks on a reply like ``"Here {is} my verdict: {...}"``, and the answer must be parsed
+    exactly as the model wrote it rather than reshaped.
+    """
+    fenced = _FENCED_BLOCK.search(text)
+    candidates = [fenced.group(1)] if fenced is not None else []
+    candidates.append(text)
+    decoder = json.JSONDecoder()
+    attempts = 0
+    for candidate in candidates:
+        for index, char in enumerate(candidate):
+            if char != "{":
+                continue
+            attempts += 1
+            if attempts > 32:  # a reply full of braces is not a verdict; stop scanning
+                return None
+            try:
+                payload, _end = decoder.raw_decode(candidate[index:])
+            except ValueError:
+                continue
+            if isinstance(payload, Mapping):
+                return payload
+    return None
+
+
+def _review_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in _TRUE_WORDS:
+            return True
+        if text in _FALSE_WORDS:
+            return False
+        return None
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    return None
+
+
+def parse_review_verdict(raw: Any) -> dict[str, Any]:
+    """Turn one vision-tool answer into ``{state, reasons}``. Never raises, never flatters."""
+    text, problem = _review_text(raw)
+    if problem is not None:
+        return artifacts.unreviewed_review(problem)
+    payload = _review_payload((text or "")[:_MAX_REVIEW_REPLY_CHARS])
+    if payload is None:
+        return artifacts.unreviewed_review(
+            "the vision tool returned no parseable JSON verdict; the illustration was not reviewed"
+        )
+    if not any(key in payload for key in artifacts.REVIEW_CHECKS):
+        # The registry answers an unknown tool with a JSON error body; that body is the honest
+        # reason, not a verdict.
+        detail = str(payload.get("error") or payload.get("error_type") or "").strip()
+        if payload.get("success") is False or detail:
+            return artifacts.unreviewed_review(
+                f"the host vision tool reported failure ({detail[:200] or 'no detail'})"
+            )
+        return artifacts.unreviewed_review(
+            "the vision tool returned no typed verdict; the illustration was not reviewed"
+        )
+    checks: dict[str, bool] = {}
+    missing: list[str] = []
+    for key in artifacts.REVIEW_CHECKS:
+        value = _review_bool(payload.get(key))
+        if value is None:
+            missing.append(key)
+        else:
+            checks[key] = value
+    if missing:
+        return artifacts.unreviewed_review(
+            f"the vision verdict omitted {', '.join(sorted(missing))}; the illustration was not reviewed"
+        )
+    reason = " ".join(str(payload.get("reason") or "").split())[:400]
+    failures: list[str] = []
+    if not checks["subject_matches"]:
+        failures.append("the picture does not show the subject the prompt asked for")
+    if checks["contains_legible_text"]:
+        failures.append("the picture contains legible text or numbers a learner could read as a fact")
+    if checks["depicts_procedure_or_measurement"]:
+        failures.append(
+            "the picture depicts a procedure or measurement and could be read as authority"
+        )
+    if failures:
+        return artifacts.review_record("rejected", failures + ([reason] if reason else []))
+    return artifacts.review_record(
+        "approved",
+        [
+            reason
+            or "the picture matches the prompt and shows no legible text, procedure or measurement"
+        ],
+    )
+
+
 @dataclass
 class MediaGenerationSummary:
     artifact_ids: list[str]
@@ -99,6 +269,10 @@ class MediaGenerationSummary:
     reused: int = 0
     degraded: int = 0
     skipped: int = 0
+    #: Illustrations the vision gate approved in this run, and illustrations it rejected and
+    #: replaced with their text equivalent. Reported so a job checkpoint shows the gate's work.
+    reviewed: int = 0
+    rejected: int = 0
 
     def as_checkpoint(self) -> dict[str, Any]:
         return {
@@ -106,6 +280,8 @@ class MediaGenerationSummary:
             "reused": self.reused,
             "degraded": self.degraded,
             "skipped": self.skipped,
+            "reviewed": self.reviewed,
+            "rejected": self.rejected,
             "artifact_ids": list(self.artifact_ids),
         }
 
@@ -155,6 +331,58 @@ class HostMedia:
         if not isinstance(payload, Mapping):
             raise MediaGenerationError(f"{name} returned a non-object payload")
         return dict(payload)
+
+    def _dispatch_raw(self, name: str, arguments: dict[str, Any]) -> Any:
+        """Dispatch one host tool with the media deadline, returning its raw answer.
+
+        Unlike :meth:`_dispatch_json` this does not demand a JSON object: the vision tool answers
+        in prose on one host path and in an envelope on another, and the caller parses defensively.
+        """
+        try:
+            return deadline_mod.run_bounded(
+                lambda: self._dispatch_tool(name, arguments),
+                timeout_s=self._deadline(),
+                label=str(name),
+            )
+        except deadline_mod.DeadlineExceeded as exc:
+            raise MediaTimeout(
+                f"{name} exceeded its {exc.deadline_s:g}s deadline",
+                tool=str(name),
+                deadline_s=exc.deadline_s,
+            ) from exc
+        except deadline_mod.CallCapacityExhausted as exc:
+            raise MediaGenerationError(f"{name} unavailable: {exc}") from exc
+        except Exception as exc:  # noqa: BLE001 - a review failure becomes unreviewed, never fatal
+            raise MediaGenerationError(f"{name} failed: {type(exc).__name__}: {exc}") from exc
+
+    def review_image(
+        self,
+        data: bytes,
+        *,
+        mime: str,
+        prompt: str,
+        text_equivalent: str = "",
+    ) -> dict[str, Any]:
+        """Ask the host's vision tool for a typed, adversarial verdict on one generated picture.
+
+        The bytes travel as a ``data:`` URL so no temporary path is written for the host to read.
+        Every failure mode (no tool, tool error, native-mode envelope, unparseable prose) returns
+        ``unreviewed`` with its reason — this seam can never manufacture an approval.
+        """
+        subject = str(prompt or "").strip() or str(text_equivalent or "").strip()
+        if not subject:
+            return artifacts.unreviewed_review("the illustration has no prompt to review against")
+        if mime not in ("image/png", "image/jpeg", "image/webp", "image/gif"):
+            return artifacts.unreviewed_review(f"the host vision tool cannot review {mime}")
+        image_url = "data:" + mime + ";base64," + base64.b64encode(data).decode("ascii")
+        question = REVIEW_QUESTION.format(prompt=subject[:600])
+        try:
+            raw = self._dispatch_raw(
+                REVIEW_TOOL_NAME, {"image_url": image_url, "question": question}
+            )
+        except MediaGenerationError as exc:
+            return artifacts.unreviewed_review(f"the host vision tool is unavailable ({exc})")
+        return parse_review_verdict(raw)
 
     def image(self, prompt: str, *, aspect_ratio: str = "landscape") -> tuple[bytes, str]:
         payload = self._dispatch_json(
@@ -372,6 +600,55 @@ def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Cal
     raise artifacts.MediaUnavailable(f"no producer for {spec.kind}/{spec.role}")
 
 
+def revision_prompt(prompt: str, review: Mapping[str, Any] | None = None) -> str:
+    """The one corrective re-prompt a rejected illustration earns.
+
+    It restates the context-art rule and carries the reviewer's reasons, so the second attempt is a
+    different request rather than the same prompt hoping for a different sample.
+    """
+    base = str(prompt or "").strip()
+    reasons = "; ".join(str(reason) for reason in (review or {}).get("reasons") or [])[:600]
+    revised = f"{base}. {REVIEW_REVISION_RULE}" if base else REVIEW_REVISION_RULE
+    if reasons:
+        revised = f"{revised} The previous attempt was rejected: {reasons}."
+    return revised
+
+
+def reviewer_for(
+    spec: artifacts.MediaSpec, host: "HostMedia | None"
+) -> tuple[Callable[[bytes], dict[str, Any]], Callable[[dict[str, Any]], bytes]] | None:
+    """``(review, regenerate)`` for a generated illustration, or ``None`` when it is not gated.
+
+    Only a host-generated illustration is reviewed: a deterministic schematic is rendered from
+    structured facts, and narration is read from its transcript, so neither needs a picture judged.
+    A host object without ``review_image`` (an older host, or a duck-typed test double) returns
+    ``None`` and the artifact layer records ``unreviewed`` instead of pretending it was approved.
+    """
+    if spec.kind != "visual" or spec.role != "illustration" or host is None:
+        return None
+    review_method = getattr(host, "review_image", None)
+    if not callable(review_method):
+        return None
+    prompt = spec.prompt or spec.text_equivalent
+
+    def _review(data: bytes) -> dict[str, Any]:
+        verdict = review_method(
+            data,
+            mime=artifacts.sniff_mime(data),
+            prompt=prompt,
+            text_equivalent=spec.text_equivalent,
+        )
+        if not isinstance(verdict, Mapping):
+            return artifacts.unreviewed_review("the host vision tool returned no verdict object")
+        return dict(verdict)
+
+    def _regenerate(review: dict[str, Any]) -> bytes:
+        data, _mime = host.image(revision_prompt(prompt, review))
+        return data
+
+    return _review, _regenerate
+
+
 def _lesson_rows(connection: Any, lesson_ids: Sequence[str]) -> list[dict[str, Any]]:
     if not lesson_ids:
         return []
@@ -476,20 +753,35 @@ def generate_for_lessons(
                 source_fingerprint=source_fp,
             )
             if cached is not None:
+                cached_provenance = cached.get("provenance") or {}
+                cached_review = cached_provenance.get("review")
+                if spec.kind == "visual" and spec.role == "illustration" and not isinstance(
+                    cached_review, Mapping
+                ):
+                    # An artifact written before the gate has no verdict. The bytes still ship —
+                    # they passed size/MIME/render safety — but the item says unreviewed, never
+                    # nothing at all, so a reader cannot mistake silence for approval.
+                    cached_review = artifacts.unreviewed_review(
+                        "the cached illustration predates the review gate; it has no recorded review"
+                    )
                 item.update(
                     {
                         "artifact_id": cached["artifact_id"],
                         "content_hash": cached["content_hash"],
                         "mime": cached["mime"],
-                        "label": cached.get("provenance", {}).get("label", artifacts.honesty_label(spec)),
+                        "label": cached_provenance.get("label", artifacts.honesty_label(spec)),
                         "degraded": False,
                         "reason": None,
+                        # The verdict recorded when these bytes were produced travels with the
+                        # reuse: a cache hit never upgrades an unreviewed picture to approved.
+                        "review": cached_review,
                     }
                 )
                 summary.reused += 1
                 changed = True
                 continue
             started = time.monotonic()
+            gated = reviewer_for(spec, host)
             outcome = artifacts.produce_with_fallback(
                 store,
                 spec,
@@ -508,6 +800,8 @@ def generate_for_lessons(
                     "independent": lesson_state == "validated",
                     "notes": f"generated for lesson {row.get('id')}" + (f" / job {job_id}" if job_id else ""),
                 },
+                reviewer=gated[0] if gated is not None else None,
+                regenerate=gated[1] if gated is not None else None,
             )
             item.update(
                 {
@@ -517,6 +811,12 @@ def generate_for_lessons(
                     "text_equivalent": outcome.text_equivalent,
                 }
             )
+            if outcome.review is not None:
+                item["review"] = outcome.review
+                if outcome.review.get("state") == "approved":
+                    summary.reviewed += 1
+                elif outcome.review.get("state") == "rejected":
+                    summary.rejected += 1
             if outcome.artifact is not None:
                 item.update(
                     {
@@ -717,5 +1017,8 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         # recorded none; a reader must not infer "validated" from its absence.
         "lesson_state": provenance.get("lesson_state") or None,
         "independent": provenance.get("independent") if "independent" in provenance else None,
+        # The adversarial verdict the illustration earned when it was generated. ``None`` for a
+        # medium that is not reviewed; the Desktop can show "unreviewed" rather than imply a pass.
+        "review": provenance.get("review") if "review" in provenance else None,
         "data_url": f"data:{detected};base64," + base64.b64encode(data).decode("ascii"),
     }

@@ -42,6 +42,59 @@ ILLUSTRATION_LABEL = (
 SCHEMATIC_LABEL = "Deterministic schematic rendered from structured facts."
 REFERENCE_LABEL = "Sourced reference — see the cited source and its permission status."
 
+# ── adversarial review of generated illustrations ───────────────────────────
+#
+# A generated illustration is the one artifact whose bytes no deterministic check can judge: size,
+# MIME and render safety say nothing about whether the picture shows the lesson's subject or, worse,
+# invents a torque value or a step sequence. The reviewer is a host-provided vision call (bound
+# outside this module), and its verdict is persisted with the bytes.
+#
+# ``unreviewed`` is a first-class state, never a synonym for approved: a host with no vision seam, a
+# tool error, or a verdict the reviewer could not parse leaves the illustration labelled context
+# only and recorded as unreviewed. ``rejected`` bytes are never stored.
+
+#: Every state a persisted review may carry.
+REVIEW_STATES = ("approved", "rejected", "unreviewed")
+
+#: The typed checks a reviewer answers. The first is a positive match; the other two are hazards.
+REVIEW_CHECKS = ("subject_matches", "contains_legible_text", "depicts_procedure_or_measurement")
+
+#: Bound on one persisted reason line, so a model's paragraph cannot bloat a media row.
+_MAX_REVIEW_REASON_CHARS = 400
+_MAX_REVIEW_REASONS = 4
+
+
+def review_record(state: str, reasons: Iterable[str] = ()) -> dict[str, Any]:
+    """The one persisted review shape: ``{state, reasons}``.
+
+    ``state`` is one of :data:`REVIEW_STATES`; anything else is a programming error, not a verdict.
+    Reasons are whitespace-collapsed, bounded, de-duplicated and order-preserving.
+    """
+    normalised = str(state or "").strip()
+    if normalised not in REVIEW_STATES:
+        raise ValueError(f"unknown review state {state!r}; expected one of {REVIEW_STATES}")
+    cleaned: list[str] = []
+    for reason in reasons:
+        text = " ".join(str(reason).split())[:_MAX_REVIEW_REASON_CHARS]
+        if text and text not in cleaned:
+            cleaned.append(text)
+    return {"state": normalised, "reasons": cleaned[:_MAX_REVIEW_REASONS]}
+
+
+def unreviewed_review(reason: str) -> dict[str, Any]:
+    """The honest verdict when no vision judgement exists. Never an approval."""
+    return review_record("unreviewed", [reason])
+
+
+def review_triage(review: dict[str, Any]) -> dict[str, Any]:
+    """The recovery options after a rejection; never a silent substitution."""
+    return {
+        "review": dict(review),
+        "options": ["rewrite_the_prompt", "use_text_fallback"],
+        "silent_substitution": False,
+    }
+
+
 #: Kinds the ``artifacts`` table accepts (``cb.db`` v2).
 ARTIFACT_KINDS = ("visual", "audio", "pdf", "pack", "export", "other")
 
@@ -969,6 +1022,10 @@ class MediaOutcome:
     reason: str | None = None
     triage: dict[str, Any] = field(default_factory=dict)
     label: str = ""
+    #: The adversarial review verdict for an illustration (``{state, reasons}``); ``None`` for a
+    #: medium that is not reviewed (narration, deterministic schematic). ``unreviewed`` is a real
+    #: state, not a missing key.
+    review: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -978,6 +1035,7 @@ class MediaOutcome:
             "reason": self.reason,
             "triage": self.triage,
             "label": self.label,
+            "review": self.review,
         }
 
 
@@ -999,6 +1057,55 @@ def voice_triage(voice: str | None, language: str | None, reason: str) -> dict[s
     }
 
 
+def _apply_review(
+    data: bytes,
+    reviewer: Callable[[bytes], dict[str, Any]] | None,
+    regenerate: Callable[[dict[str, Any]], bytes] | None,
+) -> tuple[bytes, dict[str, Any]]:
+    """Run the adversarial gate over freshly produced bytes.
+
+    Returns ``(bytes, review)``. A rejected first attempt is re-prompted exactly once; the second
+    verdict is final. Any reviewer failure is ``unreviewed`` — never ``approved``: a vision seam
+    that could not answer has not cleared the picture.
+    """
+    if reviewer is None:
+        return data, unreviewed_review(
+            "no vision review seam is bound; the illustration is context only and was not reviewed"
+        )
+
+    def verdict(blob: bytes) -> dict[str, Any]:
+        try:
+            raw = reviewer(blob)
+        except Exception as exc:  # noqa: BLE001 - a review failure must not fail the lesson
+            return unreviewed_review(
+                f"the vision review failed ({type(exc).__name__}: {exc}); the illustration is unreviewed"
+            )
+        try:
+            return review_record(str(raw.get("state")), raw.get("reasons") or ())
+        except (AttributeError, TypeError, ValueError) as exc:
+            return unreviewed_review(f"the vision review returned no usable verdict ({exc})")
+
+    review = verdict(data)
+    if review["state"] != "rejected" or regenerate is None:
+        return data, review
+    try:
+        retried = regenerate(review)
+    except Exception as exc:  # noqa: BLE001 - the re-prompt is an attempt, not a guarantee
+        review["reasons"].append(
+            f"the re-prompt could not be produced ({type(exc).__name__}: {exc})"
+        )
+        return data, review
+    second = verdict(retried)
+    if second["state"] == "rejected":
+        second = review_record(
+            "rejected",
+            ["the re-prompted illustration was rejected too"]
+            + review["reasons"]
+            + second["reasons"],
+        )
+    return retried, second
+
+
 def produce_with_fallback(
     store: ArtifactStore,
     spec: MediaSpec,
@@ -1008,11 +1115,19 @@ def produce_with_fallback(
     mime: str,
     provenance: dict[str, Any] | None = None,
     cached: dict[str, Any] | None = None,
+    reviewer: Callable[[bytes], dict[str, Any]] | None = None,
+    regenerate: Callable[[dict[str, Any]], bytes] | None = None,
 ) -> MediaOutcome:
     """Generate media, or return the complete text fallback with an honest reason.
 
     A cached original is reused when the provider is unavailable and the caller has one
     (``keep_cached_original``); otherwise the text equivalent is the artifact.
+
+    An illustration is additionally gated by ``reviewer`` (the host's vision tool, bound by the
+    caller): the bytes are judged against the prompt before they are stored, and a rejection is
+    re-prompted once through ``regenerate``. A still-rejected picture is never saved — the item
+    degrades to its text equivalent with the reviewer's reasons, exactly as a provider failure
+    does. With no reviewer the picture ships ``unreviewed`` and keeps the context-only label.
     """
     assert_media_ok(spec)
     label = honesty_label(spec)
@@ -1060,11 +1175,34 @@ def produce_with_fallback(
             triage=voice_triage(spec.voice, spec.language, str(exc)),
             label=label,
         )
+    review: dict[str, Any] | None = None
+    if spec.kind == "visual" and spec.role == "illustration":
+        data, review = _apply_review(data, reviewer, regenerate)
+        if review["state"] == "rejected":
+            reasons = "; ".join(review["reasons"]) or "no reason given"
+            return MediaOutcome(
+                artifact=None,
+                text_equivalent=spec.text_equivalent,
+                degraded=True,
+                reason=f"illustration rejected by review ({reasons}); delivered as text",
+                triage=review_triage(review),
+                label=label,
+                review=review,
+            )
+        metadata["review"] = review
+    # The reviewer judged these bytes, so the store must record what they actually are: a host
+    # provider may return JPEG or WebP even when the caller asked for PNG, and a declared type the
+    # bytes contradict would refuse an illustration that is perfectly renderable.
+    shipped_mime = mime
+    if spec.kind == "visual" and spec.role == "illustration":
+        detected = sniff_mime(data)
+        if detected in ("image/png", "image/jpeg", "image/webp", "image/gif"):
+            shipped_mime = detected
     artifact = store.save(
         course_id=course_id,
         kind=spec.kind,
         data=data,
-        mime=mime,
+        mime=shipped_mime,
         provenance=metadata,
     )
     return MediaOutcome(
@@ -1074,6 +1212,7 @@ def produce_with_fallback(
         reason=None,
         triage={},
         label=label,
+        review=review,
     )
 
 

@@ -18,7 +18,9 @@ Design boundary (``docs/VISUAL_MEDIA_PLAN.md`` §4):
 * A language production lesson is not automatically a listening lesson. Narration exists only when
   the intent names a spoken or listening construct, never because a locale is set.
 * A technical procedure may require a schematic or a permissioned source image. An AI illustration
-  is context only and can never be *required* or be a measurement, sequence or safety authority.
+  is context only and can never be *required* or be a measurement, sequence or safety authority: it
+  may ride along as optional context art (authority ``none``) beside the authority visual, and the
+  deterministic schematic or cited source is the only thing the graded procedure rests on.
 * ``one_off`` is verified, not quizzed; ``parent`` is observed, not quizzed. Their check angle and
   rubric profile are fixed by the recipe even when the objective declares another evidence target.
 
@@ -124,6 +126,17 @@ IMAGE_SPEC_ROLE: dict[str, str] = {
     "schematic": "schematic",
     "sourced_reference": "sourced_technical",
 }
+
+#: What each visual role is allowed to *assert*. A generated illustration has no authority at all:
+#: it is context art, it renders nothing from the source ledger, and it never carries a step, a
+#: measurement or a safety condition. A deterministic schematic is the procedure authority; a cited
+#: source image is the authority for what a real part looked like.
+IMAGE_AUTHORITY: dict[str, str] = {
+    "illustration": "none",
+    "schematic": "deterministic",
+    "sourced_reference": "cited_source",
+}
+
 AUDIO_SPEC_ROLE: dict[str, str] = {
     "narration": "narration",
     "pronunciation_reference": "narration",
@@ -366,6 +379,11 @@ class LessonCapabilityPlan:
     #: remains only for a legacy/hand-built section with no declaration.
     declared: bool = False
     construct: str | None = None
+    #: True when the lesson may carry an **additional** optional generated illustration as context
+    #: art. The authority role stays whatever ``image_role`` says (a deterministic schematic or a
+    #: cited source); context art is never required, never satisfies ``required_media``, and never
+    #: becomes the thing the procedure check grades.
+    context_illustration: bool = False
 
     def __post_init__(self) -> None:
         if self.recipe not in RECIPES:
@@ -380,8 +398,21 @@ class LessonCapabilityPlan:
         _check_media("audio", self.audio, self.audio_role, AUDIO_ROLES)
         if self.image == "required" and self.image_role == "illustration":
             raise CapabilityPolicyError(
-                "an AI illustration is context only and can never be required evidence"
+                "a generated illustration is context only and can never be required evidence; on "
+                "a technical procedure it may ride along as optional context art (authority none), "
+                "while the required visual and the graded procedure stay with the deterministic "
+                "schematic or the cited source"
             )
+        if self.context_illustration:
+            if self.recipe == "one_off":
+                raise CapabilityPolicyError(
+                    "a one-off brief gets no decorative media, so it cannot carry context art"
+                )
+            if self.image == "none" or self.image_role is None:
+                raise CapabilityPolicyError(
+                    "context art needs a lesson that already carries a visual; it never adds media "
+                    "on its own"
+                )
         if not self.reasons:
             raise CapabilityPolicyError("a capability plan must record why it chose its media")
         if self.declared:
@@ -393,6 +424,17 @@ class LessonCapabilityPlan:
                 )
         elif self.construct is not None:
             raise CapabilityPolicyError("construct is only recorded for a declared media need")
+
+    @property
+    def image_authority(self) -> str | None:
+        """What the lesson's visual may assert: ``None``, ``deterministic`` or ``cited_source``.
+
+        ``None`` means the visual carries no authority at all — a generated illustration. A
+        procedure's steps never rest on it.
+        """
+        if self.image == "none" or self.image_role is None:
+            return None
+        return IMAGE_AUTHORITY.get(self.image_role)
 
     @property
     def carries_media(self) -> bool:
@@ -410,7 +452,13 @@ class LessonCapabilityPlan:
         return tuple(roles)
 
     def to_dict(self) -> dict[str, object]:
-        """A JSON-safe projection for plan/lesson records. No behaviour, no hidden state."""
+        """A JSON-safe projection for plan/lesson records. No behaviour, no hidden state.
+
+        The persisted object is the closed ``POLICY_SCHEMA`` contract, so the typed context-art
+        permission (:attr:`context_illustration`, :attr:`image_authority`) stays a runtime property
+        instead of widening that record. Its reason string carries the same statement in prose, so
+        a stored plan still explains what was permitted.
+        """
         return {
             "recipe": self.recipe,
             "evidence_target": self.evidence_target,
@@ -638,6 +686,37 @@ def _image_decision(
     return "none", None, _none_image_reason(domain, recipe)
 
 
+def _context_art_permitted(
+    *,
+    domain: str,
+    recipe: str,
+    image: str,
+    image_role: str | None,
+    text: str,
+    need: MediaNeed | None,
+) -> bool:
+    """Whether this lesson may carry a generated illustration as **context art**.
+
+    Only a technical procedure gains anything from a picture beside its authority visual: a workshop
+    scene or a part in place helps a learner picture the job, while the schematic or the cited source
+    stays the only thing the steps rest on. Context art is never a one-off brief's decoration, never
+    a parent lesson's picture (that recipe is observation-led), never added to a lesson that carries
+    no visual at all, and never required.
+    """
+    if domain != "technical_procedure" or recipe in ("one_off", "parent"):
+        return False
+    if image == "none" or image_role is None:
+        return False
+    if image_role == "illustration":
+        # The lesson's only visual is already context art; there is nothing to ride along with.
+        return True
+    construct_text = _normalise_intent(need.construct) if need is not None else ""
+    return bool(
+        _ILLUSTRATION_VISUAL.search(text)
+        or (construct_text and _ILLUSTRATION_VISUAL.search(construct_text))
+    )
+
+
 def _audio_decision(
     *,
     domain: str,
@@ -731,7 +810,9 @@ def _declared_image_decision(
     if role == "illustration":
         if need.image == "required":
             raise CapabilityPolicyError(
-                "an AI illustration is context only and can never be a required visual need"
+                "an AI illustration is context only and can never be a required visual need; it may "
+                "only be optional context art beside the deterministic schematic or cited source the "
+                "procedure is graded on"
             )
         if domain in SYMBOLIC_DOMAINS:
             raise CapabilityPolicyError(
@@ -773,11 +854,16 @@ def _declared_image_decision(
             "recipe parent: the observation is the evidence, so a visual need can be optional but "
             "never required"
         )
+    context_note = (
+        " as context art with authority none — it is never required and never the procedure authority"
+        if role == "illustration" and domain == "technical_procedure"
+        else ""
+    )
     return (
         need.image,
         role,
         f"the plan declared a {need.image} {role} need for {need.construct!r}; the policy accepts "
-        f"that role for {domain}",
+        f"that role for {domain}{context_note}",
     )
 
 
@@ -953,6 +1039,15 @@ def plan_lesson_capability(
         text=text,
     )
 
+    context_illustration = _context_art_permitted(
+        domain=domain,
+        recipe=recipe,
+        image=image,
+        image_role=image_role,
+        text=text,
+        need=need,
+    )
+
     # Parent brief preferences narrow the permitted media, never widen it. The brief is an answer
     # the parent typed, so it is honoured where it withholds a medium; it is not a request to
     # decorate a lesson, so a "diagrams"/"script" answer leaves the decision exactly as authored.
@@ -963,6 +1058,16 @@ def plan_lesson_capability(
     if preferences.get("narration") == "none" and audio != "none":
         audio, audio_role = "none", None
         audio_reason += "; the parent brief asked for no narration, which withholds audio media"
+
+    # A withheld visual also withholds the context art that would have ridden along with it: the
+    # plan may never carry media it just decided not to have.
+    if image == "none":
+        context_illustration = False
+    if context_illustration and image_role != "illustration":
+        image_reason += (
+            "; a generated illustration may also ride along as optional context art with authority "
+            "none — it is never required and never the procedure authority"
+        )
 
     reasons = (angle_reason, image_reason, audio_reason, profile_reason)
     return LessonCapabilityPlan(
@@ -980,6 +1085,7 @@ def plan_lesson_capability(
         reasons=reasons,
         declared=need is not None,
         construct=need.construct if need is not None else None,
+        context_illustration=context_illustration,
     )
 
 
@@ -1002,10 +1108,18 @@ def recipe_check_angle(recipe: str) -> tuple[str | None, str]:
 
 
 def permitted_image_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:
-    """The visual media roles a lesson spec may declare under ``plan``. Empty means no visual."""
+    """The visual media roles a lesson spec may declare under ``plan``. Empty means no visual.
+
+    A procedure lesson's authority role comes first: the deterministic schematic or the cited source
+    the check grades against. When the plan also permits context art, ``illustration`` follows it —
+    an extra, optional item with no authority, never a substitute for the first role.
+    """
     if plan.image == "none" or plan.image_role is None:
         return ()
-    return (IMAGE_SPEC_ROLE[plan.image_role],)
+    roles = (IMAGE_SPEC_ROLE[plan.image_role],)
+    if plan.context_illustration and "illustration" not in roles:
+        roles = roles + ("illustration",)
+    return roles
 
 
 def permitted_audio_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:

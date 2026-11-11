@@ -65,6 +65,12 @@ Hard boundaries that the plan object enforces in `__post_init__`:
   role it does not use.
 - `image == "required"` is incompatible with `image_role == "illustration"`. An AI illustration is
   context only and can never be required evidence, a measurement, a sequence or a safety authority.
+- A technical procedure may still carry a generated illustration as **context art**: an *additional*
+  optional item with `image_authority == "none"`, permitted only beside the authority role (the
+  deterministic schematic or the cited source). `permitted_image_roles` then lists the authority
+  role first and `illustration` second; `missing_required_media` keeps demanding the schematic, so
+  the picture never stands in for the thing the check grades. One-off briefs and lessons with no
+  visual at all never get context art.
 - A plan without reasons is refused. Every decision must be explainable by a construct.
 
 ## 2.1 The plan declares the need (H-05)

@@ -236,6 +236,7 @@ plugin now enforces its own wall clock in `coursebook/deadline.py`:
 | any of the above, inside a job attempt | `min(purpose bound, remaining attempt budget)` (`COURSEBOOK_JOB_DEADLINE_SECONDS`, default 1800 s) | `ProviderTimeout` with `details.job_deadline: true` |
 | `ctx.dispatch_tool("web_search"/"web_extract")` | 45 s / 60 s (`COURSEBOOK_WEB_*_TIMEOUT_SECONDS`) | `ResearchTimeout` (a `ResearchUnavailable`) |
 | `ctx.dispatch_tool("image_generate"/"text_to_speech")` | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, degraded to text |
+| `ctx.dispatch_tool("vision_analyze")` (illustration review) | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, recorded as `unreviewed` (the picture still ships, labelled context only) |
 
 Two mechanisms, chosen so the normal path leaks nothing:
 

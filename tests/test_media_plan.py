@@ -640,7 +640,7 @@ class PlanDeclarationRuleTest(unittest.TestCase):
         document["sections"][0]["media_need"] = need(
             "context picture", image=("required", "illustration")
         )
-        self.assert_plan_rejected(row, document, "can never be a required visual need")
+        self.assert_plan_rejected(row, document, "optional context art beside the deterministic schematic")
 
     def test_a_missing_declaration_is_refused(self) -> None:
         row = MATRIX["algebra_derivation"]
