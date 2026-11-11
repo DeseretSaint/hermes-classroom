@@ -180,8 +180,11 @@ logger = logging.getLogger("coursebook.generation")
 #: The v1 plan prompt. H-195 adds the through-line and prerequisite-assumption requirements, so
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
 #: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
-#: blueprint prompt, so this advances to v10.
-PLAN_PROMPT_VERSION = "plan-prompt.v10"
+#: blueprint prompt, so this advances to v10. CP-015g/D1-F1 adds the evidence-family rule (the
+#: check's kind follows the objective's evidence target) and the objective claim-link rule
+#: (``source_ids`` only with a verbatim ``source_quote``), so it advances to v11; the rule that
+#: citing is required where an excerpt carries the claim advances it to v12.
+PLAN_PROMPT_VERSION = "plan-prompt.v12"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -192,7 +195,9 @@ PLAN_PROMPT_VERSION = "plan-prompt.v10"
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v11"
+#: CP-015g/D1-F1 adds the evidence-family, casual-check-form and claim-link rules, so it advances
+#: to v12; the rule that citing is required where an excerpt carries the claim advances it to v13.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v13"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -215,7 +220,12 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
 #: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
 #: read before answering, which is the H-191 lesson applied again.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v5"
+#:
+#: v6 (CP-015g/D1-F1): the plan-validation payload now carries the curriculum brief's typed
+#: ``performance`` block (the goal asks the learner to carry out a physical act, so the plan must
+#: evidence the act). The instruction text is unchanged; the payload a version is keyed to is not,
+#: and a label is recorded in stored validation bindings, so the label advances.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v6"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -1851,6 +1861,11 @@ OBJECTIVE_SCHEMA: dict[str, Any] = {
         },
         "support": {"type": "string", "enum": list(SUPPORT_VALUES)},
         "source_ids": {"type": "array", "maxItems": 8, "items": _identifier},
+        # CP-015g/D1-F1: the words from one cited excerpt that carry this objective's claim.
+        # A `sourced` objective must copy them verbatim; the rule set refuses a citation whose
+        # quote is not in the cited excerpt, so an over-cited objective is regenerated instead
+        # of reaching the validator as an unsupported claim.
+        "source_quote": {"type": "string", "minLength": 12, "maxLength": 280},
         # H-89: the lemmas this objective teaches, copied exactly from the declared frequency
         # inventory. Absent when no inventory is declared (the vocabulary set is unverified)
         # or when the objective is grammar/skill work rather than vocabulary.
@@ -2103,6 +2118,9 @@ OBJECTIVE_SCHEMA_V2: dict[str, Any] = {
         },
         "support": {"type": "string", "enum": list(SUPPORT_VALUES)},
         "source_ids": {"type": "array", "maxItems": 8, "items": _identifier},
+        # CP-015g/D1-F1: the words from one cited excerpt that carry this objective's claim,
+        # copied verbatim. See OBJECTIVE_SCHEMA.
+        "source_quote": {"type": "string", "minLength": 12, "maxLength": 280},
         # H-89: lemmas copied exactly from the declared frequency inventory, in band order.
         "target_items": {
             "type": "array",
@@ -3678,6 +3696,7 @@ def _plan_instructions(
     scope: str | None = None,
     capability: capability_policy.LessonCapabilityPlan | None = None,
     parent_brief: dict[str, Any] | None = None,
+    goal: str | None = None,
 ) -> str:
     expectation = _scope_expectation(scope)
     # The v1 prompt asks for ``v1_objectives``; the enforced v2 contract lives in
@@ -3710,6 +3729,13 @@ def _plan_instructions(
         "generic heading or a generic intent that would fit any course.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
+        # CP-015g/D1-F1: the check's kind is the shape of the evidence, and a quiz cannot
+        # evidence something the learner does with their hands.
+        "The check's `kind` follows the objective's evidence target, never the reverse: a "
+        "'procedure' objective is evidenced by a performance checklist (kind 'verification'), "
+        "a 'transfer' objective by a recorded attempt or an observation log (kind 'verification' "
+        "or 'observation'), and only a 'recall', 'comprehension' or 'discrimination' objective "
+        "may be evidenced by a quiz.",
         "State explicit exclusions: what this course will not cover or claim.",
     ]
     # The declared inputs are stated as themselves. ``locale`` is the language of delivery and
@@ -3753,7 +3779,11 @@ def _plan_instructions(
             "with no quiz, and a check marked verification or observation does not satisfy it."
         )
     if recipe == "casual":
-        lines.append("Checks are optional self-checks; state that in evidence_note.")
+        lines.append(
+            "Checks are optional self-checks; state that in evidence_note. 'Optional' is about "
+            "grading, not about form: a self-check on a performance is still a performance "
+            "checklist or an observation log, never a quiz about the performance."
+        )
     if recipe == "parent":
         lines.append(
             "delivery is parent_led; include the parent block with age band, reading level, "
@@ -3859,6 +3889,7 @@ def _plan_instructions(
                 locale=locale,
                 level=level,
                 recipe=recipe,
+                goal=goal,
             )
         )
     )
@@ -3882,6 +3913,7 @@ def _plan_instructions_v2(
     scope: str | None = None,
     capability: capability_policy.LessonCapabilityPlan | None = None,
     parent_brief: dict[str, Any] | None = None,
+    goal: str | None = None,
 ) -> str:
     """The ``coursebook.plan.v2`` blueprint prompt (``docs/COURSE-BLUEPRINT.md`` §5).
 
@@ -3914,6 +3946,14 @@ def _plan_instructions_v2(
         "Produce exactly one check plan entry per objective with objective_ref, kind and "
         "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
         "owner lesson writes exactly one check, and independence is an evidence class.",
+        # CP-015g/D1-F1: the check's kind is the shape of the evidence, and a quiz cannot
+        # evidence something the learner does with their hands.
+        "The check's `kind` follows the objective's evidence target, never the reverse: a "
+        "'procedure' objective is evidenced by a performance checklist (kind 'verification'), "
+        "a 'transfer' objective by a recorded attempt or an observation log (kind 'verification' "
+        "or 'observation'), and only a 'recall', 'comprehension' or 'discrimination' objective "
+        "may be evidenced by a quiz. A course that measures only what the learner can say about "
+        "an act does not evidence the act.",
         # H-195: the arc the units build and the standing the learner starts from.
         "State the course 'through_line': one paragraph naming the single arc every unit and "
         "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
@@ -3957,7 +3997,11 @@ def _plan_instructions_v2(
             "with no quiz, and a check marked verification or observation does not satisfy it."
         )
     if recipe == "casual":
-        lines.append("Checks are optional self-checks; state that in evidence_note.")
+        lines.append(
+            "Checks are optional self-checks; state that in evidence_note. 'Optional' is about "
+            "grading, not about form: a self-check on a performance is still a performance "
+            "checklist or an observation log, never a quiz about the performance."
+        )
     if recipe == "parent":
         lines.append(
             "delivery is parent_led; include the parent block with age band, reading level, "
@@ -4027,6 +4071,7 @@ def _plan_instructions_v2(
                 locale=locale,
                 level=level,
                 recipe=recipe,
+                goal=goal,
             )
         )
     )
@@ -4294,9 +4339,18 @@ def provenance_violations(
     known = _ledger_provenance(ledger)
     problems: list[str] = []
 
+    # CP-015g/D1-F1: `source_quote` is a verbatim copy of supplied page text, not an authored
+    # citation. A quoted excerpt routinely contains markdown links and image URLs that are in the
+    # excerpt but are not the ledger's source URL; linting them would refuse an honest claim link
+    # for the exact words it was told to copy. The quote is checked against the cited excerpt by
+    # `_enforce_plan_tail` instead, which is the rule it exists for.
+    verbatim_copy_keys = frozenset({"source_quote"})
+
     def visit(value: Any, path: str) -> None:
         if isinstance(value, dict):
             for key, child in value.items():
+                if str(key) in verbatim_copy_keys and isinstance(child, str):
+                    continue
                 visit(child, f"{path}.{key}" if path else str(key))
             return
         if isinstance(value, list):
@@ -4753,6 +4807,91 @@ def _enforce_plan_tail(
             obj_sources = [sid for sid in (obj.get("source_ids") or []) if sid in ledger_ids]
             if not obj_sources:
                 reasons.append(f"objective {obj.get('ordinal')} claims 'sourced' support without a ledger source")
+
+    # CP-015g/D1-F1: a citation is a claim link, not a reading list. Two live runs marked
+    # objectives 3 and 4 `sourced` with three source ids each and the independent validator
+    # refused both claims: "the supplied excerpts do not show how to distinguish Jupiter's moons
+    # from background stars" / "do not show dated two-night sketches". The author is now refused
+    # on the same basis before validation: a `sourced` objective must copy, verbatim, the words
+    # from one of its cited excerpts that carry its claim. A quote that is not in any cited
+    # excerpt is the author citing a source that does not say it — the plan is regenerated with
+    # the reason, never stored with an over-citation.
+    excerpt_index = {
+        source.source_id: " ".join(str(source.excerpt or "").split()).casefold()
+        for source in ledger
+    }
+    for obj in objectives:
+        ordinal = obj.get("ordinal")
+        support = str(obj.get("support") or "")
+        ids = [str(sid) for sid in (obj.get("source_ids") or []) if str(sid).strip()]
+        quote = " ".join(str(obj.get("source_quote") or "").split())
+        if support == "sourced":
+            if not ids:
+                continue  # already reported above
+            if not quote:
+                reasons.append(
+                    f"objective {ordinal} is marked 'sourced' without a source_quote; copy the "
+                    "words from the cited excerpt that carry this objective's claim"
+                )
+                continue
+            if len(quote) < 12:
+                reasons.append(
+                    f"objective {ordinal}'s source_quote is {len(quote)} characters; a claim "
+                    "link is at least 12 characters copied from the cited excerpt"
+                )
+                continue
+            carried = [
+                sid for sid in ids if quote.casefold() in excerpt_index.get(sid, "")
+            ]
+            if not carried:
+                reasons.append(
+                    f"objective {ordinal}'s source_quote does not appear in the supplied excerpt "
+                    f"of any source it cites ({', '.join(sorted(ids))}); cite the source whose "
+                    "excerpt carries the claim, or set support 'unverified' and drop the ids"
+                )
+        elif ids:
+            reasons.append(
+                f"objective {ordinal} cites {len(ids)} source(s) but marks its support "
+                f"{support or 'unset'!r}; an objective whose claim a supplied excerpt carries is "
+                "marked 'sourced' with its source_quote, and one it does not carry cites nothing"
+            )
+
+    # CP-015g/D1-F1 (a): a course for a goal the learner carries out must contain the carrying
+    # out. Both live runs authored four objectives about setting up a telescope and observing
+    # Jupiter's moons with every objective `comprehension`, which is a course about the act
+    # rather than a course in it. The requirement is typed in `curriculum.performance_requirement`
+    # and the author is told the same block; this is the deterministic half.
+    raw_goal = str(goal or plan.get("goal") or "")
+    performance = curriculum.performance_requirement(raw_goal) if recipe != "parent" else None
+    if performance is not None:
+        families = set(performance["performance_families"])
+        performed = {
+            int(obj.get("ordinal", 0))
+            for obj in objectives
+            if str(obj.get("evidence_target") or "") in families
+        }
+        if not performed:
+            reasons.append(
+                "the goal asks the learner to carry out a physical act "
+                f"({performance['detected_action']!r}) but no objective declares a 'procedure' or "
+                "'transfer' evidence target; a course of quizzes about the act does not evidence "
+                "the act"
+            )
+        else:
+            units = [unit for unit in plan.get("units") or [] if isinstance(unit, dict)]
+            if len(units) > 1:
+                first = min(int(unit.get("ordinal", 0)) for unit in units)
+                opening = {
+                    int(obj.get("ordinal", 0))
+                    for obj in objectives
+                    if int(obj.get("unit_ref", 0)) == first
+                }
+                if not (opening & performed):
+                    reasons.append(
+                        f"unit {first} opens a course whose goal is a physical act "
+                        f"({performance['detected_action']!r}) with no 'procedure' or 'transfer' "
+                        "objective; a hands-on course starts with doing, not with terminology"
+                    )
 
     # Claim-level provenance, not just cited ids (round-2 P0-2). An invented URL, title,
     # publisher, DOI or ISBN in prose is a rule violation even when every source_id is real.
@@ -6457,6 +6596,7 @@ def build_plan_request(
         locale=locale,
         level=declared_level,
         recipe=recipe,
+        goal=goal,
     )
     # The plan-time capability decision: the same deterministic function the lesson stage
     # calls, computed for the plan's own declared inputs. At plan time no lesson intent exists
@@ -6510,7 +6650,8 @@ def build_plan_request(
                 "unit_objective_count": list(scope_expectation["unit_objectives"]),
                 "sections": "do not author sections; a separate unit stage authors them after "
                 "approval",
-                "source_ids": "use only ids present in sources",
+                "source_ids": "use only ids present in sources; every 'sourced' objective "
+                "carries a source_quote copied verbatim from one cited source's excerpt",
                 "support": "unverified when no supplied source grounds the objective",
                 "check_plan": "exactly one entry per objective: objective_ref, kind, "
                 "evidence_target, optional notes. No count and no independent_evidence field.",
@@ -6521,7 +6662,8 @@ def build_plan_request(
             else {
                 "objective_count": [4, 8],
                 "section_count": [2, 8],
-                "source_ids": "use only ids present in sources",
+                "source_ids": "use only ids present in sources; every 'sourced' objective "
+                "carries a source_quote copied verbatim from one cited source's excerpt",
                 "support": "unverified when no supplied source grounds the objective",
                 "media_need": (
                     "every section declares construct/image/audio; image and audio default to "
@@ -6558,6 +6700,7 @@ def build_plan_request(
             scope=scope,
             capability=capability,
             parent_brief=parent_brief,
+            goal=goal,
         )
         if blueprint
         else _plan_instructions(
@@ -6570,6 +6713,7 @@ def build_plan_request(
             scope=scope,
             capability=capability,
             parent_brief=parent_brief,
+            goal=goal,
         )
     )
     vocabulary_lines = _frequency_prompt_lines(frequency_block)
@@ -6640,6 +6784,7 @@ def build_plan_validation_requests(
             locale=locale,
             level=declared_level,
             recipe=recipe,
+            goal=goal,
         ),
         "research_status": research_run.status,
         "sources": _source_brief(research_run.sources),

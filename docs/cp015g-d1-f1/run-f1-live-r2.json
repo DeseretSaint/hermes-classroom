@@ -1,0 +1,347 @@
+{
+  "job": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-read-jobs-get-1634df3d",
+    "revision": 0,
+    "result": {
+      "job": {
+        "job_id": "job_c3a5f5ca512a4d518e7b06c924e53eed",
+        "kind": "plan",
+        "state": "completed",
+        "operation_id": "cp015g-d1-jobs-create-38569c9c",
+        "attempt_id": "att_b6f4b52c7a28406d9a59b597c2947829",
+        "brief": {
+          "course_id": "crs_3e69216020604fbd90cbc132b8e9e4ed",
+          "dials": {
+            "depth": "working"
+          },
+          "enrollment_id": "enr_38e7a0a9fd4443e9bd2ef283a7ec36b4",
+          "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+          "locale": "en-US",
+          "recipe": "casual",
+          "scope": "short",
+          "stage": "plan"
+        },
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v13",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": null,
+            "resolved_domain": "language",
+            "source": "declared_locale",
+            "target_language": "en"
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 4,
+          "plan_hash": "sha256:c9b3fafea753b751134debb068aca882228275c2d0edb01adc1a837474797d9e",
+          "plan_id": "pln_76c18f739b5b434faeaf91ba68b7dc64",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 1,
+          "rejection_reasons": [
+            "objective:2: The setup/aim procedure is unsourced and must not be presented to a learner as verified content.",
+            "objective:4: The orbital-explanation objective is unsourced and must not be presented to a learner as verified content."
+          ],
+          "reuse_declined": null,
+          "reused": false,
+          "units": 2,
+          "validation": {
+            "cost": {
+              "calls": 4,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "same_model",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_verdict": "reject"
+        },
+        "progress": {
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1,
+          "message": "plan authored (needs_review)"
+        },
+        "activity": {
+          "stage": "plan",
+          "stage_source": "checkpoint",
+          "steps_done": 1,
+          "steps_total": 1,
+          "elapsed_seconds": 294,
+          "elapsed_basis": "created_to_updated",
+          "can_cancel": false,
+          "can_retry": false,
+          "terminal": true,
+          "readable": true,
+          "message": "plan authored (needs_review)",
+          "last_progress_at": "2026-11-11T13:36:30Z",
+          "usage": {
+            "calls": 6,
+            "tokens": {
+              "input": 41346,
+              "output": 32169,
+              "cache_read": null,
+              "cache_write": null
+            },
+            "cost_usd": null,
+            "unknown_cost_calls": 6,
+            "artifacts": 0,
+            "providers": [
+              "nous"
+            ],
+            "models": [
+              "deepseek/deepseek-v4.1-flash-1017"
+            ]
+          }
+        },
+        "lease": null,
+        "artifact_ids": [],
+        "error": null,
+        "created_at": "2026-11-11T13:31:36Z",
+        "updated_at": "2026-11-11T13:36:30Z",
+        "cancel_requested_at": null
+      }
+    }
+  },
+  "outline": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-read-course-outline-38f8ef24",
+    "revision": 0,
+    "result": {
+      "enrollment_id": "enr_38e7a0a9fd4443e9bd2ef283a7ec36b4",
+      "plan": {
+        "plan_id": "pln_76c18f739b5b434faeaf91ba68b7dc64",
+        "version": 1,
+        "state": "draft",
+        "plan_hash": "sha256:c9b3fafea753b751134debb068aca882228275c2d0edb01adc1a837474797d9e",
+        "validation": {
+          "approvable": false,
+          "source": null,
+          "verdict": "reject",
+          "outcome": "rejected",
+          "independence": "same_model",
+          "facts_unverified": false,
+          "reasons": [
+            "objective:2: The setup/aim procedure is unsourced and must not be presented to a learner as verified content.",
+            "objective:4: The orbital-explanation objective is unsourced and must not be presented to a learner as verified content."
+          ],
+          "reason": "plan_not_validated",
+          "detail": null,
+          "manual_authoring": false
+        },
+        "units": [
+          {
+            "ordinal": 1,
+            "title": "Set up a small telescope and acquire Jupiter",
+            "goal": "This unit comes first because the later moon observation depends on a stable, focused telescope pointed at Jupiter; without acquisition there is nothing to observe on later nights.",
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "unmet": [],
+            "objectives": [
+              {
+                "objective_id": "bec1656361fad8da",
+                "ordinal": 1,
+                "title": "Choose an adequate small telescope and eyepiece for viewing Jupiter's moons and justify the choice",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "ecc792151aaa1ea0",
+                "ordinal": 2,
+                "title": "Set up the telescope outdoors on a stable mount and aim it at Jupiter with a low-power eyepiece",
+                "evidence_target": "procedure",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "title": "Observe Jupiter's moons across nights and explain their motion",
+            "goal": "This unit builds on unit 1: once Jupiter is acquired, the learner returns on a second night to see the moons' positions change and explains that change as orbital motion rather than twinkling or a setup error.",
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "prerequisite_state": "unmet",
+            "unmet": [
+              {
+                "objective_id": "bec1656361fad8da",
+                "ordinal": 1,
+                "title": "Choose an adequate small telescope and eyepiece for viewing Jupiter's moons and justify the choice",
+                "state": "not_started"
+              },
+              {
+                "objective_id": "ecc792151aaa1ea0",
+                "ordinal": 2,
+                "title": "Set up the telescope outdoors on a stable mount and aim it at Jupiter with a low-power eyepiece",
+                "state": "not_started"
+              }
+            ],
+            "objectives": [
+              {
+                "objective_id": "d8c9a8d1c692d38d",
+                "ordinal": 3,
+                "title": "Observe Jupiter's moons on at least two nights and point out their changed positions relative to Jupiter",
+                "evidence_target": "transfer",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "c92ded4872e191ec",
+                "ordinal": 4,
+                "title": "Explain why the moons' changing positions across nights indicate orbit rather than twinkling or telescope error",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "objective_id": "bec1656361fad8da",
+          "ordinal": 1,
+          "title": "Choose an adequate small telescope and eyepiece for viewing Jupiter's moons and justify the choice",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "ecc792151aaa1ea0",
+          "ordinal": 2,
+          "title": "Set up the telescope outdoors on a stable mount and aim it at Jupiter with a low-power eyepiece",
+          "evidence_target": "procedure",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "d8c9a8d1c692d38d",
+          "ordinal": 3,
+          "title": "Observe Jupiter's moons on at least two nights and point out their changed positions relative to Jupiter",
+          "evidence_target": "transfer",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "c92ded4872e191ec",
+          "ordinal": 4,
+          "title": "Explain why the moons' changing positions across nights indicate orbit rather than twinkling or telescope error",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        }
+      ],
+      "total": 4,
+      "truncated": false
+    }
+  },
+  "usage": {
+    "ok": false,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-read-usage-summary-5eec1bd4",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "category": "validation",
+      "message": "usage.summary request payload invalid at <payload>: Additional properties are not allowed ('course_id' was unexpected)",
+      "retryable": false,
+      "details": {
+        "path": "<payload>"
+      }
+    }
+  },
+  "course": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-read-course-get-ab56798f",
+    "revision": 0,
+    "result": {
+      "course": {
+        "course_id": "crs_3e69216020604fbd90cbc132b8e9e4ed",
+        "title": "Backyard observatory",
+        "recipe": "casual",
+        "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+        "locale": "en-US",
+        "level": null,
+        "subject_domain": null,
+        "scope": "short",
+        "dials": {
+          "depth": "working"
+        },
+        "status": "draft",
+        "pack_id": null,
+        "created_at": "2026-11-11T13:31:36.890669+00:00",
+        "updated_at": "2026-11-11T13:31:36.890669+00:00",
+        "plans": [
+          {
+            "plan_id": "pln_76c18f739b5b434faeaf91ba68b7dc64",
+            "version": 1,
+            "state": "draft",
+            "plan_hash": "sha256:c9b3fafea753b751134debb068aca882228275c2d0edb01adc1a837474797d9e"
+          }
+        ],
+        "active_plan_id": null,
+        "syllabus": null
+      },
+      "revision": 0
+    }
+  }
+}

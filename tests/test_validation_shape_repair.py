@@ -289,7 +289,7 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # different instruction text under a reused label is never silently accepted.
         # v5 (`t_0affea08`) added the declared-reject rule to the pass instructions; the label
         # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v5")
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v6")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

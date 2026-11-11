@@ -1024,17 +1024,27 @@ class CeilingLLM(RecordedLLM):
         for unit in document["units"]:
             for _ in range(unit["target_lessons"]):
                 ordinal += 1
+                # CP-015g/D1-F1: this brief's goal is a physical act, so the plan must declare the
+                # performance it teaches. Every fourth objective is the one the learner performs;
+                # the rest are the knowledge that supports it. The objective count — the thing the
+                # bound is about — is unchanged.
+                performed = ordinal % 4 == 1
                 document["objectives"].append({
                     "ordinal": ordinal,
                     "unit_ref": unit["ordinal"],
                     "title": f"Objective {ordinal}",
-                    "evidence_target": "comprehension",
-                    "evidence_criteria": [f"Explains point {ordinal} without notes"],
+                    "evidence_target": "procedure" if performed else "comprehension",
+                    "evidence_criteria": [
+                        f"Performs step {ordinal} without prompting" if performed
+                        else f"Explains point {ordinal} without notes"
+                    ],
                     "support": "unverified",
                     "source_ids": [],
                 })
                 document["check_plan"].append({
-                    "objective_ref": ordinal, "kind": "quiz", "evidence_target": "comprehension",
+                    "objective_ref": ordinal,
+                    "kind": "verification" if performed else "quiz",
+                    "evidence_target": "procedure" if performed else "comprehension",
                 })
         assert ordinal == self.objectives_n, (ordinal, self.objectives_n)
         return document

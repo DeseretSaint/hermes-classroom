@@ -16,19 +16,23 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v12` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v13` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v6` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v6` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v13` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v12` otherwise.
 
-The prompt labels above are the ones **H-192b** ships: on top of H-195's labels the two plan
-prompts now also state the graded-check rule the kernel enforces for a `committed` course (at
-least one `quiz` entry in `check_plan`), so they advance `v8` → `v10` and `v9` → `v11`.
+The prompt labels above are the ones **CP-015g/D1-F1** ships: on top of H-192b's labels the two plan
+prompts now also state the evidence-family rule (the check's `kind` follows the objective's
+`evidence_target`; a quiz evidences recall, comprehension or discrimination only), the
+performance rule (`curriculum.performance_requirement`, §5b), the casual self-check form rule and
+the objective claim-link rule, so they advance `v10` → `v12` and `v11` → `v13`. The validation
+prompt advances `v5` → `v6` because the plan-validation payload now carries the curriculum brief's
+typed `performance` block; its instruction text is unchanged.
 `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
 fingerprint, so a plan or lesson authored under an older label is never silently reused under the
 current rules.
@@ -83,7 +87,9 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
 whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v5`, so it is a stated contract rather than an unstated schema trap (the H-191
+`validation-prompt.v6` (the label advanced from `v5` only because the plan-validation payload now
+carries the curriculum `performance` block; the rule text is unchanged by CP-015g/D1-F1), so it is a
+stated contract rather than an unstated schema trap (the H-191
 lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
 `docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
 its H-182/D1 repair loop, and its stored reasons come from the rejections, then the failed
@@ -402,6 +408,48 @@ keeps passing because v1 genuinely cannot express an edge.
 After two failed attempts (rule violation or validator reject) the artifact is still persisted, but
 `generation_state`/lesson `state` is `needs_review`, `validation_id` is `NULL` when no validator ever
 ran, and the reasons are stored. Nothing is quietly discarded and nothing is quietly approved.
+
+## 5b. A performed goal must be evidenced, and a citation must carry the claim (CP-015g/D1-F1)
+
+Two live CP-015g runs authored a valid four-objective Short plan for *"Set up a small backyard
+telescope and find and observe the moons of Jupiter on a clear night"* and the independent validator
+refused it: every objective was `comprehension` and every check a quiz ("All checks are
+comprehension quizzes, so they cannot evidence the required hands-on setup, alignment, focusing, and
+centering performance"), and two objectives were marked `sourced` against excerpts that did not
+carry their claims. Both rules below are generation-side; the validation contract and its repair
+path are unchanged.
+
+**The performance requirement is typed, not prose.** `curriculum.performance_requirement(goal)` is a
+deterministic, goal-only detector. It fires on an act the learner performs with hands, tools or
+instruments (`set up`, `assemble`, `solder`, `calibrate`, `align`, `replace`, …; or a weaker act such
+as `observe`/`measure` when the goal also names an instrument, a board, a bike, the sky and so on),
+and never on a goal that asks only for understanding. It does not read the resolved subject domain:
+an undeclared domain resolves to the locale default (`language`), which is the wrong answer for a
+hands-on goal. The block is added to the curriculum brief, so the plan author and the plan validator
+are told the same thing: such a goal needs objectives whose `evidence_target` is `procedure` or
+`transfer`, and their checks are a performance checklist (kind `verification`) or an observation log
+(kind `verification`/`observation`) — never a quiz.
+
+`enforce_plan_rules` then refuses, before validation, a plan for a performance goal that declares no
+`procedure`/`transfer` objective, and one whose **opening unit** has none ("a hands-on course starts
+with doing, not with terminology"). The refusal is a `_RuleViolation`, so attempt 1 regenerates with
+the reason in `revision_instructions` and attempt 2 parks the document `needs_review`; no validator
+record is invented for a plan that never reached one. `parent` plans are exempt: their checks are
+observations of a child by design.
+
+**A citation is a claim link.** `OBJECTIVE_SCHEMA` and `OBJECTIVE_SCHEMA_V2` carry an optional
+`source_quote` (12–280 characters). A `sourced` objective must name at least one ledger source, mark
+`support: "sourced"`, and supply a `source_quote` that occurs **verbatim** (case- and
+whitespace-insensitive) in the supplied excerpt of one of the sources it cites. A quote that appears
+in no cited excerpt is refused by name, as is citing source ids without marking the objective
+`sourced`, and `sourced` without a quote at all. The author is told to leave `source_ids` empty and
+mark `unverified` when no supplied excerpt carries the claim — and to cite where one does, because a
+plan that marks every objective `unverified` while the excerpts contain its claims has not used the
+research it was given.
+
+What this does **not** decide: whether a verbatim quote actually carries the claim it is attached
+to. That is a judgment, and the independent validator's `source_support` criterion still makes it;
+the rule only removes the over-citation that made the claim impossible to support at all.
 
 ## 5a. The declared plan inputs: level, subject_domain, scope
 

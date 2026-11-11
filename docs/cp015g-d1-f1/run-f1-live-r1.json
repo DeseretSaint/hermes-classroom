@@ -1,0 +1,345 @@
+{
+  "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+  "scope": "short",
+  "presentation_mode": "game",
+  "run": "e94994",
+  "course_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-course-create-615ecb1c",
+    "revision": 0,
+    "result": {
+      "course_id": "crs_4be584f9250d4e869f15d1ef181875a6",
+      "plan_id": "pln_560f284474c241e2ba579fab79886a73",
+      "revision": 0
+    }
+  },
+  "enrollment_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-enrollment-create-b66cd810",
+    "revision": 0,
+    "result": {
+      "enrollment_id": "enr_d73418e78d8a44a492646883cad8cd36",
+      "revision": 0
+    }
+  },
+  "jobs_create": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-jobs-create-63ababd5",
+    "revision": 0,
+    "result": {
+      "job_id": "job_c4e86e5c9ee341518ae3d6a68150f770",
+      "state": "queued"
+    }
+  },
+  "job_id": "job_c4e86e5c9ee341518ae3d6a68150f770",
+  "jobs_get": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-jobs-get-90313e67",
+    "revision": 0,
+    "result": {
+      "job": {
+        "job_id": "job_c4e86e5c9ee341518ae3d6a68150f770",
+        "kind": "plan",
+        "state": "completed",
+        "operation_id": "cp015g-d1-jobs-create-63ababd5",
+        "attempt_id": "att_4e1d5c0311a94ba8815cd134a50b0870",
+        "brief": {
+          "course_id": "crs_4be584f9250d4e869f15d1ef181875a6",
+          "dials": {
+            "depth": "working"
+          },
+          "enrollment_id": "enr_d73418e78d8a44a492646883cad8cd36",
+          "goal": "Set up a small backyard telescope and find and observe the moons of Jupiter on a clear night",
+          "locale": "en-US",
+          "recipe": "casual",
+          "scope": "short",
+          "stage": "plan"
+        },
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v12",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "domain_provenance": {
+            "declared_locale": "en-US",
+            "declared_subject_domain": null,
+            "resolved_domain": "language",
+            "source": "declared_locale",
+            "target_language": "en"
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 4,
+          "plan_hash": "sha256:06dc28b461b1087336865a2e2c6bcc3ed232809b400be30e8d0d336846af6d80",
+          "plan_id": "pln_560f284474c241e2ba579fab79886a73",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 1,
+          "rejection_reasons": [
+            "criteria failed: source_support"
+          ],
+          "reuse_declined": null,
+          "reused": false,
+          "units": 2,
+          "validation": {
+            "cost": {
+              "calls": 4,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "same_model",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_verdict": "reject"
+        },
+        "progress": {
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1,
+          "message": "plan authored (needs_review)"
+        },
+        "activity": {
+          "stage": "plan",
+          "stage_source": "checkpoint",
+          "steps_done": 1,
+          "steps_total": 1,
+          "elapsed_seconds": 216,
+          "elapsed_basis": "created_to_updated",
+          "can_cancel": false,
+          "can_retry": false,
+          "terminal": true,
+          "readable": true,
+          "message": "plan authored (needs_review)",
+          "last_progress_at": "2026-11-11T13:23:36Z",
+          "usage": {
+            "calls": 6,
+            "tokens": {
+              "input": 40852,
+              "output": 32012,
+              "cache_read": null,
+              "cache_write": null
+            },
+            "cost_usd": null,
+            "unknown_cost_calls": 6,
+            "artifacts": 0,
+            "providers": [
+              "nous"
+            ],
+            "models": [
+              "deepseek/deepseek-v4.1-flash-1017"
+            ]
+          }
+        },
+        "lease": null,
+        "artifact_ids": [],
+        "error": null,
+        "created_at": "2026-11-11T13:20:00Z",
+        "updated_at": "2026-11-11T13:23:36Z",
+        "cancel_requested_at": null
+      }
+    }
+  },
+  "course_outline": {
+    "ok": true,
+    "contract_version": 26,
+    "operation_id": "cp015g-d1-course-outline-1355e419",
+    "revision": 0,
+    "result": {
+      "enrollment_id": "enr_d73418e78d8a44a492646883cad8cd36",
+      "plan": {
+        "plan_id": "pln_560f284474c241e2ba579fab79886a73",
+        "version": 1,
+        "state": "draft",
+        "plan_hash": "sha256:06dc28b461b1087336865a2e2c6bcc3ed232809b400be30e8d0d336846af6d80",
+        "validation": {
+          "approvable": false,
+          "source": null,
+          "verdict": "reject",
+          "outcome": "rejected",
+          "independence": "same_model",
+          "facts_unverified": false,
+          "reasons": [
+            "criteria failed: source_support"
+          ],
+          "reason": "plan_not_validated",
+          "detail": null,
+          "manual_authoring": false
+        },
+        "units": [
+          {
+            "ordinal": 1,
+            "title": "Stable Telescope Setup and Finder Alignment",
+            "goal": "Make the telescope stable and its finder aligned so that a later search for Jupiter starts from a trustworthy instrument; this comes first because an unstable or misaligned mount makes every later finding unreliable.",
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "unmet": [],
+            "objectives": [
+              {
+                "objective_id": "5ba0045858de0ddb",
+                "ordinal": 1,
+                "title": "Set up a small backyard telescope on a stable surface and align its finder to a distant landmark, unaided.",
+                "evidence_target": "procedure",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "08c27866be863cd2",
+                "ordinal": 2,
+                "title": "Explain why a stable mount and aligned finder are required before searching for Jupiter, naming the effect of each failure.",
+                "evidence_target": "comprehension",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          },
+          {
+            "ordinal": 2,
+            "title": "Finding Jupiter and Comparing Moon Positions Across Two Nights",
+            "goal": "Use the aligned telescope from unit 1 to find Jupiter, focus it, and record moon positions on two nights; this follows unit 1 because finding and comparing require a stable, aligned instrument before any observation is meaningful.",
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "prerequisite_state": "unmet",
+            "unmet": [
+              {
+                "objective_id": "5ba0045858de0ddb",
+                "ordinal": 1,
+                "title": "Set up a small backyard telescope on a stable surface and align its finder to a distant landmark, unaided.",
+                "state": "not_started"
+              },
+              {
+                "objective_id": "08c27866be863cd2",
+                "ordinal": 2,
+                "title": "Explain why a stable mount and aligned finder are required before searching for Jupiter, naming the effect of each failure.",
+                "state": "not_started"
+              }
+            ],
+            "objectives": [
+              {
+                "objective_id": "2f09153c3a409247",
+                "ordinal": 3,
+                "title": "Locate Jupiter with the unaided eye and bring it into the telescope field using the aligned finder, then focus to see its disk and moons.",
+                "evidence_target": "procedure",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              },
+              {
+                "objective_id": "a2923a4b4f5a66cd",
+                "ordinal": 4,
+                "title": "Repeat the Jupiter observation on a second clear night and use changed moon positions as evidence that the moons move with Jupiter, not as proof of an orbit.",
+                "evidence_target": "transfer",
+                "state": "not_started",
+                "check_state": "none",
+                "attempt_count": 0,
+                "independent": false,
+                "last_opened_at": null
+              }
+            ]
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "objective_id": "5ba0045858de0ddb",
+          "ordinal": 1,
+          "title": "Set up a small backyard telescope on a stable surface and align its finder to a distant landmark, unaided.",
+          "evidence_target": "procedure",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "08c27866be863cd2",
+          "ordinal": 2,
+          "title": "Explain why a stable mount and aligned finder are required before searching for Jupiter, naming the effect of each failure.",
+          "evidence_target": "comprehension",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "2f09153c3a409247",
+          "ordinal": 3,
+          "title": "Locate Jupiter with the unaided eye and bring it into the telescope field using the aligned finder, then focus to see its disk and moons.",
+          "evidence_target": "procedure",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        },
+        {
+          "objective_id": "a2923a4b4f5a66cd",
+          "ordinal": 4,
+          "title": "Repeat the Jupiter observation on a second clear night and use changed moon positions as evidence that the moons move with Jupiter, not as proof of an orbit.",
+          "evidence_target": "transfer",
+          "state": "not_started",
+          "check_state": "none",
+          "attempt_count": 0,
+          "independent": false,
+          "last_opened_at": null
+        }
+      ],
+      "total": 4,
+      "truncated": false
+    }
+  },
+  "course_surface": {
+    "ok": false,
+    "contract_version": 26,
+    "operation_id": "unknown-operation",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "category": "validation",
+      "message": "RPC request violates cb.rpc at method: 'course.surface' is not one of ['health.get', 'schema.get', 'course.create', 'course.get', 'enrollment.create', 'plan.approve', 'plan.replan', 'check.open', 'attempt.submit', 'attempt.override', 'attempt.dispute', 'progression.challenge_out', 'notebook.save', 'notebook.list', 'notebook.delete', 'quiz.history', 'binding.get', 'jobs.create', 'jobs.get', 'jobs.cancel', 'pack.preview', 'pack.import', 'pack.export', 'usage.summary', 'library.list', 'lesson.page', 'lesson.begin', 'enrollment.update', 'enrollment.delete', 'pack.delete', 'artifact.get', 'jobs.list', 'notebook.update', 'binding.abandon', 'review.queue', 'review.action', 'evidence.inspect', 'evidence.disputes', 'pack.inspect', 'pack.list', 'course.outline', 'check.get', 'lesson.assist', 'parent.brief.create', 'parent.brief.get', 'parent.plan.edit', 'parent.final.approve', 'parent.blueprint.read', 'parent.export', 'parent.reflection.record', 'parent.reflection.list', 'source.revalidate', 'pronunciation.attempt', 'pronunciation.dispute', 'syllabus.intake.create', 'syllabus.get', 'syllabus.parse', 'syllabus.align', 'syllabus.alignment.get', 'syllabus.alignment.review', 'syllabus.delete', 'course.export.read', 'course.export', 'observation.record', 'practice.start', 'practice.state', 'practice.end', 'practice.cancel', 'plan.edit', 'plan.undo', 'lesson.revise', 'lesson.regenerate', 'parent.review.read', 'engagement.read', 'engagement.award', 'tutor.ask', 'tutor.history', 'takehome.sources', 'takehome.preview', 'takehome.create', 'takehome.approve', 'takehome.export', 'takehome.read', 'homework.create', 'homework.read', 'homework.complete', 'homework.skip', 'takehome.html', 'world.read', 'world.style.preview', 'world.generate', 'world.approve', 'course.mode.set']",
+      "retryable": false,
+      "details": {
+        "path": "method"
+      }
+    }
+  }
+}
