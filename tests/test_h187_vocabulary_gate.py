@@ -42,5 +42,58 @@ class VocabularyRuleLocaleGateTest(unittest.TestCase):
         self.assertIn("declares target item", reasons)
 
 
+class VocabularyRuleDomainGateTest(unittest.TestCase):
+    """CP-015: the live create flow always sends a locale, so the locale test was always true.
+
+    Measured on the demo backend: a ``Sourdough`` course (``subject_domain: cooking``,
+    ``locale: en-US``) authored by the real provider was refused twice with "no frequency
+    inventory is available" because the plan author had set ``target_items`` — a field a cooking
+    plan is never asked for. The course then sat at ``needs_review`` / ``rejected`` and could not
+    be approved. The rule must resolve "is this a language course?" from the declared domain.
+    """
+
+    def test_a_cooking_course_with_a_locale_is_not_refused(self) -> None:
+        plan = plan_with_target_items()
+        gen.enforce_plan_rules(
+            plan, recipe="casual", dials={}, locale="en-US", ledger=[], scope="single",
+            subject_domain="cooking",
+        )
+
+    def test_a_repair_course_with_a_locale_is_not_refused(self) -> None:
+        plan = plan_with_target_items()
+        # `repair` normalises to `technical_procedure`; the alias table is the authority.
+        gen.enforce_plan_rules(
+            plan, recipe="casual", dials={}, locale="en-US", ledger=[], scope="single",
+            subject_domain="repair",
+        )
+
+    def test_a_declared_language_course_is_still_refused(self) -> None:
+        plan = plan_with_target_items()
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_plan_rules(
+                plan, recipe="casual", dials={}, locale="ja-JP", ledger=[], scope="single",
+                subject_domain="language",
+            )
+        self.assertIn("no frequency inventory is available", "\n".join(caught.exception.reasons))
+
+    def test_an_undeclared_domain_keeps_the_pre_v10_locale_rule(self) -> None:
+        # No declared domain: the locale is the only declaration there is, so the historical
+        # behaviour (a locale meant a language course) is kept rather than silently widened.
+        plan = plan_with_target_items()
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_plan_rules(
+                plan, recipe="casual", dials={}, locale="es-ES", ledger=[], scope="single"
+            )
+        self.assertIn("no frequency inventory is available", "\n".join(caught.exception.reasons))
+
+    def test_a_declared_domain_outranks_a_matching_locale(self) -> None:
+        # A Japanese-language cooking course is `cooking`: the domain wins over the locale.
+        plan = plan_with_target_items()
+        gen.enforce_plan_rules(
+            plan, recipe="casual", dials={}, locale="ja-JP", ledger=[], scope="single",
+            subject_domain="cooking",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

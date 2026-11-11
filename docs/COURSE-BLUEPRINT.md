@@ -209,6 +209,15 @@ reinforces, so a cold pass there is the delayed retrieval evidence the kernel al
 and a hinted or answer_shown pass stays non-independent. This is how a section can serve more
 than one objective without inventing a second check authority or a practice-only evidence class.
 
+A review section is **authorable while its owner pages are parked `needs_review`**. A parked
+owner page is authored content whose check is closed; failing the whole unit job on it would mean
+a unit whose owners need review can never author its review section, and a re-run cannot satisfy
+"author the owner lessons first" any differently. The review page is authored and stored
+`needs_review` with the closed owner checks named (objective, check id, owner lesson and its
+state); it is not servable until an owner check is open, and regenerating the review section then
+binds the open check. An objective with **no owner lesson at all** is still a structural
+refusal — the review names the objectives and asks for the owner lessons.
+
 Check plan v2 removes `count` and `independent_evidence`. Both were decorative: the lesson
 pipeline writes exactly one check per owner section and independence is an evidence-class
 property, not a plan promise. The v2 entry is `objective_ref`, `kind`, `evidence_target`,
@@ -253,12 +262,16 @@ Budget is per stage, not per course:
 | stage | provider calls, worst case | reason |
 |---|---:|---|
 | blueprint (`plan`) | 4 | one generate and one validate, two attempts |
-| unit sections (`unit_sections`, one unit) | 4 | one generate and one validate, two attempts |
-| unit lessons (`lessons`, one unit) | 2 calls per section times 2 attempts, over the unit's sections | unchanged lesson pipeline |
+| unit sections (`unit_sections`, one unit) | 6 | one generate, one validate and one truncation re-ask, two attempts (CP-015e) |
+| unit lessons (`lessons`, one unit) | 6 per section: one generate, one validate and one truncation re-ask, two attempts | same lesson pipeline as before; CP-015e follow-up counted the repair |
 
 A unit job uses `lesson_cost_budget` sized to that unit's section count, not the whole course.
-The blueprint uses a four-call budget. H-17 owns the dollar ceiling; this design only splits the
-work so one ceiling never covers an entire 24-lesson course.
+The unit-sections stage budgets six calls because the validator's answer is re-asked once when it
+is cut off by the completion cap (`_validation_answer_with_repair`): the unit batch is
+transactional, so a ceiling that refuses that legal call loses the whole unit. The lesson stage is
+per-section and durable, but it makes the same repair call, so `lesson_cost_budget` counts it too
+(CP-015e follow-up): six calls per section, not four. H-17 owns the dollar
+ceiling; this design only splits the work so one ceiling never covers an entire 24-lesson course.
 
 This split is also the token limit answer. The plan call carries units and objectives only. Each
 unit call carries that unit's objectives plus the shared source ledger, never the whole course

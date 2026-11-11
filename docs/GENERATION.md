@@ -16,19 +16,25 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v10` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v11` | `PLAN_SCHEMA_V2` |
-| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v5` | `VALIDATION_SCHEMA` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v17` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v18` | `PLAN_SCHEMA_V2` |
+| Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v2` | `UNIT_SECTIONS_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v9` | `VALIDATION_SCHEMA` |
+| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v9` | `VALIDATION_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v11` | `LESSON_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v9` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v11` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v10` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v18` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v17` otherwise. The plan-prompt
+bump adds the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage and
+check-covers-criteria rules to both plan authors; §5 records a later shared-rule change that
+advanced the same two labels again, which is why the rows above name `v17`/`v18`. The validator
+text is versioned separately: `validation-prompt.v9` is the current label, and each pass states the
+rubric it is judged by.
 
-The prompt labels above are the ones **H-192b** ships: on top of H-195's labels the two plan
-prompts now also state the graded-check rule the kernel enforces for a `committed` course (at
-least one `quiz` entry in `check_plan`), so they advance `v8` → `v10` and `v9` → `v11`.
+The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
+prompts now state the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage
+and check-covers-criteria rules.
 `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`) is part of every idempotency
 fingerprint, so a plan or lesson authored under an older label is never silently reused under the
 current rules.
@@ -40,6 +46,16 @@ The labels in that table are not hand-copied. They are the constants in
 or prose reference names a retired label. A prompt label is part of every stored validation binding
 and the idempotency fingerprint, so a different instruction text under a reused label is never
 silently accepted.
+
+**A unit pass is scoped to its unit** (`t_332351b0`, CP-015g). The unit-sections validator is handed
+one unit's objectives, one unit's checks and the unit's own `goal` as `plan_brief.unit_goal`; it is
+never handed the plan's whole-course `learner_outcome`. Before this, the brief carried the course
+outcome beside a `check_plan` filtered to the unit, so unit 1 of an approved multi-unit plan was
+refused under `objective_alignment` for not delivering unit 2's share — a structural refusal no
+authoring could fix. The pass instructions state the matching rule (`_UNIT_ALIGNMENT_RULE`): a
+capability another unit delivers is that unit's obligation, and only a capability named by *this*
+unit's goal or objectives that no section or check delivers is a rejection. The whole-course
+outcome is still judged at the plan stage, against all units.
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
 generation schema, or the generation prompt version. The validation record stores both prompt
@@ -82,8 +98,8 @@ was broken; it is typed as `ModelOutputInvalid` → `VALIDATION_FAILED` (non-ret
 **not** treated as a refusal — no second authoring call, no validation record, no plan document.
 Making that carrier a refusal is what spent a whole extra authoring and research cycle on
 `_feedback`'s generic "without itemised reasons" hint, and what discarded the declared refusal
-whenever the second attempt passed. The rule is stated in the pass instructions under
-`validation-prompt.v5`, so it is a stated contract rather than an unstated schema trap (the H-191
+whenever the second attempt passed. The rule is stated in the validation pass instructions, so it
+is a stated contract rather than an unstated schema trap (the H-191
 lesson; the JSON-Schema `if/then` form of the rule reports one opaque message and is not used).
 `docs/DECISION-VALIDATION-REJECT-BASIS.md` owns the reasoning. A refusal that *is* grounded keeps
 its H-182/D1 repair loop, and its stored reasons come from the rejections, then the failed
@@ -212,6 +228,24 @@ raises instead of silently behaving like one of the three.
   `language`. This keeps the language of delivery and the subject of the course separate
   (adversarial review P0-4).
 
+* **Clause-derived queries (CP-015a R-1a).** Every capability clause the goal itself names gets
+  its own query. The split is deterministic — on `:`, `;`, `,` and the word `and`, the punctuation
+  a person uses to list capabilities — and each clause is joined to the **declared** subject-domain
+  qualifier when the brief names a domain; with no declared domain the clause is searched on its
+  own (the generic recipe suffix is never invented onto a clause, so a syllabus-derived companion
+  course does not acquire the "course outline exam" question through this path). No model call, no
+  extra job step, no new budget class. The clause
+  queries sit **before** the base qualifier and before every curriculum or generic depth query, so
+  a bounded `max_queries` cell truncates the generic tail and never a capability; a goal with more
+  clauses than the cell allows still drops its later clauses in goal order and the course stays
+  short. `single`/`survey` and one-off briefs keep their bounded query sets.
+* **Stratified selection (CP-015a R-1b).** When candidates outnumber the page budget the pass
+  takes **one page per query in query order**, then a second page from any query, and so on.
+  Publisher-type rank (`SOURCE_TYPE_RANK`) orders candidates *inside* one query's list, never
+  across queries: ranking the whole pool by publisher type let query 0's reference pages spend the
+  entire budget, so the queries that asked about the goal's later capabilities were never fetched.
+  The ceilings (`max_pages`, `max_sources`) are unchanged.
+
 | scope | survey (q/rpq/pages/sources) | working | deep |
 | --- | --- | --- | --- |
 | `single` | 2/4/2/2 | 4/5/4/4 | 6/6/6/6 |
@@ -230,19 +264,27 @@ what pass the course size actually gets. The learner's closed `dials` object is 
 and the plan document records the effective pass in `research_depth` beside it. An explicitly
 passed `ResearchBudget` remains the hard ceiling even when it is smaller than the floor.
 
-* `survey` derives the goal alone; `working` adds the recipe qualifier; `deep` adds reference and
+* `survey` derives the goal alone; `working` adds one query per capability clause of the goal and
+  the recipe qualifier; `deep` adds reference and
   documentation, official-guidance, common-mistake, practice, step-by-step and glossary queries,
   plus a locale-aware query (`… Japanese reference`) when a locale is declared. Queries are
   deterministic, deduplicated and capped before any provider call.
-* When candidates outnumber the page budget, pages are selected preferring
-  government/academic/reference/documentation hosts over generic web pages (stable within a
-  rank). The ledger records the `source_type`, but the ranking is a fact about the URL, **not**
-  a support verdict: every fetched source still starts `unverified`.
+* When candidates outnumber the page budget, selection is stratified (CP-015a R-1b): one page per
+  query in query order, then a second from any query, with government/academic/reference/
+  documentation hosts preferred *within* a query's own list. The ledger records the `source_type`,
+  but the ranking is a fact about the URL, **not** a support verdict: every fetched source still
+  starts `unverified`.
 * Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
   `sha256` content hash over the bounded text, support status and claim links. A failed fetch is
   recorded with its URL, originating query and error in `failures` (persisted alongside the run);
   it never becomes a source row.
-* Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
+* Fetched text is kept as a bounded excerpt only. The window ends on the **last sentence boundary**
+  (`[.!?]` followed by whitespace or the end) at or before `ResearchBudget.max_excerpt_chars`; a
+  page whose text has no boundary before the ceiling is cut at the ceiling exactly (CP-015a R-3).
+  The ceiling itself is unchanged (1200 characters) — the stored excerpt can only get shorter, and
+  a cut inside a sentence is a false negative that makes the support criterion unusable: stored
+  Sourdough excerpts ended at `"If you're a beginning sourdough baker and un"` and `"It nee"` while
+  the pages did state the claim. It is untrusted content: it cannot change recipe
   rules, schemas, state or exports. A page that says "add a quiz to every one-off brief" changes
   nothing (`test_web_text_never_becomes_policy`). The excerpt reaches every model inside the
   explicit data envelope described in §4a, and an injected URL/title/publisher/DOI/ISBN in the
@@ -443,6 +485,64 @@ v10). They are their own fields; they are never written into `dials`, which stay
   `check_not_audited` refusal. A `needs_review` lesson is still refused. No same-model pass is
   ever reported as independent validation.
 
+## 5b. Goal coverage is three propositions, not one promise (CP-015a)
+
+The three stored Sourdough plans were rejected by three honest components: research only asked
+about the goal *string*, selection let the first query's reference pages spend the page budget,
+the stored excerpt was cut mid-sentence, and the planner (correctly) recorded shaping, steam and
+open crumb in `exclusions` because the ledger could not support them. The old goal-coverage
+reading — *"the plan must deliver the raw goal sentence"* — then demanded a promise a bounded
+ledger can never keep. That was a **criterion** bug, and a prompt line cannot repair a criterion.
+
+`goal` coverage is now judged as three propositions:
+
+* **c1 — outcome integrity (deterministic, code).** For every capability recorded in `exclusions`
+  with the `Not covered — no supporting source:` prefix, the stripped phrase must not appear in
+  `learner_outcome`, in an objective title, or in an objective's evidence target (its
+  `evidence_target` family plus its `evidence_criteria` list). `generation.goal_outcome_integrity_reasons`
+  is called from `_enforce_plan_tail`, so it refuses a self-contradicting plan before any validator
+  is asked and applies to v1 and v2 documents alike. A phrase matches a field when every word of
+  it appears in that field's stemmed word set, so `open crumb` matches `open-crumb` and `shaping`
+  matches `shape it`; a paraphrase sharing no word with the recorded capability is not detected and
+  that limit is stated, not papered over. Unprefixed `exclusions` entries are ordinary scope prose
+  and are not read as removed capabilities.
+* **c2 — gap disclosure (validator criterion).** `goal_capability_disclosure` is registered in
+  `VALIDATION_CRITERIA` beside `objective_alignment`. The pass that owns it lists the capabilities
+  the *goal* names and maps each one to a covered objective or to an `exclusions` entry; a goal
+  capability in **neither** is a reject. That is strictly more demanding than "did you cover the
+  goal", because an omission can no longer hide in silence. `objective_alignment` keeps its other
+  jobs — curriculum sequence, unit prerequisites, matching an objective to the goal it serves — and
+  only loses the "deliver the raw goal sentence" reading.
+* **c3 — support integrity.** Unchanged: every objective must be carried by a cited excerpt
+  (`source_support`, `evidence_target_fit`).
+
+**Rejected alternatives.** (a) *Narrow the goal to what was researched* — the learner goal is fixed
+input; rewriting it to match the ledger is the product lying about what was asked. (b) *Drop the
+exclusions record* — it is CP-015's ledger-first honesty, and removing it would let the planner
+invent objectives the sources do not support. (c) *A prompt line asking the author not to promise
+excluded capabilities* — a prompt line is not a criterion: it is unenforced on the next call and
+unreadable in a stored verdict. (d) *A model-judged pass in place of the c1 gate* — the
+contradiction is mechanical (a phrase the plan itself wrote in two fields), and a model verdict on
+it would be a substitution for a configured checker. (e) *Reject any plan with an exclusion* — that
+would punish a course for disclosing a gap, which is the behaviour the ledger-first rule exists to
+produce.
+
+**The criterion set grew to eleven, and the pass split stayed legal.** `VALIDATION_CRITERIA_PASSES`
+is now a 6/5 split (`VALIDATION_CRITERIA[:6]`, `[6:]`) so no pass answers more than
+`VALIDATION_CRITERIA_PER_PASS_MAX = 6` criteria — the fixed maximum H-192b bought, independent of
+plan size. `LESSON_VALIDATION_CRITERIA` is the same set minus `goal_capability_disclosure`: a lesson
+or a unit-section batch carries no goal and no `exclusions`, so asking a validator for that verdict
+would demand an `unknown`, which is not a pass. `validation_verdict` takes the criterion set it must
+require, so the plan stage requires eleven and the lesson stages require ten.
+
+**And the authoring rule was corrected, not merely the checker.** `_plan_sourcing_rules` used to
+tell the author to name the excluded capability in `learner_outcome` ("say so in learner_outcome as
+well as in exclusions"). That instruction is the contradiction c1 refuses, so it was replaced with
+the rule that satisfies the gate: record the capability in `exclusions`, say only what the course
+does cover in `learner_outcome`, and never name the excluded capability there or in an objective
+title or evidence criteria. Both plan prompt labels advance (`plan-prompt.v17`, `plan-prompt.v18`),
+because the shared rule text changed.
+
 ## 6. Lessons, checks and answer separation
 
 For an **approved** plan only (`PlanNotApproved` otherwise) the pipeline writes one lesson per
@@ -515,10 +615,20 @@ whose labels read the same once case, spacing and punctuation are ignored are re
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
 `needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v10` is
+prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v11` is
 the current label.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v10`) asks for 3–6 criteria, each a distinct
+**Answer-leak surfaces (CP-015c follow-up).** `lesson-prompt.v11` states the rule
+`assert_no_answer_leak` and `assert_check_payload_does_not_announce_answer` enforce: a `model`
+segment (and narration media that reads it) is the one surface where the target form, its reading
+and its function appear together; every other learner surface is scanned (non-model segments, the
+worked example, `learner_explanation(_short)`, `parent_notes`, non-narration media, the recap), and
+the check's stimulus prompt and `learner_instructions` must not restate the key. The lesson
+validation payload carries the stored key in its own `answer_key` block, marked
+`learner_facing: false`, because `learner_page` never serializes it; `validation-prompt.v9` states
+that split so a validator does not read the key's presence as a shipped answer.
+
+**Rubric floor.** The lesson prompt (`lesson-prompt.v11`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -540,7 +650,7 @@ called, `teaching_quality_problems(lesson)` applies a deterministic floor to the
 A failure is a `_RuleViolation`, so attempt 1 is retried with those reasons and attempt 2 parks the
 lesson `needs_review` with the check closed: a thin draft never reaches a learner. The floor is
 deterministic and structural — it refuses an outline and never scores prose quality — which is
-exactly why it is **not** an eleventh `VALIDATION_CRITERIA` entry. The ten criteria remain the
+exactly why it is **not** a `VALIDATION_CRITERIA` entry. The criteria remain the
 independent model's judgment; this floor remains code.
 
 **Capability policy reaches the model.** The plan declares what each lesson needs before the lesson
@@ -551,7 +661,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v10`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v11`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -574,7 +684,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v10` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v11` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -632,6 +742,17 @@ On rejection the author is called **once more** with the validator's itemised re
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
 
+**A review section over parked owners (CP-015j).** A review lesson authors no check; it presents
+the owner check of an objective it reinforces. A `needs_review` owner page closes that check, so
+`_resolve_review_target` now selects the owner's latest check *preferring an open one* and returns
+the closed check when none is open, instead of raising. The review page is still authored; the
+lesson is stored `needs_review` with a `rejection_reasons_json` entry naming each closed owner
+check (objective ordinal, check id, owner lesson id and lesson state) and the job completes. The
+page is not servable and `check_enabled` is false; regenerating the review section after an owner
+check opens rebinds it. Only an objective with **no owner lesson at all** is a structural refusal
+(`GenerationRejected`, naming the objectives), because then "author the owner lessons first" is
+still true.
+
 ### 7.1 A malformed answer is repaired once, then it is a typed failure — never an outage, never a verdict
 
 The host's structured-output gate (`agent.plugin_llm._parse_structured_text`) validates the parsed
@@ -682,10 +803,11 @@ label, not in the total number of labels.
 The demand is now cut into fixed-size batches (`CLAIM_VERDICTS_PER_PASS = 6` on a criteria pass,
 `CLAIM_ONLY_VERDICTS_PER_PASS = 12` on a claim-only pass):
 
-* the criteria pass takes at most one batch of claim labels and still judges all ten criteria;
+* the criteria pass takes at most one batch of claim labels and still judges the criteria it owns
+  (eleven in total across the two criteria passes since CP-015a; ten before it);
 * the remaining labels become **claim-only** passes, each with a narrowed schema that carries
   `claim_verdicts` and nothing else — no `criteria`, no `rejections`, no artifact `verdict`;
-* `merge_validation_reports` merges the ten criteria from the owning pass(es) and the claim
+* `merge_validation_reports` merges the eleven criteria from the owning pass(es) and the claim
   verdicts from every pass; a claim-only pass cannot reject the artifact or widen the review;
 * `_run_validation_passes` submits all passes together, so wall time stays at the slowest pass.
 
@@ -727,7 +849,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v10`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v11`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`
@@ -817,20 +939,21 @@ who typed a ceiling must be told it was not applied.
 
 ### Sized ceilings and the preflight gate
 
-`CostBudget.max_calls` defaults to 32 — the worst legal pipeline cost, 8 sections x 2 attempts x
-(generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
-section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
-behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
-was 8).
+`CostBudget.max_calls` defaults to 32, which is a *fallback* ceiling for a job that was not sized,
+not a bound on the pipeline. A lesson job is budgeted to its own plan (`lesson_cost_budget`,
+6 calls per section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs
+that were behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old
+default was 8). Every stage sizes the truncation re-ask — see *The truncation repair is a legal
+call* below.
 
 The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
 
-    max_calls     = n * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS     (4n)
+    max_calls     = n * LESSON_ATTEMPTS * (CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS)  (6n)
     max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
 
 with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
 `DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
-legitimate job is not refused by a rounding error). Eight sections therefore get $1.28, not $0.75:
+legitimate job is not refused by a rounding error). Eight sections therefore get $1.92, not $0.75:
 the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
 while the call ceiling scaled. The operator override still wins, and the value actually used is
 recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
@@ -843,6 +966,57 @@ generation + one validation per section, no retries). `jobs.create` runs the sam
 never holds a job that is guaranteed to half-fail. Below the **worst legal** cost but above the
 minimum the job starts — and if the ceiling does bind, it now leaves a recovery checkpoint instead
 of a dead end.
+
+#### The truncation repair is a legal call, and the budget counts it
+
+`_validation_answer_with_repair` spends exactly one extra provider call when a validator answer was
+cut off by the completion cap (`TRUNCATION_REPAIR_CALLS`) — the same demand, re-asked once under a
+`.cut` prompt version. A ceiling that does not count that call refuses a run that behaved exactly
+as designed and reports the refusal as though the artifact had been rejected (CP-015e).
+
+The unit-sections stage is transactional — its batch is written in one transaction after a passing
+verdict — so an abort loses the whole unit. Its budget is therefore sized to the true worst legal
+path:
+
+    max_calls    = 2 attempts x (generate + validate + 1 repair)     (6)
+    max_cost_usd = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
+
+Six calls is a real maximum, not headroom: the repair runs at most once per attempt, and a second
+cut answer in one attempt is a typed `ModelOutputInvalid` that ends the stage without a further
+call. Live evidence: every observed `coursebook.unit_sections.validate` answer consumed the
+8 000-token cap, so the repair was mandatory on every attempt, while the repaired answers that did
+parse used 1 964–2 749 tokens — the cap holds the 10-criterion + claim answer, the first ask spends
+it on reasoning.
+
+The **lesson** stage uses the same arithmetic per section (CP-015e follow-up): two attempts, each
+generate + validate + one repair, so `lesson_calls` is `2n` minimum and `6n` worst legal, and
+`lesson_cost_budget(n)` sizes both ceilings from that 6. The previous `4n` was not a different
+policy, it was the H-17 / audit P1-6 "size to the worst legal path" rule applied to an undercounted
+path: CP-015b's Sourdough run recorded five `coursebook.lesson.validate` answers cut at the
+8 000-token cap for a four-lesson job, each repaired. A lesson row is durable before the next
+section starts, so the old abort wasted a run and a resume rather than losing data — a smaller
+failure than the unit stage's, not a safe one. Five sections now size to $1.20 (6 x 5 x $0.04)
+instead of $0.75, and eight to $1.92; an operator ceiling still wins.
+
+#### A budget stop is not a verdict (`CP-015e`)
+
+`CostCeilingExceeded` is a spend arithmetic stop: nothing was validated and nothing was rejected.
+`cb.errors` is frozen, so the code stays the documented `POLICY_VIOLATION` with
+`details.reason = cost_ceiling_exceeded` — a dedicated code would name it better and is a contract
+bump owned by Atlas, not something this module invents. What the backend does guarantee, so an
+operator cannot read the failure as a content refusal:
+
+* the message opens with `provider-call budget exhausted before <purpose>` (or `after` when a
+  returned call crossed the dollar ceiling);
+* `details.purpose` names the call the ceiling refused and `details.budget_source` says whether the
+  ceiling was `declared`, `operator_env`, `operator_brief` or `caller`;
+* the recovery checkpoint carries `kind: cost_ceiling_exceeded`, `refused_purpose`,
+  `budget_source`, `sections_completed: []`, `actions` and a `resume` brief for the **same** stage
+  and unit (`{stage: unit_sections, plan_id, unit_ordinal}`) — never the lessons pipeline by
+  default.
+
+A validator rejection, by contrast, is `VALIDATION_FAILED` with the rejection reasons and no budget
+arithmetic in `details`.
 
 A call whose provider reported no cost is charged at `DECLARED_CALL_COST_USD` for ceiling
 purposes. Unknown is still recorded as unknown (`cost_usd: null`, `unknown_cost: true`,

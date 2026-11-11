@@ -51,23 +51,27 @@ class SizedCeilingTest(unittest.TestCase):
         preflight = gen.preflight_lesson_cost(4)
         self.assertTrue(preflight.fits_minimum)
         self.assertTrue(preflight.fits_maximum)
-        # 4 sections x 2 calls/attempt = 8 minimum; x 2 attempts = 16 worst legal.
+        # 4 sections x 2 calls/attempt = 8 minimum; x 2 attempts x 3 calls (generate + validate +
+        # truncation re-ask) = 24 worst legal.
         self.assertEqual(preflight.minimum_calls, 8)
-        self.assertEqual(preflight.maximum_calls, 16)
-        self.assertEqual(gen.lesson_cost_budget(4).max_calls, 16)
+        self.assertEqual(preflight.maximum_calls, 24)
+        self.assertEqual(gen.lesson_cost_budget(4).max_calls, 24)
         self.assertLessEqual(preflight.minimum_cost_usd, preflight.max_cost_usd)
 
     def test_the_dollar_ceiling_scales_with_the_plan(self) -> None:
         small = gen.lesson_cost_budget(2)
         medium = gen.lesson_cost_budget(5)
         full = gen.lesson_cost_budget(8)
-        # The old flat 0.75 is the floor; anything above four sections must size above it.
+        # The old flat 0.75 is the floor; anything above two sections must size above it.
         self.assertEqual(small.max_cost_usd, gen.DEFAULT_MAX_COST_USD)
-        self.assertAlmostEqual(medium.max_cost_usd, 20 * gen.DECLARED_CALL_COST_USD)
-        self.assertAlmostEqual(full.max_cost_usd, 32 * gen.DECLARED_CALL_COST_USD)
+        medium_cost = medium.max_cost_usd
+        full_cost = full.max_cost_usd
+        assert medium_cost is not None and full_cost is not None
+        self.assertAlmostEqual(medium_cost, 30 * gen.DECLARED_CALL_COST_USD)
+        self.assertAlmostEqual(full_cost, 48 * gen.DECLARED_CALL_COST_USD)
         self.assertGreater(full.max_cost_usd, gen.DEFAULT_MAX_COST_USD)
-        # The audit's exact arithmetic: 8 sections x 4 calls x the measured $0.032 was $1.024,
-        # above the flat ceiling. The declared estimate keeps the new ceiling above it.
+        # The audit's exact arithmetic: 8 sections x 6 calls (repair counted) x the measured $0.032
+        # was above the flat ceiling. The declared estimate keeps the new ceiling above it.
         self.assertGreater(full.max_cost_usd, 24 * 0.032)
 
     def test_a_large_course_is_refused_before_it_starts(self) -> None:
@@ -228,7 +232,7 @@ class LessonCostRecoveryTest(GenerationTestBase):
         llm = self.lesson_script(validation_from_fixture(), generate=_costly(lesson_from_request()))
         with mock.patch.dict(os.environ, {gen.JOB_MAX_COST_ENV: "2.5"}):
             result = gen.run_lesson_job(self.connection, self.job(plan_result), llm, now=NOW)
-        self.assertEqual(result["budget"], {"max_calls": 16, "max_cost_usd": 2.5, "source": "operator_env"})
+        self.assertEqual(result["budget"], {"max_calls": 24, "max_cost_usd": 2.5, "source": "operator_env"})
         self.assertEqual(result["usage"]["budget"]["max_cost_usd"], 2.5)
         self.assertTrue(result["preflight"]["fits_maximum"])
 

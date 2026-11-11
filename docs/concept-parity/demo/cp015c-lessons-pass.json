@@ -1,0 +1,179 @@
+{
+  "plan_id": "pln_5dde08c973f94cc0a444caa77a09d53c",
+  "enrollment_id": "enr_2bc4905ab3974e7bbc1afe02cb0b21fc",
+  "started_at": "2026-11-11T11:33:27.131696+00:00",
+  "wire_version": 26,
+  "run": "r4",
+  "owners": [
+    {
+      "ordinal": 1,
+      "section_id": "c045a8958c7f26f8",
+      "job_id": "job_bd19c3ea4a3d44e7a305da763dd892d9",
+      "job_state": "completed",
+      "job_error": null,
+      "job_result": null,
+      "lesson": {
+        "id": "436bc19c28010e01",
+        "version": 2,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"learner-facing narrative contains the check reference answer or a keyed answer\"]",
+        "validation_id": null
+      }
+    },
+    {
+      "ordinal": 2,
+      "section_id": "f5fce7fa0d7a55d0",
+      "job_id": "job_7825c0e5ce5a428e808bcab750a62fe0",
+      "job_state": "completed",
+      "job_error": null,
+      "job_result": null,
+      "lesson": {
+        "id": "65dd61b04f5d5191",
+        "version": 2,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"lesson.learner_explanation: The pre-check learner explanation states the correct choice ('choose the line that names テーブル席 and ends with お願いします'), leaking the quiz answer to the learner before the graded check.\"]",
+        "validation_id": "97c11e23a422a51c"
+      }
+    },
+    {
+      "ordinal": 3,
+      "section_id": "8118048ef3a887d9",
+      "job_id": "job_23f201329b5e4b30bed72fa18edc944a",
+      "job_state": "completed",
+      "job_error": null,
+      "job_result": null,
+      "lesson": {
+        "id": "45d7744c0ef6b292",
+        "version": 2,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"criteria could not be verified: source_support\"]",
+        "validation_id": "415b0aabd2d706cc"
+      }
+    }
+  ],
+  "review": {
+    "job_id": "job_436041eae3b74afb97c2ac7dce337c53",
+    "job_state": "completed",
+    "job_error": null,
+    "job_result": null,
+    "sections_after": [
+      {
+        "id": "c045a8958c7f26f8",
+        "ordinal": 1,
+        "title": "Party Size: 二人です",
+        "section_role": "owner",
+        "lesson": {
+          "id": "436bc19c28010e01",
+          "version": 2,
+          "state": "needs_review",
+          "rejection_reasons_json": "[\"learner-facing narrative contains the check reference answer or a keyed answer\"]",
+          "validation_id": null
+        }
+      },
+      {
+        "id": "f5fce7fa0d7a55d0",
+        "ordinal": 2,
+        "title": "Table Request: テーブル席でお願いします",
+        "section_role": "owner",
+        "lesson": {
+          "id": "65dd61b04f5d5191",
+          "version": 2,
+          "state": "needs_review",
+          "rejection_reasons_json": "[\"lesson.learner_explanation: The pre-check learner explanation states the correct choice ('choose the line that names テーブル席 and ends with お願いします'), leaking the quiz answer to the learner before the graded check.\"]",
+          "validation_id": "97c11e23a422a51c"
+        }
+      },
+      {
+        "id": "8118048ef3a887d9",
+        "ordinal": 3,
+        "title": "Seating-Order Question: 先に席を取ったほうがいいですか",
+        "section_role": "owner",
+        "lesson": {
+          "id": "45d7744c0ef6b292",
+          "version": 2,
+          "state": "needs_review",
+          "rejection_reasons_json": "[\"criteria could not be verified: source_support\"]",
+          "validation_id": "415b0aabd2d706cc"
+        }
+      },
+      {
+        "id": "f89ecc43f807dd1d",
+        "ordinal": 4,
+        "title": "Review: Matching Entrance Phrases to Their Jobs",
+        "section_role": "review",
+        "lesson": {
+          "id": "17dabcbc229a6501",
+          "version": 1,
+          "state": "needs_review",
+          "rejection_reasons_json": "[\"review section 4 presents a closed owner check: objective 1 is served by 75630acdb704f7c2 (closed) from owner lesson 436bc19c28010e01 (needs_review); objective 2 is served by f0c14474b5534478 (closed) from owner lesson 65dd61b04f5d5191 (needs_review); objective 3 is served by bd79dc5c98364cb0 (closed) from owner lesson 45d7744c0ef6b292 (needs_review). The review page is authored and parked; approve or regenerate the owner lessons, then regenerate this section so the review binds to an open check.\", \"lesson.check.reference_answer: Learner-facing check ships the reference answer and accepted answers with full justifications, letting the learner copy the graded response verbatim.\"]",
+          "validation_id": "d5ba47e29ee5508b"
+        }
+      }
+    ]
+  },
+  "sections_before": [
+    {
+      "id": "c045a8958c7f26f8",
+      "ordinal": 1,
+      "title": "Party Size: 二人です",
+      "section_role": "owner",
+      "lesson": {
+        "id": "9e6a9db4ba1db564",
+        "version": 1,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"lesson document: blocks[3].short [text_completeness] dangling_terminal_word: ends on 'not', so the sentence lost its complement\", \"lesson document: blocks[5].deep [text_completeness] dangling_terminal_word: ends on 'not', so the sentence lost its complement\", \"learner-facing narrative contains the check reference answer or a keyed answer\"]",
+        "validation_id": null
+      }
+    },
+    {
+      "id": "f5fce7fa0d7a55d0",
+      "ordinal": 2,
+      "title": "Table Request: テーブル席でお願いします",
+      "section_role": "owner",
+      "lesson": {
+        "id": "31c81b797209ebcb",
+        "version": 1,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"criteria failed: source_support\"]",
+        "validation_id": "821c06f3fd0cd26f"
+      }
+    },
+    {
+      "id": "8118048ef3a887d9",
+      "ordinal": 3,
+      "title": "Seating-Order Question: 先に席を取ったほうがいいですか",
+      "section_role": "owner",
+      "lesson": {
+        "id": "63e73be65a5dc547",
+        "version": 1,
+        "state": "needs_review",
+        "rejection_reasons_json": "[\"lesson document: blocks[0].short introduces '“first,”', '“seat,”', '“take.”', which its deep text does not contain\", \"lesson document: blocks[1].short introduces '“first,”', '“seat”', '“it is better,”', which its deep text does not contain\", \"lesson document: blocks[2].short introduces '“two people”', '“a table seat, please”', which its deep text does not contain\", \"lesson document: blocks[3].short introduces '“first,”', '“a seat,”', '“take,”', which its deep text does not contain\"]",
+        "validation_id": null
+      }
+    },
+    {
+      "id": "f89ecc43f807dd1d",
+      "ordinal": 4,
+      "title": "Review: Matching Entrance Phrases to Their Jobs",
+      "section_role": "review",
+      "lesson": {}
+    }
+  ],
+  "export_read": {
+    "ready": false,
+    "blocked_reason": "lessons_not_validated",
+    "blocked_message": "every lesson page must be in a validated state before this course can be packaged.",
+    "problems": [
+      "section 1 (入口での人数：二人です) is needs_review (edited and not yet approved)",
+      "section 2 (Table Request: テーブル席でお願いします) is needs_review (edited and not yet approved)",
+      "section 3 (Seating-Order Question: 先に席を取ったほうがいいですか) is needs_review (edited and not yet approved)",
+      "section 4 (復習：入り口の表現を、その役割に合わせる) is needs_review (edited and not yet approved)"
+    ],
+    "content_hash": null,
+    "sections": {
+      "total": 4,
+      "validated": 0
+    }
+  },
+  "finished_at": "2026-11-11T11:42:32.990860+00:00"
+}

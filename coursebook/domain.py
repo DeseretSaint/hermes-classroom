@@ -838,6 +838,23 @@ def _plan_outline_ready(connection, plan_id: str) -> bool:
     return row is not None and int(row["n"]) > 0
 
 
+def _plan_is_empty(connection, plan) -> bool:
+    """True when the plan row carries no objectives at all.
+
+    ``course.create`` writes a draft plan row before any authoring job runs; a generated plan job
+    that never completes can leave that row behind. A plan with zero objectives must fail closed
+    at the approval gate rather than inherit the manual-authoring path's ``approvable`` default.
+    """
+    try:
+        row = connection.execute(
+            "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?",
+            (str(plan["id"]),),
+        ).fetchone()
+    except Exception:  # noqa: BLE001 - a schema without objectives is a pre-plan tree
+        return False
+    return row is None or int(row["n"]) == 0
+
+
 def _plan_validation_facts(connection, plan, actual_hash: str) -> dict[str, Any]:
     """The durable approval provenance of one plan version, read without raising.
 
@@ -866,6 +883,18 @@ def _plan_validation_facts(connection, plan, actual_hash: str) -> dict[str, Any]
         "validated_plan_hash": None,
         "current_plan_hash": actual_hash,
     }
+    if _plan_is_empty(connection, plan):
+        # A draft row with no objectives has nothing to teach, sequence or check. It is not an
+        # approvable course even when it carries no generation document (the manual-authoring
+        # path): approving it would produce a course the learner can never start. The projection
+        # must fail closed here, because a review surface that trusts `approvable` would offer the
+        # button. `plan.approve` has its own zero-objective refusal; this is the read-side twin.
+        facts.update(
+            reason="plan_not_validated",
+            detail="the plan states no objectives; there is nothing to teach or check",
+            reasons=["the plan states no objectives; there is nothing to teach or check"],
+        )
+        return facts
     if not _table_exists(connection, "gen_plan_documents"):
         facts.update(source=PLAN_VALIDATION_MANUAL, approvable=True)
         return facts
@@ -969,6 +998,13 @@ def _plan_validation_source(connection, plan, actual_hash: str) -> str:
     facts = _plan_validation_facts(connection, plan, actual_hash)
     if facts["approvable"]:
         return str(facts["source"])
+    if _plan_is_empty(connection, plan):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "an empty plan cannot be approved; it has no objectives.",
+            reason="plan_empty",
+            plan_id=str(plan["id"]),
+        )
     if facts["reason"] == "plan_validation_stale":
         raise RpcError.of(
             "VALIDATION_FAILED",

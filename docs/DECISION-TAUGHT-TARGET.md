@@ -171,3 +171,24 @@ OK
 
 The 5 new tests fail against `719e507` before the change: the model-segment pack is refused and
 the authored document's key is not scanned at all.
+
+## 9. Follow-up: the prompt now states the rule (CP-015c, `t_a0bcacdd`)
+
+Section 6 recorded that the lesson payload said the *field* was stored separately but did not
+forbid the taught string, so no prompt label changed. CP-015c measured the cost of that omission on
+the approved Japanese Cafe plan: the lesson stage re-authored all three owner sections and each
+parked `needs_review` on the answer-leak family — the author taught the target in the model segment
+and then restated it verbatim in `learner_explanation` and the worked example, because the prompt
+never said which surfaces are scanned or that the model segment is the one presentation surface.
+
+Two changes, both verified by `tests/test_cp015c_answer_leak_surfaces.py`:
+
+| Surface | Change |
+|---|---|
+| `lesson-prompt.v11` | states the scanned surfaces, the `model`/narration exemption, the legal shape (target form, reading and function in the model segment; referred to by function elsewhere) and one passing example |
+| `lesson.check.reference_answer` | the check's `stimulus.prompt` and `learner_instructions` are scanned deterministically under that named reason; the stored key stays in the answer key and the page projection still never carries it |
+| `validation-prompt.v9` | the lesson validation payload carries the stored key in an `answer_key` block marked `learner_facing: false`, and the pass states that `answer_leakage` judges the learner-facing surfaces, not the key's existence |
+
+The rule is unchanged; only its statement and the key's placement in the validation request moved.
+The exemption for `kind: model` segments and `role: narration` media is the one decided in §2.
+

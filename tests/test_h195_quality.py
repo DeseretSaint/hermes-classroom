@@ -201,8 +201,9 @@ class TeachingFloorTest(unittest.TestCase):
         self.assertIn("overview", gen.GENERIC_LESSON_HEADINGS)
         self.assertIn("key takeaways", gen.GENERIC_LESSON_HEADINGS)
         self.assertIn("lorem ipsum", gen.PLACEHOLDER_LESSON_PHRASES)
-        # The depth floor is deterministic: it is not an eleventh VALIDATION_CRITERIA entry.
-        self.assertEqual(len(gen.VALIDATION_CRITERIA), 10)
+        # The depth floor is deterministic: it is not a VALIDATION_CRITERIA entry. (CP-015a took the
+        # count to eleven with goal_capability_disclosure; this floor is still not one of them.)
+        self.assertEqual(len(gen.VALIDATION_CRITERIA), 11)
         self.assertNotIn("teaching_depth", gen.VALIDATION_CRITERIA)
 
     def test_a_lesson_that_meets_the_floor_has_no_problems(self) -> None:

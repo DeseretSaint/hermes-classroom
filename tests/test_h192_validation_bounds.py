@@ -19,6 +19,7 @@ These tests pin the repair without a provider:
 """
 from __future__ import annotations
 
+import json
 import unittest
 
 from coursebook import generation as gen
@@ -117,8 +118,10 @@ class ClaimBatchingTest(unittest.TestCase):
                 )
 
     def test_the_criteria_passes_cover_the_whole_ten_criterion_review(self) -> None:
-        # H-192b: the review is split into fixed-size passes, so no answer reasons over ten
-        # criteria and a full plan at once. Together they still cover exactly the reviewed set.
+        # H-192b: the review is split into fixed-size passes, so no answer reasons over the whole
+        # reviewed set and a full plan at once. Together they still cover exactly that set.
+        # CP-015a adds an eleventh criterion (goal_capability_disclosure); the per-pass maximum is
+        # six now, and it is still fixed rather than a function of plan size.
         requests = build_requests(big_plan(20))
         owned = [
             criterion
@@ -127,7 +130,9 @@ class ClaimBatchingTest(unittest.TestCase):
         ]
         self.assertEqual(tuple(owned), gen.VALIDATION_CRITERIA)
         for request in requests:
-            self.assertLessEqual(len(gen.validation_pass_criteria(request)), 5)
+            self.assertLessEqual(
+                len(gen.validation_pass_criteria(request)), gen.VALIDATION_CRITERIA_PER_PASS_MAX
+            )
 
     def test_leftover_claims_become_claim_only_passes(self) -> None:
         plan = big_plan(20)
@@ -153,18 +158,24 @@ class ClaimBatchingTest(unittest.TestCase):
         self.assertEqual(sorted(demanded), sorted(labels))
         self.assertEqual(len(demanded), len(set(demanded)))
 
-    def test_a_small_plan_needs_no_claim_only_pass(self) -> None:
-        # Single/short plans measured 3–5 claim labels; they must not pay for extra claim passes.
+    def test_a_small_plan_pays_for_extra_passes_rather_than_one_long_answer(self) -> None:
+        # CP-015: a four-objective plan's six-claim criteria pass answered 34 738 bytes against a
+        # 24 576-byte bound. A pass now takes three claims, so a short plan does pay for a
+        # claim-only pass — that is the bound working, not a regression. What must hold is that no
+        # single answer's claim demand exceeds the fixed maximum and no claim is judged twice.
         plan = big_plan(2, units=1)
-        self.assertLessEqual(len(gen.plan_claim_labels(plan)), gen.CLAIM_VERDICTS_PER_PASS)
+        labels = gen.plan_claim_labels(plan)
         requests = build_requests(plan)
-        self.assertEqual(len(requests), len(gen.VALIDATION_CRITERIA_PASSES))
+        self.assertGreaterEqual(len(requests), len(gen.VALIDATION_CRITERIA_PASSES))
+        seen = [label for request in requests for label in claim_enum(request)]
+        self.assertEqual(sorted(seen), sorted(labels))
         for request in requests:
             self.assertLessEqual(len(claim_enum(request)), gen.CLAIM_VERDICTS_PER_PASS)
 
     def test_every_pass_demands_a_fixed_maximum(self) -> None:
-        # H-192b: no answer's demand grows with plan size — five criteria at most, six claims at
-        # most on a criteria pass, twelve on a claim-only pass.
+        # H-192b: no answer's demand grows with plan size — a fixed, small number of criteria at
+        # most (six after CP-015a's eleventh criterion), six claims at most on a criteria pass,
+        # twelve on a claim-only pass.
         for plan in (big_plan(2, units=1), big_plan(12), big_plan(40, units=12)):
             requests = build_requests(plan)
             labels = gen.plan_claim_labels(plan)
@@ -175,7 +186,7 @@ class ClaimBatchingTest(unittest.TestCase):
             for request in requests:
                 criteria = gen.validation_pass_criteria(request)
                 claims = claim_enum(request)
-                self.assertLessEqual(len(criteria), 5)
+                self.assertLessEqual(len(criteria), gen.VALIDATION_CRITERIA_PER_PASS_MAX)
                 if criteria:
                     self.assertLessEqual(len(claims), gen.CLAIM_VERDICTS_PER_PASS)
                 else:
@@ -416,10 +427,40 @@ class UnitValidationPayloadTest(unittest.TestCase):
             {"objective_ref": ordinal, "kind": "quiz", "evidence_target": "recall"}
             for ordinal in range(1, 7)
         ]
-        brief = gen._unit_plan_brief(plan, [{"ordinal": 2}, {"ordinal": 3}])
+        unit = {
+            "ordinal": 1,
+            "title": "Unit one",
+            "goal": "Unit one advances the first part of the goal",
+            "target_lessons": 3,
+            "prereq_unit_ordinals": [],
+        }
+        brief = gen._unit_plan_brief(plan, unit, [{"ordinal": 2}, {"ordinal": 3}])
         self.assertEqual([item["objective_ref"] for item in brief["check_plan"]], [2, 3])
         self.assertNotIn("objectives", brief)
         self.assertNotIn("units", brief)
+
+    def test_the_brief_carries_the_unit_goal_not_the_course_outcome(self) -> None:
+        """CP-015g: one unit is judged against its own slice of the outcome, never the whole one."""
+        plan = big_plan(6, units=2)
+        plan["learner_outcome"] = "Match snack words and explain omotenashi after the entrance unit."
+        unit = {
+            "ordinal": 1,
+            "title": "Entrance phrases",
+            "goal": "Unit 1 gets the learner through a doorway greeting.",
+            "target_lessons": 3,
+            "prereq_unit_ordinals": [],
+        }
+        brief = gen._unit_plan_brief(plan, unit, [{"ordinal": 1}, {"ordinal": 2}])
+        self.assertEqual(brief["unit_goal"], unit["goal"])
+        self.assertNotIn("learner_outcome", brief)
+        self.assertNotIn("snack words", json.dumps(brief))
+
+    def test_the_unit_pass_states_the_delegation_rule(self) -> None:
+        """The rubric is stated in the pass that owns it (H-191): the prompt carries the rule."""
+        request = self._request(big_plan(6, units=1), [{"ordinal": 1}])
+        self.assertIn("for this unit only", request.instructions)
+        self.assertIn("another unit of the course delivers is that unit's obligation", request.instructions)
+        self.assertEqual(request.prompt_version, "validation-prompt.v9")
 
 
 if __name__ == "__main__":

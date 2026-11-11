@@ -574,7 +574,10 @@ class ResearchTest(GenerationTestBase):
         self.assertLessEqual(single.max_sources, single.max_pages)
 
     def test_failed_fetches_keep_their_urls_and_degrade(self) -> None:
-        seam = ExpandingSearch(fail_suffixes=("/3",))
+        # CP-015a R-1b: selection takes the first page of every query before any second page, so a
+        # failure has to be planted on a URL the pass actually fetches. The goal query's own first
+        # page is always fetched; a suffix deeper in one query's list may never be reached.
+        seam = ExpandingSearch(fail_suffixes=("/greetings/0",))
         run = research.run_research(
             "greetings", recipe="committed", dials={"depth": "working"}, scope="single", search=seam, now=NOW
         )
@@ -709,7 +712,10 @@ class PlanJobTest(GenerationTestBase):
             validation_responder,
         )
 
-        seam = ExpandingSearch(fail_suffixes=("/3",))
+        # CP-015a R-1b: one page per query is taken before any second page, so plant the failure
+        # on the first page of every query — the survivors are the second-pass pages, which is
+        # exactly the degraded pass this test is about.
+        seam = ExpandingSearch(fail_suffixes=("/0",))
         scoped = blueprint_plan(scope="full", units=2, objectives_per_unit=6)
         result = gen.run_plan_job(
             self.connection,
@@ -929,7 +935,14 @@ class PlanJobTest(GenerationTestBase):
 
     def test_rejected_plan_regenerates_once_with_reasons_then_records_conflict(self) -> None:
         conflict = fixture("validation_pass")
-        conflict["criteria"][1] = {"id": "source_support", "verdict": "fail", "reason": "the source contradicts the claim"}
+        # By id, not by position: the criteria list is now eleven entries and CP-015a inserted
+        # goal_capability_disclosure at index 1.
+        conflict["criteria"] = [
+            {"id": "source_support", "verdict": "fail", "reason": "the source contradicts the claim"}
+            if entry.get("id") == "source_support"
+            else entry
+            for entry in conflict["criteria"]
+        ]
         conflict["rejections"] = [
             {
                 "item": "objective:1",
@@ -1287,7 +1300,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v10")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v11")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -1348,7 +1361,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v10")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v11")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -1617,8 +1630,8 @@ class LessonJobTest(GenerationTestBase):
         self.assertEqual(self.count("gen_lessons"), 4)
 
     def test_lesson_budget_is_sized_to_the_plan_and_still_has_a_ceiling(self) -> None:
-        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 20)  # 5 x 2 attempts x 2 calls
-        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 32)
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 30)  # 5 x 2 attempts x 3 calls
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 48)
         budget = gen.lesson_cost_budget(2)
         usage = gen._Usage(budget)
         request = gen.build_lesson_request(
@@ -1910,6 +1923,35 @@ class SourceTrustTest(GenerationTestBase):
         self.assertIn("10.9999/fake", joined)
         self.assertIn("isbn", joined)
 
+    def test_exclusions_record_a_gap_rather_than_a_citation(self) -> None:
+        # CP-015: the author records an unsupported capability as an exclusion. A quoted topic
+        # there is scope prose, not a title or publisher, so the provenance lint must not read it
+        # as a citation the ledger fails to contain.
+        ledger = [
+            research.SourceRecord(
+                source_id="src_real",
+                url="https://example.invalid/page",
+                title="A Real Title",
+                publisher="Real Press",
+                source_type="web_page",
+                fetched_at="2026-11-06T12:00:00Z",
+                published_at=None,
+                content_hash="sha256:0",
+                excerpt="A real sentence that the page contains.",
+            )
+        ]
+        plan = {
+            "exclusions": [
+                'Not covered — no supporting source: "explaining the cause of the Moon\'s phases"',
+                "identifying planets in the night sky",
+            ]
+        }
+        self.assertEqual(gen.provenance_violations(plan, ledger=ledger, what="plan"), [])
+        # The same phrase outside an exclusion list is still a provenance assertion.
+        dirty = {"learner_outcome": 'Source: "Invented Title" — Invented Press.'}
+        problems = gen.provenance_violations(dirty, ledger=ledger, what="plan")
+        self.assertTrue(problems, "the exemption must not silence the rest of the document")
+
     def test_a_validator_cannot_upgrade_support_without_an_excerpt(self) -> None:
         base = fixture("validation_pass")
 
@@ -1936,6 +1978,16 @@ class SourceTrustTest(GenerationTestBase):
     def test_validator_invented_provenance_is_flagged_and_downgraded(self) -> None:
         run = self._run()
         report = fixture("validation_pass")
+        # The recorded answer predates CP-015a's eleventh criterion; a wide report must still answer
+        # every criterion the review asks for, so the slot is supplied here rather than weakening
+        # the "validator must answer every criterion" rule.
+        report["criteria"].append(
+            {
+                "id": "goal_capability_disclosure",
+                "verdict": "pass",
+                "reason": "every goal capability maps to an objective or an exclusion",
+            }
+        )
         report["claim_verdicts"][0]["reason"] = (
             "confirmed by https://invented.invalid/authority which the ledger never fetched"
         )

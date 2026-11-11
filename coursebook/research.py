@@ -31,7 +31,7 @@ import os
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Iterable, Protocol
+from typing import Any, Iterable, Protocol, Sequence
 from urllib.parse import urlparse
 
 from . import curriculum, policy
@@ -139,7 +139,19 @@ CONTRACT_SUPPORT_STATUS: dict[str, str] = {
 #: Hard caps on the shape of a snippet/excerpt we keep. Content is never stored in full.
 _MAX_TITLE = 300
 _MAX_PUBLISHER = 120
-_MAX_EXCERPT = 600
+#: The sentence boundary an excerpt may end on: terminal punctuation followed by whitespace or the
+#: end of the window. A cut inside a sentence is a false negative — a page can state a capability
+#: while the stored excerpt stops one word short of it (CP-015: "…baker and un", "It nee").
+_SENTENCE_BOUNDARY = re.compile(r"[.!?](?=\s|$)")
+#: A pipeline excerpt is the text a plan/lesson validator judges a claim against, so it must carry
+#: real prose, not the first few hundred characters of site chrome. 600 characters was measured to
+#: end inside a navigation menu (``Search ## Suggested Searches - [Artemis]…``) and left every
+#: objective unsupportable. The request bound is still ``REQUEST_BYTES_BOUNDS`` (24 kB at
+#: ``short``); eight sources at 1200 characters fit it with the plan payload, and a measured
+#: 1600-character window overflowed it at 24 352 bytes.
+_MAX_EXCERPT = 1200
+#: Search-result descriptions are not judged evidence; keep them small and stable.
+_MAX_DESCRIPTION = 600
 _MAX_SOURCE_TYPE = 40
 _MAX_QUERY = 220
 _MAX_REASON = 300
@@ -457,7 +469,7 @@ class HermesToolSearch:
                 {
                     "url": url,
                     "title": _bound(str(row.get("title") or url), _MAX_TITLE),
-                    "description": _bound(str(row.get("description") or ""), _MAX_EXCERPT),
+                    "description": _bound(str(row.get("description") or ""), _MAX_DESCRIPTION),
                 }
             )
         return results[:limit]
@@ -586,9 +598,18 @@ def derive_queries(
     Depth means what the contract says it means:
 
     * ``survey`` — the goal itself only;
-    * ``working`` — the goal plus the one recipe qualifier the brief actually needs;
+    * ``working`` — the goal, one query per capability clause the goal names, then the one recipe
+      qualifier the brief actually needs;
     * ``deep`` — those plus reference/documentation, official-guidance, common-mistake and
       practice queries, and a locale-aware query when a locale is declared.
+
+    The capability-clause queries sit before the base qualifier and before every curriculum or
+    generic depth query (CP-015 R-1a), so the bounded ``max_queries`` cell truncates the generic
+    tail and never a capability. They are derived from the goal's own punctuation and the word
+    ``and`` — no model call, no job step, no widened budget — and each is joined to the declared
+    subject-domain qualifier when the brief names a domain (a clause with no declared qualifier is
+    searched on its own). A goal with more clauses than the cell allows stays short: clauses are
+    dropped in goal order after the cap.
 
     ``overview``/``thorough`` are documented aliases for ``survey``/``deep``; any other value
     raises. The caller's ``max_queries`` (the budget cell) is the hard ceiling.
@@ -607,17 +628,30 @@ def derive_queries(
     if depth != "survey":
         qualifier = _domain_qualifier(domain, level)
         if qualifier is not None:
-            queries.append(f"{base} {qualifier}")
+            base_qualifier = qualifier
         elif recipe == "one_off":
-            queries.append(f"{base} official instructions safety")
+            base_qualifier = "official instructions safety"
         elif recipe == "committed":
-            queries.append(f"{base} syllabus learning objectives")
+            base_qualifier = "syllabus learning objectives"
         elif recipe == "companion":
-            queries.append(f"{base} course outline exam")
+            base_qualifier = "course outline exam"
         elif recipe == "parent":
-            queries.append(f"{base} lesson plan for children")
+            base_qualifier = "lesson plan for children"
         else:
-            queries.append(f"{base} beginner guide")
+            base_qualifier = "beginner guide"
+        # CP-015a R-1a: one query per capability clause the goal itself names, derived from the
+        # goal's clause structure and joined to the declared domain qualifier. These are appended
+        # before the base-qualifier and the curriculum/generic tail so a bounded ``max_queries``
+        # cell truncates the generic tail, never a capability: a goal that names shaping and steam
+        # must ask about shaping and steam, or the ledger can only ever carry the first capability
+        # it happened to search for and the planner correctly (and uselessly) excludes the rest.
+        # The clause is joined only to a *declared* qualifier: when the brief names no domain there
+        # is nothing declared to join, and inventing the recipe suffix would put the generic
+        # recipe question back into a query a syllabus-derived companion course must not carry.
+        # A one-off brief keeps its bounded speed and a survey pass stays one query.
+        if recipe != "one_off":
+            queries.extend(_capability_queries(base, qualifier))
+        queries.append(f"{base} {base_qualifier}")
         # A course is not a list of topics. Ask how the subject is sequenced and what has
         # to come first, before the generic reference/glossary questions can consume the
         # bounded budget. Survey depth stays deliberately one query, and a one-off brief
@@ -677,7 +711,93 @@ def _domain_qualifier(domain: str | None, level: str | None) -> str | None:
     return qualifier
 
 
+#: A capability clause boundary in a learner's own goal sentence: the punctuation a person uses to
+#: list capabilities, plus the coordinating ``and``. Deterministic splitting only — no model call,
+#: no part-of-speech guess, no subject-matter table.
+_CLAUSE_BOUNDARY = re.compile(r"[:;,]+|\band\b", re.IGNORECASE)
+
+
+def _capability_clauses(goal: str) -> list[str]:
+    """The capability clauses the goal itself names, in goal order.
+
+    ``Keep a starter alive and bake a reliable open-crumb loaf at home: build the levain, develop
+    the dough, shape, and bake with steam.`` yields six clauses. The split is on the goal's own
+    punctuation and the word ``and``; nothing is inferred, added or reordered, and a goal with no
+    clause boundary yields one clause (the goal itself, which the caller deduplicates against the
+    base query).
+    """
+    parts = _CLAUSE_BOUNDARY.split(" ".join(str(goal or "").split()))
+    clauses: list[str] = []
+    seen: set[str] = set()
+    for part in parts:
+        clause = part.strip(" .!?;:,")
+        clause = " ".join(clause.split())
+        # A one-character fragment is punctuation debris, not a capability.
+        if len(clause) < 2:
+            continue
+        key = clause.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        clauses.append(clause)
+    return clauses
+
+
+def _capability_queries(goal: str, qualifier: str | None) -> list[str]:
+    """One query per capability clause of the goal, joined to the declared domain qualifier.
+
+    ``qualifier`` is ``None`` when the brief declares no subject domain: there is no declared
+    qualifier to join, and the clause is searched on its own. A goal clause is often a single verb
+    (``shape``), which is a weaker query than the base goal and exactly why the clause is added
+    next to it rather than instead of it.
+    """
+    clauses = _capability_clauses(goal)
+    if qualifier is None:
+        return clauses
+    return [f"{clause} {qualifier}" for clause in clauses]
+
+
 # ── The bounded pass ────────────────────────────────────────────────────────
+
+
+def _stratified_candidates(
+    candidates: Sequence[dict[str, Any]], limit: int
+) -> list[dict[str, Any]]:
+    """One page per query in query order, then a second per query, up to ``limit``.
+
+    Publisher-type rank orders the candidates *inside* one query's own list (a government page
+    beats a blog for the same question); it never lets an earlier query's ranked results consume
+    the whole page budget. Query order is the goal's own order — the base goal query first, then
+    the capability clauses — so a bounded pass asks every capability before it deepens any one.
+    Ties inside a query keep search position order. The result is deterministic for a given
+    candidate list.
+    """
+    by_query: dict[int, list[dict[str, Any]]] = {}
+    for item in candidates:
+        by_query.setdefault(int(item.get("query_index", 0)), []).append(item)
+    for items in by_query.values():
+        items.sort(
+            key=lambda item: (
+                SOURCE_TYPE_RANK.get(_classify_source(item["url"]), len(SOURCE_TYPE_RANK)),
+                int(item.get("position", 0)),
+            )
+        )
+    ordered: list[dict[str, Any]] = []
+    depth = 0
+    while len(ordered) < limit:
+        took_one = False
+        for query_index in sorted(by_query):
+            items = by_query[query_index]
+            if depth >= len(items):
+                continue
+            ordered.append(items[depth])
+            took_one = True
+            if len(ordered) >= limit:
+                break
+        if not took_one:
+            break
+        depth += 1
+    return ordered
 
 
 def run_research(
@@ -787,20 +907,19 @@ def run_research(
                 }
             )
 
-    # Selection preference: government/academic/reference/documentation pages before generic web
-    # pages, stable within a rank by query order. This is a fact about the URL, not a claim that
-    # the page is correct — support status stays ``unverified`` for every row.
-    candidates.sort(
-        key=lambda item: (
-            SOURCE_TYPE_RANK.get(_classify_source(item["url"]), len(SOURCE_TYPE_RANK)),
-            item["query_index"],
-            item["position"],
-        )
-    )
+    # Selection order (CP-015 R-1b, stratified): take one page per query in query order, then a
+    # second page from any query, and so on. Publisher-type rank applies *within* each query's own
+    # list, never across queries — sorting the whole candidate pool by rank let query 0's
+    # reference-type results spend the entire page budget, so the queries that asked about the
+    # goal's later capabilities returned nothing to fetch. The ceilings are unchanged
+    # (``max_pages``/``max_sources``), the ``SOURCE_TYPE_RANK`` meaning is unchanged, and every
+    # fetched row still starts ``unverified``: this is a fact about which URL was fetched, not a
+    # support verdict.
+    ordered_candidates = _stratified_candidates(candidates, budget.max_pages)
 
     sources: list[SourceRecord] = []
     failures: list[dict[str, str]] = []
-    for candidate in candidates[: budget.max_pages]:
+    for candidate in ordered_candidates:
         if len(sources) >= budget.max_sources:
             break
         if callable(cancel_probe) and cancel_probe():
@@ -1008,8 +1127,47 @@ def _bound(text: str, limit: int) -> str:
 
 
 def _excerpt(text: str, limit: int) -> str:
-    collapsed = " ".join(text.split())
-    return collapsed[:limit]
+    """A content-first slice of the fetched page, whitespace-collapsed and bounded.
+
+    Extraction returns the whole page; the first characters are frequently a site header or a
+    navigation menu (NASA's starts ``Search ## Suggested Searches - [Artemis](…)``). An excerpt
+    that stops inside that menu cannot carry a claim, so the leading chrome lines are skipped
+    before the window is taken. The skip is deliberately narrow — blank lines, an explicit
+    search/nav banner, and link-list lines — so real prose is never discarded.
+    """
+    lines = text.splitlines()
+    start = 0
+    while start < len(lines):
+        stripped = lines[start].strip()
+        if not stripped:
+            start += 1
+            continue
+        low = stripped.casefold()
+        is_chrome = (
+            low.startswith("search")
+            or "suggested searches" in low
+            or "an official website of the united states government" in low
+            or low.startswith("ask ")  # "Ask DOI Anything - How Can We Help?"
+            or stripped.startswith(("- [", "* [", "* * *"))
+            or (stripped.startswith("[") and "](" in stripped)
+        )
+        if is_chrome:
+            start += 1
+            continue
+        break
+    body = "\n".join(lines[start:])
+    collapsed = " ".join(body.split())
+    if len(collapsed) <= limit:
+        return collapsed
+    window = collapsed[:limit]
+    # CP-015 R-3: end on the last sentence boundary at or before the ceiling. The ceiling itself is
+    # unchanged — the stored excerpt can only get shorter. A page with no boundary before the
+    # ceiling (a table, a list, a run-on) still gets the plain cut, because an empty excerpt would
+    # lose the page's first claim entirely.
+    matches = list(_SENTENCE_BOUNDARY.finditer(window))
+    if matches:
+        return window[: matches[-1].end()]
+    return window
 
 
 def _loads_tool_json(raw: Any) -> dict[str, Any]:

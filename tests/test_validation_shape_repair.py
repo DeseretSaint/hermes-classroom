@@ -97,16 +97,31 @@ def _owned_criteria(request: gen.LLMRequest | None) -> list[str]:
 def _narrow_to_pass(document: dict, request: gen.LLMRequest | None) -> dict:
     """Answer exactly the pass: its criteria, its rejections, its claims.
 
-    H-192b splits the review into passes of five criteria, so a recorded ten-criterion answer
-    would fail the narrowed schema on ``criteria`` (too long) before the shape under test is
-    reached. Narrowing keeps the recorded text and only removes what another pass owns.
+    H-192b splits the review into passes, so a recorded wide answer would fail the narrowed schema
+    on ``criteria`` (too long) before the shape under test is reached. Narrowing keeps the recorded
+    text and only removes what another pass owns. CP-015a added an eleventh criterion, so a pass can
+    own a criterion the recorded answer predates; that slot is filled with a plain ``pass`` entry
+    (as ``tests/blueprint_support.narrowed_validation_answer`` does) rather than letting the count
+    be what the schema rejects — the recorded defect under test here is the over-long ``item``.
     """
-    owned = set(_owned_criteria(request))
+    owned = _owned_criteria(request)
+    owned_set = set(owned)
     document["criteria"] = [
-        entry for entry in document.get("criteria") or [] if entry.get("id") in owned
+        entry for entry in document.get("criteria") or [] if entry.get("id") in owned_set
     ]
+    if ((_claim_block(request).get("criteria") or {}) if request is not None else {}):
+        answered = {entry.get("id") for entry in document["criteria"]}
+        document["criteria"].extend(
+            {
+                "id": criterion,
+                "verdict": "pass",
+                "reason": "nothing in the artifact contradicts this criterion",
+            }
+            for criterion in owned
+            if criterion not in answered
+        )
     document["rejections"] = [
-        entry for entry in document.get("rejections") or [] if entry.get("criterion") in owned
+        entry for entry in document.get("rejections") or [] if entry.get("criterion") in owned_set
     ]
     return _with_claims(document, request)
 
@@ -289,7 +304,13 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # different instruction text under a reused label is never silently accepted.
         # v5 (`t_0affea08`) added the declared-reject rule to the pass instructions; the label
         # advances with it (`docs/DECISION-VALIDATION-REJECT-BASIS.md`).
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v5")
+        # v6 (CP-015) lowers the per-pass claim demand to three (criteria pass) and four
+        # (claim-only pass) because a six-claim pass overran the 24 576-byte answer bound.
+        # v7 (CP-015d) states the narrowed-plan rubric for objective_alignment /
+        # internal_contradiction / goal_capability_disclosure and sizes the answer demand.
+        # v8 (CP-015g) states that a unit-sections pass judges one unit against its own goal and
+        # objectives, and drops the whole-course learner_outcome from the unit-stage brief.
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v9")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

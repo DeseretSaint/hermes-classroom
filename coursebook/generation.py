@@ -96,6 +96,9 @@ __all__ = [
     "COST_ACTIONS",
     "DECLARED_CALL_COST_USD",
     "DEFAULT_MAX_COST_USD",
+    "TRUNCATION_REPAIR_CALLS",
+    "UNIT_SECTIONS_ATTEMPTS",
+    "unit_sections_cost_budget",
     "LessonNotAvailable",
     "LLMRequest",
     "LLMResponse",
@@ -146,6 +149,7 @@ __all__ = [
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
     "VALIDATION_CRITERIA_PASSES",
+    "VALIDATION_REASON_MAX_CHARS",
     "CLAIM_VERDICTS_PER_PASS",
     "CLAIM_ONLY_VERDICTS_PER_PASS",
     "VALIDATION_AUX_TASK",
@@ -156,6 +160,7 @@ __all__ = [
     "build_plan_validation_requests",
     "validation_pass_schema",
     "validation_claim_schema",
+    "validation_answer_bound",
     "validation_pass_instructions",
     "validation_pass_criteria",
     "plan_claim_labels",
@@ -181,7 +186,16 @@ logger = logging.getLogger("coursebook.generation")
 #: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
 #: H-192b states the graded-check rule the kernel enforces for ``committed``; v9 is taken by the
 #: blueprint prompt, so this advances to v10.
-PLAN_PROMPT_VERSION = "plan-prompt.v10"
+#: v13: the plan author is ledger-first — it may state only objectives a supplied excerpt
+#: carries, may stay short, and records an unsupported goal capability in exclusions instead of
+#: inventing an objective (CP-015).
+#: v17 (CP-015a): the exclusions rule no longer asks the author to name the removed capability in
+#: ``learner_outcome`` — that line fought the goal-coverage criterion, because a plan cannot both
+#: promise and exclude the same capability. The rule gate ``goal_outcome_integrity_reasons`` now
+#: refuses the contradiction deterministically, so the prompt states the authoring rule that
+#: satisfies it. The label advances past every label already shipped (v15 here, v16 for the
+#: blueprint prompt).
+PLAN_PROMPT_VERSION = "plan-prompt.v17"
 
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
@@ -192,16 +206,28 @@ PLAN_PROMPT_VERSION = "plan-prompt.v10"
 #: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
 #: through-line and prerequisite-assumption requirements here too, so it advances to v9.
 #: H-192b adds the committed graded-check line, so it advances to v11 after the v1 prompt's v10.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v11"
+#: v14: the ledger-first authoring rule, the short-course rule and the exclusions record (CP-015).
+#: v18 (CP-015a): same exclusions/outcome-integrity rule as the v1 prompt's v17 — the shared
+#: ``_plan_sourcing_rules`` text changed, so both labels advance.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v18"
 #: The unit-sections authoring stage. One unit per call, so its own version.
-UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v2"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt. H-195 adds the
 #: teaching-arc and audience requirements, so it advances to v10.
-LESSON_PROMPT_VERSION = "lesson-prompt.v10"
+#:
+#: v11 (CP-015c follow-up, ``t_a0bcacdd``): the lesson prompt states the answer-leak rule that
+#: :func:`assert_no_answer_leak` and :func:`assert_check_payload_does_not_announce_answer` enforce —
+#: which learner surfaces are scanned, that the ``model`` segment is the one presentation surface,
+#: the legal shape (the target in the model segment, referred to by function elsewhere) and the
+#: ban on shipping the key in the learner-facing check. CP-015c measured the defect: an author
+#: taught the target in the model segment and then restated it verbatim in the explanation and
+#: worked example, which is the natural way to explain a phrase the learner is about to be
+#: checked on, and both attempts parked on a rule the prompt never stated.
+LESSON_PROMPT_VERSION = "lesson-prompt.v11"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -215,12 +241,44 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 #: schema cannot carry that rule usefully (a JSON-Schema ``if/then`` is reported to the model as
 #: one opaque "not valid under any of the given schemas"); the prompt is where the rule can be
 #: read before answering, which is the H-191 lesson applied again.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v5"
+#: v7 (`t_c84d545e`, CP-015d): the plan passes state what ``objective_alignment`` and
+#: ``internal_contradiction`` mean for a narrowed plan, and the disclosure rule names the
+#: ``Not covered — no supporting source:`` prefix verbatim. CP-015b measured the defect: a plan
+#: that did exactly what the author rule asks (narrowed ``learner_outcome`` plus prefixed
+#: exclusions) was refused under both legacy criteria because the validator was handed criterion
+#: ids and nothing else, so it judged the raw goal sentence. A criterion name is not a rubric.
+#: The answer-length rule is stated as one number that the schema also carries
+#: (:data:`VALIDATION_REASON_MAX_CHARS`), and each pass's rejection list is bounded by the items
+#: it was actually given, so the byte/token demand is sized by the request rather than by hope.
+#:
+#: v8 (`t_332351b0`, CP-015g): the unit-sections pass states that a unit is judged against its own
+#: goal and its own objectives, not the whole course's outcome. CP-015c measured the defect: the
+#: unit-stage brief carried the whole-course ``learner_outcome`` while its ``check_plan`` was
+#: filtered to the unit, so the validator refused unit 1 of a correctly approved two-unit plan
+#: for not delivering unit 2's share. Dropping the whole-course outcome and stating the
+#: delegation rule is a change to the instruction text, so the label advances.
+#:
+#: v9 (CP-015c follow-up, ``t_a0bcacdd``): the lesson pass is told where the stored answer key
+#: lives. CP-015c measured the defect: the review page's validator read the authoring payload's
+#: ``lesson.check.reference_answer`` and ``accepted_answers`` as a learner-facing check that ships
+#: the graded response verbatim, and refused the page for it. The key is authoring material that
+#: ``learner_page`` never serializes; moving it to its own ``answer_key`` block and stating the
+#: learner surfaces the leakage criterion judges separates the two, so the validator refuses a real
+#: announcement and stops refusing the key's existence. Instruction text changed, so v9.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v9"
 
-#: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
+#: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
+#:
+#: ``goal_capability_disclosure`` (CP-015a) is the goal-coverage completeness check: the validator
+#: lists the capabilities the *goal* names and maps each one to a covered objective or to an
+#: ``exclusions`` entry. A goal capability in neither is a reject. It replaces the old reading of
+#: ``objective_alignment`` under which the plan had to deliver the raw goal sentence — a promise a
+#: bounded ledger can never keep. ``objective_alignment`` keeps its other jobs (curriculum
+#: sequence, unit prerequisites, the matching of an objective to the goal it serves).
 VALIDATION_CRITERIA: tuple[str, ...] = (
     "objective_alignment",
+    "goal_capability_disclosure",
     "source_support",
     "factual_correctness",
     "answer_uniqueness",
@@ -230,6 +288,14 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
     "answer_leakage",
     "hazard_age_appropriateness",
     "evidence_target_fit",
+)
+
+#: Plan criteria that do not apply to a lesson or a unit-section batch. Those artifacts carry no
+#: goal and no ``exclusions``, so asking a validator to judge disclosure over one would demand a
+#: verdict it has no evidence for, and ``unknown`` is not a pass. ``validation_verdict`` is given
+#: this set for those stages, so a lesson draft is never refused for a plan-level proposition.
+LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
+    criterion for criterion in VALIDATION_CRITERIA if criterion != "goal_capability_disclosure"
 )
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
@@ -306,6 +372,14 @@ MAX_VALIDATION_BYTES = 24 * 1024
 #: rule (and re-ask once) rather than to accept a claim where a locator is expected.
 ITEM_REFERENCE_MAX_CHARS = 80
 
+#: Bound on one validator ``reason``/``fix_hint``, in characters. CP-015d: the pass instructions
+#: said "at most 200 characters" while the schema allowed 400, so an answer that followed the
+#: stated rule and one that ignored it were both accepted — and a validator that wrote 400-char
+#: reasons on every criterion and rejection produced a 36 895-byte answer against a 24 576-byte
+#: bound. One number now, carried by the schema *and* stated in the prompt (H-191: a bound the
+#: prompt never states is a trap), with headroom over the one-sentence instruction.
+VALIDATION_REASON_MAX_CHARS = 240
+
 #: Minimum seconds a shape re-ask must inherit from the original call's deadline to be worth
 #: spending. Below it the stage could not finish inside its declared bound anyway, so the
 #: failure is typed instead of buying a call that is already out of time.
@@ -316,6 +390,17 @@ MIN_SHAPE_REPAIR_SECONDS = 15.0
 #: is a different text. The recorded validation binding keeps the *pass* label; the usage row
 #: and the recorded shape-violation count carry the re-ask.
 REPAIR_PROMPT_SUFFIX = ".repair"
+
+#: Suffix a *truncation* re-ask carries on its ``prompt_version``. A cut or empty answer is an
+#: incomplete answer, not a verdict, so it is re-asked once under its own marked label rather than
+#: being folded into the schema-repair path (different rejection, different rule stated).
+TRUNCATION_REPAIR_PROMPT_SUFFIX = ".cut"
+
+#: How close an answer's recorded completion tokens must be to its cap to be read as *cut off*.
+#: Token accounting is the provider's, and a trailing newline or one-final-token difference is not
+#: proof that the answer was allowed to finish; the slop keeps the check from missing a truncation
+#: over a single token while never labelling a short answer as truncated.
+TRUNCATION_CAP_SLOP_TOKENS = 64
 
 #: How much of a host schema-violation message the re-ask quotes back. Bounded because the
 #: message quotes model output, and the quote is wrapped in the untrusted-data envelope.
@@ -488,11 +573,39 @@ class CostCeilingExceeded(GenerationError):
     The exception also carries the *recovery checkpoint*: what was already authored, what was
     spent, and the three legal actions. A caller can persist it (``to_checkpoint``) and resume
     without re-authoring completed sections; nothing here grants permission to spend more.
+
+    It is a **budget stop, not a verdict about the artifact** — nothing was validated and nothing
+    was rejected. CP-015e measured the confusion that costs: a unit-sections job that ran out of
+    its four-call ceiling was read as a content refusal even though ``sections_completed_count``
+    was 0. Every raise therefore names the ``purpose`` whose call was refused and the
+    ``budget_source`` that sized the ceiling, and the message opens with
+    ``provider-call budget exhausted`` so it cannot be mistaken for a validator's rejection.
     """
 
-    def __init__(self, message: str) -> None:
+    #: A dedicated code would name this better, but ``cb.errors`` is frozen and code additions are
+    #: a contract bump owned by Atlas. ``POLICY_VIOLATION`` plus ``details.reason =
+    #: cost_ceiling_exceeded`` is the documented shape (docs/CONTRACTS.md), and the details below
+    #: make it distinguishable from a content rejection without inventing a code.
+    code = "POLICY_VIOLATION"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        purpose: str | None = None,
+        budget_source: str | None = None,
+        resume_brief: Mapping[str, Any] | None = None,
+    ) -> None:
         super().__init__(message)
         self.message = message
+        #: The provider call the ceiling refused (``coursebook.<stage>.<step>``), when known.
+        self.purpose = purpose
+        #: Where the ceiling came from (``declared`` / ``operator_env`` / ``operator_brief`` /
+        #: ``caller``), so ``cost_ceiling_exceeded`` cannot be read as "the validator said no".
+        self.budget_source = budget_source
+        #: The ``jobs.create`` brief that continues this stage. Overridden by a stage whose resume
+        #: is not the lessons pipeline (the unit stage resumes one unit).
+        self.resume_brief = dict(resume_brief) if resume_brief else None
         #: Section ids whose lesson row is already durable and validated/parked.
         self.sections_completed: list[str] = []
         self.sections_total: int = 0
@@ -515,9 +628,12 @@ class CostCeilingExceeded(GenerationError):
         usage: "_Usage",
         budget: "CostBudget",
         recovery: str,
+        resume_brief: Mapping[str, Any] | None = None,
     ) -> "CostCeilingExceeded":
         """Attach the durable facts. Never called before the rows they describe exist."""
         self.plan_id = plan_id
+        if resume_brief is not None:
+            self.resume_brief = dict(resume_brief)
         self.sections_completed = [str(item) for item in sections_completed][:200]
         self.sections_total = int(sections_total)
         self.calls = len(usage.calls)
@@ -549,8 +665,13 @@ class CostCeilingExceeded(GenerationError):
             "unknown_calls": self.unknown_calls,
             "max_cost_usd": self.max_cost_usd,
             "max_calls": self.max_calls,
+            "budget_source": self.budget_source,
+            # The call the ceiling refused. A budget stop names the arithmetic; it never implies a
+            # verdict about the artifact.
+            "refused_purpose": self.purpose,
             "actions": list(self.actions),
-            "resume": {
+            "resume": self.resume_brief
+            or {
                 "method": "jobs.create",
                 "brief": {"stage": "lessons", "plan_id": self.plan_id},
             },
@@ -716,10 +837,13 @@ def validation_independence(
 class CostBudget:
     """Honest ceilings for one job. Unknown cost is charged at a declared estimate, never zero.
 
-    ``max_calls`` is the *worst legal* pipeline cost, not the happy path: 8 sections x 2 attempts
-    x (generate + validate) = 32. The old default of 8 was below the floor for any plan larger
-    than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry, so
-    the job ended ``POLICY_VIOLATION`` on a fast provider).
+    The dataclass default is a *fallback*, not a bound on the pipeline: a plan job starts it, and
+    every lesson job is re-sized to its own plan (:func:`lesson_cost_budget`, 6 calls per section
+    including the truncation re-ask) and every unit-sections job to its unit
+    (:func:`unit_sections_cost_budget`, 6). The old default of 8 was below the floor for any plan
+    larger than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry,
+    so the job ended ``POLICY_VIOLATION`` on a fast provider); 32 is kept as a ceiling that is still
+    above any single blueprint call set without pretending to be the worst legal lesson path.
 
     ``max_cost_usd`` is the hard dollar ceiling this job will not cross. ``source`` records where
     it came from so the job view can show the *actual configured* value instead of implying a
@@ -802,6 +926,22 @@ CALLS_PER_LESSON_ATTEMPT = 2
 
 #: Attempts per section before the lesson is parked for review with its reasons.
 LESSON_ATTEMPTS = 2
+
+#: Attempts per unit-sections stage before the unit fails. The batch is transactional, so the
+#: second attempt re-authors from the first attempt's refusal reasons rather than patching rows.
+UNIT_SECTIONS_ATTEMPTS = (1, 2)
+
+#: Provider calls one *truncation re-ask* may add to a single stage attempt.
+#:
+#: :func:`_validation_answer_with_repair` spends exactly one extra call when the validator's answer
+#: was cut off by the completion cap: the same demand is re-asked once under a marked prompt
+#: version. That call is legal — refusing it reports a cut answer as a content rejection — so every
+#: budget that calls itself the *worst legal* path has to count it, or the ceiling kills a run that
+#: behaved exactly as designed. CP-015e measured that: ``unit_sections_cost_budget`` sized four
+#: calls for a six-call legal run (two attempts, each generate + validate + one repair) and job
+#: ``job_98d3c0e43fcc452dad317b7757619c41`` died at call 4 with ``sections_completed_count: 0``
+#: after every observed validation answer (8 000/8 000 tokens) ran into the cap.
+TRUNCATION_REPAIR_CALLS = 1
 
 #: Declared per-call cost used to *size* a ceiling and to charge a call whose provider reported no
 #: cost at all. This is a policy estimate, not a bill: it rounds the audit's measured $0.032 per
@@ -901,22 +1041,41 @@ def default_cost_budget(*, max_calls: int | None = None, brief_budget_usd: Any =
 def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tuple[int, int]:
     """``(minimum_calls, worst_legal_calls)`` for a plan of ``section_count`` sections.
 
-    The minimum is one generation plus one validation per section — no retries. The worst legal
-    case adds the second attempt the validator is allowed to ask for.
+    The minimum is one generation plus one validation per section — no retries:
+
+        sections x CALLS_PER_LESSON_ATTEMPT                                    (2n)
+
+    The worst legal case adds the second attempt the validator is allowed to ask for **and** the
+    one truncation re-ask (:data:`TRUNCATION_REPAIR_CALLS`) that each attempt may legally spend:
+
+        sections x attempts x (generate + validate + TRUNCATION_REPAIR_CALLS)   (6n)
+
+    The repair is counted because it is a designed call, not an exception. CP-015b's Sourdough run
+    recorded five ``coursebook.lesson.validate`` answers cut at the 8 000-token cap for a four-lesson
+    job, each repaired: on a route that runs into the cap, the repair is the *normal* path. Leaving
+    it out of the ceiling bought nothing — every such job either refused a legal call and failed
+    mid-course (wasting the whole run, since the operator must resume) or, on a route that never
+    truncates, never came near the ceiling anyway. The sizing policy is H-17 / audit P1-6 "size the
+    ceiling to the plan's worst legal path"; four calls per section was that policy applied to an
+    undercounted path, so counting the repair is the fix, not a new policy.
     """
     sections = max(1, int(section_count))
-    per_section = CALLS_PER_LESSON_ATTEMPT * max(1, int(attempts))
-    return sections * CALLS_PER_LESSON_ATTEMPT, sections * per_section
+    tries = max(1, int(attempts))
+    per_attempt = CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS
+    return sections * CALLS_PER_LESSON_ATTEMPT, sections * tries * per_attempt
 
 
 def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> CostBudget:
     """Budget sized to the plan's sections, not to a constant.
 
     Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
-    validation, so the call ceiling is ``4 x sections``. The *dollar* ceiling is sized the same
-    way from :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a
-    flat $0.75 left binding: 8 sections need 32 calls, and a $0.75 ceiling aborted at call 24
-    with sections unauthored. A caller/operator value still wins.
+    validation, plus the truncation re-ask each attempt may spend, so the call ceiling is
+    ``6 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
+    :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a flat $0.75
+    left binding: 8 sections need 48 calls, and a $0.75 ceiling aborted the audit's run at call 24
+    with sections unauthored. Five sections therefore get $1.20, not $0.75. A caller/operator value
+    still wins (``COURSEBOOK_JOB_MAX_COST_USD`` or ``brief.budget_usd``), so an operator who wants a
+    tighter ceiling can declare one, but the default never refuses a call the pipeline itself makes.
     """
     _, worst_legal = lesson_calls(section_count)
     sized_floor = worst_legal * DECLARED_CALL_COST_USD
@@ -1149,14 +1308,17 @@ class _Usage:
     #: flight, not just calls that already returned.
     _reserved: int = 0
 
-    def reserve(self, count: int) -> None:
+    def reserve(self, count: int, *, purpose: str | None = None) -> None:
         """Hold *count* call slots before a group of parallel passes is submitted."""
         with self._lock:
             if len(self.calls) + self._reserved + int(count) > self.budget.max_calls:
                 raise CostCeilingExceeded(
-                    f"job already made {len(self.calls)} provider calls and holds "
-                    f"{self._reserved} reservation(s); {count} more would exceed the ceiling "
-                    f"{self.budget.max_calls}"
+                    f"provider-call budget exhausted: the job already made {len(self.calls)} "
+                    f"provider calls and holds {self._reserved} reservation(s); "
+                    f"{count} more for {purpose or 'the submitted passes'} would exceed the "
+                    f"{self.budget.max_calls}-call ceiling declared for this stage",
+                    purpose=purpose,
+                    budget_source=self.budget.source,
                 )
             self._reserved += int(count)
 
@@ -1182,16 +1344,25 @@ class _Usage:
                 self._reserved -= 1
             elif len(self.calls) >= self.budget.max_calls:
                 raise CostCeilingExceeded(
-                    f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
+                    f"provider-call budget exhausted before {request.purpose}: the job already "
+                    f"made {len(self.calls)} provider calls, which is the "
+                    f"{self.budget.max_calls}-call ceiling declared for this stage. No verdict was "
+                    "stated and nothing from this stage was validated or rejected",
+                    purpose=request.purpose,
+                    budget_source=self.budget.source,
                 )
             if (
                 self.budget.max_cost_usd is not None
                 and self.estimated_spend_usd >= self.budget.max_cost_usd
             ):
                 raise CostCeilingExceeded(
-                    f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
+                    f"provider-call budget exhausted before {request.purpose}: spend "
+                    f"{self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
                     f"{self.unknown_calls} with unknown cost) already reaches the "
-                    f"{self.budget.max_cost_usd:.4f} USD ceiling"
+                    f"{self.budget.max_cost_usd:.4f} USD ceiling. No verdict was stated and "
+                    "nothing from this stage was validated or rejected",
+                    purpose=request.purpose,
+                    budget_source=self.budget.source,
                 )
 
     def wait_id(self) -> str:
@@ -1246,8 +1417,12 @@ class _Usage:
             unknown = self.unknown_calls
         if over_ceiling:
             raise CostCeilingExceeded(
-                f"spend {spend:.4f} USD ({unknown} calls with unknown "
-                f"cost) exceeded the {self.budget.max_cost_usd:.4f} USD ceiling"
+                f"provider-call budget exhausted after {request.purpose}: spend {spend:.4f} USD "
+                f"({unknown} calls with unknown cost) exceeded the "
+                f"{self.budget.max_cost_usd:.4f} USD ceiling. The call's tokens are recorded as "
+                "spend; no verdict about the artifact was stated",
+                purpose=request.purpose,
+                budget_source=self.budget.source,
             )
 
     def summary(self) -> dict[str, Any]:
@@ -2721,7 +2896,11 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "id": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
                     "verdict": {"type": "string", "enum": ["pass", "fail", "unknown"]},
-                    "reason": {"type": "string", "minLength": 3, "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
                 },
             },
         },
@@ -2735,8 +2914,12 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "item": {"type": "string", "minLength": 1, "maxLength": ITEM_REFERENCE_MAX_CHARS},
                     "criterion": {"type": "string", "enum": list(VALIDATION_CRITERIA)},
-                    "reason": {"type": "string", "minLength": 5, "maxLength": 400},
-                    "fix_hint": {"type": "string", "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
+                    "fix_hint": {"type": "string", "maxLength": VALIDATION_REASON_MAX_CHARS},
                 },
             },
         },
@@ -2760,7 +2943,11 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                             "stored bytes, so a fabricated quote never upgrades support."
                         ),
                     },
-                    "reason": {"type": "string", "minLength": 3, "maxLength": 400},
+                    "reason": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": VALIDATION_REASON_MAX_CHARS,
+                    },
                     "excerpt": {
                         "type": ["string", "null"],
                         "maxLength": 600,
@@ -2793,12 +2980,22 @@ VALIDATION_SCHEMA: dict[str, Any] = {
 #: plan it was still running at the 600 s deadline (job failed ``HOST_UNAVAILABLE``), and on a
 #: short plan it emitted 22 325 tokens / 539 s. Ten criteria reasoned over a full plan is not a
 #: fixed demand. The criteria set is therefore split into two passes of five: every pass now
-#: answers a fixed maximum (five criteria, six claims), independent of plan size, and the two
+#: answers a fixed maximum (at most six criteria, six claims), independent of plan size, and the two
 #: halves run together (max of the two, not the sum).
 VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
-    VALIDATION_CRITERIA[:5],
-    VALIDATION_CRITERIA[5:],
+    # CP-015a adds an eleventh criterion. The split stays two passes of a fixed maximum (six and
+    # five criteria) so no pass's verdict count grows with plan size — the H-192b property this
+    # ledger exists to protect. ``objective_alignment`` and ``goal_capability_disclosure`` share a
+    # pass because both read the same goal/outcome text, and their narrowed prompts state both
+    # rubrics together.
+    VALIDATION_CRITERIA[:6],
+    VALIDATION_CRITERIA[6:],
 )
+
+#: The most criteria one validation pass may demand. Fixed by the layout above, never a function
+#: of plan size — the property H-192b bought with the split, and the reason a criterion may not be
+#: appended to the widest pass without re-checking the demand measurement.
+VALIDATION_CRITERIA_PER_PASS_MAX = max(len(batch) for batch in VALIDATION_CRITERIA_PASSES)
 
 #: Most claim-support verdicts one validation pass may demand.
 #:
@@ -2816,15 +3013,20 @@ VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (
 #: large the plan is. Six keeps a single/short plan in one call (the measured claim set was 3–5
 #: labels) while a full plan becomes a handful of small concurrent passes instead of one unbounded
 #: one.
-CLAIM_VERDICTS_PER_PASS = 6
+#: CP-015 (2026-11-10): a six-claim criteria pass on a four-objective astronomy plan emitted a
+#: 34 738-byte answer against the 24 576-byte bound. Six claims plus five criteria is still more
+#: than the bound allows at this model's verbosity, so a criteria pass now takes three; the rest
+#: ride claim-only passes at a lower fixed batch. Demand per pass is what is bounded, not the
+#: plan.
+CLAIM_VERDICTS_PER_PASS = 3
 
 #: Most claim-support verdicts one *claim-only* pass may demand.
 #:
 #: A claim-only pass rules on no criterion, so its answer is a short support verdict per claim
-#: rather than criterion reasoning. Twelve keeps a maximum-band full plan (40 objectives, 12
-#: units, the learner outcome = 53 labels) to five claim-only passes while staying far below the
-#: unbounded 29 386-token answer H-192 measured.
-CLAIM_ONLY_VERDICTS_PER_PASS = 12
+#: rather than criterion reasoning. Twelve produced oversized answers on the measured plan, so a
+#: claim-only batch is four; a maximum-band full plan becomes a handful of small passes instead
+#: of one unbounded answer.
+CLAIM_ONLY_VERDICTS_PER_PASS = 4
 
 # ── Validator output bound (H-192c) ─────────────────────────────────────────
 #
@@ -2855,11 +3057,21 @@ VALIDATION_AUX_TASK = "cb_validate"
 VALIDATION_REASONING_EFFORT = "low"
 
 #: Hard completion cap per validation answer, in tokens. It counts reasoning tokens too, so it is
-#: sized for a low-effort reasoning trace plus a full schema answer: ten verdicts at the 400-char
-#: reason bound plus JSON overhead is under 1 500 tokens, and the measured low-effort trace is
-#: ~300. A pass that would exceed this is truncated by the provider (``finish_reason=length``),
-#: which the shape gate reports as ``VALIDATION_FAILED`` rather than a silent overrun.
-VALIDATION_OUTPUT_TOKENS = 4000
+#: sized for a low-effort reasoning trace plus a full schema answer.
+#:
+#: CP-015 measured this on the demo authoring model (``nous`` / ``deepseek-v4.1-flash``, the host's
+#: configured route) while creating four real courses: of nine ``coursebook.plan.validate`` calls,
+#: four consumed the cap exactly (``output_tokens: 4000``), and three of those came back as
+#: truncated or empty content — ``plan validation is not valid JSON: Unterminated string``,
+#: ``... not valid JSON: Expecting value``, ``plan validation was empty``. The three answers that
+#: did parse used 2 998–3 814 tokens, so 4 000 sat at the median answer, not above it. The cap is
+#: therefore 8 000: still far below the 19 739-token unbounded answer H-192c measured, but with
+#: room for the route's reasoning trace *and* the schema answer. A pass that would still exceed it
+#: is truncated by the provider, which the shape gate reports as ``VALIDATION_FAILED``; a
+#: truncation whose cap was fully consumed is first re-asked once (see
+#: :func:`_validation_answer_with_repair`), because a cut answer is an incomplete answer, not a
+#: verdict.
+VALIDATION_OUTPUT_TOKENS = 8000
 
 #: The auxiliary-task defaults declared at register time. ``reasoning_effort`` is folded into
 #: ``extra_body.reasoning`` by the host; ``extra_body.max_tokens`` is the route-level cap the
@@ -2878,6 +3090,80 @@ VALIDATION_AUX_DEFAULTS: dict[str, Any] = {
 #: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
 #: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
 _PLAN_SEQUENCE_CRITERION = "objective_alignment"
+
+#: CP-015a: the goal-coverage completeness criterion. The rubric is stated in the pass that owns
+#: it, because the pass answers a narrowed schema and an unstated rule is a trap (H-191).
+_PLAN_DISCLOSURE_CRITERION = "goal_capability_disclosure"
+
+#: CP-015d: the inconsistency criterion, judged over the plan's own parts rather than against the
+#: raw goal sentence. Its rubric is stated in the pass that owns it for the same reason.
+_PLAN_CONTRADICTION_CRITERION = "internal_contradiction"
+
+#: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
+#: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
+#: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
+#:
+#: Defined here, above the validator rules, because the rubric text quotes it verbatim: a rule that
+#: paraphrases the prefix would let the prompt and :func:`excluded_capabilities` drift apart.
+EXCLUSION_PREFIX = "Not covered — no supporting source:"
+
+#: CP-015d: ``objective_alignment`` for a plan. CP-015b measured the validator refusing an
+#: R-2-compliant Sourdough plan because its objectives taught less than the raw goal sentence.
+#: That is the disclosed gap c2 exists to record, not misalignment: the criterion keeps its own
+#: jobs (sequence, prerequisites, objective-to-outcome), and the completeness question belongs to
+#: ``goal_capability_disclosure`` alone.
+_PLAN_ALIGNMENT_RULE = (
+    " Also judge curriculum sequence and objective alignment under objective_alignment: every "
+    "unit after the first must name the earlier unit(s) it builds on and explain why it comes at "
+    "that point; no unit may require a concept taught later; and each objective must advance the "
+    "learner_outcome the plan itself declares. Reject a plan whose order is arbitrary, whose "
+    "prerequisite edges do not match the stated dependencies, or whose language-coverage claim is "
+    "unsourced or treats coverage as comprehension. Judge the plan against its own declared "
+    "outcome and scope, not against every capability the raw goal sentence names: a capability "
+    "that appears only in a prefixed exclusions entry is disclosed scope, not misalignment, and "
+    "it is never an objective_alignment failure. Goal coverage is judged only by "
+    "goal_capability_disclosure."
+)
+
+#: CP-015d: ``internal_contradiction`` for a plan reads the plan's own parts against each other.
+#: The goal is input, not a promise the plan must repeat; a disclosed exclusion narrowing it is
+#: not a contradiction.
+_PLAN_CONTRADICTION_RULE = (
+    " Also judge internal_contradiction over the plan's own parts against each other: "
+    "learner_outcome, objectives, check_plan, evidence_note, delivery and exclusions must be able "
+    "to be true together. A contradiction is two statements the plan itself makes that cannot both "
+    "hold; a capability that appears only in a prefixed exclusions entry is a disclosed limit, not "
+    "a contradiction with the goal, and the goal sentence is not evidence that the plan promises "
+    "it. Do not reject on this criterion for a disclosed gap."
+)
+
+_PLAN_DISCLOSURE_RULE = (
+    " Also judge goal coverage under goal_capability_disclosure: list every capability the goal "
+    "names, and map each one either to an objective that covers it or to an entry in the plan's "
+    "exclusions that begins exactly with 'Not covered — no supporting source:'. A goal capability "
+    "that appears in neither is a reject: silence about a capability the learner asked for is the "
+    "failure this criterion exists to catch. A capability the plan honestly records as excluded "
+    "is disclosed, not covered — do not reject a plan for disclosing a gap, and do not pass one "
+    "that hides it."
+)
+
+#: CP-015g: ``objective_alignment`` for one unit of a multi-unit plan. CP-015c measured the
+#: defect: the unit-stage brief carried the whole-course ``learner_outcome`` while its
+#: ``check_plan`` was filtered to the unit, so a validator applying the generic rubric refused
+#: unit 1 of an approved two-unit plan for not teaching unit 2's share. The scope of a unit pass
+#: is the unit, and a rule the prompt does not state is a trap, so the prompt now states it.
+_UNIT_ALIGNMENT_RULE = (
+    " Also judge objective_alignment for this unit only, not for the whole course: the artifact "
+    "is one unit's sections, so judge it against the unit's own goal (plan_brief.unit_goal), the "
+    "unit's own objectives in 'objectives', and the part of the course's outcome those objectives "
+    "name. Each owner section must teach and assess the objective it claims, and every "
+    "evidence_criteria entry of this unit's objectives must be deliverable by a section or check "
+    "in this batch. A capability that another unit of the course delivers is that unit's "
+    "obligation: do not reject this unit because it does not teach another unit's share, and do "
+    "not read plan_brief.unit_goal as a promise of the whole course. Reject only when this unit's "
+    "own goal or one of this unit's own objectives names a capability that no section or check in "
+    "this batch delivers."
+)
 
 
 def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
@@ -2948,6 +3234,14 @@ def validation_pass_schema(
     criteria_schema["maxItems"] = len(criteria)
     criteria_schema["items"]["properties"]["id"]["enum"] = list(criteria)
     properties["rejections"]["items"]["properties"]["criterion"]["enum"] = list(criteria)
+    # CP-015d: size the demand by what this pass was given. A rejection list is at most one entry
+    # per judged criterion or claim — a validator cannot honestly itemise more defects than there
+    # are items to point at, and the wide ``maxItems: 20`` let one pass write ~18 KB of rejections
+    # on a six-criterion answer. The byte bound is derived from this same schema
+    # (:func:`validation_answer_bound`), so the limit the model is checked against and the limit it
+    # is told are one number.
+    judged = len(criteria) + len(claim_labels)
+    properties["rejections"]["maxItems"] = judged
     if claim_labels:
         claim_schema = properties["claim_verdicts"]
         claim_schema["minItems"] = len(claim_labels)
@@ -2959,6 +3253,67 @@ def validation_pass_schema(
     else:
         properties.pop("claim_verdicts", None)
     return schema
+
+
+#: The most UTF-8 bytes one code point can occupy. A JSON-Schema ``maxLength`` counts code points,
+#: so ``maxLength * this`` is a true upper bound on the encoded byte length of a schema string,
+#: independent of language.
+_SCHEMA_UTF8_BYTES_PER_CHAR = 4
+
+#: Structural bytes allowed per JSON member (key quotes, colon, comma, escaping headroom). The
+#: bound is a ceiling for a pre-parse guard, not a size prediction, so it over-counts rather than
+#: under-counts.
+_SCHEMA_STRUCTURAL_BYTES = 12
+
+
+def _schema_json_bound(schema: Mapping[str, Any]) -> int:
+    """Upper bound on the compact UTF-8 size of any instance the given schema admits.
+
+    It walks the schema's own ``maxLength``/``maxItems``/``enum`` declarations, which are the only
+    honest limits on a validator answer: the prompt's prose is not enforced, the schema is. Object
+    members are summed over every declared property (all were counted, whether required or not)
+    and arrays are multiplied by their own ``maxItems``.
+    """
+    if not isinstance(schema, Mapping):
+        return 0
+    enum = schema.get("enum")
+    if isinstance(enum, list) and enum:
+        return max(
+            _schema_json_bound({"type": "string", "maxLength": len(str(value))})
+            for value in enum
+        )
+    declared = schema.get("type")
+    types = declared if isinstance(declared, list) else [declared]
+    best = 0
+    for kind in types:
+        if kind == "null":
+            best = max(best, 4)
+        elif kind == "string":
+            best = max(best, int(schema.get("maxLength") or 0) * _SCHEMA_UTF8_BYTES_PER_CHAR + 2)
+        elif kind == "array":
+            items = _schema_json_bound(schema.get("items") or {})
+            count = int(schema.get("maxItems") or 0)
+            best = max(best, count * (items + _SCHEMA_STRUCTURAL_BYTES // 2) + 2)
+        elif kind == "object":
+            total = 2
+            for key, child in (schema.get("properties") or {}).items():
+                total += len(str(key)) + _SCHEMA_STRUCTURAL_BYTES + _schema_json_bound(child)
+            best = max(best, total)
+    return best
+
+
+def validation_answer_bound(schema: Mapping[str, Any]) -> int:
+    """The byte bound for one validator answer, derived from the pass's own schema.
+
+    CP-015d: ``MAX_VALIDATION_BYTES`` was a constant applied to every stage, and a narrowed plan
+    pass whose *schema-legal* answer can be tens of kilobytes failed on the byte count before the
+    schema could judge it (measured: 36 895 bytes / 24 576 bound on an honest 3-objective plan).
+    The schema is what bounds the answer — ``maxItems`` on criteria/claims/rejections and
+    ``maxLength`` on every string — so the bound is derived from it. A legitimate answer cannot
+    exceed it by construction; an answer that does could not have been schema-valid anyway. The
+    constant stays as a floor so a small pass is never given a looser guard than the historic one.
+    """
+    return max(MAX_VALIDATION_BYTES, _schema_json_bound(schema))
 
 
 #: The rule that makes a declared ``reject`` a verdict (`t_0affea08`). Stated by *both* prompt
@@ -2973,6 +3328,25 @@ _DECLARED_VERDICT_RULE = (
     "criteria and names no rejection states no rule that was broken: it is not a verdict, and "
     "the harness reports the answer as a contract failure (VALIDATION_FAILED) instead of "
     "treating it as a refusal."
+)
+
+#: CP-015c follow-up: the lesson payload separates the stored answer key from the learner-facing
+#: artifact, and the leakage criterion is defined over the learner surfaces so the key's existence
+#: is not read as a leak. Stated because it is enforced and because the same defect was measured:
+#: a review-page validator refused a page with ``lesson.check.reference_answer`` for shipping the
+#: key it was never shipped.
+_LESSON_ANSWER_KEY_RULE = (
+    " The stored answer key travels under 'answer_key', not inside 'lesson.check':"
+    " 'reference_answer', 'accepted_answers', 'accepted_alternatives' and 'rubric' are authoring"
+    " material and are never serialized into the learner page, so their presence is not a leak."
+    " Judge 'answer_leakage' on the learner-facing surfaces only: every segment whose kind is not"
+    " 'model' (heading, body and short), the worked example (prompt, answer, steps and short),"
+    " 'learner_explanation', 'learner_explanation_short', 'parent_notes', non-narration media"
+    " text, the recap, and the check's stimulus prompt and learner_instructions. A 'model'"
+    " segment may present the target form it checks, narration-role media may read it, and a"
+    " selection check's choices may contain the correct choice. Refuse a page that announces the"
+    " key on any other surface, and refuse a check whose stimulus prompt or learner_instructions"
+    " restates the reference answer: locate that rejection as 'lesson.check.reference_answer'."
 )
 
 
@@ -2998,10 +3372,12 @@ def validation_pass_instructions(
     text = (
         f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
         f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
-        "named here and no others. Keep each reason to one sentence (at most 200 characters) that "
-        "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
-        "author's rationale, or explain your method. Reject any item that must not reach a learner, "
-        "with the item reference and a concrete reason."
+        "named here and no others. Keep each reason to one sentence (at most "
+        f"{VALIDATION_REASON_MAX_CHARS} characters) that names the concrete artifact feature it "
+        "rests on; do not restate the artifact, restate the author's rationale, or explain your "
+        "method. Return at most one rejection per criterion or claim you were given, and leave "
+        "'fix_hint' out unless a concrete replacement is needed. Reject any item that must not "
+        "reach a learner, with the item reference and a concrete reason."
     ) + _DECLARED_VERDICT_RULE
     if claim_labels:
         text += (
@@ -3017,13 +3393,11 @@ def validation_pass_instructions(
     else:
         text += " Return no claim_verdicts: claim support is judged by another pass."
     if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
-        text += (
-            " Also judge curriculum sequence under objective_alignment: every unit after the "
-            "first must name the earlier unit(s) it builds on and explain why it comes at that "
-            "point; no unit may require a concept taught later. Reject a plan whose order is "
-            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
-            "language-coverage claim is unsourced or treats coverage as comprehension."
-        )
+        text += _PLAN_ALIGNMENT_RULE
+    if subject == "plan" and _PLAN_CONTRADICTION_CRITERION in criteria:
+        text += _PLAN_CONTRADICTION_RULE
+    if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
+        text += _PLAN_DISCLOSURE_RULE
     return text
 
 
@@ -3054,8 +3428,9 @@ def merge_validation_reports(
     """Combine one report per validation pass into the single report ``validation_verdict`` reads.
 
     ``passes`` is one ``(owned_criteria, report)`` pair per pass. Nothing is dropped to make the
-    merge succeed: every one of the ten criteria must arrive from the pass that owns it, so a pass
-    that answered only part of its batch is a typed rejection rather than a smaller review. The
+    merge succeed: every criterion in :data:`VALIDATION_CRITERIA` must arrive from the pass that
+    owns it, so a pass that answered only part of its batch is a typed rejection rather than a
+    smaller review. The
     merged report keeps the shape and the meaning ``validation_verdict`` already relies on
     (``outcome``, ``independence`` and the recorded validator identity are computed there, not
     here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
@@ -3135,7 +3510,7 @@ def _run_validation_passes(
 
     # Reserve every pass's slot before any of them starts: five threads that each check the call
     # ceiling as they begin would all see the same "calls so far" and cross it together.
-    usage.reserve(len(requests))
+    usage.reserve(len(requests), purpose=requests[0].purpose if requests else None)
     with ThreadPoolExecutor(max_workers=len(requests), thread_name_prefix="coursebook-validation") as pool:
         futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
         responses: list[LLMResponse | None] = [None] * len(requests)
@@ -3459,17 +3834,21 @@ def _escape_untrusted_markers(text: str) -> str:
     return escaped
 
 
-def _untrusted_excerpt(text: Any) -> str:
+def _untrusted_excerpt(text: Any, *, excerpt_chars: int | None = None) -> str:
     """Wrap one bounded fetched excerpt in the shared data envelope.
 
     The content is bounded by ``ResearchBudget.max_excerpt_chars`` before it reaches here; this
     function only collapses whitespace, strips control characters, escapes the markers and adds
     the delimiters. Nothing is deleted: the model sees the page as data, including hostile text.
+
+    ``excerpt_chars`` lets the plan request shrink the window so a deep research pass (ten
+    sources) still fits its byte bound instead of failing the job; the default is the research
+    window, so every other caller is unchanged.
     """
     collapsed = " ".join(str(text or "").split())
     collapsed = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", collapsed)
     collapsed = _escape_untrusted_markers(collapsed)
-    limit = ResearchBudget().max_excerpt_chars
+    limit = excerpt_chars if excerpt_chars is not None else ResearchBudget().max_excerpt_chars
     if len(collapsed) > limit:
         collapsed = collapsed[:limit]
     return f"{UNTRUSTED_SOURCE_BEGIN}\n{collapsed}\n{UNTRUSTED_SOURCE_END}"
@@ -3600,6 +3979,61 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     return lines
 
 
+def _plan_sourcing_rules() -> list[str]:
+    """Authoring rules a validator measures and a plan can fail without.
+
+    A plan objective is only as good as the ledger text behind it, and a graded check with no
+    accepted answer cannot be scored. Both were measured live failures: every objective after the
+    first was stored ``support: unverified`` with no ``source_ids`` while the ledger held only
+    navigation-chrome excerpts, and every quiz was an open ``explain`` prompt the validator refused
+    as non-unique. The rules are stated so the author can satisfy them; the validator still judges
+    the result, and neither rule weakens a verdict.
+    """
+    return [
+        "Author the plan from the source ledger, not from the goal. For each objective you write, "
+        "find the sentence in a supplied excerpt that states the capability, and write the "
+        "objective only when that sentence exists; then list that source in the objective's "
+        "source_ids and set support to 'sourced'. Keep each objective at the level of generality "
+        "the excerpt actually supports: do not add a mechanism, cause, number, name, date, named "
+        "example or label the excerpt does not state. An objective whose claim the excerpts do "
+        "not carry must not be written at all; do not invent a citation and do not leave it at "
+        "support 'unverified' in a finished plan.",
+        "Make every graded check answerable with one defensible answer: a quiz check's notes must "
+        "name the fixed stimulus (the exact items, chart, case or options the learner responds to) "
+        "and the single accepted answer or a closed list of accepted answers. For a multiple-choice "
+        "quiz, give the stem, every option, and mark which option is accepted and why each other "
+        "option is wrong — do not give only the accepted answer. Never write an open 'explain why' "
+        "prompt that several correct answers would satisfy. The answer key stays in the check "
+        "record, never on the learner-facing page.",
+        "The check kind and evidence_target must match what the learner is asked to do: asking a "
+        "learner to label, trace or perform is an application or procedure check, not "
+        "comprehension, and the objective's evidence target must be the same class.",
+        "A course may be short. State only the capabilities the excerpts support, even when that "
+        "is one objective in one unit; never pad the plan with an extra objective, unit or named "
+        "example to reach an objective count. Cover what the goal names only where the ledger "
+        "carries it: when the goal names a capability no excerpt supports, do not invent an "
+        "objective for it — record the capability in exclusions, prefixed 'Not covered — no "
+        "supporting source:', so the gap is visible to the reviewer instead of being taught "
+        "unsourced.",
+        "One check must assess every evidence criterion on its objective. Write only criteria the "
+        "check actually exercises, and let the check observe all of them; a check that assesses one "
+        "of three stated criteria is incomplete. Keep context_needs consistent with the check plan "
+        "— do not demand more quiz items in context_needs than the checks supply.",
+        "A check item must require the learner to perform the objective's capability, not to recall "
+        "the source's wording. 'What does the guide say it examines?' is recall of a document; "
+        "'describe the Moon's changing shape' is the capability. Write the second kind.",
+        "When the goal names a capability the ledger cannot support, record it in exclusions with "
+        "the prefix 'Not covered — no supporting source:' and say in learner_outcome only what "
+        "the course does cover. Do not name the excluded capability in learner_outcome, in an "
+        "objective title or in an objective's evidence criteria: a plan whose stated outcome "
+        "promises a capability its own exclusions remove is refused by the goal-coverage rule "
+        "before any validator reads it.",
+        "Declare a prerequisite unit edge only when an earlier unit's concept is genuinely required "
+        "by the later unit's goal. Do not add an edge to show a sequence; a prerequisite with no "
+        "shared concept is a false ordering.",
+    ]
+
+
 def _plan_length_rule() -> str:
     """The hard-cap rule every plan prompt states (H-63 D-H63-2).
 
@@ -3612,8 +4046,9 @@ def _plan_length_rule() -> str:
         "value, so a field that reaches its maximum has lost its ending and the plan is rejected. "
         "Write learner_outcome in at most 450 characters, evidence_note in at most 300, "
         "time_estimate.rationale in at most 450, parent.reading_level in at most 30, "
-        "parent.parent_facing_summary in at most 450, and every other prose field well under its "
-        "maximum. Finish every sentence."
+        "parent.parent_facing_summary in at most 450, each check_plan notes entry in at most 225 "
+        "(its maximum is 300 and a value at the cap has been cut), and every other prose field "
+        "well under its maximum. Finish every sentence."
     )
 
 
@@ -3660,8 +4095,13 @@ def _plan_instructions(
         "generic heading or a generic intent that would fit any course.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
-        "State explicit exclusions: what this course will not cover or claim.",
     ]
+    lines.extend(_plan_sourcing_rules())
+    lines.extend(
+        [
+        "State explicit exclusions: what this course will not cover or claim.",
+        ]
+    )
     # The declared inputs are stated as themselves. ``locale`` is the language of delivery and
     # ``subject_domain`` is what the course is about; the plan may not collapse one into the other.
     if level:
@@ -3864,18 +4304,23 @@ def _plan_instructions_v2(
         "Produce exactly one check plan entry per objective with objective_ref, kind and "
         "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
         "owner lesson writes exactly one check, and independence is an evidence class.",
-        # H-195: the arc the units build and the standing the learner starts from.
-        "State the course 'through_line': one paragraph naming the single arc every unit and "
-        "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
-        "learner must already have before unit 1. Never invent prior mastery the goal does not "
-        "state.",
-        "Every unit and objective must serve the goal in the input. Do not add generic "
-        "study-skills units or objectives (time management, note-taking, motivation, 'learning "
-        "how to learn'); those are not this course unless the goal itself names them.",
-        "Each unit goal and objective title must name the specific capability this course "
-        "teaches, never a generic template phrase that would fit any course.",
-        "State explicit exclusions: what this course will not cover or claim.",
     ]
+    lines.extend(_plan_sourcing_rules())
+    lines.extend(
+        [
+            # H-195: the arc the units build and the standing the learner starts from.
+            "State the course 'through_line': one paragraph naming the single arc every unit and "
+            "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
+            "learner must already have before unit 1. Never invent prior mastery the goal does not "
+            "state.",
+            "Every unit and objective must serve the goal in the input. Do not add generic "
+            "study-skills units or objectives (time management, note-taking, motivation, 'learning "
+            "how to learn'); those are not this course unless the goal itself names them.",
+            "Each unit goal and objective title must name the specific capability this course "
+            "teaches, never a generic template phrase that would fit any course.",
+            "State explicit exclusions: what this course will not cover or claim.",
+        ]
+    )
     if level:
         lines.append(
             f"Learner level: {level}. It is declared by the brief; never infer a level from the "
@@ -4046,6 +4491,36 @@ def _lesson_instructions(
         "A short must not add a claim. No number, date, name, acronym or quotation may appear in a "
         "short unless the same string appears in the deep text beside it, and a short must never "
         "state the check's reference answer, an accepted answer or rubric text.",
+        # CP-015c follow-up: the answer-leak gate is deterministic and scans named surfaces. An
+        # author that never saw the list taught the target in the model segment and then restated
+        # it verbatim in the explanation and the worked example — the natural way to explain a
+        # phrase the learner is about to be checked on — and every attempt parked on the gate.
+        "Answer-leak rule (enforced deterministically; a draft that breaks it is refused before "
+        "validation): the check's reference answer, every accepted answer and a practice's match "
+        "clauses are scanned for on every learner surface except one. A segment with kind "
+        "'model' is the one presentation surface: the target form, its reading or gloss and its "
+        "function belong there. Narration-role media that reads the model segment is exempt for "
+        "the same reason. Every other surface is scanned: any non-model segment's heading, body "
+        "and short (explain, guided, retrieval), the worked example's prompt, answer, steps and "
+        "short, learner_explanation, learner_explanation_short, parent_notes, non-narration media "
+        "text, the recap, and every block projected from them. A selection check's stimulus "
+        "choices are not scanned, because the correct choice must appear among the options.",
+        "Legal shape for a taught-then-checked item: present the target once, in the model "
+        "segment, as form plus reading or gloss plus function; everywhere else refer to it by "
+        "function or by a description, and never restate the reference answer verbatim. Never "
+        "write 'the answer is ...', 'the answer you should pick is ...', or 'choose the line that "
+        "names X and ends with Y' on an explanation, worked-example or recap surface. Passing "
+        "example: the model segment reads '二人です (futari desu) means \"two people\" and is how "
+        "you answer when the host asks how many people are in your party.'; the explanation then "
+        "reads 'Answer the party-size question with the phrase the model segment showed.' A draft "
+        "whose explanation says 'The answer is 二人です' is refused.",
+        "The stored answer key is not a learner surface: check.reference_answer, "
+        "check.accepted_answers, check.accepted_alternatives and check.rubric are stored "
+        "separately and must never appear in a segment, the worked example, the explanation or "
+        "the recap. The learner-facing check is its stimulus prompt, choices or items, and "
+        "learner_instructions, and it must not restate the reference answer either: ask the "
+        "question without shipping its key. A check whose stimulus prompt or learner_instructions "
+        "contains the reference answer is refused as 'lesson.check.reference_answer'.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
         "If check.stimulus.format is 'verification', enumerate the steps it asks the learner to "
@@ -4122,14 +4597,16 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "field outside the schema is returned, so put each verdict in exactly the fields the "
         "schema names."
     ) + _DECLARED_VERDICT_RULE
-    if subject == "plan":
-        text += (
-            " Also judge curriculum sequence under objective_alignment: every unit after the "
-            "first must name the earlier unit(s) it builds on and explain why it comes at that "
-            "point; no unit may require a concept taught later. Reject a plan whose order is "
-            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
-            "language-coverage claim is unsourced or treats coverage as comprehension."
-        )
+    if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += _PLAN_ALIGNMENT_RULE
+    if subject == "unit sections" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += _UNIT_ALIGNMENT_RULE
+    if subject == "plan" and _PLAN_CONTRADICTION_CRITERION in criteria:
+        text += _PLAN_CONTRADICTION_RULE
+    if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
+        text += _PLAN_DISCLOSURE_RULE
+    if subject.startswith("lesson"):
+        text += _LESSON_ANSWER_KEY_RULE
     return text
 
 
@@ -4152,6 +4629,10 @@ _PROVENANCE_CUE = re.compile(
     re.IGNORECASE,
 )
 _QUOTED = re.compile(r"^[\"“]([^\"”]{2,200})[\"”]")
+
+#: Keys whose prose is scope, not citation. A phrase in ``exclusions`` names a capability the
+#: course does not teach; reading it as a title or publisher is a false provenance failure.
+_PROVENANCE_EXEMPT_KEYS: frozenset[str] = frozenset({"exclusions"})
 
 
 def _provenance_key(text: Any) -> str:
@@ -4244,14 +4725,20 @@ def provenance_violations(
     known = _ledger_provenance(ledger)
     problems: list[str] = []
 
-    def visit(value: Any, path: str) -> None:
+    def visit(value: Any, path: str, key: str = "") -> None:
+        if key in _PROVENANCE_EXEMPT_KEYS:
+            # Scope prose is not a citation. `exclusions` records capabilities the course does
+            # not teach (and why); a phrase there is a topic, not a title or publisher the pack
+            # asserts as evidence. Linting it as provenance rejected a plan whose only defect was
+            # a quoted topic name in its own exclusion list (CP-015, astronomy).
+            return
         if isinstance(value, dict):
-            for key, child in value.items():
-                visit(child, f"{path}.{key}" if path else str(key))
+            for child_key, child in value.items():
+                visit(child, f"{path}.{child_key}" if path else str(child_key), str(child_key))
             return
         if isinstance(value, list):
             for index, child in enumerate(value):
-                visit(child, f"{path}[{index}]")
+                visit(child, f"{path}[{index}]", key)
             return
         if not isinstance(value, str):
             return
@@ -4435,6 +4922,18 @@ def _plan_schema_for_document(
     return PLAN_SCHEMA_V2 if v2 else PLAN_SCHEMA_V1
 
 
+def _vocabulary_rule_applies(subject_domain: str | None, locale: str | None) -> bool:
+    """Whether the H-89/H-187 vocabulary-sequence rule governs this plan.
+
+    The authority is ``policy.normalise_subject_domain``: a declared domain always wins, so a
+    Japanese-language cooking course is ``cooking`` and a Spanish brake procedure is
+    ``technical_procedure``. Only a brief that declares no domain at all falls back to the
+    locale (the pre-v10 shape), where the historical behaviour — a locale meant a language
+    course — is kept, because there is no other declaration to consult.
+    """
+    return capability_policy.normalise_subject_domain(subject_domain, locale) == "language"
+
+
 def enforce_plan_rules(
     plan: dict[str, Any],
     *,
@@ -4446,6 +4945,7 @@ def enforce_plan_rules(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """Dispatch on the document's own schema marker, never on a caller's guess.
 
@@ -4456,6 +4956,10 @@ def enforce_plan_rules(
 
     Truncation is judged first and merged into whatever structural reasons the rule set found: a
     clipped prose value is a regeneration trigger on either schema, never a stored artifact.
+
+    ``subject_domain`` is the declared domain the brief carried. The language-only rules
+    (H-187 vocabulary sequencing) resolve against it, not against ``locale``: every course
+    carries a locale, so a locale test is true for a cooking or repair course too.
     """
     truncated = _prose_cap_reasons(plan, _plan_schema_for_document(plan, parent_brief))
     try:
@@ -4472,6 +4976,7 @@ def enforce_plan_rules(
                 # H-195: the goal is what the drift check compares against. Dropping it here made
                 # the rule unreachable on the real path, so it is threaded through explicitly.
                 goal=goal,
+                subject_domain=subject_domain,
             )
         else:
             _enforce_plan_rules_v1(
@@ -4484,6 +4989,7 @@ def enforce_plan_rules(
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
                 goal=goal,
+                subject_domain=subject_domain,
             )
     except _RuleViolation as exc:
         if truncated:
@@ -4504,6 +5010,7 @@ def _enforce_plan_rules_v1(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it.
 
@@ -4597,12 +5104,135 @@ def _enforce_plan_rules_v1(
     # language: a non-language brief is never asked for them (the prompt carries no vocabulary
     # block at all), so a non-language plan that happens to set the field cannot satisfy an
     # inventory rule and used to be refused twice with no path forward. The field is inert there;
-    # the rule stays exactly as strict whenever a locale declares a language.
-    if locale:
+    # the rule stays exactly as strict whenever a course declares a language.
+    #
+    # CP-015: "declares a language" is the declared DOMAIN, not the presence of a locale. Every
+    # course carries a locale (en-US on a repair or cooking course), so the earlier `if locale:`
+    # gate applied a language-only rule to every non-language course and refused it twice. The
+    # domain authority is `policy.normalise_subject_domain`, which consults the locale only when
+    # no domain was declared — the pre-v10 shape, which stays conservative.
+    if _vocabulary_rule_applies(subject_domain, locale):
         reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
         raise _RuleViolation(reasons)
+
+
+#: The prefix is defined above, beside the validator rubric that quotes it verbatim
+#: (:data:`EXCLUSION_PREFIX`). Only prefixed entries are capability exclusions; any other exclusion
+#: is prose about what the course does not promise and is not judged by the outcome-integrity rule.
+
+#: Tolerate the punctuation a model actually writes for that prefix (hyphen, en dash, missing
+#: space) rather than only the em dash the prompt shows. The *meaning* is unchanged.
+_EXCLUSION_PREFIX_RE = re.compile(
+    r"^\s*not\s+covered\s*[—–\-:]+\s*no\s+supporting\s+source\s*:\s*", re.IGNORECASE
+)
+
+
+def excluded_capabilities(plan: Mapping[str, Any]) -> list[str]:
+    """The capability phrases the plan's own ``exclusions`` record as unsupported, in order.
+
+    An entry without the ``Not covered — no supporting source:`` prefix is not a capability
+    exclusion: it is ordinary scope prose ("no graded exam in week one"), and it must not be read
+    as a removed capability. The returned phrase is the entry with the prefix stripped and its
+    trailing punctuation removed; a fragment under four characters carries no capability and is
+    skipped rather than matched everywhere.
+    """
+    phrases: list[str] = []
+    seen: set[str] = set()
+    for entry in plan.get("exclusions") or []:
+        text = str(entry or "")
+        if not _EXCLUSION_PREFIX_RE.match(text):
+            continue
+        phrase = _EXCLUSION_PREFIX_RE.sub("", text, count=1)
+        phrase = " ".join(phrase.split()).strip(" .,;:—-–")
+        if len(phrase) < 4:
+            continue
+        key = phrase.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        phrases.append(phrase)
+    return phrases
+
+
+#: Suffixes stripped before the word-set comparison, so "shape"/"shaping"/"shapes" and
+#: "develop"/"development" are read as the same capability word. This is stemming, not semantics:
+#: a paraphrase that shares no word with the recorded capability is not matched and is not claimed.
+_STEM_SUFFIXES = ("ings", "ing", "ments", "ment", "ed", "es", "s", "e")
+
+
+def _stem(token: str) -> str:
+    for suffix in _STEM_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
+            return token[: -len(suffix)]
+    return token
+
+
+def _word_set(text: Any) -> set[str]:
+    """The stemmed word set of one field: lowercased, punctuation and hyphens become spaces.
+
+    Hyphenation is why this exists: a plan writes ``open-crumb`` in its outcome and ``open crumb``
+    in its exclusions, and the two must read as the same capability.
+    """
+    return {_stem(word) for word in re.findall(r"[a-z0-9]+", str(text or "").casefold())}
+
+
+def goal_outcome_integrity_reasons(
+    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+) -> list[str]:
+    """CP-015 c1 — a plan must not promise a capability its own exclusions remove.
+
+    This is the deterministic half of the goal-coverage criterion (the validator half is
+    ``goal_capability_disclosure``). The class it closes rejected all three stored Sourdough
+    plans: the goal named levain, dough development, shaping, steam and open crumb, the planner
+    honestly recorded them in ``exclusions`` because the ledger could not support them, and the
+    plan's ``learner_outcome`` still promised a baked open-crumb loaf. A model opinion is not
+    needed to read that contradiction, and a prompt line alone cannot refuse it.
+
+    Checked, for every capability phrase an exclusion removes: the plan's ``learner_outcome``,
+    every objective title, and every objective's declared evidence target (the ``evidence_target``
+    family plus the ``evidence_criteria`` list — the document's own words for what the learner is
+    asked to demonstrate). A phrase matches a field when **every** word of the phrase appears in
+    that field's word set (see :func:`_word_set`), so ``open crumb`` matches ``open-crumb`` and
+    ``shaping`` matches ``shape it``. The vocabulary is the plan's own: a paraphrase that shares no
+    word with the recorded capability is not detected, and that limit is stated rather than papered
+    over.
+    """
+    phrases = excluded_capabilities(plan)
+    if not phrases:
+        return []
+    reasons: list[str] = []
+    outcome = _word_set(plan.get("learner_outcome"))
+    for phrase in phrases:
+        words = _word_set(phrase)
+        if words and words <= outcome:
+            reasons.append(
+                f"plan.learner_outcome promises {phrase!r}, which plan.exclusions records as "
+                "not covered by any supporting source (goal coverage: outcome integrity)"
+            )
+    for objective in objectives:
+        title = _word_set(objective.get("title"))
+        evidence = _word_set(objective.get("evidence_target")) | _word_set(
+            " ".join(str(item or "") for item in objective.get("evidence_criteria") or [])
+        )
+        for phrase in phrases:
+            words = _word_set(phrase)
+            if not words:
+                continue
+            if words <= title:
+                reasons.append(
+                    f"objective {objective.get('ordinal')} promises {phrase!r} in its title, "
+                    "which plan.exclusions records as not covered by any supporting source "
+                    "(goal coverage: outcome integrity)"
+                )
+            elif words <= evidence:
+                reasons.append(
+                    f"objective {objective.get('ordinal')} promises {phrase!r} in its evidence "
+                    "target, which plan.exclusions records as not covered by any supporting "
+                    "source (goal coverage: outcome integrity)"
+                )
+    return reasons
 
 
 def _enforce_plan_tail(
@@ -4664,6 +5294,12 @@ def _enforce_plan_tail(
                             f"{field_name} drifts into generic study skills ({phrase!r}) that "
                             "the goal does not ask for"
                         )
+
+    # CP-015 c1 (goal coverage: outcome integrity). The plan's own exclusions remove capabilities
+    # the ledger could not support; a learner_outcome, objective title or evidence target that
+    # still promises one of them makes the plan contradict its own scope. Deterministic, before
+    # any validator call, so the contradiction cannot be argued away.
+    reasons.extend(goal_outcome_integrity_reasons(plan, objectives))
 
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
@@ -4861,6 +5497,7 @@ def _enforce_plan_rules_v2(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     goal: str | None = None,
+    subject_domain: str | None = None,
 ) -> None:
     """The §5 blueprint rules. Structure first, then the shared tail.
 
@@ -5026,9 +5663,9 @@ def _enforce_plan_rules_v2(
         goal=goal,
     )
 
-    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187: gated on
-    # a declared language for the same reason as the v1 path above.
-    if locale:
+    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187 gated
+    # them on a declared language; CP-015 resolves "declared" from the domain, not the locale.
+    if _vocabulary_rule_applies(subject_domain, locale):
         reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
@@ -5698,6 +6335,56 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
         raise _RuleViolation(["learner-facing narrative contains rubric text"])
 
 
+#: The check fields a learner actually reads. ``choices`` and ``items`` are excluded for the same
+#: reason the page projection excludes them from the narrative scan: in a selection check the
+#: correct choice must appear among the options, and a checklist lists the steps, not the key.
+_LEARNER_CHECK_FIELDS = ("prompt", "learner_instructions")
+
+#: The shortest key this gate treats as a restated answer. A one- or two-character key is a token
+#: (a choice number, a letter) that a legitimate prompt may name without shipping the answer.
+_MIN_ANNOUNCED_KEY_CHARS = 4
+
+
+def assert_check_payload_does_not_announce_answer(lesson: Mapping[str, Any]) -> None:
+    """The learner-facing half of the check must not ship the answer with the question.
+
+    ``assert_no_answer_leak`` scans the page narrative; the check's own prompt and instructions
+    are the other surface a learner reads before answering, and they are not part of that scan.
+    CP-015c measured the defect: a validator refused a review page with
+    ``lesson.check.reference_answer`` because the learner-facing check carried the reference
+    answer, an accepted answer and a justification. The stored key is authoring material — the
+    page projection never carries it — but a prompt or instruction that restates it lets the
+    learner copy the graded response, so it is refused here under the same named reason.
+    """
+    check = lesson.get("check") or {}
+    stimulus = check.get("stimulus") or {}
+    surfaces = [
+        str(stimulus.get("prompt") or "") if field == "prompt" else str(check.get(field) or "")
+        for field in _LEARNER_CHECK_FIELDS
+    ]
+    secrets = [str(check.get("reference_answer") or "")] + [
+        str(item) for item in check.get("accepted_answers") or []
+    ]
+    for group in check.get("accepted_alternatives") or []:
+        secrets.extend(str(item) for item in group or [])
+    scanned = _normalize_answer("\n".join(surfaces))
+    # A very short key (``2``, ``b``) is a token, not a phrase: a legitimate prompt may name a
+    # number of options or a lettered choice without shipping the answer. Only a key long enough to
+    # be an answer phrase is scanned here, the same shape the narrative gate refuses.
+    leaked = [
+        secret for secret in secrets
+        if secret and len(_normalize_answer(secret)) >= _MIN_ANNOUNCED_KEY_CHARS
+        and _normalize_answer(secret) in scanned
+    ]
+    if leaked:
+        raise _RuleViolation([
+            "lesson.check.reference_answer: the learner-facing check restates the reference answer "
+            "or an accepted answer in its stimulus prompt or learner_instructions, so the graded "
+            "response can be copied; keep the key in the stored answer key and ask the question "
+            "without shipping it"
+        ])
+
+
 #: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
 #: these from its own deep text, but introducing one is introducing a claim about the material.
 #:
@@ -5879,7 +6566,13 @@ def _parse_validation_answer(
     schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
     try:
         document = _parse_structured(
-            response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
+            response,
+            schema,
+            what=what,
+            # CP-015d: the byte bound is the schema's own capacity, not a stage-wide constant. A
+            # schema-legal answer can be larger than 24 KB; failing it on bytes before the schema
+            # judges it told the operator "over the bound" about an answer that obeyed its request.
+            max_bytes=validation_answer_bound(schema),
         )
     except GenerationRejected as exc:
         raise ModelOutputInvalid(
@@ -5902,6 +6595,83 @@ def _parse_validation_answer(
     return document
 
 
+def _answer_was_cut(response: LLMResponse, request: LLMRequest) -> bool:
+    """Whether the provider's own token count says this answer ran into the cap.
+
+    A cut answer is not a verdict. The provider reports no ``finish_reason`` through this seam, so
+    the recorded completion tokens are the only truncation signal: an answer that consumed its
+    whole cap and still arrived empty or mid-JSON was stopped, not finished. An answer that ends
+    malformed well below its cap is a genuinely bad answer and is *not* repairable this way —
+    re-asking it spends the same call to get the same shape.
+    """
+    used = getattr(response, "output_tokens", None)
+    if used is None:
+        return False
+    try:
+        return int(used) >= int(request.max_tokens) - TRUNCATION_CAP_SLOP_TOKENS
+    except (TypeError, ValueError):
+        return False
+
+
+def _truncation_repair_request(request: LLMRequest) -> LLMRequest:
+    """The one re-ask for a cut-off answer: same demand, the answer-length rule stated.
+
+    The pass, its schema, its criteria and its claim set are byte-identical to the original call,
+    so the re-ask is still this pass answering its own request — it is not a second validator and
+    it cannot widen the reviewed set. Only ``instructions`` gains the correction and only
+    ``prompt_version`` is marked (``docs/GENERATION.md`` §1).
+    """
+    note = (
+        "\n\nYour previous answer to this same request was cut off before it finished: it "
+        "consumed the whole answer-length budget and no usable JSON object arrived, so no verdict "
+        "from it survives. Answer the request again and keep the answer short — one sentence per "
+        f"reason (under {VALIDATION_REASON_MAX_CHARS} characters), no restating the artifact, no "
+        "method explanation, and no discussion inside the answer fields. Return exactly one JSON "
+        "object matching the schema, with every required field present."
+    )
+    return replace(
+        request,
+        instructions=request.instructions + note,
+        prompt_version=request.prompt_version + TRUNCATION_REPAIR_PROMPT_SUFFIX,
+    )
+
+
+def _validation_answer_with_repair(
+    llm: "LLM",
+    request: LLMRequest,
+    response: LLMResponse,
+    usage: "_Usage",
+    *,
+    what: str,
+) -> tuple[dict[str, Any], LLMResponse]:
+    """Parse one validator answer, re-asking once when the answer was *cut off* by the cap.
+
+    A truncated or empty answer is an incomplete answer: the validator never stated a verdict, so
+    reporting it as a non-retryable ``VALIDATION_FAILED`` tells the operator a permanent rejection
+    happened when the only thing that happened is that the route spent its budget on reasoning.
+    CP-015 measured that on the demo route: four of nine plan-validation calls consumed the cap
+    exactly and three of them arrived unusable. The re-ask is bounded — exactly one, on the same
+    demand — and its answer is parsed by the same gate, so a second cut answer is still a typed
+    contract failure. A malformed answer that did *not* run into the cap is not retried here.
+
+    The returned response carries ``shape_repair_attempts=1`` when a re-ask produced it, so
+    provenance and the validation record never present a repaired answer as first-time clean.
+    """
+    try:
+        return _parse_validation_answer(response, request, what=what), response
+    except ModelOutputInvalid:
+        if not _answer_was_cut(response, request):
+            raise
+    usage.reserve(1)
+    retry = _truncation_repair_request(request)
+    repaired = _call_llm(llm, retry, usage)
+    document = _parse_validation_answer(repaired, retry, what=what)
+    return document, replace(
+        repaired,
+        shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+    )
+
+
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
     """Structural guarantee that validation is a second, different call.
 
@@ -5922,6 +6692,7 @@ def validation_verdict(
     research_status: str,
     ledger: Sequence[SourceRecord] = (),
     independence: str = INDEPENDENCE_UNIDENTIFIED,
+    criteria: Sequence[str] = VALIDATION_CRITERIA,
 ) -> dict[str, Any]:
     """Turn a validator report into an outcome the pipeline can act on.
 
@@ -5950,7 +6721,7 @@ def validation_verdict(
     seen: dict[str, str] = {}
     for entry in report.get("criteria") or []:
         seen[str(entry.get("id"))] = str(entry.get("verdict"))
-    missing = [criterion for criterion in VALIDATION_CRITERIA if criterion not in seen]
+    missing = [criterion for criterion in criteria if criterion not in seen]
     if missing:
         raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
     failed = [criterion for criterion, value in seen.items() if value == "fail"]
@@ -5975,7 +6746,7 @@ def validation_verdict(
         entry["reason"] = (
             "[provenance flagged: the cited provenance is not in the ledger] "
             + str(entry.get("reason") or "")
-        )[:400]
+        )[:VALIDATION_REASON_MAX_CHARS]
     facts_unverified = research_status == "unavailable"
     passed = declared == "pass" and not failed and not unknown and not rejections
     if not passed:
@@ -6093,7 +6864,46 @@ def _bounded_input(payload: dict[str, Any], limit: int = DEFAULT_REQUEST_BYTES) 
     )
 
 
-def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
+def _fit_source_brief(
+    payload: dict[str, Any],
+    sources: Sequence[SourceRecord],
+    *,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Ledger rows for one request, shrunk only as far as the byte bound requires.
+
+    A deep research pass carries ten sources; at the full 1200-character window the plan request
+    measured 25 636 bytes against the 24 000-byte short bound and the job failed before the author
+    was called. The fix is not a longer bound and not a truncated request: the excerpt window
+    shrinks (still prose, still from the same fetched text), and only at the 400-character floor
+    does the least-preferred trailing source leave. ``_bounded_input`` still owns the final
+    refusal if even the floor cannot fit.
+    """
+    floor = 400
+    window = ResearchBudget().max_excerpt_chars
+    working = list(sources)
+    brief = _source_brief(working, excerpt_chars=window)
+    while True:
+        payload["sources"] = brief
+        size = len(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+        if size <= limit:
+            return brief
+        if window > floor:
+            window = max(floor, window - 200)
+            brief = _source_brief(working, excerpt_chars=window)
+            continue
+        if len(working) > 2:
+            working = working[:-1]
+            brief = _source_brief(working, excerpt_chars=window)
+            continue
+        return brief
+
+
+def _source_brief(
+    sources: Iterable[SourceRecord],
+    *,
+    excerpt_chars: int | None = None,
+) -> list[dict[str, Any]]:
     """The ledger rows handed to a model. Every free-text field is untrusted page data.
 
     ``source_id`` is the only locally minted identifier. ``untrusted_excerpt`` is the bounded
@@ -6111,7 +6921,7 @@ def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
             "fetched_at": source.fetched_at,
             "source_type": source.source_type,
             "support_status": source.support_status,
-            "untrusted_excerpt": _untrusted_excerpt(source.excerpt),
+            "untrusted_excerpt": _untrusted_excerpt(source.excerpt, excerpt_chars=excerpt_chars),
         }
         for source in sources
     ]
@@ -6266,7 +7076,7 @@ def build_plan_request(
             "reason": research_run.reason,
             "queries": [entry.get("query") for entry in research_run.queries],
         },
-        "sources": _source_brief(research_run.sources),
+        "sources": [],
         "rules": (
             {
                 "units": "one ordered group of objectives per unit; units are the authoring, "
@@ -6341,12 +7151,16 @@ def build_plan_request(
     vocabulary_lines = _frequency_prompt_lines(frequency_block)
     if vocabulary_lines:
         instructions = instructions + "\n" + "\n".join(vocabulary_lines)
+    # The ledger is fitted last, against the final payload, so a deep pass cannot overflow the
+    # bound after every other field is already in place.
+    request_limit = _request_bound(scope)
+    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
     return LLMRequest(
         purpose="coursebook.plan.generate",
         prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=instructions,
-        input_text=_bounded_input(payload, limit=_request_bound(scope)),
+        input_text=_bounded_input(payload, limit=request_limit),
         schema=schema,
         schema_name=(
             "coursebook_plan_v2" if blueprint else "coursebook_plan_v1"
@@ -6408,7 +7222,7 @@ def build_plan_validation_requests(
             recipe=recipe,
         ),
         "research_status": research_run.status,
-        "sources": _source_brief(research_run.sources),
+        "sources": [],
         "plan": plan,
         "learner_facing": False,
     }
@@ -6418,7 +7232,11 @@ def build_plan_validation_requests(
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
-    input_text = _bounded_input(payload, limit=_request_bound(scope))
+    # Same bound as the author request: the ledger is fitted against the final payload (which
+    # already carries the plan under review), never truncated.
+    request_limit = _request_bound(scope)
+    _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
+    input_text = _bounded_input(payload, limit=request_limit)
     timeout = _timeout_for("coursebook.plan.validate", timeout_s)
     claims = plan_claim_labels(plan)
     return [
@@ -6514,6 +7332,9 @@ def build_lesson_request(
             "authored: strictly shorter than their deep text and adding no claim, number, name or "
             "quotation the deep text does not contain",
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
+            "answer_leak": "only a 'model' segment (and narration media that reads it) may carry the "
+            "check's reference answer or an accepted answer; every other learner surface is scanned, "
+            "and the check's stimulus prompt and learner_instructions must not restate the key",
             "media": "declarative spec with a complete text equivalent; only the roles the "
             "capability policy permits; the harness generates it and never treats an "
             "illustration as technical authority",
@@ -6543,6 +7364,11 @@ def build_lesson_request(
     )
 
 
+#: The check fields that are the stored answer key: authoring material the learner page never
+#: carries. They travel in ``answer_key`` on the lesson validation payload.
+_ANSWER_KEY_CHECK_FIELDS = ("reference_answer", "accepted_answers", "accepted_alternatives", "rubric")
+
+
 def build_lesson_validation_request(
     *,
     lesson: dict[str, Any],
@@ -6567,7 +7393,31 @@ def build_lesson_validation_request(
     compact on a legal 3-page parent plan, over the 24 000-byte lesson-stage bound, and the
     plan-wide lessons job failed before a single section was authored. The ledger is now the
     section's own slice, exactly the one the authoring pass was given.
+
+    The answer key is **not** left inside ``lesson.check``: ``reference_answer``,
+    ``accepted_answers``, ``accepted_alternatives`` and ``rubric`` move to an ``answer_key`` block
+    marked ``learner_facing: false``. The page projection already drops them, and the split is what
+    lets the validator judge ``answer_leakage`` on the surfaces a learner actually reads instead of
+    reading the key's presence as a shipped answer (CP-015c follow-up).
     """
+    # The stored answer key is authoring material, not a learner surface: ``learner_page``
+    # projects ``lesson.check`` without it. It travels in its own ``answer_key`` block so the
+    # validator can judge answer uniqueness and leakage without reading the key's presence inside
+    # the learner-facing check as a leak (CP-015c follow-up: a review-page validator refused a page
+    # with ``lesson.check.reference_answer`` on exactly that misreading).
+    learner_lesson = dict(lesson)
+    learner_check = dict(lesson.get("check") or {})
+    answer_key: dict[str, Any] = {
+        "learner_facing": False,
+        "note": (
+            "Stored answer key; never serialized into the learner page. Judge answer_leakage on "
+            "the learner-facing surfaces, not on the key's existence."
+        ),
+    }
+    for field in _ANSWER_KEY_CHECK_FIELDS:
+        if field in learner_check:
+            answer_key[field] = learner_check.pop(field)
+    learner_lesson["check"] = learner_check
     payload = {
         "artifact_kind": "lesson",
         "section": section,
@@ -6578,14 +7428,15 @@ def build_lesson_validation_request(
         "level": level or _dial_text(dials, "level"),
         "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
         "sources": _lesson_ledger(section, sources),
-        "lesson": lesson,
+        "lesson": learner_lesson,
+        "answer_key": answer_key,
         "learner_facing": True,
     }
     return LLMRequest(
         purpose="coursebook.lesson.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="lesson and its learner page", criteria=VALIDATION_CRITERIA),
+        instructions=_validation_instructions(subject="lesson and its learner page", criteria=LESSON_VALIDATION_CRITERIA),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -7977,6 +8828,7 @@ def run_plan_job(
                     parent_brief=parent_brief,
                     frequency_selection=frequency_selection,
                     goal=planning_goal,
+                    subject_domain=subject_domain,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -8003,17 +8855,21 @@ def run_plan_job(
             for validation_request in validation_requests:
                 assert_separate_pass(plan_request, validation_request)
             validation_responses = _run_validation_passes(validator, validation_requests, usage)
-            reports = [
-                (
-                    validation_pass_criteria(validation_request),
-                    _parse_validation_answer(
-                        validation_response, validation_request, what="plan validation"
-                    ),
+            reports = []
+            for index, (validation_request, validation_response) in enumerate(
+                zip(validation_requests, validation_responses)
+            ):
+                report, answered = _validation_answer_with_repair(
+                    validator,
+                    validation_request,
+                    validation_response,
+                    usage,
+                    what="plan validation",
                 )
-                for validation_request, validation_response in zip(
-                    validation_requests, validation_responses
-                )
-            ]
+                # A truncation re-ask answers the same pass under a marked label; keep the
+                # answering response so provenance reports the re-ask, never a first-time clean.
+                validation_responses[index] = answered
+                reports.append((validation_pass_criteria(validation_request), report))
             report = merge_validation_reports(reports)
             validation_request = validation_requests[0]
             # H-192b: the review is several passes. Provenance is recorded from an answering
@@ -8488,12 +9344,30 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
 
 
 def unit_sections_cost_budget(*, brief_budget_usd: Any = None) -> CostBudget:
-    """Budget for one unit-sections stage: four calls worst case (§6).
+    """Budget for one unit-sections stage: **six** calls worst case (§6).
 
-    One generation and one validation, with one retry each. The ceiling is per stage, never per
-    course: a unit job must not inherit a 24-lesson course's ceiling.
+    The unit stage is transactional: the batch is written in one transaction only after an
+    approving verdict, so a ceiling abort loses the whole unit. Its arithmetic must therefore
+    cover every legal call, including the truncation re-ask:
+
+        attempts x (generate + validate + TRUNCATION_REPAIR_CALLS)
+        2        x (1        + 1        + 1                      ) = 6
+
+    CP-015e measured the old four-call ceiling against real runs: every observed
+    ``coursebook.unit_sections.validate`` answer consumed the 8 000-token cap (8 000/8 000 on three
+    attempts), so the repair was mandatory, not exceptional — attempt 1 (generate + validate +
+    repair) plus attempt 2 (generate + validate + repair) is six calls. Four refused the second
+    attempt's validation with ``cost_ceiling_exceeded`` and ``sections_completed_count: 0``.
+
+    The repair is *not* a third attempt: :func:`_validation_answer_with_repair` re-asks the same
+    demand exactly once and then gives up with a typed ``ModelOutputInvalid``, so six is a real
+    maximum and not an estimate.
+
+    The ceiling is per stage, never per course: a unit job must not inherit a 24-lesson course's
+    ceiling. A caller/operator dollar ceiling still wins.
     """
-    worst_legal = 4
+    attempts = len(UNIT_SECTIONS_ATTEMPTS)
+    worst_legal = attempts * (CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS)
     sized_floor = worst_legal * DECLARED_CALL_COST_USD
     override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
     return CostBudget(
@@ -8566,6 +9440,71 @@ def _section_owner_ref(section: dict[str, Any]) -> int | None:
     return int(refs[0]) if len(refs) == 1 else None
 
 
+def _section_reinforced_refs(section: dict[str, Any]) -> list[int] | None:
+    """The objective ordinals a review section reinforces, or ``None`` for an owner section.
+
+    Two shapes reach this: an *authored batch* item (``role``/``reinforces``, from the unit
+    stage's provider answer) and a *stored* section row (``section_role``/``objective_refs``, from
+    ``gen_plan_sections``). The rule gate and the lesson stage must judge both with one function,
+    or the two gates disagree about which batches are authorable.
+    """
+    role = str(section.get("role") or section.get("section_role") or "owner")
+    if role != "review":
+        return None
+    refs = section.get("reinforces")
+    if refs is None:
+        refs = section.get("objective_refs") or []
+    return [int(ref) for ref in refs]
+
+
+def review_check_overuse_reasons(
+    sections: Sequence[dict[str, Any]],
+    *,
+    existing_reviews: Sequence[dict[str, Any]] = (),
+) -> list[str]:
+    """Objectives the review sections reinforce more times than their owner checks can serve.
+
+    §5 gives each objective exactly one owner section, hence exactly one owner check, and a
+    review lesson *presents* that check (``_resolve_review_target``) instead of authoring a new
+    one. Two review sections over one objective therefore compete for a single check: whichever
+    the learner reaches second presents a check the first has already closed, and when the check
+    is closed at authoring time the second review cannot be built at all. The count is knowable
+    from the batch alone, so the unit-section rule gate refuses it there, on the attempt whose
+    feedback is the one legal re-author — instead of letting the lesson stage discover it after
+    the owner lessons and their provider calls are spent.
+
+    ``existing_reviews`` carries review sections already stored for the same unit, so a unit
+    authored in two batches cannot smuggle in the same objective twice.
+    """
+    reasons: list[str] = []
+    used: dict[int, str] = {}
+    for stored in existing_reviews:
+        refs = _section_reinforced_refs(stored)
+        if refs is None:
+            continue
+        label = f"stored section {stored.get('ordinal')}"
+        for ref in refs:
+            used.setdefault(ref, label)
+    for index, section in enumerate(sections):
+        refs = _section_reinforced_refs(section)
+        if refs is None:
+            continue
+        label = f"section {index + 1}"
+        for ref in refs:
+            first = used.get(ref)
+            if first is None:
+                used[ref] = label
+                continue
+            if first == label:
+                # Repeating a ref inside one section is its own reason, reported by the caller.
+                continue
+            reasons.append(
+                f"{label} reinforces objective {ref}, which {first} already reinforces; one "
+                "owner check serves one review section, so give each objective at most one review"
+            )
+    return reasons
+
+
 def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[dict[str, Any]],
                                 recipe: str, locale: str | None, feedback: str | None = None) -> str:
     lines = [
@@ -8589,6 +9528,19 @@ def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[di
     lines.append(
         "Every section declares media_need with construct/image/audio; use level 'none' with role "
         "'none' and an empty construct when the text already carries the teaching."
+    )
+    # CP-015h: the gate is deterministic and refuses a construct that does not name what the media
+    # carries, so the shape it enforces is stated here rather than left to be inferred. An author
+    # that writes the target phrase as the construct fails the whole unit batch, and the previous
+    # batch's refusal feedback alone could not teach it the shape.
+    lines.append(
+        "Media policy: audio may only be declared for a language lesson, and a construct must name "
+        "what the audio carries, never just the target text. For audio role "
+        "'pronunciation_reference', name the spoken act and the line it speaks, for example "
+        "'pronounce the line 二人です (futari desu) aloud'. A construct that is only the target "
+        "phrase (for example '二人です') is refused. For audio role 'narration', name what the "
+        "learner listens to, for example 'listen to a shopkeeper greeting a customer'. A refused "
+        "declaration fails the whole unit batch."
     )
     lines.append("Context needs are concrete (for example an audio source or a physical object).")
     lines.append(f"Total sections for this unit: exactly {int(unit.get('target_lessons', 0))}.")
@@ -8663,7 +9615,9 @@ def build_unit_sections_request(
 
 
 def _unit_plan_brief(
-    plan: Mapping[str, Any], objectives: Sequence[Mapping[str, Any]]
+    plan: Mapping[str, Any],
+    unit: Mapping[str, Any],
+    objectives: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
     """The plan context one unit's validation needs, bounded by the unit, not the course.
 
@@ -8673,6 +9627,13 @@ def _unit_plan_brief(
     rules on this unit's sections against this unit's objectives; it needs the plan's intent and
     the checks that cover *these* objectives, not every objective and unit in the course. Extra
     course length no longer grows this payload.
+
+    CP-015g: this brief carries the unit's own ``goal`` as ``unit_goal``, never the plan's
+    whole-course ``learner_outcome``. With the whole outcome in the payload and only this unit's
+    ``check_plan`` beside it, an approved two-unit plan's unit 1 was structurally unapprovable —
+    the validator read the course-wide promise as a promise this unit must keep and refused it for
+    not delivering unit 2's share. The unit pass is scoped to the unit; a capability delegated to
+    another unit is that unit's obligation, and :data:`_UNIT_ALIGNMENT_RULE` says so in the pass.
     """
     ordinals = {int(obj["ordinal"]) for obj in objectives}
     check_plan = [
@@ -8684,7 +9645,7 @@ def _unit_plan_brief(
         "title": plan.get("title"),
         "scope": plan.get("scope"),
         "delivery": plan.get("delivery"),
-        "learner_outcome": plan.get("learner_outcome"),
+        "unit_goal": unit.get("goal"),
         "check_plan": check_plan,
     }
     return {key: value for key, value in brief.items() if value not in (None, [], "")}
@@ -8708,7 +9669,7 @@ def build_unit_sections_validation_request(
         "goal": goal,
         "recipe": recipe,
         "locale": locale,
-        "plan_brief": _unit_plan_brief(plan, objectives),
+        "plan_brief": _unit_plan_brief(plan, unit, objectives),
         "unit": unit,
         "objectives": list(objectives),
         "sections": list(sections),
@@ -8720,7 +9681,7 @@ def build_unit_sections_validation_request(
         purpose="coursebook.unit_sections.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="unit sections", criteria=VALIDATION_CRITERIA),
+        instructions=_validation_instructions(subject="unit sections", criteria=LESSON_VALIDATION_CRITERIA),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -8740,11 +9701,18 @@ def enforce_unit_section_rules(
     locale: str | None,
     ledger: Sequence[SourceRecord],
     existing_owner_refs: Sequence[int] = (),
+    existing_reviews: Sequence[dict[str, Any]] = (),
 ) -> None:
     """§5 rules 4 and 7, on the batch the unit stage just authored.
 
     The writer assigns global ordinals, so the model's ``ordinal`` is advisory and never trusted
     for identity. What must hold is role shape, owner coverage, review refs and the target count.
+
+    **Review checks (CP-015f).** Each objective has one owner check, and a review lesson presents
+    it rather than authoring a new one. The batch is therefore also judged by
+    :func:`review_check_overuse_reasons`: a second review over an already-reinforced objective is
+    refused here, while the reason can still feed the one legal re-author, because the lesson
+    stage can only discover it after the owner lessons are spent.
 
     **Completeness (H-46).** A section's ``lesson_intent`` is authored prose, and a provider
     truncation leaves it as a well-formed string that stops mid-sentence — the schema cannot see
@@ -8757,6 +9725,7 @@ def enforce_unit_section_rules(
     unit_ordinal = int(unit["ordinal"])
     objective_ordinals = [int(obj["ordinal"]) for obj in objectives]
     ledger_ids = {source.source_id for source in ledger}
+    reasons.extend(review_check_overuse_reasons(sections, existing_reviews=existing_reviews))
     owners: dict[int, int] = {}
     reviews = 0
     seen_review = False
@@ -8892,7 +9861,8 @@ def run_unit_sections_job(
 
     Idempotent per ``(plan_id, unit_ordinal)``: existing section rows are reused, and only owner
     sections for objectives that have none are asked for. The job is one stage with its own
-    four-call budget and a durable checkpoint; it never enqueues the next unit.
+    six-call budget (two attempts, each generation + validation + one truncation re-ask; see
+    :func:`unit_sections_cost_budget`) and a durable checkpoint; it never enqueues the next unit.
 
     **Transactional over the unit.** A batch is written only after it is cleared for use. A batch
     that breaks the unit's own rules (on either attempt) or that the validator rejects is
@@ -8965,6 +9935,13 @@ def run_unit_sections_job(
     existing_owner_refs = [
         ref for ref in (_section_owner_ref(section) for section in existing_sections) if ref is not None
     ]
+    # CP-015f: reviews already stored for this unit count against the same one-review-per-objective
+    # rule, so a unit authored in two batches cannot hide a second review over one owner check.
+    existing_reviews = [
+        section
+        for section in existing_sections
+        if str(section.get("section_role") or "owner") == "review"
+    ]
     missing_objectives = [
         objective
         for objective in objectives
@@ -8972,6 +9949,16 @@ def run_unit_sections_job(
     ]
     target = int(unit["target_lessons"])
     if not missing_objectives and len(existing_sections) >= target:
+        # The stored batch is what the lesson stage will author from. Claiming it as reusable
+        # while the lesson stage can prove it unexecutable is the disagreement CP-015f reports,
+        # so the same rule is applied here and the unit is refused instead of reported as reused.
+        overuse = review_check_overuse_reasons(existing_sections)
+        if overuse:
+            raise GenerationRejected(
+                f"unit {requested_unit} sections are stored but cannot be authored: "
+                + "; ".join(overuse)
+                + ". Re-author the plan's unit sections so each objective has at most one review."
+            )
         return {
             "job_id": job_id,
             "job_kind": "unit_sections",
@@ -9001,7 +9988,7 @@ def run_unit_sections_job(
     request: LLMRequest | None = None
 
     try:
-        for attempt in (1, 2):
+        for attempt in UNIT_SECTIONS_ATTEMPTS:
             validation_request = None
             validation_response = None
             verdict = None
@@ -9056,8 +10043,12 @@ def run_unit_sections_job(
             assert request is not None
             assert_separate_pass(request, validation_request)
             validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_validation_answer(
-                validation_response, validation_request, what="unit sections validation"
+            report, validation_response = _validation_answer_with_repair(
+                validator,
+                validation_request,
+                validation_response,
+                usage,
+                what="unit sections validation",
             )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
@@ -9067,6 +10058,7 @@ def run_unit_sections_job(
                 research_status=research_status,
                 ledger=sources,
                 independence=independence,
+                criteria=LESSON_VALIDATION_CRITERIA,
             )
             if verdict["verdict"] == "pass":
                 authored = batch
@@ -9184,6 +10176,36 @@ def run_unit_sections_job(
             "budget": resolved_budget.as_dict(),
             "rejection_reasons": rejection_reasons if state == "needs_review" else [],
         }
+    except CostCeilingExceeded as exc:
+        # A budget stop is not a rejection and leaves no partial unit (the batch is written in one
+        # transaction after a passing verdict). Say the arithmetic and the next step, so the
+        # operator reads a spend ceiling rather than a validator refusal. CP-015e: job
+        # 98d3c0e43fcc452dad317b7757619c41 surfaced a bare POLICY_VIOLATION with
+        # ``sections_completed_count: 0`` and no checkpoint.
+        _record_usage(connection, job_id, usage, now)
+        raise exc.attach_checkpoint(
+            plan_id=str(plan_id),
+            sections_completed=[],
+            sections_total=int(target),
+            usage=usage,
+            budget=resolved_budget,
+            recovery=(
+                f"unit {requested_unit} of plan {plan_id} authored no sections: its "
+                f"{resolved_budget.max_calls}-call stage budget was exhausted"
+                + (f" before {exc.purpose}" if exc.purpose else "")
+                + ". This is a spend ceiling, not a verdict about the sections. Next: run the unit "
+                "again as a new job (a new attempt is re-budgeted), or raise "
+                f"{JOB_MAX_COST_ENV} / brief.budget_usd."
+            ),
+            resume_brief={
+                "method": "jobs.create",
+                "brief": {
+                    "stage": "unit_sections",
+                    "plan_id": str(plan_id),
+                    "unit_ordinal": requested_unit,
+                },
+            },
+        )
     except BaseException:
         _record_usage(connection, job_id, usage, now)
         raise
@@ -9671,6 +10693,20 @@ def run_lesson_job(
                 "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
             ).fetchall()
         ]
+    # CP-015f: the two gates must agree. The unit stage refuses a batch whose reviews reinforce
+    # one objective twice, and the same rule is re-applied here *before* the first provider call,
+    # so a batch that was stored under older rules (or written by hand) refuses as a batch with
+    # zero spend. Discovering it midway cost four owner lessons and nine calls on job
+    # job_7716cb69e28e4b03868540150679f85d.
+    if blueprint_plan and unit is not None:
+        overuse = review_check_overuse_reasons(section_rows)
+        if overuse:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} of plan {plan_id!r} cannot be authored: "
+                + "; ".join(overuse)
+                + ". Re-author the unit sections so each objective has at most one review; "
+                "no lesson was authored and no provider call was made."
+            )
     # H-194: a `lesson.regenerate` job names exactly one section. Author only that section, at
     # its next `gen_lessons` version, and never re-author the rest of the unit or plan. The
     # coverage checks below compare a *unit's* sections to its objectives, so they are skipped for
@@ -9808,8 +10844,14 @@ def run_lesson_job(
                 )
                 next_version = int((version_row or {}).get("v") or 0) + 1
             review_target = None
+            park_reason = None
             if blueprint_plan and str(section.get("section_role") or "owner") == "review":
                 review_target = _resolve_review_target(connection, str(plan_id), section)
+                # CP-015j: the review page is authored either way. When the owner check it
+                # presents is closed (its owner page is parked `needs_review`), the review is
+                # stored `needs_review` with the closed checks named rather than failing the unit.
+                if not review_target.get("check_open", True):
+                    park_reason = _review_park_reason(section, review_target)
             lesson_summaries.append(
                 _author_section(
                     connection,
@@ -9831,6 +10873,7 @@ def run_lesson_job(
                     now=now,
                     parent_brief=lesson_parent_brief,
                     review_target=review_target,
+                    park_reason=park_reason,
                     version=next_version,
                 )
             )
@@ -9897,59 +10940,163 @@ def _resolve_review_target(
     A review lesson authors **no new check** (§5). It presents the existing owner check of the
     objective it reinforces. Choosing the first reinforced ref that already has an open check is
     deterministic; the caller stores the link and never inserts a ``checks`` row.
+
+    CP-015j: a review is *authorable* while its owner page is parked ``needs_review``. That page
+    exists, its check is closed, and the page may be approved or regenerated later — failing the
+    whole unit job here meant a unit whose owners needed review could never author its review
+    section at all (job_57a89f823d274b2ba7d769edd81eee0c). So a closed owner check is returned as
+    a target with ``check_open: False``; the caller authors the review page but parks it
+    ``needs_review`` with the closed checks named. An objective with **no check at all** has no
+    owner lesson, and that is still a structural refusal.
     """
     refs = [int(ref) for ref in section.get("objective_refs") or []]
+    found: list[dict[str, Any]] = []
     for ref in refs:
         objective = _objective_for(connection, plan_id, ref)
         if objective is None:
             continue
         row = _row_dict(
             connection.execute(
-                "SELECT * FROM checks WHERE objective_id = ? AND state = 'open' "
-                "ORDER BY version DESC LIMIT 1",
+                # Prefer the open check, exactly like the practice and attempt lanes; fall back
+                # to the latest closed one so a parked owner page still names a real check.
+                "SELECT * FROM checks WHERE objective_id = ? "
+                "ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
                 (str(objective["id"]),),
             ).fetchone()
         )
         if row is None:
             continue
-        stimulus = _load_json(row["stimulus_json"], {})
-        reference = _load_json(row["reference_json"], {})
-        rubric = _load_json(row["rubric_json"], {})
+        target = _review_check_target(connection, ref, objective, row)
+        found.append(target)
+        if target["check_open"]:
+            target["closed_refs"] = [
+                item["objective_ordinal"] for item in found if not item["check_open"]
+            ]
+            target["missing_refs"] = [
+                other for other in refs if other not in {item["objective_ordinal"] for item in found}
+            ]
+            # Reuse the first *open* owner check: a review over an approved owner is servable even
+            # when another reinforced owner is still parked.
+            target["closed_owner_checks"] = [
+                _closed_check_summary(item) for item in found if not item["check_open"]
+            ]
+            return target
+    if not found:
+        raise GenerationRejected(
+            f"review section {section.get('ordinal')} reinforces objectives {refs} but no owner "
+            "lesson has authored a check for any of them; author the owner lessons for those "
+            "objectives first"
+        )
+    chosen = found[0]
+    chosen["closed_refs"] = [item["objective_ordinal"] for item in found]
+    chosen["missing_refs"] = [
+        other for other in refs if other not in {item["objective_ordinal"] for item in found}
+    ]
+    chosen["closed_owner_checks"] = [_closed_check_summary(item) for item in found]
+    return chosen
+
+
+def _review_check_target(
+    connection: sqlite3.Connection,
+    ref: int,
+    objective: dict[str, Any],
+    row: dict[str, Any],
+) -> dict[str, Any]:
+    """One owner check projected into the shape a review lesson reuses.
+
+    The check is never re-authored and its row is never rewritten: the review lesson links this
+    exact check id. ``check_open`` is carried so the caller can park the review when the owner page
+    is still ``needs_review``.
+    """
+    stimulus = _load_json(row["stimulus_json"], {})
+    reference = _load_json(row["reference_json"], {})
+    rubric = _load_json(row["rubric_json"], {})
+    # The lesson that authored the check is the owner section's, never the review that later
+    # links the same check id — a review link must not be reported as the check's owner.
+    kind_row = _row_dict(
+        connection.execute(
+            "SELECT l.id AS lesson_id, l.state AS lesson_state, l.page_json FROM gen_lessons l"
+            " JOIN gen_lesson_checks g ON g.lesson_id = l.id"
+            " JOIN gen_plan_sections s ON s.id = l.section_id AND s.plan_id = l.plan_id"
+            " WHERE g.check_id = ? AND s.section_role = 'owner'"
+            " ORDER BY l.version DESC, l.rowid DESC LIMIT 1",
+            (str(row["id"]),),
+        ).fetchone()
+    )
+    if kind_row is None:
         kind_row = _row_dict(
             connection.execute(
-                "SELECT l.page_json FROM gen_lessons l JOIN gen_lesson_checks g ON g.lesson_id = l.id "
-                "WHERE g.check_id = ? LIMIT 1",
+                "SELECT l.id AS lesson_id, l.state AS lesson_state, l.page_json FROM gen_lessons l"
+                " JOIN gen_lesson_checks g ON g.lesson_id = l.id WHERE g.check_id = ?"
+                " ORDER BY l.version DESC, l.rowid DESC LIMIT 1",
                 (str(row["id"]),),
             ).fetchone()
         )
-        page = _load_json(kind_row["page_json"], {}) if kind_row is not None else {}
-        kind = (page.get("check") or {}).get("kind") or "quiz"
-        check = {
-            "kind": kind,
-            "evidence_target": row["evidence_target"],
-            "stimulus": dict(stimulus),
-            "learner_instructions": stimulus.get("learner_instructions") or "",
-            # H-18: an owner check authored after this change stores the open scaffold list, and a
-            # legacy one stores the Japanese triple object. Normalise both instead of dict()-ing a
-            # list, so a review lesson over an H-18 lesson keeps working and its scaffolds stay
-            # readable by enforce_lesson_rules.
-            "scaffolds": localization.copy_scaffolds(stimulus.get("scaffolds")),
-            "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
-            "reference_answer": reference.get("reference_answer"),
-            "accepted_answers": list(reference.get("accepted_answers") or []),
-            "accepted_alternatives": [list(group) for group in reference.get("accepted_alternatives") or []],
-            "rubric": [dict(item) for item in rubric.get("criteria") or []],
-        }
-        return {
-            "check_id": str(row["id"]),
-            "objective": objective,
-            "objective_ordinal": ref,
-            "check": check,
-        }
-    raise GenerationRejected(
-        f"review section {section.get('ordinal')} reinforces objectives {refs} but none has an "
-        "open owner check; author the owner lessons for those objectives first"
+    page = _load_json(kind_row["page_json"], {}) if kind_row is not None else {}
+    check = {
+        "kind": (page.get("check") or {}).get("kind") or "quiz",
+        "evidence_target": row["evidence_target"],
+        "stimulus": dict(stimulus),
+        "learner_instructions": stimulus.get("learner_instructions") or "",
+        # H-18: an owner check authored after this change stores the open scaffold list, and a
+        # legacy one stores the Japanese triple object. Normalise both instead of dict()-ing a
+        # list, so a review lesson over an H-18 lesson keeps working and its scaffolds stay
+        # readable by enforce_lesson_rules.
+        "scaffolds": localization.copy_scaffolds(stimulus.get("scaffolds")),
+        "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
+        "reference_answer": reference.get("reference_answer"),
+        "accepted_answers": list(reference.get("accepted_answers") or []),
+        "accepted_alternatives": [list(group) for group in reference.get("accepted_alternatives") or []],
+        "rubric": [dict(item) for item in rubric.get("criteria") or []],
+    }
+    return {
+        "check_id": str(row["id"]),
+        "objective": objective,
+        "objective_ordinal": ref,
+        "check": check,
+        "check_state": str(row["state"]),
+        "check_open": str(row["state"]) == "open",
+        "owner_lesson_id": kind_row.get("lesson_id") if kind_row is not None else None,
+        "owner_lesson_state": kind_row.get("lesson_state") if kind_row is not None else None,
+    }
+
+
+def _closed_check_summary(target: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "objective_ref": target["objective_ordinal"],
+        "check_id": target["check_id"],
+        "check_state": target["check_state"],
+        "lesson_id": target.get("owner_lesson_id"),
+        "lesson_state": target.get("owner_lesson_state"),
+    }
+
+
+def _review_park_reason(section: dict[str, Any], review_target: dict[str, Any]) -> str:
+    """Why a review lesson over closed owner checks is authored but not servable.
+
+    The review page is real content and is stored for revision; its check is the owner's, and a
+    closed owner check cannot be presented to a learner. Naming the exact owner lessons makes the
+    parent's next action concrete: approve or regenerate those owners, then regenerate this
+    section.
+    """
+    details = []
+    for item in review_target.get("closed_owner_checks") or []:
+        lesson = item.get("lesson_id") or "no lesson row"
+        state = item.get("lesson_state") or "unknown"
+        details.append(
+            f"objective {item['objective_ref']} is served by {item['check_id']} "
+            f"({item['check_state']}) from owner lesson {lesson} ({state})"
+        )
+    missing = review_target.get("missing_refs") or []
+    if missing:
+        details.append(f"objectives {sorted(missing)} have no owner check at all")
+    return (
+        f"review section {section.get('ordinal')} presents a closed owner check: "
+        + "; ".join(details)
+        + ". The review page is authored and parked; approve or regenerate the owner lessons, "
+        "then regenerate this section so the review binds to an open check."
     )
+
 
 
 def _author_section(
@@ -9973,6 +11120,7 @@ def _author_section(
     subject_domain: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     review_target: dict[str, Any] | None = None,
+    park_reason: str | None = None,
     version: int = 1,
 ) -> dict[str, Any]:
     objective_ordinal = int(
@@ -10076,6 +11224,12 @@ def _author_section(
             assert_no_answer_leak({**page, "document": document} if document is not None else page, candidate)
         except _RuleViolation as exc:
             problems.extend(exc.reasons)
+        # The check's prompt and instructions are the other learner-readable surface; the key
+        # must not ship with the question (CP-015c follow-up).
+        try:
+            assert_check_payload_does_not_announce_answer(candidate)
+        except _RuleViolation as exc:
+            problems.extend(exc.reasons)
         if problems:
             rejection_reasons = problems
             if attempt == 2:
@@ -10098,8 +11252,12 @@ def _author_section(
         )
         assert_separate_pass(request, validation_request)
         validation_response = _call_llm(validation_llm() or llm, validation_request, usage)
-        report = _parse_validation_answer(
-            validation_response, validation_request, what="lesson validation"
+        report, validation_response = _validation_answer_with_repair(
+            validation_llm() or llm,
+            validation_request,
+            validation_response,
+            usage,
+            what="lesson validation",
         )
         independence = validation_independence(
             model_identity(response), model_identity(validation_response)
@@ -10109,6 +11267,7 @@ def _author_section(
             research_status=research_status,
             ledger=sources,
             independence=independence,
+            criteria=LESSON_VALIDATION_CRITERIA,
         )
         if verdict["verdict"] == "pass":
             lesson = candidate
@@ -10151,6 +11310,13 @@ def _author_section(
         state = "model_assessed"
     else:
         state = "needs_review"
+    if park_reason is not None:
+        # CP-015j: the review page is authored content, but the owner check it presents is closed
+        # (its owner page is still `needs_review`). A review that cannot present a servable check
+        # is not a validated lesson: park it with the closed owner checks named, instead of
+        # failing the whole unit job. The page survives for revision.
+        state = "needs_review"
+        rejection_reasons = [park_reason, *[reason for reason in rejection_reasons if reason != park_reason]]
     check_payloads = _check_payloads(
         lesson, locale=locale, recipe=recipe,
         practice_check_already=_plan_has_practice(connection, plan_id),
@@ -10238,7 +11404,10 @@ def _author_section(
         "lesson_id": lesson_id,
         "check_id": check_id,
         "state": state,
-        "check_enabled": state in ("validated", "model_assessed"),
+        # A review lesson presents its owner's check: the page is only usable when that check is
+        # open. A parked review keeps the page but never claims an enabled check.
+        "check_enabled": state in ("validated", "model_assessed")
+        and (review_target is None or bool(review_target.get("check_open", True))),
         "audit_state": "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
         "validation_id": validation_id,
         "validation_verdict": verdict["verdict"],
@@ -10248,6 +11417,12 @@ def _author_section(
         "generation": generation_provenance(response, request),
         "reused": False,
     }
+    if review_target is not None:
+        summary["review_check_open"] = bool(review_target.get("check_open", True))
+        summary["review_check_state"] = review_target.get("check_state")
+    if park_reason is not None:
+        summary["parked"] = True
+        summary["park_reason"] = park_reason
     warning = summary["validation"].get("warning")
     if warning:
         summary["warning"] = warning
@@ -10302,6 +11477,10 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     if _leaks(page):
         raise LessonNotAvailable("projected lesson document contains answer material; refusing to serve it")
     page_text = _narrative_text(page)
+    # The learner-facing check is served from the page projection; the stored key is not part of
+    # it, and a stored check whose question restates the key is refused on the same rule the
+    # authoring pass applies (CP-015c follow-up).
+    assert_check_payload_does_not_announce_answer(_load_json(row["page_json"], {}))
     for check_row in check_rows:
         reference = _load_json(dict(check_row).get("reference_json"), {})
         for answer in [reference.get("reference_answer")] + list(reference.get("accepted_answers") or []):
