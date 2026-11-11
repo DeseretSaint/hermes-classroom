@@ -77,6 +77,26 @@ crops. Region critic Qwen3-VL-235B or Gemini 3.8 Flash, JSON only. Verifier atla
 tie-break only. Cards are created unassigned in `todo`; the cron supervisor `85d2218453f7` assigns,
 dispatches and merges.
 
+### D-007 — the approved field_atlas@2 kit goes live (owner ruling 2026-11-11 ~11:00 MST)
+
+Owner, verbatim: "I approve using the approved visual kit, but I am concerned that the live
+coursebook state doesn't reflect that." VQ-G0 (`t_fcdf8967`) is completed on that line.
+
+- **What it means:** the kit at `assets/visual-kits/field_atlas/` is the Home, Classroom and Workshop
+  art: the hero plate, the six display covers, the lesson room, the fox and the objects. The
+  live plugin (sha 0112000c) reads none of it. Home shows T/J/J/O letter plates on hatched planks.
+- **Target change:** Home is scored against the kit composition, not pixel parity with A1. Masked
+  SSIM against A1 is recorded, not gated. No letter plate or typographic cover renders where a kit
+  plate maps.
+- **Cards (submission in under four hours, review-ready by 13:15 MST):**
+  - `t_0f55ccd0` UI-K1, kit plates in the brand-asset segment (easel), parent of all three below;
+  - `t_831137dd` Home (atlas, scope override prepended);
+  - `t_e57c21cc` UI-K3, Classroom lesson-room fallback (quill);
+  - `t_093aeb9a` UI-K4, Workshop and Courses covers (lattice).
+  Disjoint files. One Home writer: VQ-003 `t_4af1937f` and VQ-005 `t_0e92f6fc` are held behind
+  Home.
+- **Writer model:** profile default, DeepSeek V4.1 Flash (owner).
+
 ## Divergence ledger
 
 | row | concept | product | reason / evidence |
