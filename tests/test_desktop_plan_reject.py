@@ -45,6 +45,8 @@ const model = planRejectView({
   planValidation: payload.planValidation || null,
   objectiveCount: payload.objectiveCount || 0,
   surface: payload.surface || 'learner',
+  // CREATE-5: a surface with no create form must not be offered the goal action.
+  canChangeGoal: payload.canChangeGoal !== false,
   goal: payload.goal || null,
   title: payload.title || null
 })
@@ -159,6 +161,28 @@ class PlanRejectModelTest(unittest.TestCase):
         self.assertEqual(model["action"]["label"], "Change the goal")
         self.assertTrue(model["draftKept"])
         self.assertIn("nothing to approve", model["title"].lower() + " " + model["body"].lower())
+
+    def test_a_learner_surface_without_a_create_form_is_offered_try_again(self) -> None:
+        """CREATE-5: never render a control the surface cannot honour.
+
+        The empty-plan refusal's repair is "Change the goal" only where a create form can host
+        it. A learner surface with no handler gets the repair it can actually run, instead of a
+        button that answers with "the create form is not reachable from this surface".
+        """
+        out = self.run_case(
+            {
+                "kind": "model",
+                "job": completed_reject(["plan: no objectives were authored"]),
+                "objectiveCount": 0,
+                "plan": {"plan_id": "plan_draft_1", "version": 1, "state": "draft"},
+                "surface": "learner",
+                "canChangeGoal": False,
+            }
+        )
+        model = out["model"]
+        self.assertEqual(model["kind"], "empty")
+        self.assertEqual(model["action"]["id"], "try_again")
+        self.assertEqual(model["action"]["label"], "Try again")
 
     def test_unsourced_plan_names_trying_again(self) -> None:
         out = self.run_case(
@@ -494,6 +518,18 @@ class PlanRejectWiringTest(unittest.TestCase):
         self.assertGreaterEqual(source.count("onChangeGoal,"), 3)
         self.assertIn("beginCreate(seed || null)", source)
         self.assertIn("seed: createSeed", source)
+
+    def test_the_dead_change_goal_sentence_is_gone(self) -> None:
+        """CREATE-5: the control returns to the form or is not offered at all."""
+        source = _source()
+        self.assertNotIn("is not reachable from this surface", source)
+        # The model is told what the surface can do, and the panel action follows it.
+        self.assertIn("canChangeGoal: typeof onChangeGoal === 'function'", source)
+        self.assertIn("action: learner && canChangeGoal", source)
+        # The create result screen hosts the form, so it wires the return itself.
+        create = source[source.index("function CreateCourseFlow"):source.index("// ══ H-27")]
+        self.assertIn("onChangeGoal: returnToCreate", create)
+        self.assertIn("setStep(1)", create[create.index("const returnToCreate"):])
 
 
 if __name__ == "__main__":

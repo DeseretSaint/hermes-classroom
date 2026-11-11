@@ -265,6 +265,74 @@ class DeclaredDomainIsUnchangedTest(unittest.TestCase):
         self.assertEqual(resolved["target_language"], "Spanish")
 
 
+class DeclaredSubjectInOwnWordsTest(unittest.TestCase):
+    """CREATE-7: the subject box is free text, so an exact alias cannot be the only door.
+
+    The create form asks for the subject "in your own words" and its own examples include
+    `Spanish`, `statistics` and `electrical safety`. A declared subject that missed the exact
+    alias table fell to the generic profile, so a repair course was researched and authored as
+    if it were a generic one. The three phrases below are the audit's, plus a subject that must
+    stay generic: no stem may claim a topic the product has no profile for.
+    """
+
+    def test_the_forms_own_examples_resolve(self) -> None:
+        for declared, expected in (
+            ("auto repair", "technical_procedure"),
+            ("Spanish", "language"),
+            ("electrical safety", "technical_procedure"),
+        ):
+            resolved = curriculum.resolve_domain(goal="Do the thing", domain=declared, locale="en-US")
+            self.assertEqual(resolved["domain"], expected, declared)
+            # The profile is the declared one; nothing was inferred from the goal.
+            self.assertEqual(resolved["source"], "declared", declared)
+
+    def test_a_subject_no_profile_names_stays_generic(self) -> None:
+        for declared in ("astronomy", "poetry", "marine biology"):
+            resolved = curriculum.resolve_domain(goal="Do the thing", domain=declared, locale="en-US")
+            self.assertEqual(resolved["domain"], "general", declared)
+            self.assertEqual(resolved["source"], "declared", declared)
+
+    def test_case_a_plural_and_word_order_do_not_decide_it(self) -> None:
+        for declared in (
+            "AUTO REPAIR",
+            "auto repairs",
+            "repair auto",
+            "electrical-safety",
+            "safety, electrical",
+        ):
+            self.assertEqual(
+                curriculum.resolve_domain(goal="Do the thing", domain=declared, locale="en-US")["domain"],
+                "technical_procedure",
+                declared,
+            )
+        self.assertEqual(
+            curriculum.resolve_domain(goal="Do the thing", domain="languages", locale="en-US")["domain"],
+            "language",
+        )
+
+    def test_the_head_of_the_phrase_decides(self) -> None:
+        # A declared "Spanish colonial history" is a history course, not a language course:
+        # the last word that names a domain is the one the phrase is about.
+        resolved = curriculum.resolve_domain(
+            goal="Do the thing", domain="Spanish colonial history", locale="es-MX"
+        )
+        self.assertEqual(resolved["domain"], "history")
+
+    def test_the_single_word_alias_table_still_answers(self) -> None:
+        for declared, expected in (
+            ("repair", "technical_procedure"),
+            ("technical", "technical_procedure"),
+            ("math", "mathematics"),
+            ("statistics", "mathematics"),
+            ("grammar", "grammar"),
+        ):
+            self.assertEqual(
+                curriculum.resolve_domain(goal="Do the thing", domain=declared, locale="en-US")["domain"],
+                expected,
+                declared,
+            )
+
+
 class ParentBriefTest(unittest.TestCase):
     def test_a_parent_brief_for_a_hands_on_goal_gets_the_procedure_profile(self) -> None:
         request = generation.build_plan_request(

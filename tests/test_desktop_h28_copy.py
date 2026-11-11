@@ -452,8 +452,17 @@ class CreateFlowSourceTest(unittest.TestCase):
         self.assertIn("data-cb-tune", source)
         self.assertIn("Help me tune it (optional)", source)
         tune_at = source.index("data-cb-tune")
-        level_at = source.index("id: 'cb-level'")
-        self.assertLess(tune_at, level_at)
+        subject_at = source.index("id: 'cb-subject'")
+        self.assertLess(tune_at, subject_at)
+
+    def test_the_starting_level_is_a_question_not_a_tuning_dial(self) -> None:
+        """CREATE-2: a placeholder is not a value, so the level moved out of the disclosure."""
+        source = self.source
+        self.assertIn("'data-cb-create-level'", source)
+        self.assertNotIn("id: 'cb-level'", source)
+        # It is asked on the goal step, before the shape step and before the tune disclosure.
+        self.assertLess(source.index("'data-cb-create-level'"), source.index("data-cb-tune"))
+        self.assertLess(source.index("'data-cb-create-level'"), source.index("'data-cb-scope-option'"))
 
     def test_create_receipt_is_a_disclosure(self) -> None:
         source = self.source

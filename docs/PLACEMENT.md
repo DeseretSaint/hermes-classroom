@@ -8,6 +8,14 @@
 | Contract delta | None. No `cb.rpc` bump, no `cb.db` migration, no new job kind, no new error code, no new route, no provider call |
 | Authority | `docs/ADVERSARIAL-REVIEW-V3.md` item 28, `AUDIT.md` item 3 (placement must not add a surprise model call), `PREBUILD_SPEC.md` (one coherent working slice, no partially wired control) |
 
+> **Rebase note (CREATE-2, `wt/create-level`).** The starting level is no longer the free-text field
+> this document was written against: it is now the first create screen's one-tap question
+> ("Where are you starting from?" — None / Some / Confident), and `courses.level` carries
+> `none` / `some` / `confident`. The frozen decisions here still hold (bare token, no score, no
+> evidence row, no provenance column, no contract delta), but H-119's entry point and its `locked`
+> copy belong under that question on step 1, and `accept` writes into the same one level state.
+> Nothing else in this specification is affected.
+
 This document freezes the optional starting-point check the create flow gains before a learner
 course is written. It is a decision document, not product code. It changes no contract and makes
 no claim about any learner.

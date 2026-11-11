@@ -119,6 +119,21 @@ Landed on `wt/e2e-fixes`:
 - GEN-3 (beginner half): plan rule 1b refuses a plan whose first objective is a procedure or a
   transfer when the learner declared none/beginner/novice/L0/A1.
 
+Landed on `wt/create-level`:
+
+- CREATE-2: the starting level is the first screen's third question — None / Some / Confident, one
+  tap each, sending `none` / `some` / `confident`. The value reaches `enforce_plan_rules(level=…)`
+  through `course.create` and the plan brief; the trailhead states it before Create. The optional
+  free-text box is gone. `tests/test_desktop_create_flow::CreateFormInteractionTest` presses the
+  shipped form in jsdom; `tests/test_learner_plan_flow` proves the level arrives at the rule.
+- CREATE-5: the create result screen passes its own return to the plan review, so "Change the goal"
+  reopens the form on the goal step with the brief that ran prefilled and a fresh idempotency key.
+  A surface with no create form is no longer offered that action (`canChangeGoal`); its refusal
+  gets the retry it can actually run, and the dead sentence is gone from the source.
+- CREATE-7: the declared subject is matched as words, not as one spelling. A bounded stem table
+  plus normalisation resolves `auto repair`, `Spanish` and `electrical safety`, keeps word order
+  working by letting the phrase's head decide, and leaves `astronomy` / `poetry` generic.
+
 Partly landed:
 
 - GEN-7: the plan rule compares check kind against the objective's family, so a contradictory plan
@@ -126,4 +141,4 @@ Partly landed:
   author a quiz for a procedure objective and every `LessonJobTest` authors from them, so changing
   the lesson rule alone turns 7 tests red. It lands with the fixture migration, in one commit.
 
-Not started: GEN-1, GEN-5, GEN-6, CREATE-2, CREATE-4, CREATE-6, MEDIA-1, MEDIA-3, WIRE-8, WIRE-9.
+Not started: GEN-1, GEN-5, GEN-6, CREATE-4, CREATE-6, MEDIA-1, MEDIA-3, WIRE-8, WIRE-9.

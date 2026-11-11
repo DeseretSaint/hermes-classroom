@@ -168,6 +168,41 @@ const GOAL_PLACEHOLDER = 'e.g. Hold a six-minute conversation in Spanish'
 const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
 
 /**
+ * CREATE-2/CREATE-3: the starting level is a question on the first screen, not a free-text dial
+ * behind "Help me tune it".
+ *
+ * `coursebook/generation.py::is_beginner_level` reads the plan brief's `level` and refuses a plan
+ * that opens with the act for a learner who declared none. A placeholder is not a value, so the
+ * old optional box sent nothing whenever it was left alone and the rule never fired. These three
+ * choices send the rule's own vocabulary in one tap: `none` is a token it reads as beginner, while
+ * `some` and `confident` are deliberately tokens it does not (`tests/test_e2e_fixes.py` pins
+ * both halves of that). The answer says where the plan starts; it is never a grade.
+ */
+const CREATE_LEVEL_OPTIONS = Object.freeze([
+  { id: 'none', token: 'none', label: 'None', detail: 'New to this' },
+  { id: 'some', token: 'some', label: 'Some', detail: 'I know a little' },
+  { id: 'confident', token: 'confident', label: 'Confident', detail: 'I can already do it' }
+])
+
+const CREATE_LEVEL_HELP =
+  'This sets where the plan starts, never a grade. Leave it unanswered and the plan assumes no level at all.'
+
+/** The choice a stored level names, or null when the field was left alone or holds free text. */
+function levelOption(level) {
+  const text = String(level || '').trim().toLowerCase()
+  if (!text) return null
+  return CREATE_LEVEL_OPTIONS.find((option) => option.token === text) || null
+}
+
+/** What the trailhead says about the level it is about to send. */
+function levelFact(level) {
+  const text = String(level || '').trim()
+  if (!text) return 'Starting point: not stated'
+  const option = levelOption(text)
+  return `Starting from: ${option ? option.label : text}`
+}
+
+/**
  * The examples, labelled as examples and inert until chosen. Pressing one fills the goal field the
  * learner can still edit; it never submits the form or starts a job.
  */
@@ -416,14 +451,14 @@ function createModeCard(mode, current, choose) {
       jsxs('span', {
         style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem' },
         children: [
-          jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.lead, fontWeight: 600 }, children: game ? 'Game' : 'Textbook' }),
-          jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)' }, children: selected ? 'Selected' : 'Choose' })
+          jsx('span', { style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.lead, fontWeight: 600 }, children: game ? 'Game' : 'Textbook' }, 'name'),
+          jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)' }, children: selected ? 'Selected' : 'Choose' }, 'state')
         ]
-      }),
+      }, 'head'),
       jsx('span', {
         style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
         children: game ? 'A visual world around this course' : 'Text-first, no generated world'
-      })
+      }, 'consequence')
     ]
   }, mode)
 }
@@ -511,6 +546,45 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     setRecipe(id)
   }, [])
 
+  // CREATE-5: "Change the goal" on the result screen is a real door back into this form.
+  // The plan's own brief seeds it when that read has landed (it is what the job actually ran);
+  // the fields on this screen are the fallback for the first paint, before `jobs.get` answers.
+  // Every other answer is kept, the goal is prefilled on the step that owns it, and the
+  // idempotency key is cleared: a changed goal is a new course, never a silent overwrite of the
+  // draft this screen already created.
+  const returnToCreate = useCallback(
+    (seedFromPlan) => {
+      const source = seedFromPlan || {}
+      const next = {
+        goal: source.goal || goal,
+        title: source.title || title,
+        recipe: source.recipe || recipe,
+        dials: source.dials || dials,
+        locale: source.locale || locale,
+        level: source.level || level,
+        subjectDomain: source.subjectDomain || subjectDomain,
+        scope: source.scope || scope
+      }
+      setResult(null)
+      setRecoverable(null)
+      setError(null)
+      setGoal(next.goal)
+      setTitle(next.title)
+      setTitleEdited(Boolean(String(next.title || '').trim()))
+      setRecipe(next.recipe)
+      setDials(next.dials)
+      setLocale(next.locale)
+      setLevel(next.level)
+      setSubjectDomain(next.subjectDomain)
+      setScope(next.scope)
+      // Step 1, not the first missing answer: the control that opened this is "Change the goal",
+      // so the goal must be the field in front of the learner, prefilled and editable.
+      setStep(1)
+      keyRef.current = null
+    },
+    [dials, goal, level, locale, recipe, scope, subjectDomain, title]
+  )
+
   const submit = useCallback(async () => {
     if (submitting) return
     if (!keyRef.current) keyRef.current = `cb-course-create-${newOperationId('create')}`
@@ -565,27 +639,27 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     return jsxs('div', {
       className: 'mx-auto flex w-full max-w-2xl flex-col gap-3 py-4',
       children: [
-        jsx('h2', { className: 'text-sm font-semibold', children: CREATE_RESULT_COPY.lead }),
+        jsx('h2', { className: 'text-sm font-semibold', children: CREATE_RESULT_COPY.lead }, 'lead'),
         jsx('p', {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
-        }),
+        }, 'body'),
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
           children: [
-            jsx('summary', { className: 'cursor-pointer', children: CREATE_RESULT_COPY.details }),
+            jsx('summary', { className: 'cursor-pointer', children: CREATE_RESULT_COPY.details }, 'summary'),
             jsxs('div', {
               className: 'mt-1 flex flex-col',
               children: [
-                jsx(StatusRow, { label: 'Course', value: result.courseId }),
-                jsx(StatusRow, { label: 'Plan', value: `${result.planId} (draft)` }),
-                jsx(StatusRow, { label: 'Enrolment', value: result.enrollmentId }),
-                jsx(StatusRow, { label: 'Plan job', value: `${result.jobId} · ${result.jobState}` })
+                jsx(StatusRow, { label: 'Course', value: result.courseId }, 'course'),
+                jsx(StatusRow, { label: 'Plan', value: `${result.planId} (draft)` }, 'plan'),
+                jsx(StatusRow, { label: 'Enrolment', value: result.enrollmentId }, 'enrollment'),
+                jsx(StatusRow, { label: 'Plan job', value: `${result.jobId} · ${result.jobState}` }, 'job')
               ]
-            })
+            }, 'rows')
           ]
-        }),
+        }, 'receipt'),
         jsx(LearnerPlanView, {
           course: { course_id: result.courseId, enrollment_id: result.enrollmentId },
           revision,
@@ -593,13 +667,16 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           onOpenSection: null,
           onStartLesson: null,
           onChanged: null,
+          // CREATE-5: this surface *is* the create form, so "Change the goal" hands the brief
+          // straight back to it instead of printing that the form cannot be reached from here.
+          onChangeGoal: returnToCreate,
           jobHint: result.jobId,
           scopeHint: scope
-        }),
+        }, 'plan'),
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2 pt-1',
           children: [
-            jsx(sdk.Button, { onClick: onCancel, variant: 'secondary', children: 'Open in Courses' }),
+            jsx(sdk.Button, { onClick: onCancel, variant: 'secondary', children: 'Open in Courses' }, 'open'),
             jsx(sdk.Button, {
               onClick: () => {
                 setResult(null)
@@ -615,7 +692,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               },
               variant: 'text',
               children: 'Create another'
-            })
+            }, 'another')
           ]
         })
       ]
@@ -710,6 +787,66 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   jsx(GoalGallery, { onChoose: changeGoal })
                 ]
               }),
+              // CREATE-2: one tap, on the screen that already asks the goal. No default is
+              // preselected — an unanswered level is a real answer ("no level declared"), and
+              // pressing the chosen option again clears it rather than trapping the learner.
+              jsxs('div', {
+                'data-cb-create-level': level || '',
+                role: 'group',
+                'aria-labelledby': 'cb-level-label',
+                'aria-describedby': 'cb-level-help',
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('div', {
+                    id: 'cb-level-label',
+                    className: 'text-xs font-medium text-(--ui-text-secondary)',
+                    children: 'Where are you starting from?'
+                  }, 'label'),
+                  jsx('div', {
+                    className: 'grid gap-1.5',
+                    style: { gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr))', minWidth: 0 },
+                    children: CREATE_LEVEL_OPTIONS.map((option) => {
+                      const current = levelOption(level)
+                      const chosen = Boolean(current && current.id === option.id)
+                      return jsx(
+                        sdk.Button,
+                        {
+                          'aria-pressed': chosen,
+                          'data-cb-level-option': option.id,
+                          'data-cb-level-token': option.token,
+                          'data-cb-level-selected': chosen ? 'true' : 'false',
+                          onClick: () => setLevel(chosen ? '' : option.token),
+                          variant: chosen ? 'secondary' : 'outline',
+                          style: {
+                            minHeight: '44px',
+                            height: 'auto',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            gap: '0.05rem',
+                            whiteSpace: 'normal',
+                            textAlign: 'left',
+                            fontFamily: CB_SANS
+                          },
+                          children: [
+                            jsx('span', { style: { fontSize: CB_TYPE.meta, fontWeight: 600 }, children: option.label }, 'label'),
+                            jsx('span', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: option.detail }, 'detail')
+                          ]
+                        },
+                        option.id
+                      )
+                    })
+                  }, 'control'),
+                  jsx('div', {
+                    id: 'cb-level-help',
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: levelOption(level)
+                      ? CREATE_LEVEL_HELP
+                      : String(level || '').trim()
+                        ? `Saved with this course: ${String(level).trim()}. Press one choice to replace it.`
+                        : CREATE_LEVEL_HELP
+                  }, 'help')
+                ]
+              }),
               jsxs('details', {
                 'data-cb-title-disclosure': '',
                 className: 'text-xs',
@@ -755,7 +892,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
               jsx('p', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: 'Pick the shape of the journey. Nothing is created yet, and you can go back at any point.'
-              }),
+              }, 'intro'),
               jsx('div', {
                 role: 'listbox',
                 'aria-label': 'The shape of this course',
@@ -838,7 +975,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                                 letterSpacing: '-0.01em'
                               },
                               children: option.label
-                            }),
+                            }, 'name'),
                             jsx('span', {
                               style: {
                                 flexShrink: 0,
@@ -848,14 +985,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                                 color: selected ? 'var(--cb-ink)' : 'var(--cb-ink-soft)'
                               },
                               children: selected ? 'Selected' : 'Choose'
-                            })
+                            }, 'state')
                           ]
-                        }),
+                        }, 'head'),
                         jsx('span', {
                           'aria-hidden': 'true',
                           style: { display: 'block', height: '34px', margin: '0.05rem 0 0.1rem' },
                           children: jsx(CbShapeTrail, { scope: option.id, height: 34 })
-                        }),
+                        }, 'trail'),
                         jsx('span', {
                           style: {
                             fontFamily: CB_SANS,
@@ -864,7 +1001,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                             color: 'var(--cb-ink)'
                           },
                           children: option.consequence
-                        }),
+                        }, 'consequence'),
                         jsx('span', {
                           'data-cb-scope-facts': option.id,
                           style: {
@@ -874,13 +1011,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                             color: 'var(--cb-ink-soft)'
                           },
                           children: scopeFacts(option.id)
-                        })
+                        }, 'facts')
                       ]
                     },
                     option.id
                   )
                 })
-              }),
+              }, 'shapes'),
               jsx('div', {
                 'aria-live': 'polite',
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -888,7 +1025,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children: scope
                   ? planTimingCopy(scope)
                   : 'Choose one shape above to continue. Nothing is generated until you review the trailhead on the last step.'
-              }),
+              }, 'timing'),
               jsxs('div', {
                 'data-cb-create-mode': presentationMode,
                 style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
@@ -916,7 +1053,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                         : 'Text-first. No generated world and no image generation. You can ask for a world later from the course.'
                   }, 'consequence')
                 ]
-              }),
+              }, 'mode'),
               jsxs('div', {
                 'data-cb-use-choice': '',
                 style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
@@ -980,63 +1117,50 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                     children: (RECIPE_COPY[recipe] || {}).description || ''
                   }, 'consequence')
                 ]
-              }),
+              }, 'use'),
               jsxs('details', {
                 'data-cb-tune': '',
                 className: 'border-t border-(--ui-stroke-tertiary) pt-3 text-xs text-(--ui-text-secondary)',
                 children: [
-                  jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'Help me tune it (optional)' }),
+                  jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'Help me tune it (optional)' }, 'summary'),
                   jsxs('div', {
                     className: 'mt-2 flex flex-col gap-3',
                     children: [
                       jsxs('div', {
                         className: 'flex flex-col gap-1.5',
                         children: [
-                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-level', children: 'Where you are starting from' }),
-                          jsx(sdk.Input, {
-                            id: 'cb-level',
-                            maxLength: 35,
-                            onChange: (event) => setLevel(event.target.value),
-                            placeholder: 'e.g. complete beginner, or rusty',
-                            value: level
-                          })
-                        ]
-                      }),
-                      jsxs('div', {
-                        className: 'flex flex-col gap-1.5',
-                        children: [
-                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-subject', children: 'Subject, in your own words' }),
+                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-subject', children: 'Subject, in your own words' }, 'label'),
                           jsx(sdk.Input, {
                             id: 'cb-subject',
                             maxLength: 60,
                             onChange: (event) => setSubjectDomain(event.target.value),
                             placeholder: 'e.g. Spanish, statistics, electrical safety',
                             value: subjectDomain
-                          })
+                          }, 'input')
                         ]
-                      }),
+                      }, 'subject'),
                       jsxs('div', {
                         className: 'flex flex-col gap-1.5',
                         children: [
-                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-locale', children: 'Language or locale (language courses only)' }),
+                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-locale', children: 'Language or locale (language courses only)' }, 'label'),
                           jsx(sdk.Input, {
                             id: 'cb-locale',
                             maxLength: 35,
                             onChange: (event) => setLocale(event.target.value),
                             placeholder: 'e.g. es-ES for Spanish, ja-JP for Japanese',
                             value: locale
-                          }),
+                          }, 'input'),
                           jsx('div', {
                             className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                             children: 'This only sets language and formatting conventions. It never describes the subject.'
-                          })
+                          }, 'note')
                         ]
-                      }),
+                      }, 'locale'),
                       ...Object.keys(DIALS).map((dial) =>
                         jsxs('div', {
                           className: 'flex flex-col gap-1.5',
                           children: [
-                            jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
+                            jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }, 'label'),
                             jsx(sdk.SegmentedControl, {
                               onChange: (value) => {
                                 if (dial === 'depth') {
@@ -1052,7 +1176,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                               options: DIALS[dial].options,
                               sizing: 'content',
                               value: dials[dial]
-                            }),
+                            }, 'control'),
                             // H-168: the size's research floor is stated, not hidden — the default
                             // depth already follows it, and a lower pick is raised to it.
                             dial === 'depth' && scope
@@ -1060,7 +1184,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                                   'data-cb-depth-floor': scope,
                                   className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                                   children: `This size is researched at ${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} depth or deeper.`
-                                })
+                                }, 'floor')
                               : null
                           ]
                         }, dial)
@@ -1068,11 +1192,11 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       jsx('div', {
                         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                         children: 'These shape the plan only. Nothing here becomes a grade.'
-                      })
+                      }, 'note')
                     ]
-                  })
+                  }, 'fields')
                 ]
-              })
+              }, 'tune')
             ]
           })
         : null,
@@ -1143,7 +1267,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                       jsx('span', {
                         'data-cb-create-preview-depth': scope,
                         children: scope ? `${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} research depth` : 'depth from the plan'
-                      }, 'depth')
+                      }, 'depth'),
+                      // CREATE-2: the trailhead states the level the brief will actually carry, so
+                      // the one-tap answer is visible before Create and not only in the receipt.
+                      jsx('span', {
+                        'data-cb-create-preview-level': level || 'none',
+                        children: levelFact(level)
+                      }, 'level')
                     ]
                   }, 'facts'),
                   jsxs('p', {
@@ -1169,11 +1299,11 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children:
                   'Create course writes the course and one draft plan. The plan then opens here for you to ' +
                   'approve, and no lesson is written until you do.'
-              }),
+              }, 'facts'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
-              }),
+              }, 'timing'),
               // A failed plan keeps what it already wrote. One calm line, not a receipt wall: the
               // same attempt is continued, never a second course.
               recoverable
@@ -1182,9 +1312,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                     className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
                     children:
                       'This course and its enrolment are saved. Trying again continues the same plan; it does not create a second course.'
-                  })
+                  }, 'recoverable')
                 : null,
-              error ? jsx(ErrorLine, { error }) : null
+              error ? jsx(ErrorLine, { error }, 'error') : null
             ]
           })
         : null,
@@ -1197,7 +1327,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 variant: 'secondary',
                 disabled: submitting,
                 children: 'Back'
-              })
+              }, 'back')
             : null,
           step < 3
             ? jsx(CbAction, {
@@ -1207,13 +1337,13 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 onClick: () => setStep(step + 1),
                 variant: 'primary',
                 children: 'Continue'
-              })
+              }, 'advance')
             : jsx(CbAction, {
                 disabled: submitting,
                 onClick: submit,
                 variant: 'primary',
                 children: submitting ? 'Creating course' : recoverable ? 'Try again' : 'Create course'
-              }),
+              }, 'advance'),
           // One row of actions: the primary is the only filled control; Back is secondary; Cancel
           // is tertiary and sits at the far edge on every step.
           jsx(CbAction, {
@@ -1222,7 +1352,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             disabled: submitting,
             style: { marginLeft: 'auto' },
             children: 'Cancel'
-          })
+          }, 'cancel')
         ]
       })
     ]

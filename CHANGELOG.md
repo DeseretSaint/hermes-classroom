@@ -130,6 +130,29 @@ summarises those records and does not re-verify them.
   wire or schema change. Evidence:
   `audit/visual/h182-repair-live-followup/EVIDENCE.md`, `tests/test_generation.py::LessonRequestBoundTest`,
   `tests/test_generation.py::PlanWideLessonBoundTest`.
+- CREATE-2 (the starting level is a question): it was an optional free-text box inside "Help me
+  tune it", so the placeholder "complete beginner" was never a value and the plan brief carried no
+  `level` at all — the beginner rule had nothing to read. The first create screen now asks
+  "Where are you starting from?" with three one-tap choices (None / Some / Confident) that send the
+  rule's own vocabulary (`none`, `some`, `confident`), the trailhead states the answer before
+  Create, and the value travels unchanged through `course.create` and the plan brief into
+  `enforce_plan_rules(level=…)`. The contract already accepted `level`; no wire or schema change.
+  Evidence: `tests/test_desktop_create_flow.py::CreateFormInteractionTest`,
+  `tests/test_learner_plan_flow.py::test_the_one_tap_level_reaches_the_plan_rule`.
+- CREATE-5 ("Change the goal"): the create result screen's plan review had no create-form handler,
+  so the one repair control for an empty plan answered with a sentence instead of a door. The same
+  screen now hosts that return: the control reopens the form on the goal step with the brief the
+  plan actually ran (goal, title, recipe, dials, locale, level, subject) prefilled and a fresh
+  idempotency key, and a surface that cannot host it is never offered the action — its refusal gets
+  `try_again` instead. No wire or schema change. Evidence:
+  `tests/test_desktop_create_flow.py::CreateFormInteractionTest::test_change_the_goal_returns_to_the_prefilled_form`,
+  `tests/test_desktop_plan_reject.py::PlanRejectModelTest::test_a_learner_surface_without_a_create_form_is_offered_try_again`.
+- CREATE-7 (subject in the learner's own words): the declared subject resolved by exact alias only,
+  so "auto repair", "Spanish" and "electrical safety" all fell to the generic domain profile. One
+  bounded stem table plus normalisation (case, a plural, word order with the phrase's head last)
+  now answers them as `technical_procedure`, `language` and `technical_procedure`, while a subject
+  no profile names ("astronomy", "poetry") still resolves to `general`. No wire or schema change.
+  Evidence: `tests/test_cp015g_domain_default.py::DeclaredSubjectInOwnWordsTest`.
 
 ### Known limitations at 0.1.0
 

@@ -261,6 +261,78 @@ _DOMAIN_ALIASES: dict[str, str] = {
     "history": "history",
 }
 
+#: Stems, not spellings, for the subject the create form asks for "in your own words". A learner
+#: types `auto repair`, `Spanish` or `electrical safety`; a case, a plural or a word order is not
+#: a signal about the subject, so matching runs on normalised tokens instead of the exact phrase.
+#:
+#: The head of an English compound is its last word, so the *last* token that names a domain wins:
+#: `auto repair` is a repair, `electrical safety` is a safety topic, and `Spanish colonial
+#: history` is history rather than a language course.
+#:
+#: A stem earns a place only when it names a *domain*, never a topic: `astronomy`, `poetry` and
+#: `marine biology` stay `general` on purpose, because no profile exists for them and a wrong
+#: profile is worse than the honest default. Bounded on purpose — this is a lookup, not a
+#: classifier, and it never invents a construct.
+_DOMAIN_STEMS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "language",
+        (
+            "language", "linguistic", "spanish", "french", "german", "italian", "portuguese",
+            "japanese", "korean", "chinese", "mandarin", "cantonese", "arabic", "russian",
+            "hindi", "urdu", "hebrew", "turkish", "dutch", "greek", "polish", "swedish",
+            "norwegian", "danish", "finnish", "vietnamese", "thai", "indonesian", "swahili",
+            "cefr", "esl", "efl", "ielts", "toefl",
+        ),
+    ),
+    (
+        "technical_procedure",
+        (
+            "technical", "procedure", "procedural", "trade", "maintenance", "engineering",
+            "repair", "mechanic", "automotive", "electrical", "electric", "electrician",
+            "wiring", "plumbing", "carpentry", "carpenter", "welding", "welder",
+            "installation", "safety", "hydraulic", "pneumatic", "machining", "machinist",
+            "hvac",
+        ),
+    ),
+    (
+        "mathematics",
+        (
+            "mathematic", "math", "algebra", "geometry", "geometric", "calculus", "statistic",
+            "trigonometry", "arithmetic", "probability",
+        ),
+    ),
+    ("grammar", ("grammar", "syntax", "conjugation")),
+    ("history", ("history", "historical")),
+)
+
+#: A word's comparative stem: its letters, with one trailing plural `s`. `repairs` -> `repair`,
+#: `mathematics` -> `mathematic`, `languages` -> `language`. A double `s` (`business`) is a
+#: spelling, not a plural, so it is left alone.
+_WORD_PLURAL = re.compile(r"(?<=[a-z]{3})(?<!ss)s$")
+
+
+def _domain_stem(word: str) -> str:
+    token = re.sub(r"[^a-z0-9]+", "", str(word).lower())
+    return _WORD_PLURAL.sub("", token)
+
+
+def _domain_from_words(text: str) -> str | None:
+    """The domain the last domain-naming word in ``text`` belongs to, or ``None``.
+
+    Word order survives because the head of the phrase decides, and a token matches a stem by
+    prefix so an inflection (`electrician`, `mechanical`) needs no second spelling in the map.
+    """
+    found: str | None = None
+    for word in re.split(r"[^A-Za-z0-9]+", text):
+        stem = _domain_stem(word)
+        if not stem:
+            continue
+        for domain, stems in _DOMAIN_STEMS:
+            if any(stem == candidate or stem.startswith(candidate) for candidate in stems):
+                found = domain
+                break
+    return found
+
 # ── Intent construct detectors ──────────────────────────────────────────────
 #
 # These are construct detectors, not topic classifiers. A match is a named thing the lesson has
@@ -491,8 +563,13 @@ def _check_media(kind: str, level: str, role: str | None, allowed_roles: tuple[s
 def _normalise_domain(subject_domain: str | None, locale: str | None) -> str:
     if subject_domain is None or not str(subject_domain).strip():
         return "language" if locale else "general"
-    domain = str(subject_domain).strip().lower().replace("-", "_").replace(" ", "_")
-    return _DOMAIN_ALIASES.get(domain, domain)
+    text = str(subject_domain).strip()
+    domain = text.lower().replace("-", "_").replace(" ", "_")
+    # The exact alias table answers a single declared word without splitting it (`technical`,
+    # `repair`), and the stem matcher answers the sentence a person actually types (`auto
+    # repair`, `electrical safety`, `Spanish`). An unrecognised subject keeps the old shape
+    # (its own normalised words), which the curriculum resolves to `general`.
+    return _DOMAIN_ALIASES.get(domain) or _domain_from_words(text) or domain
 
 
 def normalise_subject_domain(subject_domain: str | None, locale: str | None = None) -> str:
@@ -502,6 +579,11 @@ def normalise_subject_domain(subject_domain: str | None, locale: str | None = No
     *about*?") and there must be exactly one alias table. ``locale`` is only consulted when no
     domain was declared, which is the pre-v10 shape; a declared domain always wins, so a
     Spanish brake-pad procedure is ``technical_procedure`` and not ``language``.
+
+    The declared value is the free text the create form asks for ("Subject, in your own words"),
+    so it is matched as words rather than as one spelling: case, a plural and word order do not
+    change the answer (:data:`_DOMAIN_STEMS`). A subject no stem names is returned normalised and
+    unchanged, and the curriculum resolves it to ``general`` — never to a guessed profile.
     """
     return _normalise_domain(subject_domain, locale)
 

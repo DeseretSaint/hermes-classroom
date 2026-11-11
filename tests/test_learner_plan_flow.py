@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from unittest import mock
 
 from coursebook import db, domain, executor, generation, job_service
 
@@ -241,6 +242,57 @@ class LearnerPlanFlowTest(KernelCase):
         )
 
     # ── the hash rule ───────────────────────────────────────────────────────
+    def test_the_one_tap_level_reaches_the_plan_rule(self) -> None:
+        """CREATE-2/CREATE-3: the level the create form sends is the one the plan rule reads.
+
+        The form's one-tap answer travels as `course.create.level` and as the plan brief's
+        `level`. This drives the second half through the real plan job and asserts the value the
+        deterministic rule is handed — not that a placeholder existed in the DOM.
+        """
+        payload = dict(learner_course_payload(), level="none", subject_domain="auto repair")
+        created = self.ok("course.create", payload, idempotency_key="cb-create-level-none")
+        course_id = created["result"]["course_id"]
+        enrolled = self.ok(
+            "enrollment.create",
+            {"course_id": course_id, "learner_label": TITLE},
+            idempotency_key="cb-create-level-none-enroll",
+        )
+        brief = dict(
+            learner_plan_brief(course_id, enrolled["result"]["enrollment_id"]),
+            level="none",
+            subject_domain="auto repair",
+        )
+        job = plan_job(job_id="job-level-none")
+        job["brief"] = dict(brief)
+        connection = db.connect()
+        try:
+            with mock.patch.object(
+                generation, "enforce_plan_rules", wraps=generation.enforce_plan_rules
+            ) as rule:
+                generation.run_plan_job(
+                    connection,
+                    job,
+                    FakeLLM(
+                        {
+                            "coursebook.plan.generate": blueprint_response(learner_plan()),
+                            "coursebook.plan.validate": validation_responder(
+                                blueprint_response,
+                                validation_pass(),
+                                model="fake-independent-validator",
+                            ),
+                        }
+                    ),
+                    FakeSearch(),
+                    now=NOW,
+                )
+        finally:
+            connection.close()
+        self.assertTrue(rule.called, "the plan rule was never called")
+        self.assertEqual(rule.call_args_list[-1].kwargs["level"], "none")
+        # The course row the create call wrote holds the same declared level.
+        course = self.ok("course.get", {"course_id": course_id})["result"]["course"]
+        self.assertEqual(course["level"], "none")
+
     def generated_draft(self) -> dict:
         flow = self.create_with_plan_job()
         job = plan_job(job_id=flow["job_id"])

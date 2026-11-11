@@ -3838,8 +3838,13 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
 /**
  * The rejection review model. `null` means there is nothing to repair: the job is still running,
  * it finished with a usable draft, or it failed in a way a fresh job cannot repeat.
+ *
+ * `canChangeGoal` is the surface's capability, not the plan's: only a surface that can open the
+ * create form may offer "Change the goal". Everywhere else the same refusal gets `try_again`,
+ * which is a control that actually runs. Offering the goal action and then answering it with a
+ * sentence is the dead end this replaces.
  */
-function planRejectView({ job, plan, planValidation, objectiveCount, surface, goal, title }) {
+function planRejectView({ job, plan, planValidation, objectiveCount, surface, goal, title, canChangeGoal = true }) {
   const planId = plan && plan.plan_id ? String(plan.plan_id) : null
   const checkpoint = (job && job.checkpoint) || {}
   const checkpointPlanId = checkpoint.plan_id ? String(checkpoint.plan_id) : null
@@ -3938,7 +3943,7 @@ function planRejectView({ job, plan, planValidation, objectiveCount, surface, go
       title: 'The plan came back with nothing to teach',
       body: `The draft for ${spoken} arrived without any objectives, so there is nothing to approve. The course, its brief and this draft are still saved; nothing was deleted.`,
       where: 'The whole plan: no objective was written',
-      action: learner
+      action: learner && canChangeGoal
         ? { id: 'change_goal', label: 'Change the goal' }
         : { id: 'try_again', label: 'Try again' },
       secondary: null
@@ -4011,15 +4016,15 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
       jsx('div', {
         style: { fontSize: cb3Type('meta'), fontWeight: 600, color: 'var(--cb3-ink)' },
         children: model.title
-      }),
-      jsx('p', { className: 'max-w-prose', children: model.body }),
-      jsx('div', { 'data-cb-plan-reject-where': '', children: `Where: ${model.where}` }),
+      }, 'title'),
+      jsx('p', { className: 'max-w-prose', children: model.body }, 'body'),
+      jsx('div', { 'data-cb-plan-reject-where': '', children: `Where: ${model.where}` }, 'where'),
       jsx('div', {
         'data-cb-plan-reject-draft': model.draftKept ? 'kept' : 'none',
         children: model.draftKept
           ? 'Your draft is still here. It is not approved, and no lesson will be written from it.'
           : 'No draft was written, so there is nothing to lose by running the brief again.'
-      }),
+      }, 'draft'),
       jsx('div', {
         className: 'flex flex-wrap items-center gap-2',
         children: [
@@ -4028,7 +4033,7 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
             disabled: busy,
             onClick: () => onAction(model.action.id),
             children: busy ? 'Starting' : model.action.label
-          }),
+          }, 'action'),
           model.secondary && !busy
             ? jsx(sdk.Button, {
                 size: 'sm',
@@ -4036,21 +4041,21 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
                 'data-cb-plan-reject-secondary': model.secondary.id,
                 onClick: () => onAction(model.secondary.id),
                 children: model.secondary.label
-              })
+              }, 'secondary')
             : null
         ]
-      }),
-      error ? jsx('div', { children: error }) : null,
+      }, 'actions'),
+      error ? jsx('div', { children: error }, 'error') : null,
       jsxs('details', {
         'data-cb-plan-reject-details': '',
         children: [
-          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }, 'summary'),
           jsx('div', {
             className: 'mt-1 flex flex-col gap-1',
             children: model.detail.map((line, index) => jsx('div', { children: line }, `detail-${index}`))
-          })
+          }, 'detail')
         ]
-      })
+      }, 'details')
     ]
   })
 }
@@ -5329,6 +5334,8 @@ function StudioPlanView({
     planValidation,
     objectiveCount: objectives.length,
     surface,
+    // A surface that cannot open the create form is never offered "Change the goal".
+    canChangeGoal: typeof onChangeGoal === 'function',
     goal:
       (planRun && planRun.brief && planRun.brief.goal) ||
       (brief && brief.brief && brief.brief.goal) ||
@@ -5578,22 +5585,24 @@ function StudioPlanView({
       return
     }
     if (action === 'change_goal') {
-      if (typeof onChangeGoal !== 'function') {
-        setRejectError('The create form is not reachable from this surface. Open Courses and start a new course with this goal.')
+      // The panel offers this action only on a surface that wires a handler (`canChangeGoal`),
+      // so this is a real return to the create form with the brief that ran, never a sentence.
+      // A caller that reaches here without one gets the retry below: the same brief, a new job,
+      // which is the only repair this surface can actually perform.
+      if (typeof onChangeGoal === 'function') {
+        const source = (planRun && planRun.brief) || {}
+        onChangeGoal({
+          goal: source.goal || '',
+          title: (course && course.title) || '',
+          recipe: source.recipe || null,
+          dials: source.dials || null,
+          locale: source.locale || null,
+          level: source.level || null,
+          subjectDomain: source.subject_domain || null,
+          scope: source.scope || null
+        })
         return
       }
-      const source = (planRun && planRun.brief) || {}
-      onChangeGoal({
-        goal: source.goal || '',
-        title: (course && course.title) || '',
-        recipe: source.recipe || null,
-        dials: source.dials || null,
-        locale: source.locale || null,
-        level: source.level || null,
-        subjectDomain: source.subject_domain || null,
-        scope: source.scope || null
-      })
-      return
     }
     const source = planRun
     if (!source || !source.brief || !source.job_id) {

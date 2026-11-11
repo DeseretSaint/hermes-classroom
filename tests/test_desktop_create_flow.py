@@ -480,7 +480,7 @@ class CreateFlowWiringTest(unittest.TestCase):
 
     def test_the_flow_uses_the_one_orchestrator(self) -> None:
         source = _source()
-        start = source[source.index("function CreateCourseFlow"):source.index("function CreateCourseFlow") + 6000]
+        start = source[source.index("function CreateCourseFlow"):source.index("// ══ H-27")]
         self.assertIn("startLearnerPlan({", start)
         self.assertNotIn("'course.create',\n      {", start)
 
@@ -535,6 +535,376 @@ class CreateFlowWiringTest(unittest.TestCase):
         plan_view = source[source.index("function StudioPlanView"):source.index("function StudioBlueprintView")]
         self.assertNotIn("onSettled, onRunAgain", plan_view)
         self.assertIn("onSettled: onJobSettled", plan_view)
+
+
+# The shared stub renders `Input`/`Textarea` as null, which is right for markup tests but hides the
+# one field these cases read back. The create form's own fields become real elements here so the
+# prefilled goal is read from the DOM rather than from a prop.
+FORM_SDK_STUB = SDK_STUB.replace(
+    "export const Input = () => null",
+    "export const Input = (props) => el('input', { ...props })",
+).replace(
+    "export const Textarea = () => null",
+    "export const Textarea = (props) => el('textarea', { ...props })",
+)
+assert FORM_SDK_STUB != SDK_STUB, "the shared SDK stub changed shape; update the form stub"
+
+#: CREATE-2/CREATE-5: the form is mounted in jsdom and pressed the way a learner presses it. The
+#: transport is a recording `ctx.rest`, so the payloads come from the shipped component, not from a
+#: copy of its logic.
+FORM_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+import fs from 'node:fs'
+
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.window.navigator })
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.MouseEvent = dom.window.MouseEvent
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+globalThis.__CB_TEST_WIDTH__ = '1049'
+window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+
+const mod = await import('./plugin.js')
+
+const calls = []
+const responses = payload.responses || {}
+const generic = { items: [], entries: [], objectives: [], jobs: [], total: 0 }
+const fakeRest = async (path, options) => {
+  const body = (options && options.body) || {}
+  const base = String(path).split('?')[0]
+  if (base === '/rpc') {
+    calls.push({ method: body.method, payload: body.payload || {}, key: body.idempotency_key || null })
+    const result = Object.prototype.hasOwnProperty.call(responses, body.method) ? responses[body.method] : generic
+    return { ok: true, contract_version: 26, operation_id: 'test-operation', result }
+  }
+  if (base === '/runtime') {
+    return {
+      wire_version: 26,
+      contract_version: 26,
+      implemented_methods: payload.implemented || [],
+      single_home_host: false
+    }
+  }
+  if (base === '/health') {
+    return { ok: true, contract_version: 26, result: { db: { ready: true }, plugin_version: 'test', contract_version: 26 } }
+  }
+  return { ok: true, result: {} }
+}
+
+mod.default.register({
+  rest: fakeRest,
+  register: () => {},
+  onDispose: () => {},
+  setTimeout: (fn, ms) => {
+    const handle = window.setTimeout(fn, ms)
+    return () => window.clearTimeout(handle)
+  },
+  clearTimeout: (handle) => window.clearTimeout(handle)
+})
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+
+const flush = async (ms = 40) => {
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)) })
+}
+const text = (node) => ((node && node.textContent) || '').replace(/\s+/g, ' ').trim()
+const byText = (selector, wanted) =>
+  [...document.querySelectorAll(selector)].find((node) => text(node) === wanted) || null
+const levelState = () =>
+  [...document.querySelectorAll('[data-cb-level-option]')].map((node) => ({
+    id: node.getAttribute('data-cb-level-option'),
+    token: node.getAttribute('data-cb-level-token'),
+    pressed: node.getAttribute('aria-pressed'),
+    selected: node.getAttribute('data-cb-level-selected'),
+    label: text(node)
+  }))
+const press = async (node, what) => {
+  if (!node) throw new Error(`nothing to press: ${what}`)
+  await act(async () => {
+    node.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+  })
+  await flush(25)
+}
+// React tracks a field's own value; writing through the prototype setter and firing `input` is
+// how a person's keystroke reaches a controlled field in this DOM.
+const type = async (node, value) => {
+  if (!node) throw new Error('nothing to type into')
+  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(node), 'value').set
+  await act(async () => {
+    setter.call(node, value)
+    node.dispatchEvent(new window.Event('input', { bubbles: true }))
+  })
+  await flush(15)
+}
+const stepMarker = () => {
+  const found = [...document.querySelectorAll('div')].find((node) => /^Step [123] of 3$/.test(text(node)))
+  return found ? text(found) : null
+}
+const levelField = () => document.querySelector('[data-cb-create-level]')
+
+await act(async () => {
+  root.render(React.createElement(mod.CreateCourseFlow, {
+    seed: payload.kind === 'choices' ? null : payload.seed || null,
+    onCancel: () => {},
+    onCreated: () => {}
+  }))
+})
+await flush(80)
+
+if (payload.kind === 'choices') {
+  const output = {
+    step: stepMarker(),
+    freeTextLevel: Boolean(document.querySelector('#cb-level')),
+    levels: levelState(),
+    help: text(document.querySelector('#cb-level-help')),
+    groupLabel: text(document.querySelector('#cb-level-label'))
+  }
+  process.stdout.write(JSON.stringify(output))
+} else {
+  await type(document.querySelector('#cb-goal'), payload.goal)
+  await press(
+    [...document.querySelectorAll('[data-cb-level-option]')].find(
+      (node) => node.getAttribute('data-cb-level-option') === (payload.pick || 'none')
+    ),
+    'a level choice'
+  )
+  const afterPick = levelState()
+  await press(byText('button', 'Continue'), 'Continue from the goal step')
+  await press(document.querySelector('[data-cb-scope-option="short"]'), 'the short shape')
+  await press(byText('button', 'Continue'), 'Continue from the shape step')
+  const previewNode = document.querySelector('[data-cb-create-preview-level]')
+  const previewLevel = previewNode ? text(previewNode) : null
+  const stepAtReview = stepMarker()
+  await press(byText('button', 'Create course'), 'Create course')
+  await flush(200)
+
+  const course = calls.find((call) => call.method === 'course.create')
+  const job = calls.find((call) => call.method === 'jobs.create')
+  const rejectNode = document.querySelector('[data-cb-plan-reject]')
+  const changeGoal = byText('button', 'Change the goal')
+  const before = {
+    reject: rejectNode ? rejectNode.getAttribute('data-cb-plan-reject') : null,
+    rejectAction: rejectNode ? rejectNode.getAttribute('data-cb-plan-reject-action') : null,
+    changeGoalOffered: Boolean(changeGoal),
+    scolds: document.body.textContent.includes('not reachable from this surface')
+  }
+
+  let after = null
+  if (changeGoal && payload.followChangeGoal !== false) {
+    await press(changeGoal, 'Change the goal')
+    await flush(80)
+    const goalField = document.querySelector('#cb-goal')
+    after = {
+      step: stepMarker(),
+      heading: text(document.querySelector('h2')),
+      goal: goalField ? goalField.value : null,
+      level: levelField() ? levelField().getAttribute('data-cb-create-level') : null,
+      levels: levelState(),
+      scolds: document.body.textContent.includes('not reachable from this surface'),
+      stillHasResult: Boolean(document.querySelector('[data-cb-create-receipt]'))
+    }
+  }
+
+  process.stdout.write(JSON.stringify({
+    afterPick,
+    previewLevel,
+    stepAtReview,
+    coursePayload: course ? course.payload : null,
+    brief: job && job.payload && job.payload.brief ? job.payload.brief : null,
+    before,
+    after
+  }))
+}
+"""
+
+GOAL = "Replace the head gasket on a 1998 Civic without stripping the block"
+
+
+def _rejected_plan() -> dict:
+    return {
+        "plan_id": "plan_draft_1",
+        "version": 1,
+        "state": "draft",
+        "validation": {
+            "approvable": False,
+            "source": None,
+            "verdict": "reject",
+            "outcome": "rejected",
+            "independence": "same_model",
+            "facts_unverified": False,
+            "reasons": ["plan: no objectives were authored"],
+            "reason": None,
+            "detail": None,
+            "manual_authoring": False,
+        },
+    }
+
+
+def _rejected_job() -> dict:
+    return {
+        "job_id": "job_plan_1",
+        "kind": "plan",
+        "state": "completed",
+        "brief": {
+            "stage": "plan",
+            "course_id": "course_1",
+            "enrollment_id": "enr_1",
+            "goal": GOAL,
+            "recipe": "casual",
+            "dials": {"pace": "light", "depth": "working", "assessment": "self_check", "autonomy": "guided"},
+            "level": "none",
+            "subject_domain": "auto repair",
+            "scope": "short",
+        },
+        "checkpoint": {
+            "plan_id": "plan_draft_1",
+            "objectives": 0,
+            "rejection_reasons": ["plan: no objectives were authored"],
+            "validation_verdict": "reject",
+            "validation": {"outcome": "rejected", "independence": "same_model", "research_status": "available"},
+        },
+        "error": None,
+    }
+
+
+class CreateFormInteractionTest(unittest.TestCase):
+    """CREATE-2/CREATE-5: the shipped form, pressed in jsdom, against a recording transport."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to run the runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-create-form-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "harness.mjs").write_text(FORM_HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}),
+            encoding="utf-8",
+        )
+        (sdk / "index.js").write_text(FORM_SDK_STUB, encoding="utf-8")
+        cls.root = root
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def run_case(self, payload: dict) -> dict:
+        case = self.root / "case.json"
+        case.write_text(json.dumps(payload), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.root / "harness.mjs"), str(case)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-3000:])
+        return json.loads(result.stdout)
+
+    def submit(self, pick: str, **payload) -> dict:
+        responses = {
+            "course.create": {"course_id": "course_1", "plan_id": "plan_draft_1", "revision": 0},
+            "enrollment.create": {"enrollment_id": "enr_1", "revision": 0},
+            "jobs.create": {"job_id": "job_plan_1", "state": "queued"},
+            "jobs.get": {"job": _rejected_job()},
+            "jobs.list": {"jobs": [_rejected_job()]},
+            "course.outline": {"plan": _rejected_plan(), "objectives": []},
+            "parent.blueprint.read": {"plan": _rejected_plan(), "tabs": {}, "sources": []},
+        }
+        return self.run_case(
+            {
+                "kind": "submit",
+                "pick": pick,
+                "goal": GOAL,
+                "implemented": [
+                    "course.create", "enrollment.create", "jobs.create", "jobs.get",
+                    "jobs.list", "course.outline", "parent.blueprint.read",
+                ],
+                "responses": responses,
+                **payload,
+            }
+        )
+
+    # ── CREATE-2: the level is a question ──────────────────────────────────
+    def test_the_level_is_three_one_tap_choices_and_no_free_text(self) -> None:
+        out = self.run_case({"kind": "choices"})
+        self.assertEqual(out["step"], "Step 1 of 3")
+        self.assertFalse(out["freeTextLevel"], "the free-text level box must be gone")
+        self.assertEqual([row["id"] for row in out["levels"]], ["none", "some", "confident"])
+        self.assertEqual([row["token"] for row in out["levels"]], ["none", "some", "confident"])
+        for row, label in zip(out["levels"], ("None", "Some", "Confident")):
+            self.assertTrue(row["label"].startswith(label), row["label"])
+        # Nothing is preselected: an unanswered level is a real answer.
+        self.assertTrue(all(row["pressed"] == "false" for row in out["levels"]))
+        self.assertIn("Where are you starting from?", out["groupLabel"])
+
+    def test_one_tap_none_is_the_token_the_generation_rule_reads(self) -> None:
+        """The token that reaches the plan is the rule's own vocabulary, proven in Python."""
+        out = self.submit("none")
+        self.assertEqual([row["id"] for row in out["afterPick"] if row["pressed"] == "true"], ["none"])
+        brief = out["brief"]
+        self.assertIsNotNone(brief)
+        self.assertEqual(out["stepAtReview"], "Step 3 of 3")
+        self.assertEqual(out["coursePayload"]["level"], "none")
+        self.assertEqual(brief["level"], "none")
+        # The level is the one the deterministic beginner rule accepts, and it is the same value
+        # the course row stores for the same decision.
+        from coursebook import generation
+
+        self.assertTrue(generation.is_beginner_level(brief["level"]))
+        self.assertIn("Starting from: None", out["previewLevel"])
+
+    def test_one_tap_some_is_recorded_and_is_not_a_beginner_claim(self) -> None:
+        out = self.submit("some")
+        brief = out["brief"]
+        self.assertEqual(brief["level"], "some")
+        from coursebook import generation
+
+        self.assertFalse(generation.is_beginner_level(brief["level"]))
+        self.assertIn("Starting from: Some", out["previewLevel"])
+
+    # ── CREATE-5: change the goal really returns to the form ───────────────
+    def test_change_the_goal_returns_to_the_prefilled_form(self) -> None:
+        out = self.submit("none")
+        before = out["before"]
+        self.assertEqual(before["reject"], "empty")
+        self.assertEqual(before["rejectAction"], "change_goal")
+        self.assertTrue(before["changeGoalOffered"], "the empty-plan refusal must offer a real control")
+        self.assertFalse(before["scolds"])
+        after = out["after"]
+        self.assertIsNotNone(after)
+        self.assertEqual(after["step"], "Step 1 of 3")
+        self.assertEqual(after["heading"], "What do you want to be able to do?")
+        # The brief the plan actually ran is prefilled, including the level and the subject.
+        self.assertEqual(after["goal"], GOAL)
+        self.assertEqual(after["level"], "none")
+        self.assertEqual([row["id"] for row in after["levels"] if row["pressed"] == "true"], ["none"])
+        self.assertFalse(after["scolds"])
+        self.assertFalse(after["stillHasResult"], "the result screen is gone, not stacked under the form")
 
 
 if __name__ == "__main__":
