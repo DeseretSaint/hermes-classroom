@@ -155,3 +155,35 @@ Consequences, all binding:
 - No gate is relaxed by this ruling. Gate 0 asset existence, Gate 2 mechanical, Gate 3 region
   critic, Gate 4 rubric floors, Gate 5 installed capture and Gate 6 cohesion all still apply per
   surface; only the scheduling changes.
+
+### D-009 — wave 1 landed the kit on four surfaces; the capture door is the open gate
+
+Landed on master 2026-11-11 between 11:28 and 12:00 MST, in this order, each verified on the merged
+tree before the next one started:
+
+| what | commit | verification on the merged tree |
+|---|---|---|
+| UI-K1 kit segment (`cb3KitSource`, `cb3KitCoverFor`, nine plates) | `4fd921c3` | `build_plugin --check` module `1d23b78c`; kit segment + assets + fox 123 tests OK |
+| UI-K3 classroom lesson room | `7479bfb0` | `test_cp_023_classroom` 13 OK |
+| UI-K4 Workshop/Courses display covers | `3b14b6f9` | 77 tests OK; see the merge note below |
+| UI-K5 course home plate + point fox | `715d2eac` | course-home + workshop + classroom 36 OK |
+| Home quality (covers, hero, planks, fox, clock, tag) | `2487d842` | home geometry + wayfinding 27 OK |
+
+**One semantic conflict the auto-merge could not see.** UI-K4 assumed `cb3KitCoverFor` answers a
+full asset key and passed it to `cb3Asset`; UI-K1 defined it as a short id read by `cb3KitSource`.
+Three sites (Workshop hero, Workshop/courses card, Home course branch) silently fell back to the
+typographic plate while every branch test was green. Fixed in `3b14b6f9`; the rule stands: a short
+kit id is read by `cb3KitSource`, never by `cb3Asset`.
+
+**The installed capture does not yet certify the wave.** `docs/visual-review/wave-1/manifest.json`
+(commit `715d2eac`, plugin `98400108`, disposable state `~/.hermes/coursebook-test-wave`) writes 16
+cells and 0 pass. Every cell stamps `data-cb-scope: dark` while the approved references are light;
+`discover` never mounts; `course-home` resolves to the Home destination; the Design System surface
+does not exist yet; `classroom` and `world-studio` are skipped for want of an approved Game course.
+Home improved from `display_cover 0/4` to `2/4` plus a real kit hero, which is the only measured
+movement this wave can claim.
+
+Therefore: no parity claim is made for this wave. Two cards carry the remaining gate work, and
+neither blocks a screen card: `t_f8c1e464` (VQ-009, the capture door) and `t_7f3699c5` (VQ-010, the
+2x plate rule). A frame that resolves to the wrong surface, or photographs dark, is not evidence
+even when it looks correct.
