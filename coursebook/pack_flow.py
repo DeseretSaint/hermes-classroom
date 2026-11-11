@@ -406,6 +406,13 @@ def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
     media_problems = _media_byte_problems(manifest, staged.directory)
     if media_problems:
         raise PackRejected("linked pack media is not playable: " + "; ".join(media_problems))
+    # A pack's ``presentation.world.brief`` is stored as ``course_worlds.brief_json`` and read
+    # back through ``world.read``. The pack schema is looser than ``cb.rpc``'s ``world_brief``, so
+    # a brief this build cannot read would import "successfully" and leave every later world read
+    # failing. Refuse it here, before the first write, naming the field.
+    brief_problems = _world_brief_problems(manifest)
+    if brief_problems:
+        raise PackRejected("pack presentation is not reconstructable: " + "; ".join(brief_problems))
     # A pack may not hold content for a role it does not declare, and no manifest may carry a
     # private field. Both are checked on the document itself, not only on the archive.
     leaked = packs.contains_private_fields(manifest)
@@ -547,6 +554,53 @@ def _media_byte_problems(manifest: Mapping[str, Any], root: Path) -> list[str]:
             problems.append(f"media[{index}] {link['path']!r}: {exc}")
     return problems
 
+
+def _world_brief_problems(manifest: Mapping[str, Any]) -> list[str]:
+    """Check a pack-supplied world brief against the type this build reads back.
+
+    ``cb.pack`` v3's ``presentation.world.brief`` is stored as ``course_worlds.brief_json`` and
+    returned by ``world.read`` as ``cb.rpc`` ``world_brief``. The pack schema only bounds lengths,
+    so it accepts a brief missing required fields, holding more sections than the kit budget, or
+    carrying a malformed route anchor — all of which import cleanly and then make every world read
+    fail. This is the gate that turns that into a refusal before anything is adopted.
+    """
+    from . import world as world_module
+    from .contracts import ContractError, validate_definition
+
+    presentation = manifest.get("presentation")
+    world_block = presentation.get("world") if isinstance(presentation, Mapping) else None
+    if not isinstance(world_block, Mapping):
+        return []
+    brief = world_block.get("brief")
+    if brief is None:
+        return []
+    if not isinstance(brief, Mapping):
+        return ["presentation.world.brief must be an object"]
+    problems: list[str] = []
+    anchors = brief.get("route_anchors")
+    if isinstance(anchors, list) and len(anchors) > world_module.MAX_ROUTE_ANCHORS:
+        problems.append(
+            f"presentation.world.brief.route_anchors carries {len(anchors)} anchors; a plate "
+            f"declares at most {world_module.MAX_ROUTE_ANCHORS}"
+        )
+    # ``course_id`` is the importer's to set (it is rewritten to the new course), so a blank one in
+    # the pack is not a defect; every other field is stored as-is and must be complete. Defaults are
+    # deliberately *not* invented here (``WorldBrief.from_mapping`` would fill them): a brief that
+    # omits ``safety_class`` or ``tone`` is a different world, not the same world with a default.
+    candidate = dict(brief)
+    candidate["course_id"] = str(brief.get("course_id") or "crs_pack_import")
+    problem = world_module.route_anchor_problems(candidate)
+    if problem is not None:
+        field, message = problem
+        problems.append(f"presentation.world.brief.{field}: {message}")
+    if not problems:
+        try:
+            validate_definition(
+                "cb.rpc", "world_brief", candidate, what="pack presentation.world.brief"
+            )
+        except ContractError as exc:
+            problems.append(str(exc))
+    return problems
 
 
 def _pack_row_id(pack_id: str, version: str) -> str:
@@ -739,14 +793,80 @@ def _restore_world(
     from . import world as world_module
 
     ordinal_to_objective = {int(obj["ordinal"]): row_id for row_id, obj in objective_rows}
+    title_by_ordinal = {
+        int(obj["ordinal"]): str(obj.get("title") or "") for _row_id, obj in objective_rows
+    }
     style_hash = str(world_block.get("style_hash") or "")
     assets = [asset for asset in world_block.get("assets") or [] if isinstance(asset, Mapping)]
     if not style_hash or not assets:
         return
     world_id = _new_id("wld")
     raw_brief = world_block.get("brief")
-    brief: dict[str, Any] = dict(raw_brief) if isinstance(raw_brief, Mapping) else {}
-    brief["course_id"] = course_id
+    source_brief: Mapping[str, Any] = raw_brief if isinstance(raw_brief, Mapping) else {}
+    # The pack's brief names the *exporter's* objectives: a generation brief is
+    # ``objectives[:MAX_KIT_SECTIONS]`` in ordinal order, so a brief section is the objective at
+    # its 1-based position. This import created new objective rows, so re-key the sections (and the
+    # route anchors that point at them) by that ordinal. A section the imported course does not
+    # carry has no target and is dropped: leaving the old id in place would make the stored world
+    # disagree with its own plates, and ``world.approve`` would call the kit partial forever.
+    source_sections = [
+        item
+        for item in (source_brief.get("sections") or [])
+        if isinstance(item, Mapping)
+    ][: int(getattr(world_module, "MAX_KIT_SECTIONS", 6))]
+    brief_sections: list[dict[str, Any]] = []
+    section_id_map: dict[str, str] = {}
+    if source_sections:
+        for index, item in enumerate(source_sections):
+            objective_row_id = ordinal_to_objective.get(index + 1)
+            if objective_row_id is None:
+                continue
+            old_id = str(item.get("id") or "")
+            if old_id:
+                section_id_map[old_id] = objective_row_id
+            title = str(item.get("title") or "").strip() or title_by_ordinal.get(index + 1, "")
+            brief_sections.append({"id": objective_row_id, "title": title[:200]})
+    else:
+        # No authored brief (the field is optional): the plates themselves say which objectives
+        # this kit paints, so the stored brief is derived from the section plates rather than left
+        # describing no course at all.
+        plate_ordinals = sorted(
+            {
+                int(asset.get("section_ordinal") or 0)
+                for asset in assets
+                if str(asset.get("role")) == "section"
+            }
+        )
+        for ordinal in plate_ordinals[: int(getattr(world_module, "MAX_KIT_SECTIONS", 6))]:
+            objective_row_id = ordinal_to_objective.get(ordinal)
+            if objective_row_id is None:
+                continue
+            brief_sections.append(
+                {"id": objective_row_id, "title": title_by_ordinal.get(ordinal, "")[:200]}
+            )
+    brief_anchors: list[dict[str, Any]] = []
+    for anchor in source_brief.get("route_anchors") or []:
+        if not isinstance(anchor, Mapping):
+            continue
+        target = section_id_map.get(str(anchor.get("section_id") or ""))
+        if target is None:
+            continue
+        brief_anchors.append({**dict(anchor), "section_id": target})
+    typing_input = dict(source_brief)
+    typing_input.update(
+        {
+            "course_id": course_id,
+            "sections": brief_sections,
+            "route_anchors": brief_anchors,
+        }
+    )
+    brief = world_module.WorldBrief.from_mapping(typing_input).as_dict()
+    anchor_problem = world_module.route_anchor_problems(brief)
+    if anchor_problem is not None:
+        raise PackRejected(
+            "presentation.world.brief route_anchors are malformed after re-keying at "
+            f"{anchor_problem[0]}: {anchor_problem[1]}"
+        )
     plates: list[tuple[str, str, str]] = []
     restored: list[tuple[Mapping[str, Any], str, str]] = []
     for asset in assets:

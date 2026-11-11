@@ -674,10 +674,40 @@ def _presentation_problems(
         return problems
     if not isinstance(world, Mapping):
         return ["presentation.world must be an object"]
+    # A world is the Game kit: plates the Textbook layout never paints. A pack that declares one
+    # under Textbook asks the importer to adopt art no course in that mode can show, and the real
+    # export never writes it (``course.export`` emits ``{"mode": "textbook"}`` and no files). Left
+    # unchecked the importer stages and records the plates, then drops the block silently.
+    if mode != "game":
+        problems.append(
+            "presentation.world requires presentation.mode 'game'; a Textbook pack carries no "
+            "world kit"
+        )
+    if not (world.get("assets") or []):
+        # ``mode: game`` with no ``world`` is legal (the world is simply not approved yet). A
+        # ``world`` that names a grammar, a style and an approval but carries no plate is a claim
+        # no author made, and the importer would silently import Game with no world at all.
+        problems.append(
+            "presentation.world declares no plates; a world block must carry the kit it names"
+        )
     for key in ("grammar", "style_id", "style_hash", "kit_hash"):
         if not str(world.get(key) or "").strip():
             problems.append(f"presentation.world.{key} is empty")
     ordinals = {int(objective["ordinal"]) for objective in manifest.get("objectives") or []}
+    # The kit budget is the one ``world.generate`` spends: one hero, one cover and at most
+    # ``MAX_KIT_SECTIONS`` section plates. ``world.read`` also returns at most ten assets, so a
+    # pack declaring a plate for every objective of a large course imports a world the read
+    # contract cannot carry.
+    from . import world as world_module
+
+    kit_budget = 2 + int(getattr(world_module, "MAX_KIT_SECTIONS", 6))
+    plates_declared = [item for item in (world.get("assets") or []) if isinstance(item, Mapping)]
+    if len(plates_declared) > kit_budget:
+        problems.append(
+            f"presentation.world.assets declares {len(plates_declared)} plates; the world kit "
+            f"budget is {kit_budget} (hero, cover and at most "
+            f"{kit_budget - 2} section plates)"
+        )
     seen: set[tuple[str, int | None]] = set()
     roles_present: set[str] = set()
     for index, asset in enumerate(world.get("assets") or []):
@@ -686,6 +716,17 @@ def _presentation_problems(
             continue
         role = str(asset.get("role") or "")
         file = str(asset.get("file") or "")
+        # The pack schema lists ``lesson_scene`` too, but ``cb.rpc``'s ``world_asset`` — what
+        # ``world.read`` returns for a stored kit — carries only hero, cover and section. A lesson
+        # scene also has no lesson binding in this block (it names no objective), so there is
+        # nothing to reconstruct it onto; importing it makes every world read a non-contract
+        # result.
+        if role not in ("hero", "cover", "section"):
+            problems.append(
+                f"presentation.world.assets[{index}]: role {role!r} cannot be reconstructed; a "
+                "world kit is hero, cover and section plates"
+            )
+            continue
         entry = declared.get(file)
         if entry is None:
             problems.append(f"presentation.world.assets[{index}]: {file!r} is not a declared file")

@@ -1088,6 +1088,9 @@ MAX_CONCEPTS = 3
 #: The kit budget: one hero, one cover and at most six section cards.
 MAX_KIT_SECTIONS = 6
 
+#: The most route anchors one plate may declare (``cb.rpc`` ``world_brief.route_anchors``).
+MAX_ROUTE_ANCHORS = 24
+
 
 class WorldMediaFailure(RuntimeError):
     """The host has no usable image provider, or the provider refused a plate."""
