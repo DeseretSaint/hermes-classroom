@@ -1,8 +1,12 @@
 # Coursebook UI program — single handoff to Opus
 
-Attach the six ratified frames from `docs/concept-parity/refs/` (home, discover, map, classroom,
-system, board), the fox sign-off 2-up (`docs/concept-parity/art/fox-signoff-2up.png`), and the
-current live screenshot of Home. The hashes and roles are in `docs/concept-parity/refs/REFS.md`.
+Three images are attached, in this order:
+
+1. **A1 — Home reference** (the standalone Home page).
+2. **A2 — Fox sign-off 2-up** (M1 model sheet plus the A1 seven-pose sheet).
+3. **A3 — Four-tab board** (Home, Discover/Workshop, Classroom, Design System).
+
+If the attachment order differs, identify each by its content, not its filename.
 
 ---
 
@@ -12,37 +16,38 @@ backend, contracts, tests, course content, or release notes.
 
 This is a **single handoff**. You get one planning session and one program. You will not get another
 briefing, and the owner does not want status pings. You ask at most three questions in total, and
-only when a stop rule fires. Everything else: decide, write it in
-`docs/launch/UI-DECISIONS.md`, and proceed.
+only when a stop rule fires. Everything else: decide, write it in `docs/launch/UI-DECISIONS.md`, and
+proceed.
 
 The owner sees two things from you: a stop-rule escalation, and the final contact sheet with a
 ten-line report. Nothing in between.
 
 ## 1. The references — what governs what
 
-| id | file | size | governs |
-|---|---|---|---|
-| R-HOME | `refs/home.png` | 1344×768 | Home target. Not the board's Home panel. |
-| R-DISC | `refs/discover.png` | 1344×768 | Discover / Workshop (ratified) |
-| R-MAP | `refs/map.png` | 1344×768 | Course home only (ratified) |
-| R-CLASS | `refs/classroom.png` | 1344×768 | Classroom lesson (ratified) |
-| R-SYS | `refs/system.png` | 1344×768 | fox poses, card anatomy, badges, palette — a component sheet, not a screen |
-| R-BOARD | `refs/board.png` | 2400×1700 | four panels; Discover, Classroom and Design System ratified; its Home panel is not |
+| id | attachment | governs |
+|---|---|---|
+| A1 | Home reference (standalone) | Home target. Not the board's Home panel. |
+| A2 | Fox sign-off 2-up | Character authority: M1 model sheet (front, three-quarter, side, back) and the A1 seven-pose sheet. The painted fox is canonical. |
+| A3 | Four-tab board | Discover/Workshop (top right), Classroom (bottom left), Design System (bottom right). Its Home panel (top left) is not the Home target. |
 
-Attach all six. The owner's words: "outside of the home page, these images were ratified." R-SYS is
-the character and component authority: the approved fox is the painted A1 set at `assets/art/fox/`
-(`fox-signoff-2up.png` shows the model sheet and seven poses); use those poses and the card anatomy
-shown there, and do not invent a pose or a badge.
+The owner's words: "outside of the home page, these images were ratified." A2 is the character and
+pose authority; A3's Design System panel is the component, card, badge and palette authority. Use
+the approved fox poses and the card anatomy shown there; do not invent a pose, a badge or a card
+shape.
+
+The repo also contains `docs/concept-parity/refs/map.png` for Course home (ratified but not one of
+the three attachments) and the generated pack. Use them only when the program reaches Course home.
+Parent Studio has no frame in this handoff.
 
 ## 2. Scope and order
 
-1. **Home** — R-HOME, plus the existing `design/home-scene.html` at commit `a07b99ea` as the
+1. **Home** — A1, plus the existing `design/home-scene.html` at commit `a07b99ea` as the
    composition ground truth.
-2. **Discover / Workshop** — R-DISC.
-3. **Course home** — R-MAP.
-4. **Classroom lesson** — R-CLASS.
-5. **Design System consolidation** — R-BOARD panels plus R-SYS; this is where the components used by
-   all screens are reconciled, not a new screen.
+2. **Discover / Workshop** — A3 top-right panel.
+3. **Classroom lesson** — A3 bottom-left panel.
+4. **Design System consolidation** — A3 bottom-right panel plus A2; this is where the components
+   used by all screens are reconciled, not a new screen.
+5. **Course home** — the repo's ratified `refs/map.png`; follow-on only after the first four land.
 6. **Parent Studio** — no ratified frame. Compose it from the design system after the five, mark it
    system-derived, and do not pretend it matches a reference.
 
@@ -52,8 +57,9 @@ One screen at a time. No parallel screens. No screen starts before the previous 
 
 For each screen, the target is a `visual/spec/<screen>.json`: element tree, boxes, type roles,
 colours by token, assets, z-order, and the five states. For Home, derive it from
-`design/home-scene.html` and the generated pack. For the rest, derive it from the reference at
-crop level and from R-SYS.
+`design/home-scene.html` and the generated pack. For Discover and Classroom, derive it from the A3
+panels at crop level. For the Design System, reconcile A3's bottom-right panel and A2. For Course
+home, use the repo's ratified map frame.
 
 The writer receives three things, never a description alone:
 
@@ -86,10 +92,10 @@ do not ask for another sign-off, and do not call the placeholder canonical. Adop
 placeholder and is too small. The audit records the rendered `currentSrc` hash, its painted source,
 and the natural-vs-rendered size; a CSS-drawn substitute fails even if it looks fox-like.
 
-**Character fidelity.** On a 600×600 crop, answer specific binary questions against the approved
-model sheet, not the shipped vector: same ear shape, muzzle, eye style, chest and leg markings, tail
-tip, line weight, palette. Each answer cites the region. Compare the reference and render crops at 2×
-for SSIM, palette distance, edge density and an embedding distance; those are diagnostics, not the
+**Character fidelity.** On a 600×600 crop, answer specific binary questions against the A2 model
+sheet, not the shipped vector: same ear shape, muzzle, eye style, chest and leg markings, tail tip,
+line weight, palette. Each answer cites the region. Compare the reference and render crops at 2× for
+SSIM, palette distance, edge density and an embedding distance; those are diagnostics, not the
 verdict. The owner approved the A1 model sheet and pose sheet on 2026-11-10 (`FOX-SIGNOFF.md`);
 every export is hash-locked. Do not re-open the character.
 
@@ -213,7 +219,7 @@ Record every accepted difference from the concept, with the reason and the evide
 concept covers → shipped pack art; the 72→64 hero; host chrome in the docked pane. The ledger is
 part of the final report. It is not an excuse; it is how a professional handles a concept that is
 not a spec. A missing character asset is not a ledger entry: it blocks the screen and spawns an
-asset-export card.
+asset-adoption card.
 
 ## 9. Cost and stop rules
 
@@ -234,7 +240,7 @@ No status pings. When the program is done — or a stop rule fires — send one 
 
 - screens landed, with rubric averages, critical-dimension scores and masked SSIM;
 - character fidelity evidence: asset hash, painted source, natural size and a crop comparison
-  against A1; the character itself is already approved;
+  against A2; the character itself is already approved;
 - gate results and the installed-build capture;
 - the divergence ledger;
 - spend against the caps;
