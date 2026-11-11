@@ -9262,6 +9262,71 @@ def _section_owner_ref(section: dict[str, Any]) -> int | None:
     return int(refs[0]) if len(refs) == 1 else None
 
 
+def _section_reinforced_refs(section: dict[str, Any]) -> list[int] | None:
+    """The objective ordinals a review section reinforces, or ``None`` for an owner section.
+
+    Two shapes reach this: an *authored batch* item (``role``/``reinforces``, from the unit
+    stage's provider answer) and a *stored* section row (``section_role``/``objective_refs``, from
+    ``gen_plan_sections``). The rule gate and the lesson stage must judge both with one function,
+    or the two gates disagree about which batches are authorable.
+    """
+    role = str(section.get("role") or section.get("section_role") or "owner")
+    if role != "review":
+        return None
+    refs = section.get("reinforces")
+    if refs is None:
+        refs = section.get("objective_refs") or []
+    return [int(ref) for ref in refs]
+
+
+def review_check_overuse_reasons(
+    sections: Sequence[dict[str, Any]],
+    *,
+    existing_reviews: Sequence[dict[str, Any]] = (),
+) -> list[str]:
+    """Objectives the review sections reinforce more times than their owner checks can serve.
+
+    §5 gives each objective exactly one owner section, hence exactly one owner check, and a
+    review lesson *presents* that check (``_resolve_review_target``) instead of authoring a new
+    one. Two review sections over one objective therefore compete for a single check: whichever
+    the learner reaches second presents a check the first has already closed, and when the check
+    is closed at authoring time the second review cannot be built at all. The count is knowable
+    from the batch alone, so the unit-section rule gate refuses it there, on the attempt whose
+    feedback is the one legal re-author — instead of letting the lesson stage discover it after
+    the owner lessons and their provider calls are spent.
+
+    ``existing_reviews`` carries review sections already stored for the same unit, so a unit
+    authored in two batches cannot smuggle in the same objective twice.
+    """
+    reasons: list[str] = []
+    used: dict[int, str] = {}
+    for stored in existing_reviews:
+        refs = _section_reinforced_refs(stored)
+        if refs is None:
+            continue
+        label = f"stored section {stored.get('ordinal')}"
+        for ref in refs:
+            used.setdefault(ref, label)
+    for index, section in enumerate(sections):
+        refs = _section_reinforced_refs(section)
+        if refs is None:
+            continue
+        label = f"section {index + 1}"
+        for ref in refs:
+            first = used.get(ref)
+            if first is None:
+                used[ref] = label
+                continue
+            if first == label:
+                # Repeating a ref inside one section is its own reason, reported by the caller.
+                continue
+            reasons.append(
+                f"{label} reinforces objective {ref}, which {first} already reinforces; one "
+                "owner check serves one review section, so give each objective at most one review"
+            )
+    return reasons
+
+
 def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[dict[str, Any]],
                                 recipe: str, locale: str | None, feedback: str | None = None) -> str:
     lines = [
@@ -9436,11 +9501,18 @@ def enforce_unit_section_rules(
     locale: str | None,
     ledger: Sequence[SourceRecord],
     existing_owner_refs: Sequence[int] = (),
+    existing_reviews: Sequence[dict[str, Any]] = (),
 ) -> None:
     """§5 rules 4 and 7, on the batch the unit stage just authored.
 
     The writer assigns global ordinals, so the model's ``ordinal`` is advisory and never trusted
     for identity. What must hold is role shape, owner coverage, review refs and the target count.
+
+    **Review checks (CP-015f).** Each objective has one owner check, and a review lesson presents
+    it rather than authoring a new one. The batch is therefore also judged by
+    :func:`review_check_overuse_reasons`: a second review over an already-reinforced objective is
+    refused here, while the reason can still feed the one legal re-author, because the lesson
+    stage can only discover it after the owner lessons are spent.
 
     **Completeness (H-46).** A section's ``lesson_intent`` is authored prose, and a provider
     truncation leaves it as a well-formed string that stops mid-sentence — the schema cannot see
@@ -9453,6 +9525,7 @@ def enforce_unit_section_rules(
     unit_ordinal = int(unit["ordinal"])
     objective_ordinals = [int(obj["ordinal"]) for obj in objectives]
     ledger_ids = {source.source_id for source in ledger}
+    reasons.extend(review_check_overuse_reasons(sections, existing_reviews=existing_reviews))
     owners: dict[int, int] = {}
     reviews = 0
     seen_review = False
@@ -9662,6 +9735,13 @@ def run_unit_sections_job(
     existing_owner_refs = [
         ref for ref in (_section_owner_ref(section) for section in existing_sections) if ref is not None
     ]
+    # CP-015f: reviews already stored for this unit count against the same one-review-per-objective
+    # rule, so a unit authored in two batches cannot hide a second review over one owner check.
+    existing_reviews = [
+        section
+        for section in existing_sections
+        if str(section.get("section_role") or "owner") == "review"
+    ]
     missing_objectives = [
         objective
         for objective in objectives
@@ -9669,6 +9749,16 @@ def run_unit_sections_job(
     ]
     target = int(unit["target_lessons"])
     if not missing_objectives and len(existing_sections) >= target:
+        # The stored batch is what the lesson stage will author from. Claiming it as reusable
+        # while the lesson stage can prove it unexecutable is the disagreement CP-015f reports,
+        # so the same rule is applied here and the unit is refused instead of reported as reused.
+        overuse = review_check_overuse_reasons(existing_sections)
+        if overuse:
+            raise GenerationRejected(
+                f"unit {requested_unit} sections are stored but cannot be authored: "
+                + "; ".join(overuse)
+                + ". Re-author the plan's unit sections so each objective has at most one review."
+            )
         return {
             "job_id": job_id,
             "job_kind": "unit_sections",
@@ -10403,6 +10493,20 @@ def run_lesson_job(
                 "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
             ).fetchall()
         ]
+    # CP-015f: the two gates must agree. The unit stage refuses a batch whose reviews reinforce
+    # one objective twice, and the same rule is re-applied here *before* the first provider call,
+    # so a batch that was stored under older rules (or written by hand) refuses as a batch with
+    # zero spend. Discovering it midway cost four owner lessons and nine calls on job
+    # job_7716cb69e28e4b03868540150679f85d.
+    if blueprint_plan and unit is not None:
+        overuse = review_check_overuse_reasons(section_rows)
+        if overuse:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} of plan {plan_id!r} cannot be authored: "
+                + "; ".join(overuse)
+                + ". Re-author the unit sections so each objective has at most one review; "
+                "no lesson was authored and no provider call was made."
+            )
     # H-194: a `lesson.regenerate` job names exactly one section. Author only that section, at
     # its next `gen_lessons` version, and never re-author the rest of the unit or plan. The
     # coverage checks below compare a *unit's* sections to its objectives, so they are skipped for

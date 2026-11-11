@@ -144,7 +144,13 @@ def unit_sections_document(
             }
         )
     for extra in range(1, reviews + 1):
-        refs = [int(obj["ordinal"]) for obj in objectives[:2]] or [int(objectives[0]["ordinal"])]
+        # CP-015f: one owner check serves one review section, so no objective may appear in two
+        # reviews. The objectives are split across the reviews, each landing in exactly one, so a
+        # fixture batch is always one the rule gate accepts (and `reviews > objectives` is empty
+        # by construction, which is the honest shape of an impossible unit).
+        start = (extra - 1) * len(objectives) // reviews
+        end = extra * len(objectives) // reviews
+        refs = [int(obj["ordinal"]) for obj in objectives[start:end]]
         sections.append(
             {
                 "ordinal": len(sections) + 1,
