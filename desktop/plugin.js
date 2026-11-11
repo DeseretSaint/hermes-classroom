@@ -13340,10 +13340,10 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-targets-list': String(targets.length),
           children: [
-            jsx(CbLabel, { children: 'Expressions to practise' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.practiceExpressions }),
             jsx('ul', {
               className: 'flex flex-col gap-1 text-sm leading-snug',
-              'aria-label': 'Expressions to practise',
+              'aria-label': CB3_CLASSROOM_COPY.practiceExpressions,
               children: targets
                 .filter((target) => target.label)
                 .map((target) =>
@@ -13411,7 +13411,7 @@ function PracticeSurface({
             jsx(CbLabel, { children: 'Transcript' }),
             jsx('ol', {
               className: 'flex flex-col gap-1.5',
-              'aria-label': 'Practice transcript',
+              'aria-label': CB3_CLASSROOM_COPY.practiceTranscript,
               children: transcript.map((turn) =>
                 jsxs(
                   'li',
@@ -13544,11 +13544,11 @@ function PracticeSurface({
           className: 'flex flex-col gap-1',
           'data-cb-practice-criteria': String(criteria.length),
           children: [
-            jsx(CbLabel, { children: 'Grading criteria' }),
+            jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkCriteria }),
             criteria.length > 0
               ? jsx('ul', {
                   className: 'flex flex-col gap-1',
-                  'aria-label': 'Grading criteria',
+                  'aria-label': CB3_CLASSROOM_COPY.checkCriteria,
                   children: criteria.map((item, index) =>
                     jsxs(
                       'li',
@@ -14168,7 +14168,7 @@ function AttemptControls({
               choices.length > 0 && !choiceMode
                 ? jsx('ul', {
                     className: 'flex flex-col gap-1 text-sm leading-snug',
-                    'aria-label': 'Choices',
+                    'aria-label': CB3_CLASSROOM_COPY.checkChoices,
                     children: choices.map((choice, index) =>
                       jsx('li', { children: choice }, `choice-${index}`)
                     )
@@ -14180,12 +14180,12 @@ function AttemptControls({
                     'data-cb-check-items': String(checklist.length),
                     'data-cb-check-items-mode': 'selection',
                     children: [
-                      jsx(CbLabel, { children: 'Checklist' }),
+                      jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                       // One row per declared item: the served id is the submitted value, the label
                       // is the question. Ticking is the answer; nothing is typed here.
                       jsx('ul', {
                         className: 'flex flex-col gap-1.5',
-                        'aria-label': 'Checklist',
+                        'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                         children: checklist.map((item, index) =>
                           jsxs(
                             'li',
@@ -14220,11 +14220,11 @@ function AttemptControls({
                       'data-cb-check-items': String(readOnlyItems.length),
                       'data-cb-check-items-mode': 'read_only',
                       children: [
-                        jsx(CbLabel, { children: 'Checklist' }),
+                        jsx(CbLabel, { children: CB3_CLASSROOM_COPY.checkChecklist }),
                         // One label per item, printed here and nowhere else in the lesson.
                         jsx('ul', {
                           className: 'flex flex-col gap-1',
-                          'aria-label': 'Checklist',
+                          'aria-label': CB3_CLASSROOM_COPY.checkChecklist,
                           children: readOnlyItems.map((item) =>
                             jsx('li', {
                               className: 'text-sm leading-snug',
@@ -14306,7 +14306,7 @@ function AttemptControls({
                 : choiceMode
                   ? jsxs('div', {
                       role: 'radiogroup',
-                      'aria-label': 'Answers',
+                      'aria-label': CB3_CLASSROOM_COPY.checkAnswers,
                       'aria-describedby': 'cb-attempt-help',
                       'data-cb-choice-group': String(choices.length),
                       'data-cb-choice-selected': selected >= 0 ? String(selected + 1) : '',
@@ -14908,6 +14908,1218 @@ function sectionRows({ row, review, notebooks, outline, page }) {
     .map((entry) => ({ ...entry, title: entry.title || 'Saved section' }))
     .sort((left, right) => (left.ordinal || 0) - (right.ordinal || 0))
 }
+
+// CB-V3-BEGIN — CP-023: the v3 classroom (R-CLASS, docs/concept-parity/SPEC-V3.md §5.3)
+/**
+ * ── Classroom v3 ──────────────────────────────────────────────────────────────────────────────
+ *
+ * The peer problem, executed: the lesson screen has to be *one* reading column facing a framed
+ * scene and one check, not a stack of equal boxes. This segment owns the composition and the
+ * check's v3 answer surfaces; it paints from the v3 primitives (`StampNode`, `DialogueBubble`,
+ * `EvidenceTray`, `ChallengeCard`, `FoxPose`, `PillAction`) and from `var(--cb3-*)` only.
+ *
+ * Everything visible is deck copy (`docs/concept-parity/COPY.md` §4) or a backend field:
+ *
+ *   stepper      `course.outline.objectives[]` — one `StampNode` per real section; `Now` on the
+ *                section the lesson page names, `Done` on an objective with independent or delayed
+ *                evidence, `Next` otherwise. A section is `locked` **only** when the plan records
+ *                the gate (`objective.locked === true`); nothing is inferred, because the outline
+ *                carries no prerequisite field today and inventing a padlock would be a lie.
+ *   scene        the course world's section plate (`world.read` → artifact id → `artifact.get`),
+ *                else a typographic plate that states the course title. Never an invented cover.
+ *   dialogue     the pack's own line, read out of the authored teaching segment (kana, romaji and
+ *                the English meaning are all in that line); the ruby is deck-authored over known
+ *                kanji and is omitted for any line this deck has no reading for.
+ *   check        the served stimulus in its own format (`text`, `selection`, `verification`) with
+ *                exactly one filled control; `Check answer` → `Try again` / `Next section`.
+ *   aside        evidence (counted from `lesson.page.checks[]`), the real next section, and the
+ *                tutor door. Game mode adds the XP chip and the Field Challenge; Textbook and
+ *                Guided never render XP.
+ *
+ * A volatile copy of this warning lives on the screen it protects: nothing here may print an
+ * evidence vocabulary word, a percentage, a streak or a second filled control.
+ */
+
+const CB3_CLASSROOM_COPY = Object.freeze({
+  // COPY.md §4 — the classroom rows, verbatim. A template keeps the `{slot}` fill visible.
+  back: 'Back to {course}',
+  stepper: 'This section',
+  stepCurrent: 'Now',
+  stepDone: 'Done',
+  stepNext: 'Next',
+  stepLocked: 'Opens after the check',
+  play: 'Play the line',
+  checkPrimary: 'Check answer',
+  checkEdit: 'Edit answer',
+  clearChoice: 'Clear choice',
+  clearTicks: 'Clear ticks',
+  // Group names (COPY.md §4, SPEC-V3 §5.3 C7): the visible words and the aria-labels of the
+  // answer surfaces are these rows, so a group can never be named twice.
+  checkChoices: 'Choices',
+  checkChecklist: 'Checklist',
+  checkAnswers: 'Answers',
+  checkCriteria: 'Grading criteria',
+  correct: 'That is right.',
+  wrong: 'Not quite.',
+  retry: 'Try again',
+  next: 'Next section',
+  evidenceTitle: 'Evidence',
+  evidenceCount: '{n} of {total} checks recorded',
+  evidenceEmpty: 'No checks recorded yet.',
+  asideNext: 'Next up: {next}',
+  asideTutor: 'Ask the tutor',
+  // Practice group names (COPY.md §4, SPEC-V3 §5.3 C8).
+  practiceExpressions: 'Expressions to practise',
+  practiceTranscript: 'Practice transcript',
+  nochatTitle: 'This section has no chat yet',
+  nochatBody: 'Start a fresh run to open a chat for this section.',
+  nochatAction: 'Start a fresh run',
+  completeTitle: 'Section finished',
+  completeBody: 'Your check is recorded.',
+  completeAction: 'Back to the path',
+  loading: 'Opening this section.',
+  errorTitle: 'This section could not be read',
+  errorBody: 'Your attempt is unchanged. Try again.',
+  errorAction: 'Try again',
+  offlineTitle: 'You are offline',
+  offlineBody: 'The page you opened last is still here. Checking an answer waits.',
+  gameXp: '{n} XP',
+  challengeTitle: 'Field Challenge',
+  challengeStart: 'Try it yourself',
+  // SPEC-V3 §5.3 C7 does not name this label and the deck has no row for it (ruling 2026-11-10):
+  // the visible words stay identical and the missing row is reported in the review summary,
+  // never invented here as a second copy source.
+  answerLabel: 'Your answer',
+  selected: 'Selected',
+  nothingSelected: 'Nothing selected yet.',
+  selectedSummary: 'Selected: {n}. {choice}',
+  playUnavailable: 'No audio for this line yet.'
+})
+
+/** Fill one deck row's `{slot}` without ever printing an empty box. */
+function classroomCopy(template, values) {
+  let out = String(template || '')
+  Object.keys(values || {}).forEach((key) => {
+    out = out.split(`{${key}}`).join(String(values[key]))
+  })
+  return out
+}
+
+/**
+ * The deck-authored ruby over the bundled L0 pack's line.
+ *
+ * A reading is never derived from kana (SPEC-V3 §4): only these kanji runs have an authored
+ * reading, and a line with any other kanji renders plain. `好き`/`付き合って` are the two words
+ * the pack's own worked example uses; nothing else is guessed.
+ */
+const CB3_CLASSROOM_RUBY = Object.freeze({
+  好き: 'すき',
+  付き合って: 'つきあって'
+})
+
+/** Split one Japanese line into plain runs and ruby runs, in reading order. */
+function classroomRubySegments(text) {
+  const value = String(text || '')
+  if (!value) return []
+  const keys = Object.keys(CB3_CLASSROOM_RUBY).sort((left, right) => right.length - left.length)
+  const parts = []
+  let index = 0
+  while (index < value.length) {
+    const hit = keys.find((key) => value.startsWith(key, index))
+    if (hit) {
+      parts.push({ text: hit, ruby: CB3_CLASSROOM_RUBY[hit] })
+      index += hit.length
+      continue
+    }
+    let end = index + 1
+    while (end < value.length && !keys.some((key) => value.startsWith(key, end))) end += 1
+    parts.push({ text: value.slice(index, end) })
+    index = end
+  }
+  return parts
+}
+
+const CB3_JAPANESE = /[\u3040-\u30ff\u3400-\u9fff]/
+const CB3_KANJI = /[\u3400-\u9fff]/
+//: `Speaker: 好きです。 (suki desu.) — "I like you."` — the pack's own authored dialogue shape.
+const CB3_DIALOGUE_LINE = /^\s*([^:\n]{1,24}):\s*([^()\n]+?)\s*\(([^()\n]+)\)\s*[—-]\s*["“”']?(.+?)["“”']?\s*$/
+
+/**
+ * The lesson's real line, read from the page's authored teaching text.
+ *
+ * `lesson.page.segments[].text` is the pack's own section content, not model prose and not a
+ * transcript. A line qualifies only when it carries all three scaffolds on the same authored
+ * line (kana/kanji, romaji in parentheses, the English meaning after a dash). Among qualifying
+ * lines the last one containing kanji is preferred: that is the section's target line, and it is
+ * the only kind the deck's ruby can sit on. With no qualifying line the bubble is not rendered
+ * at all — a decorative quote would be invented content.
+ */
+function classroomLineFromPage(page) {
+  const texts = []
+  if (page && Array.isArray(page.segments)) {
+    page.segments.forEach((segment) => {
+      if (segment && typeof segment.text === 'string') texts.push(segment.text)
+    })
+  }
+  const document = page && page.document
+  if (document && Array.isArray(document.blocks)) {
+    document.blocks.forEach((block) => {
+      if (!block) return
+      if (typeof block.deep === 'string') texts.push(block.deep)
+      if (typeof block.short === 'string') texts.push(block.short)
+    })
+  }
+  const lines = []
+  texts.forEach((text) => {
+    String(text)
+      .split(/\r?\n/)
+      .forEach((line) => {
+        const match = CB3_DIALOGUE_LINE.exec(line)
+        if (!match) return
+        const kana = match[2].trim()
+        const romaji = match[3].trim()
+        const english = match[4].trim()
+        if (!CB3_JAPANESE.test(kana) || !romaji || !english) return
+        lines.push({ kana, romaji, english })
+      })
+  })
+  if (lines.length === 0) return null
+  const withKanji = lines.filter((line) => CB3_KANJI.test(line.kana))
+  const picked = withKanji.length > 0 ? withKanji[withKanji.length - 1] : lines[0]
+  return {
+    kana: picked.kana,
+    romaji: picked.romaji,
+    english: picked.english,
+    segments: classroomRubySegments(picked.kana)
+  }
+}
+
+/**
+ * The stepper's nodes, in the plan's own order (SPEC-V3 §5.3 C3, "better than the concept" 3/7).
+ *
+ * `Done` means the objective reached independent or delayed evidence — the same fact the course
+ * home reads. `Now` is the section the lesson page is showing. `locked` is only a plan-recorded
+ * gate, never a guess from ordinal alone.
+ */
+function classroomStepNodes(outline, page) {
+  const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives : []
+  const currentId = page && page.section ? page.section.objective_id : null
+  return objectives
+    .filter((objective) => objective && objective.objective_id)
+    .map((objective, index) => {
+      const done =
+        objective.independent === true ||
+        objective.state === 'independent_evidence' ||
+        objective.state === 'delayed_evidence' ||
+        objective.state === 'overridden'
+      const locked = objective.locked === true
+      const current = objective.objective_id === currentId
+      const state = locked ? 'locked' : current ? 'current' : done ? 'done' : 'upcoming'
+      return {
+        key: objective.objective_id,
+        index,
+        label: objective.title || '',
+        state,
+        stateWord:
+          state === 'current'
+            ? CB3_CLASSROOM_COPY.stepCurrent
+            : state === 'locked'
+              ? CB3_CLASSROOM_COPY.stepLocked
+              : undefined
+      }
+    })
+}
+
+/**
+ * `2 of 5 checks recorded`, counted from the served page (COPY.md §4 `classroom.evidence.count`).
+ *
+ * The denominator is the page's own `checks[]` length and the numerator counts a check with a
+ * committed attempt. The event rows keep the integrity states visible: a recorded check prints
+ * the class its newest attempt was committed with (`First try, no hints` / `Hinted` /
+ * `Answer shown`), never a score.
+ */
+function classroomEvidence(page) {
+  const checks = page && Array.isArray(page.checks) ? page.checks : []
+  const attempts = page && Array.isArray(page.attempts) ? page.attempts : []
+  const byCheck = {}
+  attempts.forEach((attempt) => {
+    if (!attempt || !attempt.check_id) return
+    const current = byCheck[attempt.check_id]
+    if (!current) byCheck[attempt.check_id] = attempt
+  })
+  const recordedChecks = checks.filter((check) => check && Number(check.attempt_count) > 0)
+  const events = []
+  recordedChecks.forEach((check) => {
+    const attempt = byCheck[check.check_id]
+    const label = attempt && attempt.evidence_class ? EVIDENCE_CLASS_COPY[attempt.evidence_class] : null
+    if (label) events.push(label)
+  })
+  return {
+    recorded: recordedChecks.length,
+    total: checks.length,
+    countLabel: classroomCopy(CB3_CLASSROOM_COPY.evidenceCount, {
+      n: recordedChecks.length,
+      total: checks.length
+    }),
+    events: Array.from(new Set(events))
+  }
+}
+
+/**
+ * The scene's plate: the course world's own section plate, else a typographic field.
+ *
+ * `world.read` returns the governed kit; a plate is used only when it names this section, so the
+ * classroom never borrows another section's art (the swap check, SPEC-V3 §5.3). No world plate
+ * means a typographic plate that prints the course title — never an invented cover, and never the
+ * host's placeholder image.
+ */
+function classroomSceneFromWorld(read, sectionId, courseTitle) {
+  const world = read && read.world ? read.world : null
+  const kit = world && (world.kit || world)
+  const plates = kit && Array.isArray(kit.plates) ? kit.plates : []
+  const usable = plates.filter((plate) => plate && (plate.artifact_id || plate.artifactId))
+  const match = sectionId
+    ? usable.find((plate) => plate.section_id === sectionId || plate.sectionId === sectionId)
+    : null
+  if (match) {
+    return {
+      artifactId: match.artifact_id || match.artifactId,
+      title: courseTitle || '',
+      credit: match.credit || match.attribution || null,
+      kind: match.kind || null
+    }
+  }
+  return { artifactId: null, title: courseTitle || '', credit: null, kind: null }
+}
+
+/** One quiet line of teaching state: never a goal, never a compliment. */
+function ClassroomQuietLine({ children, role }) {
+  return jsx('p', {
+    role: role || undefined,
+    style: {
+      margin: 0,
+      fontFamily: 'var(--cb3-font-ui)',
+      fontSize: cb3Type('meta'),
+      lineHeight: cb3Lead('meta'),
+      color: cb3Role('ink-soft')
+    },
+    children
+  })
+}
+
+/**
+ * The framed scene (SPEC-V3 §5.3 C5): a mounted plate, 8 px canvas-edge mat, 1 px ink rule and the
+ * elevation token from the stylesheet — never a shadow recipe here.
+ */
+function ClassroomScene({ scene, title, height }) {
+  const artifactId = scene && scene.artifactId ? scene.artifactId : null
+  // `useArtifactPreview` is declared in the components segment; the call is unconditional so the
+  // hook order is stable whether or not this section has a plate (a conditional hook throws).
+  const preview = useArtifactPreview(artifactId)
+  const ready = preview && preview.state === 'ready' && preview.data_url
+  return jsxs('div', {
+    'data-cb3-scene': ready ? 'art' : 'type',
+    'data-cb3-scene-artifact': artifactId || 'none',
+    className: 'cb3-card-elevated',
+    style: {
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: height || '10.25rem',
+      padding: '8px',
+      backgroundColor: cb3Role('canvas-edge'),
+      border: `1px solid ${cb3Role('ink')}`,
+      borderRadius: cb3Radius('round'),
+      overflow: 'hidden',
+      minWidth: 0
+    },
+    children: [
+      ready
+        ? jsx('img', {
+            'data-cb3-scene-art': '',
+            alt: '',
+            'aria-hidden': 'true',
+            src: preview.data_url,
+            style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
+          }, 'art')
+        : jsxs('div', {
+            'data-cb3-scene-plate': 'type',
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              height: '100%',
+              paddingInline: '1rem',
+              backgroundColor: cb3Role('card-stock'),
+              border: `1px solid ${cb3Role('rule')}`,
+              borderRadius: cb3Radius('square')
+            },
+            children: [
+              jsx('span', {
+                style: {
+                  fontFamily: 'var(--cb3-font-display)',
+                  fontSize: cb3Type('heading'),
+                  lineHeight: cb3Lead('heading'),
+                  fontWeight: 600,
+                  maxWidth: '20ch',
+                  textAlign: 'center',
+                  color: cb3Role('ink')
+                },
+                children: title || ''
+              }, 'title')
+            ]
+          }, 'plate'),
+      scene && scene.credit
+        ? jsx('span', {
+            'data-cb3-scene-credit': '',
+            style: {
+              position: 'absolute',
+              right: '0.75rem',
+              bottom: '0.75rem',
+              paddingInline: '0.35rem',
+              backgroundColor: cb3Role('card-stock'),
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('caption'),
+              lineHeight: cb3Lead('caption'),
+              color: cb3Role('ink-soft')
+            },
+            children: scene.credit
+          }, 'credit')
+        : null
+    ]
+  })
+}
+
+/** One verdict line: the deck's sentence plus only the observation the backend recorded. */
+function classroomVerdictSentence(result) {
+  if (!result) return null
+  const criteria = Array.isArray(result.criteria) ? result.criteria : []
+  const observed = criteria
+    .filter((item) => item && item.observed)
+    .map((item) => String(item.observed).trim())
+    .filter(Boolean)
+  const why = observed.length > 0 ? observed[0] : null
+  if (result.verdict === 'pass') {
+    return why ? `${CB3_CLASSROOM_COPY.correct} ${why}` : CB3_CLASSROOM_COPY.correct
+  }
+  if (result.verdict === 'partial' || result.verdict === 'not_yet' || result.verdict === 'needs_retry') {
+    return why ? `${CB3_CLASSROOM_COPY.wrong} ${why}` : CB3_CLASSROOM_COPY.wrong
+  }
+  return null
+}
+
+/**
+ * The check card (SPEC-V3 §5.3 C7): one paper card, the served question, the answer surface the
+ * stimulus names, and the screen's **only** filled control.
+ *
+ * It deliberately shares no state machine with `AttemptControls`: that component is the v2 answer
+ * pane pinned by H-149/H-178 and is still mounted in two v2 surfaces. This is the v3 composition,
+ * with the same backend commands and the same fences (`expectedRevision`, one `attempt_nonce` per
+ * answer, a fresh nonce only on `Try again`), so the kernel sees identical input.
+ */
+function ClassroomCheckCard({
+  check,
+  stimulusStatus = 'ready',
+  stimulusError = null,
+  enrollmentId,
+  objectiveId,
+  revision,
+  onRetryStimulus,
+  onCommitted,
+  onVerdict,
+  onNextSection,
+  busyLabel
+}) {
+  const [text, setText] = useState('')
+  const [ticked, setTicked] = useState([])
+  const [selected, setSelected] = useState(-1)
+  const [phase, setPhase] = useState('awaiting_input')
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const nonceRef = useRef(null)
+  const verdictRef = useRef(null)
+
+  const stimulus = check ? check.stimulus || null : null
+  const items = checklistItems(stimulus)
+  const choices =
+    stimulus && stimulus.format === 'selection' && Array.isArray(stimulus.choices)
+      ? stimulus.choices.filter((choice) => String(choice || '').trim())
+      : []
+  const kind = items.length > 0 ? 'verification' : choices.length > 0 ? 'selection' : 'text'
+  const ready = stimulusStatus === 'ready' && Boolean(stimulus)
+  const selectedChoice = kind === 'selection' && selected >= 0 && selected < choices.length ? choices[selected] : null
+  const locked = phase === 'submitting'
+  const canCheck =
+    ready &&
+    !locked &&
+    (kind === 'verification' ? ticked.length > 0 : kind === 'selection' ? selectedChoice !== null : text.trim().length > 0)
+
+  useEffect(() => {
+    if (phase === 'graded' || phase === 'wrong') {
+      verdictRef.current?.focus?.({ preventScroll: true })
+    }
+  }, [phase])
+
+  const submit = useCallback(async () => {
+    if (!check || !canCheck) return
+    const answer =
+      kind === 'verification' ? checklistAnswer(ticked) : kind === 'selection' ? choiceAnswer(selectedChoice) : attemptAnswer(text.trim())
+    if (!nonceRef.current) nonceRef.current = newOperationId('attempt')
+    setPhase('submitting')
+    setError(null)
+    const response = await rpc(
+      'attempt.submit',
+      {
+        enrollment_id: enrollmentId,
+        check_id: check.check_id,
+        check_version: check.check_version,
+        attempt_nonce: nonceRef.current,
+        answer
+      },
+      {
+        idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
+        expectedRevision: Number(revision) || 0
+      }
+    )
+    if (!response.ok) {
+      setError(response.error)
+      setPhase('awaiting_input')
+      return
+    }
+    const graded = response.result
+    setResult(graded)
+    setPhase(graded.verdict === 'pass' ? 'graded' : 'wrong')
+    if (onVerdict) onVerdict(graded.verdict)
+    if (onCommitted) onCommitted(graded)
+  }, [check, canCheck, kind, ticked, selectedChoice, text, enrollmentId, revision, onCommitted, onVerdict])
+
+  const tryAgain = useCallback(() => {
+    nonceRef.current = null
+    setResult(null)
+    setError(null)
+    setPhase('awaiting_input')
+  }, [])
+
+  const moveOn = useCallback(() => {
+    if (onNextSection) onNextSection()
+  }, [onNextSection])
+
+  const primary =
+    phase === 'graded'
+      ? { label: CB3_CLASSROOM_COPY.next, onClick: moveOn }
+      : phase === 'wrong'
+        ? { label: CB3_CLASSROOM_COPY.retry, onClick: tryAgain }
+        : { label: CB3_CLASSROOM_COPY.checkPrimary, onClick: submit }
+
+  const toggleTick = (id) => {
+    if (locked) return
+    setTicked((previous) => (previous.includes(id) ? previous.filter((item) => item !== id) : previous.concat(id)))
+  }
+
+  const card = jsxs('div', {
+    'data-cb3-surface': 'check',
+    'data-cb3-check': kind,
+    'data-cb3-check-phase': phase,
+    className: 'cb3-card',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      padding: '1.25rem',
+      backgroundColor: cb3Role('card-stock'),
+      border: `1px solid ${cb3Role('rule')}`,
+      borderRadius: cb3Radius('round'),
+      color: cb3Role('ink'),
+      minWidth: 0
+    },
+    children: [
+      stimulus && stimulus.prompt
+        ? jsx('p', {
+            'data-cb3-question': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('lead'),
+              lineHeight: cb3Lead('lead'),
+              maxWidth: '60ch'
+            },
+            children: stimulus.prompt
+          }, 'question')
+        : null,
+
+      !ready
+        ? jsxs('div', {
+            'data-cb3-check-read': stimulusStatus,
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: [
+              jsx(ClassroomQuietLine, {
+                role: 'status',
+                children:
+                  stimulusStatus === 'loading'
+                    ? busyLabel || CB3_CLASSROOM_COPY.loading
+                    : stimulusUnavailableDescription(stimulusError)
+              }),
+              typeof onRetryStimulus === 'function' && stimulusStatus === 'unavailable'
+                ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.errorAction, onClick: onRetryStimulus }, 'retry')
+                : null
+            ]
+          }, 'read')
+        : null,
+
+      ready && kind === 'verification'
+        ? jsx('div', {
+            role: 'group',
+            'data-cb3-answer': 'verification',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: items.map((item, index) =>
+              jsxs('label', {
+                'data-cb3-item': item.id,
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  minHeight: '44px',
+                  paddingInline: '0.5rem',
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  cursor: locked ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body')
+                },
+                children: [
+                  jsx('input', {
+                    type: 'checkbox',
+                    checked: ticked.includes(item.id),
+                    disabled: locked,
+                    onChange: () => toggleTick(item.id),
+                    style: { width: '24px', height: '24px', accentColor: cb3Role('terracotta') }
+                  }, 'box'),
+                  jsx('span', { children: item.label }, 'label')
+                ]
+              }, `item-${index}`)
+            )
+          }, 'verification')
+        : null,
+
+      ready && kind === 'selection'
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: [
+              jsx('div', {
+                role: 'radiogroup',
+                'aria-label': stimulus.prompt || CB3_CLASSROOM_COPY.checkPrimary,
+                'data-cb3-answer': 'selection',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+                children: choices.map((choice, index) =>
+                  jsxs('label', {
+                    'data-cb3-choice': index + 1,
+                    'data-cb3-choice-selected': selected === index ? 'true' : 'false',
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.6rem',
+                      minHeight: '44px',
+                      paddingInline: '0.5rem',
+                      border: `1px solid ${cb3Role(selected === index ? 'terracotta' : 'rule')}`,
+                      borderRadius: cb3Radius('soft'),
+                      cursor: locked ? 'not-allowed' : 'pointer',
+                      fontFamily: 'var(--cb3-font-ui)',
+                      fontSize: cb3Type('body'),
+                      lineHeight: cb3Lead('body')
+                    },
+                    children: [
+                      jsx('input', {
+                        type: 'radio',
+                        name: 'cb3-classroom-choice',
+                        checked: selected === index,
+                        disabled: locked,
+                        onChange: () => setSelected(index),
+                        style: { width: '20px', height: '20px', accentColor: cb3Role('terracotta') }
+                      }, 'radio'),
+                      jsx('span', { 'aria-hidden': 'true', children: String(index + 1) }, 'number'),
+                      jsx('span', { children: choice }, 'text'),
+                      selected === index
+                        ? jsx('span', {
+                            style: {
+                              marginInlineStart: 'auto',
+                              fontFamily: 'var(--cb3-font-ui)',
+                              fontSize: cb3Type('meta'),
+                              lineHeight: cb3Lead('meta'),
+                              fontWeight: 600
+                            },
+                            children: CB3_CLASSROOM_COPY.selected
+                          }, 'word')
+                        : null
+                    ]
+                  }, `choice-${index}`)
+                )
+              }, 'choices'),
+              jsx(ClassroomQuietLine, {
+                role: 'status',
+                children: selectedChoice
+                  ? classroomCopy(CB3_CLASSROOM_COPY.selectedSummary, { n: selected + 1, choice: selectedChoice })
+                  : CB3_CLASSROOM_COPY.nothingSelected
+              }, 'summary')
+            ]
+          }, 'selection')
+        : null,
+
+      ready && kind === 'text'
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+            children: [
+              jsx('label', {
+                htmlFor: 'cb3-classroom-answer',
+                style: {
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  color: cb3Role('ink-soft')
+                },
+                children: CB3_CLASSROOM_COPY.answerLabel
+              }, 'label'),
+              jsx('textarea', {
+                id: 'cb3-classroom-answer',
+                'data-cb3-answer': 'text',
+                value: text,
+                rows: 3,
+                disabled: locked || !ready,
+                onChange: (event) => setText(event.target.value),
+                style: {
+                  width: '100%',
+                  minHeight: '44px',
+                  padding: '0.6rem',
+                  backgroundColor: cb3Role('card-stock'),
+                  border: `1px solid ${cb3Role('rule')}`,
+                  borderRadius: cb3Radius('soft'),
+                  color: cb3Role('ink'),
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('body'),
+                  lineHeight: cb3Lead('body'),
+                  resize: 'vertical'
+                }
+              }, 'field')
+            ]
+          }, 'text')
+        : null,
+
+      error
+        ? jsx(ClassroomQuietLine, {
+            role: 'alert',
+            children: `${error.code || 'ERROR'}: ${describeError(error)}`
+          }, 'error')
+        : null,
+
+      result
+        ? jsx('p', {
+            ref: verdictRef,
+            tabIndex: -1,
+            role: 'status',
+            'data-cb3-verdict': result.verdict,
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('body'),
+              lineHeight: cb3Lead('body'),
+              color: result.verdict === 'pass' ? cb3Role('ink') : cb3Role('alert'),
+              maxWidth: '60ch'
+            },
+            children: classroomVerdictSentence(result)
+          }, 'verdict')
+        : null,
+
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' },
+        children: [
+          jsx(PillAction, {
+            'data-cb3-primary': '',
+            variant: 'primary',
+            label: primary.label,
+            disabled: phase === 'submitting' || (phase === 'awaiting_input' && !canCheck),
+            busy: phase === 'submitting',
+            onClick: primary.onClick
+          }, 'primary'),
+          phase === 'awaiting_input' && ready && kind !== 'text'
+            ? jsx(PillAction, {
+                variant: 'quiet',
+                label: kind === 'selection' ? CB3_CLASSROOM_COPY.clearChoice : CB3_CLASSROOM_COPY.clearTicks,
+                onClick: () => (kind === 'selection' ? setSelected(-1) : setTicked([]))
+              }, 'clear')
+            : null
+        ]
+      }, 'actions')
+    ]
+  })
+
+  return card
+}
+
+/**
+ * The classroom surface (SPEC-V3 §5.3). Pure: every fact arrives as a prop, so the render test can
+ * mount each matrix state without a backend and the container below is the only place that reads.
+ */
+function ClassroomV3({
+  row,
+  outline,
+  page,
+  check,
+  stimulusStatus = 'ready',
+  stimulusError = null,
+  mode = 'guided',
+  engagement = null,
+  scene = null,
+  state = 'default',
+  chatAvailable = true,
+  gameRows = [],
+  enrollmentId,
+  objectiveId,
+  revision,
+  onBack,
+  onOpenSection,
+  onNextSection,
+  onStartChat,
+  onAskTutor,
+  onPlayLine,
+  onRetry,
+  onRetryStimulus,
+  onCommitted
+}) {
+  const width = useCbViewportWidth()
+  const wide = width >= 1000
+  const compact = width > 0 && width < 620
+  const courseTitle = (row && row.title) || (page && page.course && page.course.title) || ''
+  const section = page && page.section ? page.section : null
+  const steps = classroomStepNodes(outline, page)
+  const evidence = classroomEvidence(page)
+  const line = classroomLineFromPage(page)
+  const game = mode === 'game'
+  const [verdict, setVerdict] = useState(null)
+  const foxPose = verdict === 'pass' ? 'cheer' : verdict && verdict !== 'pass' ? 'think' : 'read'
+  const nextStep = row && row.next_step && row.next_step.label ? row.next_step.label : null
+
+  const handleVerdict = useCallback(
+    (value) => {
+      setVerdict(value)
+      if (onCommitted) onCommitted(value)
+    },
+    [onCommitted]
+  )
+
+  const stepper = jsxs('nav', {
+    'aria-label': CB3_CLASSROOM_COPY.stepper,
+    'data-cb3-stepper': wide ? 'column' : 'strip',
+    style: {
+      display: 'flex',
+      flexDirection: wide ? 'column' : 'row',
+      alignItems: wide ? 'center' : 'flex-start',
+      gap: wide ? '0.85rem' : '0.5rem',
+      overflowX: wide ? 'visible' : 'auto',
+      paddingBlock: wide ? 0 : '0.25rem',
+      minWidth: 0
+    },
+    children: steps.map((step) =>
+      jsx(StampNode, {
+        state: step.state,
+        label: step.label,
+        stateWord: step.stateWord,
+        index: step.index,
+        onClick: () => onOpenSection && onOpenSection(step.key)
+      }, step.key)
+    )
+  })
+
+  const head = jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.75rem' },
+        children: [
+          jsx('h1', {
+            'data-cb3-classroom-title': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              maxWidth: '34ch',
+              overflowWrap: 'anywhere'
+            },
+            children: courseTitle
+          }, 'title'),
+          game && engagement
+            ? jsxs('span', {
+                'data-cb3-xp': String(Number(engagement.xp_total) || 0),
+                style: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontFamily: 'var(--cb3-font-ui)',
+                  fontSize: cb3Type('meta'),
+                  lineHeight: cb3Lead('meta'),
+                  fontWeight: 600,
+                  color: cb3Role('ink')
+                },
+                children: [
+                  jsx(sdk.Codicon, { name: 'flame', size: CB_ICON_UI }, 'icon'),
+                  jsx('span', {
+                    children: classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 })
+                  }, 'label')
+                ]
+              }, 'xp')
+            : null
+        ]
+      }),
+      section
+        ? jsx('p', {
+            'data-cb3-classroom-section': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('body'),
+              lineHeight: cb3Lead('body'),
+              color: cb3Role('ink-soft'),
+              maxWidth: '70ch'
+            },
+            children: section.title
+          }, 'section')
+        : null,
+      state === 'loading' ? jsx(ClassroomQuietLine, { role: 'status', children: CB3_CLASSROOM_COPY.loading }) : null
+    ]
+  })
+
+  const statePanel =
+    state === 'error' || state === 'offline'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': state,
+          className: 'cb3-card',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            padding: '1rem',
+            border: `1px solid ${cb3Role('rule')}`,
+            borderRadius: cb3Radius('round'),
+            backgroundColor: cb3Role('card-stock')
+          },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('body'),
+                lineHeight: cb3Lead('body'),
+                fontWeight: 600
+              },
+              children: state === 'offline' ? CB3_CLASSROOM_COPY.offlineTitle : CB3_CLASSROOM_COPY.errorTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, {
+              children: state === 'offline' ? CB3_CLASSROOM_COPY.offlineBody : CB3_CLASSROOM_COPY.errorBody
+            }, 'body'),
+            jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.errorAction, onClick: onRetry }, 'retry')
+          ]
+        }, 'state')
+      : null
+
+  const nochat =
+    chatAvailable === false && state === 'default'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': 'no-chat',
+          style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-ui)',
+                fontSize: cb3Type('body'),
+                lineHeight: cb3Lead('body'),
+                fontWeight: 600
+              },
+              children: CB3_CLASSROOM_COPY.nochatTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.nochatBody }, 'body'),
+            jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.nochatAction, onClick: onStartChat }, 'action')
+          ]
+        }, 'nochat')
+      : null
+
+  const complete =
+    state === 'complete'
+      ? jsxs('div', {
+          'data-cb3-classroom-state': 'complete',
+          className: 'cb3-card',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            padding: '1.25rem',
+            border: `1px solid ${cb3Role('rule')}`,
+            borderRadius: cb3Radius('round'),
+            backgroundColor: cb3Role('card-stock')
+          },
+          children: [
+            jsx('p', {
+              style: {
+                margin: 0,
+                fontFamily: 'var(--cb3-font-display)',
+                fontSize: cb3Type('heading'),
+                lineHeight: cb3Lead('heading'),
+                fontWeight: 600
+              },
+              children: CB3_CLASSROOM_COPY.completeTitle
+            }, 'title'),
+            jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.completeBody }, 'body'),
+            jsx(PillAction, { variant: 'primary', label: CB3_CLASSROOM_COPY.completeAction, onClick: onNextSection }, 'action')
+          ]
+        }, 'complete')
+      : null
+
+  const checkCard =
+    state === 'default' && !complete
+      ? jsx(ClassroomCheckCard, {
+          check,
+          stimulusStatus,
+          stimulusError,
+          enrollmentId,
+          objectiveId,
+          revision,
+          onRetryStimulus,
+          onCommitted: handleVerdict,
+          onNextSection,
+          busyLabel: CB3_CLASSROOM_COPY.loading
+        }, 'check')
+      : null
+
+  const aside = jsxs('aside', {
+    'data-cb3-aside': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
+    children: [
+      game
+        ? jsx(ChallengeCard, {
+            title: CB3_CLASSROOM_COPY.challengeTitle,
+            prompt: check && check.stimulus && check.stimulus.prompt ? check.stimulus.prompt : null,
+            recordNote: engagement ? classroomCopy(CB3_CLASSROOM_COPY.gameXp, { n: Number(engagement.xp_total) || 0 }) : null,
+            actionLabel: CB3_CLASSROOM_COPY.challengeStart,
+            onStart: onNextSection
+          }, 'challenge')
+        : null,
+      game && Array.isArray(gameRows) && gameRows.length > 0
+        ? jsx('ul', {
+            'data-cb3-game-rows': '',
+            style: {
+              margin: 0,
+              paddingInlineStart: '1rem',
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft')
+            },
+            children: gameRows.map((entry, index) =>
+              jsx('li', { children: entry && entry.label ? entry.label : '' }, `game-row-${index}`)
+            )
+          }, 'game-rows')
+        : null,
+      jsx(EvidenceTray, {
+        countLabel: evidence.recorded > 0 || evidence.total > 0 ? evidence.countLabel : null,
+        recorded: evidence.recorded,
+        emptyLabel: CB3_CLASSROOM_COPY.evidenceEmpty,
+        events: evidence.events
+      }, 'evidence'),
+      nextStep
+        ? jsx(ClassroomQuietLine, {
+            children: classroomCopy(CB3_CLASSROOM_COPY.asideNext, { next: nextStep })
+          }, 'next')
+        : null,
+      typeof onAskTutor === 'function'
+        ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.asideTutor, onClick: onAskTutor }, 'tutor')
+        : null,
+      jsx(FoxPose, { pose: foxPose, size: wide ? 96 : 88 }, 'fox')
+    ]
+  })
+
+  return jsxs('div', {
+    'data-cb-classroom': '',
+    'data-cb3-surface': 'classroom',
+    'data-cb3-classroom-mode': game ? 'game' : mode,
+    'data-cb3-classroom-state': state,
+    className: 'cb3-gutter',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1rem',
+      paddingBlock: '1rem',
+      minWidth: 0,
+      fontFamily: 'var(--cb3-font-ui)',
+      color: cb3Role('ink')
+    },
+    children: [
+      jsx(PillAction, {
+        variant: 'quiet',
+        icon: 'arrow-left',
+        label: classroomCopy(CB3_CLASSROOM_COPY.back, { course: courseTitle }),
+        onClick: onBack,
+        style: { alignSelf: 'flex-start' }
+      }, 'back'),
+      head,
+      jsxs('div', {
+        style: wide
+          ? {
+              display: 'grid',
+              gridTemplateColumns: '96px minmax(0, 1fr) 268px',
+              columnGap: '24px',
+              alignItems: 'start',
+              minWidth: 0
+            }
+          : {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              minWidth: 0
+            },
+        children: [
+          jsx('div', { 'data-cb3-stepper-column': wide ? 'wide' : 'flow', style: { minWidth: 0 }, children: stepper }, 'stepper'),
+          jsxs('div', {
+            'data-cb3-reading': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+            children: [
+              jsx(ClassroomScene, {
+                scene,
+                title: courseTitle,
+                height: wide ? '10.25rem' : compact ? '8.95rem' : '17.75rem'
+              }, 'scene'),
+              line && !compact
+                ? jsx(DialogueBubble, {
+                    segments: line.segments,
+                    romaji: line.romaji,
+                    en: line.english,
+                    onPlay: typeof onPlayLine === 'function' ? onPlayLine : undefined,
+                    playLabel: typeof onPlayLine === 'function' ? CB3_CLASSROOM_COPY.play : undefined
+                  }, 'line')
+                : line && compact
+                  ? jsx(DialogueBubble, {
+                      segments: line.segments,
+                      romaji: line.romaji,
+                      en: line.english
+                    }, 'line-compact')
+                  : null,
+              nochat,
+              statePanel,
+              complete,
+              checkCard
+            ]
+          }, 'reading'),
+          aside
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The wired classroom: one place that reads, one place that composes.
+ *
+ * Reads are the same ones the v2 lesson pane makes, keyed so a section switch refetches:
+ * `course.outline` (the stepper), `lesson.page` (scene text, checks, attempts), `check.open` +
+ * `check.get` through `useOpenCheck` (the answer surface), `world.read` (the section plate) and,
+ * only in Game mode, `engagement.read` (XP and the challenge). Nothing here invents a row: a read
+ * that fails paints the error state, never an empty lesson.
+ */
+function ClassroomV3Surface({
+  row,
+  enrollmentId,
+  objectiveId,
+  mode = 'guided',
+  onBack,
+  onOpenSection,
+  onNextSection,
+  onStartChat,
+  onAskTutor,
+  onPlayLine
+}) {
+  const courseId = row && row.course_id ? row.course_id : null
+  const outline = useRpcQuery(
+    'course.outline',
+    { enrollment_id: enrollmentId },
+    `cb3-classroom-outline-${enrollmentId}`,
+    Boolean(enrollmentId) && backendSupports('course.outline')
+  )
+  const page = useRpcQuery(
+    'lesson.page',
+    { enrollment_id: enrollmentId, objective_id: objectiveId },
+    `cb3-classroom-page-${enrollmentId}-${objectiveId}`,
+    Boolean(enrollmentId) && Boolean(objectiveId) && backendSupports('lesson.page')
+  )
+  const world = useRpcQuery(
+    'world.read',
+    { course_id: courseId },
+    `cb3-classroom-world-${courseId}`,
+    Boolean(courseId) && backendSupports('world.read')
+  )
+  const engagement = useRpcQuery(
+    'engagement.read',
+    { course_id: courseId, enrollment_id: enrollmentId },
+    `cb3-classroom-engagement-${courseId}-${enrollmentId}`,
+    mode === 'game' && Boolean(courseId) && Boolean(enrollmentId) && backendSupports('engagement.read')
+  )
+  const revision = page.data ? page.data.revision : modelRevision(row)
+  const check = useOpenCheck({
+    enrollmentId,
+    objectiveId,
+    revision,
+    enabled: Boolean(objectiveId) && Boolean(page.data) && backendSupports('check.open'),
+    implemented: backendWire.implemented
+  })
+  const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
+  const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
+  const state =
+    page.status === 'error' && !page.data
+      ? 'error'
+      : page.status === 'loading' && !page.data
+        ? 'loading'
+        : 'default'
+  return jsx(ClassroomV3, {
+    row,
+    outline: outline.data,
+    page: page.data,
+    check: check.check,
+    stimulusStatus: check.stimulusStatus,
+    stimulusError: check.stimulusError,
+    mode,
+    engagement: engagement.data,
+    scene,
+    state,
+    chatAvailable: Boolean(page.data && page.data.runtime && page.data.runtime.binding_status === 'active'),
+    enrollmentId,
+    objectiveId,
+    revision,
+    onBack,
+    onOpenSection,
+    onNextSection,
+    onStartChat,
+    onAskTutor,
+    onPlayLine,
+    onRetry: () => {
+      page.reload()
+      outline.reload()
+      check.reload()
+    },
+    onRetryStimulus: check.reload,
+    onCommitted: () => {
+      page.reload()
+      outline.reload()
+    }
+  })
+}
+
+/** The enrollment revision a row carries, for the check fence before the page lands. */
+function modelRevision(row) {
+  return row && Number.isFinite(Number(row.revision)) ? Number(row.revision) : 0
+}
+// CB-V3-END — CP-023
 
 /**
  * ── Atlas Lamp: the scoped Coursebook token layer ───────────────────────────────────────────
