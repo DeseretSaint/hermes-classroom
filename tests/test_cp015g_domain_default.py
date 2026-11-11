@@ -80,15 +80,22 @@ class UndeclaredHandsOnGoalTest(unittest.TestCase):
         brief = curriculum.curriculum_brief(
             domain=None, locale="en-US", level=None, recipe="casual", goal=TELESCOPE
         )
+        budget = research.budget_for(depth="working", scope="short")
         queries = research.derive_queries(
             TELESCOPE,
             recipe="casual",
             dials={"depth": "working"},
             locale="en-US",
             subject_domain=None,
+            max_queries=budget.max_queries,
         )
         self.assertEqual(brief["domain"], "technical_procedure")
         # The procedure qualifier is derived from the same resolved domain, not the locale.
+        # This asks at the budget the research pass actually gets (short/working = 6), not at
+        # ``derive_queries``' smallest default cap of 4: CP-015a puts the qualifier query after the
+        # capability clauses and truncates it first, so a 4-query cell that names three
+        # capabilities legitimately holds no qualifier. The live-run test below pins the same claim
+        # through ``run_research`` at the real budget.
         self.assertTrue(
             any("official procedure steps safety limits" in query for query in queries), queries
         )

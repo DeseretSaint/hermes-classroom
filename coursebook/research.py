@@ -684,10 +684,18 @@ def derive_queries(
     queries = [base]
     if depth != "survey":
         qualifier = _domain_qualifier(domain, level)
-        if qualifier is not None:
-            base_qualifier = qualifier
-        elif recipe == "one_off":
+        # CP-015g/D1-F2: the domain can now be *inferred* from the goal, and a declared qualifier
+        # is not the same claim as an inferred one. A declared domain names what the course is
+        # about, so its qualifier outranks the recipe's generic question (a one-off brake job must
+        # still ask about procedure steps and safety limits, test_policy_threading). An inferred
+        # domain only shapes the base query; a one-off goal that declared no subject keeps its
+        # bounded-speed question, and the capability clauses below are never joined to a qualifier
+        # the brief did not declare.
+        declared = domain_source == "declared"
+        if recipe == "one_off" and not declared:
             base_qualifier = "official instructions safety"
+        elif qualifier is not None:
+            base_qualifier = qualifier
         elif recipe == "committed":
             base_qualifier = "syllabus learning objectives"
         elif recipe == "companion":
@@ -707,7 +715,7 @@ def derive_queries(
         # recipe question back into a query a syllabus-derived companion course must not carry.
         # A one-off brief keeps its bounded speed and a survey pass stays one query.
         if recipe != "one_off":
-            queries.extend(_capability_queries(base, qualifier))
+            queries.extend(_capability_queries(base, qualifier if declared else None))
         queries.append(f"{base} {base_qualifier}")
         # A course is not a list of topics. Ask how the subject is sequenced and what has
         # to come first, before the generic reference/glossary questions can consume the
