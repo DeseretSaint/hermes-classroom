@@ -528,8 +528,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 4,
-            "maximum_cost_usd": 0.16,
+            "maximum_calls": 6,
+            "maximum_cost_usd": 0.24,
             "minimum_calls": 2,
             "minimum_cost_usd": 0.08,
             "section_count": 1
