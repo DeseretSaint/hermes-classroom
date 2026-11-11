@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "film": "CP-033 launch film — flat animatic",
+  "claim": "A chat answers. Coursebook makes the next step depend on what you did.",
+  "tempo_bpm": 120,
+  "seconds_per_beat": 0.5,
+  "target_seconds": 75,
+  "ceiling_seconds": 90,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "tokens": "contracts/cb.tokens.v3.json",
+  "type": {
+    "display": "assets/fonts/CBDisplay-VF.woff2",
+    "ui": "assets/fonts/CBUI-VF.woff2"
+  },
+  "palette_note": "Every colour below is read from contracts/cb.tokens.v3.json modes.light; a frame that paints a value outside that table is a defect.",
+  "frames": [
+    {
+      "id": "S0-hook",
+      "seconds": 3,
+      "start_beat": 0,
+      "kind": "word",
+      "kicker": "A chat",
+      "caption": "A chat can answer this.",
+      "sub": ""
+    },
+    {
+      "id": "S1-problem",
+      "seconds": 6,
+      "start_beat": 6,
+      "kind": "word",
+      "kicker": "The problem",
+      "caption": "It cannot make the answer change what happens next.",
+      "sub": ""
+    },
+    {
+      "id": "S2-reveal",
+      "seconds": 6,
+      "start_beat": 18,
+      "kind": "reveal",
+      "kicker": "Reveal",
+      "caption": "Coursebook.",
+      "sub": "A lesson is governed state, not chat.",
+      "plate": "docs/concept-parity/refs/home.png",
+      "plate_sha256_prefix": "fd75bed31cd773ab",
+      "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
+    },
+    {
+      "id": "S3-proof1-shelf",
+      "seconds": 12,
+      "start_beat": 30,
+      "kind": "plate",
+      "kicker": "Proof 1 · the shelf",
+      "caption": "Your shelf is what you have done.",
+      "sub": "Every card carries its own evidence line and one next step.",
+      "plate": "docs/concept-parity/refs/home.png",
+      "plate_sha256_prefix": "fd75bed31cd773ab",
+      "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
+    },
+    {
+      "id": "S4a-proof2-answer",
+      "seconds": 6,
+      "start_beat": 54,
+      "kind": "plate",
+      "kicker": "Proof 2 · the check",
+      "caption": "You answer the check.",
+      "sub": "It is graded against the section's objective.",
+      "plate": "docs/concept-parity/refs/classroom.png",
+      "plate_sha256_prefix": "ee0c1a664a7317ae",
+      "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
+    },
+    {
+      "id": "S4b-proof2-row",
+      "seconds": 6,
+      "start_beat": 66,
+      "kind": "plate",
+      "kicker": "Proof 2 · the row",
+      "caption": "One row is written.",
+      "sub": "The chip is a record now.",
+      "plate": "docs/concept-parity/refs/classroom.png",
+      "plate_sha256_prefix": "ee0c1a664a7317ae",
+      "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
+    },
+    {
+      "id": "S5a-proof3-close",
+      "seconds": 6,
+      "start_beat": 78,
+      "kind": "word",
+      "kicker": "Proof 3 · resume",
+      "caption": "Close it. Open it.",
+      "sub": "A labelled cut in the final take; the reopen is real."
+    },
+    {
+      "id": "S5b-proof3-resume",
+      "seconds": 6,
+      "start_beat": 90,
+      "kind": "plate",
+      "kicker": "Proof 3 · resume",
+      "caption": "Same objective. Same check.",
+      "sub": "A new window on the same place.",
+      "plate": "docs/concept-parity/refs/classroom.png",
+      "plate_sha256_prefix": "ee0c1a664a7317ae",
+      "chip": "PLACEHOLDER · REFERENCE PLATE, NOT THE BUILD"
+    },
+    {
+      "id": "S6-mechanism",
+      "seconds": 6,
+      "start_beat": 102,
+      "kind": "word",
+      "kicker": "The mechanism",
+      "caption": "One answer. One transition. One row.",
+      "sub": ""
+    },
+    {
+      "id": "S7a-truth",
+      "seconds": 6,
+      "start_beat": 114,
+      "kind": "struck",
+      "kicker": "What is not on the screen",
+      "caption": "No stars. No XP on the shelf. No leaderboard.",
+      "sub": "Each of these is in the concept art and is refused by the build.",
+      "strike": ["Stars on every card", "240 XP on a lesson", "A leaderboard beside the lesson"]
+    },
+    {
+      "id": "S7b-truth",
+      "seconds": 6,
+      "start_beat": 126,
+      "kind": "word",
+      "kicker": "The rule",
+      "caption": "If the backend did not record it, it is not on the screen.",
+      "sub": ""
+    },
+    {
+      "id": "S8-end",
+      "seconds": 6,
+      "start_beat": 138,
+      "kind": "end",
+      "kicker": "End card",
+      "caption": "Coursebook",
+      "sub": "A Hermes Desktop plugin. MIT licence.",
+      "repo": "github.com/DeseretSaint/hermes-classroom"
+    }
+  ]
+}

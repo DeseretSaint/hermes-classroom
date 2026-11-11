@@ -1,5 +1,9 @@
 # Hackathon demo — the 88-second shot list
 
+> Superseded for the v3 cut by `docs/launch/SCRIPT.md` (75.00 s, 120 BPM grid) and
+> `docs/launch/ANIMATIC.md`. This page stays as the historical record of the v2 composition and its
+> measurements on `5b0f124`; it is not the current shot list and no frame below is in the animatic.
+
 Status: **shot list written and timed; nothing is recorded.** This page replaces the 86-second
 composition in `docs/DEMO.md` for the contest entry and keeps that file as the historical record of
 what was measured on `5b0f124`. The demo gate `t_6a32ffe9` is still open, `docs/SUBMISSION.md` §0

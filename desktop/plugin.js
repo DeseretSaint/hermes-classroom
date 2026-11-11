@@ -3739,10 +3739,10 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
           color: 'var(--cb-ink-soft)'
         },
         children: [
-          jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
-          jsx('span', { children: group.label })
+          jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }, 'chevron'),
+          jsx('span', { children: group.label }, 'label')
         ]
-      }),
+      }, 'summary'),
       jsx('ul', {
         style: {
           margin: '0.2rem 0 0',
@@ -3769,11 +3769,11 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
               },
               children: [
                 jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
-                  jsx('span', { children: member.title || 'Untitled' }),
-                  jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
-                ] }),
+                  jsx('span', { children: member.title || 'Untitled' }, 'title'),
+                  jsx('span', { children: ` · ${whenLabel(member.updated_at)}` }, 'when')
+                ] }, 'record'),
                 onOpen
-                  ? jsx(ShelfMemberOpen, { member, onOpen })
+                  ? jsx(ShelfMemberOpen, { member, onOpen }, 'open')
                   : jsxs('span', {
                       style: {
                         display: 'inline-flex',
@@ -3782,22 +3782,22 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
                         gap: '0.25rem 0.5rem'
                       },
                       children: [
-                        jsx('span', { children: `Can’t open “${member.title || 'this record'}” from here.` }),
+                        jsx('span', { children: `Can’t open “${member.title || 'this record'}” from here.` }, 'note'),
                         onOpenLibrary
                           ? jsx(CbAction, {
                               variant: 'tertiary',
                               onClick: onOpenLibrary,
                               children: 'Open the Library shelf'
-                            })
-                          : jsx('span', { children: 'Open it from the Library shelf.' })
+                            }, 'action')
+                          : jsx('span', { children: 'Open it from the Library shelf.' }, 'action')
                       ]
-                    })
+                    }, 'open')
               ]
             },
             member.enrollment_id
           )
         )
-      })
+      }, 'rows')
     ]
   })
 }
@@ -5453,7 +5453,7 @@ function PathStop({
                       color: kind === 'done' || kind === 'future' ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
                     },
                     children: objective.title
-                  }),
+                  }, 'title'),
                   jsx('span', {
                     'data-cb-path-word': '',
                     style: {
@@ -5468,25 +5468,25 @@ function PathStop({
                       whiteSpace: 'nowrap'
                     },
                     children: stateWord
-                  }),
+                  }, 'state'),
                   jsx('span', {
                     'data-cb-path-check-word': '',
                     style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                     children: checkWord
-                  })
+                  }, 'check')
                 ]
-              }),
+              }, 'titleline'),
               detailOpen
                 ? jsx('span', {
                     'data-cb-path-detail': objective.objective_id,
                     'data-cb-path-detail-body': '',
                     style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
                     children: cbPathDetailText(objective, attempts)
-                  })
+                  }, 'detail')
                 : null
             ]
-          })
-        })
+          }, 'body')
+        }, 'open')
       ]
     },
     objective.objective_id
@@ -5498,8 +5498,8 @@ function CheckpointDetailRow({ label, value }) {
   return jsxs('div', {
     style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
   , children: [
-    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
-    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
+    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }, 'label'),
+    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value }, 'value')
   ] })
 }
 
@@ -14498,9 +14498,10 @@ function plural(count, one, many) {
   return `${count} ${Number(count) === 1 ? one : many}`
 }
 
-/** The host cannot ship a font file, so the voices are OS-resident stacks only. */
-const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
-const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
+/** The v3 scope ships its faces as data URLs and sets `--cb3-font-*`; prefer them, then fall
+ *  back to the OS stacks so a host that fails to decode a face still renders in a real serif. */
+const CB_SERIF = 'var(--cb3-font-display, ui-serif), Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
+const CB_SANS = 'var(--cb3-font-ui, ui-sans-serif), system-ui, -apple-system, "Segoe UI", sans-serif'
 
 /** Codicon only, two sizes: 16px beside UI text, 20px on a plate mark. Never a per-row icon. */
 const CB_ICON_UI = '1rem'
@@ -32538,7 +32539,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
           borderRadius: '2px'
         },
         children: [
-          jsx(WorkshopCover, { item, layout, hero: false }),
+          jsx(WorkshopCover, { item, layout, hero: false }, 'cover'),
           jsx('h3', {
             style: {
               margin: 0,
@@ -32551,7 +32552,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               overflowWrap: 'anywhere'
             },
             children: item.title
-          }),
+          }, 'title'),
           jsx('p', {
             style: {
               margin: 0,
@@ -32565,10 +32566,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               overflow: 'hidden'
             },
             children: item.outcome
-          }),
-          jsx(WorkshopMeta, { item })
+          }, 'outcome'),
+          jsx(WorkshopMeta, { item }, 'meta')
         ]
-      }),
+      }, 'open'),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.5rem', marginTop: 'auto' },
         children: [
@@ -32578,7 +32579,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                 onClick: () => onOpen(item, { continue: true }),
                 'aria-label': `Continue ${item.title}`,
                 children: 'Continue'
-              })
+              }, 'install')
             : jsx(CbAction, {
                 variant: 'secondary',
                 onClick: () => onInstall(item),
@@ -32586,7 +32587,7 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                 pending: busy,
                 'aria-label': `Add ${item.title} to your library`,
                 children: busy ? 'Adding…' : 'Add to library'
-              }),
+              }, 'install'),
           jsx('button', {
             type: 'button',
             'data-cb-workshop-favorite': favorite ? 'on' : 'off',
@@ -32609,10 +32610,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
               fontSize: CB_TYPE.caption
             },
             children: [
-              jsx(sdk.Codicon, { name: favorite ? 'star-full' : 'star-empty', size: CB_ICON_UI }),
-              jsx('span', { children: favorite ? 'Saved' : 'Save' })
+              jsx(sdk.Codicon, { name: favorite ? 'star-full' : 'star-empty', size: CB_ICON_UI }, 'icon'),
+              jsx('span', { children: favorite ? 'Saved' : 'Save' }, 'word')
             ]
-          }),
+          }, 'favorite'),
           userCategory
             ? jsx('span', {
                 'data-cb-workshop-user-category': userCategory,
@@ -32625,10 +32626,10 @@ function WorkshopCard({ item, motion, index, shelfKey, onOpen, onInstall, busy, 
                   padding: '0.1rem 0.45rem'
                 },
                 children: `Your shelf: ${userCategory}`
-              })
+              }, 'shelf')
             : null
         ]
-      })
+      }, 'actions')
     ]
   })
 }
@@ -34106,7 +34107,7 @@ function ModeBadge({ mode, pending }) {
           borderRadius: '999px',
           background: game ? 'var(--cb-ochre)' : 'var(--cb-accent)'
         }
-      }),
+      }, 'dot'),
       game ? CB_WORLD_COPY.modeGame : CB_WORLD_COPY.modeTextbook,
       pending ? ' · saving' : null
     ]
