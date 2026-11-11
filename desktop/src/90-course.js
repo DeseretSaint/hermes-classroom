@@ -2510,23 +2510,69 @@ function cb3CoursePlateAnchors(plate, world) {
   return []
 }
 
-/** The one hero plate a course has: its approved world plate, else the pack's map ground. */
+/**
+ * The one hero plate a course home resolves, in this order and nothing else:
+ *
+ *   1. an approved `world.read` artifact (the course's own plate) — it wins and is previewed;
+ *   2. the approved kit's `course-map` plate;
+ *   3. the approved kit's `home-hero` plate;
+ *   4. nothing, which is the typographic field (the deck's `No scene yet` row).
+ *
+ * `kit` is injectable so the fallback order is executable without the shipped asset segment; in
+ * the product it is `cb3KitSource`. A plate the caller already resolved (`src` set, as the
+ * `world.read` branch carries) is treated as the approved artifact it is, never re-resolved.
+ */
+function cb3CourseHeroResolution({ plate, kit } = {}) {
+  const source =
+    typeof kit === 'function' ? kit : typeof cb3KitSource === 'function' ? cb3KitSource : () => null
+  const row = plate && typeof plate === 'object' ? plate : {}
+  const direct = typeof row.src === 'string' && row.src ? row.src : null
+  const artifactId = row.artifactId ? String(row.artifactId) : null
+  const anchors = Array.isArray(row.anchors) ? row.anchors : []
+  // An already-resolved plate keeps the scene it names. Without this, the kit plate that
+  // `cb3CourseHeroPlate` just resolved arrives with `src` set and would be relabelled as a
+  // caller-supplied artifact on the second pass.
+  if (row.scene === 'kit' && direct) {
+    return {
+      scene: 'kit',
+      artifactId: null,
+      sceneArtifact: row.sceneArtifact || null,
+      src: direct,
+      credit: null,
+      anchors
+    }
+  }
+  if (artifactId || direct) {
+    return {
+      scene: 'artifact',
+      artifactId,
+      sceneArtifact: artifactId,
+      src: direct,
+      credit: row.credit || null,
+      anchors
+    }
+  }
+  for (const id of ['course-map', 'home-hero']) {
+    const src = source(id)
+    if (typeof src === 'string' && src) {
+      return { scene: 'kit', artifactId: null, sceneArtifact: id, src, credit: null, anchors }
+    }
+  }
+  return { scene: 'none', artifactId: null, sceneArtifact: null, src: null, credit: null, anchors }
+}
+
+/** The one hero plate a course has: its approved world plate, else the approved kit field. */
 function cb3CourseHeroPlate(world) {
   const assets = world && Array.isArray(world.assets) ? world.assets : []
   const hero = cbWorldPlate(assets, 'hero')
   const anchors = cb3CoursePlateAnchors(hero, world)
-  if (hero && hero.artifact_id) {
-    return {
-      artifactId: hero.artifact_id,
-      src: null,
-      anchors,
-      credit: hero.attribution || null
-    }
-  }
-  // CP-013's map ground is the pack's own field; it is used only when the asset segment carries
-  // it. A plate that is not there renders the typographic field, never an invented picture.
-  const ground = typeof cb3Asset === 'function' ? cb3Asset('cb.asset.scene.map-ground') : null
-  return { artifactId: null, src: ground || null, anchors, credit: null }
+  const base =
+    hero && hero.artifact_id
+      ? { artifactId: hero.artifact_id, src: null, anchors, credit: hero.attribution || null }
+      : { artifactId: null, src: null, anchors, credit: null }
+  // D-007: the approved kit is the product lane, so the course home always has a field behind its
+  // trail. A per-course approved artifact still wins over the kit plate.
+  return cb3CourseHeroResolution({ plate: base })
 }
 
 /**
@@ -2663,6 +2709,9 @@ function CourseRouteMapNode({ node, x, y, big, onOpen }) {
       }, 'dot'),
       jsx('span', {
         'data-cb-course-node-label': '',
+        // Type over the plate sits on an opaque token chip, never raw art: `card-stock` carries
+        // `ink` at 15:1 in both modes. No text is baked into the plate itself.
+        'data-cb-course-scrim': 'card-stock',
         style: {
           maxWidth: '14ch',
           paddingInline: '0.35rem',
@@ -2676,6 +2725,7 @@ function CourseRouteMapNode({ node, x, y, big, onOpen }) {
       }, 'label'),
       node.label ? jsx('span', {
         'data-cb-course-node-word': '',
+        'data-cb-course-scrim': 'card-stock',
         style: {
           paddingInline: '0.3rem',
           borderRadius: cb3Radius('soft'),
@@ -2853,6 +2903,13 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
     'data-cb-course-plate': ready ? 'art' : 'type',
     'data-cb-course-plate-state': plate && plate.artifactId ? preview.state : ready ? 'ready' : 'none',
     'data-cb-course-world-state': posture,
+    // The painted plate's provenance, so a capture can name the scene it is looking at instead of
+    // inferring it from a blob. `artifact` is the course's own approved plate; `kit` is the
+    // approved field_atlas plate standing behind the trail (D-007). A plate that is not painted
+    // (a rejected world, or an install with no kit segment) carries no scene marker.
+    'data-cb3-scene': ready && plate && plate.scene && plate.scene !== 'none' ? plate.scene : undefined,
+    'data-cb3-scene-artifact':
+      ready && plate ? plate.artifactId || plate.sceneArtifact || undefined : undefined,
     style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
     children: [
       jsxs('div', {
@@ -2952,6 +3009,7 @@ function CourseHomeAside({
   onOpenOther
 }) {
   const nextStep = (row && row.next_step) || {}
+  const motion = useCbMotion()
   const nextLabel = nextStep.label || step.label
   const complete = step.done === true
   const planReview = !complete && step.kind === 'review_plan'
@@ -3130,9 +3188,11 @@ function CourseHomeAside({
             ]
           }, 'others')
         : null,
-      // M9: the course-home pose is `point`, beside the Continue plate and outside the hero's
-      // quiet field. FoxPose hides itself below a 620 px route.
-      jsx(FoxPose, { pose: 'point', size: big ? 96 : 88 }, 'fox')
+      // M9: the course-home pose is the approved `point` asset, beside the Continue plate and
+      // outside the hero's quiet field. The box never exceeds its export (208 gets the 256 master,
+      // 128 gets the 128) so the character is never upscaled. `FoxPose` hides itself below a
+      // 620 px route; a reader who asked for reduced motion gets no companion figure at all.
+      motion.reduced ? null : jsx(FoxPose, { pose: 'point', size: big ? 208 : 128 }, 'fox')
     ]
   })
 }
@@ -3199,6 +3259,11 @@ function CourseHomeV3({
     width: routeWidth
   })
   const evidenceLine = cb3CourseEvidenceLine(done, total)
+  // The hero resolves in the card's order and nothing else: the course's approved world artifact,
+  // then the kit's `course-map`, then the kit's `home-hero`. Resolution happens here so a plate the
+  // caller could not resolve still lands on the product lane (D-007), and the chosen source is
+  // carried in the markup as `data-cb3-scene` / `data-cb3-scene-artifact`.
+  const heroPlate = cb3CourseHeroResolution({ plate })
   const nextKind = (row && row.next_step && row.next_step.kind) || 'start_lesson'
   const step = {
     kind: nextKind,
@@ -3361,7 +3426,7 @@ function CourseHomeV3({
             style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
             children: [
               jsx(CourseHeroPlate, {
-                plate: plate || { artifactId: null, src: null, anchors: [] },
+                plate: heroPlate,
                 title: (row && row.title) || '',
                 big: mapWide,
                 worldState,
