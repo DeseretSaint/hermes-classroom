@@ -1,0 +1,764 @@
+{
+  "grammar": "field_atlas",
+  "kit_id": "field_atlas@1",
+  "label": "Field atlas",
+  "version": 1,
+  "art_bible": "docs/concept-parity/ART-BIBLE.md",
+  "lane": "display_plate",
+  "palette": {
+    "paper": "#f7f1e4",
+    "ink": "#3a2318",
+    "field": "#2f6047",
+    "ochre": "#7b4b0a",
+    "lamp": "#e8a93a",
+    "coral": "#9c2e1c"
+  },
+  "medium": "opaque gouache on warm paper, dark warm-brown ink contour drawn last, one key light upper left",
+  "composition": "field-atlas desk and shelf: quiet upper paper field for DOM type, painted props along the lower edge",
+  "source_library": {
+    "db": "/home/deseretsaint/.hermes/coursebook-test-vq006/home/plugin-data/coursebook/data.db",
+    "read_on": "2026-11-11",
+    "courses": [
+      {
+        "course_id": "crs_220f580dd07545f4b87a6f89aa15b236",
+        "title": "Japanese register: affection and closeness",
+        "pack_id": "japanese-affection-context-l0"
+      },
+      {
+        "course_id": "crs_39855b20a3b14600966d1c5ab8a9b16b",
+        "title": "Measuring together: a kitchen lesson",
+        "pack_id": "parent-measurement-practice"
+      },
+      {
+        "course_id": "crs_92e950b34ffe4970a1e6760a60bf8c8b",
+        "title": "Reading a pack before you install it",
+        "pack_id": "technical-pack-literacy"
+      }
+    ]
+  },
+  "roles": {
+    "hero": [
+      {
+        "id": "home-hero",
+        "role": "hero",
+        "path": "hero/home-hero.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "62d4495731a538bd925c1adb36dc32733a7e5fa423aca7e4aa5ab2e6a65ba02a",
+        "bytes": 1145092,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204ca/E9XJ8ljMOyKzoG7oHhW3A_cy9P4jrv.png",
+          "prompt": "Wide landscape painted plate for a course-library hero, no text anywhere. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, flat brush-shaped marks inside each mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Composition: the entire upper half is quiet, near-bare warm paper with only one faint broad brush wash, no objects, no detail, reserved for a headline typeset later. The lower third holds a still life resting on a plain wooden plank shelf that runs edge to edge: a small brass alarm clock whose face is a completely blank plain cream disc with no numerals, no tick marks, no dial markings and no numbers of any kind, only two simple hands; a blank paper luggage tag on a short string; a folded blank cloth map in field green with plain soft contours; a short stack of blank paper sheets; and a small brass hand lens. Warm pigments only: warm paper, dark warm brown ink line, ochre wood, field green cloth, brass gold. No blue, no grey, no black, no gradient, no glow, no bloom, no drop shadow, no vignette, no frame, no border. Textless: no letters, no words, no numbers, no roman numerals, no tick marks, no symbols, no watermark, no logo, no UI, no signage, no handwriting. No fox, no people, no hands, no faces, no scroll banners.",
+          "prompt_sha256": "22102938b266159f9c65d23142dae541f7b06f63a9abaec2a7d19ee5c8ea6717",
+          "raw_path": ".vq-raw/field_atlas/home-hero.raw2.png",
+          "raw_sha256": "ae2b82660344f3886964dad22224066c7f32ac4cb44d8d675469f2d841b63184",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "raw 1248x832 (3:2) cropped bottom-aligned to 1248x713 (7:4), resized to 1344x768",
+          "measured": {
+            "dominant": "#F6EDDE",
+            "paper_distance": 6
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "japanese-cover-4x5",
+        "role": "cover",
+        "path": "cover/japanese-4x5-640x800.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "644f41f566543453f3fef7868b480242d518f7f2ea25861d6295108278cd3a34",
+        "bytes": 688132,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Japanese register: affection and closeness",
+          "course_id": "crs_220f580dd07545f4b87a6f89aa15b236"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204d3/XZ2dOsdjSZbICyBn-uRW6_6SYBc5pZ.png",
+          "prompt": "Landscape painted plate for a course card about everyday Japanese register: warmth and closeness in casual speech. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Subject: a small neighbourhood cafe interior seen straight on, the scene filled edge to edge with no bare paper margin on any side. A plain wooden counter runs across the lower third with two simple wooden stools below it; on the counter sit a small teacup and a small brass kettle. One round paper lantern hangs at the upper left, its shade completely blank with no marks of any kind. A window at mid left shows a softly painted street of low wooden houses outside. At the upper right a plain dark wood shelf carries a short stack of blank bowls. The wall is a muted deep field green. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, deep field green, brass gold. No blue, no grey, no black. No hanging cloth, no curtains, no garments. No gradient, no glow, no bloom, no drop shadow, no vignette, no frame, no border. Textless: no letters, no words, no numbers, no kanji, no kana, no signage, no menu, no chalkboard marks, no watermark, no logo, no UI. No people, no hands, no faces, no fox.",
+          "prompt_sha256": "22bfb819b66a9ebdf0142b719ee1a49c2271f107bef3ace6adc28e506f57530e",
+          "raw_path": ".vq-raw/field_atlas/japanese-3x2.raw.png",
+          "raw_sha256": "66a4adf8c40a58aa9f1bc6d06e38edd3c95852b9f616ebbb4b35940fa88cb619",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "centre crop 666x832 from the 1248x832 raw, resized to 640x800",
+          "measured": {
+            "dominant": "#4E6049",
+            "paper_distance": 169
+          }
+        }
+      },
+      {
+        "id": "japanese-cover-3x2",
+        "role": "cover",
+        "path": "cover/japanese-3x2-1200x800.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "847300630ab0be06c382521ad2c92a90e4fe6d3cdc6838e814fae86dee5dcd17",
+        "bytes": 1290916,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Japanese register: affection and closeness",
+          "course_id": "crs_220f580dd07545f4b87a6f89aa15b236"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204d3/XZ2dOsdjSZbICyBn-uRW6_6SYBc5pZ.png",
+          "prompt": "Landscape painted plate for a course card about everyday Japanese register: warmth and closeness in casual speech. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Subject: a small neighbourhood cafe interior seen straight on, the scene filled edge to edge with no bare paper margin on any side. A plain wooden counter runs across the lower third with two simple wooden stools below it; on the counter sit a small teacup and a small brass kettle. One round paper lantern hangs at the upper left, its shade completely blank with no marks of any kind. A window at mid left shows a softly painted street of low wooden houses outside. At the upper right a plain dark wood shelf carries a short stack of blank bowls. The wall is a muted deep field green. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, deep field green, brass gold. No blue, no grey, no black. No hanging cloth, no curtains, no garments. No gradient, no glow, no bloom, no drop shadow, no vignette, no frame, no border. Textless: no letters, no words, no numbers, no kanji, no kana, no signage, no menu, no chalkboard marks, no watermark, no logo, no UI. No people, no hands, no faces, no fox.",
+          "prompt_sha256": "22bfb819b66a9ebdf0142b719ee1a49c2271f107bef3ace6adc28e506f57530e",
+          "raw_path": ".vq-raw/field_atlas/japanese-3x2.raw.png",
+          "raw_sha256": "66a4adf8c40a58aa9f1bc6d06e38edd3c95852b9f616ebbb4b35940fa88cb619",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "raw 1248x832 resized to 1200x800, no crop",
+          "measured": {
+            "dominant": "#4D5F49",
+            "paper_distance": 170
+          }
+        }
+      },
+      {
+        "id": "parent-cover-4x5",
+        "role": "cover",
+        "path": "cover/parent-4x5-640x800.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "54c58f57b9e0f2cda4e76aeb40f5af42b21d696b26548bcae224a3b885f92756",
+        "bytes": 709876,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Measuring together: a kitchen lesson",
+          "course_id": "crs_39855b20a3b14600966d1c5ab8a9b16b"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204d9/UD15ktRtoYsQbj4oiO2xQ_wIeWYaeD.png",
+          "prompt": "Landscape painted plate for a parent-led kitchen measurement lesson. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Composition is a scene that fills the frame completely from edge to edge: a warm ochre kitchen wall is painted across the whole background with no bare paper border and no margin, a plain wooden shelf crosses the upper third holding three blank ceramic bowls, and a wide plain wooden worktop fills the lower half and runs off the bottom and both side edges of the frame. On the worktop: a wide ceramic pitcher of milk at the left, a deep ceramic mixing bowl with a wooden spoon resting in it at the centre, two whole oranges, a folded plain field-green tea cloth at the right, and one small blank paper card lying on the cloth with no marks of any kind. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, field green cloth, warm orange, cream. No blue, no grey, no black, no glass, no transparent vessel. No gradient, no glow, no bloom, no vignette, no drop shadow, no frame, no border. Textless: no letters, no words, no numbers, no measurement marks, no scales, no rules, no dials, no signage, no watermark, no logo, no UI. No people, no children, no hands, no faces, no fox.",
+          "prompt_sha256": "1290ad2ef18c70da1715affd8d4e3eaea942eb494b34da0c372899665170b813",
+          "raw_path": ".vq-raw/field_atlas/parent-3x2.raw.png",
+          "raw_sha256": "b0a266f58dbaeee395ca4f09d8c282e79955858bebfe09ff1a885ebdcf8d969a",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "centre crop 666x832 from the 1248x832 raw, resized to 640x800",
+          "measured": {
+            "dominant": "#8C653D",
+            "paper_distance": 167
+          }
+        }
+      },
+      {
+        "id": "parent-cover-3x2",
+        "role": "cover",
+        "path": "cover/parent-3x2-1200x800.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "2107d74041e24d0b84754fa7992a51501263df381e05c0a95510d2adcc6b487c",
+        "bytes": 1288926,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Measuring together: a kitchen lesson",
+          "course_id": "crs_39855b20a3b14600966d1c5ab8a9b16b"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204d9/UD15ktRtoYsQbj4oiO2xQ_wIeWYaeD.png",
+          "prompt": "Landscape painted plate for a parent-led kitchen measurement lesson. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Composition is a scene that fills the frame completely from edge to edge: a warm ochre kitchen wall is painted across the whole background with no bare paper border and no margin, a plain wooden shelf crosses the upper third holding three blank ceramic bowls, and a wide plain wooden worktop fills the lower half and runs off the bottom and both side edges of the frame. On the worktop: a wide ceramic pitcher of milk at the left, a deep ceramic mixing bowl with a wooden spoon resting in it at the centre, two whole oranges, a folded plain field-green tea cloth at the right, and one small blank paper card lying on the cloth with no marks of any kind. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, field green cloth, warm orange, cream. No blue, no grey, no black, no glass, no transparent vessel. No gradient, no glow, no bloom, no vignette, no drop shadow, no frame, no border. Textless: no letters, no words, no numbers, no measurement marks, no scales, no rules, no dials, no signage, no watermark, no logo, no UI. No people, no children, no hands, no faces, no fox.",
+          "prompt_sha256": "1290ad2ef18c70da1715affd8d4e3eaea942eb494b34da0c372899665170b813",
+          "raw_path": ".vq-raw/field_atlas/parent-3x2.raw.png",
+          "raw_sha256": "b0a266f58dbaeee395ca4f09d8c282e79955858bebfe09ff1a885ebdcf8d969a",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "raw 1248x832 resized to 1200x800, no crop",
+          "measured": {
+            "dominant": "#C59D66",
+            "paper_distance": 126
+          }
+        }
+      },
+      {
+        "id": "technical-cover-4x5",
+        "role": "cover",
+        "path": "cover/technical-4x5-640x800.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "bf80d44c366422958197d2f97e65808381daddddac315c0e53d020acc1c87912",
+        "bytes": 751491,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Reading a pack before you install it",
+          "course_id": "crs_92e950b34ffe4970a1e6760a60bf8c8b"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204db/eXc-eWdp_m2UokBq5JvMN_Xu7IpWr4.png",
+          "prompt": "Landscape painted plate for a course about reading a technical pack before installing it. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Composition fills the frame from edge to edge with no bare paper border: a plain wooden workbench fills the lower half and runs off the bottom and side edges, a warm ochre workshop wall is painted across the whole background, and a short wooden shelf crosses the upper third holding a rolled paper tube and a small brass can. On the bench: a thick book lying open with completely blank pages and no lines of writing, a plain wrapped parcel tied with twine, a small brass hand lens, and a blank paper envelope. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, cream, brass gold, a little field green on the twine. No blue, no grey, no black. No gradient, no glow, no bloom, no vignette, no drop shadow, no frame, no border. Textless: no letters, no words, no numbers, no diagrams, no labels, no writing on any page, no signage, no watermark, no logo, no UI. No people, no hands, no faces, no fox.",
+          "prompt_sha256": "9867544a400d40b4524a63688684086df2431b4c971b652f86836333051a9c49",
+          "raw_path": ".vq-raw/field_atlas/technical-3x2.raw.png",
+          "raw_sha256": "7101a70196261d115b7b0ebf1a7ce73b91a5428feaac93b7f9fb9651ad1572e6",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "centre crop 666x832 from the 1248x832 raw, resized to 640x800",
+          "measured": {
+            "dominant": "#BB9664",
+            "paper_distance": 128
+          }
+        }
+      },
+      {
+        "id": "technical-cover-3x2",
+        "role": "cover",
+        "path": "cover/technical-3x2-1200x800.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "e5062fdab8f7a0955dcae87712bbd49938bf5dff6aed1cea6e40682c1afc3cff",
+        "bytes": 1365916,
+        "textless": true,
+        "source": "curated_kit",
+        "course": {
+          "title": "Reading a pack before you install it",
+          "course_id": "crs_92e950b34ffe4970a1e6760a60bf8c8b"
+        },
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204db/eXc-eWdp_m2UokBq5JvMN_Xu7IpWr4.png",
+          "prompt": "Landscape painted plate for a course about reading a technical pack before installing it. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Composition fills the frame from edge to edge with no bare paper border: a plain wooden workbench fills the lower half and runs off the bottom and side edges, a warm ochre workshop wall is painted across the whole background, and a short wooden shelf crosses the upper third holding a rolled paper tube and a small brass can. On the bench: a thick book lying open with completely blank pages and no lines of writing, a plain wrapped parcel tied with twine, a small brass hand lens, and a blank paper envelope. Subject centred horizontally so a narrow vertical centre crop still reads. Pigments: warm paper, warm brown ink line, ochre wood, cream, brass gold, a little field green on the twine. No blue, no grey, no black. No gradient, no glow, no bloom, no vignette, no drop shadow, no frame, no border. Textless: no letters, no words, no numbers, no diagrams, no labels, no writing on any page, no signage, no watermark, no logo, no UI. No people, no hands, no faces, no fox.",
+          "prompt_sha256": "9867544a400d40b4524a63688684086df2431b4c971b652f86836333051a9c49",
+          "raw_path": ".vq-raw/field_atlas/technical-3x2.raw.png",
+          "raw_sha256": "7101a70196261d115b7b0ebf1a7ce73b91a5428feaac93b7f9fb9651ad1572e6",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "raw 1248x832 resized to 1200x800, no crop",
+          "measured": {
+            "dominant": "#BC9563",
+            "paper_distance": 129
+          }
+        }
+      }
+    ],
+    "section": [],
+    "lesson_scene": [
+      {
+        "id": "field-atlas-lesson-room",
+        "role": "lesson_scene",
+        "path": "lesson-scene/lesson-room.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "5be37097f70599c9ddfba2c9cc25cd038a817ffd50bedb0134791afd9e29b05c",
+        "bytes": 1360570,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "fal (host image_generate seam)",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "media_url": "https://v3b.fal.media/files/b/0ab204de/i_9Ocq9X8ESG3LRanOPNF_0IpOiDU6.png",
+          "prompt": "Landscape painted plate: a calm classroom lesson background, the room a learner reads in. Painted in opaque gouache on warm paper (#f7f1e4), dark warm-brown ink contour (#3a2318) drawn last, visible flat brush-shaped marks inside every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Subject: the interior of a small warm study room seen straight on, painted edge to edge with no bare paper border. The middle of the frame is kept quiet and simple: a broad plain field-green wall with one unfilled flat wall area, no objects in the centre. At the left, a plain wooden desk with a closed blank notebook, a small brass lamp with a plain shade, and a simple wooden chair tucked under it. At the right, a low wooden shelf holding blank ceramic bowls, and below it a plain wooden counter. No hanging cloth, no curtains, no garments, no posters. Pigments: warm paper, warm brown ink line, ochre wood, deep field green, brass gold, cream. No blue, no grey, no black. No gradient, no glow, no bloom, no vignette, no drop shadow, no frame, no border. Textless: no letters, no words, no numbers, no kanji, no signage, no chalkboard marks, no writing on any page, no watermark, no logo, no UI. No people, no hands, no faces, no fox.",
+          "prompt_sha256": "79733289df1e382d5cffe87ea3a127e8159239ae8ba43a76c94810e4dd29cbd2",
+          "raw_path": ".vq-raw/field_atlas/lesson-scene.raw.png",
+          "raw_sha256": "775deb31e98f432cb6a5ac5d88087f0ca96762be493420587186cae46c767d81",
+          "temper": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize",
+          "derivation": "returned at 1344x768, no crop or resize",
+          "measured": {
+            "dominant": "#647253",
+            "paper_distance": 147
+          }
+        }
+      }
+    ],
+    "collectible": [],
+    "object": [
+      {
+        "id": "clock",
+        "role": "object",
+        "path": "objects/clock.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "e734ab1231be48cd803219c5de710cb8f2cf32025d8de7e693d97f77931861a8",
+        "bytes": 88280,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/clock.png",
+          "source_sha256": "e734ab1231be48cd803219c5de710cb8f2cf32025d8de7e693d97f77931861a8",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "medallion-rim",
+        "role": "object",
+        "path": "objects/medallion-rim.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "2ebe695ae90b8ed9b4e4657a24ca9d987683141f58880e26bc1ed9cef0959721",
+        "bytes": 78693,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/medallion-rim.png",
+          "source_sha256": "2ebe695ae90b8ed9b4e4657a24ca9d987683141f58880e26bc1ed9cef0959721",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "passport-tray",
+        "role": "object",
+        "path": "objects/passport-tray.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "22def4d61f8ad1430900c21cead0b4c80d820ab33d94a2344f40e941c716493f",
+        "bytes": 64517,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/passport-tray.png",
+          "source_sha256": "22def4d61f8ad1430900c21cead0b4c80d820ab33d94a2344f40e941c716493f",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "shelf-plank",
+        "role": "object",
+        "path": "objects/shelf-plank.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "1e996a6a272ae01720d141de9292a7a427981654afd1fa4a8bd0f22dff149647",
+        "bytes": 66048,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/shelf-plank.png",
+          "source_sha256": "1e996a6a272ae01720d141de9292a7a427981654afd1fa4a8bd0f22dff149647",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "stamp-rim",
+        "role": "object",
+        "path": "objects/stamp-rim.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "ddca1f614e31412ebd5f1a234902e9d77fd0d059f910b55ae722f97bb3ade288",
+        "bytes": 94090,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/stamp-rim.png",
+          "source_sha256": "ddca1f614e31412ebd5f1a234902e9d77fd0d059f910b55ae722f97bb3ade288",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "tag",
+        "role": "object",
+        "path": "objects/tag.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0f53b618b8e6efe316aeec4cf8664b66040fb8d24afc90403ae9178222a73054",
+        "bytes": 66938,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/tag.png",
+          "source_sha256": "0f53b618b8e6efe316aeec4cf8664b66040fb8d24afc90403ae9178222a73054",
+          "approved_by": "CP-013 (object kit)"
+        }
+      },
+      {
+        "id": "ticket",
+        "role": "object",
+        "path": "objects/ticket.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "2851526d3e2471ed11c9831d45abe3623064700bcb788a8e7132f8167c5be189",
+        "bytes": 52202,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/objects/ticket.png",
+          "source_sha256": "2851526d3e2471ed11c9831d45abe3623064700bcb788a8e7132f8167c5be189",
+          "approved_by": "CP-013 (object kit)"
+        }
+      }
+    ],
+    "fox": [
+      {
+        "id": "fox-cheer",
+        "role": "fox",
+        "path": "fox/fox-cheer-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "57fa053d39e2ac91e7dfcdbd70fb2c6e14e9afd52cc003482ad56bb5efbc1438",
+        "bytes": 61748,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-cheer-256.png",
+          "source_sha256": "57fa053d39e2ac91e7dfcdbd70fb2c6e14e9afd52cc003482ad56bb5efbc1438",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-clock",
+        "role": "fox",
+        "path": "fox/fox-clock-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "32312f0504cd2eeaaaa2b9831520fab0e48dd50b3cfa9d258ca4689c6bf75261",
+        "bytes": 57237,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-clock-256.png",
+          "source_sha256": "32312f0504cd2eeaaaa2b9831520fab0e48dd50b3cfa9d258ca4689c6bf75261",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-point",
+        "role": "fox",
+        "path": "fox/fox-point-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "333ef38242fdae5392a40ecbec0ac465406683aa03205023300b292cc3d168e3",
+        "bytes": 56421,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-point-256.png",
+          "source_sha256": "333ef38242fdae5392a40ecbec0ac465406683aa03205023300b292cc3d168e3",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-read",
+        "role": "fox",
+        "path": "fox/fox-read-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "3c3edfce1251723bfdadcc0bb06c97067193021c0b611f08f4d23dc70c440a2b",
+        "bytes": 71925,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-read-256.png",
+          "source_sha256": "3c3edfce1251723bfdadcc0bb06c97067193021c0b611f08f4d23dc70c440a2b",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-sleep",
+        "role": "fox",
+        "path": "fox/fox-sleep-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0b0b8ed24c99bc92ce5cad5ec663a0a23653bb72640a1e924c969faa4e803405",
+        "bytes": 61601,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-sleep-256.png",
+          "source_sha256": "0b0b8ed24c99bc92ce5cad5ec663a0a23653bb72640a1e924c969faa4e803405",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-think",
+        "role": "fox",
+        "path": "fox/fox-think-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "a03dd06432465dd9895640ad356f53d09413f66d12737552d16a97f3eac3a012",
+        "bytes": 49647,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-think-256.png",
+          "source_sha256": "a03dd06432465dd9895640ad356f53d09413f66d12737552d16a97f3eac3a012",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-wave",
+        "role": "fox",
+        "path": "fox/fox-wave-256.png",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "e212a74170b590a2609d329da5b6bf76cbfba055b4ddab4dc3e671a488a45779",
+        "bytes": 60235,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-wave-256.png",
+          "source_sha256": "e212a74170b590a2609d329da5b6bf76cbfba055b4ddab4dc3e671a488a45779",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      },
+      {
+        "id": "fox-model-sheet",
+        "role": "fox",
+        "path": "fox/fox-model-sheet-512.png",
+        "size": [
+          512,
+          512
+        ],
+        "sha256": "94394e3ebb6e68bfd1825b447f2eff670b80e616a3edf62ec8414df26e8a6dfb",
+        "bytes": 181763,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "carried",
+          "source_path": "assets/art/fox/fox-model-sheet-512.png",
+          "source_sha256": "94394e3ebb6e68bfd1825b447f2eff670b80e616a3edf62ec8414df26e8a6dfb",
+          "approved_by": "CP-010 (fox) / CP-013 (objects)"
+        }
+      }
+    ]
+  },
+  "fallbacks": {
+    "lesson_scene": [
+      "section",
+      "background"
+    ],
+    "cover": [
+      "course-master",
+      "background"
+    ],
+    "hero": [
+      "background"
+    ],
+    "object": [],
+    "fox": []
+  },
+  "specimens": {
+    "contact_sheet": "specimens/contact-sheet.png"
+  },
+  "resolution": {
+    "hero": {
+      "size": [
+        1344,
+        768
+      ],
+      "provider_raw": [
+        1248,
+        832
+      ],
+      "resample": "1.077x, bottom-aligned 7:4 crop",
+      "note": "one to one with the required 1344x768 hero; no 2x source exists for this plate because the provider returned a 1248x832 frame and the card allows at most two attempts"
+    },
+    "cover": {
+      "4x5": {
+        "size": [
+          640,
+          800
+        ],
+        "rendered": [
+          320,
+          400
+        ],
+        "scale": 2.0
+      },
+      "3x2": {
+        "size": [
+          1200,
+          800
+        ],
+        "rendered": [
+          600,
+          400
+        ],
+        "scale": 2.0
+      }
+    },
+    "lesson_scene": {
+      "size": [
+        1344,
+        768
+      ],
+      "note": "shipped at the scene size it renders at; the plate is a background, never a text carrier"
+    }
+  },
+  "reference": {
+    "path": "docs/concept-parity/refs/home.png",
+    "sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
+    "note": "reference frame for the contact-sheet comparison; a mockup, not a source of course titles"
+  },
+  "generation_log": [
+    {
+      "asset": "hero/home-hero.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204c7/ykzHm26ISFpnyJZWIbB1K_9zcNo3uk.png",
+      "verdict": "rejected",
+      "reason": "alarm clock face carried roman numerals and dial ticks \u2014 OCR-readable glyphs in art"
+    },
+    {
+      "asset": "hero/home-hero.png",
+      "attempt": 2,
+      "media_url": "https://v3b.fal.media/files/b/0ab204ca/E9XJ8ljMOyKzoG7oHhW3A_cy9P4jrv.png",
+      "verdict": "accepted",
+      "raw_sha256": "ae2b82660344f3886964dad22224066c7f32ac4cb44d8d675469f2d841b63184",
+      "produces": [
+        "hero/home-hero.png"
+      ],
+      "reason": "blank clock face, textless, quiet upper half; 3:2 raw cropped bottom-aligned to 7:4 then resized 1248x713 -> 1344x768"
+    },
+    {
+      "asset": "cover/japanese-4x5-640x800.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204cd/T4tbtW3sVtKA-wiG4IU6i_6glUVk30.png",
+      "verdict": "rejected",
+      "reason": "the noren was rendered as a pair of hanging trousers \u2014 garment for cloth, a subject error"
+    },
+    {
+      "asset": "cover/japanese-3x2-1200x800.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204d1/EbIDPahDt_XURxSj_4Trw_gKWNKGXD.png",
+      "verdict": "rejected",
+      "reason": "noren again rendered as trousers, and the scene left a bare paper margin on the right edge"
+    },
+    {
+      "asset": "cover/japanese-3x2-1200x800.png",
+      "attempt": 2,
+      "media_url": "https://v3b.fal.media/files/b/0ab204d3/XZ2dOsdjSZbICyBn-uRW6_6SYBc5pZ.png",
+      "verdict": "accepted",
+      "raw_sha256": "66a4adf8c40a58aa9f1bc6d06e38edd3c95852b9f616ebbb4b35940fa88cb619",
+      "produces": [
+        "cover/japanese-3x2-1200x800.png",
+        "cover/japanese-4x5-640x800.png"
+      ],
+      "reason": "no hung cloth, scene fills the frame, textless; 4:5 is a centre crop 666x832 -> 640x800 of the same raw"
+    },
+    {
+      "asset": "cover/parent-3x2-1200x800.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204d6/yLkktUJfw2sd7mQ_djK57_zY7RljtD.png",
+      "verdict": "rejected",
+      "reason": "still life inset on bare paper with a margin on all four edges \u2014 not a full-bleed scene plate"
+    },
+    {
+      "asset": "cover/parent-3x2-1200x800.png",
+      "attempt": 2,
+      "media_url": "https://v3b.fal.media/files/b/0ab204d9/UD15ktRtoYsQbj4oiO2xQ_wIeWYaeD.png",
+      "verdict": "accepted",
+      "raw_sha256": "b0a266f58dbaeee395ca4f09d8c282e79955858bebfe09ff1a885ebdcf8d969a",
+      "produces": [
+        "cover/parent-3x2-1200x800.png",
+        "cover/parent-4x5-640x800.png"
+      ],
+      "reason": "wall and worktop fill the frame, textless; 4:5 is a centre crop 666x832 -> 640x800 of the same raw"
+    },
+    {
+      "asset": "cover/technical-3x2-1200x800.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204db/eXc-eWdp_m2UokBq5JvMN_Xu7IpWr4.png",
+      "verdict": "accepted",
+      "raw_sha256": "7101a70196261d115b7b0ebf1a7ce73b91a5428feaac93b7f9fb9651ad1572e6",
+      "produces": [
+        "cover/technical-3x2-1200x800.png",
+        "cover/technical-4x5-640x800.png"
+      ],
+      "reason": "workbench fills the frame, blank pages and blank parcel, textless; 4:5 is a centre crop of the same raw"
+    },
+    {
+      "asset": "lesson-scene/lesson-room.png",
+      "attempt": 1,
+      "media_url": "https://v3b.fal.media/files/b/0ab204de/i_9Ocq9X8ESG3LRanOPNF_0IpOiDU6.png",
+      "verdict": "accepted",
+      "raw_sha256": "775deb31e98f432cb6a5ac5d88087f0ca96762be493420587186cae46c767d81",
+      "produces": [
+        "lesson-scene/lesson-room.png"
+      ],
+      "reason": "returned at 1344x768 directly, no crop needed"
+    }
+  ],
+  "generation_budget": {
+    "attempts_allowed": 10,
+    "attempts_used": 9,
+    "accepted": 5,
+    "rejected": 4
+  }
+}
