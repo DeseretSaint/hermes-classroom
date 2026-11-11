@@ -107,8 +107,8 @@ class PlanSourcingRulesTest(unittest.TestCase):
         # CP-015g/D1-F1 states three more shared rules (the check's kind follows the objective's
         # evidence target, the casual self-check form rule, the objective claim-link rule) on this
         # same rule text, so both plan labels advance rather than reusing v17/v18.
-        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v19")
-        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v20")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION, "plan-prompt.v21")
+        self.assertEqual(generation.PLAN_PROMPT_VERSION_V2, "plan-prompt.v22")
 
 
 class SourceBriefFitsTheRequestTest(unittest.TestCase):

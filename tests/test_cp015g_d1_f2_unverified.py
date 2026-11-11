@@ -22,7 +22,7 @@ What is pinned here:
 * a rejection about a ``sourced`` objective — the real over-citation defect — is untouched;
 * a refusal whose only grounds were declared gaps parks the plan ``needs_review`` on the first
   attempt, with the sourcing note recorded, instead of re-authoring;
-* the validator prompt states the distinction before the answer (``validation-prompt.v7``);
+* the validator prompt states the distinction before the answer (``validation-prompt.v12`` on the merged tree);
 * nothing here invents a pass: a validator that fails the criterion still produces a refusal.
 """
 
@@ -272,7 +272,7 @@ class DeclaredGapReclassificationTest(unittest.TestCase):
         self.assertEqual(verdict["sourcing_notes"], [])
 
     def test_a_declared_pass_with_only_gap_rejections_passes_and_discloses_the_gap(self) -> None:
-        # The shape `validation-prompt.v7` asks for: the validator marks the claim unverified and
+        # The shape `validation-prompt.v12` asks for: the validator marks the claim unverified and
         # names it, but does not refuse the plan for it.
         report = _report(
             rejections=[{"item": "objective:2", "criterion": "source_support", "reason": LIVE_REJECTION}],
@@ -485,7 +485,7 @@ class PlanStageParksOnADeclaredGapTest(unittest.TestCase):
 
 class PromptStatesTheRuleTest(unittest.TestCase):
     def test_the_label_advances(self) -> None:
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v7")
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v12")
 
     def test_the_plan_pass_states_the_distinction(self) -> None:
         text = gen.validation_pass_instructions(
@@ -516,7 +516,7 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         self.assertTrue(requests)
         for request in requests:
             self.assertIn("never against the gaps it declares", request.instructions)
-            self.assertEqual(request.prompt_version, "validation-prompt.v7")
+            self.assertEqual(request.prompt_version, "validation-prompt.v12")
 
 
 if __name__ == "__main__":

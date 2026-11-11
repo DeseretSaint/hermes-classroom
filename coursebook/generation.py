@@ -3155,9 +3155,6 @@ _PLAN_DISCLOSURE_CRITERION = "goal_capability_disclosure"
 #: raw goal sentence. Its rubric is stated in the pass that owns it for the same reason.
 _PLAN_CONTRADICTION_CRITERION = "internal_contradiction"
 
-#: CP-015g/D1-F2: the claim-support criterion. The pass that owns it is told which defects it
-#: judges and that a declared gap is not one of them.
-_PLAN_SUPPORT_CRITERION = "source_support"
 
 #: The prefix the plan prompt gives an exclusion entry that records a goal capability no supplied
 #: excerpt supports (CP-015). Only prefixed entries are capability exclusions; any other exclusion
@@ -3475,9 +3472,11 @@ def validation_pass_instructions(
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
-    if subject == "plan" and _PLAN_SUPPORT_CRITERION in criteria:
-        # CP-015g/D1-F2: the pass that owns source_support is told the distinction the kernel
-        # enforces — a declared gap is not a defect.
+    # CP-015g/D1-F2: every plan pass may be handed claim labels, so every plan pass is told the
+    # distinction the kernel enforces — ``source_support`` judges the claims an artifact makes,
+    # never the gaps it declares. Scoping this to the pass that owns ``source_support`` left the
+    # claim-labelled passes (which carry a support verdict but not that criterion) unstated.
+    if subject == "plan":
         text += _PLAN_SUPPORT_RULE
     return text
 
@@ -4734,8 +4733,9 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         text += _PLAN_CONTRADICTION_RULE
     if subject == "plan" and _PLAN_DISCLOSURE_CRITERION in criteria:
         text += _PLAN_DISCLOSURE_RULE
-    if subject == "plan" and _PLAN_SUPPORT_CRITERION in criteria:
-        # CP-015g/D1-F2: same rule as the criteria-pass builder above.
+    if subject == "plan":
+        # CP-015g/D1-F2: same rule as the criteria-pass builder above — a claim-labelled pass is
+        # told that a declared gap is not a defect.
         text += _PLAN_SUPPORT_RULE
     if subject.startswith("lesson"):
         text += _LESSON_ANSWER_KEY_RULE

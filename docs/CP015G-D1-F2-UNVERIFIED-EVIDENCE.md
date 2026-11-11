@@ -1,9 +1,5 @@
 # CP-015g/D1-F2 — the validation contract for claims a plan declares unverified
 
-(Merged from `wt/cp-015g-d1-f2-unverified`; the domain half of D1-F2 is recorded in
-`docs/CP015G-D1-F2-EVIDENCE.md`. The label this note names as `validation-prompt.v7` is
-`validation-prompt.v12` on the merged tree.)
-
 Status: implemented and tested on branch `wt/cp-015g-d1-f2-unverified`
 (base `wt/cp-015g-d1-f1-authoring` @ `e728fbe9`; unpushed, nothing published).
 Owner of the contract: Cinder (backend kernel). Authoring side is **not** re-opened: D1-F1
@@ -77,16 +73,21 @@ author's; the plan stage's job is to stop mislabelling the gap and stop paying t
 
 ## Verified (real output)
 
-* `python3 -m unittest tests.test_cp015g_d1_f2_unverified` → 19 tests, OK.
+* `python3 -m unittest tests.test_cp015g_d1_f2_unverified` → 20 tests, OK.
 * `python3 -m unittest tests.test_validation_shape_repair tests.test_cp015g_d1_f2_unverified` →
-  29 tests, OK.
+  30 tests, OK.
 * `python3 -m unittest tests.test_generation tests.test_cp015g_d1_f1_authoring
   tests.test_cp015g_d1_validation_repair tests.test_validation_reject_basis
   tests.test_h191_validation_demand tests.test_h192_validation_bounds
   tests.test_validation_shape_repair tests.test_adversarial_round2
-  tests.test_executor_plan_checkpoint tests.test_cp015g_d1_f2_unverified` → **209 tests, OK**.
+  tests.test_executor_plan_checkpoint tests.test_cp015g_d1_f2_unverified` → **210 tests, OK**.
   The first run of this set had exactly one failure, the v6→v7 label assertion, which was updated
-  in `tests/test_validation_shape_repair.py` and is green in the 209 above.
+  in `tests/test_validation_shape_repair.py` and is green in the 210 above.
+* `python3 -m unittest discover -s tests -t .` on the committed tree → **Ran 3782 tests in
+  1104.375s, OK (skipped=11)**. (An earlier attempt at this run executed inside a *different*
+  worktree — another agent was working `t_2c045efc` in `.worktrees/t_2c045efc` at the same time —
+  so its failures were that tree's state, not this one's; the re-run above was pinned to this
+  checkout and its `coursebook/` and `tests/` imports are this branch's.)
 * The suite runs against an in-memory SQLite database built by `generation.ensure_schema`, through
   the real `run_plan_job` path — not a mock of it.
 * `PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py` → `overall: PASS (3/3
