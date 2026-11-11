@@ -5,146 +5,153 @@
   "authoring_model": "host ctx.llm (nous / deepseek-v4.1-flash-1017)",
   "validator": "same model; no independent route configured -> model_assessed",
   "started_at": "2026-11-10T21:13:22+00:00",
+  "finished_at": "2026-11-11T01:35:58.771798+00:00",
   "courses": {
-    "japanese-cafe": {
-      "slug": "japanese-cafe",
-      "title": "Japanese Cafe Basics",
-      "course_id": "crs_d982669b07994774a8f7871112e8aeb4",
-      "draft_plan_id": "pln_d5ca132ae94f446dafd6eb08f1c74b77",
-      "enrollment_id": "enr_4bb73b565488447cbc54399f6b0b1ab5",
-      "spec": {
-        "title": "Japanese Cafe Basics",
-        "goal": "Order a drink and a snack at a Japanese cafe, ask for the bill, and understand the reply, politely, at a beginner level.",
-        "recipe": "committed",
-        "locale": "ja-JP",
-        "level": "L0",
-        "subject_domain": "language",
-        "scope": "short",
-        "dials": {
-          "pace": "steady",
-          "depth": "deep",
-          "assessment": "graded",
-          "autonomy": "guided"
-        },
-        "presentation_mode": "game"
-      },
-      "plan_attempts": [],
-      "error": "japanese-cafe plan still running after 700s"
-    },
-    "auto-repair": {
-      "slug": "auto-repair",
-      "title": "Auto Repair Fundamentals",
-      "course_id": "crs_489c4b157c694bcab0aa81bb117f5a40",
-      "draft_plan_id": "pln_7dc653f191d542c5b8073d59921b0ae3",
-      "enrollment_id": "enr_f199dd37e3314d06a15bdacb9eeeda86",
-      "spec": {
-        "title": "Auto Repair Fundamentals",
-        "goal": "Replace a head gasket on a four-cylinder engine: identify the failure, remove and refit the head in the correct order, torque it to the manual's sequence, and verify the repair before handing the car back.",
-        "recipe": "committed",
-        "locale": "en-US",
-        "level": "beginner",
-        "subject_domain": "repair",
-        "scope": "short",
-        "dials": {
-          "pace": "steady",
-          "depth": "deep",
-          "assessment": "graded",
-          "autonomy": "guided"
-        },
-        "presentation_mode": "game"
-      },
-      "plan_attempts": [],
-      "error": "auto-repair plan still queued after 700s"
-    },
     "astronomy": {
-      "slug": "astronomy",
       "title": "Astronomy",
-      "course_id": "crs_433c04a040a54dfa958df4bb356ab2c5",
-      "draft_plan_id": "pln_f62157ba9d664287b60cf22cd931e63d",
-      "enrollment_id": "enr_de39956963734e4fb1a5c81308470c68",
-      "spec": {
-        "title": "Astronomy",
-        "goal": "Read the night sky: find the major constellations, understand why the sky changes through the year, and explain the phases of the Moon.",
-        "recipe": "committed",
-        "locale": "en-US",
-        "level": "beginner",
-        "subject_domain": "science",
-        "scope": "short",
-        "dials": {
-          "pace": "steady",
-          "depth": "deep",
-          "assessment": "graded",
-          "autonomy": "guided"
+      "plan_approved": false,
+      "units": null,
+      "pages": null,
+      "world_approved": false,
+      "exported": false,
+      "last_error": "astronomy: plan job job_90d0a0cbccce45dbae82dc0efc412848 ended interrupted_requires_retry: null",
+      "job_ids": [
+        {
+          "id": "job_804db385b1fd4e4b95a7d4b72f0151a0",
+          "state": "completed",
+          "created_at": "2026-11-11T01:00:08Z",
+          "updated_at": "2026-11-11T01:04:34Z",
+          "error_code": null
         },
-        "presentation_mode": "game"
-      },
-      "plan_attempts": [],
-      "error": "astronomy plan still running after 700s"
+        {
+          "id": "job_18500571cccc4b45a221f65ec5bd0400",
+          "state": "completed",
+          "created_at": "2026-11-11T01:04:38Z",
+          "updated_at": "2026-11-11T01:10:28Z",
+          "error_code": null
+        },
+        {
+          "id": "job_e16c17cdbe214c22ab928c94f8841647",
+          "state": "interrupted_requires_retry",
+          "created_at": "2026-11-11T01:10:28Z",
+          "updated_at": "2026-11-11T01:16:35Z",
+          "error_code": null
+        }
+      ]
+    },
+    "japanese": {
+      "title": "Japanese Cafe Basics",
+      "plan_approved": false,
+      "units": null,
+      "pages": null,
+      "world_approved": false,
+      "exported": false,
+      "last_error": "japanese-cafe plan still running after 700s",
+      "job_ids": [
+        {
+          "id": "job_7474beab507d442994ba3bae746439fc",
+          "state": "failed",
+          "created_at": "2026-11-11T00:14:50Z",
+          "updated_at": "2026-11-11T00:38:55Z",
+          "error_code": "HOST_UNAVAILABLE"
+        }
+      ]
+    },
+    "repair": {
+      "title": "Auto Repair Fundamentals",
+      "plan_approved": false,
+      "units": null,
+      "pages": null,
+      "world_approved": false,
+      "exported": false,
+      "last_error": "auto-repair plan still queued after 700s",
+      "job_ids": [
+        {
+          "id": "job_8e3100cf41f64140ad5130127441caa4",
+          "state": "cancelled",
+          "created_at": "2026-11-11T00:14:50Z",
+          "updated_at": "2026-11-11T00:39:10Z",
+          "error_code": null
+        }
+      ]
     },
     "sourdough": {
-      "slug": "sourdough",
       "title": "Sourdough",
-      "course_id": "crs_1ad565bfb4cf42fcbc82527371ccc64b",
-      "draft_plan_id": "pln_603076ddba654345a8afb69c04ab1f7d",
-      "enrollment_id": "enr_1b5e7f780d3c4000aba4071700e3dfce",
-      "spec": {
-        "title": "Sourdough",
-        "goal": "Keep a starter alive and bake a reliable open-crumb sourdough loaf at home: build the levain, develop the dough, shape, and bake with steam.",
-        "recipe": "committed",
-        "locale": "en-US",
-        "level": "beginner",
-        "subject_domain": "cooking",
-        "scope": "short",
-        "dials": {
-          "pace": "steady",
-          "depth": "deep",
-          "assessment": "graded",
-          "autonomy": "guided"
+      "plan_approved": false,
+      "units": null,
+      "pages": null,
+      "world_approved": false,
+      "exported": false,
+      "last_error": "sourdough plan still queued after 700s",
+      "job_ids": [
+        {
+          "id": "job_08c7072eb672490080a46a9efba393f8",
+          "state": "failed",
+          "created_at": "2026-11-11T01:20:44Z",
+          "updated_at": "2026-11-11T01:24:41Z",
+          "error_code": "HOST_UNAVAILABLE"
         },
-        "presentation_mode": "game"
-      },
-      "plan_attempts": [],
-      "error": "sourdough plan still queued after 700s"
+        {
+          "id": "job_87b88bf3916d459992f18ac51e0d8732",
+          "state": "completed",
+          "created_at": "2026-11-11T01:24:49Z",
+          "updated_at": "2026-11-11T01:29:07Z",
+          "error_code": null
+        },
+        {
+          "id": "job_4e0d503e83f3467086599543c3997024",
+          "state": "completed",
+          "created_at": "2026-11-11T01:29:09Z",
+          "updated_at": "2026-11-11T01:33:24Z",
+          "error_code": null
+        },
+        {
+          "id": "job_2ffe300c67114e3f9e7fe114b542be40",
+          "state": "running",
+          "created_at": "2026-11-11T01:33:25Z",
+          "updated_at": "2026-11-11T01:35:29Z",
+          "error_code": null
+        }
+      ]
     }
   },
-  "finished_at": "2026-11-11T00:57:26.513887+00:00",
-  "observed_failure_classes": [
+  "plan_attempts": [
     {
-      "when": "2026-11-10T21:13Z",
-      "job": "unnamed (3 attempts)",
-      "class": "validator reject on source support",
-      "detail": "7 -> 1 -> 5 reasons; objectives claimed facts no fetched excerpt stated. Root cause: 600-character excerpts ended inside site navigation; fixed to a content-first 1200-character window (commit 00243ce)."
+      "plan_id": "ec339200458e07ae",
+      "created_at": "2026-11-10T23:28:55Z",
+      "verdict": "reject",
+      "reasons": [
+        "check_plan.notes is 300 characters, at its 300-character cap: the provider cut it and the ending is lost. Rewrite it in at most 225 characters."
+      ]
     },
     {
-      "when": "2026-11-10T22:2xZ",
-      "job": "job_2a403f49 / job_58b94f1b / job_f544be5b",
-      "class": "validator reject: vocabulary + answer key",
-      "detail": "The language-only vocabulary gate fired on a cooking course (fixed: domain, not locale), and quiz checks had no defensible single answer (fixed by the single-defensible-answer rule)."
+      "plan_id": "cf550724296c3461",
+      "created_at": "2026-11-11T01:10:28Z",
+      "verdict": "reject",
+      "reasons": [
+        "goal: Goal promises learners will find major constellations and understand why the sky changes through the year, but learner_outcome and exclusions say those are not taught.",
+        "unit 2: Unit 2 lists unit 1 as a prerequisite but only says it extends a skywatching habit; no unit-1 concept is required to describe the Moon's changing shape.",
+        "check_plan[2]: Q3 asks what the guide says the show examines, a source-recall item, rather than requiring the learner to describe the Moon's changing shape as objective 3 states.",
+        "check_plan[2]: This quiz item tests recall of the guide's wording and its accepted answer invokes the Moon-phase cause that the plan explicitly excludes."
+      ]
     },
     {
-      "when": "2026-11-10T23:0xZ",
-      "job": "attempt 1 (astronomy)",
-      "class": "validator reject: 5 reasons, 3 objectives",
-      "detail": "Source-support reasons plus check-plan shape; attempt 2 (5 objectives) rejected with 4; attempt 3 rejected only because the plan's own exclusions were read as provenance (fixed: exclusions are scope, not citation)."
-    },
-    {
-      "when": "2026-11-10T23:28Z",
-      "job": "job_c7151fff05db4666bc4ed2756abcf87d",
-      "class": "VALIDATION_FAILED: request over bound",
-      "detail": "24 795 bytes against the 24 000-byte plan-request bound; the validation request carried the whole unfitted ledger (fixed: both plan requests fit the ledger)."
-    },
-    {
-      "when": "2026-11-10T23:50Z",
-      "job": "job_f527212336134e55a796ebdc1a38247f",
-      "class": "VALIDATION_FAILED: answer over bound",
-      "detail": "plan validation answer was 34 738 bytes against the 24 576-byte bound; the criteria pass demanded six claim verdicts (fixed: three per criteria pass, four per claim-only pass)."
-    },
-    {
-      "when": "2026-11-11T00:08Z onward",
-      "job": "job_7e64ff08a4db417eb3af926404cfecd8, job_7474beab507d442994ba3bae746439fc, job_0c36eaf7a8e540469ef3ea666a14a52d",
-      "class": "HOST_UNAVAILABLE: provider call exceeded 900 s",
-      "detail": "Three consecutive coursebook.plan.generate calls ran to the provider deadline with no plan written. The same route answered in 104-161 s earlier in the run, so this is route degradation, not a prompt or schema defect. CP-044 (wt/cp-044-job-deadline) bounds the job attempt; the calls themselves must answer."
+      "plan_id": "b832226ae4ece61b",
+      "created_at": "2026-11-11T01:33:23Z",
+      "verdict": "reject",
+      "reasons": [
+        "plan.goal: Goal requires levain, dough development, shaping, steam baking and open crumb, but learner_outcome and exclusions remove them.",
+        "objective 2: Non-reactive container is asserted but no supplied excerpt contains that phrase or requirement.",
+        "objective 4: The 0394 excerpt discusses putting a vigorous starter to work, not a keeping-alive vs getting-active feeding distinction.",
+        "objective 5: The be47 excerpt truncates at 'mark' and does not state that marking height shows doubling.",
+        "check_plan[1]: Q2's accepted answer includes non-reactive container, which the cited excerpt does not state.",
+        "check_plan[3]: Q4's accepted answer asserts a feeding distinction absent from the 0394 excerpt.",
+        "check_plan[4]: Q5's accepted answer asserts height marking shows doubling, but the be47 excerpt is truncated before that.",
+        "goal: The stated goal requires baking an open-crumb loaf, but the plan explicitly excludes loaf-building, shaping, steam baking, and open crumb from coverage and assessment.",
+        "objective:4: The cited King Arthur excerpt does not state that keeping a starter alive differs from getting it active, so the quiz answer is unsupported.",
+        "objective:5: The cited bake-from-scratch excerpt ends at 'It\u2019s great to mark' and does not state marking height after feeding or judging doubling."
+      ]
     }
   ],
-  "blocker": "Three consecutive coursebook.plan.generate calls on the authoring route ran to their 900 s provider deadline with no plan written (jobs job_7e64ff08, job_7474beab, job_0c36eaf7). Earlier calls on the same route finished in 104-161 s, so the route degraded during the run. No course reached an approved plan, so none has a lesson page, world or export yet."
+  "outcome": "0 of 4 courses reached an approved plan. Two classes of failure, both recorded with job and plan ids: (1) a structural goal-coverage conflict \u2014 the learner's goal names capabilities the fetched excerpts do not carry, ledger-first authoring excludes them, and the validator then rejects the plan for not delivering the stated goal (every plan authored in this run, across the four courses, was rejected on this or on a check/quiz item that recalled the source's wording instead of exercising the capability); (2) route flakiness \u2014 two plan.generate calls and one plan.validate call ended HOST_UNAVAILABLE at their provider deadline, and one driver transport retry recovered."
 }
