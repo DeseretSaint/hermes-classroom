@@ -26,3 +26,4 @@ visual/node_modules/
 visual/baselines/
 visual/diffs/
 visual/frames/
+.vq-raw/

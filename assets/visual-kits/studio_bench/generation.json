@@ -1,0 +1,46 @@
+[
+  {
+    "asset": "studio-bench",
+    "role": "hero",
+    "raw": "studio-bench.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21283/4RcNxK_0kQ2NZ3gCd2H0L_h9885bV2.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "bench with a fan of terracotta, cream, ochre and field-green swatches, open blank sketchbook, jar of brushes, plain tins, pinboard of blank cards, window at the left",
+    "residual": "the cutting mat under the sketchbook carries a printed grid, so the plate has one gridded prop even though the prompt asked for a grid-free mat"
+  },
+  {
+    "asset": "swatch-bench-3x2",
+    "role": "cover",
+    "raw": "swatch-bench-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21283/dLj9rN9JXCWrbMThQTY3F_KdXM6BpT.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "swatch fan, open blank sketchbook, jar of brushes, two plain metal tins, green cutting mat, window",
+    "residual": "the tins are plain but read as zinc; the mat is field green with a grid"
+  },
+  {
+    "asset": "material-fan",
+    "role": "section",
+    "raw": "material-fan.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21284/ldxRcWroAP_AQecisi_kc_6dKTYk58.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "twelve warm swatches fanned in an arc across the bench, a thread spool, a button, scissors, a pinboard of blank cards",
+    "residual": "the wooden rule beside the fan carries faint tick marks although no figures; the plate is otherwise unmarked"
+  },
+  {
+    "asset": "working-bench",
+    "role": "lesson_scene",
+    "raw": "working-bench.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21284/z48MgdoThFIPc6NrkjlEQ_fmFWIon4.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "reference": null,
+    "vision": "studio bench with an open blank sketchbook, a jar of brushes, a small tin, a terracotta pot, a stool, pinboard of blank cards",
+    "residual": "the pinboard cards are completely blank; no notation anywhere"
+  }
+]

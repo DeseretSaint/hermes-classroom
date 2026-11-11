@@ -128,3 +128,73 @@ row without `superseded_by` — and requires the judge to exit 1 on each: 21 cas
 Copy this directory's shape, keep one `kit.json`, and register it in the same judge. A new plate is
 recorded with its prompt and hash before it ships; a plate that cannot state its provenance does not
 enter `roles`. Generate against a reference, describe a place, and count every attempt.
+
+## The seven VQ-008 grammars
+
+`workshop_manual/`, `observatory/`, `kitchen_table/`, `archive_desk/`, `studio_bench/`, `lab_bench/`
+and `instrument_board/` are kit version 1, built by `scripts/vq008-kits.py`, one directory each.
+
+| role | assets per kit |
+| --- | --- |
+| `hero` | one 1344x768 plate plus a 2688x1536 `@2x` sibling |
+| `cover` | one 3:2 1200x800 plate and one 4:5 640x800 crop of the same frame |
+| `section` | one 1344x768 section plate |
+| `lesson_scene` | one 1344x768 lesson scene plus a 2688x1536 sibling |
+| `object`, `frame`, `badge`, `material` | the shared kernel, referenced by repo path and hash |
+| `fox` | the seven painted poses at 256 px, from the same shared kernel |
+
+Grammar vocabulary is **imported from `coursebook/world.py`**, not retyped: `--check` compares each
+`kit.json`'s palette, medium, composition, motifs and subject cues against `GRAMMARS[grammar]` and
+fails on drift. The script reads that module and never edits it.
+
+### Provider-free by construction
+
+Every plate is a committed file. A curated world gets these bytes with no image provider, which is
+the program's coverage bar (`VISUAL-QUALITY-PROGRAM.md` §7 step 8). The shared objects, frames,
+badges, materials and fox poses are one kernel (`coursebook-kernel@1`) referenced from every kit
+rather than copied seven times, so the character and the object kit cannot drift between grammars.
+
+### What the judge checks on these kits
+
+`python3 scripts/vq008-kits.py --check` recomputes, for all eight grammars: sha256, byte count and
+pixel size of every shipped plate; OCR with the calibrated readable-text rule; grayscale minima
+(no pure black); the dominant ground against the grammar's own palette, so the observatory's deep
+field-green night is accepted where a warm-only test would fail its own art direction; the hero's
+quiet field, measured against **both** contract ink and cream paper and recording which tone the
+headline must use; the 3:2 and 4:5 cover arithmetic, recomputed from the sizes the manifest records;
+the shared-kernel bytes; the generation budget and the per-asset cap; the fallback chain (never a
+Press Plate); and the absence of fictional proof titles, placeholder names and Press Plate references.
+
+### Two honesty items
+
+1. **The prompt is recorded as canonical-plus-delta, not byte-exact.** Each `kit.json` records the
+   composer prompt for its grammar and role, and each attempt in `generation.json` records the delta
+   that was actually appended (`prompt_delta`), e.g. "no reference image; ruler removed from the
+   scene". `prompt_provenance` states this in every plate. A byte-exact transcript of 44 attempts was
+   not kept; inventing one would be worse than saying so.
+2. **`@2x` is native only when the provider returned 2688x1536.** The seam returned 2048x1152 on
+   fifteen of the twenty-eight plates. Where that happened, the 2688x1536 sibling is a resampled
+   frame, and `source_frame.native_2x` is `false` with the provider frame recorded beside it. The
+   3:2 cover is cut from the largest 3:2 crop the provider frame allows (1728x1152 on those plates,
+   not 2304x1536), and the note names that plate's own crop size.
+
+### Reference images caused interface leakage
+
+Passing `refs/home.png` as `reference_image_urls` made the model reproduce the mockup: one archive
+attempt came back with a red Coursebook shop sign, a standing person and a menu board, and another
+with the Coursebook wordmark composited into the corner. Both were rejected. From `archive_desk`
+onward the plates are text-only prompts, and `reference_image` is `null` in the manifest for them.
+
+### Budget
+
+44 attempts across the seven kits, ceiling 50, at most four on any one asset. `attempts_used` is read
+from `generation.json` by the judge; rejected attempts are kept with their reason and their media
+URL, including the ones that produced lettering, `PLACE` burned into a corner, a grid on a chart, or
+a rise of `1uU` under OCR at the 4:5 crop.
+
+### Contact sheets
+
+`docs/visual-review/vq-008/<grammar>-contact-sheet.png` — one per kit, captioned with the grammar's
+medium, palette and composition, showing every plate and every shared-kernel row. These are the
+sheets the owner reviews; passing `--check` is a contract verdict, not art acceptance.
+

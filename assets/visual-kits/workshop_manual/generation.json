@@ -1,0 +1,88 @@
+[
+  {
+    "asset": "service-bay",
+    "role": "hero",
+    "raw": "service-bay.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21232/rXdbUblQGOarOZmjWHfBv_zsvOmU1w.png",
+    "attempt": 3,
+    "verdict": "accepted",
+    "vision": "full-bleed bay, three depth planes, pegboard of plain iron tools, bench vice, component trays, no lettering on any tool or tin, upper band is plain warm wall",
+    "residual": "the van beyond the roller door is pale and unbadged but its tail lamp cluster is fine detail; the bench vice reads dark blue-grey iron rather than warm",
+    "prompt_sha256": "701e5adb3bb451e25863c69ee4cd8e7190149a900363734bbc0f964ce32a075c",
+    "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a small vehicle workshop service bay, seen straight on at standing eye level. BACKGROUND: warm ochre-stained timber plank wall on the right and warm cream plaster on the left; a wide roller door open onto a warm sunlit earth yard, and behind it, soft and pale, the flat side of a plain unbadged van and a wooden fence. MIDGROUND: a heavy ochre wooden workbench across the frame with a plain dark-iron bench vice, a row of open wooden component trays with blank compartments, and a tall ochre pegboard of iron hooks holding hammers, spanners and a hacksaw in flat rounded shapes; the pegboard runs off the right edge. FOREGROUND: warm ochre-stained timber floor boards running off the bottom edge, a low wooden stool with a terracotta cushion, a folded terracotta shop rag, a coil of terracotta hose, four plain ochre-painted tins with blank lids.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox."
+  },
+  {
+    "asset": "bench-3x2",
+    "role": "cover",
+    "raw": "bench-3x2.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21237/vfi7JACnDct9awikuAiNe_gXj7PeKA.png",
+    "prompt_delta": "palette paragraph extended with 'Every metal object is warm ochre-painted tin, warm brass or dark iron: no galvanised grey bin, no grey steel drum, no chrome, no blue, no grey concrete floor, no blue tool handle.'",
+    "attempt": 2,
+    "verdict": "accepted",
+    "vision": "bench across the middle, pegboard of blank tools, blank component tray stack, hose coil, no readable text",
+    "residual": "the stacked component trays are brushed grey metal, so the plate carries a neutral mass the warm-pigment rule does not want; the model returned grey for this object on both attempts",
+    "prompt_sha256": "baf7c7d62b735036dbc2233f3f88bee68a8eca6fe9d008d85166c50203552975",
+    "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the same service bay, tighter on the bench, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the ochre pegboard of plain iron hand tools and a strip of warm plaster wall with one small window onto a sunlit yard. MIDGROUND: the ochre workbench with a bench vice, a stack of blank component trays and a folded shop rag. FOREGROUND: the bench edge and the timber floor running off the bottom and side edges, a plain tin and a coil of hose.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox."
+  },
+  {
+    "asset": "tool-wall",
+    "role": "section",
+    "raw": "tool-wall.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21237/Tr17zndTHufWPuKDoUxyg_1ZxHT4GF.png",
+    "prompt_delta": "palette paragraph extended with 'Every tool handle is plain warm ochre wood or dark iron; no blue handle, no red plastic grip, no galvanised grey tin, no chrome, no steel, no grey, no blue.'",
+    "attempt": 2,
+    "verdict": "accepted",
+    "vision": "pegboard dominates, plain iron hammers and spanners, open component trays, roller door onto a warm yard, no lettering",
+    "residual": "the saw blade is steel grey by nature; every handle is ochre wood and the blue handle of attempt 1 is gone",
+    "prompt_sha256": "451c353d14c7b9fb01ab3cb1f5c5bc5ecfb0a90abb41e28097cff8e3afad8a5e",
+    "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: the tool wall itself, seen slightly from the left so the bench recedes. BACKGROUND: warm plaster wall and the roller door opening onto a bright yard at the left edge. MIDGROUND: the ochre pegboard carrying plain iron hammers, spanners, files and a hacksaw as flat rounded silhouettes on plain hooks, every hole plain; beneath it the bench edge with open component trays. FOREGROUND: the near corner of the bench running off the bottom edge, a folded rag and one plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox."
+  },
+  {
+    "asset": "bench-lesson",
+    "role": "lesson_scene",
+    "raw": "bench-lesson.raw.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21231/fF2tEiaRhnSrjil5az8DM_z8enKEeI.png",
+    "attempt": 1,
+    "verdict": "accepted",
+    "vision": "clear bench with a closed blank manual, shuttered window, roller door, stool, no people and no lettering",
+    "residual": "a small grey tin at the lower right edge; the manual's cover is completely blank",
+    "prompt_sha256": "4b92ffb7a7e1c335944a2985fe6b3e5815a87ad6a7934c57b42f4cf2bf46077b",
+    "prompt": "Full-bleed painted plate of a PLACE, not a still life, cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance.\n\nSubject: a clear workbench where someone has just set down their work, seen at a slight three-quarter angle. BACKGROUND: warm timber wall, a shuttered window and the open roller door beyond, softer in the distance. MIDGROUND: the bench with a thick closed blank manual lying flat, a tray of blank parts compartments, an iron vice and a shop rag. FOREGROUND: the bench front running off the bottom edge, a low stool and a plain tin.\n\nComposition: a centered bench and tool wall with no ceiling fixture; the only light is the single upper-left key; a wide quiet band above carries the headline, and the tool wall runs off the right edge.\n\nGrammar motifs: service bay, car on a lift, tool wall, component trays, bench vice.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, ochre, coral, dark brown cuff. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No torque value, no clearance, no part number, no sequence, no procedure, no measurement, no gauge, no dial, no scale, no ruler markings, no torque wrench, no numbered socket, no diagram, no cutaway, no exploded view, no arrow, no step number. Nothing in the plate is instructional and nothing in it is a specification.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. No people, hands, faces, animals or fox."
+  },
+  {
+    "asset": "service-bay",
+    "role": "hero",
+    "raw": "rejected/service-bay-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21219/z9mhtCzBsEbmDY7J5Hura_rwGa283e.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "grey concrete floor and wall, chrome stool and steel tins against the warm-pigment rule, plus a blank framed picture on the wall"
+  },
+  {
+    "asset": "service-bay",
+    "role": "hero",
+    "raw": "rejected/service-bay-b.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab2121d/IIVWfvaSc97tiuDv_kzy7_GcVYclBn.png",
+    "attempt": 2,
+    "verdict": "rejected",
+    "reason": "the composition fixed the grey floor but the roller-door hardware carried a small printed label at the top left"
+  },
+  {
+    "asset": "bench-3x2",
+    "role": "cover",
+    "raw": "rejected/bench-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21231/alnQ3IOq0L1jmlcUUDUuZ_l44WdKsb.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "a galvanised grey bin at the left edge and a grey steel drum at the right, both clear palette violations"
+  },
+  {
+    "asset": "tool-wall",
+    "role": "section",
+    "raw": "rejected/tool-wall-a.png",
+    "media_url": "https://v3b.fal.media/files/b/0ab21231/3Rf7oylUbLZWoUMDg87Hq_0zfFlMs5.png",
+    "attempt": 1,
+    "verdict": "rejected",
+    "reason": "a saturated blue saw handle and two grey galvanised tins"
+  }
+]

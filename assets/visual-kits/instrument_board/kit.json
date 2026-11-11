@@ -1,0 +1,726 @@
+{
+  "grammar": "instrument_board",
+  "kit_id": "instrument_board@1",
+  "label": "Instrument board",
+  "version": 1,
+  "status": "built_for_owner_review",
+  "art_bible": "docs/concept-parity/ART-BIBLE.md",
+  "lane": "display_plate",
+  "prompt_version": "vq008-kit-prompt-v1",
+  "palette": {
+    "warm paper": "#f7f1e4 (canvas)",
+    "dark brown ink": "#3a2318 (ink)",
+    "field green": "#2f6047 (forest)",
+    "ochre": "#7b4b0a (wood)",
+    "coral": "#9c2e1c (terracotta)"
+  },
+  "palette_tokens": [
+    "warm paper",
+    "dark brown ink",
+    "field green",
+    "ochre",
+    "coral"
+  ],
+  "medium": "a storybook opaque gouache illustration, thick body colour on a warm paper ground, visible flat brush-shaped marks inside each mass, subtle paper tooth over the whole plate, a dark-brown ink contour drawn last over the paint, never black and never close to neutral black; matte paint with body, not vector art and not a flat digital cartoon; the board, dividers and grid painted as flat masses",
+  "composition": "a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field",
+  "motifs": [
+    "graph paper",
+    "blackboard",
+    "brass dividers",
+    "ruler",
+    "chalk tray"
+  ],
+  "subject_cues": [
+    "graph grid",
+    "brass dividers",
+    "chalk dust",
+    "set square"
+  ],
+  "illustration_role": "quiet and optional; never an AI illustration of a symbolic concept",
+  "cannot_do": "make an AI illustration a required lesson visual",
+  "provider_free": true,
+  "kernel": {
+    "kit_id": "coursebook-kernel@1",
+    "note": "shared objects, frames, badges, materials and fox poses are referenced from one kernel; a kit does not copy new bytes for them",
+    "groups": {
+      "frame": [
+        "assets/masters/objects/medallion-rim.svg",
+        "assets/masters/objects/stamp-rim.svg"
+      ],
+      "badge": [
+        "assets/masters/objects/tag.svg",
+        "assets/masters/objects/ticket.svg"
+      ],
+      "object": [
+        "assets/objects/clock.webp",
+        "assets/objects/passport-tray.webp",
+        "assets/objects/shelf-plank.webp"
+      ],
+      "material": [
+        "assets/material/grain-paper.webp",
+        "assets/material/vignette-parchment.webp",
+        "assets/material/wood-plank.webp"
+      ],
+      "fox": [
+        "assets/fox/fox-read-256.webp",
+        "assets/fox/fox-point-256.webp",
+        "assets/fox/fox-clock-256.webp",
+        "assets/fox/fox-think-256.webp",
+        "assets/fox/fox-cheer-256.webp",
+        "assets/fox/fox-wave-256.webp",
+        "assets/fox/fox-sleep-256.webp"
+      ]
+    }
+  },
+  "roles": {
+    "hero": [
+      {
+        "id": "drafting-board",
+        "role": "hero",
+        "path": "hero/drafting-board.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "1cb515e95612f271be1efc30ff7930ed8abd35bd5918bd36c1bc79323011b8ba",
+        "bytes": 1332109,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21293/vplyD-7vwtujphziFJHIk_kzQA1cNF.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/drafting-board.raw.png",
+          "raw_sha256": "619ded7373ad10f7607e7952dbb3246d0432c7262df2ab20e98d94a8ea929471",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a wide drafting board seen at a slight angle, an open quiet surface across the upper two thirds. BACKGROUND: the warm wall behind the board, a low shelf with rolled paper tubes and a tall window at the right onto soft daylight. MIDGROUND: the board with a plain unmarked surface that fades into warm wall toward the top, brass dividers, a plain wooden set square with no markings, a ruled straightedge with no figures and a chalk tray holding plain white chalk sticks. FOREGROUND: the board edge running off the bottom edge, a wooden stool and a rolled sheet of paper.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a headline typeset later: a plain painted surface with a couple of faint broad brush marks, low contrast, no small detail, reaching the top edge of the frame, still painted environment and not bare parchment.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E1CDB7",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.06799,
+            "quiet_field": {
+              "x": 400,
+              "y": 120,
+              "w": 544,
+              "h": 220,
+              "note": "the flattest band this plate actually offers in the upper 45%, chosen by the better of its measured contrast against contract ink and against cream paper",
+              "contrast_p5_on_cream": 9.65,
+              "best_contrast": 9.65,
+              "type_tone": "cream",
+              "percentile_5": 61,
+              "percentile_25": 151,
+              "median": 195,
+              "contrast_p5": 1.64,
+              "contrast_median": 10.13,
+              "detail_energy": 0.012
+            }
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "tilted drafting board with a plain unmarked surface, brass dividers, a plain triangle, chalk in a tray, rolled paper on a shelf, warm wall and window",
+            "residual": "the board fades into warm wall across the upper third, which is the quiet field; no grid or figure is painted"
+          },
+          "derivation": "raw 2048x1152 resized 50% to the required 1344x768",
+          "source_frame": {
+            "path": "hero/drafting-board@2x.png",
+            "size": [
+              2688,
+              1536
+            ],
+            "scale": 2.0,
+            "provider_frame": [
+              2048,
+              1152
+            ],
+            "native_2x": false,
+            "note": "the provider returned a 2048x1152 frame (1.5x of the plate), so the 2688x1536 file beside the plate is a resampled 2x frame, not a native provider return; Gate 2 sees a 2x asset but the provenance says which it is"
+          }
+        }
+      }
+    ],
+    "cover": [
+      {
+        "id": "instruments-3x2",
+        "role": "cover",
+        "path": "cover/instruments-3x2.png",
+        "size": [
+          1200,
+          800
+        ],
+        "sha256": "a6aef73c2d75617b69eb5b1939b03d0cb907635aca21c379f6cd8db233062e89",
+        "bytes": 1182778,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
+          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E5D7C4",
+            "black_minima": 0.04339,
+            "cool_share": 0.0,
+            "neutral_share": 0.08625
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
+            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
+          },
+          "derivation": "raw 2048x1152 centre crop 1728x1152, resized to 1200x800; the 4:5 is a 921x1152 centre crop of the same frame, not a second generation",
+          "source_frame": {
+            "path": null,
+            "size": [
+              1728,
+              1152
+            ],
+            "scale": 2.88,
+            "ratios": {
+              "shipped_vs_render": 2.0,
+              "natural_vs_shipped": 1.44,
+              "natural_vs_render": 2.88
+            },
+            "note": "the shipped 1200x800 plate is exactly 2x the 600x400 render; the 1728x1152 natural crop is 1.44x the shipped plate and 2.88x the render"
+          },
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      },
+      {
+        "id": "instruments-4x5",
+        "role": "cover",
+        "path": "cover/instruments-4x5.png",
+        "size": [
+          640,
+          800
+        ],
+        "sha256": "092b467afa12b453f96287e115fa86fb891d365752be4ceae518abbc603883a6",
+        "bytes": 618264,
+        "textless": true,
+        "source": "curated_kit",
+        "derived_from": "instruments-3x2",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab2129b/aiSWHncEzJQvxDkHDOQs1_SMY5axkP.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/instruments-3x2.raw.png",
+          "raw_sha256": "49e3299702420bab0b0f548789b18f3d407f968959f92732c0bfff7996d75927",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: the drafting board with instruments, tighter, subject held in the middle half of the frame so a narrow vertical crop still holds it. BACKGROUND: the warm wall and a low shelf of rolled paper. MIDGROUND: brass dividers, a plain set square, a straightedge with no figures and a chalk tray with plain chalk. FOREGROUND: the board edge running off the bottom and side edges, a cloth eraser and a pencil.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe headline band and the middle half of the frame stay quiet enough for a title typeset later: no small detail in the centre, no busy pattern behind the middle.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": "the ruler and the straightedge were removed from the scene entirely after two attempts produced tick marks; the negative list gained 'no ruler, no tick marks'",
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#EBE1D2",
+            "black_minima": 0.04422
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "plain cream board, brass dividers, a wooden triangle, a pencil, a cloth eraser and a small chalk tray, rolled paper on a shelf",
+            "residual": "none observed: no figure, no tick, no letter anywhere on the board"
+          },
+          "derivation": "centre crop of the instruments-3x2 natural 2304x1536 frame to 1152x1440, resized to 640x800; derived from the same generation, not a second attempt",
+          "crop_4x5": {
+            "size": [
+              921,
+              1152
+            ],
+            "note": "centre crop of the same provider frame, resized to 640x800 (2x of a 320x400 render)"
+          }
+        }
+      }
+    ],
+    "section": [
+      {
+        "id": "grid-board",
+        "role": "section",
+        "path": "section/grid-board.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "9a5730800b1dcbdba2bc71715e25af6525bbe805e5964a146a409a08c5d6c646",
+        "bytes": 1244436,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21294/XVKu--zJAzqFEWBi4xZHC_rPeHbFSp.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/grid-board.raw.png",
+          "raw_sha256": "aaaaf696701bb38fbc2da1050a0e7189e920c4f8f5657177b366b6df75d60340",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board seen from above, a plain unmarked surface. BACKGROUND: the board surface and the warm wall beyond. MIDGROUND: brass dividers, a plain set square, a pair of plain compasses and a chalk tray with plain chalk sticks, no figures on any instrument. FOREGROUND: the board edge running off the bottom edge, a cloth eraser and a rolled sheet.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for a section title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#C7986C",
+            "black_minima": 0.04702,
+            "cool_share": 0.0,
+            "neutral_share": 0.15427
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "board seen from above with a plain unmarked surface, a wooden triangle, brass dividers, a chalk tray and a cloth eraser",
+            "residual": "none observed on the board surface"
+          }
+        }
+      }
+    ],
+    "lesson_scene": [
+      {
+        "id": "chalk-tray",
+        "role": "lesson_scene",
+        "path": "lesson-scene/chalk-tray.png",
+        "size": [
+          1344,
+          768
+        ],
+        "sha256": "194b0ce47f0bc4a5c3ed79b6fb76d0edf567bf1e63ccfd60b3619e2c8a201c3e",
+        "bytes": 1379964,
+        "textless": true,
+        "source": "curated_kit",
+        "provenance": {
+          "origin": "generated",
+          "provider": "host image_generate seam",
+          "model_id": "not reported by the seam",
+          "generated_on": "2026-11-11",
+          "generation": "text-only prompt: no reference image was passed, with the host upscale pass on",
+          "reference_image": null,
+          "media_url": "https://v3b.fal.media/files/b/0ab21294/oKQtxpGfiIu2tkGvLIDof_Bba3KVYu.png",
+          "raw_path": ".vq-raw/vq008/instrument_board/chalk-tray.raw.png",
+          "raw_sha256": "f14e625aa570bba732fe58a93f7568fc34f4d67cb5a05c010af12454e46e2c25",
+          "prompt": "A full-bleed painted scene of a room or workspace, not a still life, and not a screenshot. The painting is cropped hard edge to edge by the frame: no torn or deckled paper edge, no white margin, no vignette, no border, no picture frame. Three depth planes: painted foreground props, a midground bench or table, and an architectural background with a window, door or opening, paler in the distance. Do not paint the words of this instruction anywhere: there is no title, no caption, no heading and no label in the image.\n\nSubject: a drafting board with a stool, seen straight on, empty of people. BACKGROUND: the warm wall, a shelf of rolled paper and a window at the left. MIDGROUND: the board with a plain unmarked surface, brass dividers, a plain set square and a chalk tray. FOREGROUND: the board front running off the bottom edge, the stool and a cloth eraser.\n\nComposition: a quiet drafting board seen at a slight angle; the blueprint grid fades out under the headline field.\n\nGrammar motifs: graph paper, blackboard, brass dividers, ruler, chalk tray.\n\nThe upper third of the frame is a quiet field reserved for the lesson title typeset later: low contrast, no small detail.\n\nPainted in opaque gouache on warm paper, dark warm-brown ink contour drawn last, thick body colour, visible flat brush-shaped marks in every mass, crisp brush-stopped edges, one soft key light from the upper left, one shade plane down-right in a darker tint of the same pigment. Never pure black, no gradient, no glow, no bloom, no vignette.\n\nWarm pigments only, at most 5: warm paper, dark brown ink, field green, ochre, coral. No blue, no grey, no neutral black, no steel, no chrome, no concrete.\n\nOrientation art only. No numbers, no figures, no equations, no axis labels, no grid numbering, no scale, no protractor markings, no measurement. The board is a quiet surface and never a worked example, a proof or a required lesson visual.\n\nTextless: no letters, words, numbers, labels, signage, notice board, wall chart, poster, chalkboard, framed picture, watermark, logo or UI chrome. Every page, chart, card, book, ledger and sheet is plain blank cream paper: no ruled lines, no grid, no drawn diagram, no scribble, no writing, no printed mark. Every tool, instrument, tin, jar and badge is plain and unengraved: no stamped letters, no maker's mark, no etched numbering, no dial face. No people, hands, faces, animals or fox.",
+          "prompt_provenance": "the canonical composer prompt for this grammar and role; the attempt that produced this plate was sent with this prompt plus the delta recorded as prompt_delta in generation.json, so the manifest does not claim a byte-exact prompt record",
+          "prompt_delta": null,
+          "pipeline": "magick -modulate 105,75,100, applied to the provider raw before any crop or resize; then crop/resize; then magick -clamp +level 4%,100% applied last, after the resize (ART-BIBLE §9 rule 5)",
+          "ocr": {
+            "raw": "",
+            "max_conf": 0.0,
+            "tokens": [],
+            "readable": []
+          },
+          "measured": {
+            "dominant": "#E7D6C5",
+            "black_minima": 0.03922,
+            "cool_share": 0.0,
+            "neutral_share": 0.15513
+          },
+          "vision": {
+            "reviewed_on": "2026-11-11",
+            "checks": "drafting board seen straight on with a plain surface, brass dividers, a triangle and a cloth eraser, rolled paper on a shelf, stool below",
+            "residual": "the board is entirely unmarked, so it can never act as a worked example"
+          }
+        }
+      }
+    ],
+    "frame": [
+      {
+        "id": "medallion-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/medallion-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "203a388f72105572bc6bd77310f2625561ce9aa59c59cea867e521767d76886c",
+        "bytes": 346,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "stamp-rim",
+        "role": "frame",
+        "path": "assets/masters/objects/stamp-rim.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "1def3c1a51893732243b65d4ca0e927ee49daec3a4dd012b579fd0ce13849ef8",
+        "bytes": 413,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ],
+    "badge": [
+      {
+        "id": "tag",
+        "role": "badge",
+        "path": "assets/masters/objects/tag.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "a2d0b16e01fc8e6c829c9ba2e2020e7248b5a54714d42fc191a91dad53a40650",
+        "bytes": 416,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "ticket",
+        "role": "badge",
+        "path": "assets/masters/objects/ticket.svg",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7f5a658ef5d90b265e4940544b3cf569ea9349a36a4479795eb1f8b1f4365c35",
+        "bytes": 437,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ],
+    "object": [
+      {
+        "id": "clock",
+        "role": "object",
+        "path": "assets/objects/clock.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "24c5f6e97127b301073ca378d20c63b8d25cf3849ea8800052614ad1ee1fa079",
+        "bytes": 26566,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "passport-tray",
+        "role": "object",
+        "path": "assets/objects/passport-tray.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0b1233e392733e009c300b76224dab184d2eb010a8e20bf100c7bddf17478928",
+        "bytes": 10884,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "shelf-plank",
+        "role": "object",
+        "path": "assets/objects/shelf-plank.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "0acd9168165664fb4a5f860c13fbd900ec7d62f33b36a3738d22e44ea6bb2d4f",
+        "bytes": 17780,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ],
+    "material": [
+      {
+        "id": "grain-paper",
+        "role": "material",
+        "path": "assets/material/grain-paper.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "0058897dc5aca76a52a6d2230c8b13832cafdfeddd2613312a284910db4821f4",
+        "bytes": 820,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "vignette-parchment",
+        "role": "material",
+        "path": "assets/material/vignette-parchment.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "7ecca423831eb4ee7a5e2bab77d138fb89d743d35fb1e26c999880dc44ef7cd6",
+        "bytes": 594,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "wood-plank",
+        "role": "material",
+        "path": "assets/material/wood-plank.webp",
+        "size": [
+          96,
+          96
+        ],
+        "sha256": "b6cfc60039ab0783bb8d9b79323486e29362b8e1a5f2f6806690f446982c291d",
+        "bytes": 1228,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ],
+    "fox": [
+      {
+        "id": "fox-read-256",
+        "role": "fox",
+        "path": "assets/fox/fox-read-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "db1a98a24285a8ca5067124764e9498cab85f20ced28f1158a7f916c45d8d0b4",
+        "bytes": 14774,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-point-256",
+        "role": "fox",
+        "path": "assets/fox/fox-point-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "7c021980c39533b8cb4c1db5de38b4fe0fc1edfaddeae58a87bc74551a95d4f4",
+        "bytes": 11422,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-clock-256",
+        "role": "fox",
+        "path": "assets/fox/fox-clock-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "f931ca1f921654150f9b4d7a02dfff2476f5d810873cfe5ba07a3b36efeb8245",
+        "bytes": 12748,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-think-256",
+        "role": "fox",
+        "path": "assets/fox/fox-think-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "e8be6eea4edafa106d777bd104205d11e0cd92268562fc48145b636146606d2b",
+        "bytes": 10344,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-cheer-256",
+        "role": "fox",
+        "path": "assets/fox/fox-cheer-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "142a04d34df2c0c4e3a3787f696e159a0a00756801dd9e2e3f292e9686d42f82",
+        "bytes": 13506,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-wave-256",
+        "role": "fox",
+        "path": "assets/fox/fox-wave-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "85b531ea4711c484246c624a7c32317e59452d9e47bcf01869ff66110990f5f4",
+        "bytes": 12174,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      },
+      {
+        "id": "fox-sleep-256",
+        "role": "fox",
+        "path": "assets/fox/fox-sleep-256.webp",
+        "size": [
+          256,
+          256
+        ],
+        "sha256": "ce669e8395217a41c6b97c373c9ae5f947acf54f09e1a056854a779f9b4247e6",
+        "bytes": 10518,
+        "textless": true,
+        "source": "curated_kit",
+        "shared_kernel": true,
+        "provenance": {
+          "origin": "shared_kernel",
+          "kit_id": "coursebook-kernel@1",
+          "note": "shared visual kernel; one set of bytes every grammar kit points at"
+        }
+      }
+    ]
+  },
+  "fallbacks": {
+    "lesson_scene": [
+      "section",
+      "background"
+    ],
+    "cover": [
+      "course-master",
+      "background"
+    ],
+    "hero": [
+      "background"
+    ],
+    "section": [
+      "background"
+    ],
+    "object": [],
+    "fox": []
+  },
+  "generation_budget": {
+    "attempts_allowed": 50,
+    "per_asset_max": 4,
+    "attempts_used": 6
+  }
+}
