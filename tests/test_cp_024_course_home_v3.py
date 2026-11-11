@@ -870,7 +870,14 @@ class CourseHomeV3RenderTest(unittest.TestCase):
         img = re.search(r"<img[^>]*data-cb-course-plate-art[^>]*>", html)
         self.assertIsNotNone(img, "the kit plate resolved but no image was mounted")
         assert img is not None
-        self.assertIn("object-fit:cover", img.group(0).replace(" ", ""))
+        # D-009: the backdrop's `object-fit: cover` is a stylesheet value, not an inline recipe,
+        # and the scene box owns the height the cover fills.
+        scope = (ROOT / "desktop" / "src" / "76-v3-scope.js").read_text(encoding="utf-8")
+        backdrop_rule = scope[scope.index("[data-cb-v3] [data-cb-course-scene-backdrop]") :]
+        backdrop_rule = backdrop_rule[: backdrop_rule.index("}")]
+        self.assertIn("object-fit: cover", backdrop_rule)
+        self.assertIn("position: absolute", backdrop_rule)
+        self.assertIn('data-cb-course-scene-backdrop=""', img.group(0))
         self.assertIn('alt=""', img.group(0))
         self.assertTrue(re.search(r'src="data:image/webp;base64,', img.group(0)))
         # No text is baked into the plate; the decorative title is gone with the typographic field.
@@ -1040,6 +1047,11 @@ const plate = document.querySelector('[data-cb-course-plate]')
 const slot = plate ? plate.firstElementChild : null
 const title = payload.row.title
 
+const attr = (sel, name) => {
+  const el = document.querySelector(sel)
+  return el ? el.getAttribute(name) : null
+}
+
 const out = {
   width: payload.width,
   // Both filled-control dialects the shipped module uses: the v3 `PillAction` and the legacy
@@ -1089,6 +1101,15 @@ const out = {
   titleHeadings: [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter((node) => text(node) === title).length,
   plateAspect: slot ? slot.style.aspectRatio : null,
   plateMinHeight: slot ? slot.style.minHeight : null,
+  // D-009: the plate is the page's ground, so what matters is what lives *inside* the scene box.
+  sceneKind: attr('[data-cb-course-scene]', 'data-cb-course-scene'),
+  sceneSize: attr('[data-cb-course-scene]', 'data-cb-course-scene-size'),
+  sceneBackdrops: document.querySelectorAll('[data-cb-course-scene-backdrop]').length,
+  sceneHasLead: Boolean(document.querySelector('[data-cb-course-scene] [data-cb-course-lead]')),
+  sceneHasTitle: Boolean(document.querySelector('[data-cb-course-scene] [data-cb-course-title]')),
+  sceneHasRoute: Boolean(document.querySelector('[data-cb-course-scene] [data-cb-course-route="list"]')),
+  sceneHasAside: Boolean(document.querySelector('[data-cb-course-scene] [data-cb-course-aside]')),
+  sceneHasNodes: Boolean(document.querySelector('[data-cb-course-scene] [data-cb-course-node]')),
   continueText: text(document.querySelector('[data-cb-continue-action]') || null),
   elements: document.querySelectorAll('[data-cb-course-detail] *').length
 }
@@ -1299,15 +1320,32 @@ class CourseDetailOverviewCompositionTest(unittest.TestCase):
         self.assertEqual(at900["homeMode"], "map")
         self.assertEqual(set(at900["nodeDotWidths"]), {"48px"}, at900["nodeDotWidths"])
 
-        # The aside is a right column only at ≥ 1000 route px; at 900 it stacks under the route
-        # while the plate keeps its M4 ratio (SPEC-V3 §5.4). UI-K5: the plate is now the painted
-        # kit field on every cell, so it is the fixed 3:1 / 2:1 ratio rather than the typographic
-        # field's min-height.
+        # The aside is a right column only at ≥ 1000 route px, and at 900 it stacks under the route.
         self.assertEqual(wide["bodyMode"], "split")
-        self.assertEqual(wide["plateAspect"], "3 / 1")
         self.assertEqual(at900["bodyMode"], "stacked")
-        self.assertEqual(at900["plateAspect"], "3 / 1")
-        self.assertEqual(self.reports[460]["plateAspect"], "2 / 1")
+
+        # D-009: the approved plate is the page, not an insert. The scene is the ground on every
+        # cell — no 3:1 band, no inline `aspect-ratio` — and the head, the route and the aside are
+        # composed inside it. The band assertion is inverted on purpose: a fixed ratio reappearing
+        # here is the regression this test now exists to catch.
+        for name, report in (("1049", wide), ("900", at900), ("460", self.reports[460])):
+            with self.subTest(width=name):
+                self.assertEqual(report["sceneKind"], "art", f"the {name} scene is not painted")
+                self.assertEqual(report["sceneBackdrops"], 1)
+                self.assertFalse(
+                    report["plateAspect"], f"the {name} scene is a fixed band again: {report['plateAspect']}"
+                )
+                self.assertTrue(report["sceneHasLead"], "the course head sits outside the scene")
+                self.assertTrue(report["sceneHasTitle"], "the course title sits outside the scene")
+                self.assertTrue(report["sceneHasAside"], "the aside sits outside the scene")
+        # The room grows with its contents, not with a ratio: wide is a room, the docked widths are
+        # a band and a compact scene (the stylesheet owns the three heights).
+        self.assertEqual(wide["sceneSize"], "room")
+        self.assertEqual(at900["sceneSize"], "band")
+        self.assertEqual(self.reports[460]["sceneSize"], "compact")
+        # Map mode places its route on the plate itself, inside the scene.
+        self.assertTrue(wide["sceneHasNodes"], "the map route is not on the scene")
+        self.assertFalse(at900["sceneHasRoute"], "the map cell also emitted a list route")
 
     def test_course_home_v3_route_sits_between_plate_and_aside(self) -> None:
         """SPEC-V3 §5.4: M6 is below M5, and the aside moves under the route.

@@ -2799,13 +2799,21 @@ function cb3CourseWorldPosture(state) {
 }
 
 /**
- * The mounted hero plate (M4): an 8 px `canvas-edge` mat, a 1 px `ink` rule, `elev-1`, and art
- * that is textless. With no plate it is a typographic field carrying the course title, and the
- * deck's own state row says what the learner loses — the lesson still works. A world in flight
- * keeps its last approved plate underneath; a rejected world says so and offers the one quiet
- * way into the studio, never a dead control.
+ * D-009 — the scene is the page. The approved plate is authored as an edge-to-edge place: the
+ * kit's own brief asks for "an edge-to-edge scene with no bare paper margin on any side" and
+ * reserves its upper third "for a headline typeset later". Cropping that plate into a 3:1 mat
+ * both destroys the reserved quiet field and reads as art pasted into a document, so the course
+ * home stands **in** the plate instead: the back path and the course head sit on the plate's
+ * quiet field, the route rail and the aside are paper objects inside the same box, and the art
+ * runs edge to edge behind all of them.
+ *
+ * The box keeps its own ground (`canvas`) under the plate, so a plate that never resolves leaves
+ * a complete typographic screen — the head, the route, the aside and the deck's own "no scene
+ * yet" line — never a blank field or a broken image. A world in flight keeps its last approved
+ * plate underneath; a rejected world never paints its refused art and offers the one quiet way
+ * into the studio that owns it.
  */
-function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children }) {
+function CourseScene({ plate, big, wide, worldState, onOpenStudio, overlay, children }) {
   const preview = useArtifactPreview(plate && plate.artifactId ? plate.artifactId : null)
   const direct = plate && typeof plate.src === 'string' && plate.src ? plate.src : null
   const posture = cb3CourseWorldPosture(worldState)
@@ -2815,56 +2823,27 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
       : preview.state === 'ready' && preview.mime && String(preview.mime).startsWith('image/')
         ? preview.data_url
         : null
-  // A rejected world never paints its refused art: the field carries the course title instead.
+  // A rejected world never paints its refused art: the field carries the head instead.
   const ready = posture === 'rejected' ? null : painted
   const note =
     posture === 'running'
       ? jsx('p', {
           'data-cb-course-plate-note': '',
           'data-cb-course-plate-running': '',
-          style: {
-            margin: 0,
-            fontFamily: 'var(--cb3-font-ui)',
-            fontSize: cb3Type('caption'),
-            lineHeight: cb3Lead('caption'),
-            color: cb3Role('ink-soft')
-          },
           children: CB3_COURSE_COPY.worldRunning
         }, 'note')
       : posture === 'rejected'
-        ? jsxs('div', {
+        ? jsxs('p', {
             'data-cb-course-plate-note': '',
             'data-cb-course-plate-rejected': '',
-            style: {
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              gap: '0.5rem',
-              minWidth: 0,
-              fontFamily: 'var(--cb3-font-ui)',
-              fontSize: cb3Type('caption'),
-              lineHeight: cb3Lead('caption'),
-              color: cb3Role('ink-soft')
-            },
             children: [
-              jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.worldRejectedTitle }, 'title'),
+              jsx('strong', { children: CB3_COURSE_COPY.worldRejectedTitle }, 'title'),
               typeof onOpenStudio === 'function'
                 ? jsx('button', {
                     type: 'button',
                     'data-cb-course-world-studio': '',
                     className: 'cb3-press',
                     onClick: () => onOpenStudio(),
-                    style: {
-                      border: 0,
-                      background: 'transparent',
-                      padding: 0,
-                      color: cb3Role('ink'),
-                      fontFamily: 'var(--cb3-font-ui)',
-                      fontSize: cb3Type('caption'),
-                      lineHeight: cb3Lead('caption'),
-                      textDecoration: 'underline',
-                      cursor: 'pointer'
-                    },
                     children: CB3_COURSE_COPY.worldRejectedAction
                   }, 'action')
                 : null
@@ -2872,121 +2851,47 @@ function CourseHeroPlate({ plate, title, big, worldState, onOpenStudio, children
           }, 'note')
         : ready
           ? plate && plate.credit
-            ? jsx('p', {
-                'data-cb-course-credit': '',
-                style: {
-                  margin: 0,
-                  fontFamily: 'var(--cb3-font-ui)',
-                  fontSize: cb3Type('caption'),
-                  lineHeight: cb3Lead('caption'),
-                  color: cb3Role('ink-soft')
-                },
-                children: plate.credit
-              }, 'note')
+            ? jsx('p', { 'data-cb-course-credit': '', children: plate.credit }, 'note')
             : null
           : jsxs('p', {
               'data-cb-course-plate-note': '',
-              style: {
-                margin: 0,
-                fontFamily: 'var(--cb3-font-ui)',
-                fontSize: cb3Type('caption'),
-                lineHeight: cb3Lead('caption'),
-                color: cb3Role('ink-soft')
-              },
               children: [
-                jsx('strong', { style: { fontWeight: 600 }, children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
+                jsx('strong', { children: CB3_COURSE_COPY.noWorldTitle }, 'title'),
                 ' ',
                 jsx('span', { children: CB3_COURSE_COPY.noWorldBody }, 'body')
               ]
             }, 'note')
   return jsxs('div', {
+    // `data-cb-course-plate` stays as the art's own marker (which plate, and whether it is art or
+    // the typographic field); the scene is the box it now paints.
+    'data-cb-course-scene': ready ? 'art' : 'type',
     'data-cb-course-plate': ready ? 'art' : 'type',
     'data-cb-course-plate-state': plate && plate.artifactId ? preview.state : ready ? 'ready' : 'none',
     'data-cb-course-world-state': posture,
     // The painted plate's provenance, so a capture can name the scene it is looking at instead of
     // inferring it from a blob. `artifact` is the course's own approved plate; `kit` is the
-    // approved field_atlas plate standing behind the trail (D-007). A plate that is not painted
+    // approved field_atlas plate standing behind the route (D-007). A plate that is not painted
     // (a rejected world, or an install with no kit segment) carries no scene marker.
     'data-cb3-scene': ready && plate && plate.scene && plate.scene !== 'none' ? plate.scene : undefined,
     'data-cb3-scene-artifact':
       ready && plate ? plate.artifactId || plate.sceneArtifact || undefined : undefined,
-    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0 },
+    'data-cb-course-scene-size': wide ? 'room' : big ? 'band' : 'compact',
+    className: 'cb3-course-scene',
     children: [
-      jsxs('div', {
-        className: 'cb3-shelf',
-        style: {
-          position: 'relative',
-          width: '100%',
-          // An art plate is the fixed M4 ratio (3:1 wide, 2:1 compact). The typographic field is
-          // the same ratio as a **minimum** and grows with its title: at 200 % text a heading-step
-          // title needed more than the fixed 204/214 px box and its first lines were cut off.
-          aspectRatio: ready ? (big ? '3 / 1' : '2 / 1') : undefined,
-          minHeight: ready ? undefined : big ? '204px' : '214px',
-          padding: '8px',
-          boxSizing: 'border-box',
-          backgroundColor: cb3Role('canvas-edge'),
-          border: `1px solid ${cb3Role('ink')}`,
-          borderRadius: cb3Radius('round'),
-          overflow: 'hidden',
-          minWidth: 0
-        },
-        children: [
-          jsxs('div', {
-            style: {
-              position: 'relative',
-              width: '100%',
-              height: ready ? '100%' : 'auto',
-              minHeight: ready ? undefined : big ? '188px' : '198px',
-              overflow: 'hidden',
-              borderRadius: cb3Radius('soft'),
-              backgroundColor: cb3Role('card-stock')
-            },
-            children: [
-              ready
-                ? jsx('img', {
-                    'data-cb-course-plate-art': '',
-                    src: ready,
-                    alt: '',
-                    'aria-hidden': 'true',
-                    style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' }
-                  }, 'art')
-                : jsx('span', {
-                    'data-cb-course-plate-title': '',
-                    style: {
-                      // Positioned over the art; in the typographic field it is in flow so the
-                      // field can grow with the title instead of clipping it.
-                      position: ready ? 'absolute' : 'static',
-                      inset: ready ? 0 : undefined,
-                      width: ready ? undefined : '100%',
-                      minHeight: ready ? undefined : big ? '188px' : '198px',
-                      display: 'flex',
-                      alignItems: 'flex-end',
-                      padding: '0.75rem',
-                      boxSizing: 'border-box',
-                      fontFamily: 'var(--cb3-font-display)',
-                      // The plate is a fixed-height field (SPEC-V3 §5.4 M4: 3:1 wide, 2:1 compact),
-                      // so its decorative title takes the body step at compact widths: the course
-                      // `h2` already carries the heading, and a heading step inside a 214 px field
-                      // clipped the title's first lines at 200 % text.
-                      fontSize: cb3Type(big ? 'heading' : 'body'),
-                      lineHeight: cb3Lead(big ? 'heading' : 'body'),
-                      fontWeight: 600,
-                      color: cb3Role('ink'),
-                      // Normal word wrapping: a title may wrap between words, never inside one.
-                      // `anywhere` split "demonstration" mid-word at 460 px / 200 % text; `break-word`
-                      // still reflows a word that genuinely cannot fit, without hyphenating it.
-                      overflowWrap: 'break-word',
-                      wordBreak: 'normal',
-                      hyphens: 'none'
-                    },
-                    children: title || ''
-                  }, 'type'),
-              children
-            ]
-          })
-        ]
-      }),
+      ready
+        ? jsx('img', {
+            'data-cb-course-scene-backdrop': '',
+            'data-cb-course-plate-art': '',
+            src: ready,
+            alt: '',
+            'aria-hidden': 'true'
+          }, 'art')
+        : null,
+      overlay || null,
+      children,
       note
+        ? jsx('div', { 'data-cb-course-scene-note': '', className: 'cb3-course-scene-note', children: note }, 'note-wrap')
+        : null
     ]
   })
 }
@@ -3282,195 +3187,193 @@ function CourseHomeV3({
       color: cb3Role('ink')
     },
     children: [
-      // M2: the back path is the first focusable element on a deep screen (SPEC-V3 §3.11).
-      jsxs('button', {
-        type: 'button',
-        'data-cb-course-back': '',
-        className: 'cb3-press',
-        onClick: () => {
-          if (typeof onBack === 'function') onBack()
-        },
-        style: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.35rem',
-          alignSelf: 'flex-start',
-          minHeight: '40px',
-          paddingInline: '0.25rem',
-          border: 0,
-          background: 'transparent',
-          color: cb3Role('ink'),
-          fontFamily: 'var(--cb3-font-ui)',
-          fontSize: cb3Type('meta'),
-          lineHeight: cb3Lead('meta'),
-          cursor: 'pointer'
-        },
-        children: [
-          jsx(sdk.Codicon, { name: 'arrow-left', size: CB_ICON_UI }, 'icon'),
-          jsx('span', { children: backLabel }, 'label')
-        ]
-      }, 'back'),
-      // M3: the course head. The title is the screen's heading; the subject line is the deck's
-      // one stored subject label.
-      jsxs('div', {
-        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
-        children: [
-          jsx('h2', {
-            'data-cb-course-title': '',
-            style: {
-              margin: 0,
-              fontFamily: 'var(--cb3-font-display)',
-              fontSize: cb3Type('heading'),
-              lineHeight: cb3Lead('heading'),
-              fontWeight: 600,
-              letterSpacing: '-0.01em',
-              color: cb3Role('ink'),
-              maxWidth: '34ch',
-              // Same rule as the plate's type field: wrap between words, never inside one.
-              overflowWrap: 'break-word',
-              wordBreak: 'normal',
-              hyphens: 'none'
-            },
-            children: (row && row.title) || ''
-          }, 'title'),
-          row && row.subject_label
-            ? jsx('p', {
-                'data-cb-course-subject': '',
-                style: {
-                  margin: 0,
-                  fontFamily: 'var(--cb3-font-ui)',
-                  fontSize: cb3Type('body'),
-                  lineHeight: cb3Lead('body'),
-                  color: cb3Role('ink-soft')
-                },
-                children: row.subject_label
-              }, 'subject')
+      // D-009 — the scene is the page. The approved plate is authored as an edge-to-edge
+      // place, so the course home stands *in* it: the back path and the course head on the
+      // plate's quiet field, the route rail and the aside as paper objects inside the same
+      // box, and the art edge to edge behind all of them. No 3:1 band, no mat, no insert.
+      jsx(CourseScene, {
+        plate: heroPlate,
+        worldState,
+        big: mapWide,
+        wide,
+        onOpenStudio,
+        // M5: the route's nodes are placed on the plate's own anchors, over the art.
+        overlay:
+          plan.mode === 'map'
+            ? jsx('div', {
+                'data-cb-course-nodes': '',
+                role: 'group',
+                'aria-label': CB3_COURSE_COPY.routeLabel,
+                className: 'cb3-course-nodes',
+                children: plan.points.map((point) =>
+                  jsx(
+                    CourseRouteMapNode,
+                    { node: point.node, x: point.x, y: point.y, big: wide, onOpen: onOpenSection },
+                    point.node.id
+                  )
+                )
+              })
             : null,
-          // The course's own read state. A loading head says it is opening; a failed read says so
-          // in place and offers one quiet way to try again, while the route keeps what was saved.
-          readState === 'loading'
-            ? jsx('p', {
-                'data-cb-course-loading': '',
-                style: {
-                  margin: 0,
-                  fontFamily: 'var(--cb3-font-ui)',
-                  fontSize: cb3Type('meta'),
-                  lineHeight: cb3Lead('meta'),
-                  color: cb3Role('ink-soft')
-                },
-                children: CB3_COURSE_COPY.loading
-              }, 'loading')
-            : readState === 'error'
-              ? jsxs('div', {
-                  'data-cb-course-error': '',
-                  role: 'status',
-                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+        children: jsxs('div', {
+          'data-cb-course-field': '',
+          'data-cb-course-body': wide ? 'split' : 'stacked',
+          className: 'cb3-course-field',
+          children: [
+            jsxs('div', {
+              'data-cb-course-lead': '',
+              className: 'cb3-course-lead',
+              children: [
+                // M2: the back path is the first focusable element on a deep screen (SPEC-V3 §3.11).
+                jsxs('button', {
+                  type: 'button',
+                  'data-cb-course-back': '',
+                  className: 'cb3-press',
+                  onClick: () => {
+                    if (typeof onBack === 'function') onBack()
+                  },
+                  style: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    alignSelf: 'flex-start',
+                    minHeight: '40px',
+                    paddingInline: '0.25rem',
+                    border: 0,
+                    background: 'transparent',
+                    color: cb3Role('ink'),
+                    fontFamily: 'var(--cb3-font-ui)',
+                    fontSize: cb3Type('meta'),
+                    lineHeight: cb3Lead('meta'),
+                    cursor: 'pointer'
+                  },
                   children: [
-                    jsx('strong', {
+                    jsx(sdk.Codicon, { name: 'arrow-left', size: CB_ICON_UI }, 'icon'),
+                    jsx('span', { children: backLabel }, 'label')
+                  ]
+                }, 'back'),
+                // M3: the course head. The title is the screen's heading; the subject line is the deck's
+                // one stored subject label.
+                jsxs('div', {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+                  children: [
+                    jsx('h2', {
+                      'data-cb-course-title': '',
                       style: {
-                        fontFamily: 'var(--cb3-font-ui)',
-                        fontSize: cb3Type('meta'),
-                        lineHeight: cb3Lead('meta'),
+                        margin: 0,
+                        fontFamily: 'var(--cb3-font-display)',
+                        fontSize: cb3Type('heading'),
+                        lineHeight: cb3Lead('heading'),
                         fontWeight: 600,
-                        color: cb3Role('ink')
+                        letterSpacing: '-0.01em',
+                        color: cb3Role('ink'),
+                        maxWidth: '34ch',
+                        // Same rule as the plate's type field: wrap between words, never inside one.
+                        overflowWrap: 'break-word',
+                        wordBreak: 'normal',
+                        hyphens: 'none'
                       },
-                      children: CB3_COURSE_COPY.errorTitle
+                      children: (row && row.title) || ''
                     }, 'title'),
-                    jsx('span', {
-                      style: {
-                        fontFamily: 'var(--cb3-font-ui)',
-                        fontSize: cb3Type('meta'),
-                        lineHeight: cb3Lead('meta'),
-                        color: cb3Role('ink-soft')
-                      },
-                      children: CB3_COURSE_COPY.errorBody
-                    }, 'body'),
-                    typeof onRetry === 'function'
-                      ? jsx('button', {
-                          type: 'button',
-                          'data-cb-course-retry': '',
-                          className: 'cb3-press',
-                          onClick: () => onRetry(),
+                    row && row.subject_label
+                      ? jsx('p', {
+                          'data-cb-course-subject': '',
                           style: {
-                            border: 0,
-                            background: 'transparent',
-                            padding: 0,
-                            color: cb3Role('ink'),
+                            margin: 0,
+                            fontFamily: 'var(--cb3-font-ui)',
+                            fontSize: cb3Type('body'),
+                            lineHeight: cb3Lead('body'),
+                            color: cb3Role('ink-soft')
+                          },
+                          children: row.subject_label
+                        }, 'subject')
+                      : null,
+                    // The course's own read state. A loading head says it is opening; a failed read says so
+                    // in place and offers one quiet way to try again, while the route keeps what was saved.
+                    readState === 'loading'
+                      ? jsx('p', {
+                          'data-cb-course-loading': '',
+                          style: {
+                            margin: 0,
                             fontFamily: 'var(--cb3-font-ui)',
                             fontSize: cb3Type('meta'),
                             lineHeight: cb3Lead('meta'),
-                            textDecoration: 'underline',
-                            cursor: 'pointer'
+                            color: cb3Role('ink-soft')
                           },
-                          children: CB3_COURSE_COPY.errorAction
-                        }, 'action')
-                      : null
+                          children: CB3_COURSE_COPY.loading
+                        }, 'loading')
+                      : readState === 'error'
+                        ? jsxs('div', {
+                            'data-cb-course-error': '',
+                            role: 'status',
+                            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+                            children: [
+                              jsx('strong', {
+                                style: {
+                                  fontFamily: 'var(--cb3-font-ui)',
+                                  fontSize: cb3Type('meta'),
+                                  lineHeight: cb3Lead('meta'),
+                                  fontWeight: 600,
+                                  color: cb3Role('ink')
+                                },
+                                children: CB3_COURSE_COPY.errorTitle
+                              }, 'title'),
+                              jsx('span', {
+                                style: {
+                                  fontFamily: 'var(--cb3-font-ui)',
+                                  fontSize: cb3Type('meta'),
+                                  lineHeight: cb3Lead('meta'),
+                                  color: cb3Role('ink-soft')
+                                },
+                                children: CB3_COURSE_COPY.errorBody
+                              }, 'body'),
+                              typeof onRetry === 'function'
+                                ? jsx('button', {
+                                    type: 'button',
+                                    'data-cb-course-retry': '',
+                                    className: 'cb3-press',
+                                    onClick: () => onRetry(),
+                                    style: {
+                                      border: 0,
+                                      background: 'transparent',
+                                      padding: 0,
+                                      color: cb3Role('ink'),
+                                      fontFamily: 'var(--cb3-font-ui)',
+                                      fontSize: cb3Type('meta'),
+                                      lineHeight: cb3Lead('meta'),
+                                      textDecoration: 'underline',
+                                      cursor: 'pointer'
+                                    },
+                                    children: CB3_COURSE_COPY.errorAction
+                                  }, 'action')
+                                : null
+                            ]
+                          }, 'error')
+                        : null
                   ]
-                }, 'error')
-              : null
-        ]
-      }, 'head'),
-      // M4/M5 and M6–M9: the hero plate with the route, and the aside. Two columns only at a wide
-      // route (≥ 1000 px, SPEC-V3 §5.4); below it the aside follows the plate and keeps its order.
-      jsxs('div', {
-        'data-cb-course-body': wide ? 'split' : 'stacked',
-        style: {
-          display: 'grid',
-          gridTemplateColumns: wide ? 'minmax(0, 1fr) 268px' : 'minmax(0, 1fr)',
-          gap: wide ? '1rem' : '0.85rem',
-          alignItems: 'start',
-          minWidth: 0
-        },
-        children: [
-          jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', minWidth: 0 },
-            children: [
-              jsx(CourseHeroPlate, {
-                plate: heroPlate,
-                title: (row && row.title) || '',
-                big: mapWide,
-                worldState,
-                onOpenStudio,
-                children:
-                  plan.mode === 'map'
-                    ? jsx('div', {
-                        'data-cb-course-nodes': '',
-                        role: 'group',
-                        'aria-label': CB3_COURSE_COPY.routeLabel,
-                        style: { position: 'absolute', inset: 0 },
-                        children: plan.points.map((point) =>
-                          jsx(
-                            CourseRouteMapNode,
-                            { node: point.node, x: point.x, y: point.y, big: wide, onOpen: onOpenSection },
-                            point.node.id
-                          )
-                        )
-                      })
-                    : null
-              }),
-              // SPEC-V3 §5.4: M6 sits **below** M5, and the aside moves under the route. In list
-              // mode the route therefore lives in the main column directly under the plate, so the
-              // DOM order is plate → route → aside at every width (the map carries its route
-              // inside the plate instead).
-              plan.mode === 'list' && nodes.length
-                ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
-                : null
-            ]
-          }, 'hero'),
-          jsx(CourseHomeAside, {
-            row,
-            nodes,
-            evidenceLine,
-            others,
-            step,
-            big: wide,
-            busy,
-            onContinue,
-            onOpenPlan,
-            onOpenOther
-          }, 'aside')
-        ]
-      }, 'body')
+                }, 'head'),
+              ]
+            }, 'lead'),
+            // SPEC-V3 §5.4: in list mode the route lives in the main column under the lead,
+            // so the DOM order is lead → route → aside at every width (the map carries its
+            // route over the plate instead).
+            plan.mode === 'list' && nodes.length
+              ? jsx(CourseRouteList, { nodes, onOpen: onOpenSection }, 'route-list')
+              : null,
+            jsx(CourseHomeAside, {
+              row,
+              nodes,
+              evidenceLine,
+              others,
+              step,
+              big: wide,
+              busy,
+              onContinue,
+              onOpenPlan,
+              onOpenOther
+            }, 'aside')
+          ]
+        })
+      })
     ]
   })
 }

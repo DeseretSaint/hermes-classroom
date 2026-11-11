@@ -198,6 +198,182 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   }
 }
 
+/* ── D-009 — the course home stands in its plate ─────────────────────────────────────────────
+   The approved plate is a painted *place*, authored edge to edge (its own brief reserves the upper
+   third "for a headline typeset later"). So the scene is the page's ground and the head, the route
+   rail and the aside are paper objects composed on it. There is no 8 px mat, no 1 px ink rule and
+   no 3:1 band: those three marks are exactly what turned a room into an inserted image. */
+[data-cb-v3] .cb3-course-scene {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--cb3-radius-round);
+  background-color: var(--cb3-canvas);
+  min-height: 360px;
+}
+
+[data-cb-v3] .cb3-course-scene[data-cb-course-scene-size="band"] { min-height: 460px; }
+[data-cb-v3] .cb3-course-scene[data-cb-course-scene-size="room"] { min-height: 560px; }
+
+[data-cb-v3] [data-cb-course-scene-backdrop] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The plate's quiet field is its upper third, so a short route anchors the crop high: centring
+     it would push the reserved headline band off the top and cut the lane's floor. */
+  object-position: 50% 38%;
+  z-index: 0;
+}
+
+[data-cb-v3] .cb3-course-field {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+  box-sizing: border-box;
+  min-height: inherit;
+  padding: 1.25rem;
+  align-content: start;
+}
+
+[data-cb-v3] .cb3-course-field[data-cb-course-body="split"] {
+  grid-template-columns: minmax(0, 1fr) 268px;
+  grid-template-rows: auto 1fr;
+  column-gap: 1.5rem;
+}
+
+[data-cb-v3] .cb3-course-field[data-cb-course-body="split"] > [data-cb-course-aside] {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+[data-cb-v3] .cb3-course-field[data-cb-course-body="split"] > [data-cb-course-route="list"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+/* The head reads on the plate's own quiet field: the token canvas washes the words only, at the
+   vignette's own alpha. The art is not darkened and no gradient is introduced. */
+[data-cb-v3] .cb3-course-lead {
+  position: relative;
+  isolation: isolate;
+  align-self: start;
+  max-width: 30rem;
+  padding: 0.9rem 1.1rem 1rem;
+  border-radius: var(--cb3-radius-round);
+}
+
+[data-cb-v3] .cb3-course-lead::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: var(--cb3-canvas);
+  opacity: 0.62;
+}
+
+[data-cb-v3] .cb3-course-scene[data-cb-course-plate="type"] .cb3-course-lead { padding: 0; }
+[data-cb-v3] .cb3-course-scene[data-cb-course-plate="type"] .cb3-course-lead::before { display: none; }
+
+/* The aside is a stack of paper objects on the plate, never text floating on art. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-aside] > section {
+  background-color: var(--cb3-card-stock);
+  border: 1px solid var(--cb3-rule);
+  border-radius: var(--cb3-radius-round);
+  padding: 0.85rem;
+  box-sizing: border-box;
+  box-shadow: var(--cb3-elev-1);
+}
+
+[data-cb-v3] .cb3-course-scene [data-cb-course-aside] > [data-cb-continue] {
+  box-shadow: var(--cb3-elev-1);
+  border: 0;
+}
+
+/* M5 rides the plate itself. */
+[data-cb-v3] .cb3-course-nodes {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+[data-cb-v3] .cb3-course-nodes > button { pointer-events: auto; }
+
+/* The route rail is a paper object on the plate too — stamps on bare art are unreadable, which is
+   how the first D-009 frame shipped. The rail keeps its vertical order (SPEC-V3 §5.4 M5). */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] {
+  justify-self: start;
+  width: max-content;
+  max-width: 16rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--cb3-radius-round);
+  background-color: var(--cb3-card-stock);
+  border: 1px solid var(--cb3-rule);
+  box-shadow: var(--cb3-elev-1);
+}
+
+/* A locked node's word ("Opens after the section before it") is longer than the rail: it wraps
+   inside the paper instead of widening it past the scene's edge. */
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] {
+  max-width: 100%;
+  align-items: flex-start;
+  text-align: left;
+}
+
+[data-cb-v3] .cb3-course-scene [data-cb-course-route="list"] [data-cb3-stamp] > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: none;
+}
+
+/* A world note is a paper chip in the scene's floor corner, never text on bare art. */
+[data-cb-v3] .cb3-course-scene-note {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 1.25rem 1.25rem;
+}
+
+[data-cb-v3] .cb3-course-scene-note > p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-width: 34rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--cb3-radius-soft);
+  background-color: var(--cb3-card-stock);
+  border: 1px solid var(--cb3-rule);
+  font-family: var(--cb3-font-ui);
+  font-size: var(--cb3-text-caption);
+  line-height: var(--cb3-leading-caption);
+  color: var(--cb3-ink-soft);
+}
+
+[data-cb-v3] .cb3-course-scene-note strong {
+  font-weight: 600;
+  color: var(--cb3-ink);
+}
+
+[data-cb-v3] .cb3-course-scene-note button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--cb3-ink);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 @media (forced-colors: active) {
   [data-cb-v3] {
     background-color: Canvas;

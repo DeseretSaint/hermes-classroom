@@ -557,15 +557,32 @@ fragment are removed (search is not shipped and a truncated duplicate action is 
 | M1 | rail / tab strip | 80 wide | tab strip 56 | tab strip 56 | `nav.home`, `nav.courses`, `nav.workshop`, `nav.parent` |
 | M2 | back path | 40 tall, top 24 | 40, top 16 | 40, top 12 | `course.back` |
 | M3 | course head | heading 29.69/34.14, subject body 16/24, 24 under M2 | same | same | `course.title`, `course.subject` |
-| M4 | hero plate | 613 × 204 (3:1) at wide, mat 8, radius 12 | 852 × 284 | 428 × 214 | `course.hero.credit` |
+| M4 | scene field | the plate **is the page's ground**: full-bleed behind M2/M3/M5–M9, min-height 560, no mat, no band, radius 12 | min-height 460 | min-height 360 | `course.hero.credit` |
 | M5 | route | nodes 56 dia on a spine inside M4, 88 apart, current 56 with 3 px ring, all labels 12 | same, nodes 48 | vertical list below M4, node 44 | `course.route.label`, `course.node.current`, `course.node.done`, `course.node.next`, `course.node.locked` |
 | M6 | aside Continue | 268 wide, first child of the right column, pad 16 | below M4 | below M5 | `course.continue.title`, `course.next.label` |
 | M7 | aside evidence | 268, under M6 | full width | full width | `course.evidence.title`, `course.evidence.count` |
 | M8 | other courses | 3 rows 428 × 72 or 3 × 273 cards, 24 below the hero block | 3 rows | 2 rows max | `course.others.title`, `course.others.row` |
 | M9 | fox box | 96 × 120 beside M6, outside M4's quiet field | 88 | hidden | — |
 
-Lesson-column width at wide with the aside = 613. The aside is a right column only at ≥ 1000
-route px; below that it moves under the route and keeps its order (Continue, evidence, others).
+Lesson column at wide = the scene's main field beside a 268 px aside column. The aside is a right
+column only at ≥ 1000 route px; below that it moves under the route and keeps its order (Continue,
+evidence, others).
+
+**D-009 — the plate is the page, not an insert (owner ruling 2026-11-11).** The approved plate is
+authored as a place: the kit brief asks for "an edge-to-edge scene with no bare paper margin on any
+side" and reserves its upper third "for a headline typeset later". A 3:1 matted band crops that
+reserved field away and reads as a picture dropped into a document, so M4 is the scene the whole
+screen stands in:
+
+- the backdrop is the plate at `object-fit: cover`, anchored high enough to keep the quiet field;
+- M2 and M3 sit on that quiet field with a token-canvas wash behind the words only (no gradient);
+- M5 is a paper rail on the plate (or the plate's own anchors, in map mode);
+- M6–M9 are paper objects on the plate, never text floating on art;
+- a missing plate leaves the same box on `canvas` with the deck's `No scene yet` line, so the
+  screen is complete without art.
+
+§3.6's mounted-plate rule (8 px mat, 1 px ink rule) governs a *framed* plate inside a page. This
+scene is the page.
 
 **States**
 

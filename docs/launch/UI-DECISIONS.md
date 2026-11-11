@@ -108,6 +108,7 @@ coursebook state doesn't reflect that." VQ-G0 (`t_fcdf8967`) is completed on tha
 | L-05 | brass desk clock | object-kit alarm clock | D-002 |
 | L-06 | two filled terracotta pills | one filled primary, one quiet secondary | SPEC-V3 D1, one primary per surface |
 | L-07 | header in the docked pane | host chrome; compact composition | G0-1 |
+| L-09 | course home as a paper page with a 3:1 hero band | the plate is the page's ground; head, route and aside composed inside it | D-009; SPEC-V3 §5.4 M4 amended |
 | L-08 | course-home hero plate from the kit's `course-map` | the kit's `home-hero` field | VQ-007 has not shipped a `course-map` plate; UI-K5 resolves `world.read` artifact → `course-map` → `home-hero` and lands on `home-hero` today, marked `data-cb3-scene-artifact="home-hero"` |
 
 ### D-006 — display plates and generated Game courses
@@ -130,6 +131,33 @@ Owner ruling 2026-11-11 11:00 MST, verbatim: "I approve using the approved visua
 concerned that the live coursebook state doesn't reflect that." `field_atlas@2` is the product
 lane; the measured gap is that no `desktop/src` file reads `assets/visual-kits/`. Kit wiring lands
 before any further screen polish.
+
+### D-009 — the approved plate is the page, not an inserted image (owner ruling 2026-11-11)
+
+Owner, on the CP-024 test render: "the image was just added into the course when the image is meant
+to be the entire page, and the text and the interaction buttons and whatever are supposed to be part
+of the environment, within the environment."
+
+- **Reference:** R-CLASS (Classroom) and R-MAP (course home) both compose the screen *inside* the
+  painted scene: the prompt, the challenge panel, the stamp rail and the fox sit on the art, and no
+  frame is drawn around it.
+- **Product before:** `CourseHeroPlate` mounted the plate as a 613 x 204 (3:1) band with an 8 px
+  mat and a 1 px ink rule — SPEC-V3 §5.4 M4 as written — so the head, route and aside were a
+  document with a picture in it. The kit's own generation brief contradicts that band: "an
+  edge-to-edge scene with no bare paper margin on any side ... the upper third of the frame is a
+  quiet field reserved for a headline typeset later." The band cropped the reserved field away.
+- **Ruling:** the plate is the page's ground. M4 becomes a scene field: full-bleed backdrop, the
+  head on the plate's quiet field behind a token-canvas wash, the route as a paper rail (or on the
+  plate's own anchors in map mode), the aside as paper objects, the fox on the scene. No mat, no
+  ink rule, no fixed ratio. A missing plate keeps the same box on `canvas` with the deck's
+  `No scene yet` line.
+- **Ledger:** L-09 supersedes §5.4 M4's 3:1 mounted band. SPEC-V3 §5.4 is amended in the same
+  change.
+- **Verified:** `desktop/src/90-course.js` `CourseScene`, `desktop/src/76-v3-scope.js` scene block,
+  `tests/test_cp_024_course_home_v3.py` (the layout test now fails if a fixed `aspect-ratio` band
+  returns), frame `.coursebook/d009/course-home-1344.png` rendered from the built module.
+- **Follow-on:** the Classroom lesson (`ClassroomScene`, 70-learning.js) still mounts its lesson
+  room as a 164 px matted band. Same defect, separate card; it is not fixed by this change.
 
 ### D-008 — parallel lanes replace the one-screen-at-a-time order
 

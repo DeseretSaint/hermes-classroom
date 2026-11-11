@@ -2266,7 +2266,7 @@ export {
   modelRevision,
   // Course home (CP-024, 90-course.js)
   CourseHomeV3,
-  CourseHeroPlate,
+  CourseScene,
   CourseHomeAside,
   CourseRouteList,
   CourseRouteMapNode,
