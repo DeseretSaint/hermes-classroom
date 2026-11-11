@@ -1,28 +1,20 @@
 #!/usr/bin/env node
 /**
- * Coursebook visual audit — the missing feedback loop.
+ * Coursebook visual audit — runs on the secondary monitor, never steals focus.
  *
- * Connects to the running Hermes Desktop over CDP (no second browser), renders each v3
- * route, and for every frame:
- *   - screenshots the route node at 2x (the same crop the design was approved at),
- *   - diffs it against visual/baselines/<route>.png when a baseline exists (pixelmatch),
- *   - runs axe-core and fails on serious/critical violations,
- *   - asserts the product fonts actually loaded (a silent system-serif fallback is a defect),
- *   - verifies no course title in the DOM was replaced by glyphs inside cover art by
- *     confirming every card title is real text (non-empty, > 2 chars, not image alt).
+ * It opens a dedicated app window (a new CDP target) positioned on the secondary display,
+ * screenshots each v3 route, diffs against baselines, runs axe, and asserts the product fonts
+ * loaded. It never reloads, resizes or focuses a window the owner is using.
  *
- * Usage:
- *   node audit.mjs                  # audit, create baselines when missing, fail on drift
- *   node audit.mjs --write-baseline # accept the current frames as the baseline
- *   node audit.mjs --port 9411 --threshold 0.001
- *
- * Exit code 1 if any frame drifts past the threshold, a11y fails, or fonts are missing.
+ * Usage: node audit.mjs [--port 9371] [--write-baseline] [--monitor secondary|main|1344x768+3440+40]
+ *                        [--reuse]   (attach to an existing coursebook page instead of opening one)
  */
 import { chromium } from 'playwright'
 import { PNG } from 'pngjs'
 import pixelmatch from 'pixelmatch'
 import fs from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
@@ -34,14 +26,12 @@ const BASELINE = path.join(HERE, 'baselines')
 const DIFFS = path.join(HERE, 'diffs')
 
 const args = process.argv.slice(2)
-const opt = (name, fallback) => {
-  const i = args.indexOf(name)
-  return i === -1 ? fallback : args[i + 1]
-}
-const PORT = Number(opt('--port', 9411))
+const opt = (name, fallback) => { const i = args.indexOf(name); return i === -1 ? fallback : args[i + 1] }
+const PORT = Number(opt('--port', 0))
 const THRESHOLD = Number(opt('--threshold', 0.001))
 const WRITE_BASELINE = args.includes('--write-baseline')
-const WIDTH = Number(opt('--width', 1440))
+const REUSE = args.includes('--reuse')
+const MONITOR = opt('--monitor', 'secondary')
 
 const ROUTES = [
   { name: 'home', label: 'Home' },
@@ -51,136 +41,217 @@ const ROUTES = [
 ]
 
 for (const dir of [FRAMES, BASELINE, DIFFS]) fs.mkdirSync(dir, { recursive: true })
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-async function attach() {
-  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`)
-  const deadline = Date.now() + 15000
+function hyprJson(cmd) {
+  try { return JSON.parse(execSync(`hyprctl ${cmd} -j`, { encoding: 'utf8' })) } catch { return null }
+}
+
+function monitorBounds() {
+  if (MONITOR.includes('x') && MONITOR.includes('+')) {
+    const m = MONITOR.match(/(\d+)x(\d+)\+(\d+)\+(\d+)/)
+    if (m) return { width: +m[1], height: +m[2], left: +m[3], top: +m[4] }
+  }
+  const monitors = hyprJson('monitors')
+  if (!monitors || !monitors.length) return { width: 1344, height: 768, left: 0, top: 0 }
+  const target = MONITOR === 'main'
+    ? monitors.find((m) => m.focused) || monitors[0]
+    : monitors.find((m) => !m.focused) || monitors[0]
+  return {
+    width: Math.min(1880, target.width - 40),
+    height: Math.min(1000, target.height - 40),
+    left: target.x + 40,
+    top: target.y + 40
+  }
+}
+
+function restoreFocus(previousAddress) {
+  if (!previousAddress) return
+  try { execSync(`hyprctl dispatch focuswindow address:${previousAddress}`, { stdio: 'ignore' }) } catch { /* best effort */ }
+}
+
+function discoverPort() {
+  if (PORT) return PORT
+  try {
+    const out = execSync('ss -ltnp 2>/dev/null | grep electron', { encoding: 'utf8' })
+    const ports = [...new Set(out.split('\n').map((l) => (l.match(/127\.0\.0\.1:(\d+)/) || [])[1]).filter(Boolean).map(Number))]
+    return ports.sort((a, b) => b - a)[0]
+  } catch { return 0 }
+}
+
+async function findCoursebookFrame(browser, timeoutMs) {
+  const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     for (const ctx of browser.contexts()) {
       for (const page of ctx.pages()) {
         for (const frame of page.frames()) {
           try {
-            const has = await frame.evaluate(() => Boolean(document.querySelector('[data-cb-route]')))
-            if (has) return { browser, page, frame }
-          } catch { /* frame navigating */ }
+            if (await frame.evaluate(() => Boolean(document.querySelector('[data-cb-route]')))) return { page, frame }
+          } catch { /* navigating */ }
         }
       }
     }
     await sleep(300)
   }
-  throw new Error(`no [data-cb-route] frame on CDP port ${PORT}`)
+  return null
 }
 
-async function routeTo(frame, label) {
-  const item = frame.locator('[data-cb-nav-item]', { hasText: label }).first()
-  await item.click({ timeout: 8000 }).catch(async () => {
-    await frame.evaluate((l) => {
-      const el = [...document.querySelectorAll('[data-cb-nav-item]')].find((n) => (n.textContent || '').trim() === l)
-      if (el) el.click()
-    }, label)
-  })
-  const deadline = Date.now() + 12000
+const port = discoverPort()
+if (!port) { console.error('no Electron CDP port found'); process.exit(2) }
+const before = hyprJson('activewindow')
+const previousAddress = before && before.address ? before.address : null
+const bounds = monitorBounds()
+
+const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`)
+let page
+let frame
+let testAddress = null
+
+if (REUSE) {
+  const found = await findCoursebookFrame(browser, 10000)
+  if (!found) { console.error('no coursebook page to reuse'); process.exit(2) }
+  ;({ page, frame } = found)
+} else {
+  // Electron does not implement Target.createTarget or Browser.setWindowBounds. The host's own
+  // openWindow() creates a peer full-chrome window; we then place it on the secondary monitor
+  // with hyprctl and hand focus straight back to the owner.
+  const opener = await findCoursebookFrame(browser, 10000)
+  if (!opener) { console.error('no coursebook page to open from'); process.exit(2) }
+  const beforePages = new Set(browser.contexts().flatMap((c) => c.pages().map((p) => p)))
+  const beforeAddrs = new Set((hyprJson('clients') || []).map((c) => c.address))
+  await opener.page.evaluate(async () => await window.hermesDesktop.openWindow()).catch(() => {})
+  page = await (async () => {
+    const deadline = Date.now() + 15000
+    while (Date.now() < deadline) {
+      const fresh = browser.contexts().flatMap((c) => c.pages()).find((p) => !beforePages.has(p))
+      if (fresh) return fresh
+      await sleep(200)
+    }
+    return null
+  })()
+  if (!page) { console.error('openWindow produced no new page'); process.exit(2) }
+
+  const deadline = Date.now() + 8000
+  while (Date.now() < deadline && !testAddress) {
+    const fresh = (hyprJson('clients') || []).find((c) => !beforeAddrs.has(c.address) && /hermes/i.test(c.class))
+    if (fresh) testAddress = fresh.address
+    else await sleep(150)
+  }
+  if (testAddress) {
+    try {
+      // Place it on the secondary monitor. Do not resize: Hyprland ignores resize for tiled
+      // windows and floating it fights the app's own window state. The report records the real
+      // geometry so a narrow pane cannot be mistaken for parity.
+      execSync(`hyprctl dispatch movewindowpixel exact ${bounds.left} ${bounds.top},address:${testAddress}`, { stdio: 'ignore' })
+    } catch { /* placement is best effort; the report records the real size */ }
+  }
+  restoreFocus(previousAddress)
+  await sleep(500)
+  await page.evaluate(() => { window.location.hash = '#/coursebook' }).catch(() => {})
+  const deadline2 = Date.now() + 15000
+  while (Date.now() < deadline2 && !frame) {
+    for (const f of page.frames()) {
+      try { if (await f.evaluate(() => Boolean(document.querySelector('[data-cb-route]')))) { frame = f; break } } catch { /* navigating */ }
+    }
+    if (!frame) await sleep(250)
+  }
+  if (!frame) { console.error('the test window never rendered [data-cb-route]'); process.exit(2) }
+}
+
+// Give the host back to the owner immediately; the audit never needs focus.
+restoreFocus(previousAddress)
+await sleep(400)
+
+const report = {
+  generated: new Date().toISOString(),
+  port,
+  monitor: MONITOR,
+  bounds,
+  window: await page.evaluate(() => ({ w: innerWidth, h: innerHeight })).catch(() => null),
+  scope: await frame.evaluate(() => {
+    const r = document.querySelector('[data-cb-route]')
+    return {
+      width: r?.clientWidth,
+      height: r?.clientHeight,
+      scope: r?.getAttribute('data-cb-scope'),
+      destination: r?.getAttribute('data-cb-destination')
+    }
+  }).catch(() => null),
+  frames: [],
+  failures: []
+}
+
+async function routeTo(label) {
+  const clicked = await frame.evaluate((l) => {
+    const el = [...document.querySelectorAll('[data-cb-nav-item]')].find((n) => (n.textContent || '').trim() === l)
+    if (!el) return false
+    el.click()
+    return true
+  }, label).catch(() => false)
+  if (!clicked) return false
+  const deadline = Date.now() + 10000
   while (Date.now() < deadline) {
-    const ready = await frame.evaluate(() => {
-      const r = document.querySelector('[data-cb-route]')
-      if (!r) return false
-      // a v3 route paints the scope node; wait for it and for fonts to settle
-      return Boolean(document.querySelector('[data-cb-v3]')) && document.fonts.status === 'loaded'
-    }).catch(() => false)
+    const ready = await frame.evaluate(() => Boolean(document.querySelector('[data-cb-v3]')) && document.fonts.status === 'loaded').catch(() => false)
     if (ready) { await sleep(250); return true }
-    await sleep(200)
+    await sleep(180)
   }
   return false
 }
 
-const report = { generated: new Date().toISOString(), port: PORT, width: WIDTH, frames: [], failures: [] }
-
-const { browser, page, frame } = await attach()
-await page.bringToFront().catch(() => {})
-// the module under test must be the one the window reads; reload with empty cache
-await page.reload({ ignoreCache: true }).catch(() => {})
-await sleep(600)
-
-await frame.evaluate(() => { window.location.hash = '#/coursebook' })
-await sleep(1500)
+await frame.evaluate(() => { window.location.hash = '#/coursebook' }).catch(() => {})
+await sleep(1200)
 
 for (const route of ROUTES) {
-  const ok = await routeTo(frame, route.label)
-  const el = frame.locator('[data-cb-route]').first()
+  const ok = await routeTo(route.label)
   const shotPath = path.join(FRAMES, `${route.name}.png`)
-  await el.screenshot({ path: shotPath, animations: 'disabled' }).catch(async () => {
-    await page.screenshot({ path: shotPath })
-  })
+  await frame.locator('[data-cb-route]').first().screenshot({ path: shotPath, animations: 'disabled' }).catch(() => {})
 
-  const fonts = await frame.evaluate(() => {
-    const want = ['CB Display', 'CB UI']
-    const families = [...new Set([...document.fonts].map((f) => f.family.replace(/["']/g, '')))]
-    return want.map((f) => ({ family: f, loaded: document.fonts.check(`16px "${f}"`), present: families.includes(f) }))
-  }).catch(() => [])
-
+  const fonts = await frame.evaluate(() => ['CB Display', 'CB UI'].map((f) => ({ family: f, loaded: document.fonts.check(`16px "${f}"`) }))).catch(() => [])
   let axe = { violations: [] }
   try {
     await frame.addScriptTag({ path: AXE })
     axe = await frame.evaluate(async () => {
       const root = document.querySelector('[data-cb-route]') || document.body
       const res = await window.axe.run(root, { resultTypes: ['violations'] })
-      return { violations: res.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help })) }
+      return { violations: res.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length })) }
     })
-  } catch (e) {
-    axe = { violations: [], error: String(e.message || e) }
-  }
+  } catch (e) { axe = { violations: [], error: String(e.message || e) } }
 
-  const titles = await frame.evaluate(() => {
-    const nodes = [...document.querySelectorAll('[data-cb-route] [data-cb-card-title], [data-cb-route] h3, [data-cb-route] h2')]
-    return nodes.map((n) => (n.textContent || '').trim()).filter(Boolean).slice(0, 12)
-  }).catch(() => [])
-
-  const frameReport = { route: route.name, label: route.label, route_ready: ok, shot: shotPath, fonts, titles, axe }
   const serious = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   if (!ok) report.failures.push(`${route.name}: route never reached v3-ready`)
   if (serious.length) report.failures.push(`${route.name}: axe ${serious.map((v) => v.id).join(',')}`)
   if (fonts.some((f) => !f.loaded)) report.failures.push(`${route.name}: font fallback ${fonts.filter((f) => !f.loaded).map((f) => f.family).join(',')}`)
 
+  const fr = { route: route.name, ready: ok, shot: shotPath, fonts, axe }
   const basePath = path.join(BASELINE, `${route.name}.png`)
   if (WRITE_BASELINE || !fs.existsSync(basePath)) {
     fs.copyFileSync(shotPath, basePath)
-    frameReport.baseline = 'created'
+    fr.diff = null
   } else {
     const a = PNG.sync.read(fs.readFileSync(basePath))
     const b = PNG.sync.read(fs.readFileSync(shotPath))
     if (a.width !== b.width || a.height !== b.height) {
-      frameReport.diff = { ratio: 1, reason: `size ${a.width}x${a.height} -> ${b.width}x${b.height}` }
+      fr.diff = { ratio: 1, reason: `size ${a.width}x${a.height} -> ${b.width}x${b.height}` }
       report.failures.push(`${route.name}: frame size changed`)
     } else {
       const diff = new PNG({ width: a.width, height: a.height })
       const changed = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: 0.1 })
-      const ratio = changed / (a.width * a.height)
+      fr.diff = { ratio: changed / (a.width * a.height) }
       fs.writeFileSync(path.join(DIFFS, `${route.name}.png`), PNG.sync.write(diff))
-      frameReport.diff = { ratio, changed, total: a.width * a.height }
-      if (ratio > THRESHOLD) report.failures.push(`${route.name}: ${(ratio * 100).toFixed(2)}% pixels changed (threshold ${(THRESHOLD * 100).toFixed(2)}%)`)
+      if (fr.diff.ratio > THRESHOLD) report.failures.push(`${route.name}: ${(fr.diff.ratio * 100).toFixed(2)}% pixels changed`)
     }
   }
-  report.frames.push(frameReport)
-  console.log(`${route.name}: ready=${ok} fonts=${fonts.map((f) => `${f.family}:${f.loaded}`).join(' ')} axe=${serious.length} diff=${frameReport.diff ? (frameReport.diff.ratio * 100).toFixed(2) + '%' : 'n/a'}`)
+  report.frames.push(fr)
+  console.log(`${route.name}: ready=${ok} fonts=${fonts.map((f) => `${f.family}:${f.loaded}`).join(' ')} axe=${serious.length}`)
 }
 
-fs.writeFileSync(path.join(HERE, 'report.json'), JSON.stringify(report, null, 2))
-const html = `<!doctype html><meta charset="utf-8"><title>Coursebook visual audit</title>
-<style>body{font:15px/1.5 system-ui;margin:24px;background:#f5e3c8;color:#1a1713}h1{font-size:22px}
-img{width:420px;border:1px solid #cdb894;box-shadow:0 2px 8px #0002}.ok{color:#0d281b}.bad{color:#b4532f;font-weight:600}
-pre{background:#f4ecd9;padding:12px;overflow:auto}</style>
-<h1>Coursebook visual audit — ${report.generated}</h1>
-<p>${report.failures.length ? `<span class="bad">${report.failures.length} failure(s)</span>` : '<span class="ok">all frames clean</span>'}</p>
-${report.frames.map((f) => `<h2>${f.route}</h2><img src="frames/${f.route}.png">
-<p>fonts: ${f.fonts.map((x) => `${x.family} ${x.loaded ? 'loaded' : 'MISSING'}`).join(' · ')}<br>
-axe: ${f.axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id).join(', ') || 'none'}<br>
-titles: ${f.titles.join(' | ')}<br>
-diff: ${f.diff ? (f.diff.ratio * 100).toFixed(2) + '%' : 'baseline created'}</p>`).join('')}
-<h2>Failures</h2><pre>${report.failures.join('\n') || 'none'}</pre>`
-fs.writeFileSync(path.join(HERE, 'report.html'), html)
+if (testAddress) {
+  try { execSync(`hyprctl dispatch closewindow address:${testAddress}`, { stdio: 'ignore' }) } catch { /* best effort */ }
+}
+restoreFocus(previousAddress)
 
-await browser.close().catch(() => {})
+fs.writeFileSync(path.join(HERE, 'report.json'), JSON.stringify(report, null, 2))
+console.log(`window ${report.window?.w}x${report.window?.h} at ${bounds.left},${bounds.top}; route ${report.scope?.width}x${report.scope?.height} scope=${report.scope?.scope}`)
 console.log(report.failures.length ? `FAIL\n${report.failures.join('\n')}` : 'PASS')
+await browser.close().catch(() => {})
 process.exit(report.failures.length ? 1 : 0)

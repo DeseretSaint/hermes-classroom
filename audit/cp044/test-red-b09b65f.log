@@ -1,0 +1,18 @@
+F.
+======================================================================
+FAIL: test_job_deadline_cancels_hanging_provider_call_before_its_purpose_deadline (tests.test_cp044_job_deadline_hanging_provider.JobDeadlineCancelsHangingProviderCallTest.test_job_deadline_cancels_hanging_provider_call_before_its_purpose_deadline)
+CP-044 RED case: the job deadline is 1.5 s, the call's own bound is 60 s.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/tests/test_cp044_job_deadline_hanging_provider.py", line 206, in test_job_deadline_cancels_hanging_provider_call_before_its_purpose_deadline
+    self._assert_terminal_and_cancelled(view, seam, stub, elapsed, bound_s=8.0)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/tests/test_cp044_job_deadline_hanging_provider.py", line 182, in _assert_terminal_and_cancelled
+    self.assertLess(elapsed, bound_s, f"the job was not bounded by its deadline: {elapsed:.1f}s")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 60.177665220981 not less than 8.0 : the job was not bounded by its deadline: 60.2s
+
+----------------------------------------------------------------------
+Ran 2 tests in 62.832s
+
+FAILED (failures=1)

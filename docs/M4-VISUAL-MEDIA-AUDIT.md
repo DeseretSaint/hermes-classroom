@@ -3,15 +3,27 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the settled H-209 tree `ab6dc7e` (H-208's H-183/H-189/H-192c/H-199 integration with
-H-206 and the H-182/D1-D3 renderer work, the H-182/D8 residual learner copy, the H-182/D6
-reaper/pump store scope, the validator-reject fix, and the private test `node_modules` isolation),
-and is pinned to the module that tree produces: `desktop/plugin.js` sha256
-`cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`.
+regenerated for **CP-049** on `wt/cp-049-m4-pin` (branch from master `19fec67`), after `d4d37e2`
+changed the shipped type stacks and `879fdb2` added the guard for that wiring. It is pinned to the
+module master ships: `desktop/plugin.js` sha256
+`4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7`.
 
-That module is the one that ships from the merge `ab6dc7e`, the commit this audit was
-regenerated for, so this is the audit of the shipping module, not of a branch. The previous
-pin, `desktop/plugin.js` sha256
+The recapture moved **no pixels and no measurement**. All 62 committed PNGs hash byte-identically
+before and after the run, and a structural diff of `audit.json` shows exactly three changed values —
+`generated_at`, `summary.branch` and `summary.plugin_sha256`. That is the honest result, and it has
+a cause: `d4d37e2` rewrote `CB_SERIF`/`CB_SANS` to prefer `var(--cb3-font-display, ui-serif)` and
+`var(--cb3-font-ui, ui-sans-serif)`, but those custom properties are written only by `CbV3Scope` on
+the `[data-cb-v3]` route root. This harness mounts each lesson surface under a **v2** `data-cb-scope`
+root (`scripts/m4v-render.mjs`), so the vars are undefined in every frame and the fallback resolves
+to the same first family the old stack named (`ui-serif` / `ui-sans-serif`). The v3 faces reach the
+page chrome, not these six measured surfaces; the wiring itself is guarded statically by
+`tests/test_desktop_font_wiring.py`, and no frame in this gate can show it.
+
+That module is the one master ships at `19fec67`, the commit this audit was regenerated for, so this
+is the audit of the shipping module, not of a branch. The previous pin, `desktop/plugin.js` sha256
+`044522314ea826fac38fd02179526f233a48fb2becd26108552894fb8dcfcdf8` (CP-043, `a63f999`), is history
+for that tree, as is `cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516` (H-209,
+`ab6dc7e`), and the older
 `a11a769f6131b365555b9a4efae9cf942baa843f78bcdd0237f0170d6a0aba61` (the `4dacf07` settled tree), is
 history for that tree, as is the `eed7dc7` slice's
 `179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163` and
@@ -44,23 +56,32 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
-**Re-pin at `cd862140` (settled H-209 tree, `ab6dc7e`).** `desktop/plugin.js` moved with H-208's
-H-183/H-189/H-192c/H-199 integration, H-206 and the H-182/D1-D3 renderer work, then H-182/D8's
-residual learner copy and H-182/D6's store scope, so the audit was regenerated on the settled tree:
-`python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-`plugin_sha256: cd862140f0f03783f098326017db5225bb58b400e3595b321200480aa865c516`. The 56
-non-forced frames now measure **2,120** text nodes (the learner-copy sweep reduced painted prose on the
-Quest and Field Desk surfaces) while the 32 frames with an accessibility tree still measure **298** AX
-controls and the worst authored contrast is unchanged at 5.93:1. C-08 now measures **0** animated nodes
-in the four reduced-motion frames against **70** in full motion: H-152's transitions are real and the
-preference suppresses them. Regenerating the audit rewrote only `generated_at` and the recorded branch
-name; every measurement and every committed screenshot reproduced unchanged, which is what pins the
-numbers to `cd862140`. The reproducibility pair quoted below was re-run at this pin as part of the same
-pass.
+**Re-pin at `4087908c` (CP-049, `19fec67`, branch `wt/cp-049-m4-pin`).** `desktop/plugin.js` moved
+from CP-043's `04452231…` pin when `d4d37e2` wired the v3 display/UI faces into the v2 stacks.
+`python3 scripts/m4v-audit.py` on the shipped module returned 15 PASS, 0 not PASS, 62 frames,
+`plugin_sha256: 4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7`. The 56
+non-forced frames still measure **2,120** text nodes, the 32 frames with an accessibility tree still
+measure **298** AX controls, the worst authored contrast is unchanged at 5.93:1, and C-08 still
+measures **0** animated nodes in the four reduced-motion frames against **70** in full motion.
+Regenerating the audit rewrote only `generated_at`, the recorded branch name and the plugin pin; every
+measurement and **all 62 screenshots** reproduced byte-identically, which is what pins the numbers to
+`4087908c`.
+
+The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
+the v3 `--cb3-font-*` variables are set by `CbV3Scope` on the route root, and this harness mounts the
+six lesson surfaces under a v2 `data-cb-scope` root. The frames therefore keep the OS serif/sans
+first family in both pins. A v3-face regression would not fail this gate; it fails
+`tests/test_desktop_font_wiring.py`. Treat that as the honest coverage boundary of M4, not as evidence
+that the shipped page chrome carries the OS stack.
+
+The reproducibility check below is history at `cd862140…`: CP-049's spend guard allowed one camera
+run, so it was not re-run at `4087908c`. The single run is still a strong claim for this change — it
+reproduced all 62 screenshots and every measurement from the previous evidence, so only provenance
+moved.
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`cd862140…`), verbatim (scratch roots elided):
+Run back to back on the H-209 pin (`cd862140…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py

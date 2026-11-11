@@ -1,0 +1,80 @@
+{
+  "base_commit": "b09b65f",
+  "captured_at": "2026-11-10T23:27:31Z",
+  "scenarios": [
+    {
+      "coroutine_cancelled": 1,
+      "elapsed_s": 8.35,
+      "error_code": "HOST_UNAVAILABLE",
+      "error_details": {
+        "deadline_s": 8.0,
+        "duration_ms": 8015,
+        "job_deadline": false,
+        "purpose": "coursebook.plan.generate"
+      },
+      "error_message": "coursebook.plan.generate exceeded its 8s deadline (waited 8.0s). no plan was written; the call's real tokens are recorded as spend. Next: run this stage again as a new job for the same brief (the retry is a real attempt \u2014 research and authoring run again), or raise COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS above 900 on a slower route",
+      "job_deadline_env": null,
+      "job_id": "job_00f18869489c44409035fe4fe80e23de",
+      "left_running": true,
+      "liveness_rows": [
+        {
+          "beats": 2,
+          "elapsed_ms": 8026,
+          "heartbeat_at": "2026-11-10T23:27:39Z",
+          "id": "callwait:job_00f18869489c44409035fe4fe80e23de:1",
+          "job_id": "job_00f18869489c44409035fe4fe80e23de",
+          "prompt_version": "plan-prompt.v10",
+          "purpose": "coursebook.plan.generate",
+          "started_at": "2026-11-10T23:27:31Z",
+          "state": "timeout"
+        }
+      ],
+      "purpose_deadline_s": 8.0,
+      "row_lease_expires_at": null,
+      "row_lease_owner": null,
+      "row_state": "failed",
+      "scenario": "A: purpose deadline only (no job budget)",
+      "stub_connection_accepted": true,
+      "stub_socket_closed": true,
+      "view_lease": null,
+      "view_state": "failed"
+    },
+    {
+      "coroutine_cancelled": 1,
+      "elapsed_s": 1.77,
+      "error_code": "HOST_UNAVAILABLE",
+      "error_details": {
+        "deadline_s": 1.425384417991154,
+        "duration_ms": 1436,
+        "job_deadline": true,
+        "purpose": "coursebook.plan.generate"
+      },
+      "error_message": "coursebook.plan.generate exceeded its 1.42538s deadline (waited 1.4s); cancelled at the job's deadline, not the call's. no plan was written; the call's real tokens are recorded as spend. Next: run this stage again as a new job for the same brief (the retry is a real attempt \u2014 research and authoring run again), or raise COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS above 900 on a slower route",
+      "job_deadline_env": 1.5,
+      "job_id": "job_1294d5a461a648e09815347a9abe584a",
+      "left_running": true,
+      "liveness_rows": [
+        {
+          "beats": 1,
+          "elapsed_ms": 1448,
+          "heartbeat_at": "2026-11-10T23:27:41Z",
+          "id": "callwait:job_1294d5a461a648e09815347a9abe584a:1",
+          "job_id": "job_1294d5a461a648e09815347a9abe584a",
+          "prompt_version": "plan-prompt.v10",
+          "purpose": "coursebook.plan.generate",
+          "started_at": "2026-11-10T23:27:39Z",
+          "state": "timeout"
+        }
+      ],
+      "purpose_deadline_s": 8.0,
+      "row_lease_expires_at": null,
+      "row_lease_owner": null,
+      "row_state": "failed",
+      "scenario": "B: job deadline 1.5 s beats a 8 s purpose deadline",
+      "stub_connection_accepted": true,
+      "stub_socket_closed": true,
+      "view_lease": null,
+      "view_state": "failed"
+    }
+  ]
+}

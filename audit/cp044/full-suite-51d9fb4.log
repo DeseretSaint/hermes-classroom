@@ -1,0 +1,102 @@
+...................................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a67ebf5b0>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+......../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:212: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a67ebf5b0>
+  def _keep_alive(x, memo):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306b1f0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306bc40>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306a7a0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306bb50>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306bf10>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306b5b0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..../home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/api.py:50: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306b100>
+  def register_handler(method: str, handler: Handler) -> None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/api.py:50: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306bb50>
+  def register_handler(method: str, handler: Handler) -> None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/api.py:50: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306a7a0>
+  def register_handler(method: str, handler: Handler) -> None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/api.py:50: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306b790>
+  def register_handler(method: str, handler: Handler) -> None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/api.py:50: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f8a6306bc40>
+  def register_handler(method: str, handler: Handler) -> None:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...................................s..ssssss........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................ss...........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................coursebook: ignoring COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS='nonsense' (not a number); using 240.00s
+...............................................................................................................................................................................................................coursebook: host refused auxiliary task 'cb_validate' (reserved key); validator output stays uncapped
+.....coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+...................................................................................coursebook: job job_771f04b54f164d608c647eeb95d055ab was already cancelling; closing it cancelled after an unreadable state read
+..coursebook: cancel state unreadable for job job_2dd6542a545a47dcad08ba7ad15cbb28 (attempt 1/3): RuntimeError
+.coursebook: cancel state unreadable for job job_395da095ff3e4303acfbb492d015e9a9 (attempt 1/3): RuntimeError
+coursebook: cancel state unreadable for job job_395da095ff3e4303acfbb492d015e9a9 (attempt 2/3): RuntimeError
+coursebook: cancel state unreadable for job job_395da095ff3e4303acfbb492d015e9a9 (attempt 3/3): RuntimeError
+coursebook: job job_395da095ff3e4303acfbb492d015e9a9 stopped at plan: cancel state unreadable (job job_395da095ff3e4303acfbb492d015e9a9 cancel state could not be read after 3 attempts (RuntimeError))
+.coursebook: cancel state unreadable for job job_4f65dba8b39a49f2b4f21be46786f0b8 (attempt 1/3): RuntimeError
+coursebook: cancel state unreadable for job job_4f65dba8b39a49f2b4f21be46786f0b8 (attempt 2/3): RuntimeError
+coursebook: cancel state unreadable for job job_4f65dba8b39a49f2b4f21be46786f0b8 (attempt 3/3): RuntimeError
+.............coursebook job tick started on its own thread: kind=plan interval=0.1s limit=5
+coursebook job reaper: running->interrupted=1 cancel->cancelled=0
+.coursebook job tick started on its own thread: kind=plan interval=0.1s limit=5
+.............................................................coursebook: teaching snapshot LOST after 2 attempts and recorded in hook_errors (session=stored-telemetry-1 nonce=nonce-h124-snapshot): RuntimeError: disk I/O error
+.coursebook: teaching snapshot LOST after 2 attempts and recorded in hook_errors (session=stored-telemetry-1 nonce=nonce-h124-snapshot): RuntimeError: disk I/O error
+...coursebook: teaching snapshot recovered on retry (session=stored-telemetry-1 nonce=nonce-h124-snapshot)
+.plugin-data/coursebook/data.db: on-disk journal_mode was delete and has been switched to WAL. This rewrites the database header and persists after this process exits. If delete was a deliberate choice (for example the mitigation for the SQLite WAL-reset bug, or a WAL-unsafe filesystem), setting it with PRAGMA on the file will not survive -- every open re-applies the configured mode. Set `database.journal_mode: delete` in config.yaml to make it stick. This message fires once per process per database.
+............................................................................................................................................................................................................................................................................................................................................................................coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+....coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+../home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/56b21507342b42748c84a0319277c55b/workspace/hermes_cli/plugins_manifest.py:475: DeprecationWarning: 'maxsplit' is passed as positional argument
+  parts = re.split(r"[-+]", str(v).strip().lstrip("v"), 1)[0].split(".")
+................................................................./home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/pack_flow.py:752: PackAuthoringWarning: section file 'content/chapter-one.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+..........................................................................................................................................................coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+.coursebook job reaper failed
+Traceback (most recent call last):
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/executor.py", line 533, in _reaper_loop
+    result = job_service.reconcile_expired()
+  File "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/job_service.py", line 1089, in reconcile_expired
+    candidates = connection.execute(
+                 ~~~~~~~~~~~~~~~~~~^
+        "SELECT id, state, lease_expires_at FROM jobs WHERE state IN"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        " ('running','cancel_requested','cancelling')"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).fetchall()
+    ^
+sqlite3.OperationalError: no such table: jobs
+...........................................................................................coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+........................................................................................................................................pronunciation: availability probe could not read the store
+............pronunciation: recogniser raised RuntimeError
+......................................................................................./home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/pack_flow.py:724: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_5ef3cafb/coursebook/pack_flow.py:752: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f89e35cf970>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................................s...................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f89e35ce4d0>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............................................................/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f89e35cf6a0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..coursebook: host exposes no register_auxiliary_task; the validator's 4000-token output cap and 'low' reasoning budget cannot be requested on this host
+...........................................................................s..........................................................................................................
+----------------------------------------------------------------------
+Ran 3425 tests in 1226.195s
+
+OK (skipped=11)

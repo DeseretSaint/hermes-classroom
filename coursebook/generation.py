@@ -371,12 +371,16 @@ class ProviderTimeout(GenerationError):
         purpose: str | None = None,
         duration_ms: int | None = None,
         deadline_s: float | None = None,
+        job_deadline: bool = False,
     ) -> None:
         super().__init__(message)
         self.message = message
         self.purpose = purpose
         self.duration_ms = duration_ms
         self.deadline_s = deadline_s
+        #: True when the cut came from the *job attempt's* remaining budget rather than the
+        #: purpose's own deadline (CP-044). ``deadline_s`` is then the remaining budget.
+        self.job_deadline = bool(job_deadline)
         #: Filled in by the pipeline when it knows what work survived; job failures carry it.
         self.recovery: str | None = None
 
@@ -398,13 +402,27 @@ def _call_deadline_error(
     late success uses) and state them in the message.
     """
     elapsed = getattr(exc, "elapsed_s", None)
+    # The bound that actually fired, not the one that was requested: inside a job attempt the call
+    # deadline is clamped to the remaining job budget, and the error must name the number that
+    # stopped it (CP-044).
+    actual_deadline = float(getattr(exc, "deadline_s", deadline_s) or deadline_s)
     duration_ms: int | None = None
-    message = f"{purpose} exceeded its {deadline_s:g}s deadline"
+    job_deadline = bool(getattr(exc, "job_deadline", False))
+    message = f"{purpose} exceeded its {actual_deadline:g}s deadline"
     if elapsed is not None:
         duration_ms = max(0, int(round(float(elapsed) * 1000)))
         message += f" (waited {float(elapsed):.1f}s)"
+    if job_deadline:
+        # CP-044: the call did not overrun its own purpose deadline; the job attempt ran out of
+        # time. Naming which bound fired is the difference between "the provider is slow" and
+        # "this job's budget is spent".
+        message += "; cancelled at the job's deadline, not the call's"
     return ProviderTimeout(
-        message, purpose=purpose, deadline_s=deadline_s, duration_ms=duration_ms
+        message,
+        purpose=purpose,
+        deadline_s=actual_deadline,
+        duration_ms=duration_ms,
+        job_deadline=job_deadline,
     )
 
 
@@ -7812,6 +7830,14 @@ def run_plan_job(
     parent_brief = parent_brief_view(brief) if recipe == "parent" else None
     job_id = str(job.get("job_id") or "") or None
     usage = _Usage(budget or default_cost_budget(), cancel_probe=_job_cancel_probe(job_id))
+    # CP-044: a plan call is the longest one Coursebook makes (900 s declared), so a plan job that
+    # is waiting on a slow provider must be visible as *waiting*, not as a dead row with no usage.
+    # The reporter runs on this thread and writes through this job's connection.
+    if job_id:
+        usage.wait_id_prefix = str(job_id)
+        usage.wait_reporter = lambda call_id, purpose, prompt_version, elapsed_s, state: _record_call_wait(
+            connection, call_id, job_id, purpose, prompt_version, elapsed_s, state
+        )
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
