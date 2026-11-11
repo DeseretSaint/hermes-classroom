@@ -3,7 +3,7 @@
 Status: owner-approved 2026-11-11.
 Scope: every Coursebook surface, including user-generated lessons that choose Game mode.
 Read with: `docs/launch/UI-PROGRAM.md`, `docs/launch/UI-DECISIONS.md`,
-`docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md`, `docs/ART-BIBLE.md`,
+`docs/GAME-MODE-AND-TUTOR-RAIL-PLAN.md`, `docs/concept-parity/ART-BIBLE.md`,
 `docs/ART-DIRECTION-COVERS.md`, and `docs/GM-CONCEPT-PARITY-RUBRIC.md`.
 
 ## 1. Decision

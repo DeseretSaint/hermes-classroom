@@ -172,7 +172,7 @@ The registry lives at `assets/visual-kits/<grammar>/kit.json`. It is the only ma
   "grammar": "field_atlas",
   "label": "Field atlas",
   "version": 1,
-  "art_bible": "docs/ART-BIBLE.md",
+  "art_bible": "docs/concept-parity/ART-BIBLE.md",
   "palette": ["paper", "ink", "ochre", "lamp", "field"],
   "medium": "painted gouache on paper",
   "composition": "route through lantern district; quiet left third",
