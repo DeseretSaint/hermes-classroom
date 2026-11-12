@@ -4444,8 +4444,15 @@ def _plan_sourcing_rules() -> list[str]:
         "learner to label, trace or perform is an application or procedure check, not "
         "comprehension, and the objective's evidence target must be the same class.",
         "A course may be short. State only the capabilities the excerpts support, even when that "
-        "is one objective in one unit; never pad the plan with an extra objective, unit or named "
-        "example to reach an objective count. Cover what the goal names only where the ledger "
+        "is one capability in one unit; never pad the plan with an extra objective, unit, topic "
+        "heading or named example to reach an objective count. When the excerpts support fewer "
+        "capabilities than the objective band asks for, split a supported capability into its "
+        "own ordered sub-performances — recognise it, use it with support, use it unaided — one "
+        "objective per sub-performance, in that order, each citing the excerpt that states the "
+        "capability and each asking the learner for something its check can tell apart from the "
+        "others. Split only where the excerpt or the capability itself carries that progression: "
+        "a topic heading is not a sub-performance, and a split never licenses a claim the "
+        "excerpt does not state. Cover what the goal names only where the ledger "
         "carries it: when the goal names a capability no excerpt supports, do not invent an "
         "objective for it — record the capability in exclusions, prefixed 'Not covered — no "
         "supporting source:', so the gap is visible to the reviewer instead of being taught "
@@ -6343,6 +6350,49 @@ def prerequisite_edge_reasons(units: Sequence[dict[str, Any]]) -> list[str]:
     return reasons
 
 
+def _duplicate_performance_reasons(objectives: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Item 24 — a shortfall is closed by distinguishable performances, never by a repeat.
+
+    The scope floor counts objectives, and a ledger that supports fewer capabilities than the
+    floor left the planner two dishonest ways out: invent an unsourced objective (the citation
+    rules already refuse that) or relabel a supported one twice. Splitting a capability into
+    ordered sub-performances is legitimate only while the evidence can tell them apart, so two
+    ``sourced`` objectives that copy the same claim link, declare the same evidence target and
+    state the same observable criterion are one objective printed twice. Nothing here reads prose
+    a model could paraphrase around: the claim link and the criteria are the plan's own fields.
+    Comparison uses the module's one case/whitespace/punctuation folding rule (``_procedure_key``)
+    and keeps word order, so a reordering stays a different instruction.
+    """
+    reasons: list[str] = []
+    seen: dict[tuple[str, str, str], int] = {}
+    for objective in objectives:
+        if str(objective.get("support") or "") != "sourced":
+            continue
+        quote = _procedure_key(objective.get("source_quote"))
+        if not quote:
+            continue
+        criteria = " | ".join(
+            key
+            for key in (_procedure_key(item) for item in objective.get("evidence_criteria") or [])
+            if key
+        )
+        if not criteria:
+            continue
+        key = (quote, str(objective.get("evidence_target") or ""), criteria)
+        ordinal = int(objective.get("ordinal", 0))
+        if key in seen:
+            reasons.append(
+                f"objective {ordinal} repeats objective {seen[key]}'s sourced claim, evidence "
+                "target and evidence criteria: two objectives the evidence cannot tell apart are "
+                "one objective printed twice. A shortfall is closed by ordered sub-performances "
+                "(recognise, then with support, then unaided), each asking for something its "
+                "check can distinguish — never by a second title over the same performance"
+            )
+        else:
+            seen[key] = ordinal
+    return reasons
+
+
 def _enforce_plan_rules_v2(
     plan: dict[str, Any],
     *,
@@ -6457,6 +6507,15 @@ def _enforce_plan_rules_v2(
             )
         elif ordinal not in by_unit:
             reasons.append(f"unit {ordinal} has no objectives; a unit must author at least one")
+
+    # Item 24 — the objective floor stays where it is, and the honest way to meet it is a split,
+    # not a lower bound. A ledger that supports fewer capabilities than the band's floor can
+    # still yield three objectives when one capability is split into ordered sub-performances
+    # (recognise → with support → unaided), each citing the excerpt that states it. What must not
+    # happen is a count reached by relabelling the same sourced claim: two objectives whose
+    # claim link, evidence target and observable criteria are identical are one objective printed
+    # twice, and the check plan cannot distinguish them.
+    reasons.extend(_duplicate_performance_reasons(objectives))
 
     # Rule 5 — check plan coverage: every objective once, permitted kind.
     refs = [int(item.get("objective_ref", 0)) for item in check_plan]
