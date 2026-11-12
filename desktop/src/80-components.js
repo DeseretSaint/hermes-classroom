@@ -1104,6 +1104,100 @@ function MediaLabelOverlay({ labels, frame }) {
   })
 }
 
+/**
+ * One figure at its own size.
+ *
+ * Item 37: the reading column draws a legible preview (`maxHeight: 70vh`), and the preview is a
+ * click target. Activating it opens the same artifact unscaled — `maxWidth/maxHeight: none`, the
+ * raster's intrinsic pixels — inside a dialog that closes on Escape, on its Close control or on
+ * the backdrop, and returns focus to the figure that opened it. Nothing is re-fetched or
+ * re-derived: the dialog shows the bytes the preview route already served.
+ */
+function MediaViewer({ src, alt, caption, label, onClose }) {
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return undefined
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return jsxs('div', {
+    'data-cb-media-viewer': '',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-label': `${label || 'Figure'} at full size`,
+    onClick: (event) => {
+      if (event.target === event.currentTarget) onClose()
+    },
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 90,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      padding: '1rem',
+      background: 'var(--cb-paper)',
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          width: '100%'
+        },
+        children: [
+          jsx('span', {
+            'data-cb-media-viewer-title': '',
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.4, color: 'var(--cb-ink)' },
+            children: caption || label || 'Figure'
+          }),
+          jsx(sdk.Button, {
+            variant: 'text',
+            size: 'sm',
+            autoFocus: true,
+            'data-cb-media-close': '',
+            onClick: onClose,
+            children: 'Close figure'
+          })
+        ]
+      }),
+      jsx('div', {
+        'data-cb-media-scroll': '',
+        style: { overflow: 'auto', maxWidth: '92vw', maxHeight: '82vh', background: 'var(--cb-paper)', lineHeight: 0 },
+        children: jsx('img', {
+          src,
+          alt: alt || caption || '',
+          'data-cb-media-natural': '',
+          style: { display: 'block', width: 'auto', height: 'auto', maxWidth: 'none', maxHeight: 'none' }
+        })
+      }),
+      caption
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              maxWidth: '48rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: caption
+          })
+        : null
+    ]
+  })
+}
+
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
   // The figure's measured box, in CSS pixels. The overlay's geometry is expressed against it, so
@@ -1112,6 +1206,10 @@ function MediaSegment({ segment }) {
   // than guessing a frame size and painting a label in the wrong place.
   const frameRef = useRef(null)
   const [frame, setFrame] = useState(null)
+  // Item 37: the preview is a door, not the whole figure. `viewerOpen` is that door's state, and
+  // the trigger is remembered so closing the dialog puts focus back where it was.
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const triggerRef = useRef(null)
   useEffect(() => {
     const node = frameRef.current
     if (!node) return undefined
@@ -1163,14 +1261,16 @@ function MediaSegment({ segment }) {
     preview.state === 'ready' && preview.mime === 'image/svg+xml'
       ? jsx('img', {
           alt: caption,
-          style: { maxHeight: '380px', width: '100%', objectFit: 'contain' },
+          // Item 37: no fixed pixel cap. The figure may use 70 vh of the reader's viewport; its
+          // natural size is one activation away (MediaViewer).
+          style: { maxHeight: '70vh', width: '100%', objectFit: 'contain' },
           loading: 'lazy',
           src: preview.data_url
         })
       : preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/')
         ? jsx('img', {
             alt: caption,
-            style: { maxHeight: '380px', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
+            style: { maxHeight: '70vh', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
             loading: 'lazy',
             src: preview.data_url
           })
@@ -1188,6 +1288,32 @@ function MediaSegment({ segment }) {
                 style: { padding: '0.25rem 0', fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: preview.message
               })
+  // Item 37: only a served image can be opened at natural size. Narration keeps its own control,
+  // and a figure whose bytes the route could not serve keeps its text equivalent — there is no
+  // door to a picture that is not there.
+  const openable =
+    preview.state === 'ready' && Boolean(preview.mime) && preview.mime.startsWith('image/')
+  const figureElement = openable
+    ? jsx('button', {
+        type: 'button',
+        ref: triggerRef,
+        'data-cb-media-open': segment.artifact_id,
+        'aria-label': `Open ${label || 'this figure'} at full size`,
+        onClick: () => setViewerOpen(true),
+        style: {
+          display: 'block',
+          width: '100%',
+          margin: 0,
+          padding: 0,
+          border: 0,
+          backgroundColor: 'transparent',
+          cursor: 'zoom-in',
+          lineHeight: 0,
+          textAlign: 'left'
+        },
+        children: element
+      })
+    : element
   return jsx(MediaFrame, {
     artifactId: segment.artifact_id,
     kind,
@@ -1201,13 +1327,13 @@ function MediaSegment({ segment }) {
         kind === 'visual'
           ? jsxs('div', {
               // The figure and its drawn labels share one positioned box, so the overlay is
-              // measured against the picture the learner actually sees — 380px tall in a narrow
-              // column, 70vh or more in a wide one — and never against an assumed size.
+              // measured against the picture the learner actually sees — up to 70vh tall in any
+              // column — and never against an assumed size.
               ref: frameRef,
               'data-cb-media-frame': '',
               style: { position: 'relative', display: 'block', lineHeight: 0, maxWidth: '100%' },
               children: [
-                element,
+                figureElement,
                 jsx(MediaLabelOverlay, { labels: segment.labels, frame })
               ]
             })
@@ -1226,6 +1352,19 @@ function MediaSegment({ segment }) {
               },
               children: 'Artifact details'
             })
+          : null,
+        viewerOpen && openable
+          ? jsx(MediaViewer, {
+              src: preview.data_url,
+              alt: caption,
+              caption,
+              label,
+              onClose: () => {
+                setViewerOpen(false)
+                const trigger = triggerRef.current
+                if (trigger && typeof trigger.focus === 'function') trigger.focus()
+              }
+            }, 'viewer')
           : null
       ]
     })
@@ -3192,6 +3331,29 @@ function playerCheckCount(document) {
 }
 
 /**
+ * Item 37: the block's first figure leads the step.
+ *
+ * A paragraph that says "look at the diagram" is unreadable when the diagram sits below the
+ * prose, off the fold of a phone-sized step. The player therefore renders the block's first
+ * visual media child above the concept text; every other media child keeps its authored order
+ * below the prose. Audio is never promoted: a step's narration follows the text it narrates.
+ *
+ * Returns `{ lead, leadOrdinal, rest }`. `lead` is null when the block carries no figure.
+ */
+function playerMediaLead(block) {
+  const media = Array.isArray(block && block.media) ? block.media : []
+  const leadIndex = media.findIndex((child) => Boolean(child) && (child.kind === 'visual' || !child.kind))
+  const rest = media
+    .map((child, ordinal) => ({ media: child, ordinal }))
+    .filter((entry) => entry.ordinal !== leadIndex)
+  return {
+    lead: leadIndex >= 0 ? media[leadIndex] : null,
+    leadOrdinal: leadIndex,
+    rest
+  }
+}
+
+/**
  * The one concept on a step: the authored `short` when the document has one, otherwise the first
  * paragraph of the authored `deep` prose. The clip is declared to the learner and Textbook keeps
  * the full text, so the player never silently drops authored material.
@@ -3413,6 +3575,9 @@ function LessonPlayer({
   const current = steps[Math.min(index, steps.length - 1)]
   const last = current.index >= steps.length - 1
   const concept = playerConcept(current.block, checkLabels)
+  // Item 37: the first figure leads the concept, so a paragraph that points at it is followed by
+  // the picture on the same screen. The remaining media keep their authored order below.
+  const mediaLead = playerMediaLead(current.block)
   const call = (name) => {
     const api = playerController && playerController.current
     if (api && typeof api[name] === 'function') api[name]()
@@ -3581,6 +3746,19 @@ function LessonPlayer({
               })
             ]
           }),
+          // Item 37: figure first, prose second. The block's first visual child is the thing the
+          // concept paragraph refers to, so it is rendered before that paragraph on every step.
+          mediaLead.lead
+            ? jsx('div', {
+                'data-cb-player-figure': current.block.id,
+                style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+                children: jsx(BlockMedia, {
+                  media: mediaLead.lead,
+                  blockId: current.block.id,
+                  ordinal: mediaLead.leadOrdinal
+                }, `${current.block.id}-media-${mediaLead.leadOrdinal}`)
+              })
+            : null,
           concept.text
             ? jsx(ProseText, {
                 'data-cb-play-concept': current.block.id,
@@ -3600,8 +3778,12 @@ function LessonPlayer({
                 children: 'First paragraph of this step. The full text is in Textbook.'
               })
             : null,
-          (current.block.media || []).map((media, ordinalIndex) =>
-            jsx(BlockMedia, { media, blockId: current.block.id, ordinal: ordinalIndex }, `${current.block.id}-media-${ordinalIndex}`)
+          mediaLead.rest.map((entry) =>
+            jsx(BlockMedia, {
+              media: entry.media,
+              blockId: current.block.id,
+              ordinal: entry.ordinal
+            }, `${current.block.id}-media-${entry.ordinal}`)
           ),
           jsx(PronunciationSeat, { block: current.block, pronunciation }),
           jsx(BlockSourceChips, { ids: current.block.source_ids, index: sources }),
@@ -4751,7 +4933,26 @@ function SectionPage({
   }, 'back')
   // On the Field Stop the shell header stands down, so the breadcrumb and the view switcher travel
   // together in one slim row above the reading column. Navigation is not metadata; it stays.
-  const shellActions = page ? (playerSurface ? [crumbAction, switcher] : [switcher]) : []
+  // Item 41: a finished lesson can be kept. The control prints the document that is on screen
+  // through the same hidden-frame path the take-home card uses. The builder reads only headline,
+  // prose, media captions and the check prompt — the answer key is not on any sheet it can make.
+  const printLesson = document && pageReadable
+    ? jsx(sdk.Button, {
+        variant: 'text',
+        size: 'sm',
+        'data-cb-print-lesson': '',
+        onClick: () => {
+          cbPrintHomeworkSheet(
+            cbLessonPrintHtml(document, {
+              checkLabels,
+              checkPrompt: checkStimulus && checkStimulus.prompt
+            })
+          )
+        },
+        children: 'Print this lesson'
+      }, 'print-lesson')
+    : null
+  const shellActions = page ? [playerSurface ? crumbAction : null, printLesson, switcher].filter(Boolean) : []
 
   // The section's place in the course, printed only where the shell header is shown.
   const ordinal = section && section.ordinal ? String(section.ordinal) : null

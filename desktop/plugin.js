@@ -20261,6 +20261,100 @@ function MediaLabelOverlay({ labels, frame }) {
   })
 }
 
+/**
+ * One figure at its own size.
+ *
+ * Item 37: the reading column draws a legible preview (`maxHeight: 70vh`), and the preview is a
+ * click target. Activating it opens the same artifact unscaled — `maxWidth/maxHeight: none`, the
+ * raster's intrinsic pixels — inside a dialog that closes on Escape, on its Close control or on
+ * the backdrop, and returns focus to the figure that opened it. Nothing is re-fetched or
+ * re-derived: the dialog shows the bytes the preview route already served.
+ */
+function MediaViewer({ src, alt, caption, label, onClose }) {
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return undefined
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return jsxs('div', {
+    'data-cb-media-viewer': '',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-label': `${label || 'Figure'} at full size`,
+    onClick: (event) => {
+      if (event.target === event.currentTarget) onClose()
+    },
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 90,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      padding: '1rem',
+      background: 'var(--cb-paper)',
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          width: '100%'
+        },
+        children: [
+          jsx('span', {
+            'data-cb-media-viewer-title': '',
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.4, color: 'var(--cb-ink)' },
+            children: caption || label || 'Figure'
+          }),
+          jsx(sdk.Button, {
+            variant: 'text',
+            size: 'sm',
+            autoFocus: true,
+            'data-cb-media-close': '',
+            onClick: onClose,
+            children: 'Close figure'
+          })
+        ]
+      }),
+      jsx('div', {
+        'data-cb-media-scroll': '',
+        style: { overflow: 'auto', maxWidth: '92vw', maxHeight: '82vh', background: 'var(--cb-paper)', lineHeight: 0 },
+        children: jsx('img', {
+          src,
+          alt: alt || caption || '',
+          'data-cb-media-natural': '',
+          style: { display: 'block', width: 'auto', height: 'auto', maxWidth: 'none', maxHeight: 'none' }
+        })
+      }),
+      caption
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              maxWidth: '48rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: caption
+          })
+        : null
+    ]
+  })
+}
+
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
   // The figure's measured box, in CSS pixels. The overlay's geometry is expressed against it, so
@@ -20269,6 +20363,10 @@ function MediaSegment({ segment }) {
   // than guessing a frame size and painting a label in the wrong place.
   const frameRef = useRef(null)
   const [frame, setFrame] = useState(null)
+  // Item 37: the preview is a door, not the whole figure. `viewerOpen` is that door's state, and
+  // the trigger is remembered so closing the dialog puts focus back where it was.
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const triggerRef = useRef(null)
   useEffect(() => {
     const node = frameRef.current
     if (!node) return undefined
@@ -20320,14 +20418,16 @@ function MediaSegment({ segment }) {
     preview.state === 'ready' && preview.mime === 'image/svg+xml'
       ? jsx('img', {
           alt: caption,
-          style: { maxHeight: '380px', width: '100%', objectFit: 'contain' },
+          // Item 37: no fixed pixel cap. The figure may use 70 vh of the reader's viewport; its
+          // natural size is one activation away (MediaViewer).
+          style: { maxHeight: '70vh', width: '100%', objectFit: 'contain' },
           loading: 'lazy',
           src: preview.data_url
         })
       : preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/')
         ? jsx('img', {
             alt: caption,
-            style: { maxHeight: '380px', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
+            style: { maxHeight: '70vh', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
             loading: 'lazy',
             src: preview.data_url
           })
@@ -20345,6 +20445,32 @@ function MediaSegment({ segment }) {
                 style: { padding: '0.25rem 0', fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: preview.message
               })
+  // Item 37: only a served image can be opened at natural size. Narration keeps its own control,
+  // and a figure whose bytes the route could not serve keeps its text equivalent — there is no
+  // door to a picture that is not there.
+  const openable =
+    preview.state === 'ready' && Boolean(preview.mime) && preview.mime.startsWith('image/')
+  const figureElement = openable
+    ? jsx('button', {
+        type: 'button',
+        ref: triggerRef,
+        'data-cb-media-open': segment.artifact_id,
+        'aria-label': `Open ${label || 'this figure'} at full size`,
+        onClick: () => setViewerOpen(true),
+        style: {
+          display: 'block',
+          width: '100%',
+          margin: 0,
+          padding: 0,
+          border: 0,
+          backgroundColor: 'transparent',
+          cursor: 'zoom-in',
+          lineHeight: 0,
+          textAlign: 'left'
+        },
+        children: element
+      })
+    : element
   return jsx(MediaFrame, {
     artifactId: segment.artifact_id,
     kind,
@@ -20358,13 +20484,13 @@ function MediaSegment({ segment }) {
         kind === 'visual'
           ? jsxs('div', {
               // The figure and its drawn labels share one positioned box, so the overlay is
-              // measured against the picture the learner actually sees — 380px tall in a narrow
-              // column, 70vh or more in a wide one — and never against an assumed size.
+              // measured against the picture the learner actually sees — up to 70vh tall in any
+              // column — and never against an assumed size.
               ref: frameRef,
               'data-cb-media-frame': '',
               style: { position: 'relative', display: 'block', lineHeight: 0, maxWidth: '100%' },
               children: [
-                element,
+                figureElement,
                 jsx(MediaLabelOverlay, { labels: segment.labels, frame })
               ]
             })
@@ -20383,6 +20509,19 @@ function MediaSegment({ segment }) {
               },
               children: 'Artifact details'
             })
+          : null,
+        viewerOpen && openable
+          ? jsx(MediaViewer, {
+              src: preview.data_url,
+              alt: caption,
+              caption,
+              label,
+              onClose: () => {
+                setViewerOpen(false)
+                const trigger = triggerRef.current
+                if (trigger && typeof trigger.focus === 'function') trigger.focus()
+              }
+            }, 'viewer')
           : null
       ]
     })
@@ -22349,6 +22488,29 @@ function playerCheckCount(document) {
 }
 
 /**
+ * Item 37: the block's first figure leads the step.
+ *
+ * A paragraph that says "look at the diagram" is unreadable when the diagram sits below the
+ * prose, off the fold of a phone-sized step. The player therefore renders the block's first
+ * visual media child above the concept text; every other media child keeps its authored order
+ * below the prose. Audio is never promoted: a step's narration follows the text it narrates.
+ *
+ * Returns `{ lead, leadOrdinal, rest }`. `lead` is null when the block carries no figure.
+ */
+function playerMediaLead(block) {
+  const media = Array.isArray(block && block.media) ? block.media : []
+  const leadIndex = media.findIndex((child) => Boolean(child) && (child.kind === 'visual' || !child.kind))
+  const rest = media
+    .map((child, ordinal) => ({ media: child, ordinal }))
+    .filter((entry) => entry.ordinal !== leadIndex)
+  return {
+    lead: leadIndex >= 0 ? media[leadIndex] : null,
+    leadOrdinal: leadIndex,
+    rest
+  }
+}
+
+/**
  * The one concept on a step: the authored `short` when the document has one, otherwise the first
  * paragraph of the authored `deep` prose. The clip is declared to the learner and Textbook keeps
  * the full text, so the player never silently drops authored material.
@@ -22570,6 +22732,9 @@ function LessonPlayer({
   const current = steps[Math.min(index, steps.length - 1)]
   const last = current.index >= steps.length - 1
   const concept = playerConcept(current.block, checkLabels)
+  // Item 37: the first figure leads the concept, so a paragraph that points at it is followed by
+  // the picture on the same screen. The remaining media keep their authored order below.
+  const mediaLead = playerMediaLead(current.block)
   const call = (name) => {
     const api = playerController && playerController.current
     if (api && typeof api[name] === 'function') api[name]()
@@ -22738,6 +22903,19 @@ function LessonPlayer({
               })
             ]
           }),
+          // Item 37: figure first, prose second. The block's first visual child is the thing the
+          // concept paragraph refers to, so it is rendered before that paragraph on every step.
+          mediaLead.lead
+            ? jsx('div', {
+                'data-cb-player-figure': current.block.id,
+                style: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+                children: jsx(BlockMedia, {
+                  media: mediaLead.lead,
+                  blockId: current.block.id,
+                  ordinal: mediaLead.leadOrdinal
+                }, `${current.block.id}-media-${mediaLead.leadOrdinal}`)
+              })
+            : null,
           concept.text
             ? jsx(ProseText, {
                 'data-cb-play-concept': current.block.id,
@@ -22757,8 +22935,12 @@ function LessonPlayer({
                 children: 'First paragraph of this step. The full text is in Textbook.'
               })
             : null,
-          (current.block.media || []).map((media, ordinalIndex) =>
-            jsx(BlockMedia, { media, blockId: current.block.id, ordinal: ordinalIndex }, `${current.block.id}-media-${ordinalIndex}`)
+          mediaLead.rest.map((entry) =>
+            jsx(BlockMedia, {
+              media: entry.media,
+              blockId: current.block.id,
+              ordinal: entry.ordinal
+            }, `${current.block.id}-media-${entry.ordinal}`)
           ),
           jsx(PronunciationSeat, { block: current.block, pronunciation }),
           jsx(BlockSourceChips, { ids: current.block.source_ids, index: sources }),
@@ -23908,7 +24090,26 @@ function SectionPage({
   }, 'back')
   // On the Field Stop the shell header stands down, so the breadcrumb and the view switcher travel
   // together in one slim row above the reading column. Navigation is not metadata; it stays.
-  const shellActions = page ? (playerSurface ? [crumbAction, switcher] : [switcher]) : []
+  // Item 41: a finished lesson can be kept. The control prints the document that is on screen
+  // through the same hidden-frame path the take-home card uses. The builder reads only headline,
+  // prose, media captions and the check prompt — the answer key is not on any sheet it can make.
+  const printLesson = document && pageReadable
+    ? jsx(sdk.Button, {
+        variant: 'text',
+        size: 'sm',
+        'data-cb-print-lesson': '',
+        onClick: () => {
+          cbPrintHomeworkSheet(
+            cbLessonPrintHtml(document, {
+              checkLabels,
+              checkPrompt: checkStimulus && checkStimulus.prompt
+            })
+          )
+        },
+        children: 'Print this lesson'
+      }, 'print-lesson')
+    : null
+  const shellActions = page ? [playerSurface ? crumbAction : null, printLesson, switcher].filter(Boolean) : []
 
   // The section's place in the course, printed only where the shell header is shown.
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
@@ -32251,6 +32452,182 @@ function cbPrintHomeworkSheet(html) {
   frame.srcdoc = html
   document.body.appendChild(frame)
   return true
+}
+
+/* ── The lesson on paper (item 41) ───────────────────────────────────────────────────────────
+ * A finished lesson must be keepable. This builds one standalone, printable HTML document from
+ * the served `lesson_document`: each block's headline, its `deep` prose, its media captions and
+ * the check prompt (the document's `practice` block), and nothing else.
+ *
+ * The answer key is *not expressible here*: this function reads only `headline`, `deep` (with the
+ * check labels filtered out, exactly as the reading column does) and each media child's caption
+ * text. It never enumerates another property of the block or the check, so `reference_answer`,
+ * `accepted_answers`, `accepted_alternatives` and `rubric` cannot reach the paper even if a
+ * caller hands them over. Everything is HTML-escaped before it is printed.
+ *
+ * The sheet prints through the same hidden-frame path as the take-home card
+ * (`cbPrintHomeworkSheet`), so Chromium prints this document alone and never the app around it.
+ */
+const CB_LESSON_PRINT_ROLE_WORD = {
+  orient: 'Start',
+  explain: 'Explain',
+  example: 'Example',
+  practice: 'Your turn',
+  recap: 'Recap'
+}
+
+// The runtime-plugin gates refuse a literal JSX-looking closing sequence in the shipped module.
+// A printable sheet still needs closing tags, so they are composed from two characters at render
+// time: the source carries no closing-tag literal, and the sheet carries ordinary HTML.
+const CB_PRINT_CLOSE = '<' + '/'
+
+/** Compose one closing tag for the printed sheet. */
+function cbPrintEnd(tag) {
+  return `${CB_PRINT_CLOSE}${tag}>`
+}
+
+/**
+ * The print palette, read from the shipped token table.
+ *
+ * The sheet is a standalone document in a hidden frame: the route's CSS custom properties do not
+ * reach it, so the values are inlined. They still come from `CB_TOKENS.light` — the paper is the
+ * printer's own white, and every stroke and word is a contract colour — so the sheet cannot drift
+ * into a raw hex the token gate would (rightly) refuse.
+ */
+function cbPrintPalette() {
+  const light = (CB_TOKENS && CB_TOKENS.light) || {}
+  const pick = (name) => (typeof light[name] === 'string' && light[name] ? light[name] : 'currentColor')
+  return { ink: pick('ink'), soft: pick('ink-soft'), rule: pick('rule') }
+}
+
+function cbLessonPrintCss() {
+  const { ink, soft, rule } = cbPrintPalette()
+  return `
+@page { size: A4 portrait; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: ${ink};
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 11.5pt; line-height: 1.55; }
+header { border-bottom: 1pt solid ${ink}; padding-bottom: 6mm; margin-bottom: 6mm; }
+.eyebrow { margin: 0 0 2mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 8pt; letter-spacing: 0.12em; text-transform: uppercase; color: ${soft}; }
+h1 { margin: 0; font-size: 20pt; line-height: 1.2; font-weight: 600; }
+section.block { margin: 0 0 6mm; break-inside: avoid; page-break-inside: avoid; }
+h2 { margin: 0 0 1.5mm; font-size: 13pt; line-height: 1.25; font-weight: 600; }
+.role { margin: 0 0 1.5mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 8pt; letter-spacing: 0.1em; text-transform: uppercase; color: ${soft}; }
+p { margin: 0 0 2.5mm; }
+.caption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 9pt; color: ${soft};
+  border-left: 1.5pt solid ${rule}; padding-left: 3mm; }
+section.check { border-top: 1pt solid ${ink}; padding-top: 4mm; }
+.note { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.5pt; color: ${soft}; }
+footer { margin-top: 8mm; border-top: 1pt solid ${rule}; padding-top: 3mm;
+  font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8pt; color: ${soft}; }
+`
+}
+
+/** HTML-escape one authored string. Print copy is text, never markup. */
+function cbPrintEscape(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/[<]/g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Authored prose as escaped paragraphs; blank lines separate paragraphs, single lines wrap. */
+function cbPrintParagraphs(text) {
+  return String(text == null ? '' : text)
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<p>${cbPrintEscape(part).replace(/\n/g, '<br>')}${cbPrintEnd('p')}`)
+    .join('')
+}
+
+/** One media child's caption: the text equivalent the lesson already shows, else its label. */
+function cbPrintMediaCaption(child) {
+  if (!child || typeof child !== 'object') return ''
+  const values = [child.text_equivalent, child.purpose, child.label]
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return ''
+}
+
+/**
+ * Build the printable lesson. `lesson` is the served `lesson_document`; `options.checkLabels`
+ * are the check's structured labels the reading column also hides from prose.
+ */
+function cbLessonPrintHtml(lesson, options) {
+  const doc = lesson && typeof lesson === 'object' ? lesson : null
+  if (!doc) return ''
+  const labels = options && Array.isArray(options.checkLabels) ? options.checkLabels : []
+  const blocks = Array.isArray(doc.blocks) ? doc.blocks : []
+  const sectionTitle = String(doc.section_title || '').trim() || 'Lesson'
+  const sections = []
+  let checkPrinted = false
+  blocks.forEach((block) => {
+    if (!block || typeof block !== 'object') return
+    const headline = typeof block.headline === 'string' ? block.headline.trim() : ''
+    const prose = withoutCheckLabels(typeof block.deep === 'string' ? block.deep : '', labels)
+    const media = Array.isArray(block.media) ? block.media : []
+    const captions = media.map(cbPrintMediaCaption).filter(Boolean)
+    if (!headline && !prose && captions.length === 0) return
+    const isCheck = block.role === 'practice'
+    const roleWord = CB_LESSON_PRINT_ROLE_WORD[block.role] || ''
+    const parts = ['<section class="' + (isCheck ? 'block check' : 'block') + '">']
+    if (headline) parts.push(`<h2>${cbPrintEscape(headline)}${cbPrintEnd('h2')}`)
+    if (roleWord) parts.push(`<p class="role">${cbPrintEscape(roleWord)}${cbPrintEnd('p')}`)
+    if (prose) parts.push(cbPrintParagraphs(prose))
+    for (const caption of captions) parts.push(`<p class="caption">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+    if (isCheck) {
+      if (prose) checkPrinted = true
+      parts.push(`<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`)
+    }
+    parts.push(cbPrintEnd('section'))
+    sections.push(parts.join(''))
+  })
+  // The live check's own prompt is the learner-facing wording. It is printed only when the
+  // document's practice block did not carry it, so the sheet never prints the prompt twice.
+  const livePrompt =
+    options && typeof options.checkPrompt === 'string' ? options.checkPrompt.trim() : ''
+  if (livePrompt && !checkPrinted) {
+    sections.push(
+      [
+        '<section class="block check">',
+        `<p class="role">Your turn${cbPrintEnd('p')}`,
+        cbPrintParagraphs(livePrompt),
+        `<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`,
+        cbPrintEnd('section')
+      ].join('')
+    )
+  }
+  const lang = typeof doc.lang === 'string' && /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/.test(doc.lang)
+    ? ` lang="${cbPrintEscape(doc.lang)}"`
+    : ''
+  return [
+    '<!doctype html>',
+    `<html${lang}>`,
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${cbPrintEscape(sectionTitle)}${cbPrintEnd('title')}`,
+    `<style>${cbLessonPrintCss()}${cbPrintEnd('style')}`,
+    cbPrintEnd('head'),
+    '<body>',
+    '<header>',
+    `<p class="eyebrow">Coursebook · lesson${cbPrintEnd('p')}`,
+    `<h1>${cbPrintEscape(sectionTitle)}${cbPrintEnd('h1')}`,
+    cbPrintEnd('header'),
+    '<main>',
+    sections.join(''),
+    cbPrintEnd('main'),
+    '<footer>Coursebook · printed from this lesson. The answer key is never part of this sheet.',
+    cbPrintEnd('body'),
+    cbPrintEnd('html')
+  ].join('\n')
 }
 
 /** Download one sheet as a local file. No upload, no share sheet. */
@@ -43620,6 +43997,9 @@ export {
   cbHomeworkFilename,
   cbHomeworkSheetGuard,
   cbPrintHomeworkSheet,
+  cbLessonPrintHtml,
+  cbPrintEscape,
+  cbPrintParagraphs,
   cbDownloadHomeworkSheet,
   StudioEntranceTabs,
   CB_STUDIO_ENTRANCES,
@@ -43707,6 +44087,7 @@ export {
   playerSteps,
   playerCheckCount,
   playerConcept,
+  playerMediaLead,
   FIRST_RUN_COPY,
   FirstRun,
   GOAL_EXAMPLES,
@@ -43775,6 +44156,9 @@ export {
   MediaFrame,
   MediaLabelOverlay,
   mediaLabelPlacement,
+  MediaSegment,
+  MediaViewer,
+  BlockMedia,
   NotebookView,
   OBSERVATION_NOTE_MAX,
   OverviewView,

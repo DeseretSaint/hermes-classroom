@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T07:43:27.752Z",
+  "generated_at": "2026-11-12T09:03:31.088Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -477,14 +477,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -500,6 +500,16 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 2,
+          "tag": "button",
           "text": "Artifact details",
           "name": "",
           "ring": true,
@@ -508,7 +518,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -518,7 +528,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -528,7 +538,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -538,7 +548,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Try it to the notebook",
@@ -548,7 +558,7 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 7,
           "tag": "button",
           "text": "Save audio",
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
@@ -558,7 +568,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 8,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
@@ -567,13 +577,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-light-1280-32",
@@ -1002,7 +1012,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2450,
+      "content_height": 2675,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -1048,14 +1058,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -1071,8 +1081,8 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -1081,8 +1091,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save The mechanism to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -1091,60 +1101,70 @@
           "kind": "authored",
           "tab": 3,
           "tag": "button",
-          "text": "Save visual",
-          "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
+          "text": "Save to notebook",
+          "name": "Save The mechanism to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 0
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 4,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Save visual",
+          "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 5,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Try it to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 6,
           "tag": "button",
-          "text": "Save audio",
-          "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
+          "text": "Save to notebook",
+          "name": "Save Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 7,
           "tag": "button",
+          "text": "Save audio",
+          "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 736
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1050
+          "scroll_y": 1275
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-light-460-16",
@@ -1619,7 +1639,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -2109,14 +2129,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -2132,6 +2152,16 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 2,
+          "tag": "button",
           "text": "Artifact details",
           "name": "",
           "ring": true,
@@ -2140,7 +2170,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -2150,7 +2180,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -2160,7 +2190,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -2170,7 +2200,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Try it to the notebook",
@@ -2180,7 +2210,7 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 7,
           "tag": "button",
           "text": "Save audio",
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
@@ -2190,7 +2220,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 8,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
@@ -2199,13 +2229,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-dark-1280-32",
@@ -2634,7 +2664,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2450,
+      "content_height": 2675,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -2680,14 +2710,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -2703,8 +2733,8 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -2713,8 +2743,8 @@
           "kind": "authored",
           "tab": 2,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save The mechanism to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -2723,60 +2753,70 @@
           "kind": "authored",
           "tab": 3,
           "tag": "button",
-          "text": "Save visual",
-          "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
+          "text": "Save to notebook",
+          "name": "Save The mechanism to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 0
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 4,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Save visual",
+          "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 5,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Try it to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 6,
           "tag": "button",
-          "text": "Save audio",
-          "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
+          "text": "Save to notebook",
+          "name": "Save Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 736
         },
         {
           "kind": "authored",
           "tab": 7,
           "tag": "button",
+          "text": "Save audio",
+          "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 736
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1050
+          "scroll_y": 1275
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-dark-460-16",
@@ -3251,7 +3291,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -9629,18 +9669,28 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
-      "ax_controls": 5,
+      "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 5,
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
+          "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -9650,7 +9700,7 @@
         },
         {
           "kind": "authored",
-          "tab": 1,
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -9660,7 +9710,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -9670,7 +9720,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -9680,7 +9730,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Continue",
           "name": "",
@@ -9689,13 +9739,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 5,
-      "keyboard_presses": 5,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-light-1280-32",
@@ -9934,18 +9984,28 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
-      "ax_controls": 5,
+      "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 5,
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
+          "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -9955,7 +10015,7 @@
         },
         {
           "kind": "authored",
-          "tab": 1,
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -9965,7 +10025,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -9975,7 +10035,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -9985,7 +10045,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Continue",
           "name": "",
@@ -9994,13 +10054,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 5,
-      "keyboard_presses": 5,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-light-460-16",
@@ -10239,7 +10299,7 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
@@ -10493,18 +10553,28 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
-      "ax_controls": 5,
+      "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 5,
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
+          "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -10514,7 +10584,7 @@
         },
         {
           "kind": "authored",
-          "tab": 1,
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -10524,7 +10594,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -10534,7 +10604,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -10544,7 +10614,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Continue",
           "name": "",
@@ -10553,13 +10623,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 5,
-      "keyboard_presses": 5,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-dark-1280-32",
@@ -10798,18 +10868,28 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
-      "ax_controls": 5,
+      "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 5,
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
+          "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -10819,7 +10899,7 @@
         },
         {
           "kind": "authored",
-          "tab": 1,
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -10829,7 +10909,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -10839,7 +10919,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -10849,7 +10929,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Continue",
           "name": "",
@@ -10858,13 +10938,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 5,
-      "keyboard_presses": 5,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-dark-460-16",
@@ -11103,7 +11183,7 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
@@ -15256,24 +15336,24 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
       ],
-      "ax_controls": 11,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 14,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -15282,8 +15362,8 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Before you lift the head to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -15293,7 +15373,7 @@
           "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
-          "name": "Save Loosen in reverse sequence to the notebook",
+          "name": "Save Before you lift the head to the notebook",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -15301,6 +15381,26 @@
         {
           "kind": "authored",
           "tab": 3,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Loosen in reverse sequence to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 191
+        },
+        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -15310,7 +15410,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Clean the deck and fit the gasket to the notebook",
@@ -15320,7 +15420,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 7,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
@@ -15330,7 +15430,17 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 8,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 907
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -15340,7 +15450,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 10,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Torque the head bolts to the notebook",
@@ -15350,7 +15460,7 @@
         },
         {
           "kind": "authored",
-          "tab": 8,
+          "tab": 11,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
@@ -15360,7 +15470,7 @@
         },
         {
           "kind": "authored",
-          "tab": 9,
+          "tab": 12,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Verify before the first start to the notebook",
@@ -15370,7 +15480,7 @@
         },
         {
           "kind": "authored",
-          "tab": 10,
+          "tab": 13,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -15379,13 +15489,13 @@
           "scroll_y": 1315
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 14,
+      "keyboard_presses": 14,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 14
     },
     {
       "id": "procedure-light-1280-32",
@@ -16263,34 +16373,34 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
       ],
-      "ax_controls": 11,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 14,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 859
+          "scroll_y": 137
         },
         {
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Before you lift the head to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 859
@@ -16300,6 +16410,16 @@
           "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
+          "name": "Save Before you lift the head to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 859
+        },
+        {
+          "kind": "authored",
+          "tab": 3,
+          "tag": "button",
+          "text": "Save to notebook",
           "name": "Save Loosen in reverse sequence to the notebook",
           "ring": true,
           "in_viewport": true,
@@ -16307,7 +16427,17 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 1619
+        },
+        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -16317,7 +16447,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Clean the deck and fit the gasket to the notebook",
@@ -16327,7 +16457,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 7,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
@@ -16337,47 +16467,57 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3543
-        },
-        {
-          "kind": "authored",
-          "tab": 7,
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Torque the head bolts to the notebook",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3543
-        },
-        {
-          "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "Save visual",
-          "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3348
         },
         {
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Verify before the first start to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3348
         },
         {
           "kind": "authored",
           "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Torque the head bolts to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3348
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Save visual",
+          "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3348
+        },
+        {
+          "kind": "authored",
+          "tab": 12,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Verify before the first start to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3791
+        },
+        {
+          "kind": "authored",
+          "tab": 13,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -16386,13 +16526,13 @@
           "scroll_y": 3791
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 14,
+      "keyboard_presses": 14,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 14
     },
     {
       "id": "procedure-light-460-16",
@@ -17270,7 +17410,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -18166,24 +18306,24 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
       ],
-      "ax_controls": 11,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 14,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -18192,8 +18332,8 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Before you lift the head to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -18203,7 +18343,7 @@
           "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
-          "name": "Save Loosen in reverse sequence to the notebook",
+          "name": "Save Before you lift the head to the notebook",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
@@ -18211,6 +18351,26 @@
         {
           "kind": "authored",
           "tab": 3,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Loosen in reverse sequence to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 191
+        },
+        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -18220,7 +18380,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Clean the deck and fit the gasket to the notebook",
@@ -18230,7 +18390,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 7,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
@@ -18240,7 +18400,17 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 8,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 907
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -18250,7 +18420,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 10,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Torque the head bolts to the notebook",
@@ -18260,7 +18430,7 @@
         },
         {
           "kind": "authored",
-          "tab": 8,
+          "tab": 11,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
@@ -18270,7 +18440,7 @@
         },
         {
           "kind": "authored",
-          "tab": 9,
+          "tab": 12,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Verify before the first start to the notebook",
@@ -18280,7 +18450,7 @@
         },
         {
           "kind": "authored",
-          "tab": 10,
+          "tab": 13,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -18289,13 +18459,13 @@
           "scroll_y": 1315
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 14,
+      "keyboard_presses": 14,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 14
     },
     {
       "id": "procedure-dark-1280-32",
@@ -19173,34 +19343,34 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
       ],
-      "ax_controls": 11,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 11,
+      "keyboard_declared": 14,
       "keyboard_order": [
         {
           "kind": "authored",
           "tab": 0,
           "tag": "button",
-          "text": "Artifact details",
-          "name": "",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 859
+          "scroll_y": 137
         },
         {
           "kind": "authored",
           "tab": 1,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Before you lift the head to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 859
@@ -19210,6 +19380,16 @@
           "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
+          "name": "Save Before you lift the head to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 859
+        },
+        {
+          "kind": "authored",
+          "tab": 3,
+          "tag": "button",
+          "text": "Save to notebook",
           "name": "Save Loosen in reverse sequence to the notebook",
           "ring": true,
           "in_viewport": true,
@@ -19217,7 +19397,17 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
+          "tag": "button",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 1619
+        },
+        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -19227,7 +19417,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Clean the deck and fit the gasket to the notebook",
@@ -19237,7 +19427,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 7,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
@@ -19247,47 +19437,57 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3543
-        },
-        {
-          "kind": "authored",
-          "tab": 7,
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Torque the head bolts to the notebook",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3543
-        },
-        {
-          "kind": "authored",
           "tab": 8,
           "tag": "button",
-          "text": "Save visual",
-          "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
+          "text": "Open Deterministic schematic at full siz",
+          "name": "Open Deterministic schematic at full size",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3348
         },
         {
           "kind": "authored",
           "tab": 9,
           "tag": "button",
-          "text": "Save to notebook",
-          "name": "Save Verify before the first start to the notebook",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3348
         },
         {
           "kind": "authored",
           "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Torque the head bolts to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3348
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Save visual",
+          "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3348
+        },
+        {
+          "kind": "authored",
+          "tab": 12,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "Save Verify before the first start to the notebook",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 3791
+        },
+        {
+          "kind": "authored",
+          "tab": 13,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -19296,13 +19496,13 @@
           "scroll_y": 3791
         }
       ],
-      "keyboard_count": 11,
-      "keyboard_presses": 11,
+      "keyboard_count": 14,
+      "keyboard_presses": 14,
       "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 14
     },
     {
       "id": "procedure-dark-460-16",
@@ -20180,7 +20380,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -25025,7 +25225,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -25515,7 +25715,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -25769,7 +25969,7 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
@@ -26023,7 +26223,7 @@
           "animation": "0s"
         }
       ],
-      "interactive_count": 5,
+      "interactive_count": 6,
       "positive_tabindex": 0,
       "body_text_len": 370,
       "media_fallback_text": [],
@@ -27868,7 +28068,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -28764,7 +28964,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -30573,7 +30773,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -31063,7 +31263,7 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
@@ -31956,7 +32156,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -32852,7 +33052,7 @@
       "audios": [],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 11,
+      "interactive_count": 14,
       "positive_tabindex": 0,
       "body_text_len": 3146,
       "media_fallback_text": [
@@ -34661,14 +34861,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -34684,6 +34884,16 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 2,
+          "tag": "button",
           "text": "Artifact details",
           "name": "",
           "ring": true,
@@ -34692,7 +34902,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -34702,7 +34912,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -34712,7 +34922,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -34722,7 +34932,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Try it to the notebook",
@@ -34732,7 +34942,7 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 7,
           "tag": "button",
           "text": "Save audio",
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
@@ -34742,7 +34952,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 8,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
@@ -34751,13 +34961,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-dark-1280-16-reduced",
@@ -35232,14 +35442,14 @@
       ],
       "animated_nodes": 0,
       "animated_sample": [],
-      "interactive_count": 8,
+      "interactive_count": 9,
       "positive_tabindex": 0,
       "body_text_len": 909,
       "media_fallback_text": [],
-      "ax_controls": 13,
+      "ax_controls": 14,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
-      "keyboard_declared": 8,
+      "keyboard_declared": 9,
       "keyboard_order": [
         {
           "kind": "authored",
@@ -35255,6 +35465,16 @@
           "kind": "authored",
           "tab": 1,
           "tag": "button",
+          "text": "Open Illustration \u2014 generated for contex",
+          "name": "Open Illustration \u2014 generated for context only at full size",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 2,
+          "tag": "button",
           "text": "Artifact details",
           "name": "",
           "ring": true,
@@ -35263,7 +35483,7 @@
         },
         {
           "kind": "authored",
-          "tab": 2,
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save The mechanism to the notebook",
@@ -35273,7 +35493,7 @@
         },
         {
           "kind": "authored",
-          "tab": 3,
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "Save Illustration \u2014 generated for context only from The mechanism to the notebook",
@@ -35283,7 +35503,7 @@
         },
         {
           "kind": "authored",
-          "tab": 4,
+          "tab": 5,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -35293,7 +35513,7 @@
         },
         {
           "kind": "authored",
-          "tab": 5,
+          "tab": 6,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Try it to the notebook",
@@ -35303,7 +35523,7 @@
         },
         {
           "kind": "authored",
-          "tab": 6,
+          "tab": 7,
           "tag": "button",
           "text": "Save audio",
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
@@ -35313,7 +35533,7 @@
         },
         {
           "kind": "authored",
-          "tab": 7,
+          "tab": 8,
           "tag": "button",
           "text": "Save to notebook",
           "name": "Save Recap to the notebook",
@@ -35322,13 +35542,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 8,
-      "keyboard_presses": 14,
+      "keyboard_count": 9,
+      "keyboard_presses": 15,
       "keyboard_shadow_stops": 6,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_visible_ring": 9
     },
     {
       "id": "quest-light-1280-16-reduced",
@@ -36555,10 +36775,10 @@
       "claim": "Every interactive control has an accessible name and is keyboard reachable.",
       "verdict": "PASS",
       "evidence": {
-        "ax_controls": 298,
+        "ax_controls": 320,
         "ax_unnamed": 0,
         "keyboard_unnamed": 0,
-        "keyboard_stops": 268,
+        "keyboard_stops": 290,
         "keyboard_unreachable": 0,
         "keyboard_ring_missing": 0,
         "keyboard_host_widget_stops": 36,
@@ -36848,8 +37068,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "379afc38725717e4884a7a99340add53e89fea6d4ef83919ef695b0a45ab87fe",
-    "branch": "wt/w2-6-labels",
+    "plugin_sha256": "d57dcca4e4fa0bd7bfc12c344c05d2aa09994fe3f58c23f1ce9629657a64e864",
+    "branch": "wt/w2-5-figures-print",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }

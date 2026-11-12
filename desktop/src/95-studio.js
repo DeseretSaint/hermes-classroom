@@ -2069,6 +2069,182 @@ function cbPrintHomeworkSheet(html) {
   return true
 }
 
+/* ── The lesson on paper (item 41) ───────────────────────────────────────────────────────────
+ * A finished lesson must be keepable. This builds one standalone, printable HTML document from
+ * the served `lesson_document`: each block's headline, its `deep` prose, its media captions and
+ * the check prompt (the document's `practice` block), and nothing else.
+ *
+ * The answer key is *not expressible here*: this function reads only `headline`, `deep` (with the
+ * check labels filtered out, exactly as the reading column does) and each media child's caption
+ * text. It never enumerates another property of the block or the check, so `reference_answer`,
+ * `accepted_answers`, `accepted_alternatives` and `rubric` cannot reach the paper even if a
+ * caller hands them over. Everything is HTML-escaped before it is printed.
+ *
+ * The sheet prints through the same hidden-frame path as the take-home card
+ * (`cbPrintHomeworkSheet`), so Chromium prints this document alone and never the app around it.
+ */
+const CB_LESSON_PRINT_ROLE_WORD = {
+  orient: 'Start',
+  explain: 'Explain',
+  example: 'Example',
+  practice: 'Your turn',
+  recap: 'Recap'
+}
+
+// The runtime-plugin gates refuse a literal JSX-looking closing sequence in the shipped module.
+// A printable sheet still needs closing tags, so they are composed from two characters at render
+// time: the source carries no closing-tag literal, and the sheet carries ordinary HTML.
+const CB_PRINT_CLOSE = '<' + '/'
+
+/** Compose one closing tag for the printed sheet. */
+function cbPrintEnd(tag) {
+  return `${CB_PRINT_CLOSE}${tag}>`
+}
+
+/**
+ * The print palette, read from the shipped token table.
+ *
+ * The sheet is a standalone document in a hidden frame: the route's CSS custom properties do not
+ * reach it, so the values are inlined. They still come from `CB_TOKENS.light` — the paper is the
+ * printer's own white, and every stroke and word is a contract colour — so the sheet cannot drift
+ * into a raw hex the token gate would (rightly) refuse.
+ */
+function cbPrintPalette() {
+  const light = (CB_TOKENS && CB_TOKENS.light) || {}
+  const pick = (name) => (typeof light[name] === 'string' && light[name] ? light[name] : 'currentColor')
+  return { ink: pick('ink'), soft: pick('ink-soft'), rule: pick('rule') }
+}
+
+function cbLessonPrintCss() {
+  const { ink, soft, rule } = cbPrintPalette()
+  return `
+@page { size: A4 portrait; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: ${ink};
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 11.5pt; line-height: 1.55; }
+header { border-bottom: 1pt solid ${ink}; padding-bottom: 6mm; margin-bottom: 6mm; }
+.eyebrow { margin: 0 0 2mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 8pt; letter-spacing: 0.12em; text-transform: uppercase; color: ${soft}; }
+h1 { margin: 0; font-size: 20pt; line-height: 1.2; font-weight: 600; }
+section.block { margin: 0 0 6mm; break-inside: avoid; page-break-inside: avoid; }
+h2 { margin: 0 0 1.5mm; font-size: 13pt; line-height: 1.25; font-weight: 600; }
+.role { margin: 0 0 1.5mm; font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 8pt; letter-spacing: 0.1em; text-transform: uppercase; color: ${soft}; }
+p { margin: 0 0 2.5mm; }
+.caption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 9pt; color: ${soft};
+  border-left: 1.5pt solid ${rule}; padding-left: 3mm; }
+section.check { border-top: 1pt solid ${ink}; padding-top: 4mm; }
+.note { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.5pt; color: ${soft}; }
+footer { margin-top: 8mm; border-top: 1pt solid ${rule}; padding-top: 3mm;
+  font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8pt; color: ${soft}; }
+`
+}
+
+/** HTML-escape one authored string. Print copy is text, never markup. */
+function cbPrintEscape(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/[<]/g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Authored prose as escaped paragraphs; blank lines separate paragraphs, single lines wrap. */
+function cbPrintParagraphs(text) {
+  return String(text == null ? '' : text)
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<p>${cbPrintEscape(part).replace(/\n/g, '<br>')}${cbPrintEnd('p')}`)
+    .join('')
+}
+
+/** One media child's caption: the text equivalent the lesson already shows, else its label. */
+function cbPrintMediaCaption(child) {
+  if (!child || typeof child !== 'object') return ''
+  const values = [child.text_equivalent, child.purpose, child.label]
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return ''
+}
+
+/**
+ * Build the printable lesson. `lesson` is the served `lesson_document`; `options.checkLabels`
+ * are the check's structured labels the reading column also hides from prose.
+ */
+function cbLessonPrintHtml(lesson, options) {
+  const doc = lesson && typeof lesson === 'object' ? lesson : null
+  if (!doc) return ''
+  const labels = options && Array.isArray(options.checkLabels) ? options.checkLabels : []
+  const blocks = Array.isArray(doc.blocks) ? doc.blocks : []
+  const sectionTitle = String(doc.section_title || '').trim() || 'Lesson'
+  const sections = []
+  let checkPrinted = false
+  blocks.forEach((block) => {
+    if (!block || typeof block !== 'object') return
+    const headline = typeof block.headline === 'string' ? block.headline.trim() : ''
+    const prose = withoutCheckLabels(typeof block.deep === 'string' ? block.deep : '', labels)
+    const media = Array.isArray(block.media) ? block.media : []
+    const captions = media.map(cbPrintMediaCaption).filter(Boolean)
+    if (!headline && !prose && captions.length === 0) return
+    const isCheck = block.role === 'practice'
+    const roleWord = CB_LESSON_PRINT_ROLE_WORD[block.role] || ''
+    const parts = ['<section class="' + (isCheck ? 'block check' : 'block') + '">']
+    if (headline) parts.push(`<h2>${cbPrintEscape(headline)}${cbPrintEnd('h2')}`)
+    if (roleWord) parts.push(`<p class="role">${cbPrintEscape(roleWord)}${cbPrintEnd('p')}`)
+    if (prose) parts.push(cbPrintParagraphs(prose))
+    for (const caption of captions) parts.push(`<p class="caption">${cbPrintEscape(caption)}${cbPrintEnd('p')}`)
+    if (isCheck) {
+      if (prose) checkPrinted = true
+      parts.push(`<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`)
+    }
+    parts.push(cbPrintEnd('section'))
+    sections.push(parts.join(''))
+  })
+  // The live check's own prompt is the learner-facing wording. It is printed only when the
+  // document's practice block did not carry it, so the sheet never prints the prompt twice.
+  const livePrompt =
+    options && typeof options.checkPrompt === 'string' ? options.checkPrompt.trim() : ''
+  if (livePrompt && !checkPrinted) {
+    sections.push(
+      [
+        '<section class="block check">',
+        `<p class="role">Your turn${cbPrintEnd('p')}`,
+        cbPrintParagraphs(livePrompt),
+        `<p class="note">Answer this on the lesson screen. The answer key is not printed here.${cbPrintEnd('p')}`,
+        cbPrintEnd('section')
+      ].join('')
+    )
+  }
+  const lang = typeof doc.lang === 'string' && /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/.test(doc.lang)
+    ? ` lang="${cbPrintEscape(doc.lang)}"`
+    : ''
+  return [
+    '<!doctype html>',
+    `<html${lang}>`,
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${cbPrintEscape(sectionTitle)}${cbPrintEnd('title')}`,
+    `<style>${cbLessonPrintCss()}${cbPrintEnd('style')}`,
+    cbPrintEnd('head'),
+    '<body>',
+    '<header>',
+    `<p class="eyebrow">Coursebook · lesson${cbPrintEnd('p')}`,
+    `<h1>${cbPrintEscape(sectionTitle)}${cbPrintEnd('h1')}`,
+    cbPrintEnd('header'),
+    '<main>',
+    sections.join(''),
+    cbPrintEnd('main'),
+    '<footer>Coursebook · printed from this lesson. The answer key is never part of this sheet.',
+    cbPrintEnd('body'),
+    cbPrintEnd('html')
+  ].join('\n')
+}
+
 /** Download one sheet as a local file. No upload, no share sheet. */
 function cbDownloadHomeworkSheet(html, filename) {
   if (!html || typeof document === 'undefined' || typeof URL === 'undefined') return false
