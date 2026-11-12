@@ -4,10 +4,19 @@
 render a form (recipe choices, dial filters, course dials) are written as literals. This test reads
 those literals back out of the module and compares them with the frozen JSON contracts, so a
 contract amendment fails here instead of shipping a form that offers a value the backend refuses.
+
+The Workshop's Share tab is the same problem in a different shape: it is the one desktop surface
+that posts outside this machine, and its route is a FastAPI endpoint in `dashboard/plugin_api.py`
+rather than a cb.rpc method. Nothing in the release gate read either half of that pair, so this
+file also pins the `/workshop/share` call (verb, request fields, response fields the tab reads), the
+backend route and handler, and the Workshop tab that mounts it. `desktop/plugin.js` is the exact
+concatenation of `desktop/src/*.js` (`tests/test_plugin_build.py`), so an assertion here cannot be
+satisfied by a segment that no longer ships, or by a shipped route with no source segment.
 """
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import shutil
@@ -18,6 +27,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "desktop" / "plugin.js"
+PLUGIN_API = ROOT / "dashboard" / "plugin_api.py"
+SUBMIT_COURSE = ROOT / "scripts" / "submit-course.py"
 
 
 def _source() -> str:
@@ -48,6 +59,98 @@ PENDING_CONTRACT_METHODS: set[str] = {
 #: The three v5 surfaces this workspace depends on; asserted present so a rename cannot silently
 #: turn a real control back into a permanently gated one.
 LEARNING_WORKSPACE_METHODS = {"check.get", "course.outline", "lesson.assist"}
+
+#: Every Workshop HTTP route the Desktop calls, the verb it calls it with, and the FastAPI handler
+#: in `dashboard/plugin_api.py` that answers it. These are not cb.rpc methods, so a Desktop call with
+#: no decorator here renders a control whose click can only fail.
+WORKSHOP_ROUTES: dict[str, tuple[str, str]] = {
+    "/workshop/catalog": ("get", "workshop_catalog"),
+    "/workshop/install": ("post", "workshop_install"),
+    "/workshop/share": ("post", "workshop_share"),
+}
+
+#: The fields the Share tab reads off a successful `/workshop/share` response. Every one must be a
+#: key the store submission ledger in `scripts/submit-course.py` can actually produce; otherwise the
+#: tab prints an `undefined` where a fact belongs.
+SHARE_RESPONSE_FIELDS = {
+    "status",
+    "pack_id",
+    "mode",
+    "objectives",
+    "world_plates",
+    "content_hash",
+    "pull_request",
+}
+
+
+def _flatten(text: str) -> str:
+    """Whitespace-insensitive form of a source fragment, so an assertion survives re-indentation."""
+    return " ".join(text.split())
+
+
+def _matching_brace(source: str, open_index: int) -> int:
+    depth = 0
+    for index in range(open_index, len(source)):
+        char = source[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+    raise AssertionError("unbalanced braces in the shipped module")
+
+
+def _brace_block(source: str, marker: str) -> str:
+    """The text from `marker` through the object literal it opens (or the arrow body it starts)."""
+    start = source.index(marker)
+    return source[start : _matching_brace(source, source.index("{", start)) + 1]
+
+
+def _function_body(source: str, name: str) -> str:
+    """The whole declaration of `function name(...) {...}` in the shipped module."""
+    start = source.index(f"function {name}(")
+    body_open = source.index(") {", start) + 2
+    return source[start : _matching_brace(source, body_open) + 1]
+
+
+def _rest_call(source: str, path: str) -> str:
+    """The options object of `rest('<path>', {...})`, or "" when the call takes no options."""
+    marker = f"rest('{path}'"
+    start = source.index(marker)
+    after = start + len(marker)
+    while source[after].isspace():
+        after += 1
+    if source[after] == ")":
+        return ""
+    return _brace_block(source, marker)
+
+
+def _submit_ledger_keys() -> set[str]:
+    """String keys the submission ledger can carry: `submit`/`_counts` dicts and every ledger[...]."""
+    tree = ast.parse(SUBMIT_COURSE.read_text(encoding="utf-8"))
+    keys: set[str] = set()
+    for node in tree.body:
+        # The ledger is built in `submit`/`_counts` and completed by `_publish_from_worktree`, which
+        # mutates the same dict, so every `ledger["x"] =` in the module names a returned key.
+        if isinstance(node, ast.FunctionDef) and node.name in {"submit", "_counts"}:
+            for inner in ast.walk(node):
+                if isinstance(inner, ast.Dict):
+                    for key in inner.keys:
+                        if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                            keys.add(key.value)
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Assign):
+                for target in inner.targets:
+                    if (
+                        isinstance(target, ast.Subscript)
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id == "ledger"
+                        and isinstance(target.slice, ast.Constant)
+                        and isinstance(target.slice.value, str)
+                    ):
+                        keys.add(target.slice.value)
+    return keys
 
 
 def _string_list(source: str, marker: str) -> list[str]:
@@ -718,6 +821,147 @@ process.stdout.write(JSON.stringify(output))
         self.assertNotIn("Coursebook does not write it for you", parent)
         learner = self.run_case({"kind": "section", "recipe": "committed", "withDocument": True})["html"]
         self.assertNotIn("data-cb-parent-observation", learner)
+
+
+class WorkshopShareContractTest(unittest.TestCase):
+    """The Workshop's Share tab, its HTTP pair, and the tab that mounts it (H-196, CP-042).
+
+    The Share tab is the one Desktop surface whose button leaves this machine: it posts one
+    enrollment id to `POST /workshop/share`, which exports the course on the host, runs the store
+    gate, pushes a branch and opens one pull request. Both halves were unasserted by the release
+    gate, so a deleted route or a renamed response field would ship a dead or lying button.
+
+    The evidence is the shipped text, not a live window: `desktop/plugin.js` (byte-for-byte the
+    concatenation of `desktop/src/*.js`, enforced by `tests/test_plugin_build.py`),
+    `dashboard/plugin_api.py` for the route, and `scripts/submit-course.py` for the ledger the
+    response is built from.
+    """
+
+    def test_the_share_call_is_one_post_carrying_exactly_enrollment_and_confirm(self) -> None:
+        source = _source()
+        self.assertEqual(
+            source.count("rest('/workshop/share'"),
+            1,
+            "one share call site; a second would bypass the confirmation gate",
+        )
+        # The options object, flattened: the verb and the whole request body.
+        call = _flatten(_rest_call(source, "/workshop/share"))
+        self.assertIn("method: 'POST'", call)
+        self.assertIn("body: { enrollment_id: item.enrollment_id, confirm: true }", call)
+        # The body keys are exactly these two: never a path, never a file to publish.
+        body = call.split("body: {", 1)[1].split("}", 1)[0]
+        self.assertEqual(re.findall(r"([a-z_]+):", body), ["enrollment_id", "confirm"])
+        self.assertNotIn("path", call)
+        # The id it posts is the enrollment the library row carries, not a title or an index.
+        tab = _flatten(_function_body(source, "WorkshopShare"))
+        self.assertIn("onClick: () => setPending(item)", tab)
+        # `confirm: true` is only sent after the author pressed the dialog's publish control: the
+        # row click opens the confirmation, and `publish` is reached from nowhere else.
+        self.assertIn(
+            "jsx(WorkshopShareConfirm, { item: pending, onConfirm: () => publish(pending), "
+            "onCancel: () => setPending(null) })",
+            tab,
+        )
+        self.assertEqual(
+            tab.count("publish("),
+            1,
+            "publish( is called once, from the confirmation dialog",
+        )
+        self.assertNotIn("onClick: () => publish(", tab)
+
+    def test_the_share_tab_reads_the_response_fields_that_carry_the_outcome(self) -> None:
+        tab = _function_body(_source(), "WorkshopShare")
+        flat = _flatten(tab)
+        # A non-true `ok` is a refusal with a message, never a half-success.
+        self.assertIn("response.ok !== true", flat)
+        self.assertIn("response.message", flat)
+        self.assertIn("setError(", flat)
+        for field in sorted(SHARE_RESPONSE_FIELDS):
+            with self.subTest(field=field):
+                self.assertIn(f"outcome.{field}", flat, f"the Share tab must read {field} off the response")
+        # The three outcomes the copy distinguishes: no-op, update, new.
+        self.assertIn("outcome.status === 'already_present'", flat)
+        self.assertIn("outcome.status === 'update'", flat)
+        # The link is offered only when the host returned one, and it opens externally.
+        self.assertIn("outcome.pull_request ? jsx('a', { href: outcome.pull_request", flat)
+        self.assertIn("target: '_blank'", flat)
+        self.assertIn("rel: 'noreferrer'", flat)
+        # The button is disabled while its own row is in flight, so a double click cannot post twice.
+        self.assertIn("disabled: busy === item.enrollment_id", flat)
+
+    def test_every_share_response_field_is_one_the_submission_ledger_produces(self) -> None:
+        # The tab renders whatever the host returns, so each field it reads must be a key the store
+        # path can actually mint. This is the field half of the route contract.
+        ledger = _submit_ledger_keys()
+        self.assertEqual(
+            sorted(SHARE_RESPONSE_FIELDS - ledger),
+            [],
+            "the Share tab reads a field the submission ledger never returns",
+        )
+        submit = SUBMIT_COURSE.read_text(encoding="utf-8")
+        self.assertIn('"status": "already_present"', submit, "the no-op status the tab handles")
+        self.assertIn('ledger["pull_request"] = node', submit, "the pull request link the tab offers")
+
+    def test_every_workshop_call_in_the_module_has_its_backend_route(self) -> None:
+        source = _source()
+        api = PLUGIN_API.read_text(encoding="utf-8")
+        called = set(re.findall(r"rest\('(/workshop/[a-z-]+)'", source))
+        self.assertEqual(sorted(called - set(WORKSHOP_ROUTES)), [], "a Workshop call with no known route")
+        self.assertEqual(sorted(set(WORKSHOP_ROUTES) - called), [], "a Workshop route the module never calls")
+        for path, (verb, handler) in WORKSHOP_ROUTES.items():
+            with self.subTest(path=path):
+                self.assertRegex(
+                    api,
+                    rf'@router\.{verb}\("{re.escape(path)}"\)\s*async def {handler}\(',
+                    f"{path} must be registered as {verb.upper()} on {handler}",
+                )
+                call = _flatten(_rest_call(source, path))
+                if verb == "post":
+                    self.assertIn("method: 'POST'", call, path)
+                else:
+                    self.assertNotIn("method:", call, f"{path} is a read and must use the GET default")
+
+    def test_the_share_route_requires_confirm_and_never_accepts_a_path(self) -> None:
+        api = PLUGIN_API.read_text(encoding="utf-8")
+        self.assertIn('@router.post("/workshop/share")', api, "the share route must be registered")
+        self.assertIn('@router.get("/packs/intake")', api, "the route that follows the share handler")
+        share = api[api.index('@router.post("/workshop/share")') : api.index('@router.get("/packs/intake")')]
+        # The confirmation gate: the author's explicit grant, or a dry run that writes nothing.
+        self.assertIn('body.get("confirm") is not True', share)
+        self.assertIn('body.get("dry_run") is not True', share)
+        self.assertIn('"CONFIRMATION_REQUIRED"', share)
+        self.assertIn('"share needs one enrollment_id"', share)
+        # It exports through the contract, reading the reviewed hash first and fencing the write on it.
+        self.assertIn('"method": "course.export.read"', share)
+        self.assertIn('"method": "course.export"', share)
+        self.assertIn('"expected_content_hash": content_hash', share)
+        self.assertIn('f"share-{enrollment_id}-', share, "the export carries a per-course idempotency key")
+        # The client can never hand this route a file to publish.
+        self.assertNotIn('body.get("path")', share)
+        self.assertNotIn('body["path"]', share)
+        # Both answers are data: success is the ledger, refusal is a code plus a message.
+        self.assertIn('return {"ok": True, **ledger}', share)
+        self.assertRegex(share, r'"ok": False,\s*"code": "[A-Z_]+",\s*"message":')
+
+    def test_the_workshop_tab_mounts_the_share_surface_on_the_coursebook_route(self) -> None:
+        source = _source()
+        tabs = _string_list(source, "const WORKSHOP_TABS = Object.freeze([")
+        self.assertEqual(tabs, ["discover", "library", "provenance", "share"])
+        self.assertIn(
+            "{ id: 'share', label: 'Share to store' }",
+            _flatten(source[source.index("const WORKSHOP_TABS") : source.index("const WORKSHOP_USER_CATEGORIES")]),
+        )
+        # The tab id has exactly one branch, and it mounts the Share component with no arguments.
+        view = _flatten(_function_body(source, "WorkshopView"))
+        self.assertEqual(view.count("tab === 'share'"), 1)
+        self.assertIn("else if (tab === 'share') { body = jsx(WorkshopShare, {}) }", view)
+        # The Workshop route itself: one page registration on ROUTE_PATH rendering CoursebookPage,
+        # and the workshop destination mounting WorkshopView.
+        self.assertIn("data: { path: ROUTE_PATH }", _flatten(source))
+        self.assertIn("render: () => jsx(CoursebookPage, {})", _flatten(source))
+        workshop_branch = _flatten(_brace_block(source, "else if (destination === 'workshop') {"))
+        self.assertIn("body = jsx(WorkshopView, {", workshop_branch)
+        self.assertEqual(source.count("jsx(WorkshopShare, {"), 1, "the Share surface is mounted once")
 
 
 if __name__ == "__main__":
