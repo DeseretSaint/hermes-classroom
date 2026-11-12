@@ -2415,11 +2415,11 @@ points at those bytes.
 **Recovery, named in the refusal itself.** The message is learner-facing and carries both the fault
 and the way out, verbatim: *"this course has author edits that the installed pack does not contain,
 so exporting the pack now would ship its original pages instead of the course on screen. Nothing was
-exported. Undo the edit (plan.undo) to export the pack exactly as published, or keep the edits in the
-course; this build has no detach-from-pack export, so an edited pack-backed course cannot be
-re-packaged."* A deliberate detach path plus an authored composition of imported content is a
-feature card, not a silent approximation here; until it exists, the refusal says so instead of
-shipping the pre-edit pages under the post-edit course.
+exported. Undo the edit (plan.undo) to export the pack exactly as published; this build has no
+detach-from-pack export and cannot export an edited pack-backed course as authored content, so the
+edits stay in the course until that path exists."* A deliberate detach path plus an authored
+composition of imported content is a feature card, not a silent approximation here; until it exists,
+the refusal says so instead of shipping the pre-edit pages under the post-edit course.
 
 **Reachability.** `lesson.revise` cannot currently write a revision for a pack-backed course: the
 import stores no `gen_plan_sections`, so the course has no `section_id` to revise and

@@ -1336,9 +1336,9 @@ def review_export_tree(manifest: Mapping[str, Any], files: Mapping[str, bytes]) 
 PACK_EXPORT_REVISED_COURSE = (
     "this course has author edits that the installed pack does not contain, so exporting the pack "
     "now would ship its original pages instead of the course on screen. Nothing was exported. "
-    "Undo the edit (plan.undo) to export the pack exactly as published, or keep the edits in the "
-    "course; this build has no detach-from-pack export, so an edited pack-backed course cannot be "
-    "re-packaged."
+    "Undo the edit (plan.undo) to export the pack exactly as published; this build has no "
+    "detach-from-pack export and cannot export an edited pack-backed course as authored content, "
+    "so the edits stay in the course until that path exists."
 )
 
 
