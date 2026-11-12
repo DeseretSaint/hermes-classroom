@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "8eb1f94488d873660643bfbdff220ed41f9fde27",
-  "measured_commit_short": "8eb1f944",
+  "measured_commit": "5df8dfdc7d62754e175caece526d720d7c3c7719",
+  "measured_commit_short": "5df8dfdc",
   "measured_at": "2026-11-12",
-  "ran": 4359,
+  "ran": 4375,
   "skipped": 12,
-  "seconds": 897.528,
+  "seconds": 883.625,
   "verdict": "OK (skipped=12)",
-  "note": "Re-measured 2026-11-12 on trunk 8eb1f944 (the Gate 5 artwork merge of d73d1d24 over b8408781; b8408781 is the Gate-7 acceptance record above the CB-trunk frame-rig merge 6dc7a927): Ran 4359 tests in 897.528s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree on origin/master. The supervisor saw other workers' suites on the host during the measurement window, so 897.528s is not a quiet-host timing; the test count does not depend on the clock and is read from the run. An earlier measurement in this pass read 4350 on 6dc7a927, before the Gate 5 merge added five net tests; that figure stays as history, not as the current count. The previous records (4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count."
+  "note": "Re-measured 2026-11-12 on trunk 5df8dfdc, the merge of the recovered colouring page (wt/gm-020-colouring, 01048f96) over 7fdfd94c, which is origin/master at the time of writing: Ran 4375 tests in 883.625s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 16-test delta over 4359 is tests/test_coloring_print.py, the colouring page's own group, and the suite discovered exactly 4375 with the record at 4375. An earlier measurement in the same pass read 4359 on 8eb1f944 and 4350 on 6dc7a927; both stay as history, not as the current count. The previous records (4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count."
  },
  "rpc": {
   "contract": "cb.rpc",

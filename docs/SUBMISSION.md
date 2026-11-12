@@ -51,11 +51,12 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4359 tests in 897.528s … OK (skipped=12)` on `master` `8eb1f944` (module `52dac9ed…`)
-(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: the CB-trunk frame-rig
-merge of `f3581668` over `9695de74`); the release tree
-`b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass. The 897.528 s
-duration was taken while another worker's suite was running on the host, so it is a count
+additive only. The suite is `Ran 4375 tests in 883.625s … OK (skipped=12)` on `master` `5df8dfdc` (module `52dac9ed…`)
+(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: the recovered
+colouring page `01048f96` merged over the `7fdfd94c` trunk, whose 16-test delta is
+`tests/test_coloring_print.py`); the release tree
+`b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass. The 883.625 s
+duration was taken while other workers were active on the host, so it is a count
 measurement, not a quiet-host timing.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
@@ -101,7 +102,7 @@ invalidates the earlier evidence.
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | Re-run on `bc9f607` (code tree `ab6dc7e`, module `cd862140`), not carried forward: probes 1, 3, 4, 6, 7 PASS; probe 1's compression segment is now PASS in place (34 → 12 messages, `post_compaction` fired, `session_id` kept) because `compression.in_place` is on; probe 5 seam PASS with the Desktop render BLOCKED (no Electron window on this host); probe 2 stays FAIL — `pre_llm_call` injection is persisted and replayed, a host/doc mismatch, not a Coursebook defect. `PROBES.md` §"Re-run on the release candidate"; docs-truth PASS; suite `Ran 2724 tests in 541.893s … OK` | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` and the run record `docs/ACCEPTANCE-RUN.md` (frames under `docs/concept-parity/demo/gate7/`). The film this row used to say did not exist is `docs/launch/coursebook-walkthrough.mp4` (42.4 s, sha `9b6eed5e…e620`). The run scored `7831d31d` (module `71d940ce…`), the tree whose `desktop/plugin.js` is byte-identical to the pinned release tree `42fcd0f5`. Verdict **4 PASS / 3 FAIL**: S1a plan surface, S1c lesson, S2 app-restart resume, S4 parent surface PASS; S1b approve leg and S3 repair run FAIL on the provider-key defect `t_3e8b07ba`, S1d graded copy FAILs on `t_d2cbff9a`, and `t_b28115be` owns the `Session length could not be read` surface. The row stays `[ ]` until those three land and the FAIL rows are re-driven on the shipped tree | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `8eb1f944` after the 2026-11-12 suite re-measurement (`4359 tests`, `OK (skipped=12)` on `8eb1f944`); its doc/contract/pin checks also pass with `--skip-tests` and the `cb.rpc` v27 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe. The M4 and module fields still describe the frozen `b9f4a19` tree, not the head: re-pinning them to the trunk module is the operator's freeze decision, not a docs edit | [x] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py` (full) passes on `master` `5df8dfdc` after the 2026-11-12 suite re-measurement (`4375 tests`, `OK (skipped=12)` on `5df8dfdc`); its doc/contract/pin checks also pass with `--skip-tests` and the `cb.rpc` v27 / 93-method re-assertion, and its doc/contract/pin checks pass against the `b9f4a19` record they describe. The M4 and module fields still describe the frozen `b9f4a19` tree, not the head: re-pinning them to the trunk module is the operator's freeze decision, not a docs edit | [x] |
 | 9 | License present | DeseretSaint | `LICENSE` ships MIT (copyright 2026 DeseretSaint) at `0d17824`, the owner's decision on `t_6f2d2080`; this row, README §License, `CHANGELOG.md` and the catalog `known_issues` were reconciled in the same docs commit | [x] |
 | 10 | Public repository pushed | DeseretSaint | Measured 2026-11-10: `gh repo view DeseretSaint/hermes-classroom` reports `"visibility": "PUBLIC"` and an anonymous `git ls-remote https://github.com/DeseretSaint/hermes-classroom.git refs/heads/master` resolves `3278bae`. The visibility change itself has no recorded decision and no date in this repository — GitHub exposes no visibility-change timestamp for a user-owned repository — so this row records the measurement, not an approval | [x] |
 | 11 | Catalog entry pins the release commit | Harbor | `plugin-catalog/coursebook.yaml` on the pull-request branch pins the release tree `42fcd0f5` (module `71d940ce`; `docs_url` at the README's `#install-locally` heading, `readme: true` so the catalog renders install steps at that commit). The pull request is `NousResearch/hermes-agent#152920`, opened 2026-11-10, **open, not draft, `mergeable: MERGEABLE`** as of 2026-11-11 14:10 MST (verified through the GitHub API, not from this file), and unmerged: merging it is gated on the owner's sign-off in §0 and on gates 5 and 7. The pin and the `readme` key were changed after the maintainer's earlier approval of `3278bae`, and that delta is stated in a comment on the PR rather than silently carried | [x] |
@@ -307,7 +308,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v27 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 4359 tests on `master` `8eb1f944`
+contract problems, schema v14 from migrations `0001`-`0014`, 4375 tests on `master` `5df8dfdc`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content

@@ -53,14 +53,17 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 4359 tests in 897.528s`, `OK (skipped=12)`, exit 0 | `8eb1f944` (`master`, 2026-11-12, the Gate 5 artwork merge of `d73d1d24` over `b8408781`, which the Gate-7 record had taken above the CB-trunk frame-rig merge `6dc7a927`) | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 4375 tests in 883.625s`, `OK (skipped=12)`, exit 0 | `5df8dfdc` (`master`, 2026-11-12, the merge of the recovered colouring page `01048f96` over the `7fdfd94c` trunk; 16 of the 4375 are `tests/test_coloring_print.py`) | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v27, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `8eb1f944` (`master`, 2026-11-12) | `contracts/rpc.v27.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 27`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
 | `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `coursebook/db.py`, `contracts/db.v14.json` |
 
-The 2026-11-12 run is the count every release document now quotes: `Ran 4359 tests in 897.528s`,
-`OK (skipped=12)`, exit 0, on `8eb1f944`. The duration was measured while another worker's suite was
-running on the host, so it is a count measurement, not a quiet-host timing. The previous record —
-4212 at `5f956f7b`, and 4033 at `6d08cc8a` before it — is history. `cb.rpc` v27 (W2-6's optional
+The 2026-11-12 run is the count every release document now quotes: `Ran 4375 tests in 883.625s`,
+`OK (skipped=12)`, exit 0, on `5df8dfdc` (the colouring-page merge over `7fdfd94c`). Its sixteen
+extra tests over the `8eb1f944` count of 4359 are `tests/test_coloring_print.py`; the record in
+`docs/release-evidence.json` names `5df8dfdc` and the suite discovered exactly that count. The
+duration was measured while other workers were active on the host, so it is a count measurement, not
+a quiet-host timing. The previous records — 4359 at `8eb1f944`, 4350 at `6dc7a927`, 4212 at
+`5f956f7b`, and 4033 at `6d08cc8a` before it — are history. `cb.rpc` v27 (W2-6's optional
 `lesson_document_media.labels` array) adds no method, so the registry test still holds 93 declared to
 93 handlers.
 
