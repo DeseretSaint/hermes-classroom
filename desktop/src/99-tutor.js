@@ -2384,6 +2384,9 @@ export {
   CB3_DISCOVER_BODY,
   CB3_DISCOVER_HEADING,
   cb3DiscoverOpenKey,
+  // Share to store (96-workshop.js): rendered by the jsdom confirm test
+  WorkshopShare,
+  WorkshopShareConfirm,
   // World Studio (CP-025b, 97-world.js)
   WorldStudioFrame
 }
