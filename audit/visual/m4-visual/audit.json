@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T11:24:56.303Z",
+  "generated_at": "2026-11-12T11:26:06.552Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -27,7 +27,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -179,6 +179,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(92, 83, 71)",
@@ -285,6 +298,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -479,7 +505,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -568,8 +594,8 @@
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -598,7 +624,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -750,6 +776,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(92, 83, 71)",
@@ -856,6 +895,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -1002,7 +1054,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2450,
+      "content_height": 2421,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -1050,7 +1102,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -1105,7 +1157,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -1115,7 +1167,7 @@
           "name": "Save Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -1125,7 +1177,7 @@
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -1135,12 +1187,12 @@
           "name": "Save Recap to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1050
+          "scroll_y": 1021
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -1169,7 +1221,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -1321,6 +1373,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(92, 83, 71)",
@@ -1427,6 +1492,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -1621,7 +1699,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -1659,7 +1737,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.85,
       "contrast_failures": 0,
@@ -1811,6 +1889,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(185, 174, 154)",
@@ -1917,6 +2008,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -2111,7 +2215,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -2200,8 +2304,8 @@
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -2230,7 +2334,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.85,
       "contrast_failures": 0,
@@ -2382,6 +2486,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(185, 174, 154)",
@@ -2488,6 +2605,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -2634,7 +2764,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2450,
+      "content_height": 2421,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -2682,7 +2812,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -2737,7 +2867,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -2747,7 +2877,7 @@
           "name": "Save Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -2757,7 +2887,7 @@
           "name": "Save Narration \u2014 the transcript is authoritative from Try it to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 829
+          "scroll_y": 814
         },
         {
           "kind": "authored",
@@ -2767,12 +2897,12 @@
           "name": "Save Recap to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1050
+          "scroll_y": 1021
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -2801,7 +2931,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.85,
       "contrast_failures": 0,
@@ -2953,6 +3083,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(185, 174, 154)",
@@ -3059,6 +3202,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -3253,7 +3409,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -9415,7 +9571,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.93,
       "contrast_min_authored": 5.93,
       "contrast_failures": 0,
@@ -9517,6 +9673,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -9631,7 +9800,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": 5,
       "ax_unnamed": 0,
@@ -9690,8 +9859,8 @@
         }
       ],
       "keyboard_count": 5,
-      "keyboard_presses": 5,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 1,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -9720,7 +9889,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.93,
       "contrast_min_authored": 5.93,
       "contrast_failures": 0,
@@ -9822,6 +9991,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -9936,7 +10118,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": 5,
       "ax_unnamed": 0,
@@ -9995,8 +10177,8 @@
         }
       ],
       "keyboard_count": 5,
-      "keyboard_presses": 5,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 1,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -10025,7 +10207,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.93,
       "contrast_min_authored": 5.93,
       "contrast_failures": 0,
@@ -10127,6 +10309,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -10241,7 +10436,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -10279,7 +10474,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.53,
       "contrast_failures": 0,
@@ -10381,6 +10576,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -10495,7 +10703,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": 5,
       "ax_unnamed": 0,
@@ -10554,8 +10762,8 @@
         }
       ],
       "keyboard_count": 5,
-      "keyboard_presses": 5,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 1,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -10584,7 +10792,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.53,
       "contrast_failures": 0,
@@ -10686,6 +10894,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -10800,7 +11021,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": 5,
       "ax_unnamed": 0,
@@ -10859,8 +11080,8 @@
         }
       ],
       "keyboard_count": 5,
-      "keyboard_presses": 5,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 1,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -10889,7 +11110,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.53,
       "contrast_failures": 0,
@@ -10991,6 +11212,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -11105,7 +11339,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -14403,7 +14637,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -14815,6 +15049,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -15101,6 +15348,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -15164,32 +15424,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 15.87,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -15197,7 +15431,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2715,
+      "content_height": 2751,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -15258,7 +15492,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -15306,7 +15540,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -15316,7 +15550,7 @@
           "name": "Save Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -15326,7 +15560,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -15336,7 +15570,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -15346,7 +15580,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -15356,7 +15590,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -15366,7 +15600,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -15376,12 +15610,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 11,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 3,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -15410,7 +15644,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -15822,6 +16056,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -16108,6 +16355,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -16171,32 +16431,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 15.87,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -16204,7 +16438,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 5191,
+      "content_height": 5269,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -16265,7 +16499,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -16303,7 +16537,7 @@
           "name": "Save Loosen in reverse sequence to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1604
+          "scroll_y": 1630
         },
         {
           "kind": "authored",
@@ -16313,7 +16547,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -16323,7 +16557,7 @@
           "name": "Save Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -16333,7 +16567,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -16343,7 +16577,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -16353,7 +16587,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -16363,7 +16597,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -16373,7 +16607,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -16383,12 +16617,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3791
+          "scroll_y": 3869
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 11,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 3,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -16417,7 +16651,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -16829,6 +17063,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -17115,6 +17362,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -17178,32 +17438,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 15.87,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -17211,7 +17445,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2864,
+      "content_height": 2811,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -17272,7 +17506,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -17313,7 +17547,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.41,
       "contrast_failures": 0,
@@ -17725,6 +17959,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -18011,6 +18258,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -18074,32 +18334,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 16.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -18107,7 +18341,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2715,
+      "content_height": 2751,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -18168,7 +18402,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -18216,7 +18450,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -18226,7 +18460,7 @@
           "name": "Save Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -18236,7 +18470,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -18246,7 +18480,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 907
+          "scroll_y": 919
         },
         {
           "kind": "authored",
@@ -18256,7 +18490,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -18266,7 +18500,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -18276,7 +18510,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         },
         {
           "kind": "authored",
@@ -18286,12 +18520,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1315
+          "scroll_y": 1351
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 11,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 3,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -18320,7 +18554,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.41,
       "contrast_failures": 0,
@@ -18732,6 +18966,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -19018,6 +19265,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -19081,32 +19341,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 16.33,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -19114,7 +19348,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 5191,
+      "content_height": 5269,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -19175,7 +19409,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -19213,7 +19447,7 @@
           "name": "Save Loosen in reverse sequence to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1604
+          "scroll_y": 1630
         },
         {
           "kind": "authored",
@@ -19223,7 +19457,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -19233,7 +19467,7 @@
           "name": "Save Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -19243,7 +19477,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Clean the deck and fit the gasket to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 2341
+          "scroll_y": 2367
         },
         {
           "kind": "authored",
@@ -19253,7 +19487,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -19263,7 +19497,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -19273,7 +19507,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -19283,7 +19517,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3543
+          "scroll_y": 3595
         },
         {
           "kind": "authored",
@@ -19293,12 +19527,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3791
+          "scroll_y": 3869
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 11,
-      "keyboard_shadow_stops": 0,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 3,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -19327,7 +19561,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.41,
       "contrast_failures": 0,
@@ -19739,6 +19973,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -20025,6 +20272,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -20088,32 +20348,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 16.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -20121,7 +20355,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2864,
+      "content_height": 2811,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -20182,7 +20416,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -24575,7 +24809,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -24727,6 +24961,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(92, 83, 71)",
@@ -24833,6 +25080,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -24979,7 +25239,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2928,
+      "content_height": 2872,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -25027,7 +25287,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -25065,7 +25325,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.85,
       "contrast_failures": 0,
@@ -25217,6 +25477,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(185, 174, 154)",
@@ -25323,6 +25596,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -25469,7 +25755,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2928,
+      "content_height": 2872,
       "media_frames": [
         {
           "artifact": "art_image00000001",
@@ -25517,7 +25803,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -25555,7 +25841,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.93,
       "contrast_min_authored": 5.93,
       "contrast_failures": 0,
@@ -25657,6 +25943,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
@@ -25771,7 +26070,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -25809,7 +26108,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 13,
+      "text_nodes": 14,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.53,
       "contrast_failures": 0,
@@ -25911,6 +26210,19 @@
         {
           "tag": "span",
           "text": "Illustration \u2014 generated for context only",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
@@ -26025,7 +26337,7 @@
       ],
       "interactive_count": 5,
       "positive_tabindex": 0,
-      "body_text_len": 370,
+      "body_text_len": 318,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -27015,7 +27327,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -27427,6 +27739,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -27713,6 +28038,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.35,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(92, 83, 71)",
@@ -27776,32 +28114,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(239, 239, 239)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 18.26,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 15.87,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -27809,7 +28121,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 8622,
+      "content_height": 8426,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -27870,7 +28182,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -27911,7 +28223,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.41,
       "contrast_failures": 0,
@@ -28323,6 +28635,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -28609,6 +28934,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 24,
+          "weight": 400,
+          "large": true,
+          "ratio": 7.85,
+          "required": 3,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(185, 174, 154)",
@@ -28672,32 +29010,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(255, 255, 255)",
-          "bg": "rgb(107, 107, 107)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 5.33,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 16.33,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -28705,7 +29017,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 8622,
+      "content_height": 8426,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -28766,7 +29078,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -30123,9 +30435,9 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
-      "contrast_min": 21,
-      "contrast_min_authored": 21,
+      "text_nodes": 32,
+      "contrast_min": 13.99,
+      "contrast_min_authored": 13.99,
       "contrast_failures": 0,
       "contrast_host_primitive_failures": 0,
       "contrast_fail_sample": [],
@@ -30275,6 +30587,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(0, 0, 0)",
@@ -30387,6 +30712,19 @@
           "weight": 400,
           "large": false,
           "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -30575,7 +30913,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -30613,9 +30951,9 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
-      "contrast_min": 21,
-      "contrast_min_authored": 21,
+      "text_nodes": 32,
+      "contrast_min": 13.99,
+      "contrast_min_authored": 13.99,
       "contrast_failures": 0,
       "contrast_host_primitive_failures": 0,
       "contrast_fail_sample": [],
@@ -30765,6 +31103,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(0, 0, 0)",
@@ -30877,6 +31228,19 @@
           "weight": 400,
           "large": false,
           "ratio": 21,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -31065,7 +31429,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -31103,7 +31467,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 13.99,
       "contrast_min_authored": 13.99,
       "contrast_failures": 0,
@@ -31515,6 +31879,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(0, 0, 0)",
@@ -31801,6 +32178,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(0, 0, 0)",
@@ -31864,32 +32254,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -31897,7 +32261,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2715,
+      "content_height": 2751,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -31958,7 +32322,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -31999,7 +32363,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 87,
+      "text_nodes": 90,
       "contrast_min": 13.99,
       "contrast_min_authored": 13.99,
       "contrast_failures": 0,
@@ -32411,6 +32775,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(0, 0, 0)",
@@ -32697,6 +33074,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(0, 0, 159)",
+          "bg": "rgb(255, 255, 255)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 13.99,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/svg+xml \u00b7 1185 bytes \u00b7 served by this host",
           "fg": "rgb(0, 0, 0)",
@@ -32760,32 +33150,6 @@
           "required": 4.5,
           "pass": true,
           "host_primitive": true
-        },
-        {
-          "tag": "button",
-          "text": "Save visual",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 13.3,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": true
-        },
-        {
-          "tag": "div",
-          "text": "VERIFICATION-CHECKLIST",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
         }
       ],
       "clipped_count": 0,
@@ -32793,7 +33157,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2715,
+      "content_height": 2751,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -32854,7 +33218,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 3146,
+      "body_text_len": 2981,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -34211,7 +34575,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 6.7,
       "contrast_min_authored": 6.7,
       "contrast_failures": 0,
@@ -34363,6 +34727,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(92, 83, 71)",
@@ -34469,6 +34846,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(92, 83, 71)",
+          "bg": "rgb(255, 252, 243)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.35,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
@@ -34663,7 +35053,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -34752,8 +35142,8 @@
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -34782,7 +35172,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 30,
+      "text_nodes": 32,
       "contrast_min": 5.33,
       "contrast_min_authored": 7.85,
       "contrast_failures": 0,
@@ -34934,6 +35324,19 @@
           "host_primitive": false
         },
         {
+          "tag": "summary",
+          "text": "Provenance",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
           "tag": "span",
           "text": "image/png \u00b7 49776 bytes \u00b7 served by this host\u2019s ",
           "fg": "rgb(185, 174, 154)",
@@ -35040,6 +35443,19 @@
         {
           "tag": "span",
           "text": "Narration \u2014 the transcript is authoritative",
+          "fg": "rgb(185, 174, 154)",
+          "bg": "rgb(29, 27, 22)",
+          "size": 12,
+          "weight": 400,
+          "large": false,
+          "ratio": 7.85,
+          "required": 4.5,
+          "pass": true,
+          "host_primitive": false
+        },
+        {
+          "tag": "summary",
+          "text": "Provenance",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
@@ -35234,7 +35650,7 @@
       "animated_sample": [],
       "interactive_count": 8,
       "positive_tabindex": 0,
-      "body_text_len": 909,
+      "body_text_len": 804,
       "media_fallback_text": [],
       "ax_controls": 13,
       "ax_unnamed": 0,
@@ -35323,8 +35739,8 @@
         }
       ],
       "keyboard_count": 8,
-      "keyboard_presses": 14,
-      "keyboard_shadow_stops": 6,
+      "keyboard_presses": 16,
+      "keyboard_shadow_stops": 8,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -36533,7 +36949,7 @@
       "evidence": {
         "authored_failures": 0,
         "authored_min_ratio": 5.93,
-        "measured_text_nodes": 2120,
+        "measured_text_nodes": 2172,
         "frames": 56,
         "excluded_host_primitive_failures": 0,
         "note": "host-primitive rows are the SDK stub's UA surface, not product paint; they are reported separately and excluded."
@@ -36561,7 +36977,7 @@
         "keyboard_stops": 268,
         "keyboard_unreachable": 0,
         "keyboard_ring_missing": 0,
-        "keyboard_host_widget_stops": 36,
+        "keyboard_host_widget_stops": 64,
         "positive_tabindex": 0,
         "keyboard_frames": 32,
         "note": "the walk presses Tab until every control the DOM declares has been visited once and focus wraps, then counts distinct authored stops; the audio player's UA shadow parts are host-widget stops and are counted separately, never as Coursebook controls."
@@ -36848,7 +37264,7 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "4e278b6840b0080cd5846cb86aa7ba2a3bfad0f7a56a0645a64b2d38d78a2aa0",
+    "plugin_sha256": "0ec8f4c22aedd9d41e1ce9a2ba62b6746a7d818214d983a93740c5b1872f4600",
     "branch": "HEAD",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
