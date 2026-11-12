@@ -9,9 +9,11 @@ What this proves:
 * ``review.action`` — a due row offers snooze / stretch / drop; a row is Resume only when
   ``evidence.inspect``'s newest scheduling event is ``review_drop``; a never-dropped objective
   never offers Resume; every row the reads return renders with its controls (no display cap, so a
-  paused row stays reachable past the eighth due row); each control's accessible name names its
-  section; a stale revision refusal is shown and records nothing; and the resume door is driven
-  end to end through the real kernel handlers (no synthetic row, no mocked method).
+  paused row stays reachable past the eighth due row); a backlog larger than `review.queue`'s `cap`
+  is disclosed with the read's own counts instead of looking like a complete queue; each control's
+  accessible name names its section; a stale revision refusal is shown and records nothing; and the
+  resume door is driven end to end through the real kernel handlers (no synthetic row, no mocked
+  method).
 * ``usage.summary`` — the settings read-out shows the backend's own fields, never a zero for a
   count it did not record, never calls an unrecorded field "recorded", and shows no total at all
   when the read fails.
@@ -240,7 +242,8 @@ const out = {
     syllabusRemove: attr('[data-cb-syllabus-remove]', 'data-cb-syllabus-remove'),
     syllabusEvidence: attr('[data-cb-syllabus-remove-evidence]', 'data-cb-syllabus-remove-evidence'),
     syllabusRefusal: attr('[data-cb-syllabus-remove-refusal]', 'data-cb-syllabus-remove-refusal'),
-    reviewActions: [...document.querySelectorAll('[data-cb-review-action]')].map((node) => node.getAttribute('data-cb-review-action'))
+    reviewActions: [...document.querySelectorAll('[data-cb-review-action]')].map((node) => node.getAttribute('data-cb-review-action')),
+    reviewHidden: attr('[data-cb-review-hidden]', 'data-cb-review-hidden')
   }
 }
 process.stdout.write(JSON.stringify(out))
@@ -460,6 +463,76 @@ class ReviewDoorRenderTest(DoorRenderMixin, unittest.TestCase):
         self.assertEqual(rendered, [f"obj_{index:02d}" for index in range(1, 11)])
         for objective_id in rendered:
             self.assertEqual(out["rowActions"][objective_id], ["snooze", "stretch", "drop"], objective_id)
+
+    def test_a_backlog_larger_than_the_read_says_how_many_rows_are_hidden(self) -> None:
+        # `review.queue`'s `cap` (25 here) bounds `items` only; `total_due` / `total_overdue` are the
+        # whole backlog. A panel that renders the 25 returned rows beside a banner counting 30 hid
+        # five objectives' controls without a word. The line must name the read's real counts.
+        items = [review_item(f"obj_{index:02d}") for index in range(1, 26)]
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view(items, total_due=30),
+                "evidence": evidence_view([evidence_objective(f"obj_{index:02d}") for index in range(1, 26)], []),
+            }
+        )
+        self.assertEqual(len(out["rowActions"]), 25)
+        for objective_id, actions in out["rowActions"].items():
+            self.assertEqual(actions, ["snooze", "stretch", "drop"], objective_id)
+        self.assertEqual(out["refunds"]["reviewHidden"], "5")
+        self.assertIn("Showing 25 of 30 due sections.", out["text"])
+        self.assertIn("The other 5 return as you clear these.", out["text"])
+
+    def test_the_hidden_line_counts_what_the_read_reported_not_a_constant(self) -> None:
+        # A second shape proves the sentence is computed from the read (2 rows, 3 due, one hidden)
+        # rather than echoing the cap or a hard-coded backlog.
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view([review_item("obj_a"), review_item("obj_b")], total_due=3),
+                "evidence": evidence_view([evidence_objective("obj_a"), evidence_objective("obj_b")], []),
+            }
+        )
+        self.assertEqual(out["refunds"]["reviewHidden"], "1")
+        self.assertIn("Showing 2 of 3 due sections.", out["text"])
+        self.assertIn("One more returns as you clear these.", out["text"])
+
+    def test_a_complete_queue_says_nothing_about_hidden_rows(self) -> None:
+        # When the read is the whole queue there is no backlog to disclose, and the panel must not
+        # imply one exists.
+        items = [review_item(f"obj_{index:02d}") for index in range(1, 4)]
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view(items),
+                "evidence": evidence_view([evidence_objective(f"obj_{index:02d}") for index in range(1, 4)], []),
+            }
+        )
+        self.assertIsNone(out["refunds"]["reviewHidden"])
+        self.assertNotIn("as you clear these", out["text"])
+        self.assertEqual(len(out["rowActions"]), 3)
+
+    def test_an_empty_read_with_a_real_backlog_still_says_the_backlog_is_not_shown(self) -> None:
+        # The read returned no rows but the contract counts 30 due. An empty panel would read as an
+        # empty queue, which the contract exists to prevent.
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view([], total_due=30),
+                "evidence": evidence_view([], []),
+            }
+        )
+        self.assertEqual(out["rowActions"], {})
+        self.assertEqual(out["refunds"]["reviewHidden"], "30")
+        self.assertIn("Showing 0 of 30 due sections.", out["text"])
 
     def test_a_dropped_row_stays_visible_when_many_sections_are_due(self) -> None:
         # The reviewer's case: 8 due rows plus one dropped objective. The dropped row is not in
