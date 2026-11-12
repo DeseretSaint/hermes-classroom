@@ -1,6 +1,7 @@
 # The creation experience: a frozen spec and a ranked queue
 
-Status: slice 1 is **landed** (items 1, 13, 14, 15, 16, 17, 33, 34, 36); everything else is queued.
+Status: slices 1 and 2 are **landed** (items 1, 13, 14, 15, 16, 17, 25, 26, 27, 28, 30, 33, 34,
+36); everything else is queued.
 An item is only called landed when its path is wired and a test exercises the seam.
 
 The rule this document is written under: **a capability is only claimed when its path is wired end to
@@ -378,3 +379,21 @@ Two corrections found while integrating, both kept:
   is content-addressed, so one stale transcript invalidates all three scenarios; `setUpModule`
   skips the module with the reason and the re-record card named in `docs/UPGRADES.md`. The other
   4,000-plus tests still run, and no product claim rides on the skipped packet.
+
+---
+
+## Slice 2 — what landed, and what did not
+
+| Item | State | Note |
+| --- | --- | --- |
+| 25 demand from the lesson's shape | landed | one-off and parent lessons are exempt on purpose: a one-off gets no decorative media, and in a parent lesson the observation is the evidence |
+| 26 language lessons are not silent | landed | the schema has one audio role (`narration`), so a pronunciation reference and its narration are two *items* of that role, not a role string the store would reject |
+| 27 the illustration prompt is built | landed | subject scrubbed of any request for labels, then composition, house medium and palette, a textless block and nine negatives; the prompt hash and version are in provenance |
+| 28 text is drawn after the raster | **half landed** | the prompt contract ships; the UI overlay that draws labels over a label-free base needs a label field on the media block and is a card of its own |
+| 29 the image model is known and pinnable | **not landed** | `image_generate` still takes no model parameter, so GPT-2.5 Sunburst is a host setting; provenance records the resolved name only when the host returns it |
+| 30 geometry fits the job | landed | 4:3 illustration, 3:4 person-facing, 4:3 schematic, a 1024 px floor recorded on the artifact |
+
+A prompt changed without a version bump is a provenance lie, so `LESSON_PROMPT_VERSION` moved to
+`lesson-prompt.v13` with its five pins and its comment block updated. The media lane had left it at
+v12 because five tests pinned the value; that is a reason to update five tests, not to ship a
+different prompt under the same name.
