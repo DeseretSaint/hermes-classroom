@@ -269,7 +269,7 @@
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
-      "prompt_version": "plan-prompt.v23",
+      "prompt_version": "plan-prompt.v24",
       "warning": null
     },
     "attempt_rows": [
@@ -340,7 +340,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v23",
+    "prompt_version": "plan-prompt.v24",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -844,8 +844,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 12,
-            "maximum_cost_usd": 0.48,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -992,8 +992,8 @@
             "fits_minimum": true,
             "max_calls": 400,
             "max_cost_usd": 100.0,
-            "maximum_calls": 12,
-            "maximum_cost_usd": 0.48,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
             "minimum_calls": 4,
             "minimum_cost_usd": 0.16,
             "section_count": 2
@@ -1187,7 +1187,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v23",
+        "prompt_version": "plan-prompt.v24",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1214,7 +1214,7 @@
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
-          "prompt_version": "plan-prompt.v23",
+          "prompt_version": "plan-prompt.v24",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1229,7 +1229,7 @@
           "known": true,
           "model": "recorded-transcript-h40",
           "pipeline_version": "cb.gen.v2",
-          "prompt_version": "plan-prompt.v23",
+          "prompt_version": "plan-prompt.v24",
           "provider": "recorded"
         },
         "job_id": "job_00000000000000000000000000000007",
