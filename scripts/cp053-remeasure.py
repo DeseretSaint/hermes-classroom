@@ -53,6 +53,9 @@ def rmse(left: Image.Image, right: Image.Image, bands: int) -> float:
 
 
 def main() -> int:
+    import datetime
+
+    today = datetime.date.today().isoformat()
     record = json.loads(MEASURE.read_text(encoding="utf-8"))
     capture(RENDER)
     rendered = Image.open(RENDER).convert("RGB")
@@ -70,9 +73,9 @@ def main() -> int:
             "rmse_grey": rmse_grey,
             "sim_grey": round(1 - rmse_grey / 255, 4),
             "sim_rgb": round(1 - rmse_rgb / 255, 4),
-            "measured_at": "2026-11-11",
+            "measured_at": today,
             "note": (
-                f"Re-measured 2026-11-11 on module {module_sha[:8]} after the generated page was "
+                f"Re-measured {today} on module {module_sha[:8]} after the generated page was "
                 "re-rendered from that module; fresh chromium capture at 1344x768 of "
                 "design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, "
                 "nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row "

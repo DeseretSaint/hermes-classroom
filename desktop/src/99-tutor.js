@@ -2175,6 +2175,12 @@ export {
   notebookSourceRef,
   pronPercent,
   pronunciationAvailabilityCopy,
+  // UI-K13 — the four learner doors, exported so the jsdom suite mounts the shipped surfaces.
+  ReviewDuePanel,
+  reviewPausedItems,
+  CbGenerationUsage,
+  SyllabusRemoveControl,
+  PronunciationDispute,
   questMissions,
   missionBriefLine,
   planJobBrief,
