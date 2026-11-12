@@ -54,7 +54,12 @@ MEDIA_LINK_ROLES: dict[str, str] = {"narration": "audio", "visual": "visual", "c
 EXCLUDED_BY_CONSTRUCTION: tuple[str, ...] = tuple(contract(CONTRACT_ID)["excluded_by_construction"])
 
 #: Roles read by a learner. A reference answer must never be rendered in one of these.
-LEARNER_FACING_ROLES: frozenset[str] = frozenset({"section", "learner_page", "visual", "narration"})
+#: PRINT-2 (t_6418b9dd): ``coloring_page`` joins the set. The page is handed to the child at the
+#: table, so the answer-leak audit reads it exactly as it reads ``learner_page``; a page is
+#: learner-facing because of *who reads it*, not because of which document named it.
+LEARNER_FACING_ROLES: frozenset[str] = frozenset(
+    {"section", "learner_page", "visual", "narration", "coloring_page"}
+)
 
 #: Roles a pack may hold. Read from the newest accepted contract version, so an additive role
 #: (v2's ``cover``) is exportable without a second hand-maintained list. A v1 document is still
@@ -569,13 +574,30 @@ def _media_link_problems(manifest: Mapping[str, Any], declared: Mapping[str, Any
     return problems
 
 
+#: The roles that carry a rendered print document. PRINT-2 (t_6418b9dd): cb.pack v4 lets these
+#: four hold ``text/html`` — the exact bytes the print path renders to PDF — because a take-home
+#: pack ships print pages, and a markdown copy of a page with a figure is not the page. A v3
+#: document has no ``text/html`` in its MIME enum, so nothing already installed changes.
+PRINT_DOCUMENT_ROLES: frozenset[str] = frozenset(
+    {"parent_guide", "learner_page", "answer_guide", "coloring_page"}
+)
+
+
 def _role_mime_mismatch(role: str, mime: str) -> bool:
     textual = {"section", "check", "rubric", "source_note", "parent_guide", "learner_page", "answer_guide"}
     if role in textual:
         allowed = {"text/markdown", "text/plain", "application/json"}
         if role == "source_note":
             allowed.add("application/pdf")
+        if role in PRINT_DOCUMENT_ROLES:
+            allowed.add("text/html")
         return mime not in allowed
+    if role == "coloring_page":
+        # The page *is* an HTML print document: one SVG line drawing and the word bank as DOM
+        # text, rendered to PDF by the print path. Markdown cannot carry the figure, and a PDF
+        # byte stream cannot be read by the answer-leak audit, so ``text/html`` is the one form
+        # that is both printable and auditable. Declared by cb.pack v4 only.
+        return mime != "text/html"
     if role in {"visual", "cover"}:
         return mime not in {"image/png", "image/jpeg", "image/webp"}
     if role == "narration":
@@ -638,6 +660,29 @@ def audit_bundle(directory: str | Path) -> list[str]:
             problems.append(f"{entry['path']!r}: media has no per-artifact license record")
 
     problems.extend(_answer_key_problems(root, manifest))
+    problems.extend(_active_content_problems(root, manifest))
+    return problems
+
+
+#: Markers that make an HTML pack file something the print path could *execute* rather than print.
+#: A print document is static: one sheet of type and geometry. PRINT-2 (t_6418b9dd) is the change
+#: that let ``text/html`` into a pack at all, so the rule that keeps it static lands with it.
+_ACTIVE_CONTENT = ("<script", "<iframe", "<object", "<embed", "javascript:", "<form", "<base ")
+
+
+def _active_content_problems(root: Path, manifest: Mapping[str, Any]) -> list[str]:
+    """An HTML print document must be printable, not executable."""
+    problems: list[str] = []
+    for entry in manifest["files"]:
+        if str(entry["mime"]) != "text/html":
+            continue
+        path = str(entry["path"])
+        text = _read_text(root / path).lower()
+        for marker in _ACTIVE_CONTENT:
+            if marker in text:
+                problems.append(f"{path!r}: an HTML print document may not carry active content ({marker!r})")
+        if re.search(r"\son[a-z]+\s*=", text):
+            problems.append(f"{path!r}: an HTML print document may not carry an event handler")
     return problems
 
 

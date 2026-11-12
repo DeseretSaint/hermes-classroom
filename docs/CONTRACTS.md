@@ -32,7 +32,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.rpc` | `contracts/rpc.v27.json` | 27 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune + engagement + tutor + the `library.list` shelf facts + the plate's `route_anchors`), Sable (transport + `world.*` policy/prompts/media), Lattice (`pack.*` + `lesson_document` + `takehome.*` + `homework.*` + `takehome.html`), easel (the media child's own `labels`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
-| `cb.pack` | `contracts/pack-manifest.v3.json` (v1 and v2 also accepted) | 3 (v1/v2 accepted) | Cinder (v2 media link, H-137); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs |
+| `cb.pack` | `contracts/pack-manifest.v3.json` (v1, v2 and v4 also accepted) | 3 (v1/v2/v4 accepted) | Cinder (v2 media link, H-137; v4 `coloring_page` + `text/html`, PRINT-2, 2026-11-12); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs, take-home print packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
@@ -46,12 +46,24 @@ as immutable history: the superseded current files are `rpc.v22.json`, `db.v13.j
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`), v2
-(`pack-manifest.v2.json`) and v3 (`pack-manifest.v3.json`) all live on disk, and a pack is
-validated, exported and allowlisted against the `contract_version` it declares. v2 adds one
-optional root `media[]` array that links a declared `narration`/`visual` file to the section that
-may play it, with a short caption; a file not named there stays stored evidence only, exactly as
-every v1 pack behaves. No `cb.rpc` method, `cb.db` column or migration changes (H-137 implements
-`docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+(`pack-manifest.v2.json`), v3 (`pack-manifest.v3.json`) and v4 (`pack-manifest.v4.json`) all live on
+disk, and a pack is validated, exported and allowlisted against the `contract_version` it declares.
+v2 adds one optional root `media[]` array that links a declared `narration`/`visual` file to the
+section that may play it, with a short caption; a file not named there stays stored evidence only,
+exactly as every v1 pack behaves. No `cb.rpc` method, `cb.db` column or migration changes (H-137
+implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+
+v4 (PRINT-2, kanban t_6418b9dd) is additive over v3 and is **accepted, not current**: the inventory
+row above still names v3, so the default `contract_version` written by every existing builder does
+not move and no installed pack changes shape. v4 exists so a take-home pack can ship the colouring
+page its parent guide already tells the parent to print. It adds exactly two enum values: the file
+role `coloring_page` and the MIME `text/html`, the byte form of the print documents this build
+renders (the four print roles `parent_guide`, `learner_page`, `answer_guide` and `coloring_page` may
+hold it; section, check, rubric and source files stay markdown/plain/json). `coloring_page` is
+learner-facing, so the answer-leak audit reads it as it reads `learner_page`, and an HTML print
+document is refused if it carries active content. No `cb.rpc` method, request shape, error code,
+job kind, `cb.db` column or migration moves; only a pack that declares `coloring_page` declares
+`contract_version: 4`.
 
 v3 is one additive amendment over v2: an optional root `presentation` object. It records the mode
 the course was authored in (`textbook`/`game`) and, for a Game course with an approved world, the

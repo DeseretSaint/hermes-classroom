@@ -66,7 +66,7 @@ DIRECTORY_SLACK = 64
 _MEMBER = re.compile(r"^[A-Za-z0-9._-]+$")
 _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
-_TEXT_MIMES = frozenset({"text/markdown", "text/plain", "application/json"})
+_TEXT_MIMES = frozenset({"text/markdown", "text/plain", "application/json", "text/html"})
 
 _ACTIVE_MARKUP = re.compile(
     r"(?is)<\s*(script|iframe|object|embed|svg|style|img|video|audio|source|link|meta|form|base|math)\b"
@@ -76,6 +76,19 @@ _ACTIVE_MARKUP = re.compile(
     r"|\son[a-z]+\s*="
 )
 _REMOTE_IMAGE = re.compile(r"!\[[^\]]*\]\(\s*(?:https?:)?//", re.IGNORECASE)
+
+#: PRINT-2 (t_6418b9dd): cb.pack v4 admits ``text/html`` for the four print roles. A print
+#: document is static — one sheet of type and geometry — so the archive refuses the constructs
+#: that would make it executable or fetch anything when the print path opens it. ``<style>`` and
+#: inline ``<svg>`` stay legal: they are the page. ``<link>``, ``<script>``, frames, forms and
+#: event handlers do not.
+_HTML_ACTIVE = re.compile(
+    r"(?is)<\s*(script|iframe|object|embed|form|base|link|video|audio|source|math)\b"
+    r"|javascript\s*:"
+    r"|vbscript\s*:"
+    r"|data\s*:\s*(text/html|image/svg\+xml|application/xhtml\+xml)"
+    r"|\son[a-z]+\s*="
+)
 
 _PDF_ACTIVE = (
     b"/JavaScript",
@@ -156,6 +169,11 @@ def verify_mime(path: str, declared: str, data: bytes) -> None:
         for marker in _PDF_ACTIVE:
             if marker in data:
                 raise PackRejected(f"{path!r}: PDF contains active/embedded content marker {marker!r}")
+    elif declared == "text/html":
+        text = _decode_text(path, data)
+        match = _HTML_ACTIVE.search(text)
+        if match:
+            raise PackRejected(f"{path!r}: a print document may not carry active content {match.group(0)!r}")
 
 
 # ── Path normalization ──────────────────────────────────────────────────────

@@ -863,16 +863,27 @@ def _answer_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
 def render_documents(
     fixture: Mapping[str, Any], task_id: str, *, paper: str = "A4"
 ) -> dict[str, str]:
-    """Render the four print roles for one homework task.
+    """Render the five print documents for one homework task.
 
-    Keys: ``parent_guide``, ``learner_page``, ``answer_guide``, ``homework_sheet``. Each value is
-    a complete HTML document with explicit pages; ``answer_guide`` is parent-only.
+    Keys: ``parent_guide``, ``learner_page``, ``answer_guide``, ``homework_sheet``,
+    ``coloring_page``. Each value is a complete HTML document with explicit pages;
+    ``answer_guide`` is parent-only and ``coloring_page`` is learner-facing.
+
+    The colouring page joined this set under PRINT-2 (kanban t_6418b9dd). It used to be a
+    separate door, ``coloring_print.render_coloring``, reachable only by a caller who knew to look
+    for it — and the parent guide already told the parent to print it. The amendment is
+    deliberate: this set is what a take-home pack renders, so the page now ships with the rest of
+    the pack instead of being promised by a guide that cannot supply it.
     """
     if paper not in PAPER_SIZES:
         raise ValueError(f"paper must be one of {sorted(PAPER_SIZES)}")
     task = task_by_id(fixture, task_id)
     lesson = fixture["lesson"]
     pack_title = f"{lesson['title']} — {task['title']}"
+    # Imported here rather than at module scope: ``coloring_print`` imports this module for the
+    # page frame, so a top-level import would be circular.
+    from . import coloring_print
+
     return {
         "parent_guide": document_html(
             [_parent_guide(fixture, task, paper)], title=f"{pack_title} — parent guide", paper=paper
@@ -886,7 +897,115 @@ def render_documents(
         "homework_sheet": document_html(
             [_homework_sheet(fixture, task, paper)], title=f"{pack_title} — one-page homework", paper=paper
         ),
+        "coloring_page": coloring_print.render_coloring(fixture, task_id, paper=paper),
     }
+
+
+#: Document key -> (pack-relative path, ``cb.pack`` role). ``homework_sheet`` is the parent's
+#: one-page copy and is not a pack role; the other four are the roles ``cb.pack`` v4 names, and the
+#: colouring page is one of them (PRINT-2, t_6418b9dd).
+PACK_DOCUMENTS: dict[str, tuple[str, str]] = {
+    "parent_guide": ("content/parent-guide.html", "parent_guide"),
+    "learner_page": ("content/learner-page.html", "learner_page"),
+    "answer_guide": ("content/answer-guide.html", "answer_guide"),
+    "coloring_page": ("content/coloring-page.html", "coloring_page"),
+}
+
+#: The ``cb.pack`` document version these print documents declare. v4 is the version that knows
+#: ``coloring_page`` and ``text/html``; an older pack keeps its own declared version and validates
+#: against its own enum, so nothing already installed moves.
+PACK_CONTRACT_VERSION = 4
+
+
+def pack_documents(fixture: Mapping[str, Any], task_id: str, *, paper: str = "A4") -> dict[str, bytes]:
+    """The print documents a take-home pack ships, keyed by pack-relative path.
+
+    The bytes are the HTML the print path renders to PDF, so the pack carries exactly what the
+    parent prints. ``text/html`` is declared by ``cb.pack`` v4 for these roles.
+    """
+    rendered = render_documents(fixture, task_id, paper=paper)
+    return {
+        path: rendered[document].encode("utf-8")
+        for document, (path, _role) in PACK_DOCUMENTS.items()
+    }
+
+
+def pack_manifest(
+    fixture: Mapping[str, Any],
+    task_id: str,
+    *,
+    paper: str = "A4",
+    pack_version: str = "1.0.0",
+    contract_version: int = PACK_CONTRACT_VERSION,
+) -> dict[str, Any]:
+    """A validated ``cb.pack`` manifest for one take-home task, over the bytes it declares.
+
+    *contract_version* defaults to v4, the version that names ``coloring_page``. The manifest is
+    built through :func:`coursebook.packs.build_manifest`, so the content hash, the role/MIME
+    allowlist and the teaching minima are the pack contract's, not this module's.
+    """
+    from . import packs, __version__
+
+    task = task_by_id(fixture, task_id)
+    lesson = fixture["lesson"]
+    files = pack_documents(fixture, task_id, paper=paper)
+    metadata = {
+        path: {
+            "mime": "text/html",
+            "role": role,
+            "description": f"Print document rendered from this lesson's own content ({role}).",
+        }
+        for path, role in PACK_DOCUMENTS.values()
+    }
+    # The reference answer is the *criterion* the parent checks, never a word the page prints: a
+    # label task's answer is a word the learner page already teaches, and the answer-leak audit
+    # (rightly) refuses to ship a reference answer on a learner-facing page. Naming the response
+    # as a sentence keeps the guide honest without printing the key beside the exercise.
+    reference = "Says the lesson's own word aloud when the object is shown, on both days."
+    objective = {
+        "objective_id": str(lesson["source_objective_id"]),
+        "ordinal": 1,
+        "title": f"{lesson['title']} — {task['title']}",
+        "evidence_target": "comprehension",
+        "evidence_criteria": [
+            "The learner says the word when the object is shown.",
+            "The parent hears the word, not a translation.",
+            "The word is produced on both days of the record.",
+        ],
+        "estimated_minutes": int(task.get("estimated_minutes") or 10),
+        "sections": [
+            {"section_id": "sec-takehome-1", "title": str(task["title"]), "path": "content/learner-page.html"}
+        ],
+        "checks": [
+            {
+                "check_id": "chk-takehome-1",
+                "version": 1,
+                "evidence_target": "comprehension",
+                "stimulus": f"The parent points at the object and asks for the word on {task['title']}.",
+                "rubric": [
+                    "The learner says a word from the lesson's own label set.",
+                    "The word is audible and recognizable to the parent.",
+                    "The learner does not read it off the page.",
+                ],
+                "reference_answer": reference,
+                "accepted_alternatives": [],
+                "audit_state": "unreviewed",
+            }
+        ],
+    }
+    return packs.build_manifest(
+        pack_id=f"takehome-{task_id.replace('_', '-')}",
+        pack_version=pack_version,
+        title=f"{lesson['title']} — {task['title']}",
+        recipe="parent",
+        minimum_coursebook_version=str(__version__),
+        license={"id": "all-rights-reserved", "redistribution": "local_only"},
+        attribution="Original teaching text: Coursebook. Print documents are rendered from this lesson's own content; no third-party text or imagery is bundled.",
+        objectives=[objective],
+        files=files,
+        file_metadata=metadata,
+        contract_version=contract_version,
+    )
 
 
 # ── technical one-pager ────────────────────────────────────────────────────

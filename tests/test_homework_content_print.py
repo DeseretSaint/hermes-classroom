@@ -44,7 +44,11 @@ def sentences(text: str) -> list[str]:
 JAPANESE = re.compile(r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 
 #: Elements whose text is not running copy and cannot carry an inline span.
-_NO_LANG_SCOPE = {"title", "style", "script"}
+#: ``desc`` (SVG accessible description) is metadata, the same class as ``title``: it is the
+#: figure's alt text, never rendered as visible copy, and SVG child elements cannot carry the
+#: HTML ``lang`` attribute. The visible words the page prints — the word bank under the drawing —
+#: do carry ``lang="ja"`` on every cell (PRINT-2, kanban t_6418b9dd).
+_NO_LANG_SCOPE = {"title", "style", "script", "desc"}
 
 _VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 
@@ -277,10 +281,18 @@ class HomeWorkContentRuleTest(unittest.TestCase):
     def test_answer_guide_is_separate_and_parent_only(self) -> None:
         data = fixture()
         docs = hp.render_documents(data, "hw_premeal")
-        self.assertEqual(set(docs), {"parent_guide", "learner_page", "answer_guide", "homework_sheet"})
+        # PRINT-2 (kanban t_6418b9dd) amends this set deliberately: ``coloring_page`` joined it so
+        # a take-home pack ships the page its parent guide already tells the parent to print. The
+        # four original keys are unchanged, and the colouring page is its own document — never a
+        # section of the learner page and never a second copy of the answer guide.
+        self.assertEqual(
+            set(docs), {"parent_guide", "learner_page", "answer_guide", "homework_sheet", "coloring_page"}
+        )
         self.assertIn("PARENT ONLY · ANSWER GUIDE", docs["answer_guide"])
         self.assertNotIn("PARENT ONLY", docs["learner_page"])
         self.assertNotIn("PARENT ONLY", docs["homework_sheet"])
+        self.assertNotIn("PARENT ONLY", docs["coloring_page"])
+        self.assertNotIn("answer-guide", docs["coloring_page"])
 
     def test_content_checklist_records_each_gate(self) -> None:
         checklist = CHECKLIST.read_text(encoding="utf-8")

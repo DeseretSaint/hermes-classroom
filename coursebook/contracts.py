@@ -39,6 +39,10 @@ CONTRACT_FILES: dict[str, str] = {
     # v1 resolve ``$ref`` targets to ``pack-manifest/v1``. Bumping the inventory would either
     # break those refs or require editing a frozen wire contract, so v2 is an *accepted document
     # version* (``CONTRACT_VERSION_FILES``) while cross-document refs keep pointing at v1.
+    # PRINT-2 (t_6418b9dd): v4 is accepted the same way, additively over v3 — the file role enum
+    # gains ``coloring_page`` and the MIME enum gains ``text/html``, the byte form of the print
+    # documents this build renders. The inventory current stays v3 so no existing builder's
+    # output moves; a pack that declares ``coloring_page`` declares ``contract_version: 4``.
     "cb.pack": "pack-manifest.v3.json",
     "cb.projection": "projection.v1.json",
     # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
@@ -56,7 +60,8 @@ WIRE_CONTRACT_VERSION = 27
 #: reachable only by an explicit version. A document that declares ``contract_version`` selects the
 #: schema it is validated against, so a v1 pack keeps the v1 allowlist and never inherits v2 fields.
 CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
-    "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json", 3: "pack-manifest.v3.json"},
+    "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json", 3: "pack-manifest.v3.json",
+                4: "pack-manifest.v4.json"},
     # GM-005: v23 appends the take-home family to GM-011's v22. v22 stays readable so a client
     # that pinned the tutor wire can still validate; v21 and older remain on disk as history but
     # are not offered by the loader.
