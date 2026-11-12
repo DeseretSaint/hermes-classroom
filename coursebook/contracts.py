@@ -44,7 +44,10 @@ CONTRACT_FILES: dict[str, str] = {
     # documents this build renders. The inventory current stays v3 so no existing builder's
     # output moves; a pack that declares ``coloring_page`` declares ``contract_version: 4``.
     "cb.pack": "pack-manifest.v3.json",
-    "cb.projection": "projection.v1.json",
+    # t_d33984eb: v2 changes no projection rule or output. It corrects the one sentence that
+    # let a pack's own `trust.reviewed_by` become a `human_review_recorded` label. v1 stays on
+    # disk, and `CONTRACT_VERSION_FILES` keeps it loadable by explicit version.
+    "cb.projection": "projection.v2.json",
     # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
     # imported (or synthetic-fixture) document; the plugin bundles no third-party list.
     "cb.frequency_inventory": "frequency-inventory.v1.json",
@@ -79,6 +82,9 @@ CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
     # that pinned the plate-geometry wire can still validate.
     "cb.rpc": {22: "rpc.v22.json", 23: "rpc.v23.json", 24: "rpc.v24.json", 25: "rpc.v25.json",
                26: "rpc.v26.json", 27: "rpc.v27.json"},
+    # t_d33984eb: the v1 projection stays readable by explicit version as immutable history; v2
+    # is the inventory current (one trust-label sentence corrected, no rule or output moved).
+    "cb.projection": {1: "projection.v1.json", 2: "projection.v2.json"},
 }
 
 

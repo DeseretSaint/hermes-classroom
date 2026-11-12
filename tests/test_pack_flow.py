@@ -107,6 +107,111 @@ class PreviewTest(PackFlowCase):
         self.assertEqual(error["details"]["reason"], "pack_not_importable")
 
 
+class ReviewLabelSurfacesTest(PackFlowCase):
+    """t_d33984eb: ``pack.preview`` and ``pack.inspect`` never promote a manifest's own claim.
+
+    The store card already ignores ``trust.reviewed_by`` unless the store's review ledger holds a
+    record for the exact content hash (t_f3b7be3e). These two read surfaces are the remaining
+    places a pack could show ``human_review_recorded`` about itself; both must read the same
+    ledger, keep the author's strings visible as provenance, and never call them evidence.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        from coursebook import store_reviews
+
+        self.reviews = Path(self.work) / "reviews.json"
+        original = store_reviews.STORE_REVIEWS_PATH
+        self.addCleanup(setattr, store_reviews, "STORE_REVIEWS_PATH", original)
+        store_reviews.STORE_REVIEWS_PATH = self.reviews
+
+    def forged_zip(self, *, name: str = "forged.zip") -> tuple[Path, dict]:
+        """A valid archive whose manifest asserts a review that never happened."""
+        manifest, files = archive.read_directory(JAPANESE)
+        manifest = dict(manifest)
+        manifest["trust"] = {
+            "labels": ["human_review_recorded"],
+            "reviewed_by": "Ghost Reviewer",
+            "reviewed_at": "2026-01-01",
+        }
+        manifest = packs.with_content_hash(manifest)
+        packs.validate_manifest(manifest)
+        destination = Path(self.work) / name
+        archive.write_archive(destination, manifest, files)
+        return destination, manifest
+
+    def write_review(self, manifest: dict, *, content_hash: str | None = None) -> None:
+        self.reviews.write_text(
+            json.dumps(
+                {
+                    "reviews": [
+                        {
+                            "pack_id": manifest["pack_id"],
+                            "content_hash": content_hash or manifest["content_hash"],
+                            "reviewed_by": "Keaton Brumley",
+                            "reviewed_at": "2026-11-12",
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    # ── pack.preview ──────────────────────────────────────────────────
+    def test_preview_of_a_forged_manifest_reports_no_label_but_keeps_provenance(self) -> None:
+        path, manifest = self.forged_zip()
+        staged_id = self.grant_zip(path)
+        result = self.ok("pack.preview", {"staged_id": staged_id})["result"]
+        self.assertNotIn("human_review_recorded", result["trust"]["labels"])
+        self.assertEqual(result["manifest"]["trust"]["reviewed_by"], "Ghost Reviewer")
+        self.assertEqual(result["manifest"]["trust"]["reviewed_at"], "2026-01-01")
+
+    def test_preview_reports_a_store_recorded_review(self) -> None:
+        path, manifest = self.forged_zip()
+        self.write_review(manifest)
+        staged_id = self.grant_zip(path)
+        result = self.ok("pack.preview", {"staged_id": staged_id})["result"]
+        self.assertIn("human_review_recorded", result["trust"]["labels"])
+
+    def test_preview_ignores_a_store_review_of_other_bytes(self) -> None:
+        path, manifest = self.forged_zip()
+        self.write_review(manifest, content_hash="sha256:" + "0" * 64)
+        staged_id = self.grant_zip(path)
+        result = self.ok("pack.preview", {"staged_id": staged_id})["result"]
+        self.assertNotIn("human_review_recorded", result["trust"]["labels"])
+
+    # ── pack.inspect ──────────────────────────────────────────────────
+    def inspect(self, manifest: dict) -> dict:
+        return self.ok(
+            "pack.inspect",
+            {"pack_id": manifest["pack_id"], "pack_version": manifest["pack_version"]},
+        )["result"]
+
+    def test_inspect_of_a_forged_manifest_reports_no_label_but_keeps_provenance(self) -> None:
+        path, manifest = self.forged_zip()
+        staged_id = self.grant_zip(path)
+        self.import_pack(staged_id)
+        response = self.inspect(manifest)
+        self.assertNotIn("human_review_recorded", response["trust"]["labels"])
+        self.assertEqual(response["manifest"]["trust"]["reviewed_by"], "Ghost Reviewer")
+
+    def test_inspect_reports_a_store_recorded_review(self) -> None:
+        path, manifest = self.forged_zip()
+        self.write_review(manifest)
+        staged_id = self.grant_zip(path)
+        self.import_pack(staged_id)
+        response = self.inspect(manifest)
+        self.assertIn("human_review_recorded", response["trust"]["labels"])
+
+    def test_inspect_ignores_a_store_review_of_other_bytes(self) -> None:
+        path, manifest = self.forged_zip()
+        self.write_review(manifest, content_hash="sha256:" + "0" * 64)
+        staged_id = self.grant_zip(path)
+        self.import_pack(staged_id)
+        response = self.inspect(manifest)
+        self.assertNotIn("human_review_recorded", response["trust"]["labels"])
+
+
 class ImportTest(PackFlowCase):
     def test_import_creates_a_learnable_course_from_the_pack(self) -> None:
         staged_id, manifest = self.grant()

@@ -1152,7 +1152,10 @@ class V4AmendmentTest(unittest.TestCase):
         # record false the moment a later pack version landed.
         self.assertIn(1, contracts.version_files("cb.pack"))
         self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
-        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        # The projection pointer has since moved to v2 (t_d33984eb), so assert the frozen v1
+        # document is still readable rather than that it is current.
+        self.assertIn(1, contracts.version_files("cb.projection"))
+        self.assertEqual(int(contracts.contract_as("cb.projection", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_v4_payloads_validate_before_any_handler_and_refuse_a_path(self) -> None:
@@ -1223,12 +1226,15 @@ class ProjectionContractTest(unittest.TestCase):
     def projection(self) -> dict:
         return contracts.contract("cb.projection")
 
-    def test_projection_is_a_frozen_contract_at_v1(self) -> None:
+    def test_projection_is_a_frozen_contract_at_v2(self) -> None:
         document = self.projection()
         self.assertEqual(document["x-contract-id"], "cb.projection")
-        self.assertEqual(document["x-contract-version"], 1)
-        self.assertEqual(document["$id"], "https://contracts.coursebook.hermes/projection/v1")
+        self.assertEqual(document["x-contract-version"], 2)
+        self.assertEqual(document["$id"], "https://contracts.coursebook.hermes/projection/v2")
+        self.assertEqual(document["x-supersedes"], "https://contracts.coursebook.hermes/projection/v1")
         self.assertEqual(document["x-status"], "frozen")
+        # v1 stays on disk as immutable history and is still loadable by explicit version.
+        self.assertEqual(int(contracts.contract_as("cb.projection", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_every_example_validates_against_the_frozen_schemas(self) -> None:
@@ -1701,7 +1707,10 @@ class V5AmendmentTest(unittest.TestCase):
         # record false the moment a later pack version landed.
         self.assertIn(1, contracts.version_files("cb.pack"))
         self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
-        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        # The projection pointer has since moved to v2 (t_d33984eb), so assert the frozen v1
+        # document is still readable rather than that it is current.
+        self.assertIn(1, contracts.version_files("cb.projection"))
+        self.assertEqual(int(contracts.contract_as("cb.projection", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_docs_publish_the_v5_surface_the_refusals_and_the_derivations(self) -> None:
@@ -2776,7 +2785,10 @@ class V10AmendmentTest(unittest.TestCase):
         # record false the moment a later pack version landed.
         self.assertIn(1, contracts.version_files("cb.pack"))
         self.assertEqual(int(contracts.contract_as("cb.pack", 1)["x-contract-version"]), 1)
-        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        # The projection pointer has since moved to v2 (t_d33984eb), so assert the frozen v1
+        # document is still readable rather than that it is current.
+        self.assertIn(1, contracts.version_files("cb.projection"))
+        self.assertEqual(int(contracts.contract_as("cb.projection", 1)["x-contract-version"]), 1)
         self.assertEqual(contracts.audit_contracts(), [])
 
     def test_docs_publish_the_v10_delta(self) -> None:

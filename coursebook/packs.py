@@ -899,27 +899,24 @@ def trust_labels(
     *,
     integrity_verified: bool,
     automated_checks_passed: bool,
-    store_review_recorded: bool | None = None,
+    store_review_recorded: bool = False,
 ) -> list[str]:
     """Four independent dimensions. No label implies the others and none means "safe".
 
     ``human_review_recorded`` is the one label whose evidence can never come from the pack.
     ``manifest["trust"]["reviewed_by"]`` / ``["reviewed_at"]`` are author-supplied provenance:
-    anyone can type them into their own ``pack.json`` before shipping it. A caller that presents
-    the label as a trust fact — the store card does — must pass ``store_review_recorded`` from
-    evidence it holds itself (see ``workshop._store_review_recorded``). A passed verdict is
-    authoritative: the manifest's claim is not consulted, so ``False`` strips a forged label and
-    ``True`` reports a review the store can point at. ``None`` is the preview/inspect reading,
-    where the pack reports its own declared provenance rather than a verified fact.
+    anyone can type them into their own ``pack.json`` before shipping it, so this function never
+    reads them. The label is emitted only when the caller passes ``store_review_recorded=True``
+    from evidence the store holds itself — the review ledger bound to the manifest's exact
+    content hash (see ``store_reviews.review_recorded``). The default is ``False``: a caller with
+    no store verdict gets no label, and a forged manifest claim is stripped rather than
+    promoted. The author's strings stay visible inside ``manifest.trust`` as provenance.
     """
     labels: list[str] = []
     if integrity_verified:
         labels.append("integrity_verified")
     if automated_checks_passed:
         labels.append("automated_checks_passed")
-    if store_review_recorded is None:
-        recorded = manifest.get("trust") or {}
-        store_review_recorded = bool(recorded.get("reviewed_by") and recorded.get("reviewed_at"))
     if store_review_recorded:
         labels.append("human_review_recorded")
     if any(str(source.get("support_status")) == "model_assessed" for source in manifest.get("sources") or []):
@@ -932,7 +929,7 @@ def preview(
     *,
     integrity: Mapping[str, Any] | None = None,
     automated_checks_passed: bool = True,
-    store_review_recorded: bool | None = None,
+    store_review_recorded: bool = False,
 ) -> dict[str, Any]:
     """Build the contract-shaped ``pack.preview`` response.
 
@@ -940,8 +937,10 @@ def preview(
     sources/support, licences, notes and media size are all carried by those three objects —
     the manifest itself plus ``integrity.expanded_bytes``. Nothing is summarised away.
 
-    ``store_review_recorded`` is threaded to :func:`trust_labels` unchanged: the store passes its
-    own review evidence, and every other caller leaves it ``None``.
+    ``store_review_recorded`` is threaded to :func:`trust_labels` unchanged and defaults to
+    ``False``: no caller may turn the manifest's own ``trust`` block into a label. A caller that
+    holds a store review for these exact bytes (the Workshop catalogue, ``pack.preview`` and
+    ``pack.inspect``) passes the verdict it read from the review ledger.
     """
     integrity_block = {
         "hashes_match": bool((integrity or {}).get("hashes_match", False)),

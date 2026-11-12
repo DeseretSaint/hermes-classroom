@@ -96,7 +96,9 @@ The boundary is pinned by `tests/test_pack_authoring_bound.py` (4,000,000 accept
   `redistribution: unset` must not be redistributed.
 * Trust labels are four separate dimensions (`integrity_verified`, `automated_checks_passed`,
   `human_review_recorded`, `model_assessed_support`). None of them, and no hash, means the content
-  is safe or true.
+  is safe or true. `human_review_recorded` is evidence the **store** holds (a review ledger record
+  bound to the exact content hash, `coursebook/store_reviews.py`); declaring `trust.reviewed_by`/
+  `reviewed_at` in your own manifest records provenance and never produces the label.
 
 ## 5. An authored course packages itself (`course.export`, cb.rpc v13)
 
