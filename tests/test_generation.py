@@ -3236,5 +3236,332 @@ class SharedSourceLedgerTest(unittest.TestCase):
         )
 
 
+class ObjectiveFloorTest(unittest.TestCase):
+    """Item 24 — the objective floor is met by distinguishable performances, never by padding.
+
+    A ``short`` plan needs three objectives. When the ledger carries two capabilities the planner
+    can split a supported capability into ordered sub-performances (recognise → with support →
+    unaided) and still author three honest, sourced objectives. What the floor must never buy is
+    a relabelled repeat or an invented topic; both are refused deterministically. Every case here
+    runs the same rule gate the pipeline runs, with a hand-built ledger — no provider is called.
+    """
+
+    PHASE_EXCERPT = (
+        "The Moon's phases are the changing shape of its sunlit half as seen from Earth."
+    )
+    CYCLE_EXCERPT = "A full moon returns about every twenty-nine and a half days."
+
+    @staticmethod
+    def _ledger(*rows: tuple[str, str]) -> list[research.SourceRecord]:
+        return [
+            research.SourceRecord(
+                source_id=source_id,
+                url=f"https://example.invalid/{source_id}",
+                title=f"Source {source_id}",
+                publisher="Example Press",
+                source_type="web_page",
+                fetched_at="2026-11-10T12:00:00Z",
+                published_at=None,
+                content_hash="sha256:0",
+                excerpt=excerpt,
+            )
+            for source_id, excerpt in rows
+        ]
+
+    @staticmethod
+    def _plan(*objectives: dict) -> dict:
+        """A short blueprint whose objectives are the ones handed in, checks kept in step."""
+        from tests.blueprint_support import blueprint_plan
+
+        plan = blueprint_plan(scope="short", units=1, objectives_per_unit=len(objectives))
+        for objective, fields in zip(plan["objectives"], objectives):
+            objective.update(fields)
+        by_ordinal = {int(obj["ordinal"]): obj for obj in plan["objectives"]}
+        for check in plan["check_plan"]:
+            check["evidence_target"] = by_ordinal[int(check["objective_ref"])]["evidence_target"]
+        return plan
+
+    @staticmethod
+    def _rules(plan: dict, ledger: list[research.SourceRecord]) -> None:
+        gen.enforce_plan_rules(
+            plan,
+            recipe="casual",
+            dials={},
+            locale=None,
+            ledger=ledger,
+            scope="short",
+        )
+
+    def test_two_supported_capabilities_yield_three_sourced_sub_performances(self) -> None:
+        # Two capabilities, three objectives: the phase capability is split recognise → unaided,
+        # and the cycle capability stands whole. That is the shape a two-capability ledger can
+        # honestly carry under a three-objective floor.
+        ledger = self._ledger(
+            ("src_phases", self.PHASE_EXCERPT),
+            ("src_cycle", self.CYCLE_EXCERPT),
+        )
+        plan = self._plan(
+            {
+                "title": "Recognise the Moon's phases in a labelled picture",
+                "evidence_target": "comprehension",
+                "evidence_criteria": [
+                    "names the phase shown, choosing from the four phase names"
+                ],
+                "support": "sourced",
+                "source_ids": ["src_phases"],
+                "source_quote": self.PHASE_EXCERPT,
+            },
+            {
+                "title": "Identify the Moon's phases without a word bank",
+                "evidence_target": "comprehension",
+                "evidence_criteria": ["names the phase from the sky alone, unprompted"],
+                "support": "sourced",
+                "source_ids": ["src_phases"],
+                "source_quote": self.PHASE_EXCERPT,
+            },
+            {
+                "title": "Predict the date of the next full moon",
+                "evidence_target": "comprehension",
+                "evidence_criteria": [
+                    "states the date of the next full moon from a dated observation"
+                ],
+                "support": "sourced",
+                "source_ids": ["src_cycle"],
+                "source_quote": self.CYCLE_EXCERPT,
+            },
+        )
+        self._rules(plan, ledger)  # approved: no rule violation
+
+        objectives = plan["objectives"]
+        self.assertEqual([obj["ordinal"] for obj in objectives], [1, 2, 3])
+        ledger_ids = {source.source_id for source in ledger}
+        for objective in objectives:
+            self.assertEqual(objective["support"], "sourced")
+            self.assertTrue(objective["source_ids"])
+            self.assertLessEqual(set(objective["source_ids"]), ledger_ids)
+        # The split is ordered: the two phase objectives cite the same excerpt and ask for
+        # different observable things, so the evidence can tell them apart.
+        self.assertEqual(objectives[0]["source_ids"], objectives[1]["source_ids"])
+        self.assertNotEqual(
+            objectives[0]["evidence_criteria"], objectives[1]["evidence_criteria"]
+        )
+        self.assertEqual(objectives[2]["source_ids"], ["src_cycle"])
+
+    def test_three_real_capabilities_are_unchanged(self) -> None:
+        rows = (
+            ("src_phases", self.PHASE_EXCERPT),
+            ("src_cycle", self.CYCLE_EXCERPT),
+            (
+                "src_eclipse",
+                "A lunar eclipse happens when the Moon enters Earth's shadow.",
+            ),
+        )
+        ledger = self._ledger(*rows)
+        objectives = [
+            {
+                "title": "Recognise the Moon's phases in a labelled picture",
+                "evidence_target": "comprehension",
+                "evidence_criteria": ["names the phase shown in a picture"],
+                "support": "sourced",
+                "source_ids": [source_id],
+                "source_quote": excerpt,
+            }
+            for source_id, excerpt in rows
+        ]
+        plan = self._plan(*objectives)
+        self._rules(plan, ledger)
+
+        # Three capabilities, three objectives: no splitting, no extra objective.
+        self.assertEqual(len(plan["objectives"]), 3)
+        self.assertEqual(
+            sorted(sid for obj in plan["objectives"] for sid in obj["source_ids"]),
+            ["src_cycle", "src_eclipse", "src_phases"],
+        )
+
+    def test_a_relabelled_repeat_cannot_close_the_floor(self) -> None:
+        ledger = self._ledger(
+            ("src_phases", self.PHASE_EXCERPT),
+            ("src_cycle", self.CYCLE_EXCERPT),
+        )
+        repeated = {
+            "evidence_target": "comprehension",
+            "evidence_criteria": ["names the phase from the sky alone, unprompted"],
+            "support": "sourced",
+            "source_ids": ["src_phases"],
+            "source_quote": self.PHASE_EXCERPT,
+        }
+        plan = self._plan(
+            {
+                "title": "Recognise the Moon's phases in a labelled picture",
+                "evidence_target": "comprehension",
+                "evidence_criteria": ["names the phase shown in a picture"],
+                "support": "sourced",
+                "source_ids": ["src_phases"],
+                "source_quote": self.PHASE_EXCERPT,
+            },
+            {**repeated, "title": "Identify the Moon's phases"},
+            # The same claim, target and criterion under a third title: padding, not a split.
+            {**repeated, "title": "Recognise the Moon's phases again"},
+            {
+                "title": "Predict the date of the next full moon",
+                "evidence_target": "comprehension",
+                "evidence_criteria": [
+                    "states the date of the next full moon from a dated observation"
+                ],
+                "support": "sourced",
+                "source_ids": ["src_cycle"],
+                "source_quote": self.CYCLE_EXCERPT,
+            },
+        )
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self._rules(plan, ledger)
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("one objective printed twice", reasons)
+        self.assertIn("sub-performances", reasons)
+
+    def test_an_objective_without_a_source_is_still_refused(self) -> None:
+        ledger = self._ledger(("src_phases", self.PHASE_EXCERPT))
+        unsourced = {
+            "evidence_target": "comprehension",
+            "evidence_criteria": ["names the phase shown in a picture"],
+            "support": "sourced",
+            "source_ids": ["src_phases"],
+            # Words that are not in the cited excerpt: the claim link is invented.
+            "source_quote": "the Moon is made of green cheese and always has been",
+        }
+        plan = self._plan(
+            {**unsourced, "title": "Recognise the Moon's phases"},
+            {**unsourced, "title": "Identify the Moon's phases"},
+            {**unsourced, "title": "Name the Moon's phases"},
+        )
+        with self.assertRaises(gen._RuleViolation) as caught:
+            self._rules(plan, ledger)
+        self.assertIn("does not appear", " ".join(caught.exception.reasons))
+
+    def test_short_scope_prompt_states_the_split_without_lowering_the_floor(self) -> None:
+        # The rule lives with the never-pad rule, so both plan prompts carry it. The floor itself
+        # is unchanged: 3 to 6 objectives for a short plan.
+        prompts = [
+            gen._plan_instructions(
+                recipe="casual", dials={}, locale=None, research_status="ok", scope="short"
+            ),
+            gen._plan_instructions_v2(
+                recipe="casual", dials={}, locale=None, research_status="ok", scope="short"
+            ),
+        ]
+        for prompt in prompts:
+            self.assertIn("never pad", prompt)
+            self.assertIn("ordered sub-performances", prompt)
+            self.assertIn("recognise it, use it with support, use it unaided", prompt)
+            self.assertIn("a topic heading is not a sub-performance", prompt)
+        self.assertIn("and 3 to 6 objective(s)", prompts[1])
+        self.assertEqual(gen.SCOPE_EXPECTATIONS["short"]["blueprint_objectives"], (3, 6))
+
+
+class ObjectiveFloorPipelineTest(GenerationTestBase):
+    """Item 24 end to end: a two-capability ledger reaches an approved short plan.
+
+    The rule-gate cases above prove the shape; this one proves the pipeline stores it — research
+    mints two sources, the author (a fake, never a provider) splits one capability into two
+    ordered sub-performances, and the independent validator pass is the fixture's pass. Nothing
+    here can approve a plan the kernel would refuse: the same ``enforce_plan_rules`` runs inside
+    ``run_plan_job`` before the validator is asked anything.
+    """
+
+    @staticmethod
+    def _quote(source: dict, length: int = 60) -> str:
+        text = " ".join(str(source.get("untrusted_excerpt") or "").split())
+        text = text.replace(gen.UNTRUSTED_SOURCE_BEGIN, " ").replace(
+            gen.UNTRUSTED_SOURCE_END, " "
+        )
+        return " ".join(text.split())[:length]
+
+    def test_two_capability_ledger_produces_a_validated_short_plan(self) -> None:
+        from tests.blueprint_support import blueprint_plan, response as support_response
+
+        search = FakeSearch(
+            {
+                "https://example.org/phases": {
+                    "title": "The Moon's phases",
+                    "publisher": "example.org",
+                    "published_at": "2025-04-02",
+                    "content": (
+                        "The Moon's phases are the changing shape of its sunlit half as seen "
+                        "from Earth, and each phase returns in a regular order. "
+                    )
+                    * 12,
+                },
+                "https://example.org/cycle": {
+                    "title": "The lunar cycle",
+                    "publisher": "example.org",
+                    "published_at": "2025-04-02",
+                    "content": (
+                        "A full moon returns about every twenty-nine and a half days, which is "
+                        "the length of one lunar cycle. "
+                    )
+                    * 12,
+                },
+            }
+        )
+
+        def split_author(request: gen.LLMRequest) -> gen.LLMResponse:
+            sources = json.loads(request.input_text).get("sources") or []
+            self.assertEqual(len(sources), 2)
+            plan = blueprint_plan(scope="short", units=1, objectives_per_unit=3)
+            specs = [
+                (0, "Recognise the Moon's phases in a labelled picture",
+                 "names the phase shown, choosing from the four phase names"),
+                (0, "Identify the Moon's phases without a word bank",
+                 "names the phase from the sky alone, unprompted"),
+                (1, "Predict the date of the next full moon",
+                 "states the date of the next full moon from a dated observation"),
+            ]
+            for objective, (index, title, criterion) in zip(plan["objectives"], specs):
+                objective.update(
+                    {
+                        "title": title,
+                        "evidence_target": "comprehension",
+                        "evidence_criteria": [criterion],
+                        "support": "sourced",
+                        "source_ids": [sources[index]["source_id"]],
+                        "source_quote": self._quote(sources[index]),
+                    }
+                )
+            return support_response(plan)
+
+        result = gen.run_plan_job(
+            self.connection,
+            plan_job(goal="Read the Moon's phases and predict the next full moon", recipe="casual", locale=None, scope="short"),
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": split_author,
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            ),
+            search,
+            now=NOW,
+        )
+
+        self.assertEqual(result["status"], "draft")
+        self.assertEqual(result["validation_verdict"], "pass")
+        self.assertEqual(result["objectives"], 3)
+        self.assertEqual(self.count("sources"), 2)
+        document = json.loads(
+            self.rows("SELECT document_json FROM gen_plan_documents")[0]["document_json"]
+        )
+        objectives = document["plan"]["objectives"]
+        self.assertEqual([obj["ordinal"] for obj in objectives], [1, 2, 3])
+        for objective in objectives:
+            self.assertEqual(objective["support"], "sourced")
+            self.assertTrue(objective["source_ids"])
+        # The split cites one source twice with different observable criteria; the third
+        # objective cites the other capability. No objective is unsourced.
+        self.assertEqual(objectives[0]["source_ids"], objectives[1]["source_ids"])
+        self.assertNotEqual(objectives[0]["source_ids"], objectives[2]["source_ids"])
+        self.assertNotEqual(
+            objectives[0]["evidence_criteria"], objectives[1]["evidence_criteria"]
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
