@@ -45,7 +45,7 @@ count (298 over the 32 frames with an accessibility tree), the worst authored co
 the overflow/clipping counts (0) are unchanged. A prior record quoting 2,416 text nodes describes the
 `eed7dc7` slice, not this tree.
 
-## Suite and contract re-measurement on `master` `b1913af7` (2026-11-10)
+## Suite and contract re-measurement on `master` `8eb1f944` (2026-11-12)
 
 The table above is the `b9f4a19` H-212 record. The suite and contract counts the release documents
 quote are re-measured on the tree the release gate reads, because test-only and contract-only merges
@@ -53,9 +53,27 @@ land without moving the release pin:
 
 | Fact | Value | Measured on | Command |
 | --- | --- | --- | --- |
-| Suite | `Ran 4033 tests in 1298.016s`, `OK (skipped=12)`, exit 0 | `6d08cc8a` (`master`, 2026-11-11, final adversarial pass) | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v26, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `contracts/rpc.v26.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 26`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
+| Suite | `Ran 4359 tests in 897.528s`, `OK (skipped=12)`, exit 0 | `8eb1f944` (`master`, 2026-11-12, the Gate 5 artwork merge of `d73d1d24` over `b8408781`, which the Gate-7 record had taken above the CB-trunk frame-rig merge `6dc7a927`) | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v27, 93 declared methods, 93 handlers, no declared method without a handler and none outside the contract | `8eb1f944` (`master`, 2026-11-12) | `contracts/rpc.v27.json`, `coursebook/contracts.py` `WIRE_CONTRACT_VERSION = 27`, `coursebook/api.py` `METHOD_HANDLERS` after importing every registering module |
 | `cb.db` | v14, `DB_SCHEMA_VERSION = 14`, migrations `0001`-`0014` | `b1913af7` (`master`, 2026-11-10, supervisor CP-052 merge) | `coursebook/db.py`, `contracts/db.v14.json` |
+
+The 2026-11-12 run is the count every release document now quotes: `Ran 4359 tests in 897.528s`,
+`OK (skipped=12)`, exit 0, on `8eb1f944`. The duration was measured while another worker's suite was
+running on the host, so it is a count measurement, not a quiet-host timing. The previous record —
+4212 at `5f956f7b`, and 4033 at `6d08cc8a` before it — is history. `cb.rpc` v27 (W2-6's optional
+`lesson_document_media.labels` array) adds no method, so the registry test still holds 93 declared to
+93 handlers.
+
+The M4 block on the `b9f4a19` table above still describes the frozen release tree; this pass does not
+re-pin it. Re-checked 2026-11-12 by summing the committed `audit/visual/m4-visual/audit.json`
+per-frame measurements (the same derivation every earlier record used), the `b9f4a19` audit reproduces
+2,120 text nodes / 298 AX controls / 70 full-motion animated nodes exactly. The audit committed at
+`8eb1f944` is pinned to the trunk module `52dac9ed` and measures 2,172 / 320 / 158 with all 15 claims
+PASS. That drift belongs to the CB-trunk re-pin at `6dc7a927` (`d6d85566`): comparing that audit with
+the one now committed at `8eb1f944` shows only `generated_at`, `branch` and `plugin_sha256` differ, so
+the Gate 5 artwork merge moved the pin and not a measurement. The frozen-tree M4 row is therefore not a
+claim about the head. Re-pinning it (and re-running `scripts/m4v-repro-check.py` at `52dac9ed`, which
+has not been run) is the operator's remaining freeze decision.
 
 The previous record quoted `Ran 2880 tests in 540.226s … OK (skipped=1)` measured on the merged
 GM-005 tree over `origin/master` `3fb3779`. That count went stale when CP-014, CP-020a, CP-020b,
@@ -63,7 +81,7 @@ CP-030, CP-031, CP-044, CP-042 and CP-052 merged: **3523 is 643 tests above it**
 is 11 on this tree against 1 in that record. The record's `cb.rpc` v23 / 83 methods was stale for the
 same reason: v24 (world/homework/takehome.html, ten methods), v25 (CP-005's seven `library_item` shelf
 facts) and v26 (CP-052's optional `world_brief.route_anchors`) landed without the record moving.
-`coursebook/contracts.py` now says 26 and `contracts/rpc.v26.json` declares 93 methods, unchanged in
+`coursebook/contracts.py` then said 26 and `contracts/rpc.v26.json` declared 93 methods, unchanged in
 count from v25 because v26 adds no method; the only shape change is one optional property, so no
 v1-v25 method or required key moves.
 
