@@ -285,7 +285,8 @@ class PlayerFooterTest(H149RenderTest):
         source = PLUGIN_JS.read_text(encoding="utf-8")
         player = source.split("function LessonPlayer(", 1)[1].split("\nfunction LessonDocumentView(", 1)[0]
         self.assertIn("event.key !== 'Enter'", player)
-        self.assertIn('closest(\'button, textarea, input, select, [contenteditable="true"]\')', player)
+        # Item 40: the exclusion list also keeps Enter for links, summaries and role-buttons.
+        self.assertIn("'button, a[href], summary, [role=\"button\"], textarea, input, select, [contenteditable=\"true\"]'", player)
 
 
 class PlayerVerdictTest(H149RenderTest):
@@ -354,7 +355,9 @@ class PlayerCloseTest(H149RenderTest):
 
     def test_close_without_a_recorded_total_claims_no_count(self) -> None:
         html = self.render({"kind": "close", "ordinal": 1, "progress": {}})
-        self.assertIn("The result is recorded on this profile.", html)
+        # Item 39: a close with no recorded evidence says so instead of claiming a result.
+        self.assertIn("Nothing was recorded for this stop.", html)
+        self.assertNotIn("The result is recorded on this profile.", html)
         self.assertNotIn("with evidence", html)
 
 
