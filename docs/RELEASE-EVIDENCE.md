@@ -71,12 +71,14 @@ The M4 block on the `b9f4a19` table above still describes the frozen release tre
 re-pin it. Re-checked 2026-11-12 by summing the committed `audit/visual/m4-visual/audit.json`
 per-frame measurements (the same derivation every earlier record used), the `b9f4a19` audit reproduces
 2,120 text nodes / 298 AX controls / 70 full-motion animated nodes exactly. The audit committed at
-`8eb1f944` is pinned to the trunk module `52dac9ed` and measures 2,172 / 320 / 158 with all 15 claims
-PASS. That drift belongs to the CB-trunk re-pin at `6dc7a927` (`d6d85566`): comparing that audit with
-the one now committed at `8eb1f944` shows only `generated_at`, `branch` and `plugin_sha256` differ, so
-the Gate 5 artwork merge moved the pin and not a measurement. The frozen-tree M4 row is therefore not a
-claim about the head. Re-pinning it (and re-running `scripts/m4v-repro-check.py` at `52dac9ed`, which
-has not been run) is the operator's remaining freeze decision.
+`165d7da0`, regenerated for the VQ-011 module `9015b84c`, is pinned to that module and
+measures 2,172 / 320 / 158 with all 15 claims PASS. That drift belongs to the CB-trunk re-pin at
+`6dc7a927` (`d6d85566`): comparing that audit with the ones committed at `8eb1f944` (`52dac9ed`),
+at `fe1a8fc6` (`28bc081c`) and at `165d7da0` (`9015b84c`) shows only `generated_at`, `branch` and
+`plugin_sha256` differ, so the re-pins after the CB-trunk merge moved the pin and not a measurement.
+The frozen-tree M4 row is therefore not a claim about the head. Re-pinning it (and re-running
+`scripts/m4v-repro-check.py` at `9015b84c`, which has not been run) is the operator's remaining freeze
+decision.
 
 The previous record quoted `Ran 2880 tests in 540.226s … OK (skipped=1)` measured on the merged
 GM-005 tree over `origin/master` `3fb3779`. That count went stale when CP-014, CP-020a, CP-020b,
