@@ -24,7 +24,7 @@ a branch, and what is fixture-only: `docs/HARNESS-STATUS.md`.
   `COURSEBOOK_PYTHON` if you need to point it elsewhere.
 - Node.js for `node --check` only. No bundler, no build step, no npm install.
 
-Three declared Python dependencies on the Hermes interpreter: `jsonschema>=4.0,<5`,
+Three declared Python dependencies on the Hermes interpreter: `jsonschema>=4.18,<5`,
 `faster-whisper>=1.0,<2` (optional at runtime) and `pypdf>=4.0,<7` (optional at runtime).
 Hermes never auto-installs a plugin dependency. If the capability probe fails on import, run:
 
