@@ -40,6 +40,13 @@ BUNDLED_ROOT = ROOT / "bundled" / "packs"
 #: pull request (``scripts/submit-course.py``); it ships to every user with the next plugin update
 #: and is read here by exactly the same gate as a bundled pack.
 COMMUNITY_ROOT = ROOT / "store" / "packs"
+#: The store's own review ledger. A pack cannot write this file; the maintainer who accepts a
+#: submission records a review here, bound to the exact content hash that was read. A pack's own
+#: ``trust.reviewed_by`` is author-supplied provenance and is never evidence of a human review.
+STORE_REVIEWS_PATH = ROOT / "store" / "reviews.json"
+#: Bound on the ledger: a review file is tiny data, and an oversized one is not read.
+MAX_STORE_REVIEWS = 64
+MAX_STORE_REVIEWS_BYTES = 256_000
 
 #: A catalogue is editorial data with a tiny surface; anything outside this is not a catalogue.
 MAX_PACKS = 24
@@ -81,6 +88,47 @@ def _text_list(value: Any, *, limit: int, item_limit: int = 400) -> list[str]:
         if text:
             out.append(text)
     return out
+
+
+def _store_review_recorded(manifest: Mapping[str, Any]) -> bool:
+    """Whether the store itself holds a human review of *these exact bytes*.
+
+    This is the only evidence that may put ``human_review_recorded`` on a store card. The pack's
+    own ``trust.reviewed_by``/``reviewed_at`` are author-supplied strings and are not consulted.
+
+    A record counts only when it names this ``pack_id`` and its ``content_hash`` equals the
+    manifest's own: a review of v1 must not bless v2. A missing, oversized, unreadable or
+    malformed ledger is no evidence — the answer is ``False``, never an exception on the card
+    path, because a broken ledger must not take the whole store down.
+    """
+    try:
+        if STORE_REVIEWS_PATH.stat().st_size > MAX_STORE_REVIEWS_BYTES:
+            return False
+        document = json.loads(STORE_REVIEWS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(document, Mapping):
+        return False
+    records = document.get("reviews")
+    if not isinstance(records, list):
+        return False
+    pack_id = str(manifest.get("pack_id") or "")
+    content_hash = str(manifest.get("content_hash") or "")
+    if not pack_id or not _SHA256.match(content_hash):
+        return False
+    for record in records[:MAX_STORE_REVIEWS]:
+        if not isinstance(record, Mapping):
+            continue
+        if _text(record.get("pack_id"), limit=128) != pack_id:
+            continue
+        if str(record.get("content_hash") or "") != content_hash:
+            continue
+        if not _text(record.get("reviewed_by"), limit=200):
+            continue
+        if not _text(record.get("reviewed_at"), limit=40):
+            continue
+        return True
+    return False
 
 
 def load_catalog() -> dict[str, Any]:
@@ -448,7 +496,12 @@ def _read_entry(entry: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         "file_count": len(manifest["files"]),
         "expanded_bytes": sum(int(item["bytes"]) for item in manifest["files"]),
     }
-    document = packs.preview(manifest, integrity=integrity, automated_checks_passed=True)
+    document = packs.preview(
+        manifest,
+        integrity=integrity,
+        automated_checks_passed=True,
+        store_review_recorded=_store_review_recorded(manifest),
+    )
     return manifest, document
 
 
@@ -482,7 +535,12 @@ def _read_community(entry: Mapping[str, Any], source: Path) -> tuple[dict[str, A
             "file_count": len(manifest["files"]),
             "expanded_bytes": sum(int(item["bytes"]) for item in manifest["files"]),
         }
-        document = packs.preview(manifest, integrity=integrity, automated_checks_passed=True)
+        document = packs.preview(
+            manifest,
+            integrity=integrity,
+            automated_checks_passed=True,
+            store_review_recorded=_store_review_recorded(manifest),
+        )
         return manifest, document
 
 
