@@ -445,6 +445,175 @@ class MediaGenerationTest(KernelCase):
         self.assertTrue(preview["data_url"].startswith("data:image/svg+xml;base64,"))
 
 
+    # ── item 31: a required cited reference is delivered or flagged ──────────
+    # The defect: a ``sourced_technical`` spec had no producer, so every source-analysis lesson
+    # degraded to a generic text paragraph. The lesson was graded on an image the learner never
+    # received, and nothing on the page said the reference was missing.
+
+    SOURCED_ITEM = {
+        "kind": "visual",
+        "role": "sourced_technical",
+        "purpose": "The poster the analysis is performed on",
+        "spec": "A wartime recruitment poster photograph",
+        "text_equivalent": "A recruitment poster reading 'Your country needs you'.",
+        "source_ids": ["src_poster"],
+        "permission": "public_domain",
+    }
+
+    def seed_sourced_reference(self, *, image: str = "required", recorded: bool = True) -> None:
+        """Give the lesson a cited-reference spec and the capability decision that judges it."""
+        page: dict = {"locale": "en"}
+        if recorded:
+            page["policy"] = {
+                "recipe": "committed",
+                "evidence_target": "transfer",
+                "check_angle": "analysis",
+                "rubric_profile": "source_analysis",
+                "image": image,
+                "image_role": "sourced_reference",
+                "audio": "none",
+                "audio_role": None,
+            }
+        self.execute(
+            "UPDATE gen_lessons SET page_json = ?, media_json = ? WHERE id = ?",
+            (json.dumps(page), json.dumps([dict(self.SOURCED_ITEM)]), self.lesson_id),
+        )
+
+    def test_a_required_sourced_reference_is_flagged_media_incomplete_not_silently_text(self) -> None:
+        self.seed_sourced_reference(image="required")
+        host = FakeHost()
+        summary = self.generate(host)
+        # No provider was invented to fill the gap, and nothing was stored as the reference.
+        self.assertEqual(host.images, [])
+        self.assertEqual(summary.generated, 0)
+        self.assertEqual(summary.degraded, 0)
+        self.assertEqual(summary.incomplete, 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 0)
+        item = self.stored_media()[0]
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_INCOMPLETE)
+        # The text equivalent really is what the learner gets, so the renderer's fallback flag is
+        # true; the named state is what separates this from an optional provider hiccup.
+        self.assertTrue(item["degraded"])
+        self.assertFalse(item.get("artifact_id"))
+        self.assertIn("src_poster", item["reason"])
+        self.assertIn("public_domain", item["reason"])
+        self.assertIn("not the reference", item["reason"])
+        self.assertEqual(item["label"], artifacts.INCOMPLETE_REFERENCE_LABEL)
+        self.assertEqual(item["missing"]["source_ids"], ["src_poster"])
+        self.assertIsNone(item["missing"]["asset"])
+        # The stage reports it: the job checkpoint names the lesson and the source it lacks.
+        checkpoint = summary.as_checkpoint()
+        self.assertEqual(checkpoint["incomplete"], 1)
+        self.assertEqual(checkpoint["incomplete_items"][0]["lesson_id"], self.lesson_id)
+        self.assertEqual(checkpoint["incomplete_items"][0]["source_ids"], ["src_poster"])
+
+    def test_an_unbound_host_still_flags_a_required_reference(self) -> None:
+        # A cited reference never needed a provider, so a profile with no media seam must not ship
+        # a source-analysis lesson that looks complete.
+        self.seed_sourced_reference(image="required")
+        previous = media._HOST_MEDIA
+        media._HOST_MEDIA = None
+        try:
+            with db.read() as connection:
+                summary = media.generate_for_lessons(
+                    connection,
+                    lesson_ids=[self.lesson_id],
+                    job_id="job_media_1",
+                    store=self.store,
+                    now=datetime(2026, 11, 6, 12, 0, tzinfo=timezone.utc),
+                )
+        finally:
+            media._HOST_MEDIA = previous
+        self.assertEqual(summary.incomplete, 1)
+        item = self.stored_media()[0]
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_INCOMPLETE)
+        self.assertIn("src_poster", item["reason"])
+
+    def test_the_flagged_reference_reaches_the_learner_page_as_a_named_reason(self) -> None:
+        self.seed_sourced_reference(image="required")
+        self.generate(FakeHost())
+        with db.read() as connection:
+            page = generation.learner_page(connection, self.lesson_id)
+        served = page["media"][0]
+        self.assertFalse(served.get("artifact_id"))
+        self.assertTrue(served["degraded"])
+        self.assertIn("src_poster", served["reason"])
+        self.assertEqual(served["label"], artifacts.INCOMPLETE_REFERENCE_LABEL)
+        children = [child for block in page["document"]["blocks"] for child in block["media"]]
+        self.assertEqual(len(children), 1)
+        self.assertFalse(children[0].get("artifact_id"))
+        self.assertTrue(children[0]["degraded"])
+        self.assertEqual(children[0]["reason"], served["reason"])
+        self.assertEqual(children[0]["label"], artifacts.INCOMPLETE_REFERENCE_LABEL)
+
+    def test_an_optional_sourced_reference_degrades_and_still_names_the_source(self) -> None:
+        self.seed_sourced_reference(image="optional")
+        summary = self.generate(FakeHost())
+        self.assertEqual(summary.incomplete, 0)
+        self.assertEqual(summary.degraded, 1)
+        item = self.stored_media()[0]
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_DEGRADED)
+        self.assertIn("optional cited source src_poster", item["reason"])
+
+    def test_a_lesson_with_no_recorded_capability_decision_treats_the_reference_as_required(self) -> None:
+        # A page that cannot prove the reference was optional must not be allowed to look complete.
+        self.seed_sourced_reference(recorded=False)
+        summary = self.generate(FakeHost())
+        self.assertEqual(summary.incomplete, 1)
+        item = self.stored_media()[0]
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_INCOMPLETE)
+        self.assertIn("no capability decision", item["reason"])
+
+    def test_a_cited_reference_without_a_permission_record_is_refused_by_name(self) -> None:
+        self.seed_sourced_reference(image="required")
+        self.execute(
+            "UPDATE gen_lessons SET media_json = ? WHERE id = ?",
+            (json.dumps([{**self.SOURCED_ITEM, "permission": "unknown"}]), self.lesson_id),
+        )
+        summary = self.generate(FakeHost())
+        # The lesson still requires the reference, so the refusal is an incomplete lesson, not a
+        # quiet degradation; the validation text naming the bad permission is kept.
+        self.assertEqual(summary.incomplete, 1)
+        self.assertEqual(summary.degraded, 0)
+        item = self.stored_media()[0]
+        self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_INCOMPLETE)
+        self.assertIn("unknown permission", item["reason"])
+        self.assertFalse(item.get("artifact_id"))
+
+    def test_the_projected_segment_names_the_missing_reference(self) -> None:
+        # The lesson_segments path has no document-level reason slot: if the reason is not in the
+        # text, the learner reads an ordinary paragraph and the gap disappears.
+        self.seed_sourced_reference(image="required")
+        self.generate(FakeHost())
+        self.execute(
+            "INSERT INTO lesson_runs (id, enrollment_id, objective_id, state, revision, created_at,"
+            " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
+            ("run_sourced_1", self.enrollment_id, self.objective_id, NOW, NOW, NOW),
+        )
+        with db.transaction() as connection:
+            count = media.seed_authored_media(
+                connection,
+                lesson_run_id="run_sourced_1",
+                objective_id=self.objective_id,
+                now=NOW,
+            )
+        self.assertEqual(count, 1)
+        segment = self.rows(
+            "SELECT text, artifact_id FROM lesson_segments WHERE lesson_run_id = ?",
+            ("run_sourced_1",),
+        )[0]
+        self.assertIsNone(segment["artifact_id"])
+        self.assertIn("Your country needs you", segment["text"])
+        self.assertIn("src_poster", segment["text"])
+        self.assertIn("not the reference", segment["text"])
+
+    def test_a_delivered_medium_records_its_state_and_no_missing_block(self) -> None:
+        self.generate(FakeHost())
+        for item in self.stored_media():
+            self.assertEqual(item["media_status"], artifacts.MEDIA_STATE_DELIVERED)
+            self.assertIsNone(item["missing"])
+
+
 class MediaSpecTest(unittest.TestCase):
     def test_audio_spec_defaults_voice_and_language_from_locale(self) -> None:
         spec = media._media_spec(
@@ -472,3 +641,27 @@ class MediaSpecTest(unittest.TestCase):
             }
         )
         self.assertTrue(media.artifacts.media_problems(spec))
+
+    def test_a_sourced_reference_gap_names_its_source_and_permission(self) -> None:
+        spec = media._media_spec(
+            {
+                "kind": "visual",
+                "role": "sourced_technical",
+                "spec": "A wartime recruitment poster photograph",
+                "text_equivalent": "A recruitment poster.",
+                "source_ids": ["src_poster"],
+                "permission": "public_domain",
+            }
+        )
+        gap = artifacts.sourced_reference_gap(spec, required=True)
+        assert gap is not None
+        self.assertTrue(gap["required"])
+        self.assertIn("src_poster", gap["reason"])
+        self.assertIn("public_domain", gap["reason"])
+        self.assertEqual(gap["missing"]["source_ids"], ["src_poster"])
+        self.assertIsNone(gap["missing"]["asset"])
+        # A delivered medium has no gap: the function is about the cited-reference role only.
+        narration = media._media_spec(
+            {"kind": "audio", "role": "narration", "text_equivalent": "hi", "transcript": "hi"}
+        )
+        self.assertIsNone(artifacts.sourced_reference_gap(narration, required=True))
