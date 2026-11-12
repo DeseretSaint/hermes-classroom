@@ -3114,5 +3114,127 @@ class WaivedUnknownInStoredRecordTest(GenerationTestBase):
         self.assertEqual(record["outcome"], gen.OUTCOME_MODEL_ASSESSED)
 
 
+class SharedSourceLedgerTest(unittest.TestCase):
+    """Item 23: the plan author and the validator grading it see one source ledger.
+
+    ``_fit_source_brief`` used to shrink the array against each request's own payload, so a deep
+    pass handed the author 1 200-character excerpts while the validator that grades those claims
+    saw 400. These tests pin one payload-independent budget, byte-identical rows on both requests,
+    and the repair path (whose author bound is wider) still receiving the same rows.
+    """
+
+    @staticmethod
+    def _sources(count: int = 14, chars: int = 1200) -> list[research.SourceRecord]:
+        body = ("The Moon's phases follow from its position relative to the Sun and Earth. " * 40)[
+            :chars
+        ]
+        return [
+            research.SourceRecord(
+                source_id=f"src_{index:02d}",
+                url=f"https://example.invalid/{index}",
+                title=f"Source {index}",
+                publisher="Example Press",
+                source_type="web_page",
+                fetched_at="2026-11-10T12:00:00Z",
+                published_at=None,
+                content_hash="sha256:0",
+                excerpt=body,
+            )
+            for index in range(count)
+        ]
+
+    def _requests(
+        self, *, scope: str, plan_padding: int = 0, previous_draft: dict | None = None
+    ) -> tuple[gen.LLMRequest, list[gen.LLMRequest], dict]:
+        run = research.ResearchRun(status="ok", queries=[], sources=self._sources())
+        goal = "Read the night sky"
+        dials = {"level": "beginner"}
+        plan = plan_fixture("plan_ja")
+        if plan_padding:
+            plan["context_needs"] = ["padding " * plan_padding]
+        author = gen.build_plan_request(
+            goal=goal,
+            recipe="committed",
+            dials=dials,
+            locale="en-US",
+            research_run=run,
+            scope=scope,
+            previous_draft=previous_draft,
+        )
+        validators = gen.build_plan_validation_requests(
+            plan=plan,
+            goal=goal,
+            recipe="committed",
+            dials=dials,
+            locale="en-US",
+            research_run=run,
+            scope=scope,
+        )
+        return author, validators, plan
+
+    def test_author_and_validator_carry_identical_sources_at_both_payload_sizes(self) -> None:
+        for scope in ("short", "full"):
+            for plan_padding in (0, 200):
+                with self.subTest(scope=scope, plan_padding=plan_padding):
+                    author, validators, plan = self._requests(
+                        scope=scope, plan_padding=plan_padding
+                    )
+                    author_payload = json.loads(author.input_text)
+                    self.assertTrue(validators)
+                    for validator in validators:
+                        payload = json.loads(validator.input_text)
+                        # Byte-identical: the same ids and the same excerpts, not a re-fit.
+                        self.assertEqual(
+                            canonical_json(author_payload["sources"]),
+                            canonical_json(payload["sources"]),
+                        )
+                        # The validator still carries the whole artifact it grades.
+                        self.assertEqual(payload["plan"], plan)
+                        self.assertLessEqual(
+                            len(validator.input_text),
+                            gen._request_bound(scope) + gen._plan_artifact_bytes(plan),
+                        )
+
+    def test_the_ledger_is_fitted_once_to_the_stage_budget(self) -> None:
+        short_author, short_validators, _ = self._requests(scope="short")
+        full_author, _, _ = self._requests(scope="full")
+        short_payload = json.loads(short_author.input_text)
+        full_payload = json.loads(full_author.input_text)
+        # Every source survives; the excerpt window is what shrinks.
+        self.assertEqual(len(short_payload["sources"]), 14)
+        self.assertEqual(len(full_payload["sources"]), 14)
+        self.assertLess(
+            len(short_payload["sources"][0]["untrusted_excerpt"]),
+            len(full_payload["sources"][0]["untrusted_excerpt"]),
+        )
+        self.assertLessEqual(
+            len(canonical_json(short_payload["sources"]).encode("utf-8")),
+            gen._source_ledger_budget(gen._request_bound("short")),
+        )
+        self.assertEqual(
+            canonical_json(json.loads(short_validators[0].input_text)["sources"]),
+            canonical_json(short_payload["sources"]),
+        )
+
+    def test_a_repair_author_does_not_buy_a_longer_excerpt_than_the_validator(self) -> None:
+        draft = plan_fixture("plan_ja")
+        plain_author, _, _ = self._requests(scope="short")
+        repair_author, validators, _ = self._requests(scope="short", previous_draft=draft)
+        # Attempt 2 has a larger request bound because it carries the draft, but the ledger is
+        # fitted to the stage budget, so it is not longer than attempt 1's.
+        self.assertGreater(
+            gen._draft_payload_bound(gen._request_bound("short"), draft),
+            gen._request_bound("short"),
+        )
+        self.assertEqual(
+            canonical_json(json.loads(plain_author.input_text)["sources"]),
+            canonical_json(json.loads(repair_author.input_text)["sources"]),
+        )
+        self.assertEqual(
+            canonical_json(json.loads(repair_author.input_text)["sources"]),
+            canonical_json(json.loads(validators[0].input_text)["sources"]),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
