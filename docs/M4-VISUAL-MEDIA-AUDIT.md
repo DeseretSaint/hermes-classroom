@@ -7,7 +7,7 @@ regenerated for **CP-049** on `wt/cp-049-m4-pin` (branch from master `19fec67`),
 changed the shipped type stacks and `879fdb2` added the guard for that wiring. It is pinned to the
 module master ships: `desktop/plugin.js` sha256
 `4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (that was the shipping module
-on 2026-11-10; the committed audit has since been re-pinned for the trunk module `9015b84c…`, and the
+on 2026-11-10; the committed audit has since been re-pinned for the trunk module `e87a2e01…`, and the
 Reproducibility section records each re-pin with the numbers it measured).
 
 The recapture moved **no pixels and no measurement**. All 62 committed PNGs hash byte-identically
@@ -115,7 +115,18 @@ the aside check control (`0a4683f7`) and VQ-011's Home tag-aspect fix (`dccb532c
 (`generated_at: 2026-11-12T20:26:40.351Z`) and again reproduced every measurement: comparing that
 audit with the `28bc081c` one shows only `generated_at`, `branch` (recorded as `HEAD`) and
 `plugin_sha256` differ, so 2,172 text nodes, 320 AX controls, 158 animated nodes in full motion, 62
-frames and 15/15 claims PASS carry forward. This is the pin the committed
+frames and 15/15 claims PASS carry forward.
+
+**Re-pin at `e87a2e01` (UI-K9 cover provenance, `f766d1c6`, merged as `88a88744`, 2026-11-12).**
+UI-K9 (`f766d1c6`) replaced the painted study room behind an unplated course with a printed kit plate
+and varied the Home shelf's repeat frames by crop and zoom, rebuilding `desktop/plugin.js` from
+`desktop/src` to sha256
+`e87a2e01cee4ff99e9844456cef820ba37b89e6069aef72b60120a63091e0ee7`. A rebuild in the merged tree
+changes nothing, so the module is reproducible. The audit was regenerated for it
+(`generated_at: 2026-11-12T21:51:52.600Z`, recorded branch `wt/ui-k9-cover-provenance`) and again
+reproduced every measurement: comparing that audit with the `9015b84c` one shows only `generated_at`,
+`branch` and `plugin_sha256` differ, so 2,172 text nodes, 320 AX controls, 158 animated nodes in full
+motion, 62 frames and 15/15 claims PASS carry forward. This is the pin the committed
 `audit/visual/m4-visual/audit.json` now names.
 
 The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
@@ -209,7 +220,7 @@ audio players, text-only, media-unavailable.
 ## Verdicts
 
 The claim table below is the release-tree audit at `cd862140` (`b9f4a19`). The trunk audit at
-`9015b84c` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
+`e87a2e01` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
 full-motion animated nodes; the Reproducibility section records that re-pin.
 
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
