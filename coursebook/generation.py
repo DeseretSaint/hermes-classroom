@@ -1040,7 +1040,7 @@ LLM = Callable[[LLMRequest], LLMResponse]
 INDEPENDENCE_SAME_MODEL = "same_model"
 #: The provider reported no model on one side, so independence cannot be established.
 INDEPENDENCE_UNIDENTIFIED = "unidentified"
-#: Both identities are known and the model (or the provider) differs.
+#: Both identities resolve to *different canonical models* named in ``MODEL_ALIASES``.
 INDEPENDENCE_INDEPENDENT = "independent"
 
 INDEPENDENCE_STATES: tuple[str, ...] = (
@@ -1048,6 +1048,94 @@ INDEPENDENCE_STATES: tuple[str, ...] = (
     INDEPENDENCE_SAME_MODEL,
     INDEPENDENCE_UNIDENTIFIED,
 )
+
+#: Reported model spelling -> canonical model name.
+#:
+#: This table is the **only** source of model equivalence. The classifier is pure and offline: it
+#: never reads a provider catalog at run time, because then a renamed route could silently turn one
+#: model into two opinions. A spelling that is not listed is its own canonical name, and no vendor
+#: prefix or version suffix is stripped by pattern — ``provider/model`` and ``model@provider``
+#: spellings are canonicalised only when an entry here names them. (No ``model@provider`` entry is
+#: listed today: no provider this plugin has measured reports that form, and inventing one would
+#: be guessing.) Every entry carries where the name came from.
+MODEL_ALIASES: dict[str, str] = {
+    # Nous `/v1/models` catalog spelling of the DeepSeek v4.1 flash 1017 route, which Hermes also
+    # reported verbatim in a measured chat on 2026-10-31.
+    "deepseek/deepseek-v4.1-flash-1017": "deepseek-v4.1-flash-1017",
+    # The same 1017 route as the host's model selection shows it, with the vendor prefix dropped.
+    "deepseek-v4.1-flash-1017": "deepseek-v4.1-flash-1017",
+    # Hermes' commit-serving model, selected 2026-10-25 and recorded as
+    # `~deepseek/deepseek-v4-flash-latest`; the tilde is the host's alias marker, not part of the
+    # name. Memory of that selection records it as a *different* route from the v4.1 1017 model
+    # (different release and price), so it is a second canonical model, not an alias of the first.
+    "deepseek/deepseek-v4-flash-latest": "deepseek-v4-flash-latest",
+    "deepseek-v4-flash-latest": "deepseek-v4-flash-latest",
+}
+
+
+def canonical_model_name(model: str | None) -> str | None:
+    """The canonical model for a reported spelling, or ``None`` when no model was reported.
+
+    Lowercases and trims (the documented normalisation), then looks the name up in
+    :data:`MODEL_ALIASES`. A name that is not listed is returned as its own canonical name: the
+    table widens what counts as equal, it never invents an equivalence.
+    """
+    normalized = str(model or "").strip().lower()
+    if not normalized:
+        return None
+    return MODEL_ALIASES.get(normalized, normalized)
+
+
+def canonical_model_identity(identity: dict[str, Any] | None) -> dict[str, Any]:
+    """``(provider, model)`` normalised, plus the canonical model the classifier will compare."""
+    provider = str((identity or {}).get("provider") or "").strip().lower() or None
+    model = str((identity or {}).get("model") or "").strip() or None
+    return {
+        "provider": provider,
+        "model": model,
+        "canonical": canonical_model_name(model),
+        "known": bool(model),
+    }
+
+
+def validation_independence_detail(
+    generator: dict[str, Any] | None,
+    validator: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Classify the identity pair and name the canonical models that produced the classification.
+
+    ``independent`` requires two *different canonical models*; two spellings of one model are
+    ``same_model``. A missing model on either side is ``unidentified`` and carries no canonical
+    name for that side, so an ``independent`` verdict can be audited from its own record.
+    """
+    gen_identity = canonical_model_identity(generator)
+    val_identity = canonical_model_identity(validator)
+    gen_model = gen_identity["canonical"]
+    val_model = val_identity["canonical"]
+    if not gen_model or not val_model:
+        state = INDEPENDENCE_UNIDENTIFIED
+    elif gen_model == val_model:
+        state = INDEPENDENCE_SAME_MODEL
+    else:
+        state = INDEPENDENCE_INDEPENDENT
+    return {
+        "independence": state,
+        "canonical": {"generator": gen_model, "validator": val_model},
+    }
+
+
+def validation_independence(
+    generator: dict[str, Any] | None,
+    validator: dict[str, Any] | None,
+) -> str:
+    """Classify the *actual* identity pair by canonical model, not by reported string.
+
+    Two spellings that resolve to one canonical model (see :data:`MODEL_ALIASES`) are
+    ``same_model``: an alias is the same opinion. Only two different canonical models are
+    ``independent``; a missing model on either side cannot be called independent. Use
+    :func:`validation_independence_detail` when the verdict must also name the canonical pair.
+    """
+    return validation_independence_detail(generator, validator)["independence"]
 
 #: The only outcome that may be presented as independently validated.
 OUTCOME_INDEPENDENT = "independently_validated"
@@ -1086,25 +1174,6 @@ def generation_provenance(
         "prompt_version": getattr(request, "prompt_version", None),
         "pipeline_version": PIPELINE_VERSION,
     }
-
-
-
-def validation_independence(
-    generator: dict[str, Any] | None,
-    validator: dict[str, Any] | None,
-) -> str:
-    """Classify the *actual* identity pair. Same model name always means ``same_model``.
-
-    A different model name is independent even behind the same provider (a different model is a
-    different opinion). A missing model on either side cannot be called independent.
-    """
-    gen_model = str((generator or {}).get("model") or "").strip().lower()
-    val_model = str((validator or {}).get("model") or "").strip().lower()
-    if not gen_model or not val_model:
-        return INDEPENDENCE_UNIDENTIFIED
-    if gen_model == val_model:
-        return INDEPENDENCE_SAME_MODEL
-    return INDEPENDENCE_INDEPENDENT
 
 
 
@@ -8116,6 +8185,7 @@ def validation_verdict(
     research_status: str,
     ledger: Sequence[SourceRecord] = (),
     independence: str = INDEPENDENCE_UNIDENTIFIED,
+    canonical: Mapping[str, Any] | None = None,
     criteria: Sequence[str] = VALIDATION_CRITERIA,
     declared_gaps: Mapping[str, str] | None = None,
     objectives: Sequence[Mapping[str, Any]] | None = None,
@@ -8331,6 +8401,9 @@ def validation_verdict(
         "provenance_flags": provenance_flags,
         "independence": independence,
         "independent": independence == INDEPENDENCE_INDEPENDENT,
+        # CB-independence: the canonical models behind the classification, so a reader can audit
+        # an ``independent`` verdict without re-running the classifier.
+        "canonical": dict(canonical or {"generator": None, "validator": None}),
         "research_status": research_status,
         "facts_unverified": facts_unverified,
         "outcome": outcome,
@@ -10515,7 +10588,7 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "model": row.get("validator_model"),
         "known": bool(row.get("validator_model")),
     }
-    independence = row.get("independence") or validation_independence(generator, validator)
+    independence = validation_independence(generator, validator)
     outcome = row.get("outcome") or (
         OUTCOME_REJECTED
         if row.get("verdict") != "pass"
@@ -10531,6 +10604,9 @@ def validation_record(connection: sqlite3.Connection, validation_id: str | None)
         "validator": validator,
         "independence": independence,
         "independent": independence == INDEPENDENCE_INDEPENDENT,
+        # Re-derived from the stored identities by the same pure classifier, so an old row written
+        # by the string compare cannot present an alias as a second opinion.
+        "canonical": validation_independence_detail(generator, validator)["canonical"],
         "facts_unverified": bool(row.get("facts_unverified")),
         "outcome": outcome,
         "verdict": row.get("verdict"),
@@ -11003,14 +11079,16 @@ def run_plan_job(
                 answered,
                 key=lambda item: int(getattr(item, "shape_repair_attempts", 0) or 0),
             )
-            independence = validation_independence(
+            identity_detail = validation_independence_detail(
                 model_identity(response), model_identity(validation_response)
             )
+            independence = identity_detail["independence"]
             verdict = validation_verdict(
                 report,
                 research_status=research_run.status,
                 ledger=research_run.sources,
                 independence=independence,
+                canonical=identity_detail["canonical"],
                 # CP-015g/D1-F2: the plan's own `support: "unverified"` objectives are declared
                 # gaps, not unsupported claims. Passing them here is what keeps a validator
                 # complaint about one out of the author's repair list.
@@ -11405,7 +11483,8 @@ def _validation_block(
     """The provenance block every caller reads before saying "validated"."""
     generator = model_identity(generator_response)
     validator = model_identity(validator_response)
-    independence = verdict.get("independence") or validation_independence(generator, validator)
+    identity_detail = validation_independence_detail(generator, validator)
+    independence = verdict.get("independence") or identity_detail["independence"]
     outcome = verdict.get("outcome") or (
         OUTCOME_REJECTED
         if verdict["verdict"] != "pass"
@@ -11417,6 +11496,9 @@ def _validation_block(
         "verdict": verdict["verdict"],
         "independence": independence,
         "independent": independence == INDEPENDENCE_INDEPENDENT,
+        # The canonical models the classifier compared, so an ``independent`` verdict is auditable
+        # from the block itself (CB-independence).
+        "canonical": verdict.get("canonical") or identity_detail["canonical"],
         "generator": generator,
         "validator": validator,
         "facts_unverified": facts_unverified,
@@ -12290,14 +12372,16 @@ def run_unit_sections_job(
             except ModelOutputInvalid as exc:
                 record_unit_attempt(exc, validation_response, exc.parse_outcome)
                 raise
-            independence = validation_independence(
+            identity_detail = validation_independence_detail(
                 model_identity(response), model_identity(validation_response)
             )
+            independence = identity_detail["independence"]
             verdict = validation_verdict(
                 report,
                 research_status=research_status,
                 ledger=sources,
                 independence=independence,
+                canonical=identity_detail["canonical"],
                 criteria=lesson_validation_criteria(recipe=recipe),
                 not_applicable=lesson_validation_waivers(recipe=recipe),
             )
@@ -13625,14 +13709,16 @@ def _author_section(
         except ModelOutputInvalid as exc:
             record_lesson_attempt(exc, validation_response, exc.parse_outcome)
             raise
-        independence = validation_independence(
+        identity_detail = validation_independence_detail(
             model_identity(response), model_identity(validation_response)
         )
+        independence = identity_detail["independence"]
         verdict = validation_verdict(
             report,
             research_status=research_status,
             ledger=sources,
             independence=independence,
+            canonical=identity_detail["canonical"],
             criteria=lesson_validation_criteria(recipe=recipe),
             not_applicable=lesson_validation_waivers(recipe=recipe),
         )

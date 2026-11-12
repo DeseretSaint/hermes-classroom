@@ -441,6 +441,135 @@ class NoResearchWaiverTest(unittest.TestCase):
         self.assertEqual((check_state["state"], check_state["audit_state"]), ("open", "pending"))
 
 
+class AliasIndependenceTest(unittest.TestCase):
+    """CB-independence: an alias is the same opinion, and the verdict names the canonical model.
+
+    Every name used here comes from the plugin's alias table; the assertions are about the
+    classifier being offline, explicit and fail-closed, not about any provider call.
+    """
+
+    def test_vendor_prefixed_alias_and_bare_name_are_one_canonical_model(self) -> None:
+        # (a) The Nous catalog spells this route "deepseek/deepseek-v4.1-flash-1017"; the host
+        # reports the bare name from its own model selection. One model, one opinion.
+        self.assertEqual(
+            gen.validation_independence(
+                {"provider": "nous", "model": "deepseek/deepseek-v4.1-flash-1017"},
+                {"provider": "fake", "model": "deepseek-v4.1-flash-1017"},
+            ),
+            gen.INDEPENDENCE_SAME_MODEL,
+        )
+        # The vendor prefix on the longer route, mixed case and surrounding space included.
+        self.assertEqual(
+            gen.validation_independence(
+                {"provider": "nous", "model": "DeepSeek/DeepSeek-V4.1-Flash-1017"},
+                {"provider": None, "model": "  deepseek-v4.1-flash-1017  "},
+            ),
+            gen.INDEPENDENCE_SAME_MODEL,
+        )
+
+    def test_two_listed_canonical_models_are_independent_and_name_themselves(self) -> None:
+        # (b) Both names are in the table as distinct canonical models (1017 vs the commit-serving
+        # v4 flash latest route). Independent, and the verdict says which canonical pair.
+        detail = gen.validation_independence_detail(
+            {"provider": "nous", "model": "deepseek/deepseek-v4.1-flash-1017"},
+            {"provider": "nous", "model": "deepseek/deepseek-v4-flash-latest"},
+        )
+        self.assertEqual(detail["independence"], gen.INDEPENDENCE_INDEPENDENT)
+        self.assertEqual(
+            detail["canonical"],
+            {
+                "generator": "deepseek-v4.1-flash-1017",
+                "validator": "deepseek-v4-flash-latest",
+            },
+        )
+
+    def test_unknown_name_keeps_its_own_identity(self) -> None:
+        # (c) Not in the table -> its own canonical name. No fuzzy vendor stripping, so an
+        # unlisted prefixed name is not silently folded into a listed bare name.
+        detail = gen.validation_independence_detail(
+            {"provider": "acme", "model": "acme/secret-sauce-7"},
+            {"provider": "nous", "model": "deepseek-v4.1-flash-1017"},
+        )
+        self.assertEqual(detail["independence"], gen.INDEPENDENCE_INDEPENDENT)
+        self.assertEqual(detail["canonical"]["generator"], "acme/secret-sauce-7")
+        self.assertEqual(detail["canonical"]["validator"], "deepseek-v4.1-flash-1017")
+        # An unlisted prefixed name is not an alias of its bare form either.
+        self.assertEqual(
+            gen.validation_independence(
+                {"provider": "acme", "model": "acme/secret-sauce-7"},
+                {"provider": "acme", "model": "secret-sauce-7"},
+            ),
+            gen.INDEPENDENCE_INDEPENDENT,
+        )
+        # Two spellings of the same unknown name still meet after the documented normalisation.
+        self.assertEqual(
+            gen.validation_independence(
+                {"provider": "acme", "model": "ACME/SECRET-SAUCE-7"},
+                {"provider": "acme", "model": " acme/secret-sauce-7 "},
+            ),
+            gen.INDEPENDENCE_SAME_MODEL,
+        )
+
+    def test_missing_model_stays_unidentified_and_has_no_canonical(self) -> None:
+        # (d) A missing side can never be called independent, and it has no canonical name.
+        pairs = [
+            ({"provider": "p"}, {"model": "deepseek/deepseek-v4.1-flash-1017"}),
+            ({"model": ""}, {"model": "deepseek-v4.1-flash-1017"}),
+            (None, {"model": "deepseek-v4.1-flash-1017"}),
+            ({"model": "deepseek-v4.1-flash-1017"}, {"provider": "p"}),
+        ]
+        for generator, validator in pairs:
+            detail = gen.validation_independence_detail(generator, validator)
+            self.assertEqual(detail["independence"], gen.INDEPENDENCE_UNIDENTIFIED)
+            self.assertTrue(
+                detail["canonical"]["generator"] is None
+                or detail["canonical"]["validator"] is None
+            )
+
+    def test_plan_job_reports_an_alias_pass_as_same_model_with_the_canonical_pair(self) -> None:
+        connection = memory_connection()
+        try:
+            result = gen.run_plan_job(
+                connection,
+                plan_job(),
+                FakeLLM(
+                    {
+                        "coursebook.plan.generate": lambda request: response(
+                            plan_fixture("plan_ja", ()), model="deepseek/deepseek-v4.1-flash-1017"
+                        ),
+                        "coursebook.plan.validate": lambda request: response(
+                            validation_from_fixture()(request).parsed or {},
+                            model="deepseek-v4.1-flash-1017",
+                        ),
+                    }
+                ),
+                FakeSearch(),
+                now=NOW,
+            )
+            validation = result["validation"]
+            self.assertEqual(validation["independence"], gen.INDEPENDENCE_SAME_MODEL)
+            self.assertFalse(validation["independent"])
+            self.assertEqual(validation["outcome"], gen.OUTCOME_MODEL_ASSESSED)
+            self.assertEqual(
+                validation["canonical"],
+                {
+                    "generator": "deepseek-v4.1-flash-1017",
+                    "validator": "deepseek-v4.1-flash-1017",
+                },
+            )
+            record = connection.execute("SELECT * FROM gen_validation_records").fetchone()
+            self.assertEqual(record["independence"], gen.INDEPENDENCE_SAME_MODEL)
+            stored = gen.validation_record(connection, record["id"])
+            self.assertEqual(stored["canonical"]["generator"], "deepseek-v4.1-flash-1017")
+            document = gen.plan_document(connection, result["plan_id"])
+            documented = document.get("validation") or {}
+            self.assertEqual(
+                documented["canonical"]["validator"], "deepseek-v4.1-flash-1017"
+            )
+        finally:
+            connection.close()
+
+
 class RecordedIdentityTest(unittest.TestCase):
     def setUp(self) -> None:
         gen.bind_validator_llm(None)

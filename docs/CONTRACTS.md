@@ -853,6 +853,17 @@ sufficient to call a plan validated:
   (`independent`, `same_model`, `unidentified`) and an `outcome`
   (`independently_validated`, `model_assessed`, `rejected`). Only `independently_validated` sets
   `gen_plan_documents.generation_state = 'draft'`; the other outcomes record `needs_review`.
+* Independence is classified by **canonical model**, never by the reported string (CB-independence).
+  `validation_independence()` normalises `(provider, model)` and canonicalises the model through one
+  module-level alias table (`generation.MODEL_ALIASES`), in which every entry carries where the name
+  came from. Two spellings that resolve to one canonical model are `same_model`; only two
+  **different canonical models** are `independent`. A name absent from the table is its own
+  canonical identity: no vendor prefix or version suffix is stripped by pattern, because an alias
+  must be named to be canonical and an unnamed one must never widen the independent claim. The
+  classifier is pure and offline (it never reads a provider catalog at run time), so a renamed route
+  cannot change the verdict. The verdict carries `canonical {generator, validator}` beside
+  `independence`, and a stored validation record re-derives that pair from its recorded identities
+  on read, so an `independent` pass can be audited without re-running the classifier.
 * `plan_document()` returns `validation` (both model identities, prompt hashes, waived unknown
   criteria, `facts_unverified`, cost) and `approval` (`needs_review`, `warning`). The job result
   carries the same as `validation` / `approval_provenance`, and `warnings` includes the sentence
