@@ -380,6 +380,49 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   color: var(--cb3-forest);
 }
 
+/* UI-K9 — the printed plate for a course with no plate for its subject: kit card stock inside the
+ * 176x106 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
+ * which would claim a subject the course may not have, and never a second copy of the title the card
+ * already sets below (GM-002). All paint lives here, so the scene carries no inline colour. */
+[data-cb-v3] [data-cb-home-scene-cover="type"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 106px;
+  overflow: hidden;
+  background-color: var(--cb3-canvas-edge);
+  font-family: var(--cb3-font-display);
+  color: var(--cb3-ink-soft);
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-letter] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--cb3-rule);
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-mark] {
+  font-size: var(--cb3-text-heading);
+  line-height: var(--cb3-leading-heading);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-rule] {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background-color: var(--cb3-rule);
+}
+
 [data-cb-v3] [data-cb-home-scene-body] {
   padding: 8px 10px 10px;
 }

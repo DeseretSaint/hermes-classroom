@@ -3408,8 +3408,26 @@ function homeShelfLayout(width) {
   return { compact, columns, capacity }
 }
 
-const HOME_LESSON_CROPS = Object.freeze(['50% 42%', '66% 30%', '34% 58%', '60% 66%'])
-const HOME_KIT_REPEAT_CROPS = Object.freeze(['50% 50%', '72% 30%', '28% 64%'])
+/**
+ * A course's own cover art is already its own picture; the crop only has to stop two cards that
+ * reuse one artifact from showing the same window twice.
+ */
+const HOME_ART_CROPS = Object.freeze(['50% 42%', '66% 30%', '34% 58%', '60% 66%'])
+
+/**
+ * UI-K9 — the crop **and** zoom a repeated kit plate reads at. The kit ships one approved plate per
+ * subject family, so two courses in one family share a plate by design; they must never share a
+ * frame. Position alone is not enough: at a 160 px card the three old positions read as one room,
+ * so every repeat steps the zoom as well (a plain multiple of the plate's own size, never a
+ * stretch). The table covers the shelf's whole capacity (`CB_HOME_V3_LIMIT`), so no two visible
+ * cards of one family resolve the same pair.
+ */
+const HOME_KIT_REPEAT_FRAMES = Object.freeze([
+  Object.freeze({ position: '50% 50%', scale: 1 }),
+  Object.freeze({ position: '72% 28%', scale: 1.18 }),
+  Object.freeze({ position: '28% 64%', scale: 1.34 }),
+  Object.freeze({ position: '60% 76%', scale: 1.52 })
+])
 
 /** The approved field_atlas@2 display plate a Home card reads in, or null. A cover is an asset. */
 function homeKitCover(row) {
@@ -3421,9 +3439,13 @@ function homeKitCover(row) {
 }
 
 /**
- * One cover per visible card, resolved once: the kit display plate first, then the course's own
- * artifact cover, then the kit lesson room. Two courses sharing a plate get different crops, and
- * the card never falls back to a letter plate.
+ * One cover per visible card, resolved once: the approved display plate for the course's subject
+ * family first, then the course's own cover artifact, then an honest typographic plate on kit
+ * paper. The kit's lesson room is **not** in this chain: its art is a painted cafe study room, so
+ * a course whose pack names no family would wear a subject it may not have (UI-K9, D-011).
+ *
+ * Two courses that share a family plate get a different crop *and* zoom; `kind: 'own'` means
+ * "this course's own artifact, else the letter plate", decided where the preview resolves.
  */
 function homeCoverPlan(slots) {
   const seen = {}
@@ -3432,30 +3454,86 @@ function homeCoverPlan(slots) {
     const kit = homeKitCover(row)
     if (kit) {
       seen[kit.family] = (seen[kit.family] || 0) + 1
-      const repeat = Math.min(seen[kit.family] - 1, HOME_KIT_REPEAT_CROPS.length - 1)
-      return { kind: 'kit', src: kit.src, position: HOME_KIT_REPEAT_CROPS[repeat] }
+      const repeat = Math.min(seen[kit.family] - 1, HOME_KIT_REPEAT_FRAMES.length - 1)
+      const frame = HOME_KIT_REPEAT_FRAMES[repeat]
+      return { kind: 'kit', family: kit.family, src: kit.src, position: frame.position, scale: frame.scale }
     }
     return {
-      kind: 'fallback',
+      kind: 'own',
       artifactId: homeCoverArtifactId(row),
-      position: HOME_LESSON_CROPS[index % HOME_LESSON_CROPS.length]
+      position: HOME_ART_CROPS[index % HOME_ART_CROPS.length]
     }
   })
 }
 
-/** A 3:2 cover: the approved kit plate, else the course's own artifact, else the kit lesson room. */
+/**
+ * UI-K9 — the printed cover for a course the kit cannot dress. Kit card stock, a hairline rule and
+ * the course's two-letter mark, centred like a label pasted on the card. It is **not** a second
+ * copy of the title (the card's own heading carries the words — GM-002) and it is not a painted
+ * room, which would claim a subject the course may not have. The mark is deterministic from the
+ * title (`cbCourseMonogram`), so two undressable courses never wear the same plate.
+ */
+function HomeLetterCover({ title }) {
+  return jsx('div', {
+    'data-cb-home-cover-kind': 'letter',
+    'data-cb-cover-letter': '',
+    style: {
+      position: 'relative',
+      aspectRatio: '3 / 2',
+      width: '100%',
+      overflow: 'hidden',
+      borderRadius: cb3Radius('square'),
+      backgroundColor: cb3Role('canvas-edge'),
+      border: `1px solid ${cb3Role('rule')}`,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.35rem',
+      padding: '0.55rem',
+      boxSizing: 'border-box',
+      textAlign: 'center'
+    },
+    children: [
+      title
+        ? jsx('span', {
+            'aria-hidden': 'true',
+            style: {
+              display: 'block',
+              fontFamily: 'var(--cb3-font-display)',
+              fontSize: cb3Type('heading'),
+              lineHeight: cb3Lead('heading'),
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              color: cb3Role('ink-soft')
+            },
+            children: cbCourseMonogram(title)
+          }, 'mark')
+        : null,
+      jsx('span', {
+        'aria-hidden': 'true',
+        style: { display: 'block', width: '22px', height: '1px', backgroundColor: cb3Role('rule'), flex: '0 0 auto' }
+      }, 'rule')
+    ]
+  })
+}
+
+/**
+ * A 3:2 cover: the approved kit plate, else the course's own artifact, else the printed plate above.
+ * Never the lesson room.
+ */
 function HomeV3Cover({ cover, artifactId, title }) {
-  const plan = cover || { kind: 'fallback', position: HOME_LESSON_CROPS[0] }
+  const plan = cover || { kind: 'own', position: HOME_ART_CROPS[0] }
   const id = plan.kind === 'kit' ? null : plan.artifactId || artifactId
   const preview = useArtifactPreview(id)
   const art = preview && preview.state === 'ready' && typeof preview.data_url === 'string' ? preview.data_url : null
-  const lesson = cb3KitSource('field-atlas-lesson-room')
-  const src = plan.kind === 'kit' ? plan.src : art || lesson
+  const src = plan.kind === 'kit' ? plan.src : art
+  if (!src) return jsx(HomeLetterCover, { title })
   return jsx(CoverPlate3, {
     src,
     title,
-    'data-cb-home-cover-kind': plan.kind === 'kit' ? 'kit' : art ? 'art' : 'lesson',
-    imageStyle: { objectPosition: plan.position }
+    'data-cb-home-cover-kind': plan.kind === 'kit' ? 'kit' : 'art',
+    imageStyle: { objectPosition: plan.position, transform: plan.scale ? `scale(${plan.scale})` : undefined }
   })
 }
 
@@ -3551,8 +3629,8 @@ function HomeV3Card({ slot, mode, index, width, isNew, cover, onOpen }) {
     'data-cb-home-card-index': String(index),
     'data-cb-course-id': row.course_id || '',
     'data-cb-home-card-basis': cardWidth ? `${cardWidth}px` : 'full',
-    'data-cb-home-cover': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
-    'data-cb-home-cover-kind': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'lesson',
+    'data-cb-home-cover': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'letter',
+    'data-cb-home-cover-kind': cover && cover.kind === 'kit' ? 'kit' : artifactId ? 'artifact' : 'letter',
     role: 'listitem',
     style: {
       position: 'relative',
@@ -3562,7 +3640,7 @@ function HomeV3Card({ slot, mode, index, width, isNew, cover, onOpen }) {
       gap: '0.45rem'
     },
     children: [
-      jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { cover, artifactId, title }) }, 'cover'),
+      jsx('div', { 'data-cb-home-cover-plate': '', children: jsx(HomeV3Cover, { cover, artifactId, title: row.title || null }) }, 'cover'),
       jsx('h3', {
         style: {
           margin: 0,
@@ -3695,16 +3773,21 @@ const CB_HOME_SCENE = Object.freeze({
 function HomeSceneCard({ slot, index, cover, onOpen }) {
   const row = (slot && slot.row) || {}
   const media = cbCoverMedia(row)
-  const plan = cover || { kind: 'fallback', position: HOME_LESSON_CROPS[0] }
+  const plan = cover || { kind: 'own', position: HOME_ART_CROPS[0] }
   const preview = useArtifactPreview(plan.kind === 'kit' ? null : plan.artifactId || (media ? media.artifact_id : null))
   const artifactSrc =
     plan.kind !== 'kit' && preview && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url
       ? preview.data_url
       : null
-  const lessonSrc = plan.kind === 'kit' ? null : cb3KitSource('field-atlas-lesson-room')
-  const src = plan.kind === 'kit' ? plan.src : artifactSrc || lessonSrc
-  const kind = plan.kind === 'kit' ? 'kit' : artifactSrc ? 'art' : 'lesson'
+  // UI-K9: with no plate for its subject and no art of its own, the card wears the printed title
+  // on the scene's own kit-paper cover rule — never the painted lesson room, which reads as a
+  // different course's subject. `[data-cb-home-scene-cover]` in 76-v3-scope.js styles the element.
+  const src = plan.kind === 'kit' ? plan.src : artifactSrc
+  const kind = plan.kind === 'kit' ? 'kit' : artifactSrc ? 'art' : 'type'
   const title = (slot && (slot.title || slot.name)) || 'Untitled course'
+  // A course with no title of its own gets the plate's rule but no mark: a monogram debossed from
+  // the "Untitled course" / learner-label placeholder would read as an invented identity.
+  const mark = row && typeof row.title === 'string' && row.title.trim() ? cbCourseMonogram(row.title) : null
   const total = Number(row.sections_total) || 0
   const done = Number(row.sections_done) || 0
   const ratio = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0
@@ -3718,9 +3801,19 @@ function HomeSceneCard({ slot, index, cover, onOpen }) {
             'data-cb-home-scene-cover': kind,
             src,
             alt: kind === 'art' && media ? media.caption || '' : '',
-            style: { objectPosition: plan.position }
+            style: {
+              objectPosition: plan.position,
+              transform: plan.scale ? `scale(${plan.scale})` : undefined
+            }
           }, 'cover')
-        : null,
+        : jsx('div', {
+            'data-cb-home-scene-cover': kind,
+            'data-cb-cover-letter': '',
+            children: [
+              mark ? jsx('span', { 'data-cb-cover-mark': '', children: mark }, 'mark') : null,
+              jsx('span', { 'data-cb-cover-rule': '' }, 'rule')
+            ]
+          }, 'cover'),
       jsxs('div', {
         'data-cb-home-scene-body': '',
         children: [
@@ -4792,13 +4885,14 @@ function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
  * route paints the same object, and `data-cb-course-cover` carries the content fingerprint.
  */
 function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpenLibrary, testId }) {
-  // The Courses card reads the same approved display cover the workshop does (D-007). A course
-  // whose pack names no plate reads the kit's own lesson room, cropped — a letter or a typographic
-  // field never stands in for art. `cb3KitCoverFor` answers the full asset key, so `cb3Asset`
-  // reads it directly; the lesson room resolves through `cb3KitSource`.
+  // The Courses card reads the same approved display cover the workshop does (D-007).
+  // UI-K9: a course whose pack names no family gets the printed cover — its own title set on kit
+  // paper behind a measured rule, with the course's initial as a stamp — and never the kit's
+  // lesson room, whose art is a cafe study room and would claim a subject this course may not
+  // have. The kit plate still wins whenever one exists for the subject.
   const provenance = row && row.provenance && typeof row.provenance === 'object' ? row.provenance : {}
   const kit = cb3KitCoverFor({ pack_id: provenance.pack_id || (row && row.pack_id), title: row && row.title })
-  const coverSrc = (kit ? cb3KitSource(kit.id3x2) : null) || cb3KitSource('field-atlas-lesson-room')
+  const coverSrc = kit ? cb3KitSource(kit.id3x2) : null
   return jsxs('article', {
     'data-cb-course-cover': cbShelfFingerprint(row),
     'data-cb-course-id': row.course_id || '',
@@ -4823,7 +4917,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
           aspectRatio: '16 / 9',
           minHeight: '3rem',
           maxHeight: '7.5rem',
-          padding: coverSrc ? 0 : '0.5rem 0.6rem',
+          padding: 0,
           boxSizing: 'border-box',
           background: 'var(--cb-paper-raised)',
           overflow: 'hidden'
@@ -4834,20 +4928,47 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpe
               alt: '',
               'aria-hidden': 'true',
               'data-cb-cover-image': '',
-              'data-cb-cover-plate': kit ? kit.id3x2.split('.').pop() : 'field-atlas-lesson-room',
+              'data-cb-cover-plate': kit.id3x2.split('.').pop(),
               style: { display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }
             })
-          : jsx('div', {
-              'aria-hidden': 'true',
+          : jsxs('div', {
+              'data-cb-cover-letter': '',
               style: {
-                fontFamily: CB_SERIF,
-                fontSize: CB_TYPE.lead,
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-                lineHeight: 1,
-                color: 'var(--cb-ink-soft)'
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                width: '100%',
+                height: '100%',
+                padding: '0.45rem 0.55rem',
+                boxSizing: 'border-box',
+                border: '1px solid var(--cb-rule)',
+                overflow: 'hidden'
               },
-              children: cbCourseMonogram(row.title)
+              children: [
+                jsx('div', {
+                  'aria-hidden': 'true',
+                  style: {
+                    fontFamily: CB_SERIF,
+                    fontSize: CB_TYPE.meta,
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    lineHeight: 1,
+                    color: 'var(--cb-ink-soft)'
+                  },
+                  children: cbCourseMonogram(row.title)
+                }, 'stamp'),
+                jsx('div', {
+                  style: {
+                    fontFamily: CB_SERIF,
+                    fontSize: CB_TYPE.meta,
+                    fontWeight: 600,
+                    lineHeight: 1.25,
+                    color: 'var(--cb-ink)',
+                    overflowWrap: 'anywhere'
+                  },
+                  children: row.title || 'Untitled course'
+                }, 'words')
+              ]
             })
       }),
       jsx('h3', {
@@ -19234,6 +19355,49 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   font-family: var(--cb3-font-display);
   font-size: var(--cb3-text-heading);
   color: var(--cb3-forest);
+}
+
+/* UI-K9 — the printed plate for a course with no plate for its subject: kit card stock inside the
+ * 176x106 window, carrying the course's own two-letter mark — never the lesson room's painted cafe,
+ * which would claim a subject the course may not have, and never a second copy of the title the card
+ * already sets below (GM-002). All paint lives here, so the scene carries no inline colour. */
+[data-cb-v3] [data-cb-home-scene-cover="type"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 106px;
+  overflow: hidden;
+  background-color: var(--cb3-canvas-edge);
+  font-family: var(--cb3-font-display);
+  color: var(--cb3-ink-soft);
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-letter] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--cb3-rule);
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-mark] {
+  font-size: var(--cb3-text-heading);
+  line-height: var(--cb3-leading-heading);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+[data-cb-v3] [data-cb-home-scene-cover="type"] [data-cb-cover-rule] {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background-color: var(--cb3-rule);
 }
 
 [data-cb-v3] [data-cb-home-scene-body] {

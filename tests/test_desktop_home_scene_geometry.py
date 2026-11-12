@@ -314,26 +314,56 @@ class HomeSceneTest(unittest.TestCase):
                 rows[match.group(1)] = src.group(1)
         return rows
 
-    def test_every_scene_cover_is_an_approved_kit_plate(self) -> None:
+    @staticmethod
+    def scene_cards(html: str) -> list[str]:
+        return re.findall(r"<article[^>]*data-cb-home-scene-card.*?</article>", html, re.S)
+
+    @staticmethod
+    def monogram(title: str) -> str:
+        words = title.split()
+        if not words:
+            return "CB"
+        if len(words) == 1:
+            return words[0][:2].upper()
+        return (words[0][0] + words[1][0]).upper()
+
+    def test_every_scene_cover_is_an_approved_kit_plate_or_the_printed_plate(self) -> None:
         rows = self.kit_rows()
         self.assertIn("cb.asset.kit.field_atlas.home-hero", rows, "the kit segment is not in the module")
         html = self.render(1344)
-        covers = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-scene-cover")]
-        self.assertEqual(len(covers), 4, "every visible card carries a cover image")
-        self.assertNotIn('data-cb-home-scene-cover="type"', html, "a letter plate stands in for a cover")
-        self.assertNotIn('data-cb-cover-kind="letter"', html)
         approved = set(rows.values())
-        for tag in covers:
-            kind = attr(tag, "data-cb-home-scene-cover")
-            self.assertIn(kind, ("kit", "art", "lesson"), kind)
-            src = attr(tag, "src") or ""
-            self.assertTrue(src.startswith("data:image/webp"), src[:48])
-            self.assertIn(src, approved, "a scene cover is not an approved field_atlas@2 row")
+        covers = 0
+        printed = 0
+        for card in self.scene_cards(html):
+            cover = card.split("<h3")[0]
+            title = re.search(r'data-cb-home-scene-title[^>]*>([^<]+)<', card)
+            self.assertIsNotNone(title, "a card carries no title")
+            name = title.group(1) if title else ""
+            image = re.search(r'<img[^>]*data-cb-home-scene-cover[^>]*>', cover)
+            if image:
+                covers += 1
+                kind = attr(image.group(0), "data-cb-home-scene-cover")
+                self.assertIn(kind, ("kit", "art"), kind)
+                src = attr(image.group(0), "src") or ""
+                self.assertTrue(src.startswith("data:image/webp"), src[:48])
+                self.assertTrue(src in approved, "a scene cover is not an approved field_atlas@2 row")
+                self.assertNotEqual(src, rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"],
+                                    "a card wears the painted lesson room as its cover")
+            else:
+                printed += 1
+                self.assertIn('data-cb-cover-letter=""', cover, "a coverless card has no printed plate")
+                # The printed plate carries the course's own mark, never a second copy of the title
+                # the card already sets below it (GM-002).
+                self.assertIn(f">{self.monogram(name)}<", cover, "the printed plate lost its mark")
+                self.assertNotIn(name, cover, "the printed plate repeated the card's title")
+        self.assertEqual(covers + printed, 4, "every visible card carries one cover")
+        self.assertGreaterEqual(covers, 1, "no card carries an approved kit plate")
+        self.assertEqual(printed, 3, "the three undressable demo courses did not get printed plates")
 
     def test_each_card_reads_the_plate_for_its_own_course(self) -> None:
         # "Equals the kit row" (scope override item 1): a swapped or shared plate must fail, not just
         # an unapproved one. cb3KitCoverFor answers one family per course; a course with no family
-        # falls back to the kit's own lesson room, never a letter plate.
+        # wears the printed plate, never the kit's lesson room.
         rows = self.kit_rows()
         html = self.render(1344, [
             {"title": "Technical Pack Basics", "sections_total": 4, "sections_done": 1},
@@ -343,18 +373,25 @@ class HomeSceneTest(unittest.TestCase):
         ])
         # Cards paint in shelf order, which is not render order, so map cover -> title, not by index.
         found = {}
-        for article in re.findall(r'<article[^>]*data-cb-home-scene-card.*?</article>', html, re.S):
-            title = re.search(r'data-cb-home-scene-title[^>]*>([^<]+)<', article)
-            cover = re.search(r'<img[^>]*data-cb-home-scene-cover[^>]*>', article)
-            if title and cover:
-                found[title.group(1)] = attr(cover.group(0), "src")
-        self.assertEqual(set(found), {
+        printed = {}
+        for card in self.scene_cards(html):
+            cover = card.split("<h3")[0]
+            title = re.search(r'data-cb-home-scene-title[^>]*>([^<]+)<', card)
+            image = re.search(r'<img[^>]*data-cb-home-scene-cover[^>]*>', cover)
+            mark = re.search(r'>([A-Z0-9]{1,3})</span>', cover)
+            if title and image:
+                found[title.group(1)] = attr(image.group(0), "src")
+            elif title and mark:
+                printed[title.group(1)] = mark.group(1)
+        self.assertEqual(set(found) | set(printed), {
             "Technical Pack Basics", "Japanese Cafe Basics", "Parent Kitchen Practice", "Astronomy",
         })
         self.assertEqual(found["Technical Pack Basics"], rows["cb.asset.kit.field_atlas.technical-cover-3x2"])
         self.assertEqual(found["Japanese Cafe Basics"], rows["cb.asset.kit.field_atlas.japanese-cover-3x2"])
         self.assertEqual(found["Parent Kitchen Practice"], rows["cb.asset.kit.field_atlas.parent-cover-3x2"])
-        self.assertEqual(found["Astronomy"], rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"])
+        self.assertEqual(printed, {"Astronomy": "AS"})
+        self.assertNotIn(rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"],
+                         " ".join(found.values()), "an unmapped course fell back to the lesson room")
 
     def test_the_japanese_course_reads_in_the_japanese_plate(self) -> None:
         rows = self.kit_rows()
@@ -362,17 +399,41 @@ class HomeSceneTest(unittest.TestCase):
         plate = rows["cb.asset.kit.field_atlas.japanese-cover-3x2"]
         self.assertIn(plate, html, "the Japanese course did not resolve to its display plate")
 
-    def test_two_courses_on_one_plate_get_different_crops(self) -> None:
+    def test_two_courses_on_one_plate_get_different_frames(self) -> None:
+        # UI-K9: a family plate repeats by design, so the copies must differ in crop **and** zoom.
         html = self.render(1344, [
             {"title": "Japanese Cafe Basics", "sections_total": 4, "sections_done": 1},
             {"title": "Japanese Kitchen Japanese", "sections_total": 4, "sections_done": 0},
         ])
-        positions = [
+        styles = [
             attr(tag, "style") for tag in img_tags(html)
             if attr(tag, "data-cb-home-scene-cover") == "kit"
         ]
-        self.assertEqual(len(positions), 2)
-        self.assertNotEqual(positions[0], positions[1], "two Japanese courses share one crop")
+        self.assertEqual(len(styles), 2)
+        self.assertNotEqual(styles[0], styles[1], "two Japanese courses share one crop")
+        positions = [re.search(r'object-position:([^;"]+)', style).group(1) for style in styles]
+        scales = [re.search(r'transform:scale\(([\d.]+)\)', style) for style in styles]
+        self.assertNotEqual(positions[0], positions[1], "the repeat copied the crop")
+        self.assertTrue(all(scales), f"the repeat carries no zoom: {styles}")
+        self.assertNotEqual(scales[0].group(1), scales[1].group(1), "the repeat copied the zoom")
+
+    def test_four_courses_of_one_family_never_share_a_frame(self) -> None:
+        # The shelf shows at most four cards, so the repeat table has to cover four copies of one
+        # plate: distinct object-position and distinct scale at every step.
+        html = self.render(1344, [
+            {"title": f"Japanese Course {n}", "sections_total": 4, "sections_done": n}
+            for n in range(4)
+        ])
+        styles = [
+            attr(tag, "style") for tag in img_tags(html)
+            if attr(tag, "data-cb-home-scene-cover") == "kit"
+        ]
+        self.assertEqual(len(styles), 4, "four Japanese courses did not all read a kit plate")
+        positions = [re.search(r'object-position:([^;"]+)', style).group(1) for style in styles]
+        scales = [re.search(r'transform:scale\(([\d.]+)\)', style).group(1) for style in styles]
+        self.assertEqual(len(set(zip(positions, scales))), 4, f"a frame repeats: {list(zip(positions, scales))}")
+        self.assertEqual(len(set(positions)), 4, f"a crop repeats: {positions}")
+        self.assertEqual(len(set(scales)), 4, f"a zoom repeats: {scales}")
 
     def test_the_stage_backdrop_is_the_home_hero_plate(self) -> None:
         rows = self.kit_rows()
@@ -389,16 +450,51 @@ class HomeSceneTest(unittest.TestCase):
         band = [tag for tag in img_tags(html) if attr(tag, "data-cb-home-hero-band") is not None]
         self.assertEqual(len(band), 1, "the narrow Home has no 16:9 hero band")
         self.assertEqual(attr(band[0], "src"), rows["cb.asset.kit.field_atlas.home-hero"])
-        plates = []
-        for chunk in html.split("data-cb-home-cover-plate")[1:]:
-            tag = re.search(r'<img\b[^>]*>', chunk)
-            if tag:
-                plates.append(attr(tag.group(0), "src"))
-        self.assertTrue(plates, "the narrow shelf has no cover plate")
-        for src in plates:
-            self.assertIn(src, set(rows.values()), "a narrow cover is not an approved kit row")
+        cover_chunks = re.findall(r'data-cb-home-cover-plate=""[^>]*>(.*?)<h3', html, re.S)
+        self.assertEqual(len(cover_chunks), 4, "the narrow shelf did not paint four covers")
+        approved = set(rows.values())
+        printed = 0
+        for chunk in cover_chunks:
+            image = re.search(r'<img\b[^>]*>', chunk)
+            if image:
+                src = attr(image.group(0), "src") or ""
+                self.assertTrue(src in approved, "a narrow cover is not an approved kit row")
+                self.assertNotEqual(src, rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"],
+                                    "a narrow cover wears the painted lesson room")
+            else:
+                printed += 1
+                self.assertIn('data-cb-cover-letter=""', chunk, "a coverless card has no printed plate")
+        self.assertEqual(printed, 3, "the three undressable demo courses did not get printed plates")
         self.assertIn('data-cb-home-cover-kind="', html)
-        self.assertNotIn('data-cb-home-cover-kind="letter"', html)
+
+    def test_an_unmapped_course_never_wears_the_lesson_room(self) -> None:
+        # UI-K9 / D-011: the lesson room is painted as a cafe study room, so it is a subject claim.
+        # A course whose pack names no family gets the printed plate at both Home layouts.
+        rows = self.kit_rows()
+        lesson_room = rows["cb.asset.kit.field_atlas.field-atlas-lesson-room"]
+        unknown = [{"title": "Astronomy", "sections_total": 6, "sections_done": 1}]
+        wide = self.render(1344, unknown)
+        self.assertEqual(len([tag for tag in img_tags(wide) if attr(tag, "data-cb-home-scene-cover")]), 0,
+                         "an unmapped course rendered a picture cover")
+        self.assertNotIn(lesson_room, wide)
+        self.assertIn('data-cb-home-scene-cover="type"', wide)
+        narrow = self.render(900, unknown)
+        self.assertNotIn(lesson_room, narrow)
+        self.assertIn('data-cb-cover-letter=""', narrow)
+        self.assertIn('data-cb-home-cover-kind="letter"', narrow)
+
+    def test_a_kit_plate_still_beats_the_printed_plate(self) -> None:
+        # The UI-K9 fix must not weaken the older rule: a course whose subject the kit can dress is
+        # never given the letter plate while that plate exists.
+        rows = self.kit_rows()
+        html = self.render(900, [
+            {"title": "Japanese Cafe Basics", "sections_total": 4, "sections_done": 2},
+            {"title": "Parent Kitchen Practice", "sections_total": 4, "sections_done": 0},
+            {"title": "Technical Pack Basics", "sections_total": 4, "sections_done": 1},
+        ])
+        self.assertNotIn('data-cb-cover-letter=""', html, "a letter plate stood in for an existing kit plate")
+        for plate in ("japanese-cover-3x2", "parent-cover-3x2", "technical-cover-3x2"):
+            self.assertIn(rows[f"cb.asset.kit.field_atlas.{plate}"], html)
 
     # --- honesty --------------------------------------------------------------------------
 

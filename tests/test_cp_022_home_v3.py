@@ -418,6 +418,13 @@ class HomeV3StatesTest(Base):
                 ):
                     if isinstance(done, int) and isinstance(total, int):
                         values.add(f"{done} of {total} sections done")
+                # The cover's two-letter mark is a projection of the title the state carries
+                # (`cbCourseMonogram`), not invented copy; UI-K9 made it the printed plate's only
+                # painted text, so the oracle has to know it is derived.
+                title = item.get("title")
+                if isinstance(title, str) and title.strip():
+                    words = title.split()
+                    values.add((words[0][:2] if len(words) == 1 else f"{words[0][0]}{words[1][0]}").upper())
             return values
 
         def allowed(text: str, values: set[str]) -> bool:

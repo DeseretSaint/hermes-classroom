@@ -13,6 +13,7 @@ card with no host media read paints the product's own typographic cover fallback
 
 Usage:
   python3 scripts/gen-home-proof.py [--out design/home-scene.html] [--check]
+  python3 scripts/gen-home-proof.py --width 900 --height 1400 --out <frame>.html
 """
 
 from __future__ import annotations
@@ -52,7 +53,7 @@ import fs from 'node:fs'
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 // The route width has to be set before the module evaluates: the SDK stub's viewport atom reads it
 // at import time, and the scene is the `route >= 1200` branch.
-globalThis.__CB_TEST_WIDTH__ = '1344'
+globalThis.__CB_TEST_WIDTH__ = String(payload.width)
 const mod = await import('./plugin.js')
 
 const rows = payload.rows.map((row, index) => ({
@@ -109,9 +110,9 @@ PAGE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Coursebook Home — generated proof of the shipped scene (1344x768)</title>
+<title>Coursebook Home — generated proof of the shipped scene ({width}x{height})</title>
 <style>
-  html, body {{ margin: 0; padding: 0; width: 1344px; height: 768px; overflow: hidden; }}
+  html, body {{ margin: 0; padding: 0; width: {width}px; height: {height}px; overflow: hidden; }}
   * {{ box-sizing: border-box; }}
 </style>
 </head>
@@ -139,7 +140,7 @@ def _node_modules() -> Path:
     raise SystemExit("react/react-dom are not installed beside the desktop app")
 
 
-def render(out: Path) -> str:
+def render(out: Path, width: int = 1344, height: int = 768) -> str:
     sys.path.insert(0, str(ROOT))
     from tests.test_desktop_lesson_views import SDK_STUB  # the same stub the render suites use
 
@@ -163,7 +164,7 @@ def render(out: Path) -> str:
         (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
 
         case = root / "case.json"
-        case.write_text(json.dumps({"rows": ROWS}), encoding="utf-8")
+        case.write_text(json.dumps({"width": width, "rows": ROWS}), encoding="utf-8")
         result = subprocess.run(
             ["node", str(root / "render.mjs"), str(case)],
             cwd=root, capture_output=True, text=True, timeout=300,
@@ -172,7 +173,7 @@ def render(out: Path) -> str:
             raise SystemExit(result.stderr[-4000:])
         markup = json.loads(result.stdout)["markup"]
 
-    page = PAGE.format(sha=module_sha, markup=markup)
+    page = PAGE.format(sha=module_sha, markup=markup, width=width, height=height)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page, encoding="utf-8")
     return module_sha
@@ -181,19 +182,22 @@ def render(out: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default=str(DEFAULT_OUT))
+    parser.add_argument("--width", type=int, default=1344,
+                        help="route width to render (1344 is the binding reference frame; 900 is the narrow check)")
+    parser.add_argument("--height", type=int, default=768)
     parser.add_argument("--check", action="store_true", help="fail when the committed page is stale")
     args = parser.parse_args()
     out = Path(args.out)
     if args.check:
         with tempfile.TemporaryDirectory(prefix="coursebook-cp053-check-") as tmp:
             fresh = Path(tmp) / "home-scene.html"
-            render(fresh)
+            render(fresh, args.width, args.height)
             if not out.exists() or out.read_bytes() != fresh.read_bytes():
                 print(f"{out} is stale: regenerate with scripts/gen-home-proof.py", file=sys.stderr)
                 return 1
         print(f"{out} matches a fresh render of desktop/plugin.js")
         return 0
-    sha = render(out)
+    sha = render(out, args.width, args.height)
     print(f"wrote {out} from desktop/plugin.js sha256 {sha}")
     return 0
 
