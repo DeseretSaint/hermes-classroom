@@ -4819,6 +4819,18 @@ BRIEF_KEYS: tuple[str, ...] = (
     "narration", "locale", "egress_acknowledged", "redaction_requested",
 )
 
+#: The keys ``cb.rpc#/$defs/parent_brief`` marks ``required``. A ``jobs.brief_json`` row that carries
+#: ``course_id`` is not necessarily a parent brief: a generation plan brief has that field too
+#: (``$defs/plan_brief`` carries ``course_id`` so a durable retry can name its course). These keys
+#: are what separates the two, because ``parent.brief.create`` cannot store a brief without them
+#: (payload validation refuses it) while a generation brief never carries the consent/typing fields
+#: a parent filled in.
+_PARENT_BRIEF_REQUIRED: tuple[str, ...] = (
+    "title", "goal", "age_band", "reading_level", "duration_minutes", "setting",
+    "materials", "exclusions", "supervision", "desired_pages", "desired_visuals",
+    "narration", "egress_acknowledged",
+)
+
 #: Bounded generated-content probes for objective removal. An objective with any of these rows is
 #: in use by generated content or learning state and cannot be deleted from a plan.
 _OBJECTIVE_USE_TABLES: tuple[str, ...] = (
@@ -5084,23 +5096,44 @@ def parent_brief_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tu
 
 @_handler("parent.brief.get")
 def parent_brief_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """The typed brief, read back from the job row that the executor will consume."""
+    """The typed brief, read back from the job row that the executor will consume.
+
+    Only a *parent* brief is a parent brief. A generation course (``course.create``) has plan jobs
+    whose ``brief_json`` also carries ``course_id`` — ``$defs/plan_brief`` allows it so a durable
+    retry can name its course — but that brief is the planner's inputs, not the parent's typed
+    answers. Matching it here built a ``brief`` view missing ``title`` and the other required keys,
+    which the response validator turned into ``INTERNAL_ERROR``. The desktop's estimate read treats
+    that as a failed read and paints ``Session length could not be read`` (+ Retry) on the primary
+    course surface, where a secondary estimate should simply fall back to "not recorded". So a job
+    row whose brief is not shaped like ``$defs/parent_brief`` is skipped, and a course with none is
+    the contract's ``NOT_FOUND`` — a real answer that the desk renders as no estimate, not an error.
+    """
     db.ensure_schema()
     with db.read() as connection:
         course = _course_row(connection, payload["course_id"])
-        job = _row(
-            connection,
-            "SELECT * FROM jobs WHERE kind = 'plan'"
-            " AND json_extract(brief_json, '$.course_id') = ? ORDER BY created_at DESC LIMIT 1",
+        candidates = connection.execute(
+            # ``json_valid`` first: a row whose ``brief_json`` is not JSON makes ``json_extract``
+            # raise "malformed JSON" out of the query itself, and the dispatcher reports that as
+            # INTERNAL_ERROR. Skipping unreadable rows in SQL keeps this read an answer.
+            "SELECT * FROM jobs WHERE kind = 'plan' AND json_valid(brief_json)"
+            " AND json_extract(brief_json, '$.course_id') = ? ORDER BY created_at DESC",
             (course["id"],),
-        )
+        ).fetchall()
+        job = None
+        brief: dict[str, Any] = {}
+        for candidate in candidates:
+            loaded = _json_load(candidate["brief_json"], {})
+            # ``json.loads('null')`` is None, not a mapping: a brief row that decodes to a
+            # non-mapping cannot answer the typed contract either. It is skipped, not indexed into.
+            if isinstance(loaded, dict) and all(key in loaded for key in _PARENT_BRIEF_REQUIRED):
+                job, brief = candidate, loaded
+                break
         if job is None:
             raise RpcError.of(
                 "NOT_FOUND",
                 "this course has no parent brief; it was not created by parent.brief.create.",
                 course_id=course["id"],
             )
-        brief = _json_load(job["brief_json"], {})
         enrollment_id = brief.get("enrollment_id")
         if not enrollment_id:
             row = _row(
