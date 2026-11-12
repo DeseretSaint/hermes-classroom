@@ -407,6 +407,12 @@ function CoursebookPage() {
       onNextSection: (nextObjectiveId) =>
         setOpenCourse({ ...openCourse, objectiveId: nextObjectiveId || null, blockId: null }),
       onStartChat: () => startClassroomRun(openCourse),
+      // Item 35: the classroom's tutor door. It reveals the contributed tutor rail and puts the
+      // caret in its composer; it never sends, and it never opens a chat.
+      onAskTutor: () => {
+        revealCoursebookPane()
+        requestTutorFocus()
+      },
       onChanged: () => reloadHealth()
     })
   } else if (openCourse) {

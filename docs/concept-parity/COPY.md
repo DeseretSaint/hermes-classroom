@@ -157,6 +157,10 @@ omits the row when none is.
 | `classroom.check.checklist` | Checklist | deck | 16 | C7 group name, `verification` format |
 | `classroom.check.answers` | Answers | deck | 16 | C7 group name, `text` format |
 | `classroom.check.criteria` | Grading criteria | deck | 24 | C7 verdict criteria group name |
+| `classroom.check.hint` | Ask for a hint | deck | 24 | C7 quiet action, beside the check |
+| `classroom.check.hint_pending` | Asking the tutor for a hint. | deck | 32 | C7 quiet status while the assist is recorded |
+| `classroom.check.hint_recorded` | Hint recorded. The tutor has answered in the tutor panel. | deck + field:`lesson.assist.evidence_class` | 64 | C7 quiet status after the hint |
+| `classroom.check.hint_failed` | The hint could not be recorded. Try again. | deck | 48 | C7 quiet status on a refused assist |
 | `classroom.practice.expressions` | Expressions to practise | deck | 32 | C8 tutor rail group name |
 | `classroom.practice.transcript` | Practice transcript | deck | 28 | C8 tutor rail transcript group name |
 | `classroom.evidence.title` | Evidence | deck | 12 | C8, C9 |

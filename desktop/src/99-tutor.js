@@ -134,6 +134,45 @@ function requestTutorFocus() {
   tutorFocusListeners.forEach((listener) => listener(tutorFocusTick))
 }
 
+/**
+ * A hint asked from where the learner is stuck, consumed by the rail.
+ *
+ * The classroom records the assist (`lesson.assist`) in the check's own revision fence, then asks
+ * the rail to put the one hint question (`TUTOR_HINT_QUESTION`) to the tutor. The store is the same
+ * seam `armTutorQuote` uses for a selection: the two surfaces are separate React roots of one
+ * module instance, and the request survives a rail that mounts a beat later. Nothing is recorded
+ * here — the caller already wrote the event, so a late mount cannot double-count it.
+ */
+let pendingTutorHint = null
+let tutorHintTick = 0
+const tutorHintListeners = new Set()
+
+function requestTutorHint() {
+  tutorHintTick += 1
+  pendingTutorHint = { id: tutorHintTick, askedAt: Date.now() }
+  tutorHintListeners.forEach((listener) => listener(pendingTutorHint))
+  revealCoursebookPane()
+  requestTutorFocus()
+  return pendingTutorHint
+}
+
+function consumeTutorHint(id) {
+  if (pendingTutorHint && pendingTutorHint.id === id) pendingTutorHint = null
+}
+
+function useTutorHintRequest() {
+  const [request, setRequest] = useState(pendingTutorHint)
+  useEffect(() => {
+    const listener = (next) => setRequest(next)
+    tutorHintListeners.add(listener)
+    if (pendingTutorHint) listener(pendingTutorHint)
+    return () => {
+      tutorHintListeners.delete(listener)
+    }
+  }, [])
+  return request
+}
+
 function useTutorFocusTick() {
   const [tick, setTick] = useState(0)
   useEffect(() => {
@@ -1076,6 +1115,7 @@ function TutorRailPane({ binding }) {
 
   const quote = useTutorQuote()
   const focusTick = useTutorFocusTick()
+  const hintRequest = useTutorHintRequest()
   const [mode, setMode] = useState('ask')
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -1313,6 +1353,38 @@ function TutorRailPane({ binding }) {
     adoptRevision,
     performAsk
   ])
+
+  // Item 35: a hint asked beside the check arrives here as a request, not as a second composer.
+  // The caller already recorded `lesson.assist`, so this only asks the one hint question and
+  // renders the tutor's answer as a turn of this thread. A rail that mounts a beat later still
+  // answers it once; a payload the binding cannot name yet stays pending rather than being lost.
+  const hintHandledRef = useRef(0)
+  useEffect(() => {
+    if (!hintRequest || hintRequest.id === hintHandledRef.current || busy) return
+    // A request older than two minutes belongs to a press the learner has moved past; asking it
+    // now would be an unprompted question, so it is dropped rather than replayed.
+    if (Date.now() - (Number(hintRequest.askedAt) || 0) > 120000) {
+      hintHandledRef.current = hintRequest.id
+      consumeTutorHint(hintRequest.id)
+      return
+    }
+    const payload = tutorAskPayload({
+      courseId,
+      enrollmentId: binding.enrollment_id,
+      objectiveId,
+      lessonRunId: runId,
+      question: TUTOR_HINT_QUESTION,
+      quote: null,
+      mode: 'ask'
+    })
+    if (!payload) return
+    hintHandledRef.current = hintRequest.id
+    consumeTutorHint(hintRequest.id)
+    setMode('ask')
+    setHintUsed(true)
+    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    performAsk(payload)
+  }, [hintRequest, busy, courseId, binding.enrollment_id, objectiveId, runId, performAsk])
 
   const startPractice = useCallback(async () => {
     if (!practiceAvailable || busy) return
@@ -1904,6 +1976,9 @@ export {
   cbHomeworkFilename,
   cbHomeworkSheetGuard,
   cbPrintHomeworkSheet,
+  cbLessonPrintHtml,
+  cbPrintEscape,
+  cbPrintParagraphs,
   cbDownloadHomeworkSheet,
   StudioEntranceTabs,
   CB_STUDIO_ENTRANCES,
@@ -1991,6 +2066,7 @@ export {
   playerSteps,
   playerCheckCount,
   playerConcept,
+  playerMediaLead,
   FIRST_RUN_COPY,
   FirstRun,
   GOAL_EXAMPLES,
@@ -2062,6 +2138,8 @@ export {
   MediaSegment,
   MediaVerdictChip,
   mediaVerdict,
+  MediaViewer,
+  BlockMedia,
   NotebookView,
   OBSERVATION_NOTE_MAX,
   OverviewView,
