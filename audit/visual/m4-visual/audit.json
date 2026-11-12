@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T15:29:48.198Z",
+  "generated_at": "2026-11-12T18:54:48.190Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -37484,8 +37484,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "52dac9ed7d8ff05f744dfabd406bcd2cdef34df6bf94605e3845ea51f9f801f1",
-    "branch": "wt/gate5-trunk-artwork",
+    "plugin_sha256": "28bc081c522a656a0a03ebaf9e37b4af5b83cdceb01ca214f9fce4533ba5972f",
+    "branch": "wt/e2e-fixes",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
