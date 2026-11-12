@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "373c94249526b0732364b80c72ec04caa86504b3",
-  "measured_commit_short": "373c9424",
+  "measured_commit": "d616f84a3d686d7530b8b5b5c41997ec64857a5b",
+  "measured_commit_short": "d616f84a",
   "measured_at": "2026-11-12",
-  "ran": 4441,
+  "ran": 4444,
   "skipped": 12,
-  "seconds": 1421.065,
+  "seconds": 1273.026,
   "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on trunk `373c9424` (the merge of `wt/t_d33984eb` `81fe0ab4`, two commits: the store-owned trust label `d40e1f02` cherry-picked as `1174a832`, then the projection-v2 amendment): Ran 4441 tests in 1421.065s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated scratch worktree over `1c663172`. The 7-test delta over 4434 is that card's own groups (tests/test_pack_flow.py +105 lines for `pack.preview`/`pack.inspect` ledger reads, tests/test_packs_preview.py rewritten to the stripped manifest claim, tests/test_contracts.py for the v2 inventory, tests/test_packs_store_trust.py now also covering the `store_reviews` reader after it moved out of `workshop.py`), plus the README contract row that now names `cb.projection` v2. desktop/plugin.js moves no bytes in this merge (Python + contracts + docs only) and still hashes 9015b84c; the release gate `bash scripts/validate-plugin.sh` passed 4/4 on 373c9424 (4403 files) and `python3 scripts/check-docs-truth.py --skip-tests` PASSES on it. Previous records (4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. The docs commit above it touches only documentation, so it cannot move a test count."
+  "note": "Measured 2026-11-12 on trunk `d616f84a`, the merge of `wt/t_d33984eb` (`81fe0ab4`: the store-owned trust label `d40e1f02` cherry-picked as `1174a832`, then the `cb.projection` v2 amendment) over the validation-pool scope fix `5e3a7759`: Ran 4444 tests in 1273.026s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated scratch worktree over `1c663172`. The 10-test delta over 4434 is the two cards that landed in it: `pack.preview`/`pack.inspect` now read the store review ledger (tests/test_pack_flow.py +105 lines, tests/test_packs_preview.py rewritten to the stripped manifest claim, tests/test_contracts.py for the v2 inventory, tests/test_packs_store_trust.py extended after the ledger reader moved to `coursebook/store_reviews.py`) and the copied contextvars for plugin-spawned workers (`5e3a7759`: generation._run_validation_passes and grading._run_with_deadline, tests/test_cb_validation_pool_scope.py, 216 lines, red under the reverted propagation). desktop/plugin.js moves no bytes in either merge (Python + contracts + docs only) and still hashes 9015b84c; the release gate `bash scripts/validate-plugin.sh` passed 4/4 on d616f84a (4404 files) and `python3 scripts/check-docs-truth.py --skip-tests` PASSES on it. Previous records (4441 at 373c9424, 4437 at 5e3a7759, 4434 at 170aa650, 4429 at 165d7da0, 4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. The docs commit above it touches only documentation, so it cannot move a test count."
  },
  "rpc": {
   "contract": "cb.rpc",
