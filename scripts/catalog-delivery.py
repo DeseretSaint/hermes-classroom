@@ -27,7 +27,8 @@ ENTRY_DEFAULT = Path.home() / "Projects/hermes-fork/plugin-catalog/coursebook.ya
 LIVE_URL = "https://hermes-agent.nousresearch.com/docs/api/plugin-catalog.json"
 # Paths whose contents never reach an installed copy: a commit touching only these does not
 # require a new pin. Everything else does.
-NON_RUNTIME = ("docs/", "tests/", "audit/", "probes/", "scripts/", ".github/", "store/", "coverage/")
+NON_RUNTIME = ("docs/", "design/", "tests/", "audit/", "probes/", "scripts/", ".github/", "store/",
+               "coverage/", ".coursebook/")
 
 
 def git(*args: str) -> str:
