@@ -51,15 +51,13 @@ in migration `0012_fine_tune_revisions`, v13 adds GM-001's Game Mode storage —
 `courses.presentation_mode` plus eight play/homework/tutor tables — in migration
 `0013_game_mode_contracts`, and v14 removes exactly one unique key from `takehome_packs` in
 `0014_takehome_pack_revision_scope`, rebuilding that table in place with rows and indexes preserved,
-additive only. The suite is `Ran 4401 tests in 1502.676s … OK (skipped=12)` on `master` `3b82959f` (module `28bc081c…`)
-(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: PRINT-2
-`de92dd26`, which gives `cb.pack` v4 the `coloring_page` role, and the Workshop share contract
-cases `393d51a1`, merged over the `d85c30c5` trunk; their 16-test delta over 4385 is
-`tests/test_print_pack_coloring.py` plus one pinned-set assertion in
-`tests/test_homework_content_print.py`, plus 26 -> 32 in `tests/test_desktop_contracts.py`); the
+additive only. The suite is `Ran 4424 tests in 1020.242s … OK (skipped=12)` on `master` `ec99038e` (module `bc64d1e4…`)
+(the tree the `tests` block of `docs/release-evidence.json` names, 2026-11-12: six cards merged over
+the `d85c30c5` trunk — PRINT-2 `de92dd26` (`cb.pack` v4 names the `coloring_page` role), the Workshop
+share contract cases `393d51a1` (26 -> 32), CP-015g's measured per-call deadlines `918b0a01`,
+CP-G7-02's `parent.brief.get` NOT_FOUND answer `ef04029c`, the pnpm-aware electron resolver
+`576d79cd`, and the check-copy fix `1aa03c2c`; the 39-test delta over 4385 is those groups); the
 release tree `b9f4a19` measured `Ran 2747 tests in 410.301s … OK (skipped=1)` in the H-212 pass.
-The 1502.676 s duration was taken while other workers' full suites ran on the same host, so it is a
-count measurement and an upper bound, not a quiet-host timing.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -310,7 +308,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified, so they are not blockers: 93/93 `cb.rpc` v27 methods mounted with no
-contract problems, schema v14 from migrations `0001`-`0014`, 4401 tests on `master` `3b82959f`
+contract problems, schema v14 from migrations `0001`-`0014`, 4424 tests on `master` `ec99038e`
 (2747 on the release tree `b9f4a19`), pack round-trip and export
 hash matching, eight `parent.*` methods, the replan carry with the Parent Studio plan guard, and the
 full replan → lessons → export loop on contest row 9 at `29bede7` (export `exp_2e068c56`, content

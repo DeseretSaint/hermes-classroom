@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "3b82959f84be6e2bd98c190ccdb8d54d6e1845f7",
-  "measured_commit_short": "3b82959f",
+  "measured_commit": "ec99038e135181cbebaa8de44ed82e74cb5e348d",
+  "measured_commit_short": "ec99038e",
   "measured_at": "2026-11-12",
-  "ran": 4401,
+  "ran": 4424,
   "skipped": 12,
-  "seconds": 1502.676,
+  "seconds": 1020.242,
   "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on trunk, the union of PRINT-2 (wt/print-2-coloring-role de92dd26: cb.pack v4 names role `coloring_page`, +10 tests), the Workshop share contract tests (wt/t_23009397-desktop-contracts 393d51a1, 26 -> 32 cases) and the 0.2.1 pin repairs over master d85c30c5: Ran 4401 tests in 1502.676s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 16-test delta over 4385 is exactly those two groups. 1502.676s is a contended upper bound (other workers' full suites ran on the same host); the uncontended reference is 883.625s. desktop/plugin.js is unchanged by this merge and hashes 28bc081c, the 0.2.1 module. Previous records (4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history, not the current count. This block names the master tree the release gate reads; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count."
+  "note": "Measured 2026-11-12 on trunk, the union of PRINT-2 (`de92dd26`: cb.pack v4 names role `coloring_page`), the Workshop share contract tests (`393d51a1`), CP-015g per-call deadlines (`918b0a01`), CP-G7-02 parent.brief.get NOT_FOUND (`ef04029c`), the electron resolver (`576d79cd`) and the check-copy fix (`1aa03c2c`), over master `d85c30c5`: Ran 4424 tests in 1020.242s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 39-test delta over 4385 is those six cards' new and extended groups (test_cp015g_provider_deadlines, test_parent_studio, test_cb013_live_window_electron, test_cp_023_classroom, test_print_pack_coloring, test_desktop_contracts) plus the PRINT-2 pinned-set assertion. desktop/plugin.js is rebuilt from 20 segments by scripts/build_plugin.py in this tree and hashes bc64d1e4; the CP-053 row, both proof pages and the M4 evidence were regenerated on that module in the same commit. Previous records (4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit above it touches only documentation, so it cannot move a test count."
  },
  "rpc": {
   "contract": "cb.rpc",
