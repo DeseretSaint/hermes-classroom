@@ -173,6 +173,7 @@ omits the row when none is.
 | `classroom.nochat.action` | Start a fresh run | deck | 20 | C7 filled |
 | `classroom.complete.title` | Section finished | deck | 20 | C7 region |
 | `classroom.complete.body` | Your check is recorded. | deck | 28 | C7 region |
+| `classroom.complete.body.unrecorded` | Your check passed, but nothing was recorded for it, so it does not count toward your evidence yet. | deck | 100 | C7 region |
 | `classroom.complete.action` | Back to the path | deck | 20 | C7 filled |
 | `classroom.loading` | Opening this section. | deck | 24 | C4 |
 | `classroom.error.title` | This section could not be read | deck | 32 | C7 region |

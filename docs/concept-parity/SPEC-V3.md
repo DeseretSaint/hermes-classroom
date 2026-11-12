@@ -521,7 +521,7 @@ the deferred format must not render a half-built surface in the meantime.
 | correct | stamp lands on the verdict beat; correct option marked by shape and word; the evidence count updates | `Next section` | `classroom.check.correct`, `classroom.check.next` |
 | wrong | no stamp loss, no red flood; the option is marked, the correction names the rule | `Try again` (primary moves here) | `classroom.check.wrong`, `classroom.check.retry` |
 | no-chat | scene and line still render; one sentence says this section has no chat yet | `Start a fresh run` | `classroom.nochat.title`, `classroom.nochat.body`, `classroom.nochat.action` |
-| complete | evidence recorded, aside closed with one authored beat, no confetti | `Back to the path` | `classroom.complete.title`, `classroom.complete.body`, `classroom.complete.action` |
+| complete | evidence recorded, aside closed with one authored beat, no confetti; when the commit stored no evidence row the body says so instead of claiming a recorded result | `Back to the path` | `classroom.complete.title`, `classroom.complete.body`, `classroom.complete.body.unrecorded`, `classroom.complete.action` |
 | loading | scene and check as skeletons; the stepper already shows the real path | none; the head line says the page is opening | `classroom.loading` |
 | error | scene frame keeps its size, one sentence names what failed, the attempt is untouched | `Try again` | `classroom.error.title`, `classroom.error.body`, `classroom.error.action` |
 | offline | the same, naming the lost connection | `Try again` | `classroom.offline.title`, `classroom.offline.body`, `classroom.offline.action` |
