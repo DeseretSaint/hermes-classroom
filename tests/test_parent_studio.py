@@ -14,7 +14,7 @@ import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from coursebook import db, domain, executor, generation, job_service, packs, parent_authoring as authoring
+from coursebook import contracts, db, domain, executor, generation, job_service, packs, parent_authoring as authoring
 
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
@@ -531,6 +531,106 @@ class ParentBriefTest(ParentSeedMixin):
         # The vocabulary is frozen: no 'lesson' kind exists, so payload validation refuses it.
         error = self.err("jobs.create", {"kind": "lesson", "brief": {"plan_id": "pln_x"}})
         self.assertEqual(error["code"], "VALIDATION_FAILED")
+
+
+class ParentBriefReadIsNotAGenerationBriefTest(KernelCase):
+    """``parent.brief.get`` answers NOT_FOUND for a course that has no *parent* brief.
+
+    Gate-7 `t_b28115be`. Measured on `origin/master` `b2e30bbf`:
+
+    * ``desktop/src/50-create.js:403`` sends ``course_id`` in the ``plan_brief`` of every learner
+      plan job, so a generation course carries a ``jobs.kind = 'plan'`` row whose ``brief_json``
+      names its course but is not a parent brief (it has no ``title``/``age_band``/...).
+    * ``parent.brief.get`` matched that newest row and returned it as ``result.brief``; ``$defs/
+      parent_brief`` requires ``title``, so ``validate_response_payload`` raised and the dispatcher
+      answered ``INTERNAL_ERROR`` (``coursebook/api.py:236-245``).
+    * ``desktop/src/32-desk.js:396-399`` treats *only* ``parent.brief.get``'s ``NOT_FOUND`` as an
+      answer; every other refusal becomes ``status: 'error'``, which ``desktop/src/30-home.js:1389``
+      renders as ``Session length could not be read`` and ``:2837`` as the Retry control.
+
+    So the fix is to make the read truthful — a row that is not shaped like a parent brief is not
+    the parent brief — and the assertion below is that the refusal is ``NOT_FOUND``: the one code
+    that renders the default ``Session length not recorded`` (``30-home.js:1391``) with no Retry.
+    """
+
+    def _generation_plan_brief(self, course_id: str, enrollment_id: str) -> dict:
+        return {
+            "stage": "plan",
+            "course_id": course_id,
+            "enrollment_id": enrollment_id,
+            "goal": "Read the night sky",
+            "recipe": "committed",
+            "dials": {"pace": "steady", "depth": "deep", "assessment": "graded", "autonomy": "guided"},
+            "locale": "en-US",
+            "level": "beginner",
+            "subject_domain": "science",
+            "scope": "short",
+        }
+
+    def assert_falls_back_to_the_desk_default(self, error: dict) -> None:
+        """The refusal must be the answer the desk renders as its default, not an error block.
+
+        ``NOT_FOUND`` is the sole code ``32-desk.js``'s ``refusalIsAnAnswer`` collapses to
+        ``none``; ``30-home.js`` then shows ``Session length not recorded`` and mounts no Retry
+        (that control is gated on ``estimateState === 'error'``). Any other code fails here.
+        """
+        self.assertEqual(error["code"], "NOT_FOUND")
+        self.assertIn("no parent brief", error["message"])
+        # A response rejected by the contract names the offending path in details; that marker is
+        # what the desk used to receive. It must never come back from this read.
+        self.assertNotEqual((error.get("details") or {}).get("path"), "brief")
+
+    def test_a_generation_plan_job_is_not_a_parent_brief(self) -> None:
+        course_id, _ = self.new_course(title="Astronomy")
+        enrollment_id = self.new_enrollment(course_id)
+        self.ok("jobs.create", {"kind": "plan", "brief": self._generation_plan_brief(course_id, enrollment_id)})
+        self.assert_falls_back_to_the_desk_default(self.err("parent.brief.get", {"course_id": course_id}))
+
+    def test_a_parent_brief_missing_a_required_key_is_not_found_not_a_server_error(self) -> None:
+        created = self.ok("parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-1")["result"]
+        with db.transaction() as connection:
+            connection.execute(
+                "UPDATE jobs SET brief_json = json_remove(brief_json, '$.title') WHERE kind = 'plan'"
+            )
+        self.assert_falls_back_to_the_desk_default(self.err("parent.brief.get", {"course_id": created["course_id"]}))
+
+    def test_an_unreadable_brief_row_is_not_found_not_a_server_error(self) -> None:
+        """The error-shaped row (``brief_json`` decodes to null or is not JSON) is still an answer.
+
+        This is the "500" path: the row exists but cannot be read as a brief. Indexing into a
+        non-mapping raised ``TypeError`` inside the handler, which the dispatcher reports as
+        ``INTERNAL_ERROR`` — the exact code that paints the Retry affordance.
+        """
+        for index, raw in enumerate(("null", "{not json", '"a string"', "7")):
+            with self.subTest(brief_json=raw):
+                created = self.ok(
+                    "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key=f"key-unreadable-{index}"
+                )["result"]
+                with db.transaction() as connection:
+                    connection.execute("UPDATE jobs SET brief_json = ? WHERE kind = 'plan'", (raw,))
+                self.assert_falls_back_to_the_desk_default(
+                    self.err("parent.brief.get", {"course_id": created["course_id"]})
+                )
+
+    def test_a_newer_generation_job_does_not_hide_the_parent_brief(self) -> None:
+        created = self.ok("parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-1")["result"]
+        self.ok(
+            "jobs.create",
+            {"kind": "plan", "brief": self._generation_plan_brief(created["course_id"], created["enrollment_id"])},
+        )
+        brief = self.ok("parent.brief.get", {"course_id": created["course_id"]})["result"]["brief"]
+        self.assertEqual(brief["title"], PARENT_BRIEF["title"])
+        self.assertEqual(brief["duration_minutes"], PARENT_BRIEF["duration_minutes"])
+
+    def test_the_parent_brief_shape_is_the_contract_shape(self) -> None:
+        """The discriminator cannot drift from the contract that rejected the response.
+
+        ``_PARENT_BRIEF_REQUIRED`` decides whether a job row is a parent brief. If ``cb.rpc``
+        adds a required ``parent_brief`` key, a stored brief missing it would again be returned
+        and rejected as a non-contract result, so the two lists must stay identical.
+        """
+        required = contracts.contract("cb.rpc")["$defs"]["parent_brief"]["required"]
+        self.assertEqual(set(domain._PARENT_BRIEF_REQUIRED), set(required))
 
 
 class ParentPlanEditTest(ParentSeedMixin):
