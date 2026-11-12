@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import re
 import json
 import shutil
@@ -98,12 +99,43 @@ def _namespaced(tmp: Path, manifest: dict[str, Any], files: dict[str, bytes]) ->
     return renamed, destination
 
 
+#: Names a git/gh child may see. Everything else — every provider key, every Hermes/plugin
+#: variable — stays in this process: a child that fetches, commits or pushes has no use for it.
+#: ``GIT_*`` is matched by prefix (author identity, SSH command, askpass, terminal prompt), and
+#: both proxy spellings survive because libcurl honours both.
+ENV_KEEP = (
+    "PATH", "HOME", "LANG", "LC_ALL", "LANGUAGE",
+    "SSH_AUTH_SOCK", "SSH_ASKPASS",
+    "GH_TOKEN", "GITHUB_TOKEN", "GH_HOST", "GH_CONFIG_DIR",
+    "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+    "http_proxy", "https_proxy", "no_proxy", "all_proxy",
+)
+
+
+def _clean_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """The explicit minimal environment for one git/gh child.
+
+    The host's environment carries model-provider keys; a push does not need them, so they are
+    not inherited. SSH still works (``SSH_AUTH_SOCK`` and any ``GIT_SSH_COMMAND`` survive), and a
+    call site may add a variable it genuinely needs through ``extra``.
+    """
+    env = {name: value for name in ENV_KEEP if (value := os.environ.get(name)) is not None}
+    env.update({name: value for name, value in os.environ.items() if name.startswith("GIT_")})
+    if extra:
+        env.update(extra)
+    return env
+
+
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], capture_output=True, text=True, env=_clean_env()
+    )
 
 
 def _run(command: list[str], *, cwd: Path) -> str:
-    result = subprocess.run(command, capture_output=True, text=True, cwd=str(cwd))
+    result = subprocess.run(
+        command, capture_output=True, text=True, cwd=str(cwd), env=_clean_env()
+    )
     if result.returncode != 0:
         raise SystemExit(f"{' '.join(command)} failed:\n{result.stdout}{result.stderr}")
     return (result.stdout or result.stderr).strip()
