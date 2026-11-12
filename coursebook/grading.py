@@ -20,6 +20,7 @@ are returned; the reference itself is not.
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import json
 import threading
@@ -209,7 +210,16 @@ def _run_with_deadline(grader: AuxGrader, deadline_ms: int, **kwargs: Any) -> di
         except BaseException as exc:  # noqa: BLE001 - surfaced as a typed failure
             box["error"] = exc
 
-    thread = threading.Thread(target=runner, name="coursebook-aux-grader", daemon=True)
+    thread = threading.Thread(
+        # The aux grader inherits the caller's contextvars context: a bare thread starts with an
+        # empty one, so a grader that reads a profile secret (a routed base URL, a provider key)
+        # would fail closed on a multiplexed process instead of resolving like the turn that asked
+        # for the grade (t_3d735846 — the same class as the validation pool).
+        target=contextvars.copy_context().run,
+        args=(runner,),
+        name="coursebook-aux-grader",
+        daemon=True,
+    )
     thread.start()
     thread.join(max(deadline_ms, 1) / 1000)
     if thread.is_alive():

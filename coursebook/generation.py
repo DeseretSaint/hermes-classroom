@@ -3919,7 +3919,19 @@ def _run_validation_passes(
     # ceiling as they begin would all see the same "calls so far" and cross it together.
     usage.reserve(len(requests), purpose=requests[0].purpose if requests else None)
     with ThreadPoolExecutor(max_workers=len(requests), thread_name_prefix="coursebook-validation") as pool:
-        futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
+        # Every pass inherits the submitting tick's contextvars context. A bare pool thread starts
+        # with an EMPTY context, so the profile secret scope the tick carries — the per-turn
+        # ``_SECRET_SCOPE``, or the ``_LAUNCH_BODY_SCOPE`` a launch-context request carries after a
+        # process starts multiplexing — was absent inside the validator call. ``get_secret`` then
+        # failed closed and a routed ``NOUS_INFERENCE_BASE_URL`` read logged
+        # "no profile secret scope on a multiplexed call" and silently fell back to default
+        # routing (t_3d735846, measured on the cp015g-r4 rig). ``copy_context()`` is taken once per
+        # submission, on this thread: a ``Context`` may only be entered by one thread at a time, so
+        # sharing one copy across the pool would raise instead of running the pass.
+        futures = [
+            pool.submit(contextvars.copy_context().run, _call_llm, llm, request, usage)
+            for request in requests
+        ]
         responses: list[LLMResponse | None] = [None] * len(requests)
         first_error: BaseException | None = None
         first_error_index: int | None = None
