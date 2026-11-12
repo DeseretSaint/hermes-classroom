@@ -310,7 +310,11 @@ LESSON_PROMPT_VERSION = "lesson-prompt.v14"
 #: the three real defects (a ``sourced`` claim its excerpt does not carry, a claim presented as
 #: established fact, a claim the excerpts contradict) from a declared gap, which the kernel
 #: records instead of refusing.
-VALIDATION_PROMPT_VERSION = "validation-prompt.v12"
+#: v13 (W2-1, CREATE-EXPERIENCE-SPEC items 18 and 19): the lesson/unit pass now states one bounded
+#: sentence per criterion (``VALIDATION_CRITERION_DEFINITIONS``) instead of ten bare names, and the
+#: hazard criterion is asked only of a child-facing recipe — the artifact is told what a waived
+#: unknown means before it answers. Instruction text changed, so v13.
+VALIDATION_PROMPT_VERSION = "validation-prompt.v13"
 
 #: The eleven checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -342,6 +346,105 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
 LESSON_VALIDATION_CRITERIA: tuple[str, ...] = tuple(
     criterion for criterion in VALIDATION_CRITERIA if criterion != "goal_capability_disclosure"
 )
+
+#: Recipes that author for an adult learner. ``parent`` authors for a child under a parent's
+#: supervision (it carries the ``age_band`` the hazard rule reads); ``companion`` is a student's
+#: syllabus course whose age is not declared at this stage, so it keeps the hazard criterion
+#: rather than waiving a judgement the artifact may owe. Any recipe not named here keeps the
+#: criterion: a waiver is a claim that the judgement does not apply, and the pipeline only makes
+#: that claim when the recipe says the learner is an adult.
+ADULT_LEARNER_RECIPES: tuple[str, ...] = ("one_off", "casual", "committed")
+
+#: The hazard criterion the lesson/unit stages owe only a child-facing artifact.
+_HAZARD_CRITERION = "hazard_age_appropriateness"
+
+#: Why the hazard judgement is not asked of an adult course. Recorded beside a waived answer, so
+#: the stored record says *why* an ``unknown`` was not counted rather than dropping it silently.
+_HAZARD_NOT_APPLICABLE = (
+    "hazard_age_appropriateness does not apply: this artifact is authored for an adult learner, "
+    "so there is no declared child age band to judge materials, tools and supervision against"
+)
+
+
+def lesson_validation_criteria(*, recipe: str | None = None) -> tuple[str, ...]:
+    """The lesson/unit criteria this recipe's artifact is actually asked to satisfy.
+
+    ``hazard_age_appropriateness`` was in every set, so an adult car course was refused or passed
+    on a child-safety judgement nobody had the facts for. The criterion is now required only where
+    the artifact is child-facing (:data:`ADULT_LEARNER_RECIPES` names the adult routes). An unknown
+    recipe keeps the full set: an unrecognised route must not silently lose a safety check.
+    """
+    if recipe in ADULT_LEARNER_RECIPES:
+        return tuple(
+            criterion for criterion in LESSON_VALIDATION_CRITERIA if criterion != _HAZARD_CRITERION
+        )
+    return LESSON_VALIDATION_CRITERIA
+
+
+def lesson_validation_waivers(*, recipe: str | None = None) -> dict[str, str]:
+    """The criteria this recipe's artifact was not asked, and why a validator's ``unknown`` is waived.
+
+    An honest ``unknown`` on a criterion the artifact does not owe is not a defect and must not
+    reject the lesson; the reason travels to :func:`validation_verdict` and into the stored record.
+    An empty mapping for a child-facing or unrecognised recipe keeps ``unknown`` a refusal there.
+    """
+    if recipe in ADULT_LEARNER_RECIPES:
+        return {_HAZARD_CRITERION: _HAZARD_NOT_APPLICABLE}
+    return {}
+
+
+#: What each criterion means, in one bounded sentence, stated by :func:`_validation_instructions`
+#: before the validator answers. The validator used to receive ten bare names and invent their
+#: content: a topical lesson could pass on a guess, or a good lesson be refused for a rule it
+#: guessed. The plan-stage rubrics (``_PLAN_ALIGNMENT_RULE``, ``_PLAN_SUPPORT_RULE``, …) stay the
+#: long-form statements where they apply; these are the one-line meanings the lesson/unit pass is
+#: owed, phrased to agree with them.
+VALIDATION_CRITERION_DEFINITIONS: dict[str, str] = {
+    "objective_alignment": (
+        "the lesson teaches the section's stated intent and the objective's evidence criteria, "
+        "rather than a neighbouring topic"
+    ),
+    "goal_capability_disclosure": (
+        "every capability the goal names is mapped to a covered objective or to an explicit "
+        "exclusion, and nothing is covered that the goal never asked for"
+    ),
+    "source_support": (
+        "every claim presented as established fact is carried by the excerpt it cites, a claim the "
+        "artifact itself declares unverified is a gap rather than a defect, and no citation names "
+        "a source outside the supplied ledger"
+    ),
+    "factual_correctness": (
+        "the artifact's factual statements are true as the supplied sources state them, and none "
+        "contradicts a source it cites"
+    ),
+    "answer_uniqueness": (
+        "the check has exactly one defensible correct answer, and no second option the reference "
+        "answer would accept"
+    ),
+    "alternative_coverage": (
+        "every reasonable correct variant of the answer is accepted, so a learner who is right in "
+        "different words is not marked wrong"
+    ),
+    "rubric_consistency": (
+        "the rubric's criteria match the check's task and reference answer, and its bands do not "
+        "contradict one another or the accepted answers"
+    ),
+    "internal_contradiction": (
+        "no part of the artifact contradicts another part: the instruction, worked example, check, "
+        "rubric and answer key tell one story"
+    ),
+    "answer_leakage": (
+        "no learner-facing surface states the answer to a question the learner is asked to answer"
+    ),
+    "hazard_age_appropriateness": (
+        "every hazard the activity names or implies is disclosed with its mitigation, and every "
+        "material, tool and supervision demand fits the declared age band"
+    ),
+    "evidence_target_fit": (
+        "the check exercises the objective's declared evidence target — recall, comprehension, "
+        "production, discrimination, procedure or transfer — rather than an easier proxy"
+    ),
+}
 
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
 EVIDENCE_TARGETS = ("recall", "comprehension", "production", "discrimination", "procedure", "transfer")
@@ -4915,7 +5018,20 @@ def _lesson_instructions(
     return "\n".join(lines)
 
 
-def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
+def _validation_instructions(
+    *,
+    subject: str,
+    criteria: Sequence[str],
+    not_applicable: Mapping[str, str] | None = None,
+) -> str:
+    """One wide pass's instruction text: what it judges, what each name means, and how to answer.
+
+    ``criteria`` is the set *this* artifact is asked for (see
+    :func:`lesson_validation_criteria`), not the module-wide tuple: the lesson and unit stages used
+    to receive ten bare names, so the validator had to invent their content and a topical lesson
+    could pass on a guess. ``not_applicable`` names the criteria the schema still admits but this
+    artifact does not owe, with the reason a waived ``unknown`` will be recorded under.
+    """
     text = (
         f"Independently validate this {subject}. Check every one of these criteria and return one "
         f"entry per criterion: {', '.join(criteria)}. Reject any item that must not reach a "
@@ -4938,6 +5054,31 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "field outside the schema is returned, so put each verdict in exactly the fields the "
         "schema names."
     ) + _DECLARED_VERDICT_RULE
+    # CREATE-EXPERIENCE-SPEC item 18: the criteria used to arrive as bare names and the validator
+    # had to invent their content — a topical lesson could pass on a guess, or a good lesson be
+    # refused for a rule it guessed. Each name is stated with its one-sentence meaning before the
+    # answer is asked for. The definitions are keyed to the same ids the schema names.
+    definitions = [
+        f"- {criterion}: {VALIDATION_CRITERION_DEFINITIONS[criterion]}"
+        for criterion in criteria
+        if criterion in VALIDATION_CRITERION_DEFINITIONS
+    ]
+    # The plan stage states its rubrics at length in ``validation_pass_instructions`` (the builder
+    # the plan passes actually use); these one-line meanings are the lesson/unit contract.
+    if definitions and subject != "plan":
+        text += "\n\nWhat each criterion means:\n" + "\n".join(definitions)
+    waivers = dict(not_applicable or {})
+    if waivers:
+        # Item 19: an honest unknown on a criterion the artifact does not owe is waived and
+        # recorded, never a refusal. Saying so before the answer keeps the schema's wider enum from
+        # inviting a judgement nobody can make.
+        text += (
+            "\n\nNot asked of this artifact: "
+            + "; ".join(f"{criterion} ({reason})" for criterion, reason in waivers.items())
+            + ". Do not answer these criteria. If one appears anyway with verdict 'unknown', it is "
+            "recorded as a waived unknown and does not reject the artifact; the outcome is capped "
+            "at model_assessed."
+        )
     if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
         text += _PLAN_ALIGNMENT_RULE
     if subject == "unit sections" and _PLAN_SEQUENCE_CRITERION in criteria:
@@ -7637,13 +7778,17 @@ def validation_verdict(
     criteria: Sequence[str] = VALIDATION_CRITERIA,
     declared_gaps: Mapping[str, str] | None = None,
     objectives: Sequence[Mapping[str, Any]] | None = None,
+    not_applicable: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Turn a validator report into an outcome the pipeline can act on.
 
     A validator cannot pass an artifact while any criterion failed, and it must answer every
-    criterion. ``unknown`` is honest only where the evidence genuinely is missing (research not
-    ``ok``); those answers are recorded as ``waived_unknown`` and close the factual gate: the
-    artifact can be a proposal, never a factually validated one.
+    criterion. ``unknown`` is honest only where the evidence genuinely is missing: research not
+    ``ok`` for the two factual criteria, or a criterion this artifact was never asked because it
+    does not apply to the recipe (``not_applicable``, e.g. the hazard judgement on an adult
+    course). Those answers are recorded as ``waived_unknown`` with their reason on the criterion
+    entry itself, and they cap the outcome at ``model_assessed``: an artifact with an unanswered
+    criterion is never ``independently_validated``, however good the rest of the report reads.
 
     Claim verdicts that assert provenance the ledger does not contain are flagged and forced to
     ``unverified`` here, before ``apply_support_verdicts`` ever sees them. The flag is carried in
@@ -7681,6 +7826,7 @@ def validation_verdict(
     document for review instead of re-authoring it (nothing about regenerating supplies a source
     that was never fetched).
     """
+    waived_criteria = dict(not_applicable or {})
     allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
     for entry in report.get("criteria") or []:
@@ -7689,8 +7835,34 @@ def validation_verdict(
     if missing:
         raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
     failed = [criterion for criterion, value in seen.items() if value == "fail"]
-    unknown = [criterion for criterion, value in seen.items() if value == "unknown" and criterion not in allowed_unknown]
-    waived = [criterion for criterion, value in seen.items() if value == "unknown" and criterion in allowed_unknown]
+    # Item 19: ``unknown`` is honest, but only on a criterion this artifact was asked for. The
+    # lesson/unit schema is the wide one, so a validator may still return the plan-level disclosure
+    # criterion, which no lesson pass asks; an ``unknown`` there is not a verdict about this
+    # artifact and is recorded as ignored rather than refusing it. A criterion this artifact does
+    # not owe at all (``waived_criteria``) is waived with its reason. Only an unanswerable *asked*
+    # criterion refuses.
+    unknown: list[str] = []
+    waived: list[str] = []
+    waived_reasons: dict[str, str] = {}
+    ignored: list[str] = []
+    for criterion, value in seen.items():
+        if value != "unknown":
+            continue
+        if criterion not in criteria and criterion not in waived_criteria:
+            ignored.append(criterion)
+            continue
+        if criterion in waived_criteria:
+            reason = waived_criteria[criterion]
+        elif criterion in allowed_unknown:
+            reason = (
+                "research was unavailable, so this factual criterion could not be checked against "
+                "a fetched source"
+            )
+        else:
+            unknown.append(criterion)
+            continue
+        waived.append(criterion)
+        waived_reasons[criterion] = reason
     rejections = list(report.get("rejections") or [])
     declared = str(report.get("verdict"))
     claim_verdicts = [dict(entry) for entry in report.get("claim_verdicts") or []]
@@ -7760,24 +7932,60 @@ def validation_verdict(
             "claim_contradicted: the cited source contradicts a claim in the lesson"
         ]
     passed = declared == "pass" and not failed and not unknown and not rejections
+    # Item 19: a declared ``reject`` that rests only on a waived unknown has nothing left behind
+    # it — the criterion it refused was never asked of this artifact. It is recorded as waived (the
+    # validator's own words are kept in the criterion entry) instead of rejecting the lesson for a
+    # judgement nobody could make. The outcome stays capped at ``model_assessed``.
+    waived_only_refusal = bool(
+        declared != "pass"
+        and not passed
+        and not failed
+        and not unknown
+        and not rejections
+        and (waived or ignored)
+        and all(
+            value == "pass" or criterion in waived or criterion not in criteria
+            for criterion, value in seen.items()
+        )
+    )
+    if waived_only_refusal:
+        passed = True
     if not passed:
         outcome = OUTCOME_REJECTED
-    elif independence == INDEPENDENCE_INDEPENDENT and not facts_unverified:
+    elif independence == INDEPENDENCE_INDEPENDENT and not facts_unverified and not waived:
         outcome = OUTCOME_INDEPENDENT
     else:
+        # A waived unknown is a criterion nobody answered. Whatever the validator's identity, the
+        # artifact is not independently validated while one of its criteria is unanswered.
         outcome = OUTCOME_MODEL_ASSESSED
+    recorded_criteria: list[dict[str, Any]] = []
+    for entry in report.get("criteria") or []:
+        recorded = dict(entry)
+        reason = waived_reasons.get(str(recorded.get("id")))
+        if reason:
+            # Visible in the stored record: the criterion entry says it was not counted and why.
+            recorded["waived_unknown"] = reason
+        recorded_criteria.append(recorded)
     return {
         "verdict": "pass" if passed else "reject",
         "declared": declared,
         "failed": sorted(failed),
         "unknown": sorted(unknown),
         "waived_unknown": sorted(waived),
+        "waived_unknown_reasons": {criterion: waived_reasons[criterion] for criterion in sorted(waived_reasons)},
+        # An ``unknown`` on a criterion this pass never asked is not a verdict about the artifact;
+        # it is listed so the record shows what the validator answered and what was not counted.
+        "ignored_unknown": sorted(ignored),
+        # True when the validator declared ``reject`` only for a criterion this artifact was not
+        # asked: the refusal is recorded, not obeyed. A reader can see the declared verdict was
+        # narrower than the harness's.
+        "waived_declared_reject": waived_only_refusal,
         "rejections": rejections,
         # CP-015g/D1-F2: claims the artifact itself marks unverified, and the validator words that
         # argued about them. Recorded, never counted as defects.
         "sourcing_notes": sourcing_notes,
         "gap_only_refusal": gap_only_refusal,
-        "criteria": [dict(entry) for entry in report.get("criteria") or []],
+        "criteria": recorded_criteria,
         "claim_verdicts": claim_verdicts,
         "provenance_flags": provenance_flags,
         "independence": independence,
@@ -8626,7 +8834,11 @@ def build_lesson_validation_request(
         purpose="coursebook.lesson.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="lesson and its learner page", criteria=LESSON_VALIDATION_CRITERIA),
+        instructions=_validation_instructions(
+            subject="lesson and its learner page",
+            criteria=lesson_validation_criteria(recipe=recipe),
+            not_applicable=lesson_validation_waivers(recipe=recipe),
+        ),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -9668,6 +9880,10 @@ def _record_validation(
                         "failed": verdict["failed"],
                         "unknown": verdict["unknown"],
                         "waived_unknown": verdict.get("waived_unknown") or [],
+                        # Item 19: the reason each waiver was granted, so the record says why an
+                        # unanswered criterion did not reject the artifact.
+                        "waived_unknown_reasons": verdict.get("waived_unknown_reasons") or {},
+                        "ignored_unknown": verdict.get("ignored_unknown") or [],
                         "declared": verdict["declared"],
                         # H-191: how many shape re-asks this answer took. A repaired answer is
                         # stored as repaired, never presented as a first-time one.
@@ -10716,6 +10932,7 @@ def _validation_block(
         "facts_unverified": facts_unverified,
         "research_status": verdict.get("research_status"),
         "waived_unknown": list(verdict.get("waived_unknown") or []),
+        "waived_unknown_reasons": dict(verdict.get("waived_unknown_reasons") or {}),
         # H-191: how many shape re-asks produced this answer. Read beside ``outcome`` so a
         # repaired validation is never presented as a first-time one.
         "shape_violations": int(getattr(validator_response, "shape_repair_attempts", 0) or 0),
@@ -10778,9 +10995,14 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
     if verdict.get("unknown"):
         warnings.append("validator could not verify: " + ", ".join(verdict["unknown"]))
     if verdict.get("waived_unknown"):
+        reasons = verdict.get("waived_unknown_reasons") or {}
+        detail = "; ".join(
+            f"{criterion}: {reasons[criterion]}" if reasons.get(criterion) else str(criterion)
+            for criterion in verdict["waived_unknown"]
+        )
         warnings.append(
-            "validator answered unknown for: " + ", ".join(verdict["waived_unknown"])
-            + " (waived only because research was unavailable; the factual gate stays closed)"
+            "validator answered unknown for: " + detail
+            + " (recorded as waived; the outcome is capped at model assessed)"
         )
     # CP-015g/D1-F2: a declared gap is a disclosure, not a defect. It is stated with the next
     # action so an approver is never left guessing whether something is broken.
@@ -11151,7 +11373,11 @@ def build_unit_sections_validation_request(
         purpose="coursebook.unit_sections.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="unit sections", criteria=LESSON_VALIDATION_CRITERIA),
+        instructions=_validation_instructions(
+            subject="unit sections",
+            criteria=lesson_validation_criteria(recipe=recipe),
+            not_applicable=lesson_validation_waivers(recipe=recipe),
+        ),
         input_text=_bounded_input(payload),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
@@ -11558,7 +11784,8 @@ def run_unit_sections_job(
                 research_status=research_status,
                 ledger=sources,
                 independence=independence,
-                criteria=LESSON_VALIDATION_CRITERIA,
+                criteria=lesson_validation_criteria(recipe=recipe),
+                not_applicable=lesson_validation_waivers(recipe=recipe),
             )
             if verdict["verdict"] == "pass":
                 authored = batch
@@ -12859,7 +13086,8 @@ def _author_section(
             research_status=research_status,
             ledger=sources,
             independence=independence,
-            criteria=LESSON_VALIDATION_CRITERIA,
+            criteria=lesson_validation_criteria(recipe=recipe),
+            not_applicable=lesson_validation_waivers(recipe=recipe),
         )
         if verdict["verdict"] == "pass":
             lesson = candidate

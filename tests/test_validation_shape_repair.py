@@ -319,7 +319,7 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         # against the same profile the author was given.
         # v12 (CP-015g/D1-F2, second half): the instruction text now states what ``source_support``
         # judges — a declared gap is not a defect (`docs/GENERATION.md` §5c).
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v12")
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v13")
 
 
 class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):

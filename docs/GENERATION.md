@@ -19,10 +19,10 @@ Three different calls, three different prompts, three different schemas:
 | Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v21` | `PLAN_SCHEMA` |
 | Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v23` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v3` | `UNIT_SECTIONS_SCHEMA` |
-| Plan validator | `coursebook.plan.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
-| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
+| Unit-sections validator | `coursebook.unit_sections.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v14` | `LESSON_SCHEMA` |
-| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v12` | `VALIDATION_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v13` | `VALIDATION_SCHEMA` |
 
 `build_plan_request()` selects the v2 schema and `plan-prompt.v23` when the brief declares a scope
 (`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v21` otherwise. The rounds that
@@ -41,6 +41,14 @@ named orthography or metalanguage goal is a language goal. The validation prompt
 resolved domain with its `domain_source` (declared, inferred or default), so the validator judges
 the plan against the same profile the author was given, and the instruction text states the
 `source_support` rule below.
+
+`validation-prompt.v13` (W2-1) states one bounded sentence per criterion in the lesson and
+unit-sections passes (`VALIDATION_CRITERION_DEFINITIONS`) rather than ten bare names, asks
+`hazard_age_appropriateness` only of a child-facing recipe (`lesson_validation_criteria`), and
+records an honest `unknown` on a criterion the artifact does not owe as a waived unknown with its
+reason — capping that artifact's outcome at `model_assessed`. The plan stage keeps its own
+long-form rubrics and its full criteria set; the recipe-aware hazard rule is a lesson/unit rule,
+because the plan's criteria set is split across statically batched passes.
 
 The prompt labels above are the ones **CP-015** ships: on top of H-192b's labels (v10/v11) both plan
 prompts now state the ledger-grounding, single-defensible-answer, evidence-target-fit, goal-coverage
