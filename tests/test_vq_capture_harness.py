@@ -843,6 +843,23 @@ class TestCameraStatic(unittest.TestCase):
         self.assertNotIn("--fixture", source)
         self.assertNotIn("proof.html", source)
 
+    def test_camera_reads_the_files_pixels_not_natural_width(self):
+        # A srcSet candidate carries a density descriptor and `img.naturalWidth` is divided by it,
+        # so a 512 px fox selected from `512 2x` in a 2x window reads 256 while the evidence bytes
+        # are 512 and the judge refuses the row. The camera must record the file's own pixels.
+        source = (SCRIPTS / "vq-capture.mjs").read_text()
+        self.assertIn("const intrinsicSize = async (url) => {", source)
+        self.assertIn("intrinsic.width || naturalWidth", source)
+        self.assertIn("intrinsic.height || naturalHeight", source)
+
+    def test_camera_classifies_the_wide_home_cover(self):
+        # CP-053 paints the wide Home's card covers with `data-cb-home-scene-cover`; a classifier
+        # that only knew `data-cb3-cover` scored those two 1200x800 kit plates as `unknown`, so the
+        # 1344 cell reported display_cover 0/4 on a surface that had painted both of them.
+        source = (SCRIPTS / "vq-capture.mjs").read_text()
+        self.assertIn("data-cb-home-scene-cover=", source)
+        self.assertIn("return 'cover_plate'", source)
+
     def test_camera_records_the_required_fields(self):
         source = (SCRIPTS / "vq-capture.mjs").read_text()
         for field in ("selector", "current_src", "natural", "rendered", "sha256", "bundled_asset"):

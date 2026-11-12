@@ -102,13 +102,17 @@ function cb3KitCoverFor(course) {
 const CB3_POSES = Object.freeze(['wave', 'point', 'clock', 'read', 'cheer', 'think', 'sleep'])
 const CB3_FOX_EXPORTS = Object.freeze([64, 128, 256, 512])
 
-/** The export a box of `size` px needs: the smallest that is not an upscale. 208 gets the 256. */
+/** The export a box of `size` px needs: the smallest export at least 2x the box. 208 gets the 512.
+ *
+ * The capture gate (VISUAL-QUALITY-PROGRAM §4 Gate 2) requires a natural size at least 2x the
+ * rendered box, and the capture measures the file the module serves at a device pixel ratio of 1,
+ * so the base file — not a srcSet candidate — has to carry the 2x. A box above 256 px has no
+ * larger export and takes the 512.
+ */
 function cb3FoxPixels(size) {
   const want = Number(size) > 0 ? Number(size) : 0
-  if (want >= 416) return 512
-  if (want >= 208) return 256
-  if (want >= 128) return 128
-  return 64
+  const need = want * 2
+  return CB3_FOX_EXPORTS.find((px) => px >= need) || CB3_FOX_EXPORTS[CB3_FOX_EXPORTS.length - 1]
 }
 
 function cb3FoxSource(pose, size) {
@@ -117,13 +121,18 @@ function cb3FoxSource(pose, size) {
   return cb3Asset(`cb.asset.fox.${key}.${want}`) || cb3Asset(`cb.asset.fox.${key}.64`)
 }
 
-/** The 1x candidate is the export itself, the 2x candidate the next size up (never above 512). */
+/** The 1x candidate is the export itself; the 2x candidate the next size up.
+ *
+ * The selected export already carries 2x, so a pair is emitted only while a larger export exists.
+ * A 208 px box resolves to 512 (the top of the ladder) and gets no srcSet: "512 1x, 512 2x" is not
+ * a pair, it is one file described twice.
+ */
 function cb3FoxSrcSet(pose, size) {
   const key = CB3_POSES.indexOf(pose) >= 0 ? pose : 'clock'
   const want = cb3FoxPixels(size)
-  const next = CB3_FOX_EXPORTS.find((px) => px > want) || 512
+  const next = CB3_FOX_EXPORTS.find((px) => px > want) || null
   const one = cb3Asset(`cb.asset.fox.${key}.${want}`) || cb3Asset(`cb.asset.fox.${key}.64`)
-  const two = cb3Asset(`cb.asset.fox.${key}.${next}`) || one
+  const two = next ? cb3Asset(`cb.asset.fox.${key}.${next}`) : null
   return one && two ? `${one} 1x, ${two} 2x` : null
 }
 
@@ -765,8 +774,9 @@ function Medallion({ event, label, size, className, style, ...rest }) {
 /* ── FoxPose ─────────────────────────────────────────────────────────────────────────────────
  * The one mascot, in one of seven poses, inside one box. `aria-hidden` throughout: the adjacent
  * visible text carries whatever meaning it has, never the picture. Sizes are free box sizes: the
- * image is the smallest painted export that is not an upscale of the box (208 gets the 256, a
- * 512 box gets the 512), with a 1x/2x srcSet so a device pixel ratio of 2 gets the next export up.
+ * image is the smallest painted export at least 2x the box (a 208 box gets the 512, a 128 box the
+ * 256, so the capture gate's 2x rule holds on the file the module serves), with a 1x/2x srcSet
+ * while a larger export exists.
  * The box includes the pose's widest frame. Below a 620 px route the fox is absent, not squashed
  * (SPEC-V3 §3.8), and it never overlaps type or a control: the safe-area clearance is 24 px at a
  * wide route and 16 px below it.

@@ -126,6 +126,27 @@ class ManifestShape(unittest.TestCase):
                 self.assertGreater(row["width"], 0, row["path"])
                 self.assertGreater(row["height"], 0, row["path"])
 
+    def test_the_vignette_is_a_display_size_plate_not_a_tile(self):
+        # VQ-006 measured a 96x96 vignette painted with `cover` over a 1344x714 route and refused
+        # it on both axes. The vignette is one-shot (CP-011 already said so) and the route paints
+        # it once, so it has to be authored at the pixels it is painted at: 2x the route canvas.
+        rows = {row["role"]: row for row in _manifest("material") if "vignette" in row["role"]}
+        self.assertEqual(len(rows), 2, rows.keys())
+        for role, row in rows.items():
+            with self.subTest(role=role):
+                self.assertEqual((row["width"], row["height"]), (2688, 1428), row["path"])
+                self.assertFalse(row["seamless_3x3"], row["path"])
+                self.assertTrue(row["one_shot"], row["path"])
+                self.assertIn("2x the 1344x714 route canvas", row["derivation"])
+
+    def test_the_grain_and_wood_stay_repeating_tiles(self):
+        for row in _manifest("material"):
+            if "vignette" in row["role"]:
+                continue
+            with self.subTest(role=row["role"]):
+                self.assertEqual((row["width"], row["height"]), (96, 96), row["path"])
+                self.assertTrue(row["seamless_3x3"], row["path"])
+
     def test_every_path_stays_inside_assets(self):
         for group, row in _all_rows():
             self.assertTrue(row["path"].startswith("assets/%s/" % group), row["path"])

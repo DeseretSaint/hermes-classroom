@@ -71,6 +71,14 @@ VENV = ROOT / ".venv-cb-assets"
 SEGMENT_BUDGET = 2_500_000
 ASSET_BUDGET = 300_000
 PLUGIN_BUDGET = 4_500_000
+#: Material tiles are 96 px because grain and wood repeat at their own size. The vignette is the
+#: exception: it is a one-shot wash the route paints over the whole box with `background-size:
+#: cover`, so a 96 px file was a 14x upscale of a 1344x714 canvas and Gate 2 refused it
+#: (VQ-006). It is authored at 2x the authored route canvas instead (2688x1428) and still
+#: ships at the contract's own `material/vignette-*.webp` path, so no consumer changes.
+MATERIAL_TILE_PX = 96
+VIGNETTE_PLATE_STEMS = ("vignette-parchment", "vignette-night")
+VIGNETTE_PLATE_SIZE = (2688, 1428)
 
 FOX_POSES = ("wave", "point", "clock", "read", "cheer", "think", "sleep")
 #: The four painted export sizes under assets/art/fox/. Every pose ships all four: the primitive
@@ -219,6 +227,28 @@ def _tint(gray: "object", base: tuple[int, int, int], spread: float) -> "object"
     for i, channel in enumerate(base):
         arr[..., i] = channel * (1.0 - spread) + channel * spread * (0.55 + 0.9 * gray)
     return np.clip(arr, 0, 255).astype("uint8")
+
+
+def material_plate_image(name: str, width: int, height: int):
+    """Draw one full-box vignette plate at (width, height). Pure function of (name, size).
+
+    The field is the same periodic radial falloff the 96 px tile carries, sampled over the whole
+    box instead of one tile: the route stretches the tile with `background-size: cover`, so this is
+    the picture that stretch was trying to show, at the pixels the gate measures. No noise term:
+    the high-frequency grain belongs to the repeating grain layer, and a smooth wash is what an
+    authored, non-upscaled vignette is.
+    """
+    import numpy as np
+    from PIL import Image
+
+    yy, xx = np.mgrid[0:height, 0:width].astype("float32")
+    radial = (np.cos(2 * np.pi * xx / width) + np.cos(2 * np.pi * yy / height)) / 2.0
+    fall = np.clip((0.5 - 0.5 * radial) ** 1.6, 0, 1)
+    base = (231, 214, 184) if name.endswith("parchment") else (18, 15, 11)
+    arr = np.zeros((height, width, 3), dtype="float32")
+    for i, channel in enumerate(base):
+        arr[..., i] = channel * (1.0 - 0.45 * fall)
+    return Image.fromarray(np.clip(arr, 0, 255).astype("uint8"), mode="RGB")
 
 
 def material_master_bytes(name: str) -> bytes:
@@ -788,10 +818,15 @@ def build(check: bool = False) -> dict:
             raise SystemExit("missing material master: %s" % master)
         from PIL import Image
 
-        img = Image.open(io.BytesIO(master.read_bytes())).convert("RGB")
-        tile = 96
-        img = img.resize((tile, tile), Image.Resampling.LANCZOS)
-        webp = encode(img, "webp")
+        if stem in VIGNETTE_PLATE_STEMS:
+            width, height = VIGNETTE_PLATE_SIZE
+            img = material_plate_image(stem, width, height)
+            webp = encode(img, "webp")
+        else:
+            width = height = MATERIAL_TILE_PX
+            img = Image.open(io.BytesIO(master.read_bytes())).convert("RGB")
+            img = img.resize((width, height), Image.Resampling.LANCZOS)
+            webp = encode(img, "webp")
         rel = "assets/" + contract_rel
         out = ROOT / rel
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -802,14 +837,21 @@ def build(check: bool = False) -> dict:
             "authored:assets/masters/material/%s.png" % stem,
             "CC0-1.0",
             sha256_bytes(webp),
-            tile,
-            tile,
+            width,
+            height,
             len(webp),
             prov,
             rel,
             master="assets/masters/material/%s.png" % stem,
             master_sha256=sha256_file(master),
-            seamless_3x3=True,
+            seamless_3x3=stem not in VIGNETTE_PLATE_STEMS,
+            one_shot=stem in VIGNETTE_PLATE_STEMS,
+            derivation=(
+                "drawn at 2688x1428, 2x the 1344x714 route canvas, because the route paints this "
+                "layer once with background-size: cover (VQ-006)"
+                if stem in VIGNETTE_PLATE_STEMS
+                else "192 px master resampled to the 96 px tile the layer repeats at"
+            ),
         )
         material_rows.append(row)
         entry = {
@@ -817,8 +859,8 @@ def build(check: bool = False) -> dict:
             "role": row["role"],
             "path": rel,
             "mime": "image/webp",
-            "width": tile,
-            "height": tile,
+            "width": width,
+            "height": height,
             "bytes": len(webp),
             "sha256": row["sha256"],
             "licence": "CC0-1.0",

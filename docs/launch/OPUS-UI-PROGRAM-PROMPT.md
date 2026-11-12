@@ -182,9 +182,10 @@ This is the critical path, not a UI detail.
 2. **Registry.** Regenerate `assets/fox/manifest.json`, `desktop/cb-assets.generated.js` and
    `desktop/plugin.js`. Every fox entry's `source` is `assets/art/fox/fox-<pose>.png`; no fox entry
    may name `assets/masters/fox`.
-3. **Primitive.** `cb3FoxSource` selects 512 at ≥416 px, 256 at ≥208, 128 at ≥128, else 64, and emits
-   a 1x/2x `srcSet`. `FoxPose` accepts 208 and 512. Home's ledge renders the `clock` pose at 208;
-   the empty shelf renders `wave` at 208. Never 112/128 for a 208 reference.
+3. **Primitive.** `cb3FoxSource` serves the smallest export at least 2x the box (208 → 512, 128 →
+   256, 64 → 128) so the file the capture measures carries Gate 2's 2x, and emits a 1x/2x `srcSet`
+   only while a larger export exists. `FoxPose` accepts 208 and 512. Home's ledge renders the
+   `clock` pose at 208; the empty shelf renders `wave` at 208. Never 112/128 for a 208 reference.
 4. **Tests.** Extend `tests/test_cp010_fox_assets.py` with a segment test: every fox asset's source
    is the painted PNG, the encoded bytes/hash match the derivative, `FoxPose` `currentSrc` resolves
    to a painted derivative, and no `assets/masters/fox` path is reachable for the seven poses.

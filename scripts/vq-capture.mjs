@@ -186,6 +186,10 @@ async function pageProbe(payload) {
     if (has('data-cb3-scene=')) return 'scene_plate'
     if (has('data-cb3-cover=')) return 'cover_plate'
     if (has('data-cb-home-cover-plate')) return 'cover_plate'
+    // The wide Home paints each card's cover through its own scene marker (CP-053). Without this
+    // the richest Home cell reported `unknown` for two real 1200x800 kit covers and the judge
+    // counted 0 of 4 display covers on a surface that had painted them.
+    if (has('data-cb-home-scene-cover=')) return 'cover_plate'
     if (has('data-cb-workshop-cover-image')) return 'workshop_cover'
     if (has('data-cb-slot-cover=')) return 'artifact_media'
     return 'unknown'
@@ -258,6 +262,29 @@ async function pageProbe(payload) {
   }
 
   const evidenceKinds = new Set(payload.evidenceKinds || [])
+  /* The pixels of the file the row points at, not `naturalWidth`.
+   *
+   * A srcSet candidate carries a density descriptor, and `img.naturalWidth` reports the intrinsic
+   * width DIVIDED by that density: a 512 px fox selected from `512 2x` at a 2x window reads 256.
+   * The judge hashes the file and reads its header, so a record that repeats the density-corrected
+   * number is refused as "evidence image is 512x512px but the record claims 256x256px", and a
+   * required fox row stops counting. Loading the candidate URL alone has no srcSet, so its
+   * naturalWidth is the file's own width. */
+  const intrinsicSize = async (url) => {
+    if (!url) return { width: 0, height: 0 }
+    try {
+      const probe = new Image()
+      probe.src = url
+      if (probe.decode) await probe.decode()
+      else if (!probe.complete) await new Promise((resolve) => {
+        probe.onload = resolve
+        probe.onerror = resolve
+      })
+      return { width: probe.naturalWidth || 0, height: probe.naturalHeight || 0 }
+    } catch (error) {
+      return { width: 0, height: 0 }
+    }
+  }
   if (!route) return { route: null }
   const routeRect = route.getBoundingClientRect()
   const images = [...route.querySelectorAll('img')]
@@ -273,6 +300,9 @@ async function pageProbe(payload) {
     const bundled = sha && sha.sha256 ? payload.assets[sha.sha256] || null : null
     const naturalWidth = img.naturalWidth || 0
     const naturalHeight = img.naturalHeight || 0
+    // `naturalWidth` is density-corrected for a srcSet candidate; the file's own pixels are what
+    // the judge reads out of the evidence bytes, so record those when the file is loaded.
+    const intrinsic = await intrinsicSize(currentSrc)
     inventory.push({
       selector: selectorOf(img),
       markers: marks.slice(0, 6),
@@ -280,9 +310,12 @@ async function pageProbe(payload) {
       src_attr: (img.getAttribute('src') || '').slice(0, 200),
       current_src: currentSrc.startsWith('data:') ? `data:${currentSrc.slice(5, 40)}…` : currentSrc,
       current_src_data_uri: isData,
-      natural: { width: naturalWidth, height: naturalHeight },
+      natural: {
+        width: intrinsic.width || naturalWidth,
+        height: intrinsic.height || naturalHeight
+      },
       rendered: { width: round(rect.width), height: round(rect.height) },
-      scale_ratio: rect.width > 0 ? round(naturalWidth / rect.width) : null,
+      scale_ratio: rect.width > 0 ? round((intrinsic.width || naturalWidth) / rect.width) : null,
       sha256: sha && sha.sha256 ? sha.sha256 : null,
       sha_error: sha ? sha.error : 'no source',
       bytes: sha ? sha.bytes : null,

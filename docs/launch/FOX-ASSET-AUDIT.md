@@ -71,8 +71,9 @@ not a reason to block the screen.
 2. **Registry.** Regenerate `assets/fox/manifest.json`, `desktop/cb-assets.generated.js` and
    `desktop/plugin.js`. Every fox entry's `source` is `assets/art/fox/fox-<pose>.png`; no fox entry
    may name `assets/masters/fox`.
-3. **Primitive.** `cb3FoxSource` selects 512 at ≥416 px, 256 at ≥208, 128 at ≥128, else 64; emit a
-   `srcSet` for 1x/2x. `FoxPose` accepts 208 and 512.
+3. **Primitive.** `cb3FoxSource` serves the smallest export at least 2x the box (208 → 512, 128 →
+   256, 64 → 128), so the file the capture measures carries the visual-quality gate's 2x; emit a
+   `srcSet` for 1x/2x only while a larger export exists. `FoxPose` accepts 208 and 512.
 4. **Home.** Ledge `clock` at 208, empty shelf `wave` at 208 (or the design's accepted size, never
    112/128 for a 208 reference). Natural size must be ≥ rendered size.
 5. **Tests.** Extend `tests/test_cp010_fox_assets.py` with a segment test: every fox asset's source

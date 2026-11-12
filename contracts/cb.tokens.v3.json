@@ -289,7 +289,7 @@
       "Grain opacity may never exceed opacity_ceiling over a text run.",
       "Wood is a tile on the shelf plank and the evidence tray only; it never sits behind text.",
       "Missing texture falls back to flat canvas; never a blank route, never a broken-image mark.",
-      "All tiles are seamless 3x3 (CP-011 proof) and at most 60 KB each."
+      "Grain and wood are seamless 3x3 tiles (CP-011 proof) and at most 60 KB each."
     ]
   },
   "motion": {
