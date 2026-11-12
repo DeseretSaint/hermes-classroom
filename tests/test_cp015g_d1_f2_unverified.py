@@ -485,7 +485,7 @@ class PlanStageParksOnADeclaredGapTest(unittest.TestCase):
 
 class PromptStatesTheRuleTest(unittest.TestCase):
     def test_the_label_advances(self) -> None:
-        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v12")
+        self.assertEqual(gen.VALIDATION_PROMPT_VERSION, "validation-prompt.v13")
 
     def test_the_plan_pass_states_the_distinction(self) -> None:
         text = gen.validation_pass_instructions(
@@ -516,7 +516,7 @@ class PromptStatesTheRuleTest(unittest.TestCase):
         self.assertTrue(requests)
         for request in requests:
             self.assertIn("never against the gaps it declares", request.instructions)
-            self.assertEqual(request.prompt_version, "validation-prompt.v12")
+            self.assertEqual(request.prompt_version, "validation-prompt.v13")
 
 
 if __name__ == "__main__":

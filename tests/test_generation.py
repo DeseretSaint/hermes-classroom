@@ -2886,5 +2886,231 @@ class VagueBriefAimsAtTheGoalTest(unittest.TestCase):
         self.assertIn("'previous_section'", text)
 
 
+class ValidationCriterionDefinitionsTest(unittest.TestCase):
+    """W2-1 / CREATE-EXPERIENCE-SPEC item 18: a criterion is a stated rule, not a bare name.
+
+    The lesson and unit passes used to receive ten names and invent their content, so a topical
+    lesson could pass on a guess and a good lesson could be refused for a rule it guessed. Every
+    criterion the request asks for now carries one bounded definition sentence, and the hazard
+    judgement is asked only of a child-facing recipe.
+    """
+
+    @staticmethod
+    def _section() -> dict:
+        return {
+            "section_id": "s1",
+            "ordinal": 1,
+            "title": "Greeting",
+            "lesson_intent": "Greet someone politely",
+            "source_ids": [],
+        }
+
+    @staticmethod
+    def _objective() -> dict:
+        return {
+            "id": "o1",
+            "ordinal": 1,
+            "title": "Greet",
+            "evidence_target": "comprehension",
+            "evidence_criteria": ["selects the polite greeting"],
+        }
+
+    def _lesson_request(self, recipe: str) -> gen.LLMRequest:
+        lesson = lesson_fixture("lesson_ja")
+        section = self._section()
+        page = gen._build_learner_page(lesson, section, ())
+        return gen.build_lesson_validation_request(
+            lesson=lesson,
+            page=page,
+            section=section,
+            objective=self._objective(),
+            recipe=recipe,
+            dials={},
+            locale="ja-JP",
+            sources=(),
+        )
+
+    def _unit_request(self, recipe: str) -> gen.LLMRequest:
+        return gen.build_unit_sections_validation_request(
+            plan={"title": "Greeting", "scope": "short", "check_plan": []},
+            unit={"ordinal": 1, "goal": "Greet someone politely"},
+            objectives=[self._objective()],
+            sections=[self._section()],
+            goal="Greet someone politely",
+            recipe=recipe,
+            locale="ja-JP",
+            sources=(),
+            research_status="ok",
+        )
+
+    @staticmethod
+    def _asked(instructions: str) -> str:
+        return instructions.split("entry per criterion: ", 1)[1].split(". Reject", 1)[0]
+
+    def test_every_lesson_and_unit_criterion_has_a_definition_sentence(self) -> None:
+        self.assertLessEqual(
+            set(gen.LESSON_VALIDATION_CRITERIA), set(gen.VALIDATION_CRITERION_DEFINITIONS)
+        )
+        for request in (self._lesson_request("committed"), self._unit_request("committed")):
+            asked = gen.lesson_validation_criteria(recipe="committed")
+            self.assertEqual(self._asked(request.instructions), ", ".join(asked))
+            for criterion in asked:
+                self.assertIn(
+                    f"- {criterion}: {gen.VALIDATION_CRITERION_DEFINITIONS[criterion]}",
+                    request.instructions,
+                )
+
+    def test_the_hazard_criterion_is_absent_for_a_casual_adult_recipe(self) -> None:
+        request = self._lesson_request("casual")
+        self.assertNotIn(
+            "hazard_age_appropriateness", gen.lesson_validation_criteria(recipe="casual")
+        )
+        self.assertNotIn("hazard_age_appropriateness", self._asked(request.instructions))
+        # The wider schema enum still names it, so the request says why it is not asked.
+        self.assertIn(
+            "Not asked of this artifact: hazard_age_appropriateness", request.instructions
+        )
+
+    def test_a_parent_recipe_still_owes_the_hazard_judgement(self) -> None:
+        request = self._lesson_request("parent")
+        self.assertIn("hazard_age_appropriateness", self._asked(request.instructions))
+        self.assertNotIn("Not asked of this artifact", request.instructions)
+
+
+class ValidationVerdictWaivedUnknownTest(unittest.TestCase):
+    """W2-1 / CREATE-EXPERIENCE-SPEC item 19: an honest unknown is recorded, not obeyed.
+
+    An unknown on a criterion the artifact was never asked (the hazard judgement on an adult
+    course) is waived with its reason and caps the outcome at ``model_assessed``. The same answer
+    on a parent course — where the criterion is owed — still refuses the lesson.
+    """
+
+    @staticmethod
+    def _report(*, unknown: tuple[str, ...] = (), asked: tuple[str, ...]) -> dict:
+        ids = list(asked)
+        # A validator answering the wider schema may return a criterion it was not asked (the
+        # plan-level disclosure criterion, or the hazard judgement on an adult course).
+        for criterion in ("hazard_age_appropriateness", *unknown):
+            if criterion not in ids:
+                ids.append(criterion)
+        return {
+            "verdict": "reject" if unknown else "pass",
+            "criteria": [
+                {
+                    "id": criterion,
+                    "verdict": "unknown" if criterion in unknown else "pass",
+                    "reason": f"{criterion} judged",
+                }
+                for criterion in ids
+            ],
+            "rejections": [],
+            "claim_verdicts": [],
+        }
+
+    def test_unknown_on_a_hazard_for_an_adult_recipe_is_waived_and_capped(self) -> None:
+        asked = gen.lesson_validation_criteria(recipe="casual")
+        verdict = gen.validation_verdict(
+            self._report(unknown=("hazard_age_appropriateness",), asked=asked),
+            research_status="ok",
+            independence=gen.INDEPENDENCE_INDEPENDENT,
+            criteria=asked,
+            not_applicable=gen.lesson_validation_waivers(recipe="casual"),
+        )
+        self.assertEqual(verdict["waived_unknown"], ["hazard_age_appropriateness"])
+        self.assertEqual(verdict["unknown"], [])
+        self.assertEqual(verdict["verdict"], "pass")
+        self.assertTrue(verdict["waived_declared_reject"])
+        self.assertEqual(verdict["outcome"], gen.OUTCOME_MODEL_ASSESSED)
+        self.assertNotEqual(verdict["outcome"], gen.OUTCOME_INDEPENDENT)
+        reason = verdict["waived_unknown_reasons"]["hazard_age_appropriateness"]
+        self.assertIn("adult learner", reason)
+        entry = next(
+            item for item in verdict["criteria"] if item["id"] == "hazard_age_appropriateness"
+        )
+        self.assertEqual(entry["waived_unknown"], reason)
+
+    def test_the_same_unknown_for_a_parent_recipe_is_still_a_rejection(self) -> None:
+        asked = gen.lesson_validation_criteria(recipe="parent")
+        verdict = gen.validation_verdict(
+            self._report(unknown=("hazard_age_appropriateness",), asked=asked),
+            research_status="ok",
+            independence=gen.INDEPENDENCE_INDEPENDENT,
+            criteria=asked,
+            not_applicable=gen.lesson_validation_waivers(recipe="parent"),
+        )
+        self.assertEqual(verdict["waived_unknown"], [])
+        self.assertIn("hazard_age_appropriateness", verdict["unknown"])
+        self.assertEqual(verdict["verdict"], "reject")
+        self.assertEqual(verdict["outcome"], gen.OUTCOME_REJECTED)
+
+    def test_an_unknown_on_a_plan_level_criterion_is_not_a_lesson_verdict(self) -> None:
+        # The lesson schema enum still names ``goal_capability_disclosure``, which a lesson is
+        # never asked. Counting an ``unknown`` on it made the lesson criteria set cosmetic.
+        asked = gen.lesson_validation_criteria(recipe="committed")
+        verdict = gen.validation_verdict(
+            self._report(unknown=("goal_capability_disclosure",), asked=asked),
+            research_status="ok",
+            independence=gen.INDEPENDENCE_INDEPENDENT,
+            criteria=asked,
+        )
+        self.assertEqual(verdict["unknown"], [])
+        self.assertEqual(verdict["waived_unknown"], [])
+        self.assertEqual(verdict["ignored_unknown"], ["goal_capability_disclosure"])
+        self.assertTrue(verdict["waived_declared_reject"])
+        self.assertEqual(verdict["verdict"], "pass")
+        # Nothing the artifact owed was left unanswered, so the review is complete.
+        self.assertEqual(verdict["outcome"], gen.OUTCOME_INDEPENDENT)
+
+
+class WaivedUnknownInStoredRecordTest(GenerationTestBase):
+    """W2-1: a waived unknown reaches the stored validation record with its reason."""
+
+    def test_a_waived_hazard_unknown_is_stored_not_swallowed(self) -> None:
+        from tests.blueprint_support import narrowed_validation_answer
+
+        plan_result = self.approved_plan(
+            fixture_name="plan_ja", recipe="casual", dials={}, locale="ja-JP"
+        )
+
+        def hazard_unknown(request: gen.LLMRequest) -> gen.LLMResponse:
+            document = narrowed_validation_answer(request, fixture("validation_pass"))
+            for entry in document["criteria"]:
+                if entry["id"] == "hazard_age_appropriateness":
+                    entry["verdict"] = "unknown"
+                    entry["reason"] = "no child age band is declared for this adult course"
+            document["verdict"] = "reject"
+            return response(document, model="fake-validator")
+
+        llm = FakeLLM(
+            {
+                "coursebook.lesson.generate": lesson_from_request(),
+                "coursebook.lesson.validate": hazard_unknown,
+            }
+        )
+        result = gen.run_lesson_job(
+            self.connection,
+            {"job_id": "job-waived-1", "kind": "plan", "brief": {"plan_id": plan_result["plan_id"]}},
+            llm,
+            now=NOW,
+            budget=gen.CostBudget(max_calls=32),
+        )
+        first = result["lessons"][0]
+        # Waived, not validated: the page is usable but its outcome is the weaker honest label.
+        self.assertEqual(first["state"], "model_assessed")
+        rows = self.rows("SELECT * FROM gen_validation_records WHERE subject_kind = 'lesson'")
+        self.assertTrue(rows)
+        record = rows[0]
+        criteria = json.loads(record["criteria_json"])
+        hazard = next(item for item in criteria if item["id"] == "hazard_age_appropriateness")
+        self.assertIn("adult learner", hazard["waived_unknown"])
+        stored = json.loads(record["rejections_json"])
+        self.assertEqual(stored["waived_unknown"], ["hazard_age_appropriateness"])
+        self.assertIn(
+            "adult learner",
+            stored["waived_unknown_reasons"]["hazard_age_appropriateness"],
+        )
+        self.assertEqual(record["outcome"], gen.OUTCOME_MODEL_ASSESSED)
+
+
 if __name__ == "__main__":
     unittest.main()
