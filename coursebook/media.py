@@ -21,6 +21,17 @@ The first slice maps the existing lesson ``media`` specs to the existing ``Media
 illustration → host image, schematic → deterministic SVG, narration → host TTS. A sourced
 technical image is not synthesized; it needs a real source and permission, so it degrades to
 text until that path exists.
+
+Two things are decided here rather than forwarded from the author's prose:
+
+* **the prompt.** :func:`lesson_illustration_prompt` builds an editorial teaching illustration
+  request — subject from the spec, composition, medium and palette, a textless block and a
+  negative list — and its hash is recorded on the artifact, so a lesson's plate cannot drift
+  silently. Text a learner must read is page text the UI draws, never something the image model
+  is asked to paint.
+* **the geometry.** :func:`figure_aspect_ratio` picks the plate by role (illustration 4:3, a
+  person-facing illustration 3:4, schematic 4:3) at a 1024 px width floor, and the ratio is part
+  of the cache spec so a portrait plate can never be served from a landscape artifact.
 """
 
 from __future__ import annotations
@@ -521,11 +532,12 @@ def _media_spec(item: Mapping[str, Any], *, locale: str | None = None) -> artifa
     facts = item.get("facts")
     if not isinstance(facts, Mapping):
         facts = {}
+    prompt = str(item.get("spec") or "").strip() or None
     return artifacts.MediaSpec(
         kind=kind,
         role=role,
         text_equivalent=text,
-        prompt=str(item.get("spec") or "").strip() or None,
+        prompt=prompt,
         source_ids=tuple(str(value) for value in (item.get("source_ids") or []) if str(value).strip()),
         permission=item.get("permission"),
         voice=str(voice) if voice else None,
@@ -533,6 +545,10 @@ def _media_spec(item: Mapping[str, Any], *, locale: str | None = None) -> artifa
         transcript=str(transcript) if transcript else None,
         technical=bool(item.get("technical")),
         facts=dict(facts),
+        # Geometry is chosen here, never by the author: an item cannot ask for a ratio the role
+        # does not have, and the choice is part of the cache key so a 3:4 plate never reuses a 4:3
+        # artifact.
+        aspect_ratio=figure_aspect_ratio(kind, role, f"{prompt or ''} {text}"),
     )
 
 
@@ -558,6 +574,204 @@ def _schematic_rows(value: Mapping[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+# ── Lesson figure geometry and the built illustration prompt ─────────────────
+#
+# Two decisions this module used to leave to prose. Every lesson figure was requested landscape,
+# and the author's own spec sentence was forwarded to the image model unchanged; the model painted
+# labels and gauge numerals, the review gate rejected on legible text, and the picture was dropped.
+# Geometry and prompt are chosen here, and both are hashed into the artifact's provenance.
+
+#: The plate width a lesson figure is requested at least. The Desktop renders the figure in the
+#: prose column; below this the smallest label-level detail is not legible at 2x.
+MIN_FIGURE_WIDTH_PX = 1024
+
+#: Role-based geometry (item 30). A 4:3 plate gives a teaching illustration room for a subject and
+#: a quiet field to one side; a person-facing subject is portrait so the figure is not cropped at
+#: the shoulders; a schematic is read as a table, so it stays 4:3 and is never stretched.
+ILLUSTRATION_ASPECT = "4:3"
+PORTRAIT_ASPECT = "3:4"
+SCHEMATIC_ASPECT = "4:3"
+
+#: Words that name a subject a reader faces rather than an object beside them. A lookup, not a
+#: classifier: the default is the landscape plate and only a named person changes it.
+_PORTRAIT_SUBJECT = re.compile(
+    r"\b(portrait|person|people|learner|student|child|children|worker|mechanic|technician|"
+    r"operator|speaker|face|hands)\b",
+    re.IGNORECASE,
+)
+
+
+def figure_aspect_ratio(kind: str, role: str, text: str = "") -> str | None:
+    """The ratio a media item is requested at, or ``None`` when the medium has no plate.
+
+    Chosen by role, never by the author: an illustration is 4:3, a person-facing illustration is
+    3:4, and a schematic (or a cited source scanned into the same frame) is 4:3. ``text`` is the
+    spec sentence plus its text equivalent, which is where "portrait" or the person is named.
+    """
+    if kind != "visual":
+        return None
+    if role in ("schematic", "sourced_technical"):
+        return SCHEMATIC_ASPECT
+    if _PORTRAIT_SUBJECT.search(str(text or "")):
+        return PORTRAIT_ASPECT
+    return ILLUSTRATION_ASPECT
+
+
+#: The illustration prompt's own version. Bumping it re-hashes every plate request, so a change to
+#: the wording is visible in provenance instead of silently repainting an approved lesson.
+ILLUSTRATION_PROMPT_VERSION = "illustration-prompt.v1"
+
+#: One medium, one palette, one line: an editorial teaching illustration, not a photograph and not
+#: a chart. The same discipline the world lane's art bible sets (``world.py``), scaled to a plate
+#: that sits inside a lesson rather than on a cover.
+ILLUSTRATION_MEDIUM = (
+    "a flat editorial teaching illustration: opaque gouache shapes with a warm ink contour, on warm "
+    "paper, with no gradient, glow, glass or photographic texture"
+)
+ILLUSTRATION_PALETTE = (
+    "a warm paper ground (#f7f1e4), ochre (#7b4b0a), field green (#2f6047), coral (#9c2e1c) and a "
+    "single dark ink line, at most five pigments and no colour outside them"
+)
+ILLUSTRATION_COMPOSITION = (
+    "the subject sits off-centre in the lower two thirds, whole and uncropped, with a quiet "
+    "low-detail field on one side where the page draws its caption"
+)
+ILLUSTRATION_COMPOSITION_PORTRAIT = (
+    "a vertical composition: the figure is centred, whole and uncropped, with quiet air above and "
+    "below it and its face turned toward the learner"
+)
+
+#: The textless block. The picture carries the scene; every word a learner reads is page text the
+#: UI draws afterwards, because a model that paints a label garbles it into a false fact.
+ILLUSTRATION_TEXTLESS = (
+    "The plate contains no words at all: no title, no caption, no label, no lettering, no numbers "
+    "and no pseudo-text. Anything a learner must read — a label, a number, a callout — is page "
+    "text drawn by the product UI over the picture, never painted into it."
+)
+
+#: The negative list. Each entry restates one way a picture becomes a spec: text a learner could
+#: read as fact, a measurement, a step, or a piece of UI chrome.
+ILLUSTRATION_NEGATIVES: tuple[str, ...] = (
+    "no text",
+    "no letters, words or labels",
+    "no numbers, numerals or measurements",
+    "no arrows or callout markers",
+    "no watermark, signature or logo",
+    "no user interface, buttons, panels or frames",
+    "no pseudo-text or symbols that resemble letters",
+    "no gauges, dials or tool settings a learner could read as a fact",
+    "no depicted procedure, ordered steps or hands performing a step",
+)
+
+#: A clause that asks for text *inside* the picture. The authoring prompt forbids it, but a spec
+#: that asks anyway is rewritten here rather than forwarded: the request is dropped from the
+#: subject and the negative list still refuses the labels.
+_TEXT_REQUEST = re.compile(
+    r"\b(labels?|labell?ed|labell?ing|labeling|lettering|text|words?|numbers?|numbered|"
+    r"numerals?|arrows?|callouts?|captions?|annotations?|annotated|titles?)\b",
+    re.IGNORECASE,
+)
+_LABEL_ADJECTIVE = re.compile(r"\b(labell?ed|numbered|annotated)\b", re.IGNORECASE)
+_LABEL_TAIL = re.compile(r"\s+(?:with|showing|including|that\s+shows|and\s+with)\b.*$", re.IGNORECASE)
+#: "An editorial illustration of …" is the author naming the medium, not the subject. The builder
+#: supplies the medium, so the preamble is cut and "The picture shows a workshop bench" reads as
+#: one instruction instead of two.
+_SUBJECT_PREAMBLE = re.compile(
+    r"^(?:an?\s+|the\s+)?(?:editorial\s+)?(?:teaching\s+)?"
+    r"(?:illustration|picture|image|drawing|sketch|scene|visual|artwork)"
+    r"\s+(?:of|showing|that\s+shows)\s+",
+    re.IGNORECASE,
+)
+
+
+def _illustration_subject(spec: artifacts.MediaSpec) -> str:
+    """The subject clause of ``spec``, with any request for drawn text rewritten out of it.
+
+    A spec is prose an author wrote, and an author sometimes asks for labels ("a bench with the
+    parts labelled"). Text is drawn afterwards, so the request is removed rather than forwarded:
+    a labelling adjective is stripped from the subject it modified, a clause that is only the
+    request is dropped, and a request tail is cut. The result is bounded, because the model reads
+    one sentence and the archive keeps the spec itself.
+    """
+    raw = str(spec.prompt or "").strip() or str(spec.text_equivalent or "").strip()
+    if not raw:
+        return "the subject this lesson teaches"
+    clauses = [part.strip(" .") for part in re.split(r"[,;]", raw) if part.strip(" .")]
+    kept: list[str] = []
+    for clause in clauses:
+        if _TEXT_REQUEST.search(clause) is None:
+            kept.append(clause)
+            continue
+        if kept:
+            # A later clause is the request ("with labels on each part"); dropping it whole keeps
+            # the subject intact.
+            continue
+        stripped = _LABEL_TAIL.sub("", _LABEL_ADJECTIVE.sub("", clause)).strip(" ,;.")
+        if stripped:
+            kept.append(stripped)
+    subject = ", ".join(kept) or str(spec.text_equivalent or "").strip() or "the subject this lesson teaches"
+    subject = _SUBJECT_PREAMBLE.sub("", " ".join(subject.split()))
+    # "A workshop bench" reads as a new sentence after "The picture shows"; only the article is
+    # lowered, so a proper noun in the subject keeps its capital.
+    subject = re.sub(r"^(A|An|The)\b", lambda found: found.group(1).lower(), subject)
+    # Removing an adjective can leave a double space; the model reads one clean sentence.
+    return " ".join(subject.split())[:400] or "the subject this lesson teaches"
+
+
+@dataclass(frozen=True, slots=True)
+class LessonIllustrationPrompt:
+    """One built illustration request, with the hash an artifact records."""
+
+    prompt: str
+    negative_prompt: str
+    subject: str
+    aspect_ratio: str
+    prompt_hash: str
+    prompt_version: str = ILLUSTRATION_PROMPT_VERSION
+
+
+def lesson_illustration_prompt(spec: artifacts.MediaSpec) -> LessonIllustrationPrompt:
+    """Build the illustration prompt: subject, composition, medium and palette, textless, negatives.
+
+    Modelled on :func:`coursebook.world.build_prompt`: the author's sentence supplies the *subject*
+    and nothing else. Composition follows the plate ratio, the medium and palette are the house
+    style, and the textless block plus the negative list are fixed. The hash covers every block, so
+    the same lesson cannot drift: a prompt change re-hashes the request and provenance shows it.
+    """
+    subject = _illustration_subject(spec)
+    aspect = spec.aspect_ratio or figure_aspect_ratio(
+        spec.kind, spec.role, f"{spec.prompt or ''} {spec.text_equivalent}"
+    )
+    composition = (
+        ILLUSTRATION_COMPOSITION_PORTRAIT if aspect == PORTRAIT_ASPECT else ILLUSTRATION_COMPOSITION
+    )
+    negative = "; ".join(ILLUSTRATION_NEGATIVES)
+    prompt = (
+        "Textless editorial teaching illustration. "
+        f"The picture shows {subject}. "
+        f"It is composed as {composition}. "
+        f"The medium is {ILLUSTRATION_MEDIUM}, and the palette is {ILLUSTRATION_PALETTE}. "
+        f"{ILLUSTRATION_TEXTLESS} "
+        f"Avoid everything in this list: {negative}."
+    )
+    payload = {
+        "prompt_version": ILLUSTRATION_PROMPT_VERSION,
+        "subject": subject,
+        "composition": composition,
+        "medium": ILLUSTRATION_MEDIUM,
+        "palette": ILLUSTRATION_PALETTE,
+        "aspect_ratio": aspect,
+        "negative": list(ILLUSTRATION_NEGATIVES),
+    }
+    return LessonIllustrationPrompt(
+        prompt=prompt,
+        negative_prompt=negative,
+        subject=subject,
+        aspect_ratio=str(aspect),
+        prompt_hash=artifacts.spec_hash(payload),
+    )
+
+
 def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Callable[[], bytes], str]:
     """Return ``(producer, expected_mime)`` for one validated spec.
 
@@ -569,14 +783,21 @@ def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Cal
         if not rows:
             raise MediaGenerationError("schematic needs structured facts")
         title = spec.prompt or spec.text_equivalent or "Schematic"
-        return (lambda: artifacts.make_schematic_svg(title, rows)), "image/svg+xml"
+        # Rendered at the same width floor every lesson figure is requested at, so the recorded
+        # ``min_width_px`` is a fact about the bytes rather than a wish.
+        return (
+            lambda: artifacts.make_schematic_svg(title, rows, width=MIN_FIGURE_WIDTH_PX)
+        ), "image/svg+xml"
     if spec.kind == "visual" and spec.role == "illustration":
+        # Both an illustration and the context art beside a procedure's authority visual are this
+        # role, and both take the built prompt: the author's sentence is a subject, never the whole
+        # request.
         if host is None:
             raise artifacts.MediaUnavailable("no host image provider is bound")
-        prompt = spec.prompt or spec.text_equivalent
+        built = lesson_illustration_prompt(spec)
 
         def _image() -> bytes:
-            data, _mime = host.image(prompt)
+            data, _mime = host.image(built.prompt, aspect_ratio=built.aspect_ratio)
             return data
 
         return _image, "image/png"
@@ -643,7 +864,12 @@ def reviewer_for(
         return dict(verdict)
 
     def _regenerate(review: dict[str, Any]) -> bytes:
-        data, _mime = host.image(revision_prompt(prompt, review))
+        # Re-prompt from the *built* request, not the author's sentence: a retry that dropped the
+        # textless block and the negative list would repaint the same defect.
+        built = lesson_illustration_prompt(spec)
+        data, _mime = host.image(
+            revision_prompt(built.prompt, review), aspect_ratio=built.aspect_ratio
+        )
         return data
 
     return _review, _regenerate
@@ -782,6 +1008,29 @@ def generate_for_lessons(
                 continue
             started = time.monotonic()
             gated = reviewer_for(spec, host)
+            built_prompt = (
+                lesson_illustration_prompt(spec)
+                if spec.kind == "visual" and spec.role == "illustration"
+                else None
+            )
+            # The prompt hash is the *built* request for an illustration and the author's own text
+            # for anything else, so two lessons with the same spec sentence but a different style
+            # block cannot share a provenance record without saying so.
+            prompt_record = (
+                {"prompt_hash": built_prompt.prompt_hash, "prompt_version": built_prompt.prompt_version}
+                if built_prompt is not None
+                else {
+                    "prompt_hash": artifacts.spec_hash(
+                        {"prompt": spec.prompt, "transcript": spec.transcript}
+                    )
+                }
+            )
+            geometry: dict[str, Any] = {}
+            if spec.kind == "visual":
+                geometry = {
+                    "aspect_ratio": spec.aspect_ratio,
+                    "min_width_px": MIN_FIGURE_WIDTH_PX,
+                }
             outcome = artifacts.produce_with_fallback(
                 store,
                 spec,
@@ -791,7 +1040,8 @@ def generate_for_lessons(
                 provenance={
                     "generator": "host.image_generate" if spec.kind == "visual" else "host.text_to_speech",
                     "model": "host-configured",
-                    "prompt_hash": artifacts.spec_hash({"prompt": spec.prompt, "transcript": spec.transcript}),
+                    **prompt_record,
+                    **geometry,
                     "source_hash": source_fp,
                     # The page's own provenance travels with the bytes: a model-assessed lesson's
                     # media must never read as independently validated evidence.
@@ -1017,6 +1267,10 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         # recorded none; a reader must not infer "validated" from its absence.
         "lesson_state": provenance.get("lesson_state") or None,
         "independent": provenance.get("independent") if "independent" in provenance else None,
+        # Geometry the bytes were requested at, so a reader can tell a portrait plate from a
+        # landscape one and know the width floor the figure was generated for.
+        "aspect_ratio": provenance.get("aspect_ratio") or None,
+        "min_width_px": provenance.get("min_width_px") or None,
         # The adversarial verdict the illustration earned when it was generated. ``None`` for a
         # medium that is not reviewed; the Desktop can show "unreviewed" rather than imply a pass.
         "review": provenance.get("review") if "review" in provenance else None,

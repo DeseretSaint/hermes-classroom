@@ -497,6 +497,42 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
                 finally:
                     connection.close()
 
+    def test_a_procedure_with_no_visual_word_is_offered_its_schematic(self) -> None:
+        # Item 25: demand comes from the lesson's shape. An *undeclared* (legacy/hand-built)
+        # section whose objective is a procedure in a technical domain is offered the authority
+        # visual even though its intent never says diagram, schematic or picture.
+        request = gen.build_lesson_request(
+            plan={"title": "Course", "learner_outcome": "Outcome", "delivery": "self_study"},
+            section={
+                "section_id": "sec_1",
+                "ordinal": 1,
+                "title": "Replace the rear pads",
+                "lesson_intent": (
+                    "Replace the rear brake pads: lift the caliper, press the piston back and fit "
+                    "the new pads."
+                ),
+                "objective_refs": [1],
+                "source_ids": [],
+            },
+            objective={
+                "id": "obj_1",
+                "ordinal": 1,
+                "title": "Objective",
+                "evidence_target": "procedure",
+                "evidence_criteria": ["Produces something observable"],
+            },
+            recipe="committed",
+            dials={"subject_domain": "technical_procedure"},
+            locale=None,
+            sources=[],
+        )
+        payload = gen._load_json(request.input_text, {})
+        recorded = payload["capability_policy"]
+        self.assertFalse(recorded["declared"])
+        self.assertEqual(recorded["image"], "required")
+        self.assertIn("at least one visual item with role 'schematic'", request.instructions)
+        self.assertIn("step table", request.instructions)
+
     def test_a_declared_none_wins_over_prose_that_names_a_construct(self) -> None:
         # The old failure mode: the intent prose names a torque sequence and the policy guessed a
         # schematic. The plan's declaration is authoritative now.

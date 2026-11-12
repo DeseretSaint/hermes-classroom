@@ -77,6 +77,82 @@ class JpegHost(PlainHost):
         return artifacts.review_record("approved", ["a caliper on a bench"])
 
 
+class BuiltIllustrationPromptTest(unittest.TestCase):
+    """Item 27: the illustration prompt is built, not forwarded from the author's sentence."""
+
+    def spec(self, **overrides) -> artifacts.MediaSpec:
+        item = {
+            "kind": "visual",
+            "role": "illustration",
+            "purpose": "See the bench",
+            "spec": "An editorial illustration of a workshop bench with a torque wrench",
+            "text_equivalent": "A workshop bench with a torque wrench.",
+        }
+        item.update(overrides)
+        return media._media_spec(item)
+
+    def test_every_block_is_in_the_built_prompt(self) -> None:
+        built = media.lesson_illustration_prompt(self.spec())
+        prompt = built.prompt
+        # subject, composition, medium and palette, textless block, negative list.
+        self.assertIn("workshop bench with a torque wrench", prompt)
+        self.assertIn("The picture shows", prompt)
+        self.assertIn("It is composed as", prompt)
+        self.assertIn("The medium is", prompt)
+        self.assertIn("palette", prompt)
+        self.assertIn("contains no words at all", prompt)
+        self.assertIn("Avoid everything in this list", prompt)
+        for negative in (
+            "no text",
+            "no letters, words or labels",
+            "no numbers",
+            "no arrows",
+            "no watermark",
+            "no user interface",
+        ):
+            with self.subTest(negative=negative):
+                self.assertIn(negative, prompt)
+        self.assertNotEqual(prompt, self.spec().prompt)
+
+    def test_a_spec_that_asks_for_labels_is_not_forwarded_verbatim(self) -> None:
+        spec = self.spec(
+            spec=(
+                "An editorial illustration of a workshop bench, with labels on every part and a "
+                "numbered callout on the wrench."
+            ),
+            text_equivalent="A bench whose parts are labelled.",
+        )
+        built = media.lesson_illustration_prompt(spec)
+        self.assertIn("workshop bench", built.prompt)
+        # The request itself is rewritten out, and the negative list still refuses the labels.
+        self.assertNotIn("with labels", built.prompt)
+        self.assertNotIn("numbered callout", built.prompt)
+        self.assertIn("no letters, words or labels", built.prompt)
+
+    def test_a_labelling_adjective_is_stripped_from_the_subject(self) -> None:
+        built = media.lesson_illustration_prompt(
+            self.spec(spec="An illustration of a labelled brake caliper on a bench")
+        )
+        self.assertIn("a brake caliper on a bench", built.subject)
+        self.assertNotIn("labelled", built.subject)
+
+    def test_the_hash_covers_the_blocks_and_is_stable(self) -> None:
+        first = media.lesson_illustration_prompt(self.spec())
+        second = media.lesson_illustration_prompt(self.spec())
+        self.assertEqual(first.prompt_hash, second.prompt_hash)
+        other = media.lesson_illustration_prompt(self.spec(spec="An illustration of a brake caliper"))
+        self.assertNotEqual(first.prompt_hash, other.prompt_hash)
+        self.assertEqual(first.prompt_version, media.ILLUSTRATION_PROMPT_VERSION)
+
+    def test_the_plate_ratio_is_chosen_by_role(self) -> None:
+        self.assertEqual(media.figure_aspect_ratio("visual", "illustration"), "4:3")
+        self.assertEqual(media.figure_aspect_ratio("visual", "schematic"), "4:3")
+        self.assertEqual(
+            media.figure_aspect_ratio("visual", "illustration", "a portrait of a learner"), "3:4"
+        )
+        self.assertIsNone(media.figure_aspect_ratio("audio", "narration"))
+
+
 class ReviewGateCase(KernelCase):
     def setUp(self) -> None:
         super().setUp()
@@ -210,6 +286,42 @@ class ApprovedIllustrationTest(ReviewGateCase):
             str(self.scalar("SELECT path FROM artifacts WHERE id = ?", (item["artifact_id"],)))
         ).read_bytes()
         self.assertEqual(stored, PNG_RETRY)
+
+
+class BuiltPromptProvenanceTest(ReviewGateCase):
+    """Item 27/30: what the provider was asked for is recorded with the bytes."""
+
+    def built(self):
+        return media.lesson_illustration_prompt(
+            media._media_spec(self.media_items[0], locale="en-US")
+        )
+
+    def test_the_provenance_records_the_built_prompt_hash(self) -> None:
+        host = VerdictHost(artifacts.review_record("approved", ["a caliper on a bench"]))
+        self.generate(host)
+        item = self.stored_media()[0]
+        built = self.built()
+        self.assertEqual(host.prompts, [built.prompt])
+        self.assertNotEqual(host.prompts[0], self.media_items[0]["spec"])
+        provenance = self.provenance_of(item["artifact_id"])
+        self.assertEqual(provenance["prompt_hash"], built.prompt_hash)
+        self.assertEqual(provenance["prompt_version"], media.ILLUSTRATION_PROMPT_VERSION)
+        self.assertEqual(provenance["aspect_ratio"], "4:3")
+        self.assertEqual(provenance["min_width_px"], media.MIN_FIGURE_WIDTH_PX)
+
+    def test_a_rejected_illustration_is_re_prompted_from_the_built_request(self) -> None:
+        host = VerdictHost(
+            artifacts.review_record("rejected", ["legible text on the bench"]),
+            artifacts.review_record("approved", ["a caliper on a bench, no text"]),
+            images=[PNG, PNG_RETRY],
+        )
+        self.generate(host)
+        built = self.built()
+        # The retry keeps the textless block and the negative list; dropping them would repaint the
+        # same defect the reviewer rejected.
+        self.assertTrue(host.prompts[1].startswith(built.prompt), host.prompts[1][:120])
+        self.assertIn("Revise the illustration", host.prompts[1])
+        self.assertIn("no letters, words or labels", host.prompts[1])
 
 
 class RejectedIllustrationTest(ReviewGateCase):

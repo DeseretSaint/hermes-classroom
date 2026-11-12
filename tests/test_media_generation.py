@@ -24,9 +24,13 @@ class FakeHost:
         self.fail = fail
         self.images: list[str] = []
         self.speeches: list[str] = []
+        #: The ratio each image call asked for. Item 30: geometry is the caller's decision, so the
+        #: test double records it instead of defaulting it.
+        self.aspect_ratios: list[str] = []
 
     def image(self, prompt: str, *, aspect_ratio: str = "landscape"):
         self.images.append(prompt)
+        self.aspect_ratios.append(aspect_ratio)
         if self.fail:
             raise media.MediaGenerationError("image provider offline")
         return PNG, "image/png"
@@ -125,6 +129,95 @@ class MediaGenerationTest(KernelCase):
         self.assertEqual(host.images, [])
         self.assertEqual(host.speeches, [])
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 2)
+
+    # ── Item 30: geometry fits the job ───────────────────────────────────────────
+
+    def set_media(self, items: list[dict]) -> None:
+        self.execute(
+            "UPDATE gen_lessons SET media_json = ? WHERE id = ?",
+            (json.dumps(items), self.lesson_id),
+        )
+
+    def provenance_of(self, artifact_id: str) -> dict:
+        return json.loads(
+            str(self.scalar("SELECT provenance_json FROM artifacts WHERE id = ?", (artifact_id,)))
+        )
+
+    def test_an_illustration_is_requested_at_four_by_three_and_records_its_geometry(self) -> None:
+        host = FakeHost()
+        self.generate(host)
+        # The caller chose the plate; the old code passed nothing and took the provider default.
+        self.assertEqual(host.aspect_ratios, ["4:3"])
+        visual = next(item for item in self.stored_media() if item["kind"] == "visual")
+        provenance = self.provenance_of(visual["artifact_id"])
+        self.assertEqual(provenance["aspect_ratio"], "4:3")
+        self.assertEqual(provenance["min_width_px"], 1024)
+        self.assertEqual(provenance["min_width_px"], media.MIN_FIGURE_WIDTH_PX)
+        # The provider saw the built request, and provenance records its hash and version.
+        spec = media._media_spec(self.media_items[0], locale="ja")
+        built = media.lesson_illustration_prompt(spec)
+        self.assertEqual(host.images[0], built.prompt)
+        self.assertEqual(provenance["prompt_hash"], built.prompt_hash)
+        self.assertEqual(provenance["prompt_version"], media.ILLUSTRATION_PROMPT_VERSION)
+        # The same geometry reaches the reader through the preview route.
+        preview = media.preview_artifact(visual["artifact_id"])
+        self.assertEqual(preview["aspect_ratio"], "4:3")
+        self.assertEqual(preview["min_width_px"], 1024)
+
+    def test_a_portrait_subject_is_requested_at_three_by_four(self) -> None:
+        self.set_media(
+            [
+                dict(
+                    self.media_items[0],
+                    spec="A portrait of a mechanic at the workshop bench",
+                    text_equivalent="A mechanic stands at the bench.",
+                )
+            ]
+        )
+        host = FakeHost()
+        self.generate(host)
+        self.assertEqual(host.aspect_ratios, ["3:4"])
+        self.assertIn("vertical composition", host.images[0])
+        item = self.stored_media()[0]
+        self.assertEqual(self.provenance_of(item["artifact_id"])["aspect_ratio"], "3:4")
+
+    def test_a_schematic_records_four_by_three_and_the_width_floor(self) -> None:
+        self.set_media(
+            [
+                {
+                    "kind": "visual",
+                    "role": "schematic",
+                    "purpose": "Carry the torque sequence",
+                    "spec": "Deterministic torque table",
+                    "text_equivalent": "Bolt 1 to 20 Nm in the numbered order.",
+                    "facts": {"rows": [{"label": "Bolt 1", "value": "20 Nm"}]},
+                }
+            ]
+        )
+        host = FakeHost()
+        summary = self.generate(host)
+        self.assertEqual(summary.generated, 1)
+        # A schematic is deterministic: it never asks a provider for a picture or a ratio...
+        self.assertEqual(host.images, [])
+        self.assertEqual(host.aspect_ratios, [])
+        item = self.stored_media()[0]
+        self.assertEqual(item["mime"], "image/svg+xml")
+        provenance = self.provenance_of(item["artifact_id"])
+        self.assertEqual(provenance["aspect_ratio"], "4:3")
+        self.assertEqual(provenance["min_width_px"], 1024)
+        # ...and the bytes carry the width floor its record claims.
+        svg = Path(
+            str(self.scalar("SELECT path FROM artifacts WHERE id = ?", (item["artifact_id"],)))
+        ).read_bytes()
+        self.assertIn(b'width="1024"', svg)
+
+    def test_audio_records_no_plate_geometry(self) -> None:
+        self.generate(FakeHost())
+        audio = next(item for item in self.stored_media() if item["kind"] == "audio")
+        provenance = self.provenance_of(audio["artifact_id"])
+        self.assertNotIn("aspect_ratio", provenance)
+        self.assertNotIn("min_width_px", provenance)
+        self.assertIsNone(media.preview_artifact(audio["artifact_id"])["aspect_ratio"])
 
     # ── H-169: a model_assessed page is readable, so its media is content ───────────────
 

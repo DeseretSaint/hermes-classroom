@@ -260,6 +260,10 @@ class MediaSpec:
     transcript: str | None = None
     technical: bool = False
     facts: dict[str, Any] = field(default_factory=dict)
+    #: The plate ratio the medium is generated at, chosen by role (illustration 4:3, a
+    #: person-facing illustration 3:4, schematic 4:3). ``None`` for audio. It is part of the cache
+    #: spec so a 3:4 plate can never be served from a 4:3 artifact.
+    aspect_ratio: str | None = None
 
     def as_cache_spec(self) -> dict[str, Any]:
         return {
@@ -273,6 +277,7 @@ class MediaSpec:
             "language": self.language,
             "technical": self.technical,
             "facts": self.facts,
+            "aspect_ratio": self.aspect_ratio,
             "policy": POLICY_VERSION,
         }
 

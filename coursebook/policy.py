@@ -11,12 +11,18 @@ provider or database access, and can be replayed: the same inputs always produce
 
 Design boundary (``docs/VISUAL_MEDIA_PLAN.md`` §4):
 
-* Default is ``none`` for images and audio. Media is added only when the lesson intent names a
-  genuinely visual or oral construct that the media has to carry.
+* Default is ``none`` for images and audio. Media is added when the lesson's **shape** needs it —
+  a technical procedure's step table, any procedure objective, a named physical object — or when
+  the intent names a genuinely visual or oral construct the media has to carry. The intent regex
+  is a role selector and a veto, never the only reason media exists: "no images" or "text only"
+  still decides ``none``.
 * A symbolic lesson (mathematics, grammar) gets no AI illustration and no narration. A diagram or
   graph named by the intent may become a deterministic schematic; an illustration never can.
-* A language production lesson is not automatically a listening lesson. Narration exists only when
-  the intent names a spoken or listening construct, never because a locale is set.
+* A language production lesson is not automatically a listening lesson: narration exists only when
+  the intent names a spoken or listening construct. A lesson that names its target phrase (a
+  quotation or a run of non-Latin script) may carry a pronunciation reference even when its prose
+  never says *pronounce*, and a pronunciation reference may be accompanied by a narration reading
+  the same line; a locale alone still buys neither.
 * A technical procedure may require a schematic or a permissioned source image. An AI illustration
   is context only and can never be *required* or be a measurement, sequence or safety authority: it
   may ride along as optional context art (authority ``none``) beside the authority visual, and the
@@ -347,6 +353,41 @@ _ORAL_DENIAL = re.compile(
     r"(?:speaking|speech|audio|narration|pronunciation|oral(?:\s+\w+)?)\b"
 )
 
+#: A lesson that refuses a medium in so many words without naming it: "text only", "prose only".
+#: ``_VISUAL_DENIAL`` and ``_ORAL_DENIAL`` are masked out of the construct text before matching, so
+#: the need-based paths read this from the *raw* intent: a section that asked for text has already
+#: answered the media question, and a need is never a reason to overrule the learner.
+_TEXT_ONLY = re.compile(r"\b(?:text|prose|words)\s*(?:-| )?only\b|\btext\s+alone\b")
+
+#: A physical object the lesson's own words name. Deliberately a short lookup, not a topic
+#: classifier: a lesson about a car, an engine, a brake, an appliance, a guitar, a wall, a plant, a
+#: machine or a tool has a subject a learner can picture, so an illustration is *permitted* there
+#: even when the prose never says "picture". It is never required, and it never widens a symbolic
+#: or one-off lesson.
+_PHYSICAL_OBJECT = re.compile(
+    r"\b(car|cars|engine|engines|brake|brakes|appliance|appliances|guitar|guitars|wall|walls|"
+    r"plant|plants|machine|machines|tool|tools)\b"
+)
+
+#: A target phrase the section is teaching: a quoted line, or any run of non-Latin script. A
+#: language lesson that names the line has something to pronounce even when its prose never says
+#: "pronounce" — which was the defect that left every Japanese lesson silent. Straight single
+#: quotes are excluded because an apostrophe ("the learner's goal") is not a quotation.
+_QUOTED_PHRASE = re.compile(r"\"[^\"]{2,}\"|“[^”]{2,}”|「[^」]{1,}」|『[^』]{1,}』")
+_TARGET_SCRIPT = re.compile(
+    "["
+    "\u0370-\u03ff"  # Greek
+    "\u0400-\u04ff"  # Cyrillic
+    "\u0590-\u05ff"  # Hebrew
+    "\u0600-\u06ff"  # Arabic
+    "\u0900-\u097f"  # Devanagari
+    "\u0e00-\u0e7f"  # Thai
+    "\u3040-\u30ff"  # Hiragana and Katakana
+    "\u4e00-\u9fff"  # Han
+    "\uac00-\ud7af"  # Hangul
+    "]"
+)
+
 #: Constructs that a deterministic schematic can carry: sequence, torque, wiring, labelled parts,
 #: measurement, orientation, clearance, or a named graph/plot/chart/diagram.
 _SCHEMATIC_VISUAL = re.compile(
@@ -588,12 +629,96 @@ def normalise_subject_domain(subject_domain: str | None, locale: str | None = No
     return _normalise_domain(subject_domain, locale)
 
 
+def _raw_intent(lesson_intent: str) -> str:
+    """The intent as written, lowercased and whitespace-normalised, with nothing masked out."""
+    return " ".join(str(lesson_intent).lower().split())
+
+
 def _normalise_intent(lesson_intent: str) -> str:
-    text = " ".join(str(lesson_intent).lower().split())
+    text = _raw_intent(lesson_intent)
     # "no speaking" or "without a diagram" must not register as a request for the construct.
     text = _VISUAL_DENIAL.sub(" ", text)
     text = _ORAL_DENIAL.sub(" ", text)
     return text
+
+
+def _refuses_visual(raw_text: str) -> bool:
+    """Whether the intent explicitly refuses a picture. A need never overrides this."""
+    return bool(_VISUAL_DENIAL.search(raw_text) or _TEXT_ONLY.search(raw_text))
+
+
+def _refuses_audio(raw_text: str) -> bool:
+    """Whether the intent explicitly refuses sound. A need never overrides this."""
+    return bool(_ORAL_DENIAL.search(raw_text) or _TEXT_ONLY.search(raw_text))
+
+
+def _target_phrase(text: str) -> str | None:
+    """The target phrase the section names, or ``None`` when it names none.
+
+    A quoted line is the strongest form; a run of non-Latin script *is* the line in a language
+    lesson, so it counts too. This is a construct detector, not a topic classifier: it decides
+    only that there is something to pronounce, never which phrase is correct.
+    """
+    quoted = _QUOTED_PHRASE.search(text)
+    if quoted is not None:
+        return quoted.group(0)
+    script = _TARGET_SCRIPT.search(text)
+    if script is not None:
+        return script.group(0)
+    return None
+
+
+def _need_based_image(
+    *,
+    domain: str,
+    recipe: str,
+    evidence_target: str,
+    text: str,
+    raw_text: str,
+) -> tuple[str, str | None, str] | None:
+    """The image a lesson's **shape** needs, when its words name no visual construct.
+
+    The intent regex is a role selector and a veto, never the only reason media exists. A
+    procedure's step table needs its drawing even when the prose never says "diagram"; any
+    procedure objective earns an optional illustration so the author has to state a reason to
+    omit it; and a lesson whose subject is a physical object may show that object. Returns
+    ``None`` when the shape asks for nothing, so the caller keeps its own refusal text.
+
+    Order matters: (1) the technical authority visual, (2) the procedure illustration, (3) the
+    physical object. An explicit refusal in the intent wins over all three, and a symbolic domain
+    keeps refusing an illustration; a one-off brief and a parent lesson are not shaped as lessons
+    with a figure, so neither gains media here.
+    """
+    if recipe in ("one_off", "parent") or not text.strip():
+        return None
+    if _refuses_visual(raw_text):
+        return None
+    if domain == "technical_procedure" and evidence_target in ("procedure", "transfer"):
+        return (
+            "required",
+            "schematic",
+            "the section's evidence target is procedure or transfer in a technical lesson, so a "
+            "deterministic schematic is required: the step table needs its drawing even though "
+            "the intent names no visual construct",
+        )
+    if evidence_target == "procedure" and domain not in SYMBOLIC_DOMAINS:
+        return (
+            "optional",
+            "illustration",
+            f"the objective is a procedure and {domain} is not a symbolic domain, so an optional "
+            "illustration is permitted; the author must state a reason to omit it and the picture "
+            "is never the evidence",
+        )
+    physical = _PHYSICAL_OBJECT.search(text)
+    if physical is not None:
+        return (
+            "optional",
+            "illustration",
+            f"the section names a physical object ({physical.group(0)!r}) a learner can picture, "
+            "so an optional illustration is permitted as context; it is never required and never "
+            "the evidence",
+        )
+    return None
 
 
 def _match(pattern: re.Pattern[str], text: str) -> str | None:
@@ -640,6 +765,7 @@ def _image_decision(
     check_angle: str,
     evidence_target: str,
     text: str,
+    raw_text: str,
 ) -> tuple[str, str | None, str]:
     schematic = _match(_SCHEMATIC_VISUAL, text)
     sourced = _match(_SOURCED_VISUAL, text)
@@ -698,6 +824,15 @@ def _image_decision(
                 f"the intent names context artwork ({illustration!r}); it is optional context only, "
                 "never a measurement, sequence or safety authority",
             )
+        need = _need_based_image(
+            domain=domain,
+            recipe=recipe,
+            evidence_target=evidence_target,
+            text=text,
+            raw_text=raw_text,
+        )
+        if need is not None:
+            return need
         return "none", None, _none_image_reason(domain, recipe)
 
     if domain == "history":
@@ -722,6 +857,15 @@ def _image_decision(
                 "illustration",
                 f"the intent names context artwork ({illustration!r}); it is optional context only",
             )
+        need = _need_based_image(
+            domain=domain,
+            recipe=recipe,
+            evidence_target=evidence_target,
+            text=text,
+            raw_text=raw_text,
+        )
+        if need is not None:
+            return need
         return "none", None, _none_image_reason(domain, recipe)
 
     if domain == "language":
@@ -732,6 +876,15 @@ def _image_decision(
                 f"the intent names a visual aid ({illustration!r}); it is optional context, and the "
                 "language evidence stays in the phrase",
             )
+        need = _need_based_image(
+            domain=domain,
+            recipe=recipe,
+            evidence_target=evidence_target,
+            text=text,
+            raw_text=raw_text,
+        )
+        if need is not None:
+            return need
         return "none", None, _none_image_reason(domain, recipe)
 
     # Advisory domain is general or unknown: the intent's named construct still decides.
@@ -765,6 +918,15 @@ def _image_decision(
             "illustration",
             f"the intent names context artwork ({illustration!r}); it is optional context only",
         )
+    need = _need_based_image(
+        domain=domain,
+        recipe=recipe,
+        evidence_target=evidence_target,
+        text=text,
+        raw_text=raw_text,
+    )
+    if need is not None:
+        return need
     return "none", None, _none_image_reason(domain, recipe)
 
 
@@ -807,6 +969,7 @@ def _audio_decision(
     evidence_target: str,
     text: str,
     locale: str | None,
+    raw_text: str,
 ) -> tuple[str, str | None, str]:
     if recipe == "parent":
         return (
@@ -832,6 +995,27 @@ def _audio_decision(
     listening = _match(_LISTENING, text)
     reading = _match(_READING_WRITING, text)
     strong = _STRONG_ORAL.search(text) is not None
+
+    # A language lesson that names the line has something to pronounce. Without the word
+    # "pronounce", the old path fell through to `none` and the Japanese course was silent even
+    # though the section quoted the exact phrase the learner is asked to say. The reference clip is
+    # optional here: the phrase *is* the teaching, so the author decides whether a recording helps,
+    # but "no audio" still wins.
+    phrase = _target_phrase(text)
+    if (
+        oral is None
+        and listening is None
+        and phrase is not None
+        and locale
+        and not _refuses_audio(raw_text)
+    ):
+        return (
+            "optional",
+            "pronunciation_reference",
+            f"the section names the target phrase {phrase!r} and the course carries locale "
+            f"{locale!r}, so a pronunciation reference is permitted even though the intent names "
+            "no spoken construct; the transcript stays the authoritative text",
+        )
 
     if reading and not strong and not listening:
         return (
@@ -1084,6 +1268,7 @@ def plan_lesson_capability(
         )
 
     domain = _normalise_domain(subject_domain, locale)
+    raw_text = _raw_intent(lesson_intent)
     text = _normalise_intent(lesson_intent)
 
     forced_angle, angle_reason = recipe_check_angle(recipe)
@@ -1104,6 +1289,7 @@ def plan_lesson_capability(
             check_angle=check_angle,
             evidence_target=evidence_target,
             text=text,
+            raw_text=raw_text,
         )
         audio, audio_role, audio_reason = _audio_decision(
             domain=domain,
@@ -1112,6 +1298,7 @@ def plan_lesson_capability(
             evidence_target=evidence_target,
             text=text,
             locale=locale,
+            raw_text=raw_text,
         )
     profile, profile_reason = _rubric_profile(
         domain=domain,
@@ -1205,10 +1392,31 @@ def permitted_image_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:
 
 
 def permitted_audio_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:
-    """The audio media roles a lesson spec may declare under ``plan``. Empty means no audio."""
+    """The audio item roles a lesson spec may declare under ``plan``. Empty means no audio.
+
+    The lesson schema has **one** audio item role, ``narration``: a pronunciation reference is
+    rendered as narration whose transcript is the authoritative text, never as a second source
+    (``AUDIO_SPEC_ROLE``). So the permission this grants is the medium, and the two things the
+    policy distinguishes are *items*, not role strings:
+
+    * a language lesson granted a ``pronunciation_reference`` may carry that reference clip **and**
+      a narration reading the same line — both declare ``narration``, and the transcript of each is
+      the authoritative text;
+    * a lesson granted narration alone is one item: its listening passage already *is* the
+      reading, and a second clip would be a second text authority.
+
+    The pair is stated here so it stays a policy decision: the author may not add the second
+    recording to a lesson the policy never granted it (``media_policy_problems`` is the gate).
+    """
     if plan.audio == "none" or plan.audio_role is None:
         return ()
-    return (AUDIO_SPEC_ROLE[plan.audio_role],)
+    roles = [AUDIO_SPEC_ROLE[plan.audio_role]]
+    if plan.audio_role == "pronunciation_reference":
+        # A reference clip and a natural reading of the same line are two items of this one role.
+        # ``dict.fromkeys`` keeps the contract a tuple of distinct spec roles while the comment
+        # records that the pair is deliberate.
+        roles.append(AUDIO_SPEC_ROLE["narration"])
+    return tuple(dict.fromkeys(roles))
 
 
 def _media_reason(plan: LessonCapabilityPlan, index: int) -> str:

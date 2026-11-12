@@ -248,7 +248,11 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v3"
 #: v12 (CP-015 item 16): the first segment names the learner's goal in their own terms and what
 #: this section adds, and never re-teaches the prior section — the payload now carries `goal`,
 #: `through_line` and `previous_section`, so the instruction can name the fields it reads.
-LESSON_PROMPT_VERSION = "lesson-prompt.v12"
+#: v13 (CREATE-EXPERIENCE items 28 and 26): the media spec contract says a spec names subject,
+#: medium and composition only and that anything a learner reads is authored as text on the block
+#: and drawn by the UI; a granted pronunciation reference may be accompanied by a narration reading
+#: the same line. Both are text changes to the same prompt, so the version moves with them.
+LESSON_PROMPT_VERSION = "lesson-prompt.v13"
 #: The validator instruction text. H-191 §5: a validator answer was discarded because one
 #: ``item`` label was 81 characters against a ``maxLength`` of 80 the prompt never stated. The
 #: text now states the locator rule and the bound (read from :data:`ITEM_REFERENCE_MAX_CHARS`),
@@ -3776,7 +3780,10 @@ LESSON_SYSTEM_PROMPT = (
     "one-off brief gets a verification checklist, not a quiz; a parent lesson is parent-led with "
     "observation notes and supervision. Every media item is a declarative spec with a complete "
     "text equivalent; the harness generates the image or audio, and you never claim that a "
-    "generated illustration is a measurement or procedure authority. For a technical procedure, "
+    "generated illustration is a measurement or procedure authority. A visual spec names subject, "
+    "medium and composition only: a label, a number or a callout a learner must read is authored "
+    "as text on the block and drawn by the UI, never requested from the image model. "
+    "For a technical procedure, "
     "use a schematic with structured facts and cite the source; for language pronunciation, use "
     "narration with the exact transcript, language and voice. A technical procedure lesson also "
     "carries the typed 'procedure' header: its steps are references to the lesson's own segments, "
@@ -4201,6 +4208,14 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
                 f"- audio: {capability.audio}; {required} audio item with role {first_role!r}. "
                 f"{audio_reason}".rstrip()
             )
+        if capability.audio_role == "pronunciation_reference":
+            # One medium, two items: the reference clip and a natural reading of the same line both
+            # declare role 'narration', and the transcript stays authoritative for each (item 26).
+            lines.append(
+                "A language lesson granted a pronunciation reference may also carry one narration "
+                "item reading the same line at natural speed: both declare role 'narration', the "
+                "transcript is the authoritative text for both, and neither replaces the check."
+            )
     else:
         lines.append(f"- audio: none. Emit no audio media item. {audio_reason}".rstrip())
     lines.append(
@@ -4208,6 +4223,12 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
         "must also pass the media store: complete text equivalent, facts.rows for a schematic, "
         "source_ids plus permission for a sourced technical reference, transcript/language/voice "
         "for narration. An illustration may never claim technical authority."
+    )
+    lines.append(
+        "Media spec contract: a visual 'spec' names subject, medium and composition only — it is "
+        "the picture, not the page. Anything a learner must read (a label, a number, a callout, a "
+        "step name) is authored as text on the block and drawn by the UI; never ask the image "
+        "model to paint text, labels, numbers or arrows."
     )
     return lines
 
