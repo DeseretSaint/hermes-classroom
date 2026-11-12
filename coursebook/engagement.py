@@ -457,8 +457,6 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
                 "points": 0,
                 "xp_total": total,
                 "level": level_for(total),
-                "basis": basis,
-                "basis_components": evidence,
             }
             kernel._remember(
                 connection, key, method, payload_hash,
@@ -479,8 +477,6 @@ def award(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[
             "points": points,
             "xp_total": total,
             "level": level,
-            "basis": basis,
-            "basis_components": evidence,
         }
         kernel._remember(
             connection, key, method, payload_hash,

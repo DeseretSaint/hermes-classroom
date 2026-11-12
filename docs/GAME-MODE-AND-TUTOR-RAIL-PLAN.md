@@ -953,7 +953,9 @@ real progress or none; it never invents a five-star review.
 
 - Every XP award must name a real action AND carry graded evidence; no arbitrary timer.
 - The number is recomputed from the graded row, not asserted at award time: the same attempt pays
-  the same points in any later session, and the response carries the three facts it was built from.
+  the same points in any later session. Surfacing the reason beside the number needs a new wire
+  version (an additive response amendment), so the reason is computed and used in refusals today and
+  the surface shows the number alone until that amendment lands.
 - XP exists so learning is visible, not so activity is. The failure mode to refuse is the one where
   a daily check-in outranks a checkpoint, which produces active users who learn nothing.
 - The game layer must not hide a check, a source, a warning or a recovery action.

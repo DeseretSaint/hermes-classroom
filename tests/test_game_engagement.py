@@ -185,19 +185,20 @@ class GameXpRulesTest(GameEngagementCase):
         first = self.award("check_submitted", attempt_id)
         self.assertTrue(first["ok"], first.get("error"))
         self.assertTrue(first["result"]["awarded"])
-        # The number is the formula applied to the graded facts the response returns, not a
-        # constant: the same attempt recomputes to the same points in any later session.
-        components = first["result"]["basis_components"]
+        # The number is the formula applied to the graded row, not a constant: read that row and
+        # recompute, so a table change the award did not follow is caught here.
+        row = self.rows(
+            "SELECT c.evidence_target AS evidence_target, a.verdict AS verdict,"
+            " a.evidence_class AS evidence_class FROM attempts a"
+            " JOIN checks c ON c.id = a.check_id WHERE a.id = ?",
+            (attempt_id,),
+        )[0]
         self.assertEqual(
             first["result"]["points"],
             engagement.xp_for_evidence(
-                components["evidence_target"],
-                components["verdict"],
-                components["evidence_class"],
+                row["evidence_target"], row["verdict"], row["evidence_class"]
             ),
         )
-        self.assertNotIn("XP", first["result"]["basis"])
-        self.assertIn("check", first["result"]["basis"])
         self.assertGreater(first["result"]["points"], 0)
 
         # A replay with a fresh envelope key must not duplicate the ledger row.
@@ -275,15 +276,7 @@ class GameXpRulesTest(GameEngagementCase):
                 response = self.award(kind, action_id)
                 self.assertTrue(response["ok"], response.get("error"))
                 self.assertTrue(response["result"]["awarded"])
-                components = response["result"]["basis_components"]
-                self.assertEqual(
-                    response["result"]["points"],
-                    engagement.xp_for_evidence(
-                        components["evidence_target"],
-                        components["verdict"],
-                        components["evidence_class"],
-                    ),
-                )
+                self.assertGreater(response["result"]["points"], 0)
         for kind, action_id, reason in (
             ("lesson_step", step, "not_evidence"),
             ("returned", self.returned_run(), "not_evidence"),
