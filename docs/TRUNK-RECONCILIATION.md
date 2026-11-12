@@ -171,16 +171,20 @@ that measurement is reproducible on master; without it, it was not.
 
 ## 5. Evidence: what a frame of master's course home looks like
 
-`python3 scripts/cb-frame.py --component course-home --width 1344` on a clean `origin/master`
-worktree (`8c8369d4` adds nothing visual; this is the same render before and after) writes a frame
-whose manifest carries:
+`python3 scripts/cb-frame.py --component course-home --width 1344` writes a frame whose manifest
+carries (measured on the landing branch, module `d6d85566fde0`):
 
 ```json
-"module_sha256": "0b76b2878bac73173aaa936c6a7c29ede52644c834ee0ecfae8eff98ac2557a1",
+"module_sha256": "d6d85566fde0a4b79b9c0a04e965ec39e0458e9b227fc448727671258f33ddd5",
 "installed_module_sha256": "0b76b2878bac73173aaa936c6a7c29ede52644c834ee0ecfae8eff98ac2557a1",
-"installed_matches_branch": true,
+"installed_matches_branch": false,
 "frame_height": 1169
 ```
+
+The same command on unmodified `origin/master` reports `0b76b2878bac` on both sides and
+`installed_matches_branch: true` — master's build is what is installed. The two runs produce
+**byte-identical PNGs** (`b409dd9013fbc531…`), which is the measured proof that the four-name export
+change is visually inert: the module hash moves, the pixels do not.
 
 The image shows the 3:1 plate insert inside a page, the vertical rail of objective discs with the
 `H` Codicon stand-in glyph, the fox seated bottom-right — i.e. the layout D-009 and D-009b were
@@ -221,7 +225,11 @@ mount the shipped component and the test failed. Adding the four names is additi
 or behaviour, and is the minimum that makes the registry honest. Without it the cherry-pick is not
 possible; with it, it is — so the card's option 3 (refuse and propose dependencies) does not apply.
 
-### Acceptance, measured on `wt/trunk-frame-rig` at `8c8369d4`
+### Acceptance, measured on `wt/trunk-frame-rig`
+
+Two commits: `8c8369d4` (the rig and the export) and its follow-up (the evidence re-pin and this
+document). The preflight and frame measurements below were taken on both; the suite and plugin gate
+on the head commit, which is the one to merge.
 
 ```
 $ python3 scripts/cb-frame.py --preflight
