@@ -35,9 +35,17 @@ def git(*args: str) -> str:
 
 
 def load_entry(path: Path) -> dict:
-    import yaml  # noqa: PLC0415 — only needed when the script runs
+    """The four fields this check needs, parsed without PyYAML: cron runs on an interpreter that may
+    not ship it, and a delivery check that cannot run unattended is not a check."""
+    import re
 
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    keys = ("name", "repo", "sha", "version")
+    out: dict = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^(\w+):\s*(.*)$", line)
+        if m and m.group(1) in keys:
+            out[m.group(1)] = m.group(2).strip().strip('"').strip("'")
+    return out
 
 
 def live_entry(name: str) -> dict | None:
