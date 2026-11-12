@@ -3,6 +3,19 @@
 Coursebook is a Hermes Desktop plugin. Versions below are plugin versions; the `cb.rpc` and `cb.db`
 contract versions move independently and are named wherever they changed.
 
+## 0.2.1 — catalog review fixes (unreleased)
+
+- **A submitted index is rebuilt by the installed builder**, not by `scripts/store_index.py` from the
+  fetched worktree — that copy prepends its own root to `sys.path` and would run whatever is on the
+  base branch that day. The installed script runs with `--root <worktree>`; `CB_STORE_ROOT` is
+  deliberately never used for this. A guard refuses a builder that resolves inside the fetched tree.
+- **`git`, `gh` and `ffmpeg` children get a minimal environment** (PATH/HOME/LANG, SSH, gh tokens,
+  `GIT_*`, proxies). Model-provider keys are no longer inherited by a push or a decode.
+- **Sharing asks first**: a confirmation names the course title, the public pull request and the fork
+  under the author's account; `confirm: true` is only sent from that dialog's publish control, and
+  Escape/Cancel send nothing.
+- **`jsonschema>=4.18,<5`**, because `contracts.py` imports `referencing` directly.
+
 ## 0.2.0 — the aiming and trust pass (unreleased)
 
 - **The end goal is asked, not inferred.** The create flow asks what the learner wants to be able
