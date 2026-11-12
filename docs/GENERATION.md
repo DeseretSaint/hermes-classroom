@@ -1146,9 +1146,36 @@ A deadline is policy, so it is declared once per request purpose in
 | purpose | default |
 |---|---|
 | `coursebook.plan.generate` | 900 s |
-| `coursebook.plan.validate` | 180 s |
-| `coursebook.lesson.generate` | 300 s |
+| `coursebook.plan.validate` | 600 s |
+| `coursebook.unit_sections.generate` | 900 s |
+| `coursebook.unit_sections.validate` | 180 s |
+| `coursebook.lesson.generate` | 1200 s |
 | `coursebook.lesson.validate` | 240 s |
+
+### Why plan-validate is 600 s and lesson.generate is 1200 s (CP-015g quality)
+
+Measured 2026-11-11 in the production-shaped scratch home (`cb-prod-home`) on the supported,
+host-configured route (Nous `deepseek/deepseek-v4.1-flash-1017`). The two stages the product
+actually runs in sequence carried the *smallest* bounds in the table and both sat below observed
+behaviour:
+
+* `coursebook.plan.validate` — a four-objective plan job took **204 s** end to end and its
+  validation stage was cut twice at the old **180 s** bound; it completed only with
+  `COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS=600`. 600 s is ~2.9x the measurement.
+* `coursebook.lesson.generate` — successful single-section writes took 94.5, 95.3 and 79.3 s on
+  the recorded unit, and the job was cut at the old **300 s** bound after **908 s** with
+  **1 of 3 sections saved**. 1200 s admits the measured per-section p100 (95.3 s) times every
+  section of a supported course, plus headroom.
+* `coursebook.unit_sections.generate` — one call authors a unit's whole section outline. The old
+  240 s bound was below 3 x the measured per-section write time (285.9 s), so it is 900 s.
+
+These are outer bounds, not target latencies. A bound that fires now says which purpose, the
+declared bound, the **elapsed wait**, that the route was slower than its declared bound, and
+which `COURSEBOOK_<PURPOSE>_TIMEOUT_SECONDS` variable raises it — in the stage recovery text as
+well as the error message — so a slow route is never reported as an unavailable host. The
+regression tests are `tests/test_plan_generate_deadline.py` (plan generate) and
+`tests/test_cp015g_provider_deadlines.py` (validate, lesson and unit-section measurements plus the
+message shape).
 
 ### Why the plan-stage bound is 900 s (H-182/D10)
 

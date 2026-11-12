@@ -15,6 +15,16 @@ contract versions move independently and are named wherever they changed.
   under the author's account; `confirm: true` is only sent from that dialog's publish control, and
   Escape/Cancel send nothing.
 - **`jsonschema>=4.18,<5`**, because `contracts.py` imports `referencing` directly.
+- **The shipped deadlines fit the route the product runs on** (CP-015g quality). A four-objective
+  plan job took 204 s on `nous` / `deepseek/deepseek-v4.1-flash-1017` and was cut twice at the old
+  180 s `plan.validate` bound; a three-section lesson job was cut at the old 300 s
+  `lesson.generate` bound after 908 s with 1 of 3 sections saved (successful section writes: 94.5 /
+  95.3 / 79.3 s). Defaults are now `plan.validate` 600 s, `lesson.generate` 1200 s and
+  `unit_sections.generate` 900 s, each env-overridable as before. A fired bound now says the route
+  was slower than its declared bound, names the `COURSEBOOK_<PURPOSE>_TIMEOUT_SECONDS` variable in
+  the stage recovery text, and keeps the elapsed wait in the message — so a slow route is not
+  reported as an unavailable host. No wire or schema change. Evidence:
+  `tests/test_cp015g_provider_deadlines.py`, `docs/GENERATION.md` §9.
 
 ## 0.2.0 — the aiming and trust pass (unreleased)
 
