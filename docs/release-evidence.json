@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "5df8dfdc7d62754e175caece526d720d7c3c7719",
-  "measured_commit_short": "5df8dfdc",
+  "measured_commit": "3b82959f84be6e2bd98c190ccdb8d54d6e1845f7",
+  "measured_commit_short": "3b82959f",
   "measured_at": "2026-11-12",
-  "ran": 4375,
+  "ran": 4401,
   "skipped": 12,
-  "seconds": 883.625,
+  "seconds": 1502.676,
   "verdict": "OK (skipped=12)",
-  "note": "Re-measured 2026-11-12 on trunk 5df8dfdc, the merge of the recovered colouring page (wt/gm-020-colouring, 01048f96) over 7fdfd94c, which is origin/master at the time of writing: Ran 4375 tests in 883.625s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 16-test delta over 4359 is tests/test_coloring_print.py, the colouring page's own group, and the suite discovered exactly 4375 with the record at 4375. An earlier measurement in the same pass read 4359 on 8eb1f944 and 4350 on 6dc7a927; both stay as history, not as the current count. The previous records (4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count."
+  "note": "Measured 2026-11-12 on trunk, the union of PRINT-2 (wt/print-2-coloring-role de92dd26: cb.pack v4 names role `coloring_page`, +10 tests), the Workshop share contract tests (wt/t_23009397-desktop-contracts 393d51a1, 26 -> 32 cases) and the 0.2.1 pin repairs over master d85c30c5: Ran 4401 tests in 1502.676s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 16-test delta over 4385 is exactly those two groups. 1502.676s is a contended upper bound (other workers' full suites ran on the same host); the uncontended reference is 883.625s. desktop/plugin.js is unchanged by this merge and hashes 28bc081c, the 0.2.1 module. Previous records (4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history, not the current count. This block names the master tree the release gate reads; the docs commit that carries this record sits above it and touches only documentation, so it cannot move a test count."
  },
  "rpc": {
   "contract": "cb.rpc",
