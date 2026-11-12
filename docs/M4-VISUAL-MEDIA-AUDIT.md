@@ -7,7 +7,7 @@ regenerated for **CP-049** on `wt/cp-049-m4-pin` (branch from master `19fec67`),
 changed the shipped type stacks and `879fdb2` added the guard for that wiring. It is pinned to the
 module master ships: `desktop/plugin.js` sha256
 `4087908c1881df93bf0f7e71bbac65c2511aee3f115271f6b3f846091c9d03b7` (that was the shipping module
-on 2026-11-10; the committed audit has since been re-pinned for the trunk module `52dac9ed…`, and the
+on 2026-11-10; the committed audit has since been re-pinned for the trunk module `9015b84c…`, and the
 Reproducibility section records each re-pin with the numbers it measured).
 
 The recapture moved **no pixels and no measurement**. All 62 committed PNGs hash byte-identically
@@ -90,7 +90,8 @@ and clipping and overflow are still 0. `scripts/m4v-repro-check.py` has **not** 
 the numbers above come from the single generation recorded in
 `audit/visual/m4-visual/audit.json` (`generated_at: 2026-11-12T13:24:40.349Z`).
 
-**Re-pin at `52dac9ed` (Gate 5 artwork, `8eb1f944`, 2026-11-12).** The Gate 5 artwork landing
+**Re-pin at `52dac9ed` (Gate 5 artwork, `8eb1f944`, 2026-11-12) — superseded by the `28bc081c` and
+`9015b84c` re-pins below.** The Gate 5 artwork landing
 (`d73d1d24`, merged as `8eb1f944`) changed the vignette and the fox export ladder and rebuilt
 `desktop/plugin.js` to sha256
 `52dac9ed7d8ff05f744dfabd406bcd2cdef34df6bf94605e3845ea51f9f801f1`. The audit was regenerated for it
@@ -98,6 +99,24 @@ the numbers above come from the single generation recorded in
 the committed audit with the `d6d85566` one shows only `generated_at`, `branch` and `plugin_sha256`
 differ, so the numbers on this page (2,172 text nodes, 320 AX controls, 158 animated nodes in full
 motion, 62 frames, 15/15 claims PASS) are the same measurements under a new pin.
+
+**Re-pin at `28bc081c` (0.2.1 share-confirmation rebuild, `fe1a8fc6`, 2026-11-12).** The
+share-confirmation rebuild (`9d6588a3`, released as `1b5e1873`, coursebook 0.2.1) changed the share
+dialog's consequence text and rebuilt `desktop/plugin.js` to sha256
+`28bc081c522a656a0a03ebaf9e37b4af5b83cdceb01ca214f9fce4533ba5972f`. The audit was regenerated for it
+(`generated_at: 2026-11-12T18:54:48.190Z`, recorded branch `wt/e2e-fixes`) and, as at the re-pin
+before it, **did** reproduce every measurement: comparing that audit with the `52dac9ed` one shows
+only `generated_at`, `branch` and `plugin_sha256` differ.
+
+**Re-pin at `9015b84c` (VQ-011 Home tag aspect, `165d7da0`, 2026-11-12).** The two product merges —
+the aside check control (`0a4683f7`) and VQ-011's Home tag-aspect fix (`dccb532c`), merged as
+`165d7da0` — rebuilt `desktop/plugin.js` to sha256
+`9015b84c7e33c2caa357792a5eb9542dc69332490baea42895213d26b554a33b`. The audit was regenerated for it
+(`generated_at: 2026-11-12T20:26:40.351Z`) and again reproduced every measurement: comparing that
+audit with the `28bc081c` one shows only `generated_at`, `branch` (recorded as `HEAD`) and
+`plugin_sha256` differ, so 2,172 text nodes, 320 AX controls, 158 animated nodes in full motion, 62
+frames and 15/15 claims PASS carry forward. This is the pin the committed
+`audit/visual/m4-visual/audit.json` now names.
 
 The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
 the v3 `--cb3-font-*` variables are set by `CbV3Scope` on the route root, and this harness mounts the
@@ -190,7 +209,7 @@ audio players, text-only, media-unavailable.
 ## Verdicts
 
 The claim table below is the release-tree audit at `cd862140` (`b9f4a19`). The trunk audit at
-`52dac9ed` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
+`9015b84c` keeps every verdict PASS and re-measures 2,172 text nodes, 320 AX controls and 158
 full-motion animated nodes; the Reproducibility section records that re-pin.
 
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |

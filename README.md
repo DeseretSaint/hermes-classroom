@@ -118,13 +118,15 @@ trip that closed gate 4, plus its capture; the diff from `df052ea` is `docs/` an
 the M4 audit is pinned to module `cd862140…c516`, which is unchanged on that tree). That
 release-tree audit measures 62 frames, 15/15 claims PASS, 2,120 text nodes and 298 AX controls at
 plugin `cd862140…`; those are still the record's M4 numbers. `master` has
-advanced past it: the module at the head is `52dac9ed…` (the Gate 5 artwork merge over the CB-trunk
-frame-rig merge), and the audit committed at `audit/visual/m4-visual/audit.json` was regenerated for
-that module on 2026-11-12 (15/15 claims PASS). That regeneration did not reproduce every measurement:
+advanced past it: the module at the head is `9015b84c…` (the VQ-011 Home tag-aspect merge
+`dccb532c` over the aside check-control merge `0a4683f7`, merged as `165d7da0`), and the audit
+committed at `audit/visual/m4-visual/audit.json` was regenerated for that module on 2026-11-12
+(15/15 claims PASS). That regeneration did not reproduce the record's measurements:
 the trunk audit measures 62 frames, 15/15 claims PASS, 2,172 text nodes, 320 AX controls and 158
 full-motion animated nodes, against the record's 2,120 / 298 / 70 — the text-node count moved at the
-CB-trunk re-pin, and the Gate 5 re-pin that followed changed only the pin, the branch and
-`generated_at`. So the committed audit describes the head, not the `b9f4a19` record; re-pinning this
+CB-trunk re-pin (`d6d85566`), and every re-pin after it (the Gate 5 artwork module `52dac9ed`, the
+0.2.1 module `28bc081c`, then `9015b84c`) changed only the pin, the branch and `generated_at`. So the
+committed audit describes the head, not the `b9f4a19` record; re-pinning this
 record's module field to it is the remaining freeze step. The suite count and the
 contract/schema rows in this README are measured on the `master` tree their row names; every other
 pin and health row is the `b9f4a19` measurement, recorded in `docs/RELEASE-EVIDENCE.md`, with
