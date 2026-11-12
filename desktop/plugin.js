@@ -16404,6 +16404,10 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   nochatAction: 'Start a fresh run',
   completeTitle: 'Section finished',
   completeBody: 'Your check is recorded.',
+  // CREATE-EXPERIENCE item 38: an ending is not a receipt. When the commit carried no evidence
+  // row (a lane that names a self-reported class, or an answer the backend did not record), the
+  // panel still closes the section but never says a result was recorded.
+  completeBodyUnrecorded: 'Your check passed, but nothing was recorded for it, so it does not count toward your evidence yet.',
   completeAction: 'Back to the path',
   loading: 'Opening this section.',
   errorTitle: 'This section could not be read',
@@ -16625,6 +16629,76 @@ function classroomEvidence(page) {
     }),
     events: Array.from(new Set(events))
   }
+}
+
+/**
+ * CREATE-EXPERIENCE item 38 — which commit may end the section.
+ *
+ * The panel existed but nothing ever set `complete`: finishing the last check left the learner on
+ * a graded card with no ending, so a finished section read as unfinished work.
+ *
+ * The rule is the backend's own answer, not a click count. A committed `pass` names the check it
+ * closed; the section ends when the served page carries no *other* open check. A newer open check
+ * (for example one `progression.challenge_out` just superseded the first with) keeps the section
+ * open — the learner has not answered the question on screen yet. A page whose `checks[]` no
+ * longer names the passed check (a stale read racing the commit) is not an ending either.
+ */
+function classroomCompletion(page, passed) {
+  const checks = page && Array.isArray(page.checks) ? page.checks : []
+  const attempts = page && Array.isArray(page.attempts) ? page.attempts : []
+  if (passed && passed.verdict === 'pass') {
+    const checkId = passed.checkId || null
+    if (checkId && checks.length > 0 && !checks.some((row) => row && row.check_id === checkId)) {
+      return null
+    }
+    const anotherOpen = checks.some(
+      (row) => row && row.state === 'open' && (!checkId || row.check_id !== checkId)
+    )
+    if (anotherOpen) return null
+    return { evidence: passed.evidence === true }
+  }
+  // A revisit has no commit in this session, so the same ending is read back from the recorded
+  // rows: every served check has been answered, none is open, and the newest committed attempt is a
+  // pass. An override (`overridden`, self-reported) is not a pass and never ends a section here.
+  if (!page || checks.length === 0) return null
+  if (checks.some((row) => row && row.state === 'open')) return null
+  if (!checks.every((row) => row && Number(row.attempt_count) > 0)) return null
+  const newestPass = attempts.find((attempt) => attempt && attempt.verdict === 'pass')
+  if (!newestPass) return null
+  return { evidence: classroomEvidenceRecorded(newestPass) }
+}
+
+/**
+ * Item 38 — is this section the course's last one?
+ *
+ * The ending belongs to the course, not to every section: a section with more teaching after it
+ * hands the learner on with `Next section` (item 36), so the ending may only stand where the path
+ * has nothing after it. A truncated outline is not a finished path, so it never ends a course.
+ */
+function classroomLastSection(outline, page) {
+  if (!outline || outline.truncated === true) return false
+  const steps = classroomStepNodes(outline, page)
+  if (steps.length === 0) return false
+  const currentId = page && page.section ? page.section.objective_id : null
+  const at = steps.findIndex((step) => step.key === currentId)
+  return at >= 0 && at === steps.length - 1
+}
+
+/**
+ * Item 38: did this commit write an evidence row?
+ *
+ * `attempt.submit` answers a committed pass with the attempt it stored; the backend writes the
+ * layer-1 evidence row in the same transaction, so an attempt id is the record. A lane that names
+ * a non-independent class (`self_reported`, `override`) stores no evidence row, and an answer with
+ * no attempt id never committed — both are `false`, and the ending must not claim otherwise.
+ */
+function classroomEvidenceRecorded(graded) {
+  if (!graded || graded.verdict !== 'pass') return false
+  if (graded.evidence_id) return true
+  if (!graded.attempt_id) return false
+  const evidenceClass = String(graded.evidence_class || '')
+  if (evidenceClass === 'self_reported' || evidenceClass === 'override') return false
+  return true
 }
 
 /**
@@ -17401,6 +17475,7 @@ function ClassroomV3({
   award = null,
   scene = null,
   state = 'default',
+  evidenceRecorded = null,
   chatAvailable = true,
   gameRows = [],
   enrollmentId,
@@ -17687,7 +17762,15 @@ function ClassroomV3({
               },
               children: CB3_CLASSROOM_COPY.completeTitle
             }, 'title'),
-            jsx(ClassroomQuietLine, { children: CB3_CLASSROOM_COPY.completeBody }, 'body'),
+            jsx(ClassroomQuietLine, {
+              'data-cb3-complete-evidence': evidenceRecorded === true ? 'recorded' : 'unrecorded',
+              // Item 38: the copy is the record, not a receipt printed on hope. A pass whose
+              // commit stored no evidence row says exactly that instead of "recorded".
+              children:
+                evidenceRecorded === true
+                  ? CB3_CLASSROOM_COPY.completeBody
+                  : CB3_CLASSROOM_COPY.completeBodyUnrecorded
+            }, 'body'),
             jsx(PillAction, {
               variant: 'primary',
               label: CB3_CLASSROOM_COPY.completeAction,
@@ -17955,9 +18038,19 @@ function ClassroomV3Surface({
   const [revisionFloor, setRevisionFloor] = useState(0)
   const [challenge, setChallenge] = useState({ status: 'idle', message: null })
   const [award, setAward] = useState(null)
+  // CREATE-EXPERIENCE item 38: the last check's pass is the door to the ending, and the learner
+  // opens it with the card's own primary — the verdict and its observation are the teaching beat,
+  // so the ending may not erase them. `pass` is what the commit said; `ended` is the learner having
+  // read it and closed the section.
+  const [pass, setPass] = useState(null)
+  const [ended, setEnded] = useState(false)
   // A new section starts with no award line from the previous section.
   useEffect(() => {
     setAward(null)
+  }, [objectiveId])
+  useEffect(() => {
+    setPass(null)
+    setEnded(false)
   }, [objectiveId])
   // WIRE-8: `progression.challenge_out` bumps the enrollment revision and supersedes the open
   // check. The page read that follows can still carry the older revision for one render, so this
@@ -18056,12 +18149,30 @@ function ClassroomV3Surface({
   }, [canChallenge, enrollmentId, objectiveId, revision, reloadCheck])
   const sectionId = page.data && page.data.section ? page.data.section.objective_id : objectiveId
   const scene = classroomSceneFromWorld(world.data, sectionId, (row && row.title) || '')
+  const lastSection = classroomLastSection(outline.data, page.data)
+  const canEnd = Boolean(lastSection && pass && classroomCompletion(page.data, pass))
+  const finished = lastSection ? classroomCompletion(page.data, ended ? pass : null) : null
+  // The card's post-pass primary is the ending's door on the last check. Everywhere else it is
+  // exactly what it always was: the next section, or the course path. Once the ending is open, the
+  // same handler is the panel's "Back to the path", so it may not re-open the ending.
+  const advanceFromCheck = useCallback(
+    (nextId) => {
+      if (!ended && canEnd) {
+        setEnded(true)
+        return
+      }
+      if (typeof onNextSection === 'function') onNextSection(nextId)
+    },
+    [ended, canEnd, onNextSection]
+  )
   const state =
     page.status === 'error' && !page.data
       ? 'error'
       : page.status === 'loading' && !page.data
         ? 'loading'
-        : 'default'
+        : finished
+          ? 'complete'
+          : 'default'
   return jsx(ClassroomV3, {
     row,
     outline: outline.data,
@@ -18075,6 +18186,7 @@ function ClassroomV3Surface({
     award: mode === 'game' && feedbackVisible ? award : null,
     scene,
     state,
+    evidenceRecorded: finished ? finished.evidence : null,
     chatAvailable: Boolean(page.data && page.data.runtime && page.data.runtime.binding_status === 'active'),
     enrollmentId,
     objectiveId,
@@ -18087,7 +18199,7 @@ function ClassroomV3Surface({
     },
     onBack,
     onOpenSection,
-    onNextSection,
+    onNextSection: advanceFromCheck,
     onStartChat,
     onAskTutor,
     onPlayLine,
@@ -18099,6 +18211,15 @@ function ClassroomV3Surface({
     },
     onRetryStimulus: check.reload,
     onCommitted: (graded) => {
+      // Item 38: remember the committed pass before the re-read, so the ending is the backend's
+      // verdict and not a guess about which card is on screen.
+      if (graded && graded.verdict === 'pass') {
+        setPass({
+          checkId: check.check && check.check.check_id ? check.check.check_id : null,
+          verdict: graded.verdict,
+          evidence: classroomEvidenceRecorded(graded)
+        })
+      }
       page.reload()
       outline.reload()
       awardCheck(graded)
@@ -45215,8 +45336,11 @@ export {
   CB3_DIALOGUE_LINE,
   CB3_JAPANESE,
   CB3_KANJI,
+  classroomCompletion,
   classroomCopy,
   classroomEvidence,
+  classroomEvidenceRecorded,
+  classroomLastSection,
   classroomLineFromPage,
   classroomRubySegments,
   classroomSceneFromWorld,

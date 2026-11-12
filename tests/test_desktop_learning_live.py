@@ -284,6 +284,7 @@ const before = {
 }
 
 let middle = null
+let endingSeen = null
 if (payload.scenario === 'award') {
   const choice = document.querySelectorAll('[data-cb3-choice] input')[1]
   await act(async () => { choice.click() })
@@ -314,6 +315,11 @@ if (payload.scenario === 'award') {
   await flush(60)
   await click(byText('Check answer'))
   await click(byText('Next section'))
+  // Item 38: on the last check the primary opens the ending instead of leaving the section. The
+  // ending's own primary is the path, and that is what the learner presses next.
+  const ending = document.querySelector('[data-cb3-classroom-state="complete"]')
+  endingSeen = ending ? (ending.textContent || '').replace(/\s+/g, ' ').trim() : null
+  if (ending) await click(byText('Back to the path'))
 } else if (payload.scenario === 'challenge') {
   await click(byText('Try it yourself'))
 } else if (payload.scenario === 'challenge-none') {
@@ -342,6 +348,7 @@ process.stdout.write(JSON.stringify({
   before,
   middle,
   after,
+  endingSeen,
   events,
   calls: calls
     .filter((call) => call.path === '/rpc')
@@ -772,16 +779,20 @@ class ClassroomItem36NextSectionTest(unittest.TestCase):
             "the post-pass primary did not open the next section",
         )
 
-    def test_on_the_last_section_the_primary_returns_to_the_path(self) -> None:
+    def test_on_the_last_section_the_primary_opens_the_ending_then_returns_to_the_path(self) -> None:
         two = outline()
         two["objectives"] = two["objectives"][:2]
         last = page()
         last["section"] = {**last["section"], "objective_id": "obj_2"}
         data = self.rig.run("next-section", outline=two, page=last)
+        # Item 38: the course's last check ends on the panel, not by leaving the section.
+        self.assertIn("Section finished", data["endingSeen"] or "",
+                      "the last section's pass left without an ending")
+        self.assertIn("Back to the path", data["endingSeen"] or "")
         self.assertEqual(
             [event for event in data["events"] if event.startswith("next-section")],
             ["next-section:path"],
-            "the last section did not fall back to the course path",
+            "the ending's own primary did not return to the course path",
         )
 
     def test_the_route_opens_the_objective_the_classroom_names(self) -> None:
