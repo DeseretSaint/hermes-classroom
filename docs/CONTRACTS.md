@@ -2434,7 +2434,7 @@ this guard the command answered `INTERNAL_ERROR` ("lesson.revise failed: Operati
 `NOT_FOUND` shape it already got from a stale section id, so nothing a working caller sees moves.
 
 **No wire change.** `error.details` is an open object and `details.reason` is the existing snake_case
-seam, so `cb.rpc` stays **v26** and `cb.db` stays **v14**: no method, request field, response key,
+seam, so `cb.rpc` stays **v27** and `cb.db` stays **v14**: no method, request field, response key,
 error code, job kind, migration or enum value moves. The Desktop already prints `<code>: <message>`
 for a `pack.export` refusal, so the recovery sentence reaches the author without a UI change.
 
