@@ -41098,6 +41098,105 @@ function shareCount(value, noun) {
   return `${value} ${noun}${Number(value) === 1 ? '' : 's'}`
 }
 
+/**
+ * The public decision, in the page's own modal language (the same centred card as
+ * `ModeSwitchDialog`). Sharing is the one action that publishes: it opens a pull request on the
+ * Coursebook repository and, when the author has no write access, forks that repository under
+ * their GitHub account. The dialog names all three before the request carries `confirm: true`.
+ */
+function WorkshopShareConfirm({ item, onConfirm, onCancel }) {
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return undefined
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      onCancel()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return jsx('div', {
+    'data-cb-workshop-share-confirm-backdrop': '',
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 70,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem',
+      background: 'color-mix(in srgb, var(--cb3-forest) 46%, transparent)'
+    },
+    onMouseDown: (event) => {
+      if (event && event.target === event.currentTarget) onCancel()
+    },
+    children: jsxs('div', {
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'cb-workshop-share-confirm-title',
+      'data-cb-workshop-share-confirm': item.enrollment_id,
+      style: {
+        width: '30rem',
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.6rem',
+        padding: '1rem 1.1rem 1.1rem',
+        background: cb3Role('card-stock'),
+        border: `1px solid ${cb3Role('rule')}`,
+        borderRadius: cb3Radius('round')
+      },
+      children: [
+        jsx('h2', {
+          id: 'cb-workshop-share-confirm-title',
+          style: {
+            margin: 0,
+            fontFamily: 'var(--cb3-font-display)',
+            fontSize: cb3Type('heading'),
+            lineHeight: cb3Lead('heading'),
+            fontWeight: 600,
+            color: cb3Role('ink')
+          },
+          children: 'Publish this course?'
+        }),
+        jsx('p', {
+          'data-cb-workshop-share-confirm-course': '',
+          style: { margin: 0, fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: cb3Role('ink'), maxWidth: '54ch' },
+          children: `“${item.title}” will be published to the Coursebook store.`
+        }),
+        jsx('ul', {
+          'data-cb-workshop-share-confirm-consequences': '',
+          style: { margin: 0, paddingLeft: '1.1rem', display: 'grid', gap: '0.3rem', fontFamily: 'var(--cb3-font-ui)', fontSize: cb3Type('meta'), lineHeight: cb3Lead('meta'), color: cb3Role('ink') },
+          children: [
+            jsx('li', { children: 'A public GitHub pull request will be opened against the Coursebook repository.' }, 'pull-request'),
+            jsx('li', { children: 'A fork of the Coursebook repository will be created under your GitHub account.' }, 'fork'),
+            jsx('li', { children: 'Anyone can install the course once the repository owner merges that pull request.' }, 'public')
+          ]
+        }),
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem', paddingTop: '0.2rem' },
+          children: [
+            jsx(CbAction, {
+              variant: 'primary',
+              'data-cb-workshop-share-confirm-publish': '',
+              onClick: onConfirm,
+              children: 'Publish course'
+            }),
+            jsx(CbAction, {
+              variant: 'secondary',
+              autoFocus: true,
+              'data-cb-workshop-share-confirm-cancel': '',
+              onClick: onCancel,
+              children: 'Cancel'
+            })
+          ]
+        })
+      ]
+    })
+  })
+}
+
 /* ── Share to store ────────────────────────────────────────────────────────────────────────
  * The one action that leaves this machine on purpose. It posts one enrollment id to the host,
  * which exports the course there (never here), audits the pack with the importer's own gate, and
@@ -41108,6 +41207,7 @@ function shareCount(value, noun) {
 function WorkshopShare() {
   const [items, setItems] = useState(null)
   const [busy, setBusy] = useState('')
+  const [pending, setPending] = useState(null)
   const [outcome, setOutcome] = useState(null)
   const [error, setError] = useState('')
 
@@ -41138,7 +41238,9 @@ function WorkshopShare() {
     }
   }, [])
 
-  const share = async (item) => {
+  const publish = async (item) => {
+    // The request is only reachable after WorkshopShareConfirm's publish control has fired.
+    setPending(null)
     setBusy(item.enrollment_id)
     setOutcome(null)
     setError('')
@@ -41245,13 +41347,20 @@ function WorkshopShare() {
               jsx(CbAction, {
                 variant: 'secondary',
                 disabled: busy === item.enrollment_id,
-                onClick: () => share(item),
+                onClick: () => setPending(item),
                 children: busy === item.enrollment_id ? 'Opening pull request…' : 'Share to store'
               })
             ]
           }, item.enrollment_id)
         )
-      })
+      }),
+      pending
+        ? jsx(WorkshopShareConfirm, {
+            item: pending,
+            onConfirm: () => publish(pending),
+            onCancel: () => setPending(null)
+          })
+        : null
     ]
   })
 }
@@ -45426,6 +45535,9 @@ export {
   CB3_DISCOVER_BODY,
   CB3_DISCOVER_HEADING,
   cb3DiscoverOpenKey,
+  // Share to store (96-workshop.js): rendered by the jsdom confirm test
+  WorkshopShare,
+  WorkshopShareConfirm,
   // World Studio (CP-025b, 97-world.js)
   WorldStudioFrame
 }

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import re
 import json
 import shutil
@@ -98,12 +99,43 @@ def _namespaced(tmp: Path, manifest: dict[str, Any], files: dict[str, bytes]) ->
     return renamed, destination
 
 
+#: Names a git/gh child may see. Everything else — every provider key, every Hermes/plugin
+#: variable — stays in this process: a child that fetches, commits or pushes has no use for it.
+#: ``GIT_*`` is matched by prefix (author identity, SSH command, askpass, terminal prompt), and
+#: both proxy spellings survive because libcurl honours both.
+ENV_KEEP = (
+    "PATH", "HOME", "LANG", "LC_ALL", "LANGUAGE",
+    "SSH_AUTH_SOCK", "SSH_ASKPASS",
+    "GH_TOKEN", "GITHUB_TOKEN", "GH_HOST", "GH_CONFIG_DIR",
+    "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+    "http_proxy", "https_proxy", "no_proxy", "all_proxy",
+)
+
+
+def _clean_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """The explicit minimal environment for one git/gh child.
+
+    The host's environment carries model-provider keys; a push does not need them, so they are
+    not inherited. SSH still works (``SSH_AUTH_SOCK`` and any ``GIT_SSH_COMMAND`` survive), and a
+    call site may add a variable it genuinely needs through ``extra``.
+    """
+    env = {name: value for name in ENV_KEEP if (value := os.environ.get(name)) is not None}
+    env.update({name: value for name, value in os.environ.items() if name.startswith("GIT_")})
+    if extra:
+        env.update(extra)
+    return env
+
+
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], capture_output=True, text=True, env=_clean_env()
+    )
 
 
 def _run(command: list[str], *, cwd: Path) -> str:
-    result = subprocess.run(command, capture_output=True, text=True, cwd=str(cwd))
+    result = subprocess.run(
+        command, capture_output=True, text=True, cwd=str(cwd), env=_clean_env()
+    )
     if result.returncode != 0:
         raise SystemExit(f"{' '.join(command)} failed:\n{result.stdout}{result.stderr}")
     return (result.stdout or result.stderr).strip()
@@ -287,6 +319,27 @@ def _push(work: Path, remote: str, branch: str) -> tuple[subprocess.CompletedPro
     return forked, f"{login}:{branch}"
 
 
+def _index_command(work: Path) -> list[str]:
+    """The command that rebuilds ``work``'s index with the *installed* builder.
+
+    ``scripts/store_index.py`` resolves its own checkout first and inserts it on ``sys.path``
+    before importing ``coursebook``. Running the fetched tree's copy would therefore execute
+    whatever is on the base branch that day — code from outside the reviewed pin — on the user's
+    machine. So run this checkout's script and move only the data root with ``--root``.
+
+    Never ``CB_STORE_ROOT``: that variable is inserted on ``sys.path`` by the builder, which is
+    exactly the unreviewed-code path this avoids. ``--root`` rebinds the store paths after the
+    import has already come from the installed copy.
+    """
+    builder = (ROOT / "scripts" / "store_index.py").resolve()
+    if builder.parent.parent == work.resolve():
+        raise SystemExit(
+            "the store index builder resolved inside the fetched worktree; refusing to run "
+            "code that is not the installed review pin"
+        )
+    return [sys.executable, str(builder), "--root", str(work)]
+
+
 def _publish_from_worktree(
     work: Path, archive_path: Path, pack_id: str, manifest: dict[str, Any],
     archive_sha: str, ledger: dict[str, Any], *, derived_from: str | None, base: str,
@@ -296,7 +349,7 @@ def _publish_from_worktree(
     destination = work / "store" / "packs" / f"{pack_id}.zip"
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(archive_path, destination)
-    _run([sys.executable, str(work / "scripts" / "store_index.py")], cwd=work)
+    _run(_index_command(work), cwd=work)
     indexed = _store_index(work)
     if not any(str(row.get("pack_id")) == pack_id for row in indexed.get("packs") or []):
         raise SystemExit(f"{pack_id} was not indexed after submission; the store is inconsistent")

@@ -33,6 +33,18 @@ from typing import Any, Protocol
 
 logger = logging.getLogger("coursebook.stt")
 
+#: The only names ffmpeg needs. The host environment carries model-provider keys and Hermes
+#: internals; a decoder has no business seeing either. This mirrors the minimal-environment
+#: helper in ``scripts/submit-course.py``, kept local because ``scripts/`` is not an importable
+#: package and this module must not depend on the submission path.
+_ENV_KEEP = ("PATH", "HOME", "LANG", "LC_ALL", "LANGUAGE", "TMPDIR")
+
+
+def _clean_env() -> dict[str, str]:
+    """The explicit minimal environment for the ffmpeg child."""
+    return {name: value for name in _ENV_KEEP if (value := os.environ.get(name)) is not None}
+
+
 #: The provider string recorded on every assessment and attempt row. Deliberately not a host
 #: provider name: this is Coursebook's own recogniser.
 PROVIDER = "coursebook_local_whisper"
@@ -203,6 +215,7 @@ class LocalWhisperAdapter:
                 stderr=subprocess.PIPE,
                 timeout=DECODE_TIMEOUT_SECONDS,
                 check=False,
+                env=_clean_env(),
             )
         except subprocess.TimeoutExpired as exc:
             raise SttUnavailable("decode_timeout", type(exc).__name__) from exc
