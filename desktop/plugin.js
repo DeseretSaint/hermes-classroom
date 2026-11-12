@@ -20256,8 +20256,21 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
                 children: label
               })
             : null,
+          // Item 42: a MIME type and a byte count are provenance, not learner copy. They stay in
+          // the figure but behind a named disclosure, so the line a learner reads carries the
+          // caption and the role only; the file's own facts are one deliberate click away.
           provenance
-            ? jsx('span', { 'data-cb-media-provenance': '', children: provenance })
+            ? jsxs('details', {
+                'data-cb-media-provenance-detail': '',
+                style: { color: 'var(--cb-ink-soft)' },
+                children: [
+                  jsx('summary', {
+                    style: { cursor: 'pointer', minHeight: '1.75rem', fontSize: CB_TYPE.caption },
+                    children: 'Provenance'
+                  }),
+                  jsx('span', { 'data-cb-media-provenance': '', children: provenance })
+                ]
+              })
             : null
         ]
       }),
@@ -22809,8 +22822,14 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
   })
 }
 
-/** The close: the section is finished, and every number is the enrollment row's own count. */
-function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, companionEnabled = true }) {
+/**
+ * The close: the section is finished, and every number is the enrollment row's own count.
+ *
+ * `recorded` is the session's own evidence fact, passed from the player: a verdict exists only
+ * after an attempt was committed. When no verdict exists — a stop whose document carries no check
+ * is finished without an attempt — the close must not claim a result. Item 39.
+ */
+function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, recorded = false, companionEnabled = true }) {
   const motion = useCbMotion()
   // Completion is one beat, once: the result mark settles in 600 ms or not at all. Nothing is
   // celebrated, counted up or replayed, and the title is readable on the first frame.
@@ -22869,11 +22888,17 @@ function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, 
         : jsx('p', {
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
             'data-cb-player-close-facts': '',
-            children: 'The result is recorded on this profile.'
+            'data-cb-player-close-recorded': recorded ? 'true' : 'false',
+            children: recorded
+              ? 'The result is recorded on this profile.'
+              : 'Nothing was recorded for this stop.'
           }),
       jsx('p', {
         style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-        children: 'The trail shows this stop as recorded, and which stop is next. Nothing is lost when you leave.'
+        'data-cb-player-close-trail': recorded ? 'recorded' : 'open',
+        children: recorded
+          ? 'The trail shows this stop as recorded, and which stop is next. Nothing is lost when you leave.'
+          : 'The trail still shows this stop as open. Nothing is lost, and you can come back to it.'
       }),
       jsxs('div', {
         'data-cb-player-close-actions': '',
@@ -22948,7 +22973,10 @@ function LessonPlayer({
       // Only a *recorded* class belongs on the close. A stop whose document carries no check is
       // finished without an attempt, so `nextEvidenceClass` (a prediction) must not become the
       // claim that something was earned. With nothing recorded the close renders without a chip.
-      evidenceClass: state.evidenceClass || null
+      evidenceClass: state.evidenceClass || null,
+      // A verdict exists only after an attempt committed, so it is the session's own evidence
+      // fact: with no verdict the close says plainly that nothing was recorded (item 39).
+      recorded: Boolean(state.verdict)
     })
   }
 
@@ -22972,13 +23000,24 @@ function LessonPlayer({
   const onKeyDown = (event) => {
     if (event.key !== 'Enter' || event.shiftKey) return
     const target = event.target
-    if (target && typeof target.closest === 'function' && target.closest('button, textarea, input, select, [contenteditable="true"]')) return
+    // Item 40: Enter keeps the meaning of whatever has focus. A link, a disclosure summary and a
+    // role="button" element all handle Enter themselves; advancing the step as well would run two
+    // actions from one press.
+    if (
+      target &&
+      typeof target.closest === 'function' &&
+      target.closest('button, a[href], summary, [role="button"], textarea, input, select, [contenteditable="true"]')
+    ) return
     if (action.disabled || !action.run) return
     event.preventDefault()
     action.run()
   }
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
-  const stopTotal = progress && Number(progress.total_objectives) > 0 ? String(progress.total_objectives) : null
+  // Item 42: one denominator for the whole lesson surface. The session's own step count is the
+  // only total a learner can act on here ("how much of this stop is left"), and it is the number
+  // the step readout advances. The course's objective total is a trail fact and is printed once,
+  // as "Section n of m" — printing it here too gave one session two disagreeing totals.
+  const stopTotal = steps.length > 0 ? String(steps.length) : null
   const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
   // One objective sentence, composed only from recorded fields: the section's own evidence target,
   // in learner words. A section that records no target gets the title alone rather than a slogan.
