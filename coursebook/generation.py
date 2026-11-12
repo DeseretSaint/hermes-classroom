@@ -97,6 +97,8 @@ __all__ = [
     "DECLARED_CALL_COST_USD",
     "DEFAULT_MAX_COST_USD",
     "TRUNCATION_REPAIR_CALLS",
+    "REVISION_PROMPT_SUFFIX",
+    "LESSON_OUTPUT_TOKENS",
     "UNIT_SECTIONS_ATTEMPTS",
     "unit_sections_cost_budget",
     "LessonNotAvailable",
@@ -567,6 +569,24 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
 MAX_PLAN_BYTES = 48 * 1024
 MAX_LESSON_BYTES = 64 * 1024
 MAX_VALIDATION_BYTES = 24 * 1024
+
+#: Completion budget for one authored lesson (W2-2). The lesson prompt's own stated prose budget is
+#: 2-6 segments of up to 2 000 characters of deep body each, and every segment, the worked example
+#: and the learner explanation also carry a ``short`` (under 600 characters): 16 800 characters of
+#: teaching prose before the worked example's steps, the check with its answer key and 3-6 rubric
+#: criteria, and the media text equivalents. The route tokenises Japanese at roughly one token per
+#: character, so the historic 4 000-token cap cut a legal answer mid-object — ``_parse_structured``
+#: then reported "lesson is not valid JSON" and the whole unit job died after earlier sections had
+#: already been paid for. 24 000 is the prompt's prose budget read in the route's token unit,
+#: rounded up to cover the remaining required fields; it is not a round number chosen by feel.
+LESSON_OUTPUT_TOKENS = 24000
+
+#: Suffix an attempt-2 *repair* request carries on its ``prompt_version``. The repair re-asks the
+#: same author with the refused draft in the payload (``previous_draft``) and the full reason list,
+#: which is a different instruction text from the first pass, so it is never recorded under the
+#: first-pass label (``docs/GENERATION.md`` §1). Distinct from :data:`REPAIR_PROMPT_SUFFIX`, which
+#: marks the host's schema re-ask, and from :data:`TRUNCATION_REPAIR_PROMPT_SUFFIX`.
+REVISION_PROMPT_SUFFIX = ".revision"
 
 #: Bound on the validator's ``item`` locator, in both ``rejections`` and ``claim_verdicts``.
 #: The field is a *locator* ("plan.goal", "objective_2", "check_plan[0]") — the explanation
@@ -1267,11 +1287,13 @@ def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tupl
         sections x CALLS_PER_LESSON_ATTEMPT                                    (2n)
 
     The worst legal case adds the second attempt the validator is allowed to ask for **and** the
-    one truncation re-ask (:data:`TRUNCATION_REPAIR_CALLS`) that each attempt may legally spend:
+    two truncation re-asks (:data:`TRUNCATION_REPAIR_CALLS`) one attempt may legally spend: one on
+    the authored lesson's own answer (W2-2, ``_stage_answer_with_repair``) and one on the
+    validator's answer (``_validation_answer_with_repair``):
 
-        sections x attempts x (generate + validate + TRUNCATION_REPAIR_CALLS)   (6n)
+        sections x attempts x (generate + validate + 2 re-asks)               (8n)
 
-    The repair is counted because it is a designed call, not an exception. CP-015b's Sourdough run
+    A repair is counted because it is a designed call, not an exception. CP-015b's Sourdough run
     recorded five ``coursebook.lesson.validate`` answers cut at the 8 000-token cap for a four-lesson
     job, each repaired: on a route that runs into the cap, the repair is the *normal* path. Leaving
     it out of the ceiling bought nothing — every such job either refused a legal call and failed
@@ -1279,10 +1301,15 @@ def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tupl
     truncates, never came near the ceiling anyway. The sizing policy is H-17 / audit P1-6 "size the
     ceiling to the plan's worst legal path"; four calls per section was that policy applied to an
     undercounted path, so counting the repair is the fix, not a new policy.
+
+    W2-2 added the second re-ask, and the ceiling was re-sized with it: the lesson stage had no cut
+    signal on its *own* answer, so 6n was exact then. It is no longer exact, and a ceiling that
+    undercounts is the same defect CP-015e fixed for the validators — an abort of a run that
+    behaved exactly as designed, reported as though the artifact had been refused.
     """
     sections = max(1, int(section_count))
     tries = max(1, int(attempts))
-    per_attempt = CALLS_PER_LESSON_ATTEMPT + TRUNCATION_REPAIR_CALLS
+    per_attempt = CALLS_PER_LESSON_ATTEMPT + 2 * TRUNCATION_REPAIR_CALLS
     return sections * CALLS_PER_LESSON_ATTEMPT, sections * tries * per_attempt
 
 
@@ -1290,11 +1317,11 @@ def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> C
     """Budget sized to the plan's sections, not to a constant.
 
     Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
-    validation, plus the truncation re-ask each attempt may spend, so the call ceiling is
-    ``6 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
+    validation, plus the two truncation re-asks each attempt may spend, so the call ceiling is
+    ``8 x sections`` (:func:`lesson_calls`). The *dollar* ceiling is sized the same way from
     :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a flat $0.75
-    left binding: 8 sections need 48 calls, and a $0.75 ceiling aborted the audit's run at call 24
-    with sections unauthored. Five sections therefore get $1.20, not $0.75. A caller/operator value
+    left binding: 8 sections need 64 calls, and a $0.75 ceiling aborted the audit's run at call 24
+    with sections unauthored. Five sections therefore get $1.60, not $0.75. A caller/operator value
     still wins (``COURSEBOOK_JOB_MAX_COST_USD`` or ``brief.budget_usd``), so an operator who wants a
     tighter ceiling can declare one, but the default never refuses a call the pipeline itself makes.
     """
@@ -4353,8 +4380,11 @@ def _plan_sourcing_rules() -> list[str]:
         "source_ids and set support to 'sourced'. Keep each objective at the level of generality "
         "the excerpt actually supports: do not add a mechanism, cause, number, name, date, named "
         "example or label the excerpt does not state. An objective whose claim the excerpts do "
-        "not carry must not be written at all; do not invent a citation and do not leave it at "
-        "support 'unverified' in a finished plan.",
+        "not carry is a declared gap, not a citation problem: do not invent a citation for it. "
+        "Write it only when the learner's goal needs the capability, set support to 'unverified' "
+        "with an empty source_ids, and say in the objective's own wording that the supplied "
+        "sources do not establish it — the validator treats that as a declared gap and never "
+        "rejects source_support for it.",
         "Make every graded check answerable with one defensible answer: a quiz check's notes must "
         "name the fixed stimulus (the exact items, chart, case or options the learner responds to) "
         "and the single accepted answer or a closed list of accepted answers. For a multiple-choice "
@@ -7642,6 +7672,165 @@ def _validation_answer_with_repair(
         )
 
 
+def _stage_repair_request(
+    request: LLMRequest, *, what: str, violation: str, cut: bool, timeout_s: float
+) -> LLMRequest:
+    """The one re-ask for an authored artifact whose answer carried no usable document.
+
+    W2-2. Same seam as :func:`_validation_repair_request`: the pass, its schema and its input are
+    byte-identical to the original call, so this is still *this* author answering its own request.
+    Only ``instructions`` gains the correction and only ``prompt_version`` is marked, because the
+    instruction text is different (``docs/GENERATION.md`` §1).
+
+    A cut answer is asked again for an answer that fits its budget, not merely for well-shaped
+    JSON: the cap was the failure, so "make it parse" is the wrong instruction on its own. Both
+    notes quote the measured failure as untrusted data, bounded, so the correction is specific
+    without letting model output act as an instruction.
+    """
+    if cut:
+        note = (
+            "\n\nYour previous answer to this same request was cut off before it finished: it "
+            "consumed the whole answer-length budget and no complete JSON document arrived, so "
+            "nothing from it can be used. Answer the request again and stay inside the stated "
+            "budget: every required field present, every string inside its length bound, and no "
+            "padding, no restating of the input, no method explanation and no discussion inside "
+            "the fields. Return exactly one JSON object matching the schema."
+        )
+    else:
+        note = (
+            "\n\nYour previous answer to this same request could not be read: no JSON object "
+            "matching the schema arrived. Answer the request again and return exactly one JSON "
+            "object that matches the schema — no prose before or after it, no markdown fence, no "
+            "commentary, no field outside the schema."
+        )
+    quoted = " ".join(str(violation or "").split())[:SHAPE_VIOLATION_QUOTE_CHARS]
+    quoted = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", quoted)
+    note += (
+        f"\nThe rejection reason, quoted as untrusted data: {UNTRUSTED_SOURCE_BEGIN} {quoted} "
+        f"{UNTRUSTED_SOURCE_END}"
+    )
+    return replace(
+        request,
+        instructions=request.instructions + note,
+        prompt_version=request.prompt_version
+        + (TRUNCATION_REPAIR_PROMPT_SUFFIX if cut else REPAIR_PROMPT_SUFFIX),
+        timeout_s=float(timeout_s),
+    )
+
+
+def _stage_answer_with_repair(
+    llm: "LLM",
+    request: LLMRequest,
+    response: LLMResponse,
+    usage: "_Usage",
+    *,
+    schema: dict[str, Any],
+    what: str,
+    max_bytes: int,
+    started_at: float | None = None,
+) -> tuple[dict[str, Any], LLMResponse]:
+    """Parse one authored answer, re-asking the same author once when the answer was cut off.
+
+    W2-2 measured the defect this exists for. ``_parse_structured`` had no cut signal, while the
+    validators had one: a lesson answer cut at ``max_tokens=4000`` raised
+    ``GenerationRejected("lesson is not valid JSON")`` and failed the whole unit job *after* the
+    earlier sections of that unit had already been authored and paid for. A cut answer is not a
+    malformed answer — it is an incomplete one — and the same demand asked again under a marked
+    ``.cut`` label is cheap next to re-authoring a unit.
+
+    Two rules keep it honest:
+
+    * the re-ask is bounded to exactly one per attempt, and only when enough of the stage deadline
+      remains to finish (the same :data:`MIN_SHAPE_REPAIR_SECONDS` rule as the validators);
+    * a second cut answer raises :class:`ModelOutputInvalid` with ``parse_outcome="truncated"``
+      and ``repair_attempted`` true, so the operator reads "the cap cut this" instead of "the
+      model wrote invalid JSON".
+
+    An answer that did **not** consume its cap is not re-asked here: it is re-raised as
+    :class:`GenerationRejected`, unchanged, because a short malformed answer is a different defect
+    and the host's own schema gate (:func:`_call_llm`) has already spent its one re-ask on it.
+    """
+    try:
+        return _parse_structured(response, schema, what=what, max_bytes=max_bytes), response
+    except GenerationRejected as exc:
+        if not _answer_was_cut(response, request):
+            raise
+        elapsed = 0.0 if started_at is None else max(0.0, time.monotonic() - float(started_at))
+        remaining = float(request.timeout_s) - elapsed
+        repairs = int(getattr(response, "shape_repair_attempts", 0) or 0)
+        if repairs or remaining < MIN_SHAPE_REPAIR_SECONDS:
+            reason = (
+                "the host's schema gate already re-asked once"
+                if repairs
+                else f"only {remaining:.1f}s of the stage deadline remained"
+            )
+            raise ModelOutputInvalid(
+                f"{what} was cut off by its completion budget and no complete JSON document "
+                f"arrived (truncated: {exc}); no repair was spent because {reason}",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=str(exc),
+                repair_attempted=bool(repairs),
+                parse_outcome="truncated",
+            ) from exc
+        usage.reserve(1, purpose=request.purpose)
+        retry = _stage_repair_request(
+            request, what=what, violation=str(exc), cut=True, timeout_s=remaining
+        )
+        try:
+            repaired = _call_llm(llm, retry, usage, repair_shape=False)
+        except ModelOutputInvalid as gate:
+            raise ModelOutputInvalid(
+                f"{what} was cut off by its completion budget and no complete JSON document "
+                f"arrived (truncated: {exc}); the one repair re-ask also failed "
+                f"({gate.violation})",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=gate.violation or str(exc),
+                repair_attempted=True,
+                parse_outcome="truncated",
+            ) from gate
+        try:
+            document = _parse_structured(repaired, schema, what=what, max_bytes=max_bytes)
+        except GenerationRejected as second:
+            second_outcome = (
+                "truncated" if _answer_was_cut(repaired, retry) else _parse_failure_kind(str(second))
+            )
+            raise ModelOutputInvalid(
+                f"{what} was cut off by its completion budget and no complete JSON document "
+                f"arrived (truncated: {exc}); the one repair re-ask also failed "
+                f"({second_outcome}: {second})",
+                purpose=request.purpose,
+                schema_name=request.schema_name,
+                violation=str(second),
+                repair_attempted=True,
+                parse_outcome=second_outcome,
+            ) from second
+        return document, replace(
+            repaired,
+            shape_repair_attempts=max(1, int(getattr(repaired, "shape_repair_attempts", 0) or 0)),
+        )
+
+
+def _draft_payload_bound(base: int, previous_draft: Any) -> int:
+    """The request bound for a repair request that carries the draft it is repairing.
+
+    W2-2: attempt 2 carries the refused document so the author can keep what passed. That document
+    is authored material the harness itself produced, bounded by the stage's own schema
+    (``MAX_PLAN_BYTES`` / ``MAX_LESSON_BYTES``), so the repair request's bound is the stage bound
+    plus the size of the document it was given. The alternative — fitting the draft into the
+    existing bound — would either truncate the document mid-token (which
+    :func:`_bounded_input` refuses to do) or silently drop the part the repair exists to keep.
+    """
+    if previous_draft is None:
+        return int(base)
+    try:
+        carried = len(canonical_json(previous_draft).encode("utf-8"))
+    except (TypeError, ValueError):
+        return int(base)
+    return int(base) + int(carried)
+
+
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
     """Structural guarantee that validation is a second, different call.
 
@@ -8026,7 +8215,11 @@ def _feedback(verdict: Mapping[str, Any]) -> str:
             "- do not invent a citation to satisfy a support complaint: an objective whose claim "
             "no supplied excerpt carries stays `support: \"unverified\"` with empty `source_ids`"
         )
-    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines[:8]])
+    # W2-2: every reason travels. Eight lines was a silent truncation of the repair list itself —
+    # a draft regenerated from reasons 1-8 could break reason 12 and be refused for a defect the
+    # author was never told about. The list is bounded by the validator's own answer, which is
+    # already bounded by its schema.
+    return "\n".join(["The independent validator rejected the previous attempt for these reasons:", *lines])
 
 
 #: Local request-size guard per declared scope. This is not a provider limit: it exists so a
@@ -8291,6 +8484,7 @@ def build_plan_request(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
+    previous_draft: dict[str, Any] | None = None,
 ) -> LLMRequest:
     recipe, scope = coerce_recipe_scope(recipe, scope)
     # ``dials`` stays the closed four-dial object the contract spells; the declared plan-brief
@@ -8407,6 +8601,11 @@ def build_plan_request(
             payload["rules"]["page_budget"] = pages
     if feedback:
         payload["revision_instructions"] = feedback
+    if previous_draft is not None:
+        # W2-2: attempt 2 repairs the document that was refused instead of authoring a new one, so
+        # the parts that already passed are not paid for twice. The draft travels verbatim; the
+        # reasons travel in ``revision_instructions``.
+        payload["previous_draft"] = previous_draft
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
@@ -8440,13 +8639,24 @@ def build_plan_request(
     vocabulary_lines = _frequency_prompt_lines(frequency_block)
     if vocabulary_lines:
         instructions = instructions + "\n" + "\n".join(vocabulary_lines)
+    if previous_draft is not None:
+        instructions += (
+            "\n\nThis is a repair of the previous draft in the input's 'previous_draft', not a new "
+            "plan. Keep every part the listed reasons do not name: the goal, learner outcome, "
+            "through-line, units, objectives, source links, support values and check_plan entries "
+            "that already satisfied the rules stay as they are. Change only what a reason "
+            "requires, and return the whole repaired document in the same schema — do not "
+            "restructure, shorten or re-order what was not named."
+        )
     # The ledger is fitted last, against the final payload, so a deep pass cannot overflow the
-    # bound after every other field is already in place.
-    request_limit = _request_bound(scope)
+    # bound after every other field is already in place. A repair request is allowed the stage
+    # bound plus the draft it was handed (W2-2); the draft is bounded by ``MAX_PLAN_BYTES``.
+    request_limit = _draft_payload_bound(_request_bound(scope), previous_draft)
     _fit_source_brief(payload, list(research_run.sources), limit=request_limit)
     return LLMRequest(
         purpose="coursebook.plan.generate",
-        prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
+        prompt_version=(PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION)
+        + (REVISION_PROMPT_SUFFIX if previous_draft is not None else ""),
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=instructions,
         input_text=_bounded_input(payload, limit=request_limit),
@@ -8628,6 +8838,7 @@ def build_lesson_request(
     subject_domain: str | None = None,
     goal: str | None = None,
     previous_section: str | None = None,
+    previous_draft: dict[str, Any] | None = None,
 ) -> LLMRequest:
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
@@ -8692,21 +8903,41 @@ def build_lesson_request(
     }
     if feedback:
         payload["revision_instructions"] = feedback
+    if previous_draft is not None:
+        # W2-2: attempt 2 repairs the refused lesson instead of authoring a new one, so the
+        # segments, worked example, explanation and check that already passed are not paid for
+        # twice. The draft travels verbatim; the reasons travel in ``revision_instructions``.
+        payload["previous_draft"] = previous_draft
+    instructions = _lesson_instructions(
+        recipe=recipe,
+        locale=locale,
+        scaffold_note=_scaffold_note(policy, locale),
+        rubric_profile=rubric_profile,
+        capability=capability,
+    )
+    if previous_draft is not None:
+        instructions += (
+            "\n\nThis is a repair of the previous draft in the input's 'previous_draft', not a new "
+            "lesson. Keep every part the listed reasons do not name: segments, worked example, "
+            "learner explanation, check, rubric, accepted answers, media and sources that already "
+            "satisfied the rules stay as they are. Change only what a reason requires, and return "
+            "the whole repaired document in the same schema — do not restart the lesson, do not "
+            "shorten or restructure what was not named, and keep the same section and objective."
+        )
     return LLMRequest(
         purpose="coursebook.lesson.generate",
-        prompt_version=LESSON_PROMPT_VERSION,
+        prompt_version=LESSON_PROMPT_VERSION
+        + (REVISION_PROMPT_SUFFIX if previous_draft is not None else ""),
         system_prompt=LESSON_SYSTEM_PROMPT,
-        instructions=_lesson_instructions(
-            recipe=recipe,
-            locale=locale,
-            scaffold_note=_scaffold_note(policy, locale),
-            rubric_profile=rubric_profile,
-            capability=capability,
+        instructions=instructions,
+        # A repair request is allowed the stage bound plus the draft it was handed (W2-2); the
+        # draft is bounded by ``MAX_LESSON_BYTES``.
+        input_text=_bounded_input(
+            payload, limit=_draft_payload_bound(DEFAULT_REQUEST_BYTES, previous_draft)
         ),
-        input_text=_bounded_input(payload),
         schema=LESSON_SCHEMA,
         schema_name="coursebook_lesson_v1",
-        max_tokens=4000,
+        max_tokens=LESSON_OUTPUT_TOKENS,
         timeout_s=_timeout_for("coursebook.lesson.generate", timeout_s),
     )
 
@@ -10330,6 +10561,9 @@ def run_plan_job(
         feedback: str | None = None
         rejection_reasons: list[str] = []
         validation_id: str | None = None
+        # W2-2: the draft attempt 2 repairs. It is the plan the rules or the validator refused,
+        # carried into the next request so the parts that already passed are not authored twice.
+        previous_draft: dict[str, Any] | None = None
 
         for attempt in (1, 2):
             # Each attempt starts clean: a stale validation from the previous candidate must never
@@ -10350,6 +10584,7 @@ def run_plan_job(
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
                 frequency_status=frequency_status,
+                previous_draft=previous_draft,
             )
             response = _call_llm(llm, plan_request, usage)
             candidate = _parse_structured(
@@ -10375,6 +10610,8 @@ def run_plan_job(
                 if attempt == 2:
                     plan = candidate
                     break
+                # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.
+                previous_draft = candidate
                 feedback = "The plan broke required rules:\n- " + "\n- ".join(exc.reasons)
                 continue
 
@@ -10501,6 +10738,8 @@ def run_plan_job(
                 # the reasons a human acts on.
                 plan = candidate
                 break
+            # W2-2: attempt 2 repairs the refused draft against the validator's full reason list.
+            previous_draft = candidate
             feedback = _feedback(verdict)
 
         assert plan is not None and plan_request is not None
@@ -12880,6 +13119,9 @@ def _author_section(
     verdict: dict[str, Any] | None = None
     feedback: str | None = None
     rejection_reasons: list[str] = []
+    # W2-2: the draft attempt 2 repairs. It is the document the rules or the validator refused,
+    # carried into the next request so the parts that already passed are not authored twice.
+    previous_draft: dict[str, Any] | None = None
 
     for attempt in (1, 2):
         # Each attempt starts clean so no stale validator report can be attached to a new draft.
@@ -12901,9 +13143,23 @@ def _author_section(
             subject_domain=subject_domain,
             goal=goal,
             previous_section=previous_section,
+            previous_draft=previous_draft,
         )
+        generation_started = time.monotonic()
         response = _call_llm(llm, request, usage)
-        candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)
+        # W2-2: a lesson answer cut off by its completion budget is re-asked once on the same
+        # request before the unit job is failed; a second cut is a typed truncation, not
+        # "invalid JSON".
+        candidate, response = _stage_answer_with_repair(
+            llm,
+            request,
+            response,
+            usage,
+            schema=LESSON_SCHEMA,
+            what="lesson",
+            max_bytes=MAX_LESSON_BYTES,
+            started_at=generation_started,
+        )
         # The harness owns the policy: a model echo is accepted by the schema but overwritten, so
         # the stored and validated lesson can only carry the deterministic decision.
         candidate["policy"] = capability.to_dict()
@@ -12961,6 +13217,8 @@ def _author_section(
             if attempt == 2:
                 lesson = candidate
                 break
+            # W2-2: attempt 2 repairs this draft against every reason, rather than starting over.
+            previous_draft = candidate
             feedback = "The lesson broke required rules:\n- " + "\n- ".join(problems)
             continue
 
@@ -13032,6 +13290,8 @@ def _author_section(
         if attempt == 2:
             lesson = candidate
             break
+        # W2-2: attempt 2 repairs the refused draft against the validator's full reason list.
+        previous_draft = candidate
         feedback = _feedback(verdict)
 
     assert lesson is not None and request is not None
