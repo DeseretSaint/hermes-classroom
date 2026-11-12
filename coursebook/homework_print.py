@@ -722,6 +722,7 @@ def _parent_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         "</ol>",
         "<h2>Materials and preparation</h2>",
         f"<p>{_esc(_materials(task, target))}</p>",
+        _coloring_prompt(fixture, task),
         "<h2>Printing</h2>",
         "<p class=\"quiet\">Print in black and white at 100%. Both A4 and Letter layouts are produced by the same "
         "template; the folio at the foot of each page prints the page number.</p>",
@@ -770,6 +771,19 @@ def _parent_guide(fixture: Mapping[str, Any], task: Mapping[str, Any], paper: st
         ),
     ]
     return "".join(pages)
+
+
+def _coloring_prompt(fixture: Mapping[str, Any], task: Mapping[str, Any]) -> str:
+    """The line that ties the colouring sheet to the words, when the pack ships one.
+
+    Imported here rather than at module scope: ``coloring_print`` imports this module for the page
+    frame, so a top-level import would be circular.
+    """
+    try:
+        from . import coloring_print
+    except Exception:  # pragma: no cover - a missing colouring module must not break the pack
+        return ""
+    return coloring_print.parent_ask_line(fixture, task.get("task_id") or "")
 
 
 def _materials(task: Mapping[str, Any], target: Mapping[str, Any]) -> str:

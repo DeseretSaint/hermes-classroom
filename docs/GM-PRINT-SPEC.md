@@ -37,6 +37,8 @@ Five page roles, in this order. A pack may omit the optional pages, never reorde
 | 3 | **Answer guide** | parent only | expected responses, accepted alternatives, common errors, next step | learner-facing reuse; it is a separate page **and** a separate file in export |
 | 4 | **Sources and provenance** | parent, and the record | per source: title, publisher, URL, publication date, access date, support label (`supports` / `partial` / `contradicts` / `unverified`); per plate: provider or generator, prompt/style hash, generation time, licence, `role = orientation` | unrecorded links, invented citations, a support claim the ledger does not hold |
 | 5 | **Visual caption sheet** (optional) | parent | one plate at ≤90×60 mm, its caption, its text equivalent | any plate carrying a procedure, measurement, torque, dosage, wiring value or answer |
+| 6 | **Colouring page** (optional) | learner, at the table | one full-page line drawing of the task's own words, and a word bank printed as text beneath it | any word inside the drawing; any answer; any fill, grey tone or second ink |
+| 7 | **Cut-out picture cards** (optional) | learner | the lesson's labels as pictures with the word printed under each (the word is text, never part of the drawing), and a scissors rule | a picture carrying a measure, a torque, a dosage or an answer |
 
 Page 3 carries a 24 pt top-right label `PARENT ONLY` and a 1 pt tear rule under the header. In the
 PDF export it is its own file: `pack.pdf` (pages 1–2, 4–5) and `answer-guide.pdf` (page 3).
@@ -101,7 +103,71 @@ no reversed type, no coloured body text.
    plus, at most, a 1 pt box.
 7. **Page 2 is designed to be the cheapest page**: no image by default, one rule, one activity.
 
-A pack that prints a full-page illustration is out of spec even if it is beautiful.
+A pack that prints a full-page illustration is out of spec even if it is beautiful. **One exception
+exists, and only one: page 6, the colouring page (§4a).** It is a line drawing on white ground made
+of the lesson's own words, and it is a child's activity rather than a figure. Every other page keeps
+the ≤90×60 mm plate limit.
+
+---
+
+## 4a. The colouring page (page 6)
+
+A take-home pack that is only text asks a small child to sit still through an adult's script. Page 6
+gives the child something to do with their hands while the parent asks for the words.
+
+**It is content, not decoration.** The drawing is composed from the task's own label set (or its
+phrase targets) and nothing else. For `hw_labels` that is the six household words the lesson already
+teaches — door, window, chair, table, glass, book — arranged as one room the child can colour. The
+parent guide gains one section, *While they colour*, naming the same words to ask for. Colouring is
+the activity the parent drills against, not a reward bolted on the end.
+
+### Measured rules
+
+| Rule | Value | Why |
+|---|---|---|
+| Ink | one, `#1a1713`, `fill="none"` | a second ink or a fill turns the page into a picture to look at |
+| Effective stroke | 2.0–2.6 pt at the printed size | below 2 pt a crayon covers the line; above 2.6 pt the page fills in |
+| Gap between two separate objects | ≥ 3 mm | the crayon tip has to fit between them |
+| Objects resting on a surface | may touch it | a glass on a table is one object, not two |
+| Text inside the drawing | none, ever | words are DOM text in the word bank; a baked word cannot be fixed later |
+| Grey tones, gradients, shadows | none | low-ink rules (§4) apply unchanged |
+| Page | full page; omitted entirely under `low_ink = true` | the page is dropped, not blanked |
+| Accessible name | `role="img"` + `<title>` + `<desc>` naming every word | the figure is one image with a real text equivalent |
+| Provenance | plate source, generator or "deterministic kit", licence, `role = colouring` on page 4 | the same ledger every other figure uses |
+
+No procedure, torque, dosage, wiring value or answer may appear in a colouring page. It is a
+learner activity and never a technical authority.
+
+### Two lanes, one contract
+
+1. **Deterministic (shipped, default).** `coursebook/coloring_print.py` draws the objects itself from
+   a flat-shape kit in scene coordinates. It always prints, needs no provider, and is licence-clean.
+2. **Generated (optional, not shipped).** An image model may supply the drawing when a provider is
+   configured, but it must pass the same measured rules — stroke, gap, one ink, no text — before it
+   may take this page's place. Attractive art that fails the gap or stroke rule is not a colouring
+   page.
+
+Tracing a painted lesson plate into line art is **rejected**: edge extraction on a painterly plate
+produces dense grey mush, which is why the reference staged pipeline tells you to supply line art by
+other means for painterly sources.
+
+### Code seam
+
+`coloring_print.render_coloring(fixture, task_id, paper=...)` returns one complete HTML document.
+It is deliberately *not* a key on `homework_print.render_documents`, whose four keys are a frozen
+contract pinned by `tests.test_homework_content_print`; the take-home pack spec amendment here is
+what would let it join the set. `coloring_print.parent_ask_line(...)` is the guide section, wired in
+`homework_print._parent_guide`.
+
+Proof: `scripts/gm020_coloring_proof.py` → `docs/visual-review/gm-020-coloring/` (PDFs for A4 and
+Letter, PNGs, a figure-only raster whose OCR is empty, and `MANIFEST.json` with the measurements).
+
+### Limits
+
+- The drawing is deterministic geometry, not an illustration, and is not claimed to be one. A word
+  the kit has no shape for prints as a plain colourable block rather than a broken figure.
+- The label set is what makes the page relevant. A course whose vocabulary the kit cannot draw gets
+  a correct but plain page; that is a kit-coverage gap to card, not a defect to paper over.
 
 ---
 

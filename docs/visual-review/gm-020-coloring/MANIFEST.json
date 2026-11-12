@@ -1,0 +1,118 @@
+{
+  "card": "GM-020",
+  "generated_by": "scripts/gm020_coloring_proof.py",
+  "task": "hw_labels",
+  "words_drawn": [
+    {
+      "id": "lbl_doa",
+      "display": "\u30c9\u30a2",
+      "romaji": "doa",
+      "shape": "door"
+    },
+    {
+      "id": "lbl_mado",
+      "display": "\u307e\u3069",
+      "romaji": "mado",
+      "shape": "window"
+    },
+    {
+      "id": "lbl_isu",
+      "display": "\u3044\u3059",
+      "romaji": "isu",
+      "shape": "chair"
+    },
+    {
+      "id": "lbl_teeburu",
+      "display": "\u30c6\u30fc\u30d6\u30eb",
+      "romaji": "t\u0113buru",
+      "shape": "table"
+    },
+    {
+      "id": "lbl_koppu",
+      "display": "\u30b3\u30c3\u30d7",
+      "romaji": "koppu",
+      "shape": "glass"
+    },
+    {
+      "id": "lbl_hon",
+      "display": "\u307b\u3093",
+      "romaji": "hon",
+      "shape": "book"
+    }
+  ],
+  "measurements": {
+    "stroke_pt": 2.466,
+    "stroke_pt_band": [
+      2.0,
+      2.6
+    ],
+    "closest_pair_units": 10.0,
+    "closest_pair_mm": 5.8,
+    "min_gap_mm_required": 3.0,
+    "mm_per_scene_unit": 0.58,
+    "inks": [
+      "#1a1713"
+    ],
+    "fill": "none",
+    "text_inside_drawing": false
+  },
+  "pages": {
+    "A4": {
+      "pdf": "coloring-page-a4.pdf",
+      "pdf_sha256": "852602b42d59c08d7809b8556f5403e3730351d0ea18a688ad2caf839ae9ff53",
+      "png": "coloring-page-a4-1.png",
+      "png_sha256": "228d885f8879a8e15d43386ec25ddf029745fed757b67f6151c3945e1802b515",
+      "pages": "1",
+      "page_size": "594.96 x 841.92 pts (A4)",
+      "page_box": [
+        595.28,
+        841.89
+      ],
+      "text_kept": [
+        "Colour it in",
+        "Words in this picture",
+        "\u30c9\u30a2",
+        "\u307e\u3069"
+      ],
+      "text_sha256": "6f259faf90c467f53467a30fcf7b547c13c236db50107a28235f1797526c5193",
+      "figure_only_png": "coloring-page-a4-figure-1.png",
+      "figure_ocr": ""
+    },
+    "Letter": {
+      "pdf": "coloring-page-letter.pdf",
+      "pdf_sha256": "089c04bfa73624c2c2882620cef6390d3eab49a9a3524c82eca45566090bf4ec",
+      "png": "coloring-page-letter-1.png",
+      "png_sha256": "a5f657b8cad5ea48a70575a4b45f6194ce9658a747134d9d95d89487f7f55c56",
+      "pages": "1",
+      "page_size": "612 x 792 pts (letter)",
+      "page_box": [
+        612.0,
+        792.0
+      ],
+      "text_kept": [
+        "Colour it in",
+        "Words in this picture",
+        "\u30c9\u30a2",
+        "\u307e\u3069"
+      ],
+      "text_sha256": "796222cd43e247d32c5361f247daf6037c0801458e6000cd78fe171ee8a394e6",
+      "figure_only_png": "coloring-page-letter-figure-1.png",
+      "figure_ocr": ""
+    }
+  },
+  "parent_guide": {
+    "pdf": "parent-guide.pdf",
+    "pdf_sha256": "1b087d700ce508a5c9cca2c68656daa25347b743773b8a0b2a49bd04f39bbd13",
+    "sheets": 2,
+    "pngs": [
+      "parent-guide-1.png",
+      "parent-guide-2.png"
+    ],
+    "carries_while_they_colour": true
+  },
+  "limits": [
+    "The drawing is deterministic geometry from a flat-shape kit, not generated art. It is legible and cheap to print; it is not an illustration and is not claimed to be one.",
+    "A word the kit has no shape for prints as a plain colour block, never as a broken figure.",
+    "OCR of the art crop is a no-text check only; it is not a quality verdict."
+  ]
+}
