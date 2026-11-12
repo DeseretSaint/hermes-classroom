@@ -494,11 +494,18 @@ class CreateFlowWiringTest(unittest.TestCase):
         self.assertIn("jsx(LearnerPlanView", plan_view)
         self.assertIn("onStartLesson", plan_view)
 
-    def test_the_learner_surface_hides_parent_only_authoring(self) -> None:
+    def test_the_learner_surface_can_adjust_its_own_plan(self) -> None:
+        """W2-3: the learner may adjust a draft and ask for a change; approval stays the gate."""
         source = _source()
         self.assertIn("const learner = surface === 'learner'", source)
-        self.assertRegex(source, r"(?s)isDraft && !editing && !learner\s*\?.*?children: 'Edit plan'")
-        self.assertRegex(source, r"(?s)!isDraft && !editing && !learner\s*\?.*?children: 'Start a new plan version'")
+        # Draft editing is offered on both surfaces; the learner label is the plain one.
+        self.assertRegex(source, r"(?s)isDraft && !editing\s*\?\s*jsx\(sdk\.Button")
+        self.assertIn("children: learner ? 'Adjust this plan' : 'Edit plan'", source)
+        # Replanning an approved plan is offered on both surfaces too.
+        self.assertRegex(source, r"(?s)!isDraft && !editing\s*\?\s*jsx\(sdk\.Button")
+        self.assertIn("children: learner ? 'Ask for a change' : 'Start a new plan version'", source)
+        # Approve is still the one primary action a learner sees.
+        self.assertIn("'data-cb-plan-approve': 'approvable'", source)
 
     def test_the_learner_surface_approves_with_the_kernel_digest(self) -> None:
         """`course.outline` echoes the generation digest; approval must send the recomputed one."""
@@ -517,7 +524,10 @@ class CreateFlowWiringTest(unittest.TestCase):
 
     def test_no_fake_percentage_on_the_job_surface(self) -> None:
         source = _source()
-        job_line = source[source.index("function JobStateText"):source.index("function useStudioJob")]
+        # The job-state line itself. The wait panel below it is a different component (W2-3).
+        matched = re.search(r"function JobStateText\(.*?\n}\n", source, re.S)
+        assert matched is not None
+        job_line = matched.group(0)
         self.assertNotIn("%", job_line)
         self.assertNotIn("percent", job_line.lower())
 

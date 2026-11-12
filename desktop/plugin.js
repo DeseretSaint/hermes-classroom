@@ -9883,6 +9883,31 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
+/** A backend cost band, printed verbatim. The UI never computes a price of its own. */
+function planMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`
+}
+
+/**
+ * The queued job's preflight, rendered exactly where the regenerate door renders its own. The
+ * numbers come from the command result; when the contract returns none, this line does not exist
+ * and the caller says plainly that the exact preflight has not arrived.
+ */
+function CreatePreflightLine({ preflight }) {
+  if (!preflight) return null
+  return jsx(
+    'div',
+    {
+      className: 'text-xs text-(--ui-text-secondary)',
+      'data-cb-create-preflight': String(preflight.minimum_cost_usd),
+      children:
+        `Preflight: ${planMoney(preflight.minimum_cost_usd)}–${planMoney(preflight.maximum_cost_usd)} · ` +
+        `${preflight.minimum_calls}–${preflight.maximum_calls} call(s)`
+    },
+    'create-preflight'
+  )
+}
+
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
 function dialLabel(dial, value) {
   const options = (DIALS[dial] && DIALS[dial].options) || []
@@ -9990,7 +10015,11 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     planId,
     enrollmentId,
     jobId: job.result.job_id,
-    jobState: job.result.state
+    jobState: job.result.state,
+    // The backend's own cost/call band when this contract returns one with the queued job. It is
+    // carried verbatim, never recomputed here; absent means the screen states that the exact
+    // preflight has not been returned, not that the run is free.
+    preflight: (job.result && job.result.preflight) || null
   }
 }
 
@@ -10333,6 +10362,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
+        jsx(CreatePreflightLine, { preflight: result.preflight }, 'preflight'),
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -11051,6 +11081,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   'Create course writes the course and one draft plan. The plan then opens here for you to ' +
                   'approve, and no lesson is written until you do.'
               }, 'facts'),
+              jsx('p', {
+                'data-cb-create-preflight-waiting': scopeSectionBand(scope) || 'unknown',
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children:
+                  `This run will author ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
+                  'The exact preflight — a cost band and a call band — arrives with the plan job; ' +
+                  'nothing here is priced before the backend has sized the run.'
+              }, 'preflight-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
@@ -30159,6 +30197,155 @@ function JobStateText({ job }) {
 }
 
 /**
+ * The honest wait, before the plan exists.
+ *
+ * CREATE-EXPERIENCE items 3–5: a learner waiting for a draft plan gets a clock, the stage the job
+ * itself reports and the shape's own time band. There is deliberately **no percentage**: the plan
+ * job exposes `progress.stage`, `progress.steps_done`, `progress.steps_total` and
+ * `progress.message` and none of them is a fraction of the whole run. The clock is the only number
+ * this screen can prove, and it starts at the first poll that answers — never at a guessed start.
+ */
+const PLAN_WAIT_BAND = {
+  single: 'One lesson usually takes a few minutes.',
+  short: 'Short courses usually take a few minutes.',
+  full: 'A full course takes longer than a short course; the clock counts the real wait.'
+}
+
+/** The job's own stage, in words a person reads. Unknown stages are de-slugged, never invented. */
+const PLAN_STAGE_WORDS = {
+  queued: 'Waiting to start',
+  plan: 'Writing the outline',
+  research: 'Researching the goal',
+  authoring: 'Writing the outline',
+  validating: 'Checking the outline',
+  needs_review: 'Ready for your review'
+}
+
+function planWaitBand(scope) {
+  return PLAN_WAIT_BAND[scope] || 'A plan usually takes a few minutes.'
+}
+
+function planStageWords(stage) {
+  const key = String(stage || '').trim()
+  if (!key) return ''
+  if (PLAN_STAGE_WORDS[key]) return PLAN_STAGE_WORDS[key]
+  return key.replace(/[_-]+/g, ' ').replace(/^./, (character) => character.toUpperCase())
+}
+
+/**
+ * A ticking elapsed clock, anchored on the job id the first poll answered with. The counter only
+ * runs while the job is queued or running; a settled job stops the interval and keeps the reading.
+ */
+function useElapsedSeconds(jobId, active) {
+  const [seconds, setSeconds] = useState(0)
+  useEffect(() => {
+    if (!jobId || !active) return undefined
+    const startedAt = Date.now()
+    setSeconds(0)
+    // The host's timer seam lets a disposed plugin drop the interval; a bare window timer is the
+    // fallback so the clock still ticks in a host that exposes no seam.
+    const start =
+      pluginContext && typeof pluginContext.setInterval === 'function'
+        ? pluginContext.setInterval
+        : typeof window !== 'undefined' && typeof window.setInterval === 'function'
+          ? (handler, ms) => window.setInterval(handler, ms)
+          : null
+    if (!start) return undefined
+    const timer = start(() => {
+      setSeconds(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)))
+    }, 1000)
+    return () => {
+      if (pluginContext && typeof pluginContext.clearInterval === 'function') pluginContext.clearInterval(timer)
+      else if (typeof window !== 'undefined' && typeof window.clearInterval === 'function') window.clearInterval(timer)
+    }
+  }, [jobId, active])
+  return active ? seconds : null
+}
+
+/**
+ * The plan-screen wait panel: elapsed clock, the real stage line from `progress`, and the scope's
+ * honest band. It replaces the old "there is no progress percentage" paragraph and keeps the one
+ * cancel door that was already there.
+ */
+function PlanWritingPanel({ jobId, job, scope, onSettled, onRunAgain }) {
+  const state = job && job.state
+  const active = state === 'queued' || state === 'running'
+  const elapsed = useElapsedSeconds(job ? job.job_id || jobId : null, active)
+  const progress = (job && job.progress) || {}
+  const stage = String(progress.stage || (state === 'queued' ? 'queued' : '') || '').trim()
+  const stageWords = planStageWords(stage)
+  const message = String(progress.message || '').trim()
+  const stepsTotal = Number(progress.steps_total)
+  const stepsDone = Number(progress.steps_done)
+  const stepsText =
+    Number.isFinite(stepsTotal) && stepsTotal > 0
+      ? `Step ${Number.isFinite(stepsDone) ? stepsDone : 0} of ${stepsTotal}`
+      : ''
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    'data-cb-plan-wait': state || 'reading',
+    children: [
+      jsx('div', {
+        className: 'text-sm font-semibold',
+        children: active || !state ? 'The plan is being written' : 'The plan is not running right now'
+      }, 'title'),
+      elapsed === null
+        ? jsx(
+            'div',
+            {
+              className: 'text-xs text-(--ui-text-secondary)',
+              'data-cb-plan-elapsed': 'reading',
+              children: 'Reading the job…'
+            },
+            'elapsed'
+          )
+        : jsx(
+            'div',
+            {
+              className: 'text-xs tabular-nums text-(--ui-text-secondary)',
+              'data-cb-plan-elapsed': String(elapsed),
+              children: `${elapsed}s elapsed`
+            },
+            'elapsed'
+          ),
+      stageWords
+        ? jsx(
+            'div',
+            {
+              className: 'text-xs text-(--ui-text-secondary)',
+              'data-cb-plan-stage': stage,
+              children: stepsText ? `${stageWords} · ${stepsText}` : stageWords
+            },
+            'stage'
+          )
+        : null,
+      message
+        ? jsx(
+            'div',
+            {
+              className: 'text-xs text-(--ui-text-secondary)',
+              'data-cb-plan-message': '',
+              children: message
+            },
+            'message'
+          )
+        : null,
+      jsx(
+        'div',
+        {
+          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+          'data-cb-plan-band': scope || 'unknown',
+          children: planWaitBand(scope)
+        },
+        'band'
+      ),
+      jsx(StudioJobLine, { jobId, job, onSettled, onRunAgain }, 'job')
+    ]
+  })
+}
+
+/**
  * Poll one job until it settles. The poll never navigates and never focuses anything: it re-renders
  * the line the parent is already looking at and calls `onSettled` so the caller can re-read.
  */
@@ -35156,7 +35343,9 @@ function StudioPlanView({
   book,
   brief,
   planJobId,
+  planJob,
   planJobHint,
+  planScope,
   onChangeGoal,
   onJobSettled,
   onChanged,
@@ -35197,7 +35386,14 @@ function StudioPlanView({
   const [retryPlanJobId, setRetryPlanJobId] = useState(null)
   const retryPlanKey = useRef(null)
   const activePlanJobId = retryPlanJobId || planJobId
-  const planRun = useStudioJob(activePlanJobId, onJobSettled)
+  // A caller that already read the job (the create result carries the first job it queued, the
+  // learner route finds one by enrolment) passes it in; the panel then shares that read instead
+  // of polling the same id twice. A retry minted a new id, so the injected row stops applying.
+  const injectedPlanRun = planJob && (!activePlanJobId || planJob.job_id === activePlanJobId) ? planJob : null
+  const polledPlanRun = useStudioJob(injectedPlanRun ? null : activePlanJobId, onJobSettled)
+  const planRun = injectedPlanRun || polledPlanRun
+  // The scope the wait band names. Learner routes pass it; Parent Studio has it in the brief.
+  const waitScope = planScope || (brief && brief.brief && brief.brief.scope) || null
   const [rejectBusy, setRejectBusy] = useState(false)
   const [rejectError, setRejectError] = useState(null)
   // Editing changes the draft the refusal was about. Once an edit is saved the panel steps away:
@@ -35347,9 +35543,12 @@ function StudioPlanView({
     onRevision(response.result.revision)
     setEditing(false)
     setRejectionHandled(true)
-    setNotice('Plan saved. The edit marks the lesson set as needing review until it is approved again.')
+    const savedVersion = response.result && response.result.plan_version
+    setNotice(
+      `Plan saved${savedVersion ? ` as version ${savedVersion}` : ''}. The edit is versioned and marks the lesson set as needing review until it is approved again.`
+    )
     onChanged()
-  }, [outline.data, plan, objectives, drafts, removed, added, course.enrollment_id, revision, onRevision, onChanged])
+  }, [outline.data, plan, objectives, displayObjectives, drafts, removed, added, course.enrollment_id, revision, onRevision, onChanged])
 
   const approvePlan = useCallback(async () => {
     if (!plan) return
@@ -35584,14 +35783,22 @@ function StudioPlanView({
         ]
       })
     }
+    if (planJobId) {
+      // CREATE-EXPERIENCE items 3–5: the wait is legible instead of opaque. The clock, stage and
+      // band come from the job this screen is already polling; nothing here invents a percentage.
+      return jsx(PlanWritingPanel, {
+        jobId: planJobId,
+        job: planRun,
+        scope: waitScope,
+        onSettled: onJobSettled,
+        onRunAgain: onChanged
+      })
+    }
     return jsx(EmptyState, {
-      title: planJobId ? 'The plan is being written' : 'No plan yet',
-      description: planJobId
-        ? 'Research and drafting run in the background; this screen fills itself when the plan is written. Nothing is shown from a template, and there is no progress percentage to show.'
-        : learner
-          ? 'This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap.'
-          : 'No plan is attached to this course, so there is nothing to review. Start a new brief.',
-      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null
+      title: 'No plan yet',
+      description: learner
+        ? 'This course has no plan attached. Start a new course to generate one; nothing is invented to fill the gap.'
+        : 'No plan is attached to this course, so there is nothing to review. Start a new brief.'
     })
   }
 
@@ -35618,8 +35825,13 @@ function StudioPlanView({
             children: shownRejection && !editing
               ? null
               : [
-              isDraft && !editing && !learner
-                ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: startEditing, children: 'Edit plan' })
+              isDraft && !editing
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'secondary',
+                    onClick: startEditing,
+                    children: learner ? 'Adjust this plan' : 'Edit plan'
+                  })
                 : null,
               editing
                 ? jsx(CbAction, { size: 'sm', variant: 'primary', disabled: busy, onClick: savePlan, children: busy ? 'Saving' : 'Save changes' })
@@ -35642,13 +35854,13 @@ function StudioPlanView({
                     children: contentReady ? 'Generate missing lessons' : 'Generate lessons'
                   })
                 : null,
-              !isDraft && !editing && !learner
+              !isDraft && !editing
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'secondary',
                     disabled: busy || !supported('plan.replan'),
                     onClick: startRevision,
-                    children: 'Start a new plan version'
+                    children: learner ? 'Ask for a change' : 'Start a new plan version'
                   })
                 : null
             ]
@@ -36151,6 +36363,10 @@ function LearnerPlanView({
         book,
         brief: null,
         planJobId: showJob ? jobId : null,
+        // The learner route already found this job by enrolment, so the wait panel renders the
+        // clock and stage on the first paint instead of waiting for a second poll of the same id.
+        planJob,
+        planScope: scope,
         // H-105: a finished plan job is not re-polled, but its checkpoint already carries the
         // validator record, so a revisit still shows who checked this version.
         planJobHint: planJob,
@@ -43090,6 +43306,7 @@ export {
   StudioExportPanel,
   StudioFineTunePanel,
   StudioPlanView,
+  PlanWritingPanel,
   StudioReviewDiff,
   fineTuneChip,
   fineTuneCriteriaText,
@@ -43331,6 +43548,7 @@ export {
   questMissions,
   missionBriefLine,
   planJobBrief,
+  CreatePreflightLine,
   plural,
   COURSE_PRIMARY_TABS,
   courseMoreTabs,

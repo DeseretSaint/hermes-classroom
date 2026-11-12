@@ -357,6 +357,31 @@ const CREATE_RESULT_COPY = {
   details: 'Technical detail'
 }
 
+/** A backend cost band, printed verbatim. The UI never computes a price of its own. */
+function planMoney(value) {
+  return `$${Number(value || 0).toFixed(2)}`
+}
+
+/**
+ * The queued job's preflight, rendered exactly where the regenerate door renders its own. The
+ * numbers come from the command result; when the contract returns none, this line does not exist
+ * and the caller says plainly that the exact preflight has not arrived.
+ */
+function CreatePreflightLine({ preflight }) {
+  if (!preflight) return null
+  return jsx(
+    'div',
+    {
+      className: 'text-xs text-(--ui-text-secondary)',
+      'data-cb-create-preflight': String(preflight.minimum_cost_usd),
+      children:
+        `Preflight: ${planMoney(preflight.minimum_cost_usd)}–${planMoney(preflight.maximum_cost_usd)} · ` +
+        `${preflight.minimum_calls}–${preflight.maximum_calls} call(s)`
+    },
+    'create-preflight'
+  )
+}
+
 /** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
 function dialLabel(dial, value) {
   const options = (DIALS[dial] && DIALS[dial].options) || []
@@ -464,7 +489,11 @@ async function startLearnerPlan({ call, key, title, goal, outcome, recipe, dials
     planId,
     enrollmentId,
     jobId: job.result.job_id,
-    jobState: job.result.state
+    jobState: job.result.state,
+    // The backend's own cost/call band when this contract returns one with the queued job. It is
+    // carried verbatim, never recomputed here; absent means the screen states that the exact
+    // preflight has not been returned, not that the run is free.
+    preflight: (job.result && job.result.preflight) || null
   }
 }
 
@@ -807,6 +836,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
           className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children: CREATE_RESULT_COPY.body
         }, 'body'),
+        jsx(CreatePreflightLine, { preflight: result.preflight }, 'preflight'),
         jsxs('details', {
           'data-cb-create-receipt': '',
           className: 'text-xs text-(--ui-text-secondary)',
@@ -1525,6 +1555,14 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                   'Create course writes the course and one draft plan. The plan then opens here for you to ' +
                   'approve, and no lesson is written until you do.'
               }, 'facts'),
+              jsx('p', {
+                'data-cb-create-preflight-waiting': scopeSectionBand(scope) || 'unknown',
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children:
+                  `This run will author ${scopeSectionBand(scope) || 'the sections the plan proposes'}. ` +
+                  'The exact preflight — a cost band and a call band — arrives with the plan job; ' +
+                  'nothing here is priced before the backend has sized the run.'
+              }, 'preflight-waiting'),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: planTimingCopy(scope)
