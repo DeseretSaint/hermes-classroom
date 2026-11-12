@@ -936,8 +936,8 @@ class CourseHomeV3RenderTest(unittest.TestCase):
             re.search(r'src="data:image/(?:png|webp);base64,', image.group(0)),
             "the fox source is not a shipped asset",
         )
-        # 208 px box, 256 px export at the wide route: never upscaled past the asset's natural size.
-        self.assertIn('data-cb3-fox-export="256"', markup)
+        # 208 px box, 512 px export at the wide route: the served file carries the gate's 2x.
+        self.assertIn('data-cb3-fox-export="512"', markup)
         self.assertIn("width:208px", markup.replace(" ", ""))
         self.assertNotIn('data-cb3-fox-export="64"', markup, "the fox is painted above its export")
         # The approved pose, not the clock pose mirrored into place.
