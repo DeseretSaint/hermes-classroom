@@ -77,6 +77,20 @@ class ColouringPageContract(unittest.TestCase):
         # One ink only: no second colour anywhere in the drawing.
         self.assertEqual(set(re.findall(r'(?:stroke|fill)="(#[0-9a-fA-F]{6})"', svg)), {cp.INK})
 
+    def test_the_drawing_carries_no_grey_tone_no_gradient_and_no_shadow(self) -> None:
+        task = hp.task_by_id(self.fixture, "hw_labels")
+        svg = cp.coloring_svg(cp.scene_objects(self.fixture, task))
+        # One ink and no fill: every paint value is either the ink stroke or "none". The sibling
+        # test only pins six-digit hex, which would let `fill="white"` or a named grey through.
+        for attr, value in re.findall(r'(stroke|fill)="([^"]+)"', svg):
+            self.assertIn(value, {cp.INK, "none"}, f"{attr}={value!r} is a second paint")
+        # A grey tone, gradient, shadow, bitmap or transparency would let the page print as a
+        # picture to look at rather than a line drawing to colour. The kit emits none of these;
+        # this pins that, so §4a's "no grey tones, gradients, shadows" row is asserted, not prose.
+        lowered = svg.lower()
+        for needle in ("opacity", "gradient", "filter", "shadow", "<image", "#808080", "gray", "grey"):
+            self.assertNotIn(needle, lowered, f"the drawing carries {needle!r}")
+
     def test_the_figure_is_a_labelled_image_with_every_word_in_its_description(self) -> None:
         task = hp.task_by_id(self.fixture, "hw_labels")
         objects = cp.scene_objects(self.fixture, task)

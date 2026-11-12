@@ -59,7 +59,7 @@
   "pages": {
     "A4": {
       "pdf": "coloring-page-a4.pdf",
-      "pdf_sha256": "852602b42d59c08d7809b8556f5403e3730351d0ea18a688ad2caf839ae9ff53",
+      "pdf_sha256": "3e55a94e119faf263865f96e0338c9be4555bf5cb120247b4a8db1c85ed15a26",
       "png": "coloring-page-a4-1.png",
       "png_sha256": "228d885f8879a8e15d43386ec25ddf029745fed757b67f6151c3945e1802b515",
       "pages": "1",
@@ -80,7 +80,7 @@
     },
     "Letter": {
       "pdf": "coloring-page-letter.pdf",
-      "pdf_sha256": "089c04bfa73624c2c2882620cef6390d3eab49a9a3524c82eca45566090bf4ec",
+      "pdf_sha256": "979b0ea23b52d3c4eb191515e84a41e84077a9f47298efa083b019a8db1ae0a6",
       "png": "coloring-page-letter-1.png",
       "png_sha256": "a5f657b8cad5ea48a70575a4b45f6194ce9658a747134d9d95d89487f7f55c56",
       "pages": "1",
@@ -102,7 +102,7 @@
   },
   "parent_guide": {
     "pdf": "parent-guide.pdf",
-    "pdf_sha256": "1b087d700ce508a5c9cca2c68656daa25347b743773b8a0b2a49bd04f39bbd13",
+    "pdf_sha256": "4308aa0e557a3d6a2306eb9f7434877c67b09e7845232fa6380f55a8326f3a45",
     "sheets": 2,
     "pngs": [
       "parent-guide-1.png",
