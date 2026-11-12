@@ -24,6 +24,10 @@ Host seams beside the frozen RPC contract (never new RPC methods):
 * ``POST /sessions/bind``     -> the write half of ``binding.get``: the Desktop binds the focused
   chat's *stored* session id to the lesson run it opened. Never a runtime id, never recency.
   Refusals are HTTP 200 ``{ok:false, code, message}``.
+* ``POST /sources/revalidate`` -> the fetch half of ``source.revalidate``. The frozen method
+  requires the caller to hand over freshly fetched page text and this process has no plugin
+  ``ctx``, so the route dispatches ``web_extract`` through the host's own tool registry and
+  passes the text to the method. No RPC method and no contract version is added.
 
 No module-global process state lives here: SQLite is the source of truth, and the same package
 may be imported twice by different loaders in one gateway process.
@@ -574,6 +578,156 @@ async def sessions_bind(body: dict[str, Any] = Body(...)) -> Any:
             },
         )
     return {"ok": True, **outcome}
+
+
+# ── source revalidation: the fetch half of a frozen method ──────────────────
+
+
+def _research() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.research")
+
+
+def bind_process_seam(registry: Any | None = None) -> bool:
+    """Bind research's host seam to this process's own tool registry.
+
+    A ``hermes serve`` / dashboard process imports ``plugin_api`` by path, so its copy of the
+    backend is a *different module object* from the agent's: binding the seam in the agent
+    process leaves ``host_search() -> None`` here. This function binds the copy that actually
+    serves these routes, and returns whether a usable seam exists afterwards.
+
+    ``web_search`` / ``web_extract`` are dispatched through the host registry itself, so the
+    plugin inherits the host's provider, egress configuration, size caps and extract-side
+    SSRF/secret policy and never makes an HTTP request of its own.
+
+    ``False`` is the honest answer for a process with no host tool package: the route then
+    refuses with ``EXTRACT_UNAVAILABLE`` instead of writing a revalidation it never performed.
+    ``registry`` is injectable so a test can register a stand-in behind the host registry.
+    """
+    research = _research()
+    if registry is None:
+        try:
+            from tools.registry import registry as host_registry
+        except Exception:  # noqa: BLE001 - a process without the host tool package
+            return False
+        registry = host_registry
+        # The serving process never runs the agent's tool setup, so its registry may hold no
+        # web_extract handler. Importing the host's own tool module registers the same handler
+        # the agent would dispatch; a failed import is reported, never papered over.
+        if not research.ensure_host_tools():
+            return False
+    try:
+        research.bind_host_seam(research.RegistryToolHost(registry))
+    except research.ResearchUnavailable:
+        return False
+    return research.host_search() is not None
+
+
+@router.post("/sources/revalidate")
+async def sources_revalidate(body: dict[str, Any] = Body(...)) -> Any:
+    """Re-fetch one source through the host and record what the re-fetch did.
+
+    ``source.revalidate`` is frozen in the RPC contract and takes the page text from its caller;
+    it has no way to fetch, and this process has no plugin ``ctx``. This route is that missing
+    half: it resolves the URL from the source row (the client never supplies a URL, so this is
+    not a general fetcher), dispatches ``web_extract`` through the host's own registry, and hands
+    the bounded text to the frozen method. Nothing is added to the contract.
+
+    Three honest outcomes and one refusal:
+
+    * ``ok: true, fetched: true`` — the page was fetched and the ledger compared it;
+    * ``ok: true, fetched: false`` — the page was unreachable; the method records that and asks
+      for review instead of claiming the text is unchanged;
+    * ``ok: false, code: <method refusal>`` — the method's own code (``NOT_FOUND``, ...) passed
+      through unchanged;
+    * ``ok: false, code: "EXTRACT_UNAVAILABLE"`` — this process has no host ``web_extract``
+      handler, so nothing was fetched and nothing was written.
+
+    The idempotency key is derived from (source, page text), so re-checking unchanged text
+    replays the recorded response instead of writing the source row again.
+    """
+    research, api = _research(), _api()
+    source_id = body.get("source_id")
+    if not isinstance(source_id, str) or not source_id.strip():
+        return {"ok": False, "code": "VALIDATION_FAILED", "message": "revalidate needs one source_id"}
+    source_id = source_id.strip()
+
+    try:
+        row = _source_row(source_id)
+    except Exception:  # noqa: BLE001 - a ledger read failure is reported, never disguised
+        logger.exception("coursebook: could not read the source row for revalidation")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "code": "INTERNAL_ERROR",
+                "message": "the source ledger could not be read; nothing was fetched or written",
+            },
+        )
+    if row is None:
+        return {"ok": False, "code": "NOT_FOUND", "message": f"source {source_id} does not exist."}
+    url = str(row["url"] or "").strip()
+    if not url:
+        return {
+            "ok": False,
+            "code": "VALIDATION_FAILED",
+            "message": f"source {source_id} records no URL, so there is nothing to fetch",
+        }
+
+    seam = research.host_search()
+    if seam is None and bind_process_seam():
+        seam = research.host_search()
+    if seam is None:
+        return {
+            "ok": False,
+            "code": "EXTRACT_UNAVAILABLE",
+            "message": (
+                "this process has no host web_extract tool, so the page was not fetched and the"
+                " source was not revalidated"
+            ),
+        }
+
+    page: dict[str, Any] | None = None
+    try:
+        page = seam.fetch(url, research.REVALIDATE_TEXT_LIMIT)
+    except research.ResearchUnavailable:
+        # A page that cannot be reached is a fact the contract records as `unreachable`; it is a
+        # fetch outcome, not a missing capability, and the old text is never reported as current.
+        page = None
+    text = research.revalidate_text(page["content"]) if page is not None else ""
+    if not text:
+        page = None
+    # The payload carries the text only. A title is not part of the (source, text) key: sending
+    # it would let a title-only change produce a different payload under the same key, which the
+    # contract correctly answers with IDEMPOTENCY_CONFLICT for a page whose text did not change.
+    fetched = None if page is None else {"content": text}
+    response = api.dispatch(
+        {
+            "contract": api.RPC_CONTRACT,
+            "contract_version": api.RPC_CONTRACT_VERSION,
+            "method": "source.revalidate",
+            "operation_id": f"source-revalidate-{uuid.uuid4().hex}",
+            "payload": {"source_id": source_id, "fetched": fetched},
+            "idempotency_key": research.revalidate_key(source_id, text),
+        }
+    )
+    if not response.get("ok"):
+        error = response.get("error") or {}
+        return {
+            "ok": False,
+            "code": str(error.get("code") or "INTERNAL_ERROR"),
+            "message": str(error.get("message") or "source.revalidate was refused"),
+        }
+    return {"ok": True, "fetched": fetched is not None, **response["result"]}
+
+
+def _source_row(source_id: str) -> Any:
+    """The ledger row this route fetches for. A missing row is ``NOT_FOUND``, not a fetch."""
+    db = _db()
+    with db.read() as connection:
+        return connection.execute(
+            "SELECT id, url FROM sources WHERE id = ?", (source_id,)
+        ).fetchone()
 
 
 @router.get("/runtime")

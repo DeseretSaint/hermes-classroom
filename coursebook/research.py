@@ -58,7 +58,11 @@ __all__ = [
     "ResearchRun",
     "SearchSeam",
     "HermesToolSearch",
+    "RegistryToolHost",
     "ensure_host_tools",
+    "revalidate_text",
+    "revalidate_key",
+    "REVALIDATE_TEXT_LIMIT",
     "NullSearch",
     "budget_for",
     "effective_depth",
@@ -554,6 +558,30 @@ class HermesToolSearch:
         }
 
 
+class RegistryToolHost:
+    """A ``dispatch_tool`` host built over the process's own tool registry.
+
+    A ``hermes serve`` / dashboard process loads plugins but never runs the agent's tool setup,
+    so there is no plugin ``ctx`` object to bind there — the research seam used to be
+    permanently ``None`` in that process. It does hold the host's registry (the same
+    ``tools.registry.registry`` the agent dispatches through), and handing research this adapter
+    keeps provider selection, egress configuration, size caps and the extract-side SSRF/secret
+    checks the host's own. The plugin still makes no HTTP request of its own and reads no
+    provider key: :meth:`dispatch_tool` is the registry dispatch, nothing else.
+
+    ``registry`` is injected rather than imported here so a test can register a stand-in *behind*
+    the host registry instead of patching :func:`host_search`.
+    """
+
+    def __init__(self, registry: Any) -> None:
+        if not callable(getattr(registry, "dispatch", None)):
+            raise ResearchUnavailable("this process has no host tool registry; research seam unavailable")
+        self._registry = registry
+
+    def dispatch_tool(self, name: str, arguments: dict[str, Any]) -> Any:
+        return self._registry.dispatch(name, dict(arguments))
+
+
 # ── Host seam binding (agent half) ──────────────────────────────────────────
 #
 # ``register(ctx)`` in the plugin entry point binds the host object once. The job executor then
@@ -624,6 +652,40 @@ def host_search() -> "HermesToolSearch | None":
         return HermesToolSearch.from_ctx(_HOST_SEAM)
     except ResearchUnavailable:
         return None
+
+
+# ── Revalidation idempotency ────────────────────────────────────────────────
+
+#: The ledger hashes at most this many characters of a fetch: ``sources.refresh`` normalizes
+#: whitespace and truncates to this bound before hashing. A revalidation seam sends exactly this
+#: text so the payload and the idempotency key are functions of the same string.
+REVALIDATE_TEXT_LIMIT = 40000
+
+#: Key marker for a fetch that reached no page at all. It is stable per source so re-checking an
+#: unreachable page replays instead of rewriting the row on every click.
+_UNREACHABLE_MARKER = "unreachable"
+
+
+def revalidate_text(text: Any) -> str:
+    """The exact page text a revalidation compares: whitespace-normalized and bounded.
+
+    ``sources.refresh`` applies this same normalization before hashing, so the seam must send
+    this text and key on it. If the key were derived from the raw text, two fetches that differ
+    only past the 40000-character bound would share a key while carrying different payloads —
+    the contract would answer ``IDEMPOTENCY_CONFLICT`` for a page that did not really change.
+    """
+    return " ".join(str(text or "").split())[:REVALIDATE_TEXT_LIMIT]
+
+
+def revalidate_key(source_id: str, text: Any) -> str:
+    """One idempotency key per (source, page text).
+
+    Re-checking the same text replays the recorded ``source.revalidate`` response instead of
+    writing the source row again; a different text is a different key and a real comparison.
+    """
+    bounded = revalidate_text(text)
+    digest = sha256_of_text(bounded).removeprefix("sha256:") if bounded else _UNREACHABLE_MARKER
+    return f"source-revalidate:{source_id}:{digest}"
 
 
 # ── Query derivation ────────────────────────────────────────────────────────
