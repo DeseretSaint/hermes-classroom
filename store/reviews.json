@@ -1,0 +1,6 @@
+{
+  "contract": "cb.store-reviews",
+  "contract_version": 1,
+  "note": "Reviews the store itself holds. A record counts for a card only when its content_hash equals the pack manifest's own hash; a changed pack needs a new review. This file is written by the maintainer who accepts a submission, never by a pack. A pack's own trust.reviewed_by/reviewed_at is provenance and is never evidence of a human review.",
+  "reviews": []
+}
