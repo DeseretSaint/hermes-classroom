@@ -20516,7 +20516,6 @@ function MediaLabelOverlay({ labels, frame }) {
 }
 
 /**
-<<<<<<< HEAD
  * The review verdict, as a chip on the media item (cb.rpc item 32).
  *
  * A generated illustration is judged before its bytes are stored, and the verdict is why a figure
@@ -20609,7 +20608,13 @@ function MediaVerdictChip({ media, review }) {
             'data-cb-media-verdict-reason': '',
             style: { minWidth: 0, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
             children: verdict.reason
-=======
+          })
+        : null
+    ]
+  })
+}
+
+/**
  * One figure at its own size.
  *
  * Item 37: the reading column draws a legible preview (`maxHeight: 70vh`), and the preview is a
@@ -20697,7 +20702,6 @@ function MediaViewer({ src, alt, caption, label, onClose }) {
               color: 'var(--cb-ink-soft)'
             },
             children: caption
->>>>>>> wt/w2-5-figures-print
           })
         : null
     ]
@@ -45000,13 +45004,10 @@ export {
   MediaLabelOverlay,
   mediaLabelPlacement,
   MediaSegment,
-<<<<<<< HEAD
   MediaVerdictChip,
   mediaVerdict,
-=======
   MediaViewer,
   BlockMedia,
->>>>>>> wt/w2-5-figures-print
   NotebookView,
   OBSERVATION_NOTE_MAX,
   OverviewView,
