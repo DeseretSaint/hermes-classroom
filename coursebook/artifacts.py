@@ -141,6 +141,37 @@ def hash_forms(value: Any) -> tuple[str, str]:
 #: Roles a media spec may declare. Role, not MIME, decides the honesty label.
 MEDIA_ROLES = ("sourced_technical", "schematic", "illustration", "narration", "document", "export")
 
+#: The three states a lesson media item can be in once the media stage has run, written to the
+#: item as ``media_status``. They are distinct on purpose:
+#:
+#: * ``delivered`` — the bytes exist and their permission record travels in the artifact's
+#:   provenance (``source_ids`` and ``permission``).
+#: * ``degraded`` — a provider failure on a medium the lesson did not require. The text equivalent
+#:   is the whole medium; nothing about the lesson is missing.
+#: * ``media_incomplete`` — a *required* medium the pipeline could not deliver (item 31: a cited
+#:   reference for source analysis). The lesson itself is missing a piece, so the item names what
+#:   is missing instead of reading as an ordinary, optional text fallback.
+MEDIA_STATE_DELIVERED = "delivered"
+MEDIA_STATE_DEGRADED = "degraded"
+MEDIA_STATE_INCOMPLETE = "media_incomplete"
+MEDIA_STATES = (MEDIA_STATE_DELIVERED, MEDIA_STATE_DEGRADED, MEDIA_STATE_INCOMPLETE)
+
+#: The licence/permission vocabulary a cited reference may carry. ``unknown`` is deliberately not
+#: here: an unlicensed source cannot be presented as a technical reference. It is the same tuple
+#: ``media_problems`` enforces, so a "permission recorded" claim and a "permission accepted" rule
+#: can never disagree.
+SOURCED_PERMISSIONS = ("public_domain", "licensed", "linked")
+
+#: The honesty label a cited reference carries when its bytes were not delivered. It travels on the
+#: item, into the page's media child and any export, so the text beside it cannot be read as the
+#: reference itself.
+INCOMPLETE_REFERENCE_LABEL = "Cited source not delivered — this text is not the reference."
+
+#: The longest reason a media item may carry. The value is the document projection's own bound
+#: (``lesson_document.MAX_REASON``): the item's reason is the string the page renders, so a reason
+#: that cannot fit the document is truncated here rather than making the page fail to project.
+MAX_MEDIA_REASON = 300
+
 #: Text-equivalent is mandatory for every artifact a learner can see or hear.
 _MIN_TEXT_EQUIVALENT = 1
 _MAX_BYTES = {
@@ -295,9 +326,9 @@ def media_problems(spec: MediaSpec) -> list[str]:
     if spec.role == "sourced_technical":
         if not spec.source_ids:
             problems.append("sourced technical reference needs at least one cited source")
-        if spec.permission not in ("public_domain", "licensed", "linked", "unknown"):
+        if spec.permission not in (*SOURCED_PERMISSIONS, "unknown"):
             problems.append("sourced reference needs an explicit permission status")
-        if spec.permission == "unknown":
+        if spec.permission not in SOURCED_PERMISSIONS:
             problems.append("unknown permission cannot be presented as a technical reference")
     if spec.role == "schematic" and not spec.facts:
         problems.append("a schematic must be rendered from structured facts, not free text")
@@ -315,6 +346,50 @@ def assert_media_ok(spec: MediaSpec) -> None:
     problems = media_problems(spec)
     if problems:
         raise UnsafeMedia("; ".join(problems))
+
+
+def sourced_reference_gap(
+    spec: MediaSpec, *, required: bool, decision: str | None = None
+) -> dict[str, Any] | None:
+    """Name what a cited reference still lacks, or ``None`` when the spec is not one.
+
+    Item 31. A ``sourced_technical`` spec has no producer: the bytes are a *real cited asset*, and
+    this build declares no asset locator on the closed lesson media schema, so there is nothing to
+    stage. Rather than letting that become an anonymous "provider unavailable" degradation, the
+    caller records a named state (``MEDIA_STATE_INCOMPLETE`` when the lesson's own capability
+    decision requires the reference, ``MEDIA_STATE_DEGRADED`` when it does not) and this function
+    writes the reason: the cited source ids, the declared permission, and the construct.
+
+    The returned ``missing`` block is the machine-readable form a later adoption step can consume —
+    it is what an operator or a follow-up job has to supply, not a silent guess.
+    """
+    if spec.role != "sourced_technical":
+        return None
+    sources = ", ".join(spec.source_ids) or "no source id"
+    permission = spec.permission or "no permission record"
+    construct = str(spec.prompt or "").strip()
+    missing = {
+        "source_ids": list(spec.source_ids),
+        "permission": spec.permission,
+        "construct": construct or None,
+        "asset": None,
+        "why": (
+            "the lesson media schema carries no source-asset locator, and the sources ledger "
+            "records a citation, not a licence grant for the bytes"
+        ),
+    }
+    lead = "the required cited source" if required else "the optional cited source"
+    # The reason is rendered on the page, and the document projection bounds it
+    # (``lesson_document.MAX_REASON``). The construct and the machine-readable detail live in
+    # ``missing``; the sentence says the one thing a reader must know: the text is not the
+    # reference.
+    reason = f"{lead} {sources} (permission: {permission}) was not delivered"
+    if decision:
+        reason += f": {str(decision).rstrip('.')}"
+    reason += "; the text below is a placeholder, not the reference"
+    if len(reason) > MAX_MEDIA_REASON:
+        reason = reason[: MAX_MEDIA_REASON - 1].rstrip() + "…"
+    return {"reason": reason, "missing": missing, "required": bool(required)}
 
 
 def honesty_label(spec: MediaSpec) -> str:
