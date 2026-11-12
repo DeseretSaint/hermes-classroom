@@ -89,7 +89,8 @@ globalThis.__CB_TEST_MODE__ = payload.mode || 'light'
 
 const {
   ClassroomV3, classroomStepNodes, classroomLineFromPage, classroomEvidence,
-  classroomSceneFromWorld, classroomSceneSource, cb3KitSource, CB3_CLASSROOM_COPY
+  classroomSceneFromWorld, classroomSceneSource, cb3KitSource, classroomVerdictSentence,
+  CB3_CLASSROOM_COPY
 } = await import('./plugin.js')
 
 const h = React.createElement
@@ -148,6 +149,41 @@ process.stdout.write(JSON.stringify({
   sceneNoKitWithArtifact: classroomSceneSource({ artifactId: 'art_this' }, { state: 'text' }, null),
   sceneNoScene: classroomSceneSource(null, { state: 'text' }, null),
   kitRow: cb3KitSource('field-atlas-lesson-room') ? 'present' : null,
+  // One verdict line per path, driven through the shipped composer. The observation shapes are the
+  // ones `coursebook/validators.py` really returns (a bare predicate clause) and the authored prose
+  // an open-lane grader writes (a whole sentence).
+  verdicts: {
+    passPredicate: classroomVerdictSentence(
+      { verdict: 'pass', criteria: [{ id: 'c1', met: true, observed: 'chose the plain form' }] },
+      { prompt: 'Write the plain form.', format: 'text', choices: [], items: [] },
+      -1
+    ),
+    passSentence: classroomVerdictSentence(
+      { verdict: 'pass', criteria: [{ id: 'c1', met: true, observed: 'You used the plain form.' }] },
+      { prompt: 'Write the plain form.', format: 'text', choices: [], items: [] },
+      -1
+    ),
+    passSilent: classroomVerdictSentence(
+      { verdict: 'pass', criteria: [{ id: 'c1', met: true }] },
+      { prompt: 'Write the plain form.', format: 'text', choices: [], items: [] },
+      -1
+    ),
+    missPredicate: classroomVerdictSentence(
+      { verdict: 'not_yet', criteria: [{ id: 'c1', met: false, observed: 'the polite form was applied to a casual question' }] },
+      { prompt: 'Write the plain form.', format: 'text', choices: [], items: [] },
+      -1
+    ),
+    missSentence: classroomVerdictSentence(
+      { verdict: 'not_yet', criteria: [{ id: 'c1', met: false, observed: 'That answer does not match any accepted answer.' }] },
+      { prompt: 'Write the plain form.', format: 'text', choices: [], items: [] },
+      -1
+    ),
+    selectionMiss: classroomVerdictSentence(
+      { verdict: 'not_yet', criteria: [{ id: 'c1', met: false, observed: 'does not match an accepted answer' }] },
+      { prompt: 'Which line is the romantic confession?', format: 'selection', choices: ['A: うん、好きだよ。', 'B: 好きです。付き合ってください。'], items: [] },
+      0
+    )
+  },
   copy: CB3_CLASSROOM_COPY
 }))
 """
@@ -327,6 +363,10 @@ def row() -> dict:
     }
 
 
+CHECK_QUESTION = "Which line is the romantic confession?"
+EXTRA_INSTRUCTION = "Read both lines before you pick."
+
+
 def check() -> dict:
     return {
         "check_id": "chk_0002",
@@ -436,6 +476,41 @@ def cases() -> list[dict]:
             "attempt_count": 0,
             "stimulus": {"prompt": "Write the polite form.", "format": "text", "choices": [], "items": []},
         }}},
+        # The defect this card fixes: the stimulus and its learner instructions carry the same
+        # sentence. The check card must print that sentence once.
+        {"name": "samePrompt", "props": {"check": {
+            "check_id": "chk_0006",
+            "objective_id": "obj_6",
+            "check_version": 1,
+            "evidence_target": "discrimination",
+            "state": "open",
+            "audit_state": "passed",
+            "attempt_count": 0,
+            "stimulus": {
+                "prompt": CHECK_QUESTION,
+                "learner_instructions": CHECK_QUESTION,
+                "format": "selection",
+                "choices": ["A: うん、好きだよ。", "B: 好きです。付き合ってください。"],
+                "items": [],
+            },
+        }}},
+        # Instructions that add something keep both lines, question first.
+        {"name": "extraInstructions", "props": {"check": {
+            "check_id": "chk_0007",
+            "objective_id": "obj_7",
+            "check_version": 1,
+            "evidence_target": "discrimination",
+            "state": "open",
+            "audit_state": "passed",
+            "attempt_count": 0,
+            "stimulus": {
+                "prompt": CHECK_QUESTION,
+                "learner_instructions": EXTRA_INSTRUCTION,
+                "format": "selection",
+                "choices": ["A: うん、好きだよ。", "B: 好きです。付き合ってください。"],
+                "items": [],
+            },
+        }}},
     ]
 
 
@@ -541,6 +616,61 @@ class ClassroomV3RenderTest(unittest.TestCase):
         for name in ("verification", "text"):
             self.assertEqual(self.html[name].count('data-cb3-pill="primary"'), 1, f"{name} minted a second primary")
 
+    def _check_card(self, html: str) -> str:
+        """The check card alone, so an aside copy cannot make a count look right."""
+        card = html.split('data-cb3-surface="check"', 1)[1]
+        return card.split("data-cb3-aside", 1)[0]
+
+    def test_a_check_prints_its_question_once(self) -> None:
+        card = self._check_card(self.html["samePrompt"])
+        self.assertEqual(
+            card.count(CHECK_QUESTION),
+            1,
+            "the question is printed more than once in the check card",
+        )
+        self.assertEqual(card.count("data-cb3-question"), 1, "the card rendered two question lines")
+        self.assertNotIn(
+            "data-cb3-instructions",
+            card,
+            "instructions that only repeat the question were still printed",
+        )
+
+    def test_instructions_that_add_something_render_after_the_question(self) -> None:
+        card = self._check_card(self.html["extraInstructions"])
+        self.assertEqual(card.count(CHECK_QUESTION), 1, "the question is printed more than once")
+        self.assertIn("data-cb3-instructions", card, "a real instruction was dropped")
+        self.assertIn(EXTRA_INSTRUCTION, card)
+        self.assertLess(
+            card.index(CHECK_QUESTION),
+            card.index(EXTRA_INSTRUCTION),
+            "the instruction was printed before the question it belongs to",
+        )
+
+    def test_every_verdict_path_reads_as_a_whole_sentence(self) -> None:
+        verdicts = self.report["verdicts"]
+        self.assertEqual(verdicts["passPredicate"], "That is right. Chose the plain form.")
+        self.assertEqual(verdicts["passSentence"], "That is right. You used the plain form.")
+        self.assertEqual(verdicts["passSilent"], "That is right.")
+        self.assertEqual(
+            verdicts["missPredicate"],
+            "Not quite. The polite form was applied to a casual question.",
+        )
+        self.assertEqual(
+            verdicts["missSentence"],
+            "Not quite. That answer does not match any accepted answer.",
+        )
+        for name, line in verdicts.items():
+            self.assertTrue(line, f"{name} rendered no verdict line")
+            self.assertIsNone(
+                re.search(r"[.!?]\s+[a-z]", line),
+                f"{name} glues a verdict word to a lowercase fragment: {line!r}",
+            )
+            self.assertRegex(line, r"[.!?。！？]$", f"{name} does not end as a sentence")
+        # The selection miss still names the learner's own choice and never prints the grader's
+        # deterministic string (`coursebook/validators.py` returns it by design; the UI suppresses it).
+        self.assertTrue(verdicts["selectionMiss"].startswith("You chose A"), verdicts["selectionMiss"])
+        self.assertNotIn("does not match an accepted answer", verdicts["selectionMiss"])
+
     def test_classroom_v3_no_xp_outside_game(self) -> None:
         for name in ("guided", "textbook"):
             html = self.html[name]
@@ -556,7 +686,7 @@ class ClassroomV3RenderTest(unittest.TestCase):
         self.assertIn("Try it yourself", game)
         # WIRE-8: the challenge is a different served question, not the check already on screen.
         # Isolate the challenge card from the rest of the aside and prove it does not repeat the
-        # visible prompt (the prompt also appears once as the answer group's own aria-label).
+        # visible prompt (the question now renders once, in the check card's own question line).
         challenge_html = game.split("data-cb3-challenge", 1)[1].split('data-cb3-surface="evidence"', 1)[0]
         self.assertNotIn(
             "Which line is the romantic confession?",

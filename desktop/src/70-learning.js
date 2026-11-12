@@ -2206,10 +2206,12 @@ function AttemptControls({
             'data-cb-check-stimulus': check.check_id,
             children: [
               jsx(ProseText, { className: 'max-w-prose', text: stimulus.prompt }),
-              stimulus.learner_instructions
+              // The instructions are printed only when they say something the question does not.
+              // The same sentence in both fields is the same question twice on one screen.
+              classroomExtraInstruction(stimulus.prompt, stimulus.learner_instructions)
                 ? jsx('p', {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                    children: stimulus.learner_instructions
+                    children: classroomExtraInstruction(stimulus.prompt, stimulus.learner_instructions)
                   })
                 : null,
               choices.length > 0 && !choiceMode
@@ -3648,6 +3650,48 @@ function classroomSelectionMiss(result, choices, chosenIndex) {
 }
 
 /**
+ * The extra instruction a stimulus carries, or `null` when it only repeats the question.
+ *
+ * `stimulus.learner_instructions` is an optional field beside the question. When it is the prompt
+ * again — or the prompt with a trailing clause — printing both reads as the same question twice.
+ * Case, spacing and terminal punctuation do not make a new sentence, so compare on normalized
+ * text: drop a leading sentence that is the prompt, and return `null` when nothing is left.
+ */
+function classroomExtraInstruction(prompt, instructions) {
+  const question = String(prompt == null ? '' : prompt).trim()
+  const raw = String(instructions == null ? '' : instructions).trim()
+  if (!raw) return null
+  const norm = (value) =>
+    String(value)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[\s.!?。！？:;,\u2014\u2013-]+$/g, '')
+  const questionNorm = norm(question)
+  if (!questionNorm) return raw
+  const instructionNorm = norm(raw)
+  if (!instructionNorm || instructionNorm === questionNorm) return null
+  // The instructions are the question again with a clause on the end: keep only the new clause.
+  if (instructionNorm.startsWith(questionNorm)) {
+    const kept = raw
+      .split(/(?<=[.!?\u3002\uff01\uff1f])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence && norm(sentence) !== questionNorm)
+    return kept.length > 0 ? kept.join(' ') : null
+  }
+  // The instructions say nothing the question does not already say.
+  if (questionNorm.includes(instructionNorm)) return null
+  return raw
+}
+
+/** One observed clause as a whole sentence: capitalised once, terminated once. */
+function classroomObservedSentence(value) {
+  const text = String(value == null ? '' : value).trim()
+  if (!text) return ''
+  const cased = /^[a-z]/.test(text) ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text
+  return /[.!?\u3002\uff01\uff1f]$/.test(cased) ? cased : `${cased}.`
+}
+
+/**
  * One verdict line: the deck's sentence plus only the observation a learner can act on.
  *
  * CREATE-EXPERIENCE item 34: a selection check branches on the served format. Its message is
@@ -3671,12 +3715,12 @@ function classroomVerdictSentence(result, stimulus, chosenIndex) {
   const why = observed.length > 0 ? observed[0] : null
   if (result.verdict === 'pass') {
     if (selection) return CB3_CLASSROOM_COPY.correct
-    return why ? `${CB3_CLASSROOM_COPY.correct} ${why}` : CB3_CLASSROOM_COPY.correct
+    return why ? `${CB3_CLASSROOM_COPY.correct} ${classroomObservedSentence(why)}` : CB3_CLASSROOM_COPY.correct
   }
   if (result.verdict === 'needs_retry') return CB3_CLASSROOM_COPY.retryGrading
   if (result.verdict === 'partial' || result.verdict === 'not_yet') {
     if (selection) return classroomSelectionMiss(result, choices, chosenIndex)
-    return why ? `${CB3_CLASSROOM_COPY.wrong} ${why}` : CB3_CLASSROOM_COPY.wrong
+    return why ? `${CB3_CLASSROOM_COPY.wrong} ${classroomObservedSentence(why)}` : CB3_CLASSROOM_COPY.wrong
   }
   return null
 }
@@ -3714,6 +3758,14 @@ function ClassroomCheckCard({
   const verdictRef = useRef(null)
 
   const stimulus = check ? check.stimulus || null : null
+  // The served stimulus can carry `learner_instructions` beside its `prompt`. When the instructions
+  // are the question again (or the question plus a clause), printing both reads as the same
+  // question twice; the card prints the question once and an instruction only when it adds
+  // something the question does not already say.
+  const extraInstruction = classroomExtraInstruction(
+    stimulus && stimulus.prompt,
+    stimulus && stimulus.learner_instructions
+  )
   const items = checklistItems(stimulus)
   const choices =
     stimulus && stimulus.format === 'selection' && Array.isArray(stimulus.choices)
@@ -3865,6 +3917,21 @@ function ClassroomCheckCard({
           }, 'question')
         : null,
 
+      extraInstruction
+        ? jsx('p', {
+            'data-cb3-instructions': '',
+            style: {
+              margin: 0,
+              fontFamily: 'var(--cb3-font-ui)',
+              fontSize: cb3Type('meta'),
+              lineHeight: cb3Lead('meta'),
+              color: cb3Role('ink-soft'),
+              maxWidth: '60ch'
+            },
+            children: extraInstruction
+          }, 'instructions')
+        : null,
+
       !ready
         ? jsxs('div', {
             'data-cb3-check-read': stimulusStatus,
@@ -3926,7 +3993,7 @@ function ClassroomCheckCard({
             children: [
               jsx('div', {
                 role: 'radiogroup',
-                'aria-label': stimulus.prompt || CB3_CLASSROOM_COPY.checkPrimary,
+                'aria-label': CB3_CLASSROOM_COPY.checkChoices,
                 'data-cb3-answer': 'selection',
                 style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
                 children: choices.map((choice, index) =>
