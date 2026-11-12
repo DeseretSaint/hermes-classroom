@@ -244,19 +244,19 @@ const used = () => {
   return node ? { kind: node.getAttribute('data-cb-assist-used'), text: node.textContent.trim() } : null
 }
 const hintButtons = () =>
-  Array.from(document.querySelectorAll('button')).filter((item) => item.textContent.trim() === 'I used a hint')
+  Array.from(document.querySelectorAll('button')).filter((item) => item.textContent.trim() === 'I already used a hint')
 const initial = chip()
 const initialUsed = used()
 
 if (payload.mode === 'assist') {
-  button('I used a hint').click()
+  button('I already used a hint').click()
   await waitFor(() => chip() && chip().value === 'hinted')
 }
 // H-206: after one recorded hint the control must have left, and a second click must find no
 // control to land on (nothing that could look like a second hint).
 let secondHint = null
 if (payload.mode === 'assist') {
-  const again = button('I used a hint')
+  const again = button('I already used a hint')
   secondHint = again ? 'still_available' : 'gone'
   if (again) {
     again.click()

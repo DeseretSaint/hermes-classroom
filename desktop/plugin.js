@@ -14875,6 +14875,9 @@ function AttemptControls({
   // H-206: the pressed control shows what it is recording, then leaves. `assistPending` is the one
   // kind in flight; `assistBusy` stays the guard every other branch already reads.
   const [assistPending, setAssistPending] = useState(null)
+  // H-206/W2-4: the two hint controls write the same event but mean different things, so the
+  // in-flight label names the one that was pressed ("Asking…" vs "Recording…").
+  const [assistIntent, setAssistIntent] = useState(null)
   const assistBusy = assistPending !== null
   // H-178: `lesson.assist` bumps the enrollment revision (`docs/CONTRACTS.md` §lesson.assist), and
   // its response states the new revision. Adopting it locally means pressing "I used a hint" and
@@ -15137,11 +15140,11 @@ function AttemptControls({
    */
   const recordAssist = useCallback(
     async (kind) => {
-      if (!check || assistBusy) return
+      if (!check || assistBusy) return false
       // H-206: a hint is one recorded statement per attempt. The control is already in its used
       // state after the first one, so a repeat may not add a second event that changes nothing.
-      if (kind === 'hint_request' && hintUsed) return
-      if (kind === 'answer_shown' && answerUsed) return
+      if (kind === 'hint_request' && hintUsed) return false
+      if (kind === 'answer_shown' && answerUsed) return false
       setAssistPending(kind)
       setError(null)
       const response = await rpc(
@@ -15155,7 +15158,7 @@ function AttemptControls({
       setAssistPending(null)
       if (!response.ok) {
         setError(response.error)
-        return
+        return false
       }
       const recorded = response.result && response.result.evidence_class
       assistRecordedNow.current = true
@@ -15165,9 +15168,32 @@ function AttemptControls({
       const bumped = response.result ? Number(response.result.revision) : NaN
       if (Number.isFinite(bumped) && bumped > 0) setAssistRevision(bumped)
       if (onCommitted) onCommitted(response.result)
+      return true
     },
     [check, assistBusy, hintUsed, answerUsed, enrollmentId, objectiveId, fenceRevision, onCommitted]
   )
+
+  /**
+   * Ask for a hint, then answer it.
+   *
+   * Two writes, in order: this pane records the learner's own `hint_request` (the same event the
+   * disclosure below writes), and only after it is stored does the rail receive the one hint
+   * question. The disclosure stays a record of what already happened; this control is the one
+   * that actually asks, so a learner who presses it is told something before the check is marked.
+   */
+  const askHintBesideCheck = useCallback(async () => {
+    setAssistIntent('ask')
+    const recorded = await recordAssist('hint_request')
+    setAssistIntent(null)
+    if (recorded) requestTutorHint()
+  }, [recordAssist])
+
+  /** The post-hoc disclosure: it records the learner's own statement and answers nothing. */
+  const recordHintDisclosure = useCallback(async () => {
+    setAssistIntent('record')
+    await recordAssist('hint_request')
+    setAssistIntent(null)
+  }, [recordAssist])
 
   /** Radio-group keys: 1–8 pick by number, arrows move and select, Home/End jump. */
   const choiceKeyDown = (event) => {
@@ -15564,13 +15590,27 @@ function AttemptControls({
                     children: [
                       hintUsed
                         ? jsx(AssistUsedFlag, { kind: 'hint_request', children: 'Hint recorded' })
-                        : jsx(sdk.Button, {
-                            variant: 'text',
-                            size: 'sm',
-                            disabled: locked || assistBusy,
-                            'data-cb-assist-pending': assistPending === 'hint_request' ? '' : undefined,
-                            onClick: () => recordAssist('hint_request'),
-                            children: assistPending === 'hint_request' ? 'Recording…' : 'I used a hint'
+                        : jsxs('span', {
+                            style: { display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
+                            children: [
+                              jsx(sdk.Button, {
+                                variant: 'text',
+                                size: 'sm',
+                                'data-cb-ask-hint': '',
+                                disabled: locked || assistBusy,
+                                onClick: askHintBesideCheck,
+                                children: assistIntent === 'ask' && assistPending === 'hint_request' ? 'Asking…' : 'Ask for a hint'
+                              }, 'ask'),
+                              jsx(sdk.Button, {
+                                variant: 'text',
+                                size: 'sm',
+                                'data-cb-assist-disclosure': 'hint_request',
+                                disabled: locked || assistBusy,
+                                'data-cb-assist-pending': assistPending === 'hint_request' && assistIntent === 'record' ? '' : undefined,
+                                onClick: recordHintDisclosure,
+                                children: assistIntent === 'record' && assistPending === 'hint_request' ? 'Recording…' : 'I already used a hint'
+                              }, 'disclosure')
+                            ]
                           }),
                       answerUsed
                         ? jsx(AssistUsedFlag, { kind: 'answer_shown', children: 'Answer shown' })
@@ -16097,6 +16137,12 @@ const CB3_CLASSROOM_COPY = Object.freeze({
   checkChecklist: 'Checklist',
   checkAnswers: 'Answers',
   checkCriteria: 'Grading criteria',
+  // W2-4 item 35: the check's own door to the tutor. The first press records the assist and asks
+  // the one hint question; the status line says where the answer went, never its content.
+  checkHint: 'Ask for a hint',
+  checkHintPending: 'Asking the tutor for a hint.',
+  checkHintRecorded: 'Hint recorded. The tutor has answered in the tutor panel.',
+  checkHintFailed: 'The hint could not be recorded. Try again.',
   correct: 'That is right.',
   wrong: 'Not quite.',
   // A grader that could not finish is not a wrong answer: the attempt is saved and the retry is
@@ -16386,8 +16432,9 @@ function classroomSceneFromWorld(read, sectionId, courseTitle) {
 }
 
 /** One quiet line of teaching state: never a goal, never a compliment. */
-function ClassroomQuietLine({ children, role }) {
+function ClassroomQuietLine({ children, role, ...rest }) {
   return jsx('p', {
+    ...rest,
     role: role || undefined,
     style: {
       margin: 0,
@@ -16693,6 +16740,7 @@ function ClassroomCheckCard({
   enrollmentId,
   objectiveId,
   revision,
+  onRevision,
   onRetryStimulus,
   onCommitted,
   onVerdict,
@@ -16772,6 +16820,50 @@ function ClassroomCheckCard({
   const moveOn = useCallback(() => {
     if (onNextSection) onNextSection()
   }, [onNextSection])
+
+  /**
+   * Item 35: a hint is a hint.
+   *
+   * A press writes the learner's own `hint_request` through `lesson.assist` (the check's revision
+   * fence is current here), adopts the bumped revision, and only then hands the one hint question
+   * to the tutor rail. The answer is the tutor's, rendered in the rail this press reveals; the card
+   * states that the hint was recorded and where it went. The check still owns the verdict.
+   */
+  const [hintState, setHintState] = useState(null)
+  const hintCheckId = check && check.check_id ? check.check_id : null
+  const hintCheckRef = useRef(null)
+  useEffect(() => {
+    // A section's check is the boundary; a transient null while `check.open` re-reads after the
+    // assist's revision bump is not a new check and must not wipe the recorded line.
+    if (!hintCheckId) return
+    if (hintCheckRef.current && hintCheckRef.current !== hintCheckId) setHintState(null)
+    hintCheckRef.current = hintCheckId
+  }, [hintCheckId])
+  const hintAvailable =
+    Boolean(check) &&
+    !locked &&
+    hintState !== 'asking' &&
+    hintState !== 'recorded' &&
+    backendSupports('lesson.assist') &&
+    backendSupports('tutor.ask')
+  const askHint = useCallback(async () => {
+    if (!check || hintState === 'asking' || hintState === 'recorded') return
+    setHintState('asking')
+    setError(null)
+    const response = await rpc(
+      'lesson.assist',
+      { enrollment_id: enrollmentId, objective_id: objectiveId, kind: 'hint_request' },
+      { idempotencyKey: newOperationId('assist'), expectedRevision: Number(revision) || 0 }
+    )
+    if (!response.ok) {
+      setHintState('failed')
+      return
+    }
+    const bumped = response.result ? Number(response.result.revision) : NaN
+    if (Number.isFinite(bumped) && bumped > 0 && onRevision) onRevision(bumped)
+    setHintState('recorded')
+    requestTutorHint()
+  }, [check, hintState, enrollmentId, objectiveId, revision, onRevision])
 
   const primary =
     phase === 'graded'
@@ -16999,6 +17091,33 @@ function ClassroomCheckCard({
         : null,
 
       jsxs('div', {
+        'data-cb3-hint-row': hintState || 'available',
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem 0.75rem' },
+        children: [
+          hintState === 'recorded'
+            ? jsx(ClassroomQuietLine, {
+                role: 'status',
+                'data-cb3-hint': 'recorded',
+                children: CB3_CLASSROOM_COPY.checkHintRecorded
+              }, 'recorded')
+            : jsx(PillAction, {
+                'data-cb3-hint': hintState === 'asking' ? 'asking' : hintState === 'failed' ? 'failed' : 'available',
+                variant: 'quiet',
+                label: hintState === 'asking' ? CB3_CLASSROOM_COPY.checkHintPending : CB3_CLASSROOM_COPY.checkHint,
+                disabled: !hintAvailable,
+                onClick: askHint
+              }, 'ask'),
+          hintState === 'failed'
+            ? jsx(ClassroomQuietLine, {
+                role: 'alert',
+                'data-cb3-hint': 'failed-note',
+                children: CB3_CLASSROOM_COPY.checkHintFailed
+              }, 'failed')
+            : null
+        ]
+      }, 'hint'),
+
+      jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' },
         children: [
           jsx(PillAction, {
@@ -17046,6 +17165,7 @@ function ClassroomV3({
   enrollmentId,
   objectiveId,
   revision,
+  onRevision,
   onBack,
   onOpenSection,
   onNextSection,
@@ -17353,6 +17473,7 @@ function ClassroomV3({
             enrollmentId,
             objectiveId,
             revision,
+            onRevision,
             onRetryStimulus,
             onCommitted: handleVerdict,
             onNextSection: advanceSection,
@@ -17406,7 +17527,7 @@ function ClassroomV3({
           }, 'next')
         : null,
       typeof onAskTutor === 'function'
-        ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.asideTutor, onClick: onAskTutor }, 'tutor')
+        ? jsx(PillAction, { variant: 'quiet', label: CB3_CLASSROOM_COPY.asideTutor, onClick: onAskTutor, 'data-cb-aside-tutor': '' }, 'tutor')
         : null,
       jsx(FoxPose, { pose: foxPose, size: wide ? 96 : 88 }, 'fox')
     ]
@@ -17717,6 +17838,12 @@ function ClassroomV3Surface({
     enrollmentId,
     objectiveId,
     revision,
+    // W2-4: an assist moves the enrollment revision before the page refresh lands, so the check
+    // card's next submit fences on the bumped value instead of losing to STALE_REVISION.
+    onRevision: (value) => {
+      const next = Number(value)
+      if (Number.isFinite(next) && next > 0) setRevisionFloor(next)
+    },
     onBack,
     onOpenSection,
     onNextSection,
@@ -41134,6 +41261,12 @@ function CoursebookPage() {
       onNextSection: (nextObjectiveId) =>
         setOpenCourse({ ...openCourse, objectiveId: nextObjectiveId || null, blockId: null }),
       onStartChat: () => startClassroomRun(openCourse),
+      // Item 35: the classroom's tutor door. It reveals the contributed tutor rail and puts the
+      // caret in its composer; it never sends, and it never opens a chat.
+      onAskTutor: () => {
+        revealCoursebookPane()
+        requestTutorFocus()
+      },
       onChanged: () => reloadHealth()
     })
   } else if (openCourse) {
@@ -41507,6 +41640,45 @@ function useTutorQuote() {
 function requestTutorFocus() {
   tutorFocusTick += 1
   tutorFocusListeners.forEach((listener) => listener(tutorFocusTick))
+}
+
+/**
+ * A hint asked from where the learner is stuck, consumed by the rail.
+ *
+ * The classroom records the assist (`lesson.assist`) in the check's own revision fence, then asks
+ * the rail to put the one hint question (`TUTOR_HINT_QUESTION`) to the tutor. The store is the same
+ * seam `armTutorQuote` uses for a selection: the two surfaces are separate React roots of one
+ * module instance, and the request survives a rail that mounts a beat later. Nothing is recorded
+ * here — the caller already wrote the event, so a late mount cannot double-count it.
+ */
+let pendingTutorHint = null
+let tutorHintTick = 0
+const tutorHintListeners = new Set()
+
+function requestTutorHint() {
+  tutorHintTick += 1
+  pendingTutorHint = { id: tutorHintTick, askedAt: Date.now() }
+  tutorHintListeners.forEach((listener) => listener(pendingTutorHint))
+  revealCoursebookPane()
+  requestTutorFocus()
+  return pendingTutorHint
+}
+
+function consumeTutorHint(id) {
+  if (pendingTutorHint && pendingTutorHint.id === id) pendingTutorHint = null
+}
+
+function useTutorHintRequest() {
+  const [request, setRequest] = useState(pendingTutorHint)
+  useEffect(() => {
+    const listener = (next) => setRequest(next)
+    tutorHintListeners.add(listener)
+    if (pendingTutorHint) listener(pendingTutorHint)
+    return () => {
+      tutorHintListeners.delete(listener)
+    }
+  }, [])
+  return request
 }
 
 function useTutorFocusTick() {
@@ -42451,6 +42623,7 @@ function TutorRailPane({ binding }) {
 
   const quote = useTutorQuote()
   const focusTick = useTutorFocusTick()
+  const hintRequest = useTutorHintRequest()
   const [mode, setMode] = useState('ask')
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -42688,6 +42861,38 @@ function TutorRailPane({ binding }) {
     adoptRevision,
     performAsk
   ])
+
+  // Item 35: a hint asked beside the check arrives here as a request, not as a second composer.
+  // The caller already recorded `lesson.assist`, so this only asks the one hint question and
+  // renders the tutor's answer as a turn of this thread. A rail that mounts a beat later still
+  // answers it once; a payload the binding cannot name yet stays pending rather than being lost.
+  const hintHandledRef = useRef(0)
+  useEffect(() => {
+    if (!hintRequest || hintRequest.id === hintHandledRef.current || busy) return
+    // A request older than two minutes belongs to a press the learner has moved past; asking it
+    // now would be an unprompted question, so it is dropped rather than replayed.
+    if (Date.now() - (Number(hintRequest.askedAt) || 0) > 120000) {
+      hintHandledRef.current = hintRequest.id
+      consumeTutorHint(hintRequest.id)
+      return
+    }
+    const payload = tutorAskPayload({
+      courseId,
+      enrollmentId: binding.enrollment_id,
+      objectiveId,
+      lessonRunId: runId,
+      question: TUTOR_HINT_QUESTION,
+      quote: null,
+      mode: 'ask'
+    })
+    if (!payload) return
+    hintHandledRef.current = hintRequest.id
+    consumeTutorHint(hintRequest.id)
+    setMode('ask')
+    setHintUsed(true)
+    setNotice('Hint recorded. This answer is marked hinted; the check still owns the verdict.')
+    performAsk(payload)
+  }, [hintRequest, busy, courseId, binding.enrollment_id, objectiveId, runId, performAsk])
 
   const startPractice = useCallback(async () => {
     if (!practiceAvailable || busy) return
