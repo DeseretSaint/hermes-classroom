@@ -67,6 +67,15 @@ Regenerating the audit rewrote only `generated_at`, the recorded branch name and
 measurement and **all 62 screenshots** reproduced byte-identically, which is what pins the numbers to
 `4087908c`.
 
+**Re-pin at `514942bc` (W2-6, `5f956f7b`).** The `cb.rpc` v27 labels merge rebuilt `desktop/plugin.js`
+to sha256 `514942bc9ae7486c61c6dbf43cd5eb5fdc8d630fb5bb921cfb7e0a17745cca0c`.
+`python3 scripts/m4v-audit.py` on that module returned 15 PASS, 0 not PASS, 62 frames; the 56
+non-forced frames still measure **2,120** text nodes, the 32 frames with an accessibility tree still
+measure **298** AX controls, the worst authored contrast is unchanged at 5.93:1, and C-08 still
+measures **0** animated nodes in the four reduced-motion frames against **70** in full motion. As at
+every earlier re-pin, the regeneration rewrote only `generated_at`, the recorded branch and
+`plugin_sha256`; the measurements and all 62 screenshots reproduced unchanged.
+
 The zero-pixel result is a property of this gate's mount, not a claim that `d4d37e2` changed nothing:
 the v3 `--cb3-font-*` variables are set by `CbV3Scope` on the route root, and this harness mounts the
 six lesson surfaces under a v2 `data-cb-scope` root. The frames therefore keep the OS serif/sans
