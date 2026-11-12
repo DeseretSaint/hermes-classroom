@@ -1,0 +1,796 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/projection/v2",
+  "title": "Coursebook pack-check projection v2",
+  "description": "The deterministic, side-effect-free projection from a published pack's manifest check (cb.pack) to the kernel check spec stored in objectives.evidence_criteria_json. Import is the first consumer; Parent Studio generation and community upload review are the next two, so the mapping is contract text here rather than an importer implementation detail. Every rule below is total: the same input always yields the same output, no clock, no randomness, no per-call context. The projection decides gradability; it never grades, never renders a verdict and never writes anything.",
+  "x-contract-id": "cb.projection",
+  "x-contract-version": 2,
+  "x-owner": "atlas",
+  "x-status": "frozen",
+  "x-supersedes": "https://contracts.coursebook.hermes/projection/v1",
+  "x-amendment": "v2 changes no rule, field, vector or output of the check projection. It corrects the contract's one sentence about trust labels: human_review_recorded is store-owned evidence, never a manifest self-declaration. See audit_rules.description. v1 stays on disk as immutable history.",
+  "x-implemented-by": "coursebook.pack_flow.check_spec_from_pack_check and coursebook.pack_flow.objective_criteria",
+  "x-proof": "scripts/proof_contract_v4.py",
+  "x-known-divergences": [
+    {
+      "id": "empty-alternatives",
+      "status": "resolved",
+      "summary": "When this contract was frozen, the importer withheld every check that declares no accepted_alternatives, because its rule applied an unconditional all() over an empty list. The contract requires the guard: an empty or whitespace-only alternatives list is not an inconsistency, and the reference answer itself is an accepted form.",
+      "affected_rule": "R5",
+      "owner": "lattice",
+      "resolved_by": "577d268 (CB-025): coursebook.pack_flow.audit_check_for_import applies the non-empty guard",
+      "resolution": "Resolved. The no_accepted_alternatives_is_gradable vector runs without a divergence skip, and the bundled japanese-affection-context-l0 pack's chk-register-transfer-1 now projects, so obj-register-transfer opens through the real dispatcher."
+    },
+    {
+      "id": "declared-audit-failed",
+      "status": "resolved",
+      "summary": "When this contract was frozen, the importer graded a check whose manifest declares audit_state 'failed' whenever its own deterministic audit passed, so the stored spec said audit_state 'passed' while declared_audit_state said 'failed'. The contract requires the author's declaration to withhold gradability: a declaration can never grant it, but it may always refuse it.",
+      "affected_rule": "R6",
+      "owner": "lattice",
+      "resolved_by": "577d268 (CB-025): coursebook.pack_flow.audit_check_for_import reports the R6 problem and check_spec_from_pack_check returns None",
+      "resolution": "Resolved. The declared_failed_withholds vector runs without a divergence skip and now expects the ordinary audit-failure result, so R6 cannot reach a stored spec."
+    }
+  ],
+  "inputs": {
+    "source_contract": "https://contracts.coursebook.hermes/pack-manifest/v1",
+    "source_path": "objectives[].checks[]",
+    "fields_read": [
+      "check_id",
+      "evidence_target",
+      "stimulus",
+      "rubric",
+      "reference_answer",
+      "accepted_alternatives",
+      "locale",
+      "audit_state"
+    ],
+    "fields_deliberately_unread": {
+      "version": "The manifest check's own revision is authoring history. The kernel versions a check when it opens one; copying this number into the spec would create a second version authority.",
+      "check_id": "Not copied into the spec. The check id becomes the criterion id in objective_criteria, which is where the kernel looks it up."
+    }
+  },
+  "recipe_gate": {
+    "rule": "P1",
+    "description": "A parent pack is a lesson blueprint for a parent to teach from. The harness never grades a child, so no check from a parent pack ever yields a spec.",
+    "withhold_when": "recipe == 'parent'",
+    "reason": "parent_observation_not_graded"
+  },
+  "audit_rules": {
+    "description": "A check becomes gradable only when every rule passes. This is a deterministic pre-import audit, never a human review, and it never claims one: no trust label may be derived from a pack's own manifest. human_review_recorded is emitted only from a store-held review of the pack's exact content hash; the manifest's trust.reviewed_by/reviewed_at stay visible as author-declared provenance and never become a label.",
+    "terms": {
+      "trim(x)": "Python str.strip() semantics: remove leading and trailing whitespace.",
+      "lower(x)": "Python str.casefold().",
+      "problem": "A stable English message. It is the only reason text a withheld check reports; it is not localised and it is not a user-facing sentence."
+    },
+    "rules": [
+      {
+        "id": "R1",
+        "name": "stimulus_present",
+        "passes_when": "trim(stimulus) != ''",
+        "problem": "empty stimulus"
+      },
+      {
+        "id": "R2",
+        "name": "reference_present",
+        "passes_when": "trim(reference_answer) != ''",
+        "problem": "empty reference answer"
+      },
+      {
+        "id": "R3",
+        "name": "rubric_present",
+        "passes_when": "at least one rubric item has trim(item) != ''",
+        "problem": "empty rubric"
+      },
+      {
+        "id": "R4",
+        "name": "reference_not_in_stimulus",
+        "passes_when": "not (R1 passed and R2 passed and lower(trim(reference_answer)) is a substring of lower(trim(stimulus)))",
+        "problem": "reference answer appears in the stimulus"
+      },
+      {
+        "id": "R5",
+        "name": "alternatives_add_a_form",
+        "passes_when": "R2 failed, or no alternative has trim(alternative) != '', or at least one non-empty alternative satisfies lower(trim(alternative)) != lower(trim(reference_answer))",
+        "problem": "accepted alternatives do not add an accepted form",
+        "note": "The reference answer is already an accepted form, so declaring no alternative is not a flaw. This rule exists so a pack cannot ship a list of 'alternatives' that are all the reference answer in disguise."
+      },
+      {
+        "id": "R6",
+        "name": "declared_audit_not_failed",
+        "passes_when": "manifest audit_state is absent, 'unreviewed' or 'passed'",
+        "problem": "the pack declares this check failed its own audit",
+        "note": "A pack's self-declaration can never grant gradability (R1-R5 do that) and can always refuse it. Grading an item its author marked failed would make the stored spec contradict its own provenance. R6 is an audit rule, not a separate declaration gate: when it fails, the check is withheld for the same 'import_audit_failed' reason as R1-R5, this problem string is reported in problem_order alongside theirs, and no other reason vocabulary exists for it."
+      }
+    ],
+    "problem_order": "Rules are evaluated R1..R6 in order and every failing problem is reported; the list order in the result is that order."
+  },
+  "projection": {
+    "description": "Applied only when P1 does not withhold and no audit rule fails. Every listed field is always present in the output; there is no optional field and no default that depends on a caller.",
+    "fields": {
+      "audit_state": {
+        "value": "passed",
+        "why": "A spec exists only when the automated audit passed. The kernel reads this field, and only 'passed' opens a check."
+      },
+      "audit_source": {
+        "value": "import_automated_audit",
+        "why": "Names the authority that produced the spec so no reader can mistake it for human review."
+      },
+      "declared_audit_state": {
+        "value": "manifest audit_state, verbatim; 'unreviewed' when absent",
+        "why": "Preserved provenance. After the R6 gate it can only be 'unreviewed' or 'passed'."
+      },
+      "stimulus": {
+        "value": "{'prompt': trim(stimulus)}",
+        "why": "One field, the question text. No instructions, no answer key, no tool hints."
+      },
+      "reference": {
+        "value": "{'kind': 'rubric_only'} when evidence_target is 'production' or 'transfer', otherwise {'kind': 'exact', 'answers': [...]}",
+        "rubric_only_targets": ["production", "transfer"],
+        "answers_construction": "[trim(reference_answer)] followed by every element of accepted_alternatives, in manifest order, that is not exactly equal to trim(reference_answer)",
+        "why": "Closed-form targets have one or more accepted answers; production and transfer targets are judged against the rubric because an exact string match would grade wording, not the construct. Alternatives are carried verbatim so an answer editor can see what was declared."
+      },
+      "rubric": {
+        "value": "{'construct': evidence_target, 'pass_rule': 'all', 'criteria': [{'id': 'c<N>', 'description': <item>}]}",
+        "criteria_construction": "N is the 1-based position in the manifest's rubric array; description is the item verbatim, untrimmed, including an empty string.",
+        "why": "Positional ids keep the criterion identity stable against the manifest the learner's pack declares. 'all' is the only pass rule a pack may imply: a pack cannot declare that one criterion out of three is enough."
+      },
+      "locale": {
+        "value": "manifest locale verbatim, or null when absent",
+        "why": "Some checks are language-specific; null means unspecified, not 'English'."
+      }
+    },
+    "never_produced": [
+      "check_id",
+      "version",
+      "criterion_id",
+      "variants",
+      "any field naming a learner, course, enrollment, attempt, path or provider"
+    ],
+    "criterion_id_note": "The kernel adds criterion_id when it reads the spec out of evidence_criteria_json (coursebook.domain._check_spec). A second consumer must not write it and must not assume it is there."
+  },
+  "objective_criteria": {
+    "description": "The criteria list written to objectives.evidence_criteria_json. Order is normative: the kernel takes the first entry carrying a check_spec, so the pack's first gradable check is the check the objective opens.",
+    "entries": [
+      {
+        "position": "first",
+        "value": "{'id': 'pack_objective', 'description': objective_id, 'pack_objective_id': objective_id}",
+        "why": "Keeps the pack's objective identity inside the kernel record without a second column."
+      },
+      {
+        "position": "after pack_objective, before the checks",
+        "value": "one {'id': 'target<N>', 'description': <text>} per declared evidence_criteria item, N 1-based over that array verbatim",
+        "why": "The pack's own success criteria are visible in the Plan tab and are not machine-graded."
+      },
+      {
+        "position": "after the targets, in manifest check order",
+        "graded": "{'id': check_id, 'description': 'automated audit of ' + check_id, 'check_spec': <projection>}",
+        "withheld": "{'id': check_id, 'description': 'parent observation: not machine-graded' (recipe parent) or 'check withheld: failed the import audit', 'check_id': check_id, 'check_spec_withheld': true}",
+        "why": "A withheld check stays visible with its reason. It is not silently dropped, and no placeholder spec is invented."
+      }
+    ],
+    "requires_check_id": "check_id is required by cb.pack, so both shapes are total for a schema-valid manifest."
+  },
+  "examples": [
+    {
+      "name": "exact_closed_form",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-sum-1",
+        "version": 2,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["States four", "Shows the sum", "Answers in one word"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["four"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "What is 2 + 2?"},
+          "reference": {"kind": "exact", "answers": ["4", "four"]},
+          "rubric": {
+            "construct": "recall",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "States four"},
+              {"id": "c2", "description": "Shows the sum"},
+              {"id": "c3", "description": "Answers in one word"}
+            ]
+          },
+          "locale": null
+        }
+      }
+    },
+    {
+      "name": "parent_recipe_withholds",
+      "recipe": "parent",
+      "check": {
+        "check_id": "chk-measure-1",
+        "version": 1,
+        "evidence_target": "procedure",
+        "stimulus": "Measure the jug together and write down the reading.",
+        "rubric": ["Reads the scale", "Writes the unit", "Checks with the child"],
+        "reference_answer": "150 ml",
+        "accepted_alternatives": ["150 millilitres"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {"kind": "none", "reason": "parent_observation_not_graded", "problems": []}
+    },
+    {
+      "name": "reference_leaked_into_stimulus",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-leak-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "The answer is 150 ml. How much is in the jug?",
+        "rubric": ["Says 150 ml", "Counts the marks", "Names the unit"],
+        "reference_answer": "150 ml",
+        "accepted_alternatives": ["150", "150ml"],
+        "audit_state": "passed"
+      },
+      "expect": {
+        "kind": "none",
+        "reason": "import_audit_failed",
+        "problems": ["reference answer appears in the stimulus"]
+      }
+    },
+    {
+      "name": "whitespace_only_stimulus",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-blank-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "   ",
+        "rubric": ["States four", "Shows the sum", "Answers in one word"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["four"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {"kind": "none", "reason": "import_audit_failed", "problems": ["empty stimulus"]}
+    },
+    {
+      "name": "blank_rubric",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-blank-2",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["   ", ""],
+        "reference_answer": "4",
+        "accepted_alternatives": ["four"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {"kind": "none", "reason": "import_audit_failed", "problems": ["empty rubric"]}
+    },
+    {
+      "name": "alternatives_do_not_add_a_form",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-novar-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["States four", "Shows the sum", "Answers in one word"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["4", " 4 "],
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "none",
+        "reason": "import_audit_failed",
+        "problems": ["accepted alternatives do not add an accepted form"]
+      }
+    },
+    {
+      "name": "no_accepted_alternatives_is_gradable",
+      "recipe": "one_off",
+      "divergence": "empty-alternatives",
+      "check": {
+        "check_id": "chk-solo-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is the capital of Utah?",
+        "rubric": ["Names Salt Lake City", "Gives the state", "No qualifier"],
+        "reference_answer": "Salt Lake City",
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "What is the capital of Utah?"},
+          "reference": {"kind": "exact", "answers": ["Salt Lake City"]},
+          "rubric": {
+            "construct": "recall",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "Names Salt Lake City"},
+              {"id": "c2", "description": "Gives the state"},
+              {"id": "c3", "description": "No qualifier"}
+            ]
+          },
+          "locale": null
+        }
+      }
+    },
+    {
+      "name": "declared_failed_withholds",
+      "recipe": "casual",
+      "divergence": "declared-audit-failed",
+      "check": {
+        "check_id": "chk-declared-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["States four", "Shows the sum", "Answers in one word"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["four"],
+        "audit_state": "failed"
+      },
+      "expect": {
+        "kind": "none",
+        "reason": "import_audit_failed",
+        "problems": ["the pack declares this check failed its own audit"]
+      }
+    },
+    {
+      "name": "production_target_is_rubric_only",
+      "recipe": "committed",
+      "check": {
+        "check_id": "chk-write-1",
+        "version": 1,
+        "evidence_target": "production",
+        "stimulus": "Write two sentences introducing yourself in Japanese.",
+        "rubric": ["Uses a greeting", "Uses a name pattern", "Register is polite"],
+        "reference_answer": "はじめまして。私はケイトンです。",
+        "accepted_alternatives": ["こんにちは。ケイトンです。"],
+        "locale": "ja",
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "Write two sentences introducing yourself in Japanese."},
+          "reference": {"kind": "rubric_only"},
+          "rubric": {
+            "construct": "production",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "Uses a greeting"},
+              {"id": "c2", "description": "Uses a name pattern"},
+              {"id": "c3", "description": "Register is polite"}
+            ]
+          },
+          "locale": "ja"
+        }
+      }
+    },
+    {
+      "name": "transfer_target_is_rubric_only",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-transfer-1",
+        "version": 1,
+        "evidence_target": "transfer",
+        "stimulus": "A colleague invites you to dinner. Decline politely.",
+        "rubric": ["Declines", "Gives a reason", "Invites another time"],
+        "reference_answer": "すみません、ちょっと…",
+        "accepted_alternatives": ["今日はちょっと難しいです。"],
+        "locale": "ja",
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "A colleague invites you to dinner. Decline politely."},
+          "reference": {"kind": "rubric_only"},
+          "rubric": {
+            "construct": "transfer",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "Declines"},
+              {"id": "c2", "description": "Gives a reason"},
+              {"id": "c3", "description": "Invites another time"}
+            ]
+          },
+          "locale": "ja"
+        }
+      }
+    },
+    {
+      "name": "trim_applies_to_stimulus_and_reference_only",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-trim-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "  What is 2 + 2?  ",
+        "rubric": ["  States four  ", "Shows the sum", "Answers in one word"],
+        "reference_answer": "  4  ",
+        "accepted_alternatives": ["four"],
+        "audit_state": "passed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "passed",
+          "stimulus": {"prompt": "What is 2 + 2?"},
+          "reference": {"kind": "exact", "answers": ["4", "four"]},
+          "rubric": {
+            "construct": "recall",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "  States four  "},
+              {"id": "c2", "description": "Shows the sum"},
+              {"id": "c3", "description": "Answers in one word"}
+            ]
+          },
+          "locale": null
+        }
+      }
+    },
+    {
+      "name": "duplicate_alternative_equal_to_reference_is_dropped",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-dup-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["States four", "Shows the sum", "Answers in one word"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["4", "four", "four"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "What is 2 + 2?"},
+          "reference": {"kind": "exact", "answers": ["4", "four", "four"]},
+          "rubric": {
+            "construct": "recall",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "States four"},
+              {"id": "c2", "description": "Shows the sum"},
+              {"id": "c3", "description": "Answers in one word"}
+            ]
+          },
+          "locale": null
+        }
+      }
+    },
+    {
+      "name": "blank_rubric_item_keeps_its_position",
+      "recipe": "casual",
+      "check": {
+        "check_id": "chk-gap-1",
+        "version": 1,
+        "evidence_target": "recall",
+        "stimulus": "What is 2 + 2?",
+        "rubric": ["States four", "", "Shows the sum"],
+        "reference_answer": "4",
+        "accepted_alternatives": ["four"],
+        "audit_state": "unreviewed"
+      },
+      "expect": {
+        "kind": "spec",
+        "spec": {
+          "audit_state": "passed",
+          "audit_source": "import_automated_audit",
+          "declared_audit_state": "unreviewed",
+          "stimulus": {"prompt": "What is 2 + 2?"},
+          "reference": {"kind": "exact", "answers": ["4", "four"]},
+          "rubric": {
+            "construct": "recall",
+            "pass_rule": "all",
+            "criteria": [
+              {"id": "c1", "description": "States four"},
+              {"id": "c2", "description": ""},
+              {"id": "c3", "description": "Shows the sum"}
+            ]
+          },
+          "locale": null
+        }
+      }
+    }
+  ],
+  "objective_examples": [
+    {
+      "name": "casual_objective_grades_first_check_and_withholds_the_second",
+      "recipe": "casual",
+      "objective": {
+        "objective_id": "obj-basics",
+        "evidence_target": "recall",
+        "evidence_criteria": ["Says it aloud", "Writes it down"],
+        "checks": [
+          {
+            "check_id": "chk-sum-1",
+            "version": 1,
+            "evidence_target": "recall",
+            "stimulus": "What is 2 + 2?",
+            "rubric": ["States four", "Shows the sum", "Answers in one word"],
+            "reference_answer": "4",
+            "accepted_alternatives": ["four"],
+            "audit_state": "unreviewed"
+          },
+          {
+            "check_id": "chk-leak-1",
+            "version": 1,
+            "evidence_target": "recall",
+            "stimulus": "The answer is 4. What is 2 + 2?",
+            "rubric": ["States four", "Shows the sum", "Answers in one word"],
+            "reference_answer": "4",
+            "accepted_alternatives": ["four"],
+            "audit_state": "unreviewed"
+          }
+        ]
+      },
+      "expect": [
+        {"id": "pack_objective", "description": "obj-basics", "pack_objective_id": "obj-basics"},
+        {"id": "target1", "description": "Says it aloud"},
+        {"id": "target2", "description": "Writes it down"},
+        {
+          "id": "chk-sum-1",
+          "description": "automated audit of chk-sum-1",
+          "check_spec": {
+            "audit_state": "passed",
+            "audit_source": "import_automated_audit",
+            "declared_audit_state": "unreviewed",
+            "stimulus": {"prompt": "What is 2 + 2?"},
+            "reference": {"kind": "exact", "answers": ["4", "four"]},
+            "rubric": {
+              "construct": "recall",
+              "pass_rule": "all",
+              "criteria": [
+                {"id": "c1", "description": "States four"},
+                {"id": "c2", "description": "Shows the sum"},
+                {"id": "c3", "description": "Answers in one word"}
+              ]
+            },
+            "locale": null
+          }
+        },
+        {
+          "id": "chk-leak-1",
+          "description": "check withheld: failed the import audit",
+          "check_id": "chk-leak-1",
+          "check_spec_withheld": true
+        }
+      ]
+    },
+    {
+      "name": "parent_objective_never_grades",
+      "recipe": "parent",
+      "objective": {
+        "objective_id": "obj-measure",
+        "evidence_target": "procedure",
+        "evidence_criteria": ["Reads the scale with the child"],
+        "checks": [
+          {
+            "check_id": "chk-measure-1",
+            "version": 1,
+            "evidence_target": "procedure",
+            "stimulus": "Measure the jug together and write down the reading.",
+            "rubric": ["Reads the scale", "Writes the unit", "Checks with the child"],
+            "reference_answer": "150 ml",
+            "accepted_alternatives": ["150 millilitres"],
+            "audit_state": "unreviewed"
+          }
+        ]
+      },
+      "expect": [
+        {"id": "pack_objective", "description": "obj-measure", "pack_objective_id": "obj-measure"},
+        {"id": "target1", "description": "Reads the scale with the child"},
+        {
+          "id": "chk-measure-1",
+          "description": "parent observation: not machine-graded",
+          "check_id": "chk-measure-1",
+          "check_spec_withheld": true
+        }
+      ]
+    }
+  ],
+  "$defs": {
+    "check_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "audit_state",
+        "audit_source",
+        "declared_audit_state",
+        "stimulus",
+        "reference",
+        "rubric",
+        "locale"
+      ],
+      "properties": {
+        "audit_state": {
+          "const": "passed"
+        },
+        "audit_source": {
+          "const": "import_automated_audit"
+        },
+        "declared_audit_state": {
+          "type": "string",
+          "description": "The manifest's own audit_state, preserved verbatim. 'failed' is not in the enum because R6 withholds such a check before any spec exists; a spec that declared it failed would contradict its own provenance.",
+          "enum": ["passed", "unreviewed"]
+        },
+        "stimulus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prompt"],
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8000
+            }
+          }
+        },
+        "reference": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "answers"],
+              "properties": {
+                "kind": {
+                  "const": "exact"
+                },
+                "answers": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 41,
+                  "items": {
+                    "type": "string",
+                    "maxLength": 8000
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind"],
+              "properties": {
+                "kind": {
+                  "const": "rubric_only"
+                }
+              }
+            }
+          ]
+        },
+        "rubric": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["construct", "pass_rule", "criteria"],
+          "properties": {
+            "construct": {
+              "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/evidence_target"
+            },
+            "pass_rule": {
+              "const": "all"
+            },
+            "criteria": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 40,
+              "items": {
+                "$ref": "#/$defs/criterion"
+              }
+            }
+          }
+        },
+        "locale": {
+          "type": ["string", "null"],
+          "maxLength": 35
+        }
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^c[1-9][0-9]*$",
+          "maxLength": 8
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "objective_criterion": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "description"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "pack_objective_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "description", "check_id", "check_spec_withheld"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "check_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "check_spec_withheld": {
+              "const": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "description", "check_spec"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "check_spec": {
+              "$ref": "#/$defs/check_spec"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

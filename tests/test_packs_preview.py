@@ -73,15 +73,46 @@ class PreviewTests(unittest.TestCase):
         self.assertIn("automated_checks_passed", result["trust"]["labels"])
 
     def test_human_review_is_only_reported_when_recorded(self) -> None:
-        recorded = copy.deepcopy(self.manifest)
-        recorded["trust"] = {"labels": ["human_review_recorded"], "reviewed_by": "A named reviewer", "reviewed_at": "2026-11-06"}
-        packs.validate_manifest(recorded)
-        result = packs.preview(recorded)
-        self.assertIn("human_review_recorded", result["trust"]["labels"])
+        """t_d33984eb: a manifest's own trust block is provenance, never a label.
+
+        ``packs.preview`` has no store verdict to offer, so even a manifest that names a reviewer
+        yields no ``human_review_recorded`` label. The author's strings stay in ``manifest.trust``
+        where a reader can see them as a declaration; the label appears only when a caller passes
+        store evidence for these exact bytes.
+        """
+        forged = copy.deepcopy(self.manifest)
+        forged["trust"] = {"labels": ["human_review_recorded"], "reviewed_by": "A named reviewer", "reviewed_at": "2026-11-06"}
+        packs.validate_manifest(forged)
+        result = packs.preview(forged)
+        self.assertNotIn("human_review_recorded", result["trust"]["labels"])
         self.assertEqual(set(result["trust"]), {"labels"})
+        # The claim is still readable as provenance inside the manifest itself.
         self.assertEqual(result["manifest"]["trust"]["reviewed_by"], "A named reviewer")
+        self.assertEqual(result["manifest"]["trust"]["reviewed_at"], "2026-11-06")
         unrecorded = packs.preview(self.manifest)
         self.assertNotIn("reviewed_by", unrecorded["trust"])
+        # A store-held verdict for the same manifest is the only thing that adds the label.
+        recorded = packs.preview(forged, store_review_recorded=True)
+        self.assertIn("human_review_recorded", recorded["trust"]["labels"])
+        self.assertNotIn("human_review_recorded", packs.preview(forged, store_review_recorded=False)["trust"]["labels"])
+
+    def test_trust_labels_never_infer_the_label_from_a_manifest(self) -> None:
+        """``packs.trust_labels`` has no declared-provenance branch left to reach."""
+        forged = copy.deepcopy(self.manifest)
+        forged["trust"] = {"reviewed_by": "A named reviewer", "reviewed_at": "2026-11-06"}
+        self.assertNotIn(
+            "human_review_recorded",
+            packs.trust_labels(forged, integrity_verified=True, automated_checks_passed=True),
+        )
+        self.assertIn(
+            "human_review_recorded",
+            packs.trust_labels(
+                forged,
+                integrity_verified=True,
+                automated_checks_passed=True,
+                store_review_recorded=True,
+            ),
+        )
 
     def test_preview_validates_against_the_current_rpc_contract(self) -> None:
         result = packs.preview(self.manifest, integrity={"hashes_match": True, "file_count": 5, "expanded_bytes": 10})

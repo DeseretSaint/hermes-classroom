@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, artifacts, grading, packs, segments, validators
+from . import archive, artifacts, grading, packs, segments, store_reviews, validators
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -975,6 +975,11 @@ def pack_preview(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
 
     Nothing is summarised away: author, outcomes, checks, sources/support, licence, notes and
     media size all travel inside ``manifest``/``integrity``. The response carries no verdict.
+
+    A staged archive is untrusted input: its manifest's own ``trust.reviewed_by`` is provenance
+    inside ``manifest`` and never a label. ``human_review_recorded`` is emitted only when the
+    store's review ledger holds a record for these exact bytes, which is the one evidence source
+    an author cannot write.
     """
     try:
         staged = staging().stage(payload["staged_id"])
@@ -985,6 +990,7 @@ def pack_preview(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
         manifest,
         integrity=staged.integrity,
         automated_checks_passed=True,
+        store_review_recorded=store_reviews.review_recorded(manifest),
     )
     return 0, document
 
@@ -2281,7 +2287,9 @@ def pack_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     (``integrity.hashes_match: false``) so a review screen can refuse the export instead of
     the pane dying; only an identity absent from the library (or an unreadable manifest) is an
     error. The response carries the same four independent trust labels as ``pack.preview`` —
-    never a ``safe``/``verified`` verdict.
+    never a ``safe``/``verified`` verdict. ``human_review_recorded`` is not read from the
+    retained manifest: an imported pack keeps its author's ``trust.reviewed_by`` as provenance,
+    and the label appears only when the store's own review ledger names this exact content hash.
     """
     pack_id = str(payload["pack_id"])
     pack_version = str(payload["pack_version"])
@@ -2341,6 +2349,7 @@ def pack_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             "expanded_bytes": sum(int(entry["bytes"]) for entry in manifest["files"]),
         },
         automated_checks_passed=True,
+        store_review_recorded=store_reviews.review_recorded(manifest),
     )
     return 0, {
         "pack": _pack_list_item(record, manifest, _pack_rows()),

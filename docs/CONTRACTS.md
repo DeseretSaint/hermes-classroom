@@ -33,7 +33,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.db` | `contracts/db.v14.json` | 14 | Cinder (GM-001 storage), Lattice (GM-005 migration 0014) | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v3.json` (v1, v2 and v4 also accepted) | 3 (v1/v2/v4 accepted) | Cinder (v2 media link, H-137; v4 `coloring_page` + `text/html`, PRINT-2, 2026-11-12); CP-015g (v3 presentation, 2026-11-11) | import/export, bundled demo packs, take-home print packs |
-| `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
+| `cb.projection` | `contracts/projection.v2.json` (v1 also accepted) | 2 (v1 accepted) | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
 The v1 **to v22** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
@@ -451,14 +451,17 @@ unreadable identity) codes.
   A `pack.inspect` that cannot read the directory at all is `NOT_FOUND`.
 * `trust.labels` is the same four-dimension list `pack.preview` returns
   (`integrity_verified`, `automated_checks_passed`, `human_review_recorded`,
-  `model_assessed_support`), computed by `packs.trust_labels()` from the stored manifest. There is
-  still no `safe` or `verified` badge.
+  `model_assessed_support`), computed by `packs.trust_labels()`. `human_review_recorded` is not
+  read from the stored manifest: an imported pack keeps its author's `trust.reviewed_by`/
+  `reviewed_at` inside `manifest` as provenance, and the label appears only when the store's own
+  review ledger holds a record for this exact content hash
+  (`coursebook/store_reviews.py::review_recorded`). There is still no `safe` or `verified` badge.
 * `content_hash` in `pack` is the identity `pack.export` is checked against: the export request
   carries `options.expected_content_hash`, so the UI can show the hash it inspected and the backend
   refuses if the archive would not reproduce it. That is what replaces `previewCache`.
 * Read-only, GET-shaped: it never stages, adopts, imports, exports or deletes.
 
-## The pack-check → check-spec projection (cb.projection v1)
+## The pack-check → check-spec projection (cb.projection v2)
 
 The second gap CB-010 recorded was that the manifest-check mapping lived in importer code. `cb.pack`
 checks are `{stimulus, rubric[], reference_answer, accepted_alternatives, evidence_target, locale,
@@ -473,6 +476,15 @@ applies that contract instead of restating it.
 only the derivation from it is now frozen. Its `$defs.check_spec` is the machine-checkable shape of
 what gets stored in `objectives.evidence_criteria_json`, and `$defs.objective_criterion` is the shape
 of each criteria entry.
+
+**v2 (t_d33984eb, 2026-11-12)** changes no rule, field, vector or projection output. It corrects the
+one sentence that let a pack's own `trust.reviewed_by`/`reviewed_at` become a
+`human_review_recorded` trust label: that label is store-owned evidence bound to the exact content
+hash (`coursebook/store_reviews.py`), and a manifest's trust block stays provenance inside
+`manifest`. `pack.preview` and `pack.inspect` read the same ledger as the store card, so no read
+surface promotes a pack's claim about itself. `contracts/projection.v1.json` stays on disk as
+immutable history and is still loadable by explicit version; `contracts/projection.v2.json`
+(`x-supersedes` v1) is the inventory current.
 
 The gate, in order:
 
@@ -1659,6 +1671,7 @@ Consequences for clients (H-117 and the retry surface):
 | v3 | 2026-11-06 | CB-022 additive amendment. 38 RPC methods (+review.queue, review.action, evidence.inspect, evidence.disputes) with `review.action` fenced in the envelope; no new table, column, migration or error code — the queue stays derived and disputes stay in `attempts.grading_provenance_json`. `pack.list` deferred to a future v4. |
 | v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
 | v4 (projection closure) | 2026-11-06 | CB-025 (importer commits `577d268`, `725ffbf`) closed both `cb.projection` v1 divergences: R5 gained the non-empty guard and R6 withholds a check its manifest declares failed, so the bundled Japanese pack's `obj-register-transfer` opens through the dispatcher. `x-known-divergences` now records both as `resolved` with the implementing commit, the `declared_failed_withholds` vector reports the ordinary `import_audit_failed` problem, and `$defs.check_spec.declared_audit_state` is narrowed to `passed`/`unreviewed`. No RPC method, table, migration, wire constant or handler changed; `cb.projection` stays v1. |
+| v4 (projection v2 — store-owned trust label) | 2026-11-12 | t_d33984eb (follow-up to t_f3b7be3e): the store owns `human_review_recorded`, and the remaining read surfaces agreed. `cb.projection` **v2** changes no rule, field, vector or projection output; it corrects the `audit_rules.description` sentence that allowed a manifest's own `trust.reviewed_by`/`reviewed_at` to become a trust label. `packs.trust_labels()` loses its declared-provenance branch (default `store_review_recorded=False`), and `pack.preview`, `pack.inspect`, the Workshop catalogue and the store card all read the same ledger record bound to the exact content hash (`coursebook/store_reviews.py`). The author's strings stay visible inside `manifest.trust` as provenance. `contracts/projection.v1.json` stays on disk as immutable history (loadable by explicit version); `contracts/projection.v2.json` is current with `x-supersedes` v1. No RPC method, payload, table, migration, error code or wire constant changed. |
 | v5 | 2026-11-06 | CB-026 additive amendment. 43 RPC methods (+course.outline, check.get, lesson.assist) so CB-009 can render the Textbook section list, the Plan tab, the structured check prompt and the pane's Hint/Show answer; `lesson.assist` is fenced in the envelope. No new table, column, migration or error code — every field is derived from `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, and the assist event is the layer-1 `evidence` row the chat hook already writes. `section_titles` deliberately omitted (no heading storage). Superseded files pinned by sha256. |
 | v5 (binding scope) | 2026-11-06 | CB-009 finding: `binding.get` now answers `objective_id` and `lesson_run_id` from the `bindings` row so the pane scopes to the bound section instead of the enrollment's current one. Additive inside v5 because `binding` is an open object in `rpc.v5.json` and `cb.db` v2 already stores both columns: **no v6, no schema edit, no version bump, no status-semantics change**. `null` = legacy/course-level binding; the platform seam answers `null` on a v1 binding table rather than omitting the fields. |
 | v6 | 2026-11-06 | CB-011 additive amendment. 51 RPC methods (+parent.brief.create, parent.brief.get, parent.plan.edit, parent.final.approve, parent.blueprint.read, parent.export, parent.reflection.record, parent.reflection.list) so the Parent Studio can be built without reading SQLite. cb.db **v3** adds `final_approvals` (lesson-set approval bound to plan hash + content hash, with the vocabulary value that invalidates it) and `parent_reflections` via migration 0003; no column changes, no new error code, `cb.vocabulary`/`cb.jobs`/`cb.pack`/`cb.projection` unchanged. Rejected: a generic path-addressed `pack.file.read` (role-scoped tabs instead), a `lesson` job kind (would force a `cb.pack` v2 and reject installed packs), and per-lesson prose editing (no storage decision yet). The Parent Studio answers tab is the one scoped exception to "no answer text on the wire". |

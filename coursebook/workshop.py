@@ -30,7 +30,7 @@ import time
 from pathlib import Path
 from typing import Any, Mapping
 
-from . import archive, db, packs, pack_flow
+from . import archive, db, packs, pack_flow, store_reviews
 
 #: ``coursebook/workshop.py`` -> plugin root.
 ROOT = Path(__file__).resolve().parent.parent
@@ -43,10 +43,12 @@ COMMUNITY_ROOT = ROOT / "store" / "packs"
 #: The store's own review ledger. A pack cannot write this file; the maintainer who accepts a
 #: submission records a review here, bound to the exact content hash that was read. A pack's own
 #: ``trust.reviewed_by`` is author-supplied provenance and is never evidence of a human review.
-STORE_REVIEWS_PATH = ROOT / "store" / "reviews.json"
+#: The reader lives in :mod:`coursebook.store_reviews` so ``pack.preview``/``pack.inspect`` can
+#: consult the same evidence without importing this module.
+STORE_REVIEWS_PATH = store_reviews.STORE_REVIEWS_PATH
 #: Bound on the ledger: a review file is tiny data, and an oversized one is not read.
-MAX_STORE_REVIEWS = 64
-MAX_STORE_REVIEWS_BYTES = 256_000
+MAX_STORE_REVIEWS = store_reviews.MAX_STORE_REVIEWS
+MAX_STORE_REVIEWS_BYTES = store_reviews.MAX_STORE_REVIEWS_BYTES
 
 #: A catalogue is editorial data with a tiny surface; anything outside this is not a catalogue.
 MAX_PACKS = 24
@@ -95,40 +97,15 @@ def _store_review_recorded(manifest: Mapping[str, Any]) -> bool:
 
     This is the only evidence that may put ``human_review_recorded`` on a store card. The pack's
     own ``trust.reviewed_by``/``reviewed_at`` are author-supplied strings and are not consulted.
-
-    A record counts only when it names this ``pack_id`` and its ``content_hash`` equals the
-    manifest's own: a review of v1 must not bless v2. A missing, oversized, unreadable or
-    malformed ledger is no evidence — the answer is ``False``, never an exception on the card
-    path, because a broken ledger must not take the whole store down.
+    The ledger read lives in :mod:`coursebook.store_reviews`; the paths and bounds stay module
+    attributes here so a test or a deployment can point this surface at a different store.
     """
-    try:
-        if STORE_REVIEWS_PATH.stat().st_size > MAX_STORE_REVIEWS_BYTES:
-            return False
-        document = json.loads(STORE_REVIEWS_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return False
-    if not isinstance(document, Mapping):
-        return False
-    records = document.get("reviews")
-    if not isinstance(records, list):
-        return False
-    pack_id = str(manifest.get("pack_id") or "")
-    content_hash = str(manifest.get("content_hash") or "")
-    if not pack_id or not _SHA256.match(content_hash):
-        return False
-    for record in records[:MAX_STORE_REVIEWS]:
-        if not isinstance(record, Mapping):
-            continue
-        if _text(record.get("pack_id"), limit=128) != pack_id:
-            continue
-        if str(record.get("content_hash") or "") != content_hash:
-            continue
-        if not _text(record.get("reviewed_by"), limit=200):
-            continue
-        if not _text(record.get("reviewed_at"), limit=40):
-            continue
-        return True
-    return False
+    return store_reviews.review_recorded(
+        manifest,
+        path=STORE_REVIEWS_PATH,
+        max_records=MAX_STORE_REVIEWS,
+        max_bytes=MAX_STORE_REVIEWS_BYTES,
+    )
 
 
 def load_catalog() -> dict[str, Any]:
