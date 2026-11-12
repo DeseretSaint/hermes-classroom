@@ -1104,6 +1104,105 @@ function MediaLabelOverlay({ labels, frame }) {
   })
 }
 
+/**
+ * The review verdict, as a chip on the media item (cb.rpc item 32).
+ *
+ * A generated illustration is judged before its bytes are stored, and the verdict is why a figure
+ * can be missing. It used to travel to the page and be drawn by nobody, so a learner met a degraded
+ * item with no explanation. This chip is that explanation, and it is built only from explicit
+ * fields — never by reading the prose of a reason string:
+ *
+ *   - the media child's own `degraded` flag plus its bounded `reason`, which is all a page is told
+ *     when no bytes were delivered;
+ *   - the artifact route's `review` (`{state, reasons, criteria?}`), which exists when bytes did
+ *     ship — a rejected illustration repaired into a deterministic schematic still carries the
+ *     verdict that caused the repair.
+ *
+ * An approved, delivered item draws nothing: the chip is for a verdict a reader must be told.
+ */
+function mediaVerdict(media, review) {
+  const verdict = review && typeof review === 'object' && !Array.isArray(review) ? review : null
+  const state = verdict && typeof verdict.state === 'string' ? verdict.state : null
+  const reasons =
+    verdict && Array.isArray(verdict.reasons)
+      ? verdict.reasons.map((reason) => String(reason || '').trim()).filter(Boolean)
+      : []
+  const criteria =
+    verdict && Array.isArray(verdict.criteria)
+      ? verdict.criteria.map((criterion) => String(criterion || '').trim()).filter(Boolean)
+      : []
+  if (state === 'approved') return null
+  if (state === 'rejected' || state === 'unreviewed') {
+    return {
+      state,
+      tone: state === 'rejected' ? 'reject' : 'warn',
+      label: state === 'rejected' ? 'Rejected by review' : 'Not reviewed',
+      criteria,
+      reason: reasons.length ? reasons.join('; ') : null
+    }
+  }
+  if (media && media.degraded) {
+    return {
+      state: 'degraded',
+      tone: 'warn',
+      label: 'Media degraded',
+      criteria: [],
+      reason: media.reason ? String(media.reason) : null
+    }
+  }
+  return null
+}
+
+//: The chip's two tones come from the token contract only: `coral` is the attention hue (a
+//: rejection is attention), and a plain rule is a degrade notice with no verdict state at all.
+const CB_VERDICT_TONE = {
+  reject: { border: 'var(--cb-coral)', ink: 'var(--cb-coral)' },
+  warn: { border: 'var(--cb-rule)', ink: 'var(--cb-ink-soft)' }
+}
+
+function MediaVerdictChip({ media, review }) {
+  const verdict = mediaVerdict(media, review)
+  if (!verdict) return null
+  const tone = CB_VERDICT_TONE[verdict.tone] || CB_VERDICT_TONE.warn
+  return jsxs('div', {
+    'data-cb-media-verdict': verdict.state,
+    'data-cb-media-verdict-tone': verdict.tone,
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem', fontSize: CB_TYPE.caption },
+    children: [
+      jsx('span', {
+        'data-cb-media-verdict-chip': verdict.state,
+        style: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.25rem',
+          border: `1px solid ${tone.border}`,
+          borderRadius: '0.25rem',
+          padding: '0 0.3rem',
+          fontWeight: 600,
+          lineHeight: 1.4,
+          color: tone.ink,
+          whiteSpace: 'nowrap'
+        },
+        children: verdict.label
+      }),
+      verdict.criteria.length
+        ? jsx('span', {
+            'data-cb-media-verdict-criteria': verdict.criteria.join(','),
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: verdict.criteria.join(' · ')
+          })
+        : null,
+      verdict.reason
+        ? jsx('span', {
+            'data-cb-media-verdict-reason': '',
+            style: { minWidth: 0, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
+            children: verdict.reason
+          })
+        : null
+    ]
+  })
+}
+
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
   // The figure's measured box, in CSS pixels. The overlay's geometry is expressed against it, so
@@ -1159,6 +1258,12 @@ function MediaSegment({ segment }) {
       : null
   const textEquivalent =
     preview.text_equivalent || segment.text_equivalent || segment.purpose || null
+  // The verdict is drawn from explicit fields only: the route's own review for bytes that exist,
+  // the child's degraded flag and reason when nothing was delivered (item 32).
+  const verdictChip = jsx(MediaVerdictChip, {
+    media: { degraded: segment.degraded, reason: segment.reason },
+    review: preview.state === 'ready' ? preview.review : null
+  })
   const element =
     preview.state === 'ready' && preview.mime === 'image/svg+xml'
       ? jsx('img', {
@@ -1212,6 +1317,7 @@ function MediaSegment({ segment }) {
               ]
             })
           : element,
+        verdictChip,
         segment.artifact_id && supportsArtifactGet()
           ? jsx(sdk.Button, {
               variant: 'text',
@@ -2011,7 +2117,11 @@ function BlockMedia({ media, blockId, ordinal }) {
     label: media.label,
     // The drawn labels ride the media child: they are the words the UI paints over a textless
     // figure, and they are page text, so the block frame draws them rather than the raster.
-    labels: media.labels
+    labels: media.labels,
+    // The verdict travels with the item: a degraded illustration is the gate's own decision, and
+    // `MediaSegment` draws it as the chip rather than a paragraph of prose (item 32).
+    degraded: media.degraded,
+    reason: media.reason
   }
   return jsx(
     'div',
@@ -2029,12 +2139,7 @@ function BlockMedia({ media, blockId, ordinal }) {
         borderRadius: 0,
         boxSizing: 'border-box'
       },
-      children: [
-        jsx(MediaSegment, { segment }),
-        media.degraded && media.reason
-          ? jsx(QuietNote, { children: `Media is degraded: ${media.reason}` })
-          : null
-      ]
+      children: [jsx(MediaSegment, { segment })]
     },
     `${blockId}-media-${ordinal}`
   )

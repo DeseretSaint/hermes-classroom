@@ -14,13 +14,19 @@ Two boundaries are hard:
   a provider failure leaves a complete text lesson and an explicit degraded state.
 * an illustration is judged before it ships. The bytes are dispatched to the host's
   ``vision_analyze`` tool for a typed verdict (subject match, legible text, depicted procedure); a
-  rejection is re-prompted once and then replaced by the text equivalent, and a host with no vision
-  seam records ``unreviewed`` rather than a silent approval.
+  rejection is repaired once — by the deterministic schematic when the item carries the procedure
+  table, otherwise by a request rebuilt from the failing criterion — and then, if it is still
+  rejected, replaced by the text equivalent. A host with no vision seam records ``unreviewed``
+  rather than a silent approval, and the verdict is drawn on the media item as a chip with its
+  reason (item 32 of ``docs/CREATE-EXPERIENCE-SPEC.md``).
 
 The first slice maps the existing lesson ``media`` specs to the existing ``MediaSpec`` roles:
 illustration → host image, schematic → deterministic SVG, narration → host TTS. A sourced
-technical image is not synthesized; it needs a real source and permission, so it degrades to
-text until that path exists.
+technical image is not synthesized and is not silently downgraded: the closed lesson media schema
+declares no source-asset locator, so there is nothing to stage, and the item is flagged instead —
+``media_status: media_incomplete`` with a reason naming the cited source when the lesson's own
+capability decision requires the reference, or ``degraded`` with the same named reason when it does
+not (item 31 of ``docs/CREATE-EXPERIENCE-SPEC.md``).
 
 Two things are decided here rather than forwarded from the author's prose:
 
@@ -47,7 +53,7 @@ import time
 import urllib.parse
 import urllib.request
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -95,11 +101,39 @@ REVIEW_QUESTION = (
     "When you cannot tell, answer true for the hazard and false for subject_matches."
 )
 
-#: A correction appended to the prompt for the one re-prompt a rejection earns.
-REVIEW_REVISION_RULE = (
-    "Revise the illustration. It is context art for a lesson, not an instruction: show no readable "
-    "text, labels, numbers, gauges, tool settings or ordered steps, and do not depict a measurement "
-    "or a procedure being performed."
+#: What one failed check changes about the *next* request (item 32). These are criterion phrases,
+#: not the reviewer's paragraph: the repair states what the next plate must guarantee, so the
+#: second request has a different shape rather than one more sentence asking for the same thing.
+REVISION_CRITERIA: dict[str, str] = {
+    "subject_matches": (
+        "one unmistakable subject, named first and shown whole, with nothing else competing for the "
+        "frame"
+    ),
+    "contains_legible_text": (
+        "no writing of any kind on the plate: no words, numbers, numerals, units, gauges, signs, "
+        "letterforms or pseudo-text"
+    ),
+    "depicts_procedure_or_measurement": (
+        "a scene, never an instruction: no hands performing a task, no tool setting, no measurement "
+        "and no ordered sequence a learner could follow"
+    ),
+}
+
+#: The textless block, restated as a hard constraint after a legible-text rejection. It is a
+#: different block, not an appended sentence: the request's textless discipline stops being a
+#: description of the picture and becomes the condition the picture is judged on.
+ILLUSTRATION_TEXTLESS_STRICT = (
+    "This plate must be completely wordless. Any letterform is a failure, whether it is a real "
+    "word, an invented word, a single letter, a number, a unit, a gauge face, a placard, a sign, a "
+    "banner or a decorative mark that reads as writing. Leave every surface blank where a label "
+    "would go; the product UI draws every word a learner reads."
+)
+
+#: The no-instruction block, added only to a revision that failed the procedure/measurement check.
+ILLUSTRATION_NO_PROCEDURE_STRICT = (
+    "This plate is atmosphere, not guidance. It shows no one performing a step: no hands at work, "
+    "no tool being operated, no setting being adjusted, no dial or gauge legible, no measurement "
+    "being taken and no before/after sequence. Objects are shown at rest, as a still-life."
 )
 
 _MAX_REVIEW_REPLY_CHARS = 4000
@@ -253,16 +287,18 @@ def parse_review_verdict(raw: Any) -> dict[str, Any]:
         )
     reason = " ".join(str(payload.get("reason") or "").split())[:400]
     failures: list[str] = []
+    criteria: list[str] = []
     if not checks["subject_matches"]:
-        failures.append("the picture does not show the subject the prompt asked for")
+        criteria.append("subject_matches")
+        failures.append(artifacts.REVIEW_FAILURE_TEXT["subject_matches"])
     if checks["contains_legible_text"]:
-        failures.append("the picture contains legible text or numbers a learner could read as a fact")
+        criteria.append("contains_legible_text")
+        failures.append(artifacts.REVIEW_FAILURE_TEXT["contains_legible_text"])
     if checks["depicts_procedure_or_measurement"]:
-        failures.append(
-            "the picture depicts a procedure or measurement and could be read as authority"
-        )
+        criteria.append("depicts_procedure_or_measurement")
+        failures.append(artifacts.REVIEW_FAILURE_TEXT["depicts_procedure_or_measurement"])
     if failures:
-        return artifacts.review_record("rejected", failures + ([reason] if reason else []))
+        return artifacts.review_record("rejected", failures + ([reason] if reason else []), criteria)
     return artifacts.review_record(
         "approved",
         [
@@ -284,6 +320,12 @@ class MediaGenerationSummary:
     #: replaced with their text equivalent. Reported so a job checkpoint shows the gate's work.
     reviewed: int = 0
     rejected: int = 0
+    #: Required media the pipeline could not deliver (item 31). These are *not* counted as
+    #: ``degraded``: a degraded item is an optional medium that fell back to text, while an
+    #: incomplete one means the lesson is missing a piece it declared it needed. The named list
+    #: travels to the job checkpoint so the stage reports what has to be supplied.
+    incomplete: int = 0
+    incomplete_items: list[dict[str, Any]] = field(default_factory=list)
 
     def as_checkpoint(self) -> dict[str, Any]:
         return {
@@ -293,6 +335,8 @@ class MediaGenerationSummary:
             "skipped": self.skipped,
             "reviewed": self.reviewed,
             "rejected": self.rejected,
+            "incomplete": self.incomplete,
+            "incomplete_items": [dict(item) for item in self.incomplete_items],
             "artifact_ids": list(self.artifact_ids),
         }
 
@@ -574,6 +618,22 @@ def _schematic_rows(value: Mapping[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+def procedure_schematic_rows(value: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """The typed table rows a spec carries, unwrapping ``procedure.schematic`` when present.
+
+    A lesson item's ``facts`` may be the schematic payload itself (``{rows: [...]}``) or the
+    procedure object that holds it (``{procedure: {schematic: {rows: [...]}}}``). Both name the same
+    cited table, and both are read here so the deterministic fallback and the schematic producer
+    cannot disagree about which rows the item restates.
+    """
+    current: Any = value
+    for key in ("procedure", "schematic"):
+        nested = current.get(key) if isinstance(current, Mapping) else None
+        if isinstance(nested, Mapping):
+            current = nested
+    return _schematic_rows(current) if isinstance(current, Mapping) else []
+
+
 # ── Lesson figure geometry and the built illustration prompt ─────────────────
 #
 # Two decisions this module used to leave to prose. Every lesson figure was requested landscape,
@@ -728,32 +788,115 @@ class LessonIllustrationPrompt:
     aspect_ratio: str
     prompt_hash: str
     prompt_version: str = ILLUSTRATION_PROMPT_VERSION
+    #: The failed checks this request answers. Empty for a first attempt; the repair is built by
+    #: the same function with criteria set, so the revision is a differently shaped request, not
+    #: the first one with a paragraph glued on.
+    criteria: tuple[str, ...] = ()
 
 
-def lesson_illustration_prompt(spec: artifacts.MediaSpec) -> LessonIllustrationPrompt:
+#: A clause that names a step being performed or a quantity being read. A revision that failed the
+#: procedure/measurement check drops these from the subject instead of restating them.
+_STEP_CLAUSE = re.compile(
+    r"\b(hands?|gripping|tightening|torque|turning|loosening|measuring|adjusting|setting|"
+    r"step|steps|sequence|procedure|gauge|dial|meter|reading|in use|being used|"
+    r"demonstrat\w*|operat\w+)\b",
+    re.IGNORECASE,
+)
+
+
+def _plain_subject(spec: artifacts.MediaSpec) -> str:
+    """The subject restated as the learner-facing sentence, when a match check failed.
+
+    The pruned spec sentence is what the provider was asked for and did not paint, so the revision
+    asks for the *same subject named in the text equivalent* — the sentence that says what the item
+    teaches — with the preamble and any step clause removed.
+    """
+    raw = str(spec.text_equivalent or "").strip() or str(spec.prompt or "").strip()
+    if not raw:
+        return "the subject this lesson teaches"
+    first = re.split(r"[.;]\s*", raw)[0].strip(" ,;.")
+    return _scene_subject(_SUBJECT_PREAMBLE.sub("", " ".join(first.split()))[:400]) or (
+        "the subject this lesson teaches"
+    )
+
+
+def _scene_subject(subject: str) -> str:
+    """Drop clauses that name an action or a quantity, keeping the scene that remains."""
+    clauses = [part.strip(" ,;.") for part in re.split(r"[,;]", subject) if part.strip(" ,;.")]
+    kept = [clause for clause in clauses if _STEP_CLAUSE.search(clause) is None]
+    if kept:
+        return ", ".join(kept)[:400]
+    # Every clause named an action: keep the nouns only, so the scene is still askable.
+    words = [word for word in subject.split() if _STEP_CLAUSE.search(word) is None]
+    return " ".join(words).strip(" ,;.")[:400] or subject[:400]
+
+
+def lesson_illustration_prompt(
+    spec: artifacts.MediaSpec, *, criteria: Sequence[str] = ()
+) -> LessonIllustrationPrompt:
     """Build the illustration prompt: subject, composition, medium and palette, textless, negatives.
 
     Modelled on :func:`coursebook.world.build_prompt`: the author's sentence supplies the *subject*
     and nothing else. Composition follows the plate ratio, the medium and palette are the house
     style, and the textless block plus the negative list are fixed. The hash covers every block, so
     the same lesson cannot drift: a prompt change re-hashes the request and provenance shows it.
+
+    ``criteria`` are the failed checks of a rejected first attempt (item 32). They are applied
+    structurally: a legible-text failure swaps the textless block for a hard constraint and adds
+    letterform negatives, a procedure failure drops step clauses from the subject and adds a
+    still-life block, and a subject failure re-asks with the text equivalent's own sentence. The
+    revision states the criterion it answers; it never quotes the reviewer's paragraph.
     """
+    failed = tuple(check for check in artifacts.REVIEW_CHECKS if check in set(criteria))
     subject = _illustration_subject(spec)
+    if "subject_matches" in failed:
+        subject = _plain_subject(spec)
+    if "depicts_procedure_or_measurement" in failed:
+        subject = _scene_subject(subject)
     aspect = spec.aspect_ratio or figure_aspect_ratio(
         spec.kind, spec.role, f"{spec.prompt or ''} {spec.text_equivalent}"
     )
     composition = (
         ILLUSTRATION_COMPOSITION_PORTRAIT if aspect == PORTRAIT_ASPECT else ILLUSTRATION_COMPOSITION
     )
-    negative = "; ".join(ILLUSTRATION_NEGATIVES)
-    prompt = (
-        "Textless editorial teaching illustration. "
-        f"The picture shows {subject}. "
-        f"It is composed as {composition}. "
-        f"The medium is {ILLUSTRATION_MEDIUM}, and the palette is {ILLUSTRATION_PALETTE}. "
-        f"{ILLUSTRATION_TEXTLESS} "
-        f"Avoid everything in this list: {negative}."
+    textless = (
+        ILLUSTRATION_TEXTLESS_STRICT if "contains_legible_text" in failed else ILLUSTRATION_TEXTLESS
     )
+    negatives = list(ILLUSTRATION_NEGATIVES)
+    if "contains_legible_text" in failed:
+        negatives.extend(
+            (
+                "no letterforms or pseudo-text of any kind",
+                "no signs, placards, screens or printed surfaces carrying marks",
+            )
+        )
+    if "depicts_procedure_or_measurement" in failed:
+        negatives.extend(
+            (
+                "no hands at work and no tool in use",
+                "no step, sequence or before/after pairing",
+            )
+        )
+    negative = "; ".join(negatives)
+    blocks = [
+        "Textless editorial teaching illustration.",
+        f"The picture shows {subject}.",
+        f"It is composed as {composition}.",
+        f"The medium is {ILLUSTRATION_MEDIUM}, and the palette is {ILLUSTRATION_PALETTE}.",
+        textless,
+    ]
+    if "depicts_procedure_or_measurement" in failed:
+        blocks.append(ILLUSTRATION_NO_PROCEDURE_STRICT)
+    if failed:
+        # The criterion, named. This is the whole difference between a repair and a re-roll.
+        blocks.insert(
+            0,
+            "This is a revision of one rejected attempt; the next plate must guarantee: "
+            + "; ".join(REVISION_CRITERIA[check] for check in failed)
+            + ".",
+        )
+    blocks.append(f"Avoid everything in this list: {negative}.")
+    prompt = " ".join(blocks)
     payload = {
         "prompt_version": ILLUSTRATION_PROMPT_VERSION,
         "subject": subject,
@@ -761,14 +904,20 @@ def lesson_illustration_prompt(spec: artifacts.MediaSpec) -> LessonIllustrationP
         "medium": ILLUSTRATION_MEDIUM,
         "palette": ILLUSTRATION_PALETTE,
         "aspect_ratio": aspect,
-        "negative": list(ILLUSTRATION_NEGATIVES),
+        "negative": negatives,
     }
+    if failed:
+        # Only a revision adds these keys, so a first attempt hashes exactly as it did before the
+        # repair existed and no approved plate is re-keyed by this change.
+        payload["revision"] = "strict"
+        payload["criteria"] = list(failed)
     return LessonIllustrationPrompt(
         prompt=prompt,
         negative_prompt=negative,
         subject=subject,
         aspect_ratio=str(aspect),
         prompt_hash=artifacts.spec_hash(payload),
+        criteria=failed,
     )
 
 
@@ -821,18 +970,25 @@ def producer_for(spec: artifacts.MediaSpec, host: HostMedia | None) -> tuple[Cal
     raise artifacts.MediaUnavailable(f"no producer for {spec.kind}/{spec.role}")
 
 
-def revision_prompt(prompt: str, review: Mapping[str, Any] | None = None) -> str:
-    """The one corrective re-prompt a rejected illustration earns.
+def revision_request(
+    spec: artifacts.MediaSpec, review: Mapping[str, Any] | None
+) -> LessonIllustrationPrompt:
+    """The one second request a rejected illustration earns, rebuilt from its failing criterion.
 
-    It restates the context-art rule and carries the reviewer's reasons, so the second attempt is a
-    different request rather than the same prompt hoping for a different sample.
+    This replaces the prose retry (item 32): appending the reviewer's paragraph asked the provider
+    for the same picture again and usually failed the same check. The revision is produced by the
+    same builder with ``criteria`` set, so it differs structurally — a hard textless constraint
+    instead of a textless description, step clauses dropped from the subject, additional negatives,
+    and a leading sentence that names the failed check. The reviewer's own sentence is never sent.
+
+    A verdict that carries no readable criterion (a hand-built verdict, or one written before the
+    verdict recorded its failed checks) is repaired with *every* constraint applied: re-asking the
+    identical request is the one outcome that is guaranteed not to fix anything.
     """
-    base = str(prompt or "").strip()
-    reasons = "; ".join(str(reason) for reason in (review or {}).get("reasons") or [])[:600]
-    revised = f"{base}. {REVIEW_REVISION_RULE}" if base else REVIEW_REVISION_RULE
-    if reasons:
-        revised = f"{revised} The previous attempt was rejected: {reasons}."
-    return revised
+    criteria = artifacts.review_criteria(review)
+    if not criteria:
+        criteria = artifacts.REVIEW_CHECKS
+    return lesson_illustration_prompt(spec, criteria=criteria)
 
 
 def reviewer_for(
@@ -864,15 +1020,36 @@ def reviewer_for(
         return dict(verdict)
 
     def _regenerate(review: dict[str, Any]) -> bytes:
-        # Re-prompt from the *built* request, not the author's sentence: a retry that dropped the
-        # textless block and the negative list would repaint the same defect.
-        built = lesson_illustration_prompt(spec)
-        data, _mime = host.image(
-            revision_prompt(built.prompt, review), aspect_ratio=built.aspect_ratio
-        )
+        # Re-prompt from the *built* request, rebuilt for the failed criterion: a retry that only
+        # appended a sentence would repaint the same defect, and one that dropped the textless
+        # block and the negative list would lose the house rule.
+        revised = revision_request(spec, review)
+        data, _mime = host.image(revised.prompt, aspect_ratio=revised.aspect_ratio)
         return data
 
     return _review, _regenerate
+
+
+def schematic_fallback(
+    spec: artifacts.MediaSpec,
+) -> Callable[[], bytes] | None:
+    """The deterministic schematic a rejected illustration falls back to, or ``None``.
+
+    Item 32: when the spec carries the procedure's own typed rows (``procedure.schematic.rows`` on
+    the lesson item, arriving here as ``facts``), a rejection is repaired by drawing that table
+    instead of calling the provider again. The rows are cited facts the product renders itself, so
+    the fallback cannot paint a number or a step — the two things the review gate rejects.
+
+    An illustration whose spec carries no rows has no fallback: only a table can be reproduced
+    deterministically, and a fabricated picture would be worse than the text equivalent.
+    """
+    if spec.kind != "visual" or spec.role != "illustration":
+        return None
+    rows = procedure_schematic_rows(spec.facts)
+    if not rows:
+        return None
+    title = str(spec.prompt or spec.text_equivalent or "Schematic")[:200]
+    return lambda: artifacts.make_schematic_svg(title, rows, width=MIN_FIGURE_WIDTH_PX)
 
 
 def _lesson_rows(connection: Any, lesson_ids: Sequence[str]) -> list[dict[str, Any]]:
@@ -901,6 +1078,178 @@ def _plan_locale(document_json: Any) -> str | None:
     return None
 
 
+def _required_sourced_reference(row: Mapping[str, Any]) -> tuple[bool, str]:
+    """Whether this lesson's own capability decision makes a cited reference *required*.
+
+    The decision is the one ``generation`` stamped on the page (``policy.image`` /
+    ``policy.image_role``, written from the deterministic ``LessonCapabilityPlan``), never the
+    author's prose and never an inference from the media list: a ``sourced_technical`` item exists
+    only because the policy permitted that role, and the level says whether the lesson needs it.
+
+    A page that records no policy block cannot prove the reference was optional, so it is treated
+    as required. For a missing evidence image, over-flagging is the honest direction: the lesson
+    then says a piece is missing instead of quietly pretending the text is the reference.
+    """
+    try:
+        page = json.loads(row.get("page_json") or "{}")
+    except (TypeError, ValueError):
+        page = {}
+    policy = page.get("policy") if isinstance(page, Mapping) else None
+    if not isinstance(policy, Mapping):
+        return True, "the lesson records no capability decision, so the reference is treated as required"
+    level = str(policy.get("image") or "")
+    role = str(policy.get("image_role") or "")
+    if level != "required" or role != "sourced_reference":
+        return False, (
+            f"the lesson's capability decision makes the cited reference {level or 'unrecorded'!r} "
+            f"({role or 'no role'}), not required"
+        )
+    return True, "the lesson's capability decision requires a cited source image"
+
+
+def _flag_invalid_spec(
+    item: dict[str, Any], row: Mapping[str, Any], exc: BaseException, summary: MediaGenerationSummary
+) -> None:
+    """Record a media spec the pipeline refuses, without letting the lesson look complete.
+
+    An invalid illustration or narration is an ordinary degradation. An invalid *cited reference*
+    is not: when the lesson's decision requires one, the lesson is missing a required piece, so the
+    state is ``media_incomplete`` and the reason keeps the validation text that says why the record
+    cannot be delivered.
+    """
+    detail = f"{type(exc).__name__}: {exc}"
+    required = False
+    sourced = str(item.get("role") or "") == "sourced_technical"
+    if sourced:
+        required, decision = _required_sourced_reference(row)
+        detail = f"{detail}; {decision}"
+    if len(detail) > artifacts.MAX_MEDIA_REASON:
+        detail = detail[: artifacts.MAX_MEDIA_REASON - 1].rstrip() + "…"
+    fields: dict[str, Any] = {
+        "degraded": True,
+        "media_status": (
+            artifacts.MEDIA_STATE_INCOMPLETE if required else artifacts.MEDIA_STATE_DEGRADED
+        ),
+        "reason": detail,
+        "missing": None,
+    }
+    if sourced:
+        fields["label"] = artifacts.INCOMPLETE_REFERENCE_LABEL
+    item.update(fields)
+    if required:
+        summary.incomplete += 1
+        summary.incomplete_items.append(
+            {
+                "lesson_id": str(row.get("id")),
+                "role": str(item.get("role") or ""),
+                "source_ids": [str(value) for value in item.get("source_ids") or [] if str(value).strip()],
+                "permission": item.get("permission"),
+                "reason": detail,
+            }
+        )
+    else:
+        summary.degraded += 1
+
+
+def _flag_sourced_reference(
+    item: dict[str, Any],
+    spec: artifacts.MediaSpec,
+    row: Mapping[str, Any],
+    summary: MediaGenerationSummary,
+) -> None:
+    """Record the named delivered-or-missing state for one cited reference (item 31).
+
+    Shared by the normal run and the no-provider run, because a cited reference never needed a
+    provider: the reason it is missing is the absence of an adopted asset, not a failed call.
+    """
+    required, decision = _required_sourced_reference(row)
+    gap = artifacts.sourced_reference_gap(spec, required=required, decision=decision)
+    assert gap is not None  # callers pass a ``sourced_technical`` spec
+    item.update(
+        {
+            # The text equivalent really is what the learner gets, so the renderer's existing
+            # fallback flag is true; ``media_status``, ``label`` and ``reason`` say why it is a
+            # fallback and that the text is not the reference.
+            "degraded": True,
+            "media_status": (
+                artifacts.MEDIA_STATE_INCOMPLETE if required else artifacts.MEDIA_STATE_DEGRADED
+            ),
+            "label": artifacts.INCOMPLETE_REFERENCE_LABEL,
+            "reason": gap["reason"],
+            "missing": gap["missing"],
+        }
+    )
+    if required:
+        summary.incomplete += 1
+        summary.incomplete_items.append(
+            {
+                "lesson_id": str(row.get("id")),
+                "role": spec.role,
+                "source_ids": list(spec.source_ids),
+                "permission": spec.permission,
+                "reason": gap["reason"],
+            }
+        )
+    else:
+        summary.degraded += 1
+
+
+def _flag_unhosted_sourced_references(
+    connection: Any, lesson_ids: Sequence[str], *, now: datetime | None = None
+) -> MediaGenerationSummary:
+    """Flag cited references when no media provider is bound.
+
+    A host without ``dispatch_tool`` cannot produce an illustration or a narration, and skipping
+    those is the old-host and bare-test behaviour. A cited reference is different: it never needed
+    a provider, so a required one is still recorded as ``media_incomplete`` rather than shipping
+    as an ordinary text-only lesson.
+    """
+    summary = MediaGenerationSummary(artifact_ids=[], usage=[])
+    for row in _lesson_rows(connection, lesson_ids):
+        if str(row.get("state")) not in MEDIA_ELIGIBLE_LESSON_STATES:
+            summary.skipped += 1
+            continue
+        try:
+            items = json.loads(row.get("media_json") or "[]")
+        except (TypeError, ValueError):
+            items = []
+        if not isinstance(items, list) or not items:
+            summary.skipped += 1
+            continue
+        flagged = False
+        for item in items:
+            if not isinstance(item, dict) or item.get("artifact_id"):
+                continue
+            if str(item.get("role") or "") != "sourced_technical":
+                continue
+            try:
+                spec = _media_spec(item)
+                artifacts.assert_media_ok(spec)
+            except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
+                _flag_invalid_spec(item, row, exc, summary)
+                flagged = True
+                continue
+            _flag_sourced_reference(item, spec, row, summary)
+            flagged = True
+        if not flagged:
+            summary.skipped += 1
+            continue
+        with db.transaction() as write:
+            write.execute(
+                "UPDATE gen_lessons SET media_json = ?, updated_at = ? WHERE id = ?",
+                (
+                    json.dumps(items, ensure_ascii=False, sort_keys=True),
+                    (now or datetime.now(timezone.utc))
+                    .astimezone(timezone.utc)
+                    .replace(microsecond=0)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                    row["id"],
+                ),
+            )
+    return summary
+
+
 def _usage(provider: str, model: str | None, started: float) -> dict[str, Any]:
     return {
         "provider": provider,
@@ -926,11 +1275,14 @@ def generate_for_lessons(
     or rejected page is skipped. An artifact generated for a model-assessed page records that
     state in its own provenance and is never labelled as independently validated. Cached artifacts
     are reused by spec/source hash; provider failures are recorded on the media item as a degraded
-    text fallback. Each lesson's ``media_json`` is updated in its own short transaction.
+    text fallback. A cited reference has no producer in this build: the item is recorded as
+    ``media_incomplete`` (required by the lesson's capability decision) or ``degraded`` (optional),
+    with a reason naming the source it lacks, and the run's summary counts the incomplete items.
+    Each lesson's ``media_json`` is updated in its own short transaction.
     """
     host = host if host is not None else host_media()
     if host is None:
-        return MediaGenerationSummary(artifact_ids=[], usage=[], skipped=len(lesson_ids))
+        return _flag_unhosted_sourced_references(connection, lesson_ids, now=now)
     store = store or artifacts.ArtifactStore()
     summary = MediaGenerationSummary(artifact_ids=[], usage=[])
     used = 0
@@ -953,19 +1305,46 @@ def generate_for_lessons(
             if item.get("artifact_id"):
                 summary.reused += 1
                 continue
+            try:
+                spec = _media_spec(item, locale=locale)
+                artifacts.assert_media_ok(spec)
+            except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
+                _flag_invalid_spec(item, row, exc, summary)
+                changed = True
+                continue
+            if spec.role == "sourced_technical":
+                # Item 31. This build has no producer for a cited reference: the bytes are a real
+                # cited asset, and the closed lesson media schema declares no asset locator while
+                # the ``sources`` ledger records a citation (url/title/support), not a licence
+                # grant for the bytes. Adoption is therefore refused rather than invented, and the
+                # item is flagged by name instead of becoming an anonymous "provider unavailable"
+                # text paragraph.
+                _flag_sourced_reference(item, spec, row, summary)
+                changed = True
+                continue
             if used >= MAX_MEDIA_PER_JOB:
-                item["degraded"] = True
-                item["reason"] = "media generation budget reached for this job; text equivalent kept"
+                item.update(
+                    {
+                        "degraded": True,
+                        "media_status": artifacts.MEDIA_STATE_DEGRADED,
+                        "reason": "media generation budget reached for this job; text equivalent kept",
+                        "missing": None,
+                    }
+                )
                 summary.skipped += 1
                 changed = True
                 continue
             try:
-                spec = _media_spec(item, locale=locale)
-                artifacts.assert_media_ok(spec)
                 producer, expected_mime = producer_for(spec, host)
             except Exception as exc:  # noqa: BLE001 - an invalid spec is a text-only item
-                item["degraded"] = True
-                item["reason"] = f"{type(exc).__name__}: {exc}"
+                item.update(
+                    {
+                        "degraded": True,
+                        "media_status": artifacts.MEDIA_STATE_DEGRADED,
+                        "reason": f"{type(exc).__name__}: {exc}",
+                        "missing": None,
+                    }
+                )
                 summary.degraded += 1
                 changed = True
                 continue
@@ -997,7 +1376,9 @@ def generate_for_lessons(
                         "mime": cached["mime"],
                         "label": cached_provenance.get("label", artifacts.honesty_label(spec)),
                         "degraded": False,
+                        "media_status": artifacts.MEDIA_STATE_DELIVERED,
                         "reason": None,
+                        "missing": None,
                         # The verdict recorded when these bytes were produced travels with the
                         # reuse: a cache hit never upgrades an unreviewed picture to approved.
                         "review": cached_review,
@@ -1052,12 +1433,19 @@ def generate_for_lessons(
                 },
                 reviewer=gated[0] if gated is not None else None,
                 regenerate=gated[1] if gated is not None else None,
+                schematic=schematic_fallback(spec),
             )
             item.update(
                 {
                     "label": outcome.label,
                     "degraded": outcome.degraded,
+                    "media_status": (
+                        artifacts.MEDIA_STATE_DEGRADED
+                        if outcome.degraded
+                        else artifacts.MEDIA_STATE_DELIVERED
+                    ),
                     "reason": outcome.reason,
+                    "missing": None,
                     "text_equivalent": outcome.text_equivalent,
                 }
             )
@@ -1085,7 +1473,9 @@ def generate_for_lessons(
                         started,
                     )
                 )
-            else:
+            # A degraded item counts as degraded whether or not bytes shipped: the schematic
+            # fallback is a repair, not the illustration the lesson asked for (item 32).
+            if outcome.degraded:
                 summary.degraded += 1
             changed = True
         if changed:
@@ -1152,6 +1542,13 @@ def seed_authored_media(connection: Any, *, lesson_run_id: str, objective_id: st
             continue
         ordinal += 1
         text = str(item.get("text_equivalent") or item.get("purpose") or "Media").strip()
+        reason = item.get("reason")
+        if item.get("degraded") and isinstance(reason, str) and reason.strip():
+            # A media item with no artifact becomes a text segment, but never a silent one: the
+            # reason the medium is missing travels inside the segment (item 31). The segments path
+            # then reads the same way the projected document does, instead of looking like an
+            # ordinary text-only lesson.
+            text = f"{text}\n\n{reason.strip()}"
         connection.execute(
             "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, artifact_id, source_id, created_at)"
             " VALUES (?, ?, ?, 'media', ?, ?, NULL, ?)",
