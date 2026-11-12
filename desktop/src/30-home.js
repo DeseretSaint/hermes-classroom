@@ -3954,7 +3954,11 @@ function CbGenerationUsage() {
                   usage && Array.isArray(usage.unknown_fields) && usage.unknown_fields.length
                     ? jsx('div', {
                         'data-cb-usage-unknown': String(usage.unknown_fields.length),
-                        children: `Also recorded, and not read here: ${usage.unknown_fields.join(', ')}.`
+                        // `unknown_fields` names a field with at least one usage row that
+                        // recorded no value for it (domain.usage_summary adds it per row), so
+                        // this line must not call those fields "recorded". "not recorded" above
+                        // stays the only claim about a missing count.
+                        children: `Not recorded on every usage row: ${usage.unknown_fields.join(', ')}.`
                       })
                     : null,
                   jsx('div', {

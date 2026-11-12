@@ -8,10 +8,13 @@ What this proves:
 
 * ``review.action`` — a due row offers snooze / stretch / drop; a row is Resume only when
   ``evidence.inspect``'s newest scheduling event is ``review_drop``; a never-dropped objective
-  never offers Resume; a stale revision refusal is shown and records nothing; and the resume door
-  is driven end to end through the real kernel handlers (no synthetic row, no mocked method).
+  never offers Resume; every row the reads return renders with its controls (no display cap, so a
+  paused row stays reachable past the eighth due row); each control's accessible name names its
+  section; a stale revision refusal is shown and records nothing; and the resume door is driven
+  end to end through the real kernel handlers (no synthetic row, no mocked method).
 * ``usage.summary`` — the settings read-out shows the backend's own fields, never a zero for a
-  count it did not record, and no total at all when the read fails.
+  count it did not record, never calls an unrecorded field "recorded", and shows no total at all
+  when the read fails.
 * ``syllabus.delete`` — removal needs a confirm, shows the backend's ``deleted: true`` as evidence,
   and a bound syllabus is refused with its course ids.
 * ``pronunciation.dispute`` — a dispute is recorded beside the score, shown as evidence, an empty
@@ -218,6 +221,12 @@ const out = {
     [...document.querySelectorAll('[data-cb-review-item]')].map((row) => [
       row.getAttribute('data-cb-review-item'),
       row.getAttribute('data-cb-review-paused')
+    ])
+  ),
+  rowControlLabels: Object.fromEntries(
+    [...document.querySelectorAll('[data-cb-review-item]')].map((row) => [
+      row.getAttribute('data-cb-review-item'),
+      [...row.querySelectorAll('button')].map((node) => node.getAttribute('aria-label'))
     ])
   ),
   refunds: {
@@ -433,6 +442,91 @@ class ReviewDoorRenderTest(DoorRenderMixin, unittest.TestCase):
         )
         self.assertEqual(out["rowActions"].get("obj_back"), ["snooze", "stretch", "drop"])
         self.assertNotIn("resume", out["refunds"]["reviewActions"])
+
+    def test_every_due_row_keeps_its_controls_past_the_eighth(self) -> None:
+        # A display cap of 8 silently rendered rows 9-10 with no control while the banner above
+        # still counted all ten. Every row the page read must carry its controls.
+        items = [review_item(f"obj_{index:02d}") for index in range(1, 11)]
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view(items),
+                "evidence": evidence_view([evidence_objective(f"obj_{index:02d}") for index in range(1, 11)], []),
+            }
+        )
+        rendered = sorted(out["rowActions"])
+        self.assertEqual(rendered, [f"obj_{index:02d}" for index in range(1, 11)])
+        for objective_id in rendered:
+            self.assertEqual(out["rowActions"][objective_id], ["snooze", "stretch", "drop"], objective_id)
+
+    def test_a_dropped_row_stays_visible_when_many_sections_are_due(self) -> None:
+        # The reviewer's case: 8 due rows plus one dropped objective. The dropped row is not in
+        # `review.queue`; if the panel cuts the tail of its merged list, no Resume control exists
+        # anywhere on the page while the banner still says a section is out of the queue.
+        due = [review_item(f"obj_{index:02d}") for index in range(1, 9)]
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view(due),
+                "evidence": evidence_view(
+                    [evidence_objective(f"obj_{index:02d}") for index in range(1, 9)]
+                    + [evidence_objective("obj_dropped")],
+                    [layer1_event("obj_dropped", "review_drop", "2026-11-10T20:00:00Z")],
+                ),
+                "actions": [{"objective_id": "obj_dropped", "action": "resume"}],
+                "responses": {
+                    "review.action": {
+                        "ok": True,
+                        "contract_version": 26,
+                        "operation_id": "t",
+                        "revision": 8,
+                        "result": {
+                            "objective_id": "obj_dropped",
+                            "action": "resume",
+                            "recorded_at": "2026-11-11T20:05:00Z",
+                            "state": "review_due",
+                            "due_at": "2026-11-11T20:05:00Z",
+                        },
+                    }
+                },
+            }
+        )
+        self.assertEqual(out["rowActions"].get("obj_dropped"), ["resume"])
+        self.assertEqual(out["rowPaused"].get("obj_dropped"), "true")
+        self.assertEqual(len(out["rowActions"]), 9, "every due row and the paused row render")
+        call = next(item for item in out["calls"] if item.get("method") == "review.action")
+        self.assertEqual(call["payload"]["action"], "resume")
+        self.assertEqual(call["payload"]["objective_id"], "obj_dropped")
+        self.assertIn("Resume recorded", out["text"])
+
+    def test_each_review_control_names_its_section(self) -> None:
+        # Three rows of "Snooze" are three identical accessible names without a target. Each
+        # control must name the section it acts on.
+        out = self.run_scene(
+            {
+                "scene": "review",
+                "implemented": ["review.queue", "review.action", "evidence.inspect"],
+                "revision": 7,
+                "review": queue_view([review_item(f"obj_{index}") for index in (1, 2, 3)]),
+                "evidence": evidence_view([evidence_objective(f"obj_{index}") for index in (1, 2, 3)], []),
+            }
+        )
+        labels = out["rowControlLabels"]
+        for objective_id in ("obj_1", "obj_2", "obj_3"):
+            row = labels[objective_id]
+            self.assertTrue(all(row), f"every control on {objective_id} has an aria-label: {row}")
+        snoozes = [labels[key][1] for key in ("obj_1", "obj_2", "obj_3")]
+        self.assertEqual(len(set(snoozes)), 3, snoozes)
+        self.assertTrue(all("Section obj_" in label for label in snoozes), snoozes)
+        self.assertTrue(all(label.startswith("Snooze review of ") for label in snoozes), snoozes)
+        for objective_id in ("obj_1", "obj_2", "obj_3"):
+            opens = [label for label in labels[objective_id] if label and label.startswith("Open ")]
+            self.assertEqual(len(opens), 1, objective_id)
+            self.assertIn(f"Section {objective_id}", opens[0])
 
     def test_review_snooze_calls_review_action_with_the_enrolment_fence(self) -> None:
         out = self.run_scene(
@@ -681,6 +775,45 @@ class UsageDoorRenderTest(DoorRenderMixin, unittest.TestCase):
         self.assertIn("Cache read: not recorded", out["text"])
         self.assertEqual(out["refunds"]["usageUnknown"], "1")
         self.assertIn("latency_ms", out["text"])
+        self.assertIn("Not recorded on every usage row: latency_ms.", out["text"])
+        self.assertNotIn("Also recorded", out["text"])
+
+    def test_usage_does_not_call_unrecorded_fields_recorded(self) -> None:
+        # `domain.usage_summary` puts a token field in `unknown_fields` exactly when a usage row
+        # recorded no value for it, so a fresh profile returns the same four names it prints
+        # "not recorded" for above. The block must not then say they were "also recorded".
+        out = self.run_scene(
+            {
+                "scene": "usage",
+                "implemented": ["usage.summary"],
+                "responses": {
+                    "usage.summary": {
+                        "ok": True,
+                        "contract_version": 26,
+                        "operation_id": "t",
+                        "result": {
+                            "calls": 0,
+                            "tokens": {
+                                "input": None,
+                                "output": None,
+                                "cache_read": None,
+                                "cache_write": None,
+                            },
+                            "artifacts": 0,
+                            "unknown_fields": ["cache_read", "cache_write", "input", "output"],
+                        },
+                    }
+                },
+            }
+        )
+        self.assertEqual(out["refunds"]["usageUnknown"], "4")
+        text = out["text"]
+        self.assertNotIn("Also recorded", text)
+        self.assertNotIn("recorded, and not read here", text)
+        self.assertIn("Not recorded on every usage row: cache_read, cache_write, input, output.", text)
+        self.assertIn("Tokens in: not recorded · out: not recorded", text)
+        # The only statement about a missing count is "not recorded"; nothing claims a total.
+        self.assertNotIn("Generation calls: 0 ·", text)
 
     def test_usage_refusal_shows_no_totals(self) -> None:
         out = self.run_scene(

@@ -3626,11 +3626,20 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
     'data-cb-review-paused-count': String(pausedRows.length),
     style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
     children: [
-      rows.slice(0, 8).map(({ item, paused }) => {
+      // Every row this read produced gets its controls. There is no display cap: a cap made the
+      // queue actions and the Resume door unreachable past the Nth row while the banner above
+      // still counted the whole read, which is the defect this panel exists to close. The reads
+      // are already bounded (`review.queue` cap 25, `evidence.inspect` limit 200).
+      rows.map(({ item, paused }) => {
         const objectiveId = item.objective_id
         const actions = paused ? REVIEW_RESUME_ACTIONS : REVIEW_QUEUE_ACTIONS
         const outcome = outcomes[objectiveId] || null
         const busyRow = pending !== null && String(pending).startsWith(`${objectiveId}:`)
+        // Repeated controls must not share one accessible name: three rows of "Snooze" give a
+        // screen-reader user no way to tell which section each acts on. The repo's own
+        // convention names the target (cf. `20-packs.js` "Actions for ${row.title}").
+        const title = item.title || 'Untitled section'
+        const rowLabel = item.ordinal ? `section ${item.ordinal}: ${title}` : title
         const stateLine = paused
           ? `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · dropped ${reviewDueLabel(item.dropped_at)}`
           : `${OBJECTIVE_STATE_COPY[item.state] || item.state || 'State not recorded'} · due ${reviewDueLabel(item.due_at)}`
@@ -3654,7 +3663,7 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
                 children: [
                   jsx('span', {
                     style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
-                    children: item.title || 'Untitled section'
+                    children: title
                   }),
                   jsx('span', {
                     style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
@@ -3664,6 +3673,8 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
                     ? jsx(sdk.Button, {
                         variant: 'text',
                         size: 'sm',
+                        'aria-label': `Open ${rowLabel}`,
+                        title: `Open ${rowLabel}`,
                         onClick: () => onOpenSection(objectiveId),
                         children: 'Open section'
                       })
@@ -3688,7 +3699,8 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
                         'data-cb-review-action': action,
                         'data-cb-review-target': objectiveId,
                         disabled: busyRow,
-                        title: REVIEW_SCHEDULE_COPY[action].hint,
+                        'aria-label': `${REVIEW_SCHEDULE_COPY[action].label} review of ${rowLabel}`,
+                        title: `${REVIEW_SCHEDULE_COPY[action].hint} (${rowLabel})`,
                         onClick: () => act(item, action),
                         children:
                           pending === `${objectiveId}:${action}`
