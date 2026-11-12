@@ -45,7 +45,7 @@ PY
 echo "pin ${OLD:0:12} -> ${SHA:0:12} in $CATALOG"
 
 if [[ -f "$FORK/scripts/validate_plugin_catalog.py" ]]; then
-  (cd "$FORK" && python3 scripts/validate_plugin_catalog.py)
+  (cd "$FORK" && python3 scripts/validate_plugin_catalog.py plugin-catalog/coursebook.yaml)
 fi
 
 if git -C "$REPO" show "$SHA:desktop/plugin.js" >/dev/null 2>&1; then
