@@ -469,24 +469,26 @@ const CB_V3_CSS = `/* Field Atlas v3 — the route ground.
   box-shadow: var(--cb3-elev-2);
 }
 
-/* The tag reads as the kit's own kraft tag object: the plate paints, the words stay DOM. */
+/* VQ-011 — the tag paints the kit's own square 256x256 kraft tag at its natural aspect: the box is
+   square and contain is the one size that can never stretch the file (a box-derived two-value size
+   such as 100% 100% squashed the master 1.0x by 0.34x and bent the rope hole and corners).
+   No plate colour and no box shadow: the file's corners are transparent, so a box-derived fill or
+   shadow would paint a square around the object. The words stay DOM type on the kraft body. */
 [data-cb-v3] [data-cb-home-scene-tag] {
   position: absolute;
-  left: 880px;
-  top: 606px;
-  width: 164px;
-  height: 88px;
+  left: 888px;
+  top: 559px;
+  width: 148px;
+  height: 148px;
   z-index: 4;
   display: grid;
   place-items: center;
   transform: rotate(-3deg);
-  background-color: var(--cb3-card-stock);
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: contain;
   font-family: var(--cb3-font-display);
   font-size: var(--cb3-text-lead);
   color: var(--cb3-ink);
-  box-shadow: var(--cb3-elev-1);
 }
 
 [data-cb-v3] [data-cb-home-scene-clock] {

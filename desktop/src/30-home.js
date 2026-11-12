@@ -575,7 +575,11 @@ const CB_HOME_SCENE = Object.freeze({
   cards: Object.freeze({ top: 384, left: 273, width: 176, height: 175, gap: 24, cover: 106, radius: 7 }),
   shelf: Object.freeze({ left: 219, width: 915, top: 559, height: 18, lip: 10 }),
   ledge: Object.freeze({ left: 130, width: 1150, top: 684, height: 30, face: 24 }),
-  tag: Object.freeze({ left: 880, top: 606, width: 164, height: 88, font: 23 }),
+  // VQ-011: the plate is the kit's square 256x256 tag object painted at its own aspect (148x148,
+  // rope loop included). The old 164x88 box with background-size: 100% 100% squashed the master
+  // 1.0x horizontally and 0.34x vertically, which bent the rope hole and the corners. The box top
+  // is the shelf's top edge (the rope hangs from behind it) and its bottom lands on the ledge.
+  tag: Object.freeze({ left: 888, top: 559, width: 148, height: 148, font: 23 }),
   // D-007 seating: the animated group stands ON plank two, whose top edge is y=684. The clock's
   // painted base sits 2.3 px above its 118 px box bottom and the fox's painted feet 4.9 px above its
   // 208 px box bottom, so the boxes start at 568 and 481 to land base/feet on 683.7 / 684.1. The fox

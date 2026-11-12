@@ -2,7 +2,7 @@
   "card": "CP-053 / D-007 Home quality pass (t_831137dd)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "bc64d1e48ed1d731af10031b3506ee9acc0cae887dd91eb62879ed245ad9bc2e",
+  "module_sha256": "47e28079591b19723c9394ea1f6d323f27ee42664d62f46c1ada8c103dbeb0f1",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
@@ -11,10 +11,10 @@
     768
   ],
   "metric": "sim_grey = 1 - RMSE(grey)/255 over the full frame at native 1344x768",
-  "rmse_rgb": 92.692,
-  "rmse_grey": 92.944,
-  "sim_grey": 0.6355,
-  "sim_rgb": 0.6365,
+  "rmse_rgb": 93.058,
+  "rmse_grey": 93.302,
+  "sim_grey": 0.6341,
+  "sim_rgb": 0.6351,
   "bands_sim_grey": {
     "header": 0.6419,
     "hero": 0.5904,
@@ -25,5 +25,5 @@
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. Cards now carry the approved field_atlas@2 display plates, so the frame is measured against A1 as a record, not as a gate: D-007 changed the target from pixel parity with the mockup to the approved kit composition.",
   "measured_at": "2026-11-12",
-  "note": "Re-measured 2026-11-12 on module bc64d1e4 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor."
+  "note": "Re-measured 2026-11-12 on module 47e28079 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor."
 }
