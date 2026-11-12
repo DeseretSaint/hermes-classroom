@@ -157,8 +157,19 @@ facts.sectionHtml = renderToStaticMarkup(
   })
 )
 facts.printHtml = mod.cbLessonPrintHtml(payload.document, payload.printOptions || {})
+// The printed sheet goes through the same hidden frame the take-home card uses. This proves the
+// door accepts the built document (the frame is appended with that exact srcdoc); a real browser
+// then prints the frame alone.
+mod.cbPrintHomeworkSheet(facts.printHtml)
+await flush(20)
+const printFrame = [...document.querySelectorAll('iframe')].find(
+  (node) => node.getAttribute('title') === 'Homework sheet for printing'
+)
+facts.printFramePresent = Boolean(printFrame)
+facts.printFrameSrcdoc = printFrame ? printFrame.getAttribute('srcdoc') : null
 
-process.stdout.write(JSON.stringify(facts))
+const output = JSON.stringify(facts)
+process.stdout.write(output, () => process.exit(0))
 """
 
 
@@ -348,6 +359,10 @@ class FiguresAndPrintTest(unittest.TestCase):
         self.assertNotIn("rubric", html)
         # The check prompt is printed once, as the learner reads it — not twice.
         self.assertEqual(html.count(PROMPT), 1)
+
+    def test_the_printed_lesson_goes_through_the_hidden_print_frame(self) -> None:
+        self.assertTrue(self.facts["printFramePresent"])
+        self.assertEqual(self.facts["printFrameSrcdoc"], self.facts["printHtml"])
 
     def test_print_escapes_authored_markup(self) -> None:
         html = self.facts["printHtml"]
