@@ -8,14 +8,14 @@
  "record_scope": "measured_commit is the frozen release tree that the module pin and the M4 audit describe. The tests, rpc and db blocks track the master tree the release gate reads and each names its own measurement commit, because test-only merges land without moving the release pin.",
  "tests": {
   "command": "python3 -m unittest discover -s tests -t .",
-  "measured_commit": "ec99038e135181cbebaa8de44ed82e74cb5e348d",
-  "measured_commit_short": "ec99038e",
+  "measured_commit": "165d7da0ab382b0fa7a9e6c4987cbb0eebbe0934",
+  "measured_commit_short": "165d7da0",
   "measured_at": "2026-11-12",
-  "ran": 4424,
+  "ran": 4429,
   "skipped": 12,
-  "seconds": 1020.242,
+  "seconds": 982.942,
   "verdict": "OK (skipped=12)",
-  "note": "Measured 2026-11-12 on trunk, the union of PRINT-2 (`de92dd26`: cb.pack v4 names role `coloring_page`), the Workshop share contract tests (`393d51a1`), CP-015g per-call deadlines (`918b0a01`), CP-G7-02 parent.brief.get NOT_FOUND (`ef04029c`), the electron resolver (`576d79cd`) and the check-copy fix (`1aa03c2c`), over master `d85c30c5`: Ran 4424 tests in 1020.242s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 39-test delta over 4385 is those six cards' new and extended groups (test_cp015g_provider_deadlines, test_parent_studio, test_cb013_live_window_electron, test_cp_023_classroom, test_print_pack_coloring, test_desktop_contracts) plus the PRINT-2 pinned-set assertion. desktop/plugin.js is rebuilt from 20 segments by scripts/build_plugin.py in this tree and hashes bc64d1e4; the CP-053 row, both proof pages and the M4 evidence were regenerated on that module in the same commit. Previous records (4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit above it touches only documentation, so it cannot move a test count."
+  "note": "Measured 2026-11-12 on trunk, the union of PRINT-2 (`de92dd26`: cb.pack v4 names role `coloring_page`), the Workshop share contract tests (`393d51a1`), CP-015g per-call deadlines (`918b0a01`), CP-G7-02 parent.brief.get NOT_FOUND (`ef04029c`), the electron resolver (`576d79cd`) and the check-copy fix (`1aa03c2c`), over master `d85c30c5`: Ran 4429 tests in 982.942s, OK (skipped=12), exit 0, one uninterrupted run in a dedicated worktree. The 44-test delta over 4385 is those six cards' new and extended groups (test_cp015g_provider_deadlines, test_parent_studio, test_cb013_live_window_electron, test_cp_023_classroom, test_print_pack_coloring, test_desktop_contracts) plus the PRINT-2 pinned-set assertion, plus the aside Try-it-yourself contract (`wt/t_66930483-aside-check` `0a4683f7`: test_cp_023_classroom focus-with-a-check and absent-without-a-check cases, test_desktop_learning_live rewritten to the new contract) and VQ-011's Home tag aspect (`wt/vq-011-home-tag-aspect` `dccb532c`: test_desktop_home_tag_aspect, 183 lines, plus test_desktop_home_scene_geometry). desktop/plugin.js is rebuilt from 20 segments by scripts/build_plugin.py in this tree and hashes 9015b84c; the CP-053 row (sim_grey 0.6341, rmse_grey 93.302), both proof pages and the M4 evidence (15/15 claims PASS) were regenerated on that module in the same commit. Previous records (4424 at ec99038e, 4401 at 3b82959f, 4385 at be6b3856, 4375 at 5df8dfdc, 4359 at 8eb1f944, 4350 at 6dc7a927, 4212 at 5f956f7b, 4033 at 6d08cc8a) are history. This block names the master tree the release gate reads; the docs commit above it touches only documentation, so it cannot move a test count."
  },
  "rpc": {
   "contract": "cb.rpc",
