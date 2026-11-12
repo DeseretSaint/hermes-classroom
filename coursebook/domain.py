@@ -5241,6 +5241,11 @@ def parent_plan_edit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple
                     "order must be a permutation of the plan's surviving objective ids.",
                     field="order",
                 )
+            # `objectives` is UNIQUE(plan_id, ordinal); a direct swap collides mid-update, so move
+            # every row out of the target range first (the same guard `plan.edit` uses).
+            connection.execute(
+                "UPDATE objectives SET ordinal = ordinal + 1000 WHERE plan_id = ?", (plan["id"],)
+            )
             for index, objective_id in enumerate(requested, start=1):
                 connection.execute(
                     "UPDATE objectives SET ordinal = ? WHERE id = ?", (index, objective_id)
