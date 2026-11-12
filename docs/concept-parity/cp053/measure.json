@@ -2,7 +2,7 @@
   "card": "CP-053 / D-007 Home quality pass (t_831137dd)",
   "surface": "desktop/plugin.js CoursebookHome at route width 1344, rendered by design/home-scene.html (generated from the module by scripts/gen-home-proof.py)",
   "capture": "chromium --headless=new --window-size=1344,768 --force-device-scale-factor=1",
-  "module_sha256": "cc316fe0c3c157a91f7ae0bc1f220898fb7969bfa9571554734fd32c324fcad4",
+  "module_sha256": "21721ef0930b6a8a0d050bc98baec462ec710e824926109c1444355ea4d4fd87",
   "reference": "docs/concept-parity/refs/home.png",
   "reference_sha256": "fd75bed31cd773ab50a5b5ad62daa46566d50b1b7f3ed1582a52915a14f3ffe3",
   "render": "docs/concept-parity/cp053/home-scene-1344.png",
@@ -25,5 +25,5 @@
   },
   "not_a_desktop_capture": "no host, no backend; the scene canvas only. Cards now carry the approved field_atlas@2 display plates, so the frame is measured against A1 as a record, not as a gate: D-007 changed the target from pixel parity with the mockup to the approved kit composition.",
   "measured_at": "2026-11-12",
-  "note": "Re-measured 2026-11-12 on module cc316fe0 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor."
+  "note": "Re-measured 2026-11-12 on module 21721ef0 after the generated page was re-rendered from that module; fresh chromium capture at 1344x768 of design/home-scene.html, fresh RMSE against docs/concept-parity/refs/home.png, nothing carried over. The CP-053 reference is the pre-plate hand frame, so this row records the approved-kit composition rather than clearing the 0.85 floor."
 }

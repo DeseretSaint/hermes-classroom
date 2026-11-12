@@ -3560,6 +3560,21 @@ function reviewPausedItems(evidence) {
 }
 
 /**
+ * What the queue panel says when `review.queue` returned fewer due rows than the contract's full
+ * counts. `cap` bounds `items` only; `total_due` / `total_overdue` are always the whole backlog
+ * (docs/CONTRACTS.md §`review.queue`), so the panel can say exactly what it is not showing instead
+ * of letting a capped read look like a complete queue. `shown` can be 0, and the sentence still
+ * names the real backlog rather than claiming there is nothing due.
+ */
+function reviewBacklogNotice(shown, total) {
+  const hidden = Math.max(0, Number(total) - Number(shown))
+  if (hidden === 1) {
+    return `Showing ${shown} of ${total} due sections. One more returns as you clear these.`
+  }
+  return `Showing ${shown} of ${total} due sections. The other ${hidden} return as you clear these.`
+}
+
+/**
  * The queue panel: the rows `review.queue` says are due, then the rows `evidence.inspect` says were
  * taken out of the queue. Both lists call the same method and both show its answer as evidence.
  */
@@ -3567,6 +3582,14 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
   const dueRows = (review && Array.isArray(review.items) ? review.items : []).filter(
     (item) => item && (item.overdue || item.state === 'review_due')
   )
+  // The contract's own counts, never a client-side total: `items` is capped, the counts are not.
+  const dueTotal =
+    review && typeof review.total_due === 'number'
+      ? Number(review.total_due)
+      : review && typeof review.total_overdue === 'number'
+        ? Number(review.total_overdue)
+        : null
+  const hiddenDue = dueTotal === null ? 0 : Math.max(0, dueTotal - dueRows.length)
   const pausedRows = reviewPausedItems(evidence)
   const rows = [
     ...dueRows.map((item) => ({ item, paused: false })),
@@ -3619,13 +3642,24 @@ function ReviewDuePanel({ enrollmentId, revision, review, evidence, onRecorded, 
     [enrollmentId, revision, onRecorded]
   )
 
-  if (rows.length === 0) return null
+  // A read that returned no rows and reports no backlog has nothing to say; a read that returned
+  // no rows while the contract counts a backlog still has to say the backlog is not shown.
+  if (rows.length === 0 && hiddenDue === 0) return null
 
   return jsxs('div', {
     'data-cb-review-queue': String(rows.length),
     'data-cb-review-paused-count': String(pausedRows.length),
     style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
     children: [
+      // `cap` bounds the rows, not the backlog. Without this line a queue of 25 looked complete
+      // while the banner above counted 30, and the five rows past the cap had no control anywhere.
+      hiddenDue > 0
+        ? jsx('p', {
+            'data-cb-review-hidden': String(hiddenDue),
+            style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: reviewBacklogNotice(dueRows.length, dueTotal)
+          })
+        : null,
       // Every row this read produced gets its controls. There is no display cap: a cap made the
       // queue actions and the Resume door unreachable past the Nth row while the banner above
       // still counted the whole read, which is the defect this panel exists to close. The reads
